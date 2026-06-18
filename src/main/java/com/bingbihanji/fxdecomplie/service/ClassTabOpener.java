@@ -358,13 +358,15 @@ public final class ClassTabOpener {
         return null;
     }
 
-    /** 在文件树中查找指定路径的节点（公开，供快速打开使用） */
-    public FileTreeNode findNodeByPath(TreeItem<FileTreeNode> item, String fullPath) {
-        FileTreeNode node = item.getValue();
-        if (node != null && fullPath.equals(node.getFullPath())) return node;
-        for (TreeItem<FileTreeNode> child : item.getChildren()) {
-            FileTreeNode found = findNodeByPath(child, fullPath);
-            if (found != null) return found;
+    /** 在文件树中查找指定路径的节点（迭代 BFS，防止深层包结构栈溢出） */
+    public FileTreeNode findNodeByPath(TreeItem<FileTreeNode> root, String fullPath) {
+        java.util.ArrayDeque<TreeItem<FileTreeNode>> queue = new java.util.ArrayDeque<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeNode node = item.getValue();
+            if (node != null && fullPath.equals(node.getFullPath())) return node;
+            queue.addAll(item.getChildren());
         }
         return null;
     }
