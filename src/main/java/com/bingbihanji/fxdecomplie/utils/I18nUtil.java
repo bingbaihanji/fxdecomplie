@@ -107,7 +107,7 @@ public class I18nUtil {
      * @return ResourceBundle
      * @throws IOException 加载失败时抛出异常
      */
-    private static ResourceBundle loadResourceBundle(Locale locale) throws IOException {
+    static ResourceBundle loadResourceBundle(Locale locale) throws IOException {
         // 构建资源文件名
         String bundleName = toBundleName(BASE_NAME, locale);
         String resourceName = toResourceName(bundleName);
@@ -230,6 +230,22 @@ public class I18nUtil {
      */
     private static String toResourceName(String bundleName) {
         return bundleName.replace('.', '/') + ".properties";
+    }
+
+    /**
+     * 创建测试用 ResourceBundle，返回独立实例。
+     * 不影响全局静态状态，适合并发测试。
+     *
+     * @param locale 目标语言环境
+     * @return 独立的 ResourceBundle 实例
+     * @throws RuntimeException 如果资源加载失败
+     */
+    public static ResourceBundle createBundleFor(Locale locale) {
+        try {
+            return loadResourceBundle(locale);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load bundle for locale: " + locale, e);
+        }
     }
 
     /**
