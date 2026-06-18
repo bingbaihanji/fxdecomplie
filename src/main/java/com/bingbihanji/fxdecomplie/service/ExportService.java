@@ -212,6 +212,9 @@ public final class ExportService {
             for (TreeItem<FileTreeNode> item : items) {
                 if (Thread.currentThread().isInterrupted()) {
                     state.errors.add("Export canceled");
+                    try {
+                        zos.closeEntry();
+                    } catch (IOException ignored) { }
                     return;
                 }
                 FileTreeNode data = item.getValue();
