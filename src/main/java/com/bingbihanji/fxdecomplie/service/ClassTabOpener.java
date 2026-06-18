@@ -268,7 +268,7 @@ public final class ClassTabOpener {
                     return;
                 }
 
-                String text = new String(bytes, StandardCharsets.UTF_8);
+                String text = decodeText(bytes);
 
                 Platform.runLater(() -> {
                     jfx.incubator.scene.control.richtext.CodeArea codeArea =
@@ -450,6 +450,27 @@ public final class ClassTabOpener {
         // ---- Extract metadata for Ctrl+Click navigation ----
         CodeMetadata metadata = OutlineParser.extractMetadata(sourceCode);
         return new DecompileResult(sourceCode, metadata);
+    }
+
+    /** 检测字节数组的文本编码并解码为字符串（支持 BOM、UTF-8、UTF-16、ISO-8859-1 回退） */
+    private static String decodeText(byte[] bytes) {
+        if (bytes.length >= 3 && (bytes[0] & 0xFF) == 0xEF
+                && (bytes[1] & 0xFF) == 0xBB && (bytes[2] & 0xFF) == 0xBF) {
+            return new String(bytes, 3, bytes.length - 3, java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (bytes.length >= 2) {
+            if ((bytes[0] & 0xFF) == 0xFE && (bytes[1] & 0xFF) == 0xFF) {
+                return new String(bytes, 2, bytes.length - 2, java.nio.charset.StandardCharsets.UTF_16);
+            }
+            if ((bytes[0] & 0xFF) == 0xFF && (bytes[1] & 0xFF) == 0xFE) {
+                return new String(bytes, 2, bytes.length - 2, java.nio.charset.StandardCharsets.UTF_16LE);
+            }
+        }
+        try {
+            return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1);
+        }
     }
 
     /** 显示错误弹窗 */
