@@ -328,14 +328,17 @@ public final class ClassTabOpener {
 
     /** 查找已打开的同名 class 标签页，移除不同引擎的重复标签页 */
     private Tab findOrRemoveOpenClassTab(TabPane codeTabPane, FileTreeNode node, DecompilerTypeEnum engine) {
+        java.util.List<Tab> toRemove = new java.util.ArrayList<>();
         for (Tab tab : codeTabPane.getTabs()) {
             if (tab instanceof CodeEditorTab codeTab
                     && codeTab.getOpenFile().getFullPath().equals(node.getFullPath())) {
-                if (codeTab.getOpenFile().getEngine() == engine) return tab;
+                if (codeTab.getOpenFile().getEngine() == engine) {
+                    return tab;
+                }
+                toRemove.add(tab);
             }
         }
-        codeTabPane.getTabs().removeIf(tab -> tab instanceof CodeEditorTab codeTab
-                && codeTab.getOpenFile().getFullPath().equals(node.getFullPath()));
+        codeTabPane.getTabs().removeAll(toRemove);
         return null;
     }
 
@@ -386,14 +389,14 @@ public final class ClassTabOpener {
         String wsKey = computeWorkspaceKey(workspace);
 
         // ---- L2: in-memory decompile cache (fastest path) ----
-        String sourceCode = decompileCache.get(internalName, engine, optionsHash);
+        String sourceCode = decompileCache.get(wsKey, internalName, engine, optionsHash);
 
         // ---- L2 miss: try L3 disk-persisted cache ----
         if (sourceCode == null) {
             sourceCode = DiskCodeCache.load(wsKey, internalName, engine);
             if (sourceCode != null) {
                 // ---- L3 hit: back-fill L2 so next lookup is instantaneous ----
-                decompileCache.put(internalName, engine, optionsHash, sourceCode);
+                decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
             }
         }
 
@@ -405,7 +408,7 @@ public final class ClassTabOpener {
                     .decompile(node.getFullPath(), bytes,
                             DecompilerContext.fromWorkspaceIndex(workspace.getIndex()));
             // ---- Save decompiled result to L2 (immediate) ----
-            decompileCache.put(internalName, engine, optionsHash, sourceCode);
+            decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
 
             // ---- Save to L3 disk cache asynchronously (non-blocking) ----
             final String finalSource = sourceCode;
