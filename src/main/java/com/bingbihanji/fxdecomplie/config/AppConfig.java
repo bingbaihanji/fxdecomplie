@@ -133,8 +133,9 @@ public class AppConfig {
     }
 
     public static class Decompiler {
-        /** 默认反编译引擎，有效值: PROCYON, CFR, VINEFLOWER */
-        public String defaultEngine = "VINEFLOWER";
+        /** 默认反编译引擎 */
+        public com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum defaultEngine =
+                com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum.VINEFLOWER;
         /** 是否显示行号 */
         public boolean lineNumbersEnabled = true;
         /** 是否自动换行 */

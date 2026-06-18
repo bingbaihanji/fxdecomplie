@@ -1,6 +1,7 @@
 package com.bingbihanji.fxdecomplie.ui.settings;
 
 import com.bingbihanji.fxdecomplie.config.AppConfig;
+import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbihanji.fxdecomplie.model.ExportConfig;
 import com.bingbihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbihanji.fxdecomplie.utils.I18nUtil;
@@ -39,7 +40,7 @@ public final class SettingsDialog {
         decompilerTab.setClosable(false);
         ComboBox<String> engineCombo = new ComboBox<>();
         engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD");
-        engineCombo.setValue(config.decompiler.defaultEngine);
+        engineCombo.setValue(config.decompiler.defaultEngine.name());
         decompilerTab.setContent(new VBox(10,
                 new Label(I18nUtil.getString("settings.defaultEngine")), engineCombo));
 
@@ -123,7 +124,7 @@ public final class SettingsDialog {
 
         var result = dialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.APPLY) {
-            config.decompiler.defaultEngine = engineCombo.getValue();
+            config.decompiler.defaultEngine = DecompilerTypeEnum.valueOf(engineCombo.getValue());
             config.decompiler.lineNumbersEnabled = lineNumCheck.isSelected();
             config.decompiler.wrapText = wrapCheck.isSelected();
             config.search.fullSourceSearch = fullSourceSearchCheck.isSelected();

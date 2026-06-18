@@ -98,6 +98,10 @@ public final class NavigationService {
         if (recordHistory && currentPath != null) {
             backStack.push(currentPath);
             forwardStack.clear();
+            // Limit history to prevent unbounded memory growth
+            while (backStack.size() > 100) {
+                backStack.removeLast();
+            }
         }
         currentPath = path;
         // ---- Dispatch: route to class opener or resource opener based on node type ----

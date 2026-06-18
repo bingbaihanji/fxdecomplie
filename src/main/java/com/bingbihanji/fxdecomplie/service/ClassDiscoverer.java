@@ -84,7 +84,13 @@ public final class ClassDiscoverer {
         List<ClassEntry> entries = new ArrayList<>();
         Path root = dir.toPath();
         try (Stream<Path> stream = Files.walk(root)) {
-            stream.filter(Files::isRegularFile).forEach(p -> {
+            stream.filter(p -> {
+                try {
+                    return Files.isRegularFile(p) && !Files.isSymbolicLink(p);
+                } catch (Exception e) {
+                    return false;
+                }
+            }).forEach(p -> {
                 String relativePath = root.relativize(p).toString().replace('\\', '/');
                 String displayName = p.getFileName().toString();
                 FileTreeNode.NodeTypeEnum type = guessType(displayName);

@@ -87,7 +87,7 @@ public class MainWindow implements MainMenuBar.Actions {
     /** 显示主窗口 */
     public void show(Stage stage) {
         this.stage = stage;
-        this.currentEngine = parseDecompiler(config.decompiler.defaultEngine);
+        this.currentEngine = config.decompiler.defaultEngine;
 
         outerTabPane = new TabPane();
         outerTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -184,8 +184,8 @@ public class MainWindow implements MainMenuBar.Actions {
         }
         try {
             DecompilerProject project = ProjectFileManager.load(file.toPath());
-            currentEngine = parseDecompiler(project.engine());
-            config.decompiler.defaultEngine = currentEngine.name();
+            currentEngine = DecompilerTypeEnum.valueOf(project.engine());
+            config.decompiler.defaultEngine = currentEngine;
             if (!project.exportPath().isBlank()) {
                 config.export.lastPath = project.exportPath();
             }
@@ -461,7 +461,7 @@ public class MainWindow implements MainMenuBar.Actions {
             return;
         }
         currentEngine = engine;
-        config.decompiler.defaultEngine = engine.name();
+        config.decompiler.defaultEngine = engine;
         statusBar.setFilePath(I18nUtil.getString("status.currentEngine", engine.name()));
 
         WorkspaceView view = tabManager.currentWorkspaceView();
@@ -604,7 +604,7 @@ public class MainWindow implements MainMenuBar.Actions {
     }
 
     private void applySettings(AppConfig updated) {
-        DecompilerTypeEnum configuredEngine = parseDecompiler(updated.decompiler.defaultEngine);
+        DecompilerTypeEnum configuredEngine = updated.decompiler.defaultEngine;
         if (configuredEngine != currentEngine) {
             selectEngine(configuredEngine);
         }
@@ -735,15 +735,6 @@ public class MainWindow implements MainMenuBar.Actions {
                 Platform.runLater(() -> showError(I18nUtil.getString("dialog.error.title"), I18nUtil.getString("dialog.load.error") + ": " + e.getMessage()));
             }
         });
-    }
-
-    /** 解析反编译器名称字符串为枚举 */
-    private DecompilerTypeEnum parseDecompiler(String value) {
-        try {
-            return DecompilerTypeEnum.valueOf(value);
-        } catch (IllegalArgumentException | NullPointerException e) {
-            return DecompilerTypeEnum.VINEFLOWER;
-        }
     }
 
     /** 判断文件是否为归档文件（JAR/ZIP） */
