@@ -1,0 +1,34 @@
+module FXGeometricView {
+    // JavaFX 模块
+    requires javafx.controls;
+    requires javafx.fxml;
+    requires javafx.swing;
+    requires javafx.graphics;
+
+    // 日志模块
+    requires org.slf4j;
+    requires ch.qos.logback.core;
+    requires ch.qos.logback.classic;
+    requires java.logging;
+    requires com.github.benmanes.caffeine;
+    requires org.objectweb.asm.util;
+    requires com.google.gson;
+    requires jfx.incubator.richtext;
+    requires jd.core;
+    requires vineflower;
+    requires procyon.compilertools;
+    requires cfr;
+
+
+
+    // 导出 decompiler 包供 Gson 访问枚举
+    exports com.bingbaihanji.fxdecomplie.decompiler;
+
+    // 运行时反射访问
+    opens com.bingbaihanji.fxdecomplie to javafx.graphics;
+    opens com.bingbaihanji.fxdecomplie.config to com.google.gson;
+    opens com.bingbaihanji.fxdecomplie.model to com.google.gson;
+
+    // 开放 decompiler 包给 Gson（用于枚举反序列化）
+    opens com.bingbaihanji.fxdecomplie.decompiler to com.google.gson;
+}

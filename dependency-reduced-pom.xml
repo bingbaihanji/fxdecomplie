@@ -20,6 +20,24 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>create-bin-directory</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.6.0</version>
         <executions>
@@ -29,9 +47,12 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <outputDirectory>${project.basedir}/bin</outputDirectory>
+              <finalName>fxdecomplie</finalName>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
               <transformers>
                 <transformer>
-                  <mainClass>com.bingbihanji.fxdecomplie.AppLauncher</mainClass>
+                  <mainClass>com.bingbaihanji.fxdecomplie.AppLauncher</mainClass>
                 </transformer>
               </transformers>
             </configuration>
@@ -43,7 +64,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.6.3</version>
         <configuration>
-          <mainClass>com.bingbihanji.fxdecomplie.AppLauncher</mainClass>
+          <mainClass>com.bingbaihanji.fxdecomplie.AppLauncher</mainClass>
         </configuration>
       </plugin>
     </plugins>

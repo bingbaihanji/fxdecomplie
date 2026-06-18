@@ -15,7 +15,7 @@
 ### Task 1.1: CfrDecompiler `.class` 后缀移除修复 (P0-7)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/CfrDecompiler.java:57,70,107`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/CfrDecompiler.java:57,70,107`
 
 - [ ] **Step 1: 在 CfrDecompiler 中添加后缀安全移除方法，并替换所有 `replace(".class", "")` 调用**
 
@@ -85,7 +85,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.2: JdDecompiler 重复 package 声明修复 (P0-6)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/JdDecompiler.java:40-44`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/JdDecompiler.java:40-44`
 
 - [ ] **Step 1: 检测 JD-Core 输出是否已含 package 声明，避免重复插入**
 
@@ -218,7 +218,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.3: Vineflower Logger 接通 SLF4J (P0-3)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/VineflowerDecompiler.java:175-183`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java:175-183`
 
 - [ ] **Step 1: 将 IFernflowerLogger 空实现替换为 SLF4J 转发**
 
@@ -291,7 +291,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.4: DecompilerFactory.cleanup() 异常隔离 (P0-5)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/DecompilerFactory.java:40-43`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerFactory.java:40-43`
 
 - [ ] **Step 1: 添加 SLF4J import 和异常隔离的 cleanup**
 
@@ -356,7 +356,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.5: ClassTabOpener 迭代中修改集合修复 (P0-4)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/ClassTabOpener.java:330-339`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java:330-339`
 
 - [ ] **Step 1: 将 findOrRemoveOpenClassTab 中的 removeIf 移到循环外**
 
@@ -425,7 +425,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.6: SearchService 线程安全修复 (P0-2)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/SearchService.java:19`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/SearchService.java:19`
 
 - [ ] **Step 1: 将 providers ArrayList 替换为 CopyOnWriteArrayList**
 
@@ -472,7 +472,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.7: BytecodeCache 内存限制 (P0-1)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/BytecodeCache.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/BytecodeCache.java`
 - Modify: `pom.xml` (add Caffeine dependency)
 
 - [ ] **Step 1: 在 pom.xml 中添加 Caffeine 缓存库依赖**
@@ -500,7 +500,7 @@ Expected: 显示 caffeine-3.2.0.jar 路径
 完整重写 `BytecodeCache.java`：
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -586,7 +586,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.8: findNodeByPath 递归改迭代 (P1-9)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/ClassTabOpener.java:359-367`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java:359-367`
 
 - [ ] **Step 1: 将递归实现替换为 Deque 迭代实现**
 
@@ -644,8 +644,8 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.9: FileTreeBuilder 去重存储 + ClassDiscoverer BINARY 类型不加载字节 (P1-5, P1-10)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/FileTreeBuilder.java:39,44,48`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/ClassDiscoverer.java:70-74`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/FileTreeBuilder.java:39,44,48`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/ClassDiscoverer.java:70-74`
 
 - [ ] **Step 1: FileTreeBuilder 不再在节点中冗余存储已存入 BytecodeCache 的字节码**
 
@@ -747,9 +747,9 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.10: WorkspaceIndex 异步构建 (P1-6)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/model/Workspace.java:35-41`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/WorkspaceTabManager.java` (addWorkspaceTab 方法)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java:770-772`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java:35-41`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java` (addWorkspaceTab 方法)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java:770-772`
 
 - [ ] **Step 1: 将 Workspace 构造函数中的同步 index.build() 移出**
 
@@ -863,7 +863,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.11: MainWindow 导出代码去重 (P1-8)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java:294-417`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java:294-417`
 
 - [ ] **Step 1: 提取 doExport 公共方法，消除 exportAllFiles/exportTreeItem 重复**
 
@@ -981,8 +981,8 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.12: 文件内搜索（Ctrl+F）(P1-1)
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/EditorSearchBar.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/CodeEditorTab.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java`
 - Modify: `src/main/resources/language/language_zh_CN.properties`
 - Modify: `src/main/resources/language/language_en.properties`
 
@@ -1005,9 +1005,9 @@ editor.find.matchCount=Match {0} of {1}
 - [ ] **Step 2: 创建 EditorSearchBar 组件**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -1202,7 +1202,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 1.13: 行跳转（Ctrl+G）(P1-2)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/CodeEditorTab.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java`
 - Modify: `src/main/resources/language/language_zh_CN.properties`
 - Modify: `src/main/resources/language/language_en.properties`
 
@@ -1311,15 +1311,15 @@ Expected: Tests run: ~10, Failures: 0
 ### Task 2.1: 搜索高级选项 — SearchOptions 模型 + SearchProvider 接口扩展 (P1-3)
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/model/SearchOptions.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchProvider.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchDialog.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/SearchService.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/model/SearchOptions.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchProvider.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchDialog.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/SearchService.java`
 
 - [ ] **Step 1: 创建 SearchOptions 记录**
 
 ```java
-package com.bingbihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.model;
 
 /**
  * 搜索选项：控制正则、大小写、全词匹配。
@@ -1341,9 +1341,9 @@ public record SearchOptions(
 将 `SearchProvider.java` 的 single-abstract-method 改为双方法：
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
-import com.bingbihanji.fxdecomplie.model.SearchOptions;
+import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 
 import java.util.List;
 import java.util.Map;
@@ -1359,7 +1359,7 @@ public interface SearchProvider {
 
     /** 带搜索选项的搜索（默认忽略选项，向后兼容） */
     default List<SearchResult> search(String query, Map<String, String> sourceCache,
-                                       SearchOptions options) {
+                                      SearchOptions options) {
         return search(query, sourceCache);
     }
 }
@@ -1437,7 +1437,7 @@ git commit -m "feat: add regex/case/whole-word search options to SearchDialog"
 ### Task 2.2: ExportService.resolveClassBytes 磁盘回退 (P1-7)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/ExportService.java:136-142`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/ExportService.java:136-142`
 
 - [ ] **Step 1: 扩展 resolveClassBytes 增加磁盘回退**
 
@@ -1525,7 +1525,7 @@ git commit -m "fix: ExportService provides clearer error when class bytes unavai
 ### Task 2.3: 文件树 Unicode 图标 (P1-11)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/tree/FileTreeCell.java:26-32`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeCell.java:26-32`
 
 - [ ] **Step 1: 将文本标签替换为 Unicode 符号**
 
@@ -1565,7 +1565,7 @@ git commit -m "feat: replace text-based tree icons with Unicode symbols"
 ### Task 2.4: BackgroundTasks 有界队列 (P2-2)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/BackgroundTasks.java:14-22`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/BackgroundTasks.java:14-22`
 
 - [ ] **Step 1: 给 LinkedBlockingQueue 设置容量上限**
 
@@ -1635,7 +1635,7 @@ git commit -m "fix: BackgroundTasks uses bounded queue (100) to prevent OOM"
 ### Task 2.5: DecompileCache 大小限制 (P2-3)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/DecompileCache.java:17`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/DecompileCache.java:17`
 
 - [ ] **Step 1: 改用 LinkedHashMap LRU 驱逐**
 
@@ -1676,8 +1676,8 @@ git commit -m "fix: DecompileCache uses LRU eviction (max 1000 entries)"
 ### Task 2.6: DiskCodeCache 自动清理 (P2-4)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/DiskCodeCache.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/FxDecompilerApp.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/DiskCodeCache.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java`
 
 - [ ] **Step 1: 添加启动时缓存大小检查**
 
@@ -1745,10 +1745,10 @@ git commit -m "feat: DiskCodeCache auto-cleans when exceeding 500MB on startup"
 这些任务是较小、独立的修复，可以批处理。
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/ClassDiscoverer.java` (P2-5: 符号链接)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/service/NavigationService.java` (P2-8: 最大历史)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/utils/CodeLinkHandler.java` (P2-9: 卸载方法)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/config/AppConfig.java` (P2-11: 部分字段封装 + P2-12: 引擎枚举)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/ClassDiscoverer.java` (P2-5: 符号链接)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/service/NavigationService.java` (P2-8: 最大历史)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/utils/CodeLinkHandler.java` (P2-9: 卸载方法)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java` (P2-11: 部分字段封装 + P2-12: 引擎枚举)
 
 - [ ] **Step 1: ClassDiscoverer 符号链接保护 (P2-5)**
 
@@ -1833,11 +1833,11 @@ Expected: BUILD SUCCESS, all tests pass
 ### Task 3.1-3.3: 代码清理（重复消除、硬编码修复）
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/ProcyonDecompiler.java` (P3-1)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/CfrDecompiler.java` (P3-1, P3-2)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/VineflowerDecompiler.java` (P3-1, P3-2)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/JdDecompiler.java` (P3-1)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/BytecodeViewTab.java` (P3-3)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java` (P3-1)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/CfrDecompiler.java` (P3-1, P3-2)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java` (P3-1, P3-2)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/JdDecompiler.java` (P3-1)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeViewTab.java` (P3-3)
 
 - [ ] **Step 1: P3-1 统一使用 DecompilerContext.normalizeInternalName()**
 
@@ -1893,7 +1893,7 @@ git commit -m "refactor: P3 cleanup — deduplicate normalization, extract simpl
 ### Task 3.4: ClassInfoView 增强 (P3-4)
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/ClassInfoView.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassInfoView.java`
 
 - [ ] **Step 1: 添加方法列表和字段列表**
 
@@ -1937,10 +1937,10 @@ git commit -m "feat: ClassInfoView now shows method and field lists"
 ### Task 3.5-3.10: P3 剩余代码清理
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/model/WorkspaceIndex.java:88` (P3-5)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/IndexedMemberSearchProvider.java:54` (P3-6)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/CommentSearchProvider.java:27-28` (P3-8)
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/MethodSearchProvider.java:26-31` (P3-9)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/model/WorkspaceIndex.java:88` (P3-5)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/IndexedMemberSearchProvider.java:54` (P3-6)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CommentSearchProvider.java:27-28` (P3-8)
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/MethodSearchProvider.java:26-31` (P3-9)
 
 - [ ] **Step 1: P3-5 WorkspaceIndex 异常日志**
 
@@ -1987,13 +1987,14 @@ git commit -m "refactor: P3 — log index failures, remove dead code, expand com
 
 - [ ] **Step 1: AppConfig 测试**
 
-创建 `src/test/java/com/bingbihanji/fxdecomplie/config/AppConfigTest.java`：
+创建 `src/test/java/com/bingbaihanji/fxdecomplie/config/AppConfigTest.java`：
 
 ```java
-package com.bingbihanji.fxdecomplie.config;
+package com.bingbaihanji.fxdecomplie.config;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
@@ -2022,12 +2023,13 @@ class AppConfigTest {
 
 - [ ] **Step 2: DecompilerFactory 测试**
 
-创建 `src/test/java/com/bingbihanji/fxdecomplie/decompiler/DecompilerFactoryTest.java`：
+创建 `src/test/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerFactoryTest.java`：
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class DecompilerFactoryTest {
@@ -2050,12 +2052,13 @@ class DecompilerFactoryTest {
 
 - [ ] **Step 3: BackgroundTasks 测试**
 
-创建 `src/test/java/com/bingbihanji/fxdecomplie/service/BackgroundTasksTest.java`：
+创建 `src/test/java/com/bingbaihanji/fxdecomplie/service/BackgroundTasksTest.java`：
 
 ```java
-package com.bingbihanji.fxdecomplie.service;
+package com.bingbaihanji.fxdecomplie.service;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.concurrent.CountDownLatch;
@@ -2077,7 +2080,11 @@ class BackgroundTasksTest {
         CountDownLatch started = new CountDownLatch(1);
         Future<?> future = BackgroundTasks.run("test-cancel", () -> {
             started.countDown();
-            try { Thread.sleep(5000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         });
         assertTrue(started.await(2, TimeUnit.SECONDS));
         BackgroundTasks.cancel(future);

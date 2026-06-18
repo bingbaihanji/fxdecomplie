@@ -23,7 +23,7 @@
 ### Task 1: 全局重命名 — IDecompiler → Decompiler
 
 **Files:**
-- Rename: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/IDecompiler.java` → `Decompiler.java`
+- Rename: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/IDecompiler.java` → `Decompiler.java`
 - Modify: 所有引用该接口的文件
 
 - [ ] **Step 1: 重命名接口文件并更新接口声明**
@@ -31,7 +31,7 @@
 Delete `IDecompiler.java`, create `Decompiler.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 /**
  * 反编译引擎统一接口。所有引擎实现必须是无状态或线程安全的。
@@ -62,7 +62,7 @@ public interface Decompiler {
 - [ ] **Step 2: 更新 DecompilerFactory.java — 接口引用和内部 imports**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -122,7 +122,7 @@ Expected: BUILD SUCCESS
 Delete `DecompilerType.java`, create `DecompilerTypeEnum.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 /**
  * 反编译引擎类型枚举。
@@ -166,7 +166,7 @@ $files = Get-ChildItem -Path "src/main/java" -Recurse -Filter "*.java"
 foreach ($f in $files) {
     $content = Get-Content $f.FullName -Raw
     if ($content -match "DecompilerType[^E]") {
-        $newContent = $content -replace 'import com\.bingbihanji\.fxdecomplie\.decompiler\.DecompilerType;', 'import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;'
+        $newContent = $content -replace 'import com\.bingbihanji\.fxdecomplie\.decompiler\.DecompilerType;', 'import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;'
         $newContent = $newContent -replace '(?<!\w)DecompilerType(?!Enum)(?![.\w])', 'DecompilerTypeEnum'
         Set-Content $f.FullName -Value $newContent -NoNewline
     }
@@ -183,13 +183,13 @@ Expected: BUILD SUCCESS
 ### Task 3: decompiler/ — 工具类合规
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/DecompilerFactory.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/BytecodeCache.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerFactory.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/BytecodeCache.java`
 
 - [ ] **Step 1: DecompilerFactory 加 final + 私有构造器**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -230,7 +230,7 @@ public final class DecompilerFactory {
 - [ ] **Step 2: BytecodeCache 加 final + 私有构造器 + 防御性校验 + 删除 getBytecode**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -290,14 +290,14 @@ Expected: BUILD SUCCESS
 ### Task 4: CfrDecompiler 优化
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/CfrDecompiler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/CfrDecompiler.java`
 
 - [ ] **Step 1: 修复通配符导入 + options 常量化 + Javadoc**
 
 完整的改写后文件内容：
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import org.benf.cfr.reader.api.CfrDriver;
 import org.benf.cfr.reader.api.ClassFileSource;
@@ -457,14 +457,14 @@ Expected: BUILD SUCCESS
 ### Task 5: VineflowerDecompiler 优化
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
 
 - [ ] **Step 1: options 常量化 + 资源清理日志 + Javadoc**
 
 完整改写内容：
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.extern.IBytecodeProvider;
@@ -563,8 +563,14 @@ public class VineflowerDecompiler implements Decompiler {
             };
 
             IResultSaver resultSaver = new IResultSaver() {
-                @Override public void saveFolder(String path) {}
-                @Override public void copyFile(String source, String path, String entryName) {}
+                @Override
+                public void saveFolder(String path) {
+                }
+
+                @Override
+                public void copyFile(String source, String path, String entryName) {
+                }
+
                 @Override
                 public void saveClassFile(String path, String qualifiedName, String entryName,
                                           String content, int[] mapping) {
@@ -572,9 +578,19 @@ public class VineflowerDecompiler implements Decompiler {
                         result.append(content);
                     }
                 }
-                @Override public void createArchive(String path, String archiveName, Manifest manifest) {}
-                @Override public void saveDirEntry(String path, String archiveName, String entryName) {}
-                @Override public void copyEntry(String source, String path, String archiveName, String entry) {}
+
+                @Override
+                public void createArchive(String path, String archiveName, Manifest manifest) {
+                }
+
+                @Override
+                public void saveDirEntry(String path, String archiveName, String entryName) {
+                }
+
+                @Override
+                public void copyEntry(String source, String path, String archiveName, String entry) {
+                }
+
                 @Override
                 public void saveClassEntry(String path, String archiveName, String qualifiedName,
                                            String entryName, String content) {
@@ -582,14 +598,20 @@ public class VineflowerDecompiler implements Decompiler {
                         result.append(content);
                     }
                 }
-                @Override public void closeArchive(String path, String archiveName) {}
+
+                @Override
+                public void closeArchive(String path, String archiveName) {
+                }
             };
 
             IFernflowerLogger logger = new IFernflowerLogger() {
                 @Override
-                public void writeMessage(String message, Severity severity) {}
+                public void writeMessage(String message, Severity severity) {
+                }
+
                 @Override
-                public void writeMessage(String message, Severity severity, Throwable t) {}
+                public void writeMessage(String message, Severity severity, Throwable t) {
+                }
             };
 
             BaseDecompiler decompiler = new BaseDecompiler(bytecodeProvider, resultSaver, DEFAULT_OPTIONS, logger);
@@ -644,12 +666,12 @@ Expected: BUILD SUCCESS
 ### Task 6: ProcyonDecompiler 优化
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/ProcyonDecompiler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java`
 
 - [ ] **Step 1: 修复 StringWriter 资源泄漏 + Javadoc**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import com.strobel.assembler.metadata.Buffer;
 import com.strobel.assembler.metadata.ITypeLoader;
@@ -759,9 +781,9 @@ Expected: BUILD SUCCESS
 ### Task 7: io/ — 工具类合规
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/ClassDiscoverer.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/FileTreeBuilder.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/ExportService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/ClassDiscoverer.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/FileTreeBuilder.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/ExportService.java`
 
 - [ ] **Step 1: ClassDiscoverer — 加 final + 私有构造器 + Javadoc**
 
@@ -829,7 +851,7 @@ Expected: BUILD SUCCESS
 ### Task 8: ClassDiscoverer 正则预编译 + 异常处理
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/ClassDiscoverer.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/ClassDiscoverer.java`
 
 - [ ] **Step 1: 替换 guessType 中的正则**
 
@@ -880,7 +902,7 @@ Expected: BUILD SUCCESS
 ### Task 9: FileTreeBuilder 注释清理 + sortTree 迭代化
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/FileTreeBuilder.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/FileTreeBuilder.java`
 
 - [ ] **Step 1: 删除过时注释 + sortTree 改为 BFS 迭代**
 
@@ -922,20 +944,20 @@ Expected: BUILD SUCCESS
 ### Task 10: ExportService 防御性校验 + 提取重复代码
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/ExportService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/ExportService.java`
 
 - [ ] **Step 1: 添加防御性校验和提取私有方法**
 
 完整改写：
 
 ```java
-package com.bingbihanji.fxdecomplie.io;
+package com.bingbaihanji.fxdecomplie.io;
 
-import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbihanji.fxdecomplie.decompiler.Decompiler;
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.decompiler.Decompiler;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import javafx.scene.control.TreeItem;
 
 import java.io.BufferedOutputStream;
@@ -1043,12 +1065,12 @@ Expected: BUILD SUCCESS
 ### Task 11: AppConfig 异常处理 + toString + 注释
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/config/AppConfig.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java`
 
 - [ ] **Step 1: 完整改写 AppConfig.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.config;
+package com.bingbaihanji.fxdecomplie.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -1152,7 +1174,7 @@ Expected: BUILD SUCCESS
 ### Task 12: 全局重命名 — FileTreeNode.NodeType → NodeTypeEnum
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/model/FileTreeNode.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/model/FileTreeNode.java`
 
 - [ ] **Step 1: 重命名枚举并添加枚举值注释**
 
@@ -1207,7 +1229,7 @@ Expected: BUILD SUCCESS
 ### Task 13: FileTreeNode 死代码删除 + toString + Javadoc
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/model/FileTreeNode.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/model/FileTreeNode.java`
 
 - [ ] **Step 1: 删除 decompiled 字段及相关方法**
 
@@ -1221,7 +1243,7 @@ Expected: BUILD SUCCESS
 完整文件：
 
 ```java
-package com.bingbihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.model;
 
 /**
  * 文件树节点数据模型。包装在 TreeItem.getValue() 中。
@@ -1242,17 +1264,29 @@ public class FileTreeNode {
         this.nodeType = nodeType;
     }
 
-    public String getName() { return name; }
+    public String getName() {
+        return name;
+    }
 
-    public String getFullPath() { return fullPath; }
+    public String getFullPath() {
+        return fullPath;
+    }
 
-    public NodeTypeEnum getNodeType() { return nodeType; }
+    public NodeTypeEnum getNodeType() {
+        return nodeType;
+    }
 
-    public byte[] getCachedBytes() { return cachedBytes; }
+    public byte[] getCachedBytes() {
+        return cachedBytes;
+    }
 
-    public void setCachedBytes(byte[] cachedBytes) { this.cachedBytes = cachedBytes; }
+    public void setCachedBytes(byte[] cachedBytes) {
+        this.cachedBytes = cachedBytes;
+    }
 
-    public boolean isClassFile() { return nodeType == NodeTypeEnum.CLASS_FILE; }
+    public boolean isClassFile() {
+        return nodeType == NodeTypeEnum.CLASS_FILE;
+    }
 
     @Override
     public String toString() {
@@ -1285,13 +1319,13 @@ Expected: BUILD SUCCESS
 ### Task 14: Workspace + OpenFile 补充 equals/hashCode/toString/Javadoc
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/model/Workspace.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/model/OpenFile.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/model/OpenFile.java`
 
 - [ ] **Step 1: Workspace.java 完整改写**
 
 ```java
-package com.bingbihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.model;
 
 import javafx.scene.control.TreeItem;
 
@@ -1318,10 +1352,21 @@ public class Workspace {
         this.isArchive = isArchive;
     }
 
-    public String getName() { return name; }
-    public File getSourceFile() { return sourceFile; }
-    public TreeItem<FileTreeNode> getTreeRoot() { return treeRoot; }
-    public boolean isArchive() { return isArchive; }
+    public String getName() {
+        return name;
+    }
+
+    public File getSourceFile() {
+        return sourceFile;
+    }
+
+    public TreeItem<FileTreeNode> getTreeRoot() {
+        return treeRoot;
+    }
+
+    public boolean isArchive() {
+        return isArchive;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -1345,9 +1390,9 @@ public class Workspace {
 - [ ] **Step 2: OpenFile.java 完整改写**
 
 ```java
-package com.bingbihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.model;
 
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
 import java.util.Objects;
 
@@ -1371,10 +1416,21 @@ public class OpenFile {
         this.engine = engine;
     }
 
-    public String getClassName() { return className; }
-    public String getFullPath() { return fullPath; }
-    public String getSourceCode() { return sourceCode; }
-    public DecompilerTypeEnum getEngine() { return engine; }
+    public String getClassName() {
+        return className;
+    }
+
+    public String getFullPath() {
+        return fullPath;
+    }
+
+    public String getSourceCode() {
+        return sourceCode;
+    }
+
+    public DecompilerTypeEnum getEngine() {
+        return engine;
+    }
 
     @Override
     public boolean equals(Object o) {
@@ -1406,10 +1462,10 @@ Expected: BUILD SUCCESS
 ### Task 15: ui/ + app/ — 工具类合规
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/theme/AppTheme.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/window/AppHeaderBar.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/app/BackgroundTasks.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/AppTheme.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/window/AppHeaderBar.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/app/BackgroundTasks.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java`
 
 - [ ] **Step 1: AppTheme — 加 final + 私有构造器 + Javadoc**
 
@@ -1493,7 +1549,7 @@ Expected: BUILD SUCCESS
 ### Task 16: VsCodeThemeLoader 懒加载 + 优化
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java`
 
 - [ ] **Step 1: defaultDark() 改为静态常量懒加载**
 
@@ -1531,7 +1587,7 @@ Expected: BUILD SUCCESS
 ### Task 17: RegexHighlighter 前缀匹配修复 + Javadoc
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/theme/RegexHighlighter.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/RegexHighlighter.java`
 
 - [ ] **Step 1: 修复 resolveStyle 前缀匹配歧义**
 
@@ -1578,13 +1634,13 @@ Expected: BUILD SUCCESS
 ### Task 18: ui/ 类 Javadoc 补充
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/StatusBar.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/CodeEditorTab.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/tree/FileTreeView.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/tree/FileTreeCell.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/menu/MainMenuBar.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/Main.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/AppLauncher.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/StatusBar.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeView.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeCell.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/MainMenuBar.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/Main.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/AppLauncher.java`
 
 - [ ] **Step 1: 为每个类添加 Javadoc**
 
@@ -1697,22 +1753,22 @@ Expected: BUILD SUCCESS
 ### Task 19: MainWindow 拆分为 3 个类
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/WorkspaceTabManager.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/app/ClassTabOpener.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/app/ClassTabOpener.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java`
 
 - [ ] **Step 1: 创建 WorkspaceTabManager.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui;
+package com.bingbaihanji.fxdecomplie.ui;
 
-import com.bingbihanji.fxdecomplie.MainWindow.WorkspaceView;
-import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbihanji.fxdecomplie.model.Workspace;
-import com.bingbihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbihanji.fxdecomplie.ui.code.StatusBar;
-import com.bingbihanji.fxdecomplie.ui.tree.FileTreeView;
+import com.bingbaihanji.fxdecomplie.MainWindow.WorkspaceView;
+import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.SplitPane;
@@ -1808,7 +1864,7 @@ final class WorkspaceTabManager {
         }
         var codeSelected = view.codeTabPane().getSelectionModel().getSelectedItem();
         if (codeSelected instanceof CodeEditorTab codeTab) {
-            statusBar.setFilePath(formatClassPath(codeTab.getOpenFile().getFullPath()));
+            statusBar.setFilePath(formatClassPath(codeTab.getOpenFile().fullPath()));
             statusBar.setEncoding("UTF-8");
             var caret = codeTab.getCodeArea().getCaretPosition();
             statusBar.setCursorPosition(caret.index() + 1, caret.charIndex() + 1);
@@ -1866,18 +1922,18 @@ final class WorkspaceTabManager {
 - [ ] **Step 2: 创建 ClassTabOpener.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.app;
+package com.bingbaihanji.fxdecomplie.app;
 
-import com.bingbihanji.fxdecomplie.config.AppConfig;
-import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbihanji.fxdecomplie.model.OpenFile;
-import com.bingbihanji.fxdecomplie.model.Workspace;
-import com.bingbihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbihanji.fxdecomplie.ui.code.StatusBar;
-import com.bingbihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import javafx.application.Platform;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -1943,7 +1999,7 @@ final class ClassTabOpener {
 
     void refreshCurrentClassTab(Workspace workspace, TabPane codeTabPane, CodeEditorTab currentTab,
                                 DecompilerTypeEnum engine, boolean lineNumbersEnabled) {
-        String fullPath = currentTab.getOpenFile().getFullPath();
+        String fullPath = currentTab.getOpenFile().fullPath();
         FileTreeNode node = findNode(workspace.getTreeRoot(), fullPath);
         if (node == null) {
             statusBar.setFilePath("无法定位: " + fullPath);
@@ -1989,12 +2045,12 @@ final class ClassTabOpener {
     private Tab findOpenClassTab(TabPane codeTabPane, FileTreeNode node, DecompilerTypeEnum engine) {
         for (Tab tab : codeTabPane.getTabs()) {
             if (tab instanceof CodeEditorTab codeTab
-                    && codeTab.getOpenFile().getFullPath().equals(node.getFullPath())) {
-                if (codeTab.getOpenFile().getEngine() == engine) return tab;
+                    && codeTab.getOpenFile().fullPath().equals(node.getFullPath())) {
+                if (codeTab.getOpenFile().engine() == engine) return tab;
             }
         }
         codeTabPane.getTabs().removeIf(tab -> tab instanceof CodeEditorTab codeTab
-                && codeTab.getOpenFile().getFullPath().equals(node.getFullPath()));
+                && codeTab.getOpenFile().fullPath().equals(node.getFullPath()));
         return null;
     }
 
@@ -2055,41 +2111,32 @@ MainWindow 保留协调器职责。删除以下方法（已迁移到 WorkspaceTa
 - 添加 `WorkspaceTabManager` 和 `ClassTabOpener` 字段
 
 ```java
-package com.bingbihanji.fxdecomplie;
+package com.bingbaihanji.fxdecomplie;
 
-import com.bingbihanji.fxdecomplie.app.BackgroundTasks;
-import com.bingbihanji.fxdecomplie.app.ClassTabOpener;
-import com.bingbihanji.fxdecomplie.config.AppConfig;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbihanji.fxdecomplie.io.ClassDiscoverer;
-import com.bingbihanji.fxdecomplie.io.ExportService;
-import com.bingbihanji.fxdecomplie.io.FileTreeBuilder;
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbihanji.fxdecomplie.model.Workspace;
-import com.bingbihanji.fxdecomplie.ui.WorkspaceTabManager;
-import com.bingbihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbihanji.fxdecomplie.ui.code.StatusBar;
-import com.bingbihanji.fxdecomplie.ui.menu.MainMenuBar;
-import com.bingbihanji.fxdecomplie.ui.theme.AppTheme;
-import com.bingbihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
-import com.bingbihanji.fxdecomplie.ui.tree.FileTreeView;
-import com.bingbihanji.fxdecomplie.ui.window.AppHeaderBar;
-import javafx.application.Platform;
+import com.bingbaihanji.fxdecomplie.app.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.app.ClassTabOpener;
+import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.io.ClassDiscoverer;
+import com.bingbaihanji.fxdecomplie.io.ExportService;
+import com.bingbaihanji.fxdecomplie.io.FileTreeBuilder;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
+import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
+import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
+import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
+import com.bingbaihanji.fxdecomplie.ui.window.AppHeaderBar;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TreeItem;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * 主窗口控制器。实现 MainMenuBar.Actions 接口，协调各模块。
@@ -2162,21 +2209,55 @@ public class MainWindow implements MainMenuBar.Actions {
 
     // --- Menu Actions ---
 
-    @Override public void openFile() { /* unchanged — calls loadFile */ }
-    @Override public void openDirectory() { /* unchanged — calls loadFile */ }
-    @Override public void closeCurrentWorkspace() { /* delegates to tabManager */ }
-    @Override public void closeOtherWorkspaces() { /* delegates to tabManager */ }
-    @Override public void saveCurrentFile() { /* unchanged */ }
-    @Override public void exportAllFiles() { /* unchanged — uses tabManager.currentWorkspaceView() */ }
-    @Override public void exit() { DecompilerFactory.cleanup(); stage.close(); }
-    @Override public void copySelection() { /* unchanged */ }
-    @Override public void selectAll() { /* unchanged */ }
-    @Override public void zoomIn() { /* unchanged */ }
-    @Override public void zoomOut() { /* unchanged */ }
-    @Override public void resetZoom() { /* unchanged */ }
-    @Override public void toggleLineNumbers() { /* unchanged — uses tabManager.getWorkspaceViews() */ }
-    @Override public void collapseTree() { tabManager.collapseTreeInCurrentWorkspace(); }
-    @Override public void selectEngine(DecompilerTypeEnum engine) { /* unchanged — uses tabManager */ }
+    @Override
+    public void openFile() { /* unchanged — calls loadFile */ }
+
+    @Override
+    public void openDirectory() { /* unchanged — calls loadFile */ }
+
+    @Override
+    public void closeCurrentWorkspace() { /* delegates to tabManager */ }
+
+    @Override
+    public void closeOtherWorkspaces() { /* delegates to tabManager */ }
+
+    @Override
+    public void saveCurrentFile() { /* unchanged */ }
+
+    @Override
+    public void exportAllFiles() { /* unchanged — uses tabManager.currentWorkspaceView() */ }
+
+    @Override
+    public void exit() {
+        DecompilerFactory.cleanup();
+        stage.close();
+    }
+
+    @Override
+    public void copySelection() { /* unchanged */ }
+
+    @Override
+    public void selectAll() { /* unchanged */ }
+
+    @Override
+    public void zoomIn() { /* unchanged */ }
+
+    @Override
+    public void zoomOut() { /* unchanged */ }
+
+    @Override
+    public void resetZoom() { /* unchanged */ }
+
+    @Override
+    public void toggleLineNumbers() { /* unchanged — uses tabManager.getWorkspaceViews() */ }
+
+    @Override
+    public void collapseTree() {
+        tabManager.collapseTreeInCurrentWorkspace();
+    }
+
+    @Override
+    public void selectEngine(DecompilerTypeEnum engine) { /* unchanged — uses tabManager */ }
 
     // --- Internal ---
 
@@ -2186,7 +2267,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
     // WorkspaceView record 提升为 package-private
     static WorkspaceView createWorkspaceView(Workspace workspace, FileTreeView treeView,
-                                              TabPane codeTabPane, Tab workspaceTab) {
+                                             TabPane codeTabPane, Tab workspaceTab) {
         return new WorkspaceView(workspace, treeView, codeTabPane, workspaceTab);
     }
 
@@ -2195,7 +2276,8 @@ public class MainWindow implements MainMenuBar.Actions {
             FileTreeView treeView,
             TabPane codeTabPane,
             Tab workspaceTab
-    ) {}
+    ) {
+    }
 }
 ```
 
@@ -2211,7 +2293,7 @@ Expected: BUILD SUCCESS。如有编译错误，逐一修复后重新编译。
 ### Task 20: FxDecompilerApp + 入口类 Javadoc + 补充注释
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/FxDecompilerApp.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java`
 
 - [ ] **Step 1: FxDecompilerApp 类级别 Javadoc + deprecation 注释**
 

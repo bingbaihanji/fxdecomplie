@@ -62,7 +62,9 @@
 ```
 
 **新增 `src/main/resources/logback.xml`**:
+
 ```xml
+
 <configuration>
     <!-- 控制台彩色输出 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -72,16 +74,16 @@
     </appender>
 
     <!-- 项目包 -->
-    <logger name="com.bingbihanji.fxdecomplie" level="DEBUG" />
+    <logger name="com.bingbaihanji.fxdecomplie" level="DEBUG"/>
 
     <!-- 第三方库 -->
-    <logger name="org.jd" level="WARN" />
-    <logger name="org.benf" level="WARN" />
-    <logger name="org.jetbrains.java.decompiler" level="WARN" />
-    <logger name="com.strobel" level="WARN" />
+    <logger name="org.jd" level="WARN"/>
+    <logger name="org.benf" level="WARN"/>
+    <logger name="org.jetbrains.java.decompiler" level="WARN"/>
+    <logger name="com.strobel" level="WARN"/>
 
     <root level="INFO">
-        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="CONSOLE"/>
     </root>
 </configuration>
 ```

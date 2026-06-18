@@ -54,7 +54,7 @@ Phase 4: 新实例（并排对比）
 ### 新增包和类
 
 ```
-com.bingbihanji.fxdecomplie
+com.bingbaihanji.fxdecomplie
 ├── di/
 │   └── ServiceRegistry.java         简易 DI 容器（单例 + 工厂注册）
 ├── events/

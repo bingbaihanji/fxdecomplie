@@ -15,12 +15,12 @@
 ### Task 1.1: 修复 DecompilerFactory 线程安全
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/DecompilerFactory.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerFactory.java`
 
 - [ ] **Step 1: 将 EnumMap 替换为 ConcurrentHashMap 并将 static 块改为方法级 computeIfAbsent**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -60,7 +60,7 @@ public final class DecompilerFactory {
 ### Task 1.2: 修复 BytecodeCache 全局清理（临时修复）
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/WorkspaceTabManager.java:275`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java:275`
 
 - [ ] **Step 1: 删除 cleanupClosedWorkspace 中的 BytecodeCache.clear() 调用**
 
@@ -105,7 +105,7 @@ private void cleanupClosedWorkspace(Tab tab) {
 ### Task 1.3: 修复 InheritanceService.visited 静态共享
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/inheritance/InheritanceService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritanceService.java`
 
 - [ ] **Step 1: 移除 static visited 字段，改为方法局部变量**
 
@@ -178,7 +178,7 @@ private static void findSubClasses(String targetName, TreeItem<InheritanceNode> 
 ### Task 1.4: 修复 Vineflower 临时目录残留
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
 
 - [ ] **Step 1: 添加递归删除辅助方法 + 修改文件名使用全路径**
 
@@ -237,8 +237,8 @@ private static void deleteRecursively(Path dir) {
 ### Task 1.5: 修复异常静默吞掉
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/FxDecompilerApp.java:65-66`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/theme/AppTheme.java:50`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java:65-66`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/AppTheme.java:50`
 
 - [ ] **Step 1: FxDecompilerApp.java — 添加 LOG 警告**
 
@@ -279,12 +279,12 @@ private static void deleteRecursively(Path dir) {
 ### Task 1.6: 后台任务取消机制
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/app/BackgroundTasks.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/app/BackgroundTasks.java`
 
 - [ ] **Step 1: 重写 BackgroundTasks，返回 Future 并支持取消**
 
 ```java
-package com.bingbihanji.fxdecomplie.app;
+package com.bingbaihanji.fxdecomplie.app;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -352,12 +352,12 @@ public void openClassTab(...) {
 ### Task 2.1: 创建事件标记接口 AppEvent
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/events/AppEvent.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/events/AppEvent.java`
 
 - [ ] **Step 1: 创建标记接口**
 
 ```java
-package com.bingbihanji.fxdecomplie.events;
+package com.bingbaihanji.fxdecomplie.events;
 
 /** 应用事件标记接口。所有事件类型必须实现此接口。 */
 public interface AppEvent {
@@ -367,12 +367,12 @@ public interface AppEvent {
 ### Task 2.2: 创建 EventBus
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/events/EventBus.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/events/EventBus.java`
 
 - [ ] **Step 1: 实现线程安全的事件总线**
 
 ```java
-package com.bingbihanji.fxdecomplie.events;
+package com.bingbaihanji.fxdecomplie.events;
 
 import java.util.List;
 import java.util.Map;
@@ -413,15 +413,15 @@ public final class EventBus {
 ### Task 2.3: 创建设置窗口（SettingsDialog + SettingsConfig）
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/config/SettingsConfig.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/settings/SettingsDialog.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/config/SettingsConfig.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/settings/SettingsDialog.java`
 
 - [ ] **Step 1: 创建设置持久化类 SettingsConfig**
 
-`src/main/java/com/bingbihanji/fxdecomplie/config/SettingsConfig.java`:
+`src/main/java/com/bingbaihanji/fxdecomplie/config/SettingsConfig.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.config;
+package com.bingbaihanji.fxdecomplie.config;
 
 public class SettingsConfig {
     public String defaultEngine = "VINEFLOWER";
@@ -438,12 +438,12 @@ public class SettingsConfig {
 ### Task 2.4: 创建 ServiceRegistry
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/di/ServiceRegistry.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/di/ServiceRegistry.java`
 
 - [ ] **Step 1: 实现简易 DI 容器**
 
 ```java
-package com.bingbihanji.fxdecomplie.di;
+package com.bingbaihanji.fxdecomplie.di;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -489,19 +489,20 @@ public final class ServiceRegistry {
 ### Task 2.5: 创建 Workspace 模型
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/workspace/Workspace.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/model/Workspace.java` → 重命名为 `WorkspaceModel`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/workspace/Workspace.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java` → 重命名为 `WorkspaceModel`
 
 等等，已有 `model/Workspace.java`，为避免冲突，新工作区模型放在 `workspace/` 包下，同时废弃旧的 `model/Workspace`。
 
 - [ ] **Step 1: 创建新 Workspace 类（含独立 BytecodeCache）**
 
-`src/main/java/com/bingbihanji/fxdecomplie/workspace/Workspace.java`:
+`src/main/java/com/bingbaihanji/fxdecomplie/workspace/Workspace.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.workspace;
+package com.bingbaihanji.fxdecomplie.workspace;
 
-import com.bingbihanji.fxdecomplie.path.PathNode;
+import com.bingbaihanji.fxdecomplie.path.PathNode;
+
 import java.io.File;
 import java.util.Map;
 import java.util.Objects;
@@ -523,10 +524,21 @@ public class Workspace implements AutoCloseable {
         this.archive = archive;
     }
 
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public File getSourceFile() { return sourceFile; }
-    public boolean isArchive() { return archive; }
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public File getSourceFile() {
+        return sourceFile;
+    }
+
+    public boolean isArchive() {
+        return archive;
+    }
 
     public byte[] getClassBytes(String internalName) {
         return classCache.get(internalName);
@@ -542,10 +554,17 @@ public class Workspace implements AutoCloseable {
         classCache.putAll(entries);
     }
 
-    public Map<String, byte[]> getClassCache() { return classCache; }
+    public Map<String, byte[]> getClassCache() {
+        return classCache;
+    }
 
-    public PathNode<?> getRootNode() { return rootNode; }
-    public void setRootNode(PathNode<?> rootNode) { this.rootNode = rootNode; }
+    public PathNode<?> getRootNode() {
+        return rootNode;
+    }
+
+    public void setRootNode(PathNode<?> rootNode) {
+        this.rootNode = rootNode;
+    }
 
     @Override
     public void close() {
@@ -557,35 +576,41 @@ public class Workspace implements AutoCloseable {
         classCache.forEach(action);
     }
 
-    public int classCount() { return classCache.size(); }
+    public int classCount() {
+        return classCache.size();
+    }
 }
 ```
 
 ### Task 2.6: 创建 PathNode 层级
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/path/PathNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/path/WorkspacePathNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/path/PackagePathNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/path/ClassPathNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/path/FieldPathNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/path/MethodPathNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/path/FilePathNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/path/PathNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/path/WorkspacePathNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/path/PackagePathNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/path/ClassPathNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/path/FieldPathNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/path/MethodPathNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/path/FilePathNode.java`
 
 - [ ] **Step 1: 创建 PathNode 接口**
 
-`src/main/java/com/bingbihanji/fxdecomplie/path/PathNode.java`:
+`src/main/java/com/bingbaihanji/fxdecomplie/path/PathNode.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.path;
+package com.bingbaihanji.fxdecomplie.path;
 
 import java.util.List;
 
 public interface PathNode<V> {
     V getValue();
+
     PathNode<?> getParent();
+
     List<? extends PathNode<?>> getChildren();
+
     PathNode<?> getChild(int index);
+
     int getChildCount();
 
     default <T> T getValueOfType(Class<T> type) {
@@ -622,10 +647,10 @@ public interface PathNode<V> {
 
 - [ ] **Step 2: 创建具体 PathNode 实现类**
 
-`src/main/java/com/bingbihanji/fxdecomplie/path/ClassPathNode.java`:
+`src/main/java/com/bingbaihanji/fxdecomplie/path/ClassPathNode.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.path;
+package com.bingbaihanji.fxdecomplie.path;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -646,21 +671,45 @@ public class ClassPathNode implements PathNode<String> {
     }
 
     @Override
-    public String getValue() { return internalName; }
-    @Override
-    public PathNode<?> getParent() { return parent; }
-    @Override
-    public List<? extends PathNode<?>> getChildren() { return Collections.unmodifiableList(children); }
-    @Override
-    public PathNode<?> getChild(int index) { return children.get(index); }
-    @Override
-    public int getChildCount() { return children.size(); }
+    public String getValue() {
+        return internalName;
+    }
 
-    public String getInternalName() { return internalName; }
-    public String getSimpleName() { return simpleName; }
-    public byte[] getClassBytes() { return classBytes; }
+    @Override
+    public PathNode<?> getParent() {
+        return parent;
+    }
 
-    public void addChild(PathNode<?> child) { children.add(child); }
+    @Override
+    public List<? extends PathNode<?>> getChildren() {
+        return Collections.unmodifiableList(children);
+    }
+
+    @Override
+    public PathNode<?> getChild(int index) {
+        return children.get(index);
+    }
+
+    @Override
+    public int getChildCount() {
+        return children.size();
+    }
+
+    public String getInternalName() {
+        return internalName;
+    }
+
+    public String getSimpleName() {
+        return simpleName;
+    }
+
+    public byte[] getClassBytes() {
+        return classBytes;
+    }
+
+    public void addChild(PathNode<?> child) {
+        children.add(child);
+    }
 }
 ```
 
@@ -669,31 +718,33 @@ public class ClassPathNode implements PathNode<String> {
 ### Task 2.7: 创建 Navigable 接口 + NavigationService
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/navigation/Navigable.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/navigation/NavigationService.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/navigation/Navigable.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/navigation/NavigationService.java`
 
 - [ ] **Step 1: 创建 Navigable 接口**
 
 ```java
-package com.bingbihanji.fxdecomplie.navigation;
+package com.bingbaihanji.fxdecomplie.navigation;
 
-import com.bingbihanji.fxdecomplie.path.PathNode;
+import com.bingbaihanji.fxdecomplie.path.PathNode;
 
 public interface Navigable {
     PathNode<?> getPath();
+
     void requestFocus();
+
     void disable();
 }
 ```
 
 - [ ] **Step 2: 创建 NavigationService**
 
-`src/main/java/com/bingbihanji/fxdecomplie/navigation/NavigationService.java`:
+`src/main/java/com/bingbaihanji/fxdecomplie/navigation/NavigationService.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.navigation;
+package com.bingbaihanji.fxdecomplie.navigation;
 
-import com.bingbihanji.fxdecomplie.path.PathNode;
+import com.bingbaihanji.fxdecomplie.path.PathNode;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
@@ -722,26 +773,30 @@ public class NavigationService {
 ### Task 2.8: 注册 App 启动时服务
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/FxDecompilerApp.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java`
 
 - [ ] **Step 1: 在 FxApplication.startApplication 中初始化 ServiceRegistry**
 
 ```java
-import com.bingbihanji.fxdecomplie.di.ServiceRegistry;
-import com.bingbihanji.fxdecomplie.events.EventBus;
-import com.bingbihanji.fxdecomplie.navigation.NavigationService;
+import com.bingbaihanji.fxdecomplie.di.ServiceRegistry;
+import com.bingbaihanji.fxdecomplie.events.EventBus;
+import com.bingbaihanji.fxdecomplie.navigation.NavigationService;
 
 // 在 startApplication 方法开头添加:
 ServiceRegistry registry = new ServiceRegistry();
-registry.registerSingleton(EventBus.class, new EventBus());
-registry.registerSingleton(NavigationService.class, new NavigationService());
+registry.
+
+        registerSingleton(EventBus .class, new EventBus());
+        registry.
+
+        registerSingleton(NavigationService .class, new NavigationService());
 // ... pass registry to MainWindow constructor
 ```
 
 ### Task 2.9: 适配 MainWindow 使用新架构
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java`
 
 - [ ] **Step 1: 在 MainWindow 构造器中注入 ServiceRegistry，通过 EventBus 发布工作区事件**
 
@@ -755,12 +810,12 @@ registry.registerSingleton(NavigationService.class, new NavigationService());
 ### Task 2.10: 适配全部引用 BytecodeCache 的文件
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/ClassDiscoverer.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/ExportService.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/app/ClassTabOpener.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/CfrDecompiler.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/ProcyonDecompiler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/ClassDiscoverer.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/ExportService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/app/ClassTabOpener.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/CfrDecompiler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java`
 
 - [ ] **Step 1: 将全部 `BytecodeCache.get(key)` 和 `BytecodeCache.put(key, bytes)` 替换为通过 Workspace 实例获取**
 
@@ -783,16 +838,15 @@ registry.registerSingleton(NavigationService.class, new NavigationService());
 ### Task 3.1: 三层缓存 — DecompileCache (L2)
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/cache/DecompileCache.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/cache/DecompileCache.java`
 
 - [ ] **Step 1: 实现反编译源码内存缓存**
 
 ```java
-package com.bingbihanji.fxdecomplie.cache;
+package com.bingbaihanji.fxdecomplie.cache;
 
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
@@ -811,7 +865,9 @@ public class DecompileCache {
         cache.keySet().removeIf(k -> k.startsWith(internalName + "#"));
     }
 
-    public void clear() { cache.clear(); }
+    public void clear() {
+        cache.clear();
+    }
 
     private static String cacheKey(String internalName, DecompilerTypeEnum engine, String optionsHash) {
         return internalName + "#" + engine.name() + "#" + optionsHash;
@@ -822,14 +878,14 @@ public class DecompileCache {
 ### Task 3.2: 三层缓存 — DiskCodeCache (L3)
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/cache/DiskCodeCache.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/cache/DiskCodeCache.java`
 
 - [ ] **Step 1: 实现磁盘持久化缓存**
 
 ```java
-package com.bingbihanji.fxdecomplie.cache;
+package com.bingbaihanji.fxdecomplie.cache;
 
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -856,7 +912,8 @@ public class DiskCodeCache {
             Path file = cachePath(workspaceHash, internalName, engine);
             Files.createDirectories(file.getParent());
             Files.writeString(file, sourceCode, StandardCharsets.UTF_8);
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
     }
 
     private static Path cachePath(String workspaceHash, String internalName, DecompilerTypeEnum engine) {
@@ -870,10 +927,16 @@ public class DiskCodeCache {
         try {
             if (Files.exists(CACHE_ROOT)) {
                 try (var files = Files.walk(CACHE_ROOT).sorted(java.util.Comparator.reverseOrder())) {
-                    files.forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ignored) {} });
+                    files.forEach(p -> {
+                        try {
+                            Files.deleteIfExists(p);
+                        } catch (IOException ignored) {
+                        }
+                    });
                 }
             }
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
     }
 }
 ```
@@ -881,19 +944,19 @@ public class DiskCodeCache {
 ### Task 3.3: 增强搜索 — 7 类型 SearchProvider
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/ClassSearchProvider.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/MethodSearchProvider.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/CodeSearchProvider.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/ResourceSearchProvider.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/CommentSearchProvider.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/BytecodeSearchProvider.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchService.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchDialog.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/ClassSearchProvider.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/MethodSearchProvider.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CodeSearchProvider.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/ResourceSearchProvider.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CommentSearchProvider.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/BytecodeSearchProvider.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchDialog.java`
 
 - [ ] **Step 1: 实现 CodeSearchProvider（核心全文搜索）**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -960,23 +1023,24 @@ public List<SearchResult> searchAll(String query, boolean caseSensitive) {
 ### Task 3.4: 代码元数据 + Ctrl+Click 导航
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/navigation/CodeMetadata.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/navigation/CodeLinkHandler.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/CodeEditorTab.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/navigation/CodeMetadata.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/navigation/CodeLinkHandler.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java`
 
 - [ ] **Step 1: 创建 CodeMetadata（位置 → 引用映射）**
 
 ```java
-package com.bingbihanji.fxdecomplie.navigation;
+package com.bingbaihanji.fxdecomplie.navigation;
 
 import java.util.List;
 import java.util.Map;
 
 public class CodeMetadata {
 
-    public enum RefType { CLASS_REF, METHOD_REF, FIELD_REF }
+    public enum RefType {CLASS_REF, METHOD_REF, FIELD_REF}
 
-    public record Reference(RefType type, String targetClass, String targetMember, int lineNumber) {}
+    public record Reference(RefType type, String targetClass, String targetMember, int lineNumber) {
+    }
 
     private final Map<Integer, List<Reference>> refsByLine;
 
@@ -993,19 +1057,19 @@ public class CodeMetadata {
 - [ ] **Step 2: 创建 CodeLinkHandler（Ctrl+Click 处理）**
 
 ```java
-package com.bingbihanji.fxdecomplie.navigation;
+package com.bingbaihanji.fxdecomplie.navigation;
 
-import com.bingbihanji.fxdecomplie.path.ClassPathNode;
-import javafx.scene.input.KeyCode;
+import com.bingbaihanji.fxdecomplie.path.ClassPathNode;
 import javafx.scene.input.MouseButton;
 import jfx.incubator.scene.control.richtext.CodeArea;
 
 public class CodeLinkHandler {
 
-    private CodeLinkHandler() {}
+    private CodeLinkHandler() {
+    }
 
     public static void install(CodeArea codeArea, CodeMetadata metadata,
-                                java.util.function.Consumer<CodeMetadata.Reference> onNavigate) {
+                               java.util.function.Consumer<CodeMetadata.Reference> onNavigate) {
         codeArea.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.isControlDown()) {
                 int line = codeArea.getCaretPosition().index();
@@ -1027,18 +1091,17 @@ public class CodeLinkHandler {
 ### Task 3.5: 设置窗口 UI
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/settings/SettingsDialog.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/config/AppConfig.java`（添加 `SettingsConfig` 字段）
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/menu/MainMenuBar.java`（添加设置菜单项）
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/settings/SettingsDialog.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java`（添加 `SettingsConfig` 字段）
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/MainMenuBar.java`（添加设置菜单项）
 
 - [ ] **Step 1: 创建设置对话框**
 
 `SettingsDialog.java`:
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.settings;
+package com.bingbaihanji.fxdecomplie.ui.settings;
 
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -1046,7 +1109,7 @@ import javafx.stage.Stage;
 public class SettingsDialog {
 
     public static void show(Stage owner, AppConfig config,
-                             java.util.function.Consumer<AppConfig> onApply) {
+                            java.util.function.Consumer<AppConfig> onApply) {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.initOwner(owner);
         dialog.setTitle("设置");
@@ -1220,19 +1283,21 @@ engine.vineflower=Vineflower
 ### Task 4.1: 创建 ProcessService
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/app/ProcessService.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java`（加菜单项处理）
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/app/ProcessService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java`（加菜单项处理）
 
 - [ ] **Step 1: 实现新进程启动**
 
 ```java
-package com.bingbihanji.fxdecomplie.app;
+package com.bingbaihanji.fxdecomplie.app;
 
 import java.io.File;
 
 public final class ProcessService {
 
-    private ProcessService() { throw new AssertionError("utility class"); }
+    private ProcessService() {
+        throw new AssertionError("utility class");
+    }
 
     public static void launchNewInstance(String filePath) {
         try {

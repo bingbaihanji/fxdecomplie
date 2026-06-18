@@ -47,8 +47,8 @@
 **Files:**
 - Modify: `pom.xml`
 - Modify: `src/main/java/module-info.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/FxDecompilerApp.java`
-- Keep (no changes): `src/main/java/com/bingbihanji/fxdecomplie/Main.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java`
+- Keep (no changes): `src/main/java/com/bingbaihanji/fxdecomplie/Main.java`
 
 - [ ] **Step 1: Update pom.xml — add decompiler + JSON dependencies**
 
@@ -123,32 +123,33 @@ Open `pom.xml`. Replace the `<dependencies>` section with:
 Also add the maven-shade-plugin to build a fat JAR. Add this inside `<build><plugins>` after the compiler plugin:
 
 ```xml
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.6.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.bingbihanji.fxdecomplie.FxDecompilerApp</mainClass>
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-shade-plugin</artifactId>
+    <version>3.6.0</version>
+    <executions>
+        <execution>
+            <phase>package</phase>
+            <goals>
+                <goal>shade</goal>
+            </goals>
+            <configuration>
+                <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                        <mainClass>com.bingbaihanji.fxdecomplie.FxDecompilerApp</mainClass>
+                    </transformer>
+                </transformers>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
 ```
 
 - [ ] **Step 2: Update module-info.java**
 
 ```java
-module com.bingbihanji.fxdecomplie {
+module com.bingbaihanji.fxdecomplie {
     requires javafx.controls;
     requires javafx.graphics;
     requires jfx.incubator.richtext;
@@ -162,24 +163,24 @@ module com.bingbihanji.fxdecomplie {
     requires procyon.core;                   // Procyon
     requires procyon.compilertools;          // Procyon tools
 
-    exports com.bingbihanji.fxdecomplie;
-    exports com.bingbihanji.fxdecomplie.model;
-    exports com.bingbihanji.fxdecomplie.decompiler;
-    exports com.bingbihanji.fxdecomplie.io;
-    exports com.bingbihanji.fxdecomplie.ui.menu;
-    exports com.bingbihanji.fxdecomplie.ui.tree;
-    exports com.bingbihanji.fxdecomplie.ui.code;
-    exports com.bingbihanji.fxdecomplie.ui.theme;
-    exports com.bingbihanji.fxdecomplie.config;
+    exports com.bingbaihanji.fxdecomplie;
+    exports com.bingbaihanji.fxdecomplie.model;
+    exports com.bingbaihanji.fxdecomplie.decompiler;
+    exports com.bingbaihanji.fxdecomplie.io;
+    exports com.bingbaihanji.fxdecomplie.ui.menu;
+    exports com.bingbaihanji.fxdecomplie.ui.tree;
+    exports com.bingbaihanji.fxdecomplie.ui.code;
+    exports com.bingbaihanji.fxdecomplie.ui.theme;
+    exports com.bingbaihanji.fxdecomplie.config;
 
-    opens com.bingbihanji.fxdecomplie to com.google.gson;
+    opens com.bingbaihanji.fxdecomplie to com.google.gson;
 }
 ```
 
 - [ ] **Step 3: Create FxDecompilerApp.java**
 
 ```java
-package com.bingbihanji.fxdecomplie;
+package com.bingbaihanji.fxdecomplie;
 
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -208,16 +209,16 @@ Expected: BUILD SUCCESS
 ### Task 2: UI Layout — MainWindow + StatusBar + Placeholder Tabs
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/StatusBar.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/model/Workspace.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/model/FileTreeNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/model/OpenFile.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/StatusBar.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/model/FileTreeNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/model/OpenFile.java`
 
 - [ ] **Step 1: Create FileTreeNode.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.model;
 
 /**
  * 文件树节点数据模型。包装在 TreeItem.getValue() 中。
@@ -244,13 +245,33 @@ public class FileTreeNode {
         this.nodeType = nodeType;
     }
 
-    public String getName() { return name; }
-    public String getFullPath() { return fullPath; }
-    public NodeType getNodeType() { return nodeType; }
-    public byte[] getCachedBytes() { return cachedBytes; }
-    public void setCachedBytes(byte[] cachedBytes) { this.cachedBytes = cachedBytes; }
-    public boolean isDecompiled() { return decompiled; }
-    public void setDecompiled(boolean decompiled) { this.decompiled = decompiled; }
+    public String getName() {
+        return name;
+    }
+
+    public String getFullPath() {
+        return fullPath;
+    }
+
+    public NodeType getNodeType() {
+        return nodeType;
+    }
+
+    public byte[] getCachedBytes() {
+        return cachedBytes;
+    }
+
+    public void setCachedBytes(byte[] cachedBytes) {
+        this.cachedBytes = cachedBytes;
+    }
+
+    public boolean isDecompiled() {
+        return decompiled;
+    }
+
+    public void setDecompiled(boolean decompiled) {
+        this.decompiled = decompiled;
+    }
 
     public boolean isClassFile() {
         return nodeType == NodeType.CLASS_FILE;
@@ -266,7 +287,7 @@ public class FileTreeNode {
 - [ ] **Step 2: Create StatusBar.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -347,7 +368,7 @@ public class StatusBar extends HBox {
 - [ ] **Step 3: Create Workspace.java (placeholder)**
 
 ```java
-package com.bingbihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.model;
 
 import javafx.scene.control.TreeItem;
 
@@ -371,10 +392,21 @@ public class Workspace {
         this.isArchive = isArchive;
     }
 
-    public String getName() { return name; }
-    public File getSourceFile() { return sourceFile; }
-    public TreeItem<FileTreeNode> getTreeRoot() { return treeRoot; }
-    public boolean isArchive() { return isArchive; }
+    public String getName() {
+        return name;
+    }
+
+    public File getSourceFile() {
+        return sourceFile;
+    }
+
+    public TreeItem<FileTreeNode> getTreeRoot() {
+        return treeRoot;
+    }
+
+    public boolean isArchive() {
+        return isArchive;
+    }
 
     @Override
     public String toString() {
@@ -386,9 +418,9 @@ public class Workspace {
 - [ ] **Step 4: Create OpenFile.java (placeholder)**
 
 ```java
-package com.bingbihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.model;
 
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerType;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerType;
 
 /**
  * 已打开的 class 文件状态。
@@ -407,10 +439,21 @@ public class OpenFile {
         this.engine = engine;
     }
 
-    public String getClassName() { return className; }
-    public String getFullPath() { return fullPath; }
-    public String getSourceCode() { return sourceCode; }
-    public DecompilerType getEngine() { return engine; }
+    public String getClassName() {
+        return className;
+    }
+
+    public String getFullPath() {
+        return fullPath;
+    }
+
+    public String getSourceCode() {
+        return sourceCode;
+    }
+
+    public DecompilerType getEngine() {
+        return engine;
+    }
 
     @Override
     public String toString() {
@@ -422,15 +465,12 @@ public class OpenFile {
 - [ ] **Step 5: Create MainWindow.java (layout skeleton)**
 
 ```java
-package com.bingbihanji.fxdecomplie;
+package com.bingbaihanji.fxdecomplie;
 
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbihanji.fxdecomplie.model.Workspace;
-import com.bingbihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -471,18 +511,18 @@ public class MainWindow {
 
         Scene scene = new Scene(root, 1200, 800);
         scene.getStylesheets().add("data:text/css," +
-            ".root { -fx-background-color: #1e1e1e; }" +
-            ".tab-pane { -fx-background-color: #1e1e1e; }" +
-            ".tab-pane .tab-header-area .tab-header-background { -fx-background-color: #2d2d2d; }" +
-            ".tab-pane .tab { -fx-background-color: #2d2d2d; -fx-text-fill: #cccccc; }" +
-            ".tab-pane .tab:selected { -fx-background-color: #1e1e1e; }" +
-            ".split-pane { -fx-background-color: #1e1e1e; }" +
-            ".split-pane-divider { -fx-background-color: #3c3c3c; -fx-padding: 0 1; }" +
-            ".tree-view { -fx-background-color: #252526; -fx-text-fill: #cccccc; }" +
-            ".menu-bar { -fx-background-color: #3c3c3c; }" +
-            ".menu { -fx-text-fill: #cccccc; }" +
-            ".menu-item { -fx-text-fill: #cccccc; }" +
-            ".label { -fx-text-fill: #cccccc; }"
+                ".root { -fx-background-color: #1e1e1e; }" +
+                ".tab-pane { -fx-background-color: #1e1e1e; }" +
+                ".tab-pane .tab-header-area .tab-header-background { -fx-background-color: #2d2d2d; }" +
+                ".tab-pane .tab { -fx-background-color: #2d2d2d; -fx-text-fill: #cccccc; }" +
+                ".tab-pane .tab:selected { -fx-background-color: #1e1e1e; }" +
+                ".split-pane { -fx-background-color: #1e1e1e; }" +
+                ".split-pane-divider { -fx-background-color: #3c3c3c; -fx-padding: 0 1; }" +
+                ".tree-view { -fx-background-color: #252526; -fx-text-fill: #cccccc; }" +
+                ".menu-bar { -fx-background-color: #3c3c3c; }" +
+                ".menu { -fx-text-fill: #cccccc; }" +
+                ".menu-item { -fx-text-fill: #cccccc; }" +
+                ".label { -fx-text-fill: #cccccc; }"
         );
 
         stage.setTitle("FxDecompiler");
@@ -553,8 +593,8 @@ public class MainWindow {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("打开文件");
         chooser.getExtensionFilters().addAll(
-            new FileChooser.ExtensionFilter("Java Archives & Class Files", "*.jar", "*.zip", "*.class"),
-            new FileChooser.ExtensionFilter("All Files", "*.*")
+                new FileChooser.ExtensionFilter("Java Archives & Class Files", "*.jar", "*.zip", "*.class"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
         );
         File file = chooser.showOpenDialog(stage);
         if (file != null) {
@@ -586,18 +626,18 @@ Expected: The file should compile (MainWindow will have warnings about unused fi
 ### Task 3: Decompiler Engine Layer — Interface + 3 Engines + Cache
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/IDecompiler.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/DecompilerType.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/DecompilerFactory.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/BytecodeCache.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/CfrDecompiler.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/decompiler/ProcyonDecompiler.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/IDecompiler.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerType.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerFactory.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/BytecodeCache.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/CfrDecompiler.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java`
 
 - [ ] **Step 1: Create DecompilerType.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 public enum DecompilerType {
     PROCYON,
@@ -609,7 +649,7 @@ public enum DecompilerType {
 - [ ] **Step 2: Create IDecompiler.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 /**
  * 反编译引擎统一接口。
@@ -642,17 +682,19 @@ public interface IDecompiler {
     }
 
     /** 引擎初始化（首次创建时调用） */
-    default void initialize() {}
+    default void initialize() {
+    }
 
     /** 引擎清理（应用退出时调用） */
-    default void cleanup() {}
+    default void cleanup() {
+    }
 }
 ```
 
 - [ ] **Step 3: Create BytecodeCache.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -689,7 +731,7 @@ public class BytecodeCache {
 - [ ] **Step 4: Create DecompilerFactory.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -726,7 +768,7 @@ public class DecompilerFactory {
 Port from `D:\bingbaihanji\code-resurrector\src\main\java\com\bingbaihanji\code\resurrector\decompiler\CfrDecompiler.java`.
 
 ```java
-package com.bingbihanji.fxdecomplie.decompiler;
+package com.bingbaihanji.fxdecomplie.decompiler;
 
 import org.benf.cfr.reader.api.CfrDriver;
 import org.benf.cfr.reader.api.OutputSinkFactory;
@@ -790,7 +832,8 @@ public class CfrDecompiler implements IDecompiler {
                 if (sinkType == SinkType.EXCEPTION && sinkClass == SinkClass.EXCEPTION) {
                     return (SinkReturns.Exception) e -> result.append("// CFR Error: ").append(e.getMessage());
                 }
-                return ignore -> {};
+                return ignore -> {
+                };
             }
         };
 
@@ -804,7 +847,9 @@ public class CfrDecompiler implements IDecompiler {
     }
 
     @Override
-    public DecompilerType getType() { return DecompilerType.CFR; }
+    public DecompilerType getType() {
+        return DecompilerType.CFR;
+    }
 }
 ```
 
@@ -1001,22 +1046,21 @@ Expected: BUILD SUCCESS. If CFR or Vineflower API has changed vs the reference v
 ### Task 4: File Loading — ClassLoader + FileTreeBuilder
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/io/ClassLoader.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/io/FileTreeBuilder.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/io/ClassLoader.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/io/FileTreeBuilder.java`
 
 - [ ] **Step 1: Create ClassLoader.java — file discovery**
 
 The `ClassLoader` name conflicts with `java.lang.ClassLoader`. Use `ClassDiscoverer` instead.
 
 ```java
-package com.bingbihanji.fxdecomplie.io;
+package com.bingbaihanji.fxdecomplie.io;
 
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -1031,11 +1075,12 @@ public class ClassDiscoverer {
      * 发现的条目。
      */
     public record ClassEntry(
-        String name,       // 显示名（如 "Main.class"）
-        String fullPath,   // 完整路径（如 "com/example/Main.class"）
-        FileTreeNode.NodeType nodeType,
-        byte[] bytes       // .class 文件的 byte[]（非 class 文件为 null）
-    ) {}
+            String name,       // 显示名（如 "Main.class"）
+            String fullPath,   // 完整路径（如 "com/example/Main.class"）
+            FileTreeNode.NodeType nodeType,
+            byte[] bytes       // .class 文件的 byte[]（非 class 文件为 null）
+    ) {
+    }
 
     /**
      * 发现所有文件条目。自动判断输入类型。
@@ -1088,7 +1133,8 @@ public class ClassDiscoverer {
                 if (type == FileTreeNode.NodeType.CLASS_FILE) {
                     try {
                         bytes = Files.readAllBytes(p);
-                    } catch (IOException ignored) {}
+                    } catch (IOException ignored) {
+                    }
                 }
                 entries.add(new ClassEntry(displayName, relativePath, type, bytes));
             });
@@ -1117,9 +1163,9 @@ public class ClassDiscoverer {
 - [ ] **Step 2: Create FileTreeBuilder.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.io;
+package com.bingbaihanji.fxdecomplie.io;
 
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import javafx.scene.control.TreeItem;
 
 import java.util.*;
@@ -1149,7 +1195,7 @@ public class FileTreeBuilder {
                 if (internalName.endsWith(".class")) {
                     internalName = internalName.substring(0, internalName.length() - 6);
                 }
-                com.bingbihanji.fxdecomplie.decompiler.BytecodeCache.put(internalName, entry.bytes());
+                com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache.put(internalName, entry.bytes());
             }
 
             FileTreeNode nodeData = new FileTreeNode(entry.name(), entry.fullPath(), entry.nodeType());
@@ -1213,16 +1259,16 @@ Expected: BUILD SUCCESS
 ### Task 5: Wire UI — Connect File Loading to Workspace and CodeEditorTab
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java` — wire load logic
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/CodeEditorTab.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/tree/FileTreeView.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java` — wire load logic
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeView.java`
 
 - [ ] **Step 1: Create CodeEditorTab.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.SyntaxDecorator;
 import javafx.scene.control.Tab;
@@ -1244,7 +1290,7 @@ public class CodeEditorTab extends Tab {
         codeArea.setWrapText(true);
         codeArea.setLineNumbersEnabled(true);
         codeArea.setFont(Font.font("Consolas", 14));
-        codeArea.setText(openFile.getSourceCode());
+        codeArea.setText(openFile.sourceCode());
         codeArea.setSyntaxDecorator(highlighter);
 
         // 暗色基础样式
@@ -1254,12 +1300,17 @@ public class CodeEditorTab extends Tab {
                 "-fx-highlight-fill: #264f78"
         ));
 
-        setText(openFile.getClassName() + ".java");
+        setText(openFile.className() + ".java");
         setContent(codeArea);
     }
 
-    public CodeArea getCodeArea() { return codeArea; }
-    public OpenFile getOpenFile() { return openFile; }
+    public CodeArea getCodeArea() {
+        return codeArea;
+    }
+
+    public OpenFile getOpenFile() {
+        return openFile;
+    }
 
     /** 获取光标位置 (1-based 行，1-based 列) */
     public int[] getCursorPosition() {
@@ -1278,9 +1329,9 @@ public class CodeEditorTab extends Tab {
 - [ ] **Step 2: Create FileTreeView.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.tree;
+package com.bingbaihanji.fxdecomplie.ui.tree;
 
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 
@@ -1303,9 +1354,9 @@ public class FileTreeView extends TreeView<FileTreeNode> {
 - [ ] **Step 3: Create FileTreeCell.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.tree;
+package com.bingbaihanji.fxdecomplie.ui.tree;
 
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import javafx.scene.control.TreeCell;
 
 /**
@@ -1321,11 +1372,11 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
             setGraphic(null);
         } else {
             String icon = switch (item.getNodeType()) {
-                case PACKAGE    -> "📁 ";  // 📁
+                case PACKAGE -> "📁 ";  // 📁
                 case CLASS_FILE -> "📎 ";  // 📎
-                case JAVA_FILE  -> "📝 ";  // 📝
-                case RESOURCE   -> "📄 ";  // 📄
-                case BINARY     -> "❓ ";         // ❓
+                case JAVA_FILE -> "📝 ";  // 📝
+                case RESOURCE -> "📄 ";  // 📄
+                case BINARY -> "❓ ";         // ❓
             };
             setText(icon + item.getName());
             setStyle("-fx-text-fill: #cccccc;");
@@ -1339,23 +1390,10 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
 Add imports at top:
 
 ```java
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerType;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
-import com.bingbihanji.fxdecomplie.io.ClassDiscoverer;
-import com.bingbihanji.fxdecomplie.io.FileTreeBuilder;
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbihanji.fxdecomplie.model.OpenFile;
-import com.bingbihanji.fxdecomplie.model.Workspace;
-import com.bingbihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbihanji.fxdecomplie.ui.tree.FileTreeView;
-import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
-import javafx.application.Platform;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerType;
+import com.bingbaihanji.fxdecomplie.io.ClassDiscoverer;
+import com.bingbaihanji.fxdecomplie.io.FileTreeBuilder;
+
 ```
 
 Replace the `openFile()` and `openDirectory()` methods and add `loadFile()`:
@@ -1543,14 +1581,14 @@ Expected: Check for compilation errors. Fix any issues (e.g., `getCaretPosition`
 ### Task 6: Syntax Highlighting — RegexHighlighter + VsCodeThemeLoader
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/theme/RegexHighlighter.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java`
-- Create: `src/main/resources/com/bingbihanji/fxdecomplie/themes/dark-plus.json`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/RegexHighlighter.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java`
+- Create: `src/main/resources/com/bingbaihanji/fxdecomplie/themes/dark-plus.json`
 
 - [ ] **Step 1: Create VsCodeThemeLoader.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.theme;
+package com.bingbaihanji.fxdecomplie.ui.theme;
 
 import com.google.gson.*;
 import javafx.scene.paint.Color;
@@ -1567,37 +1605,38 @@ import java.util.*;
 public class VsCodeThemeLoader {
 
     public record ThemeData(
-        String name,
-        String type,              // "dark" or "light"
-        Color editorBackground,
-        Color editorForeground,
-        Color lineNumberForeground,
-        String fontFamily,
-        int fontSize,
-        Map<String, StyleAttributeMap> tokenStyles  // scope prefix → style
-    ) {}
+            String name,
+            String type,              // "dark" or "light"
+            Color editorBackground,
+            Color editorForeground,
+            Color lineNumberForeground,
+            String fontFamily,
+            int fontSize,
+            Map<String, StyleAttributeMap> tokenStyles  // scope prefix → style
+    ) {
+    }
 
     /**
      * 默认暗色主题（内置，无需外部文件）。
      */
     public static ThemeData defaultDark() {
         Map<String, StyleAttributeMap> tokenStyles = new LinkedHashMap<>();
-        tokenStyles.put("keyword",  style("#569CD6", true, false));
-        tokenStyles.put("comment",  style("#6A9955", false, true));
-        tokenStyles.put("string",   style("#CE9178", false, false));
+        tokenStyles.put("keyword", style("#569CD6", true, false));
+        tokenStyles.put("comment", style("#6A9955", false, true));
+        tokenStyles.put("string", style("#CE9178", false, false));
         tokenStyles.put("annotation", style("#D7BA7D", false, false));
-        tokenStyles.put("number",   style("#B5CEA8", false, false));
-        tokenStyles.put("default",  style("#d4d4d4", false, false));
+        tokenStyles.put("number", style("#B5CEA8", false, false));
+        tokenStyles.put("default", style("#d4d4d4", false, false));
 
         return new ThemeData(
-            "Default Dark",
-            "dark",
-            Color.web("#1e1e1e"),
-            Color.web("#d4d4d4"),
-            Color.web("#858585"),
-            "Consolas",
-            14,
-            tokenStyles
+                "Default Dark",
+                "dark",
+                Color.web("#1e1e1e"),
+                Color.web("#d4d4d4"),
+                Color.web("#858585"),
+                "Consolas",
+                14,
+                tokenStyles
         );
     }
 
@@ -1695,12 +1734,13 @@ public class VsCodeThemeLoader {
 Extract from the existing `Main.JavaSyntaxDecorator` but make it reusable and theme-aware.
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.theme;
+package com.bingbaihanji.fxdecomplie.ui.theme;
 
 import javafx.scene.paint.Color;
 import jfx.incubator.scene.control.richtext.SyntaxDecorator;
 import jfx.incubator.scene.control.richtext.TextPos;
 import jfx.incubator.scene.control.richtext.model.*;
+
 import java.util.*;
 import java.util.regex.*;
 
@@ -1711,34 +1751,34 @@ import java.util.regex.*;
 public class RegexHighlighter implements SyntaxDecorator {
 
     private static final Set<String> KEYWORDS = Set.of(
-        "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
-        "class", "const", "continue", "default", "do", "double", "else", "enum",
-        "extends", "final", "finally", "float", "for", "goto", "if", "implements",
-        "import", "instanceof", "int", "interface", "long", "native", "new",
-        "package", "private", "protected", "public", "return", "short", "static",
-        "strictfp", "super", "switch", "synchronized", "this", "throw", "throws",
-        "transient", "try", "void", "volatile", "while", "var", "record", "sealed",
-        "permits", "yield", "module", "requires", "exports", "opens", "to", "uses",
-        "provides", "with", "transitive", "non-sealed"
+            "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+            "class", "const", "continue", "default", "do", "double", "else", "enum",
+            "extends", "final", "finally", "float", "for", "goto", "if", "implements",
+            "import", "instanceof", "int", "interface", "long", "native", "new",
+            "package", "private", "protected", "public", "return", "short", "static",
+            "strictfp", "super", "switch", "synchronized", "this", "throw", "throws",
+            "transient", "try", "void", "volatile", "while", "var", "record", "sealed",
+            "permits", "yield", "module", "requires", "exports", "opens", "to", "uses",
+            "provides", "with", "transitive", "non-sealed"
     );
 
     // Token 类型 → theme scope 映射
     private static final Map<String, List<String>> TOKEN_TO_SCOPES = Map.of(
-        "KEYWORD",    List.of("keyword", "keyword.control", "storage.type"),
-        "STRING",     List.of("string", "string.quoted"),
-        "COMMENT",    List.of("comment", "comment.line", "comment.block"),
-        "ANNOTATION", List.of("keyword.other.annotation", "storage.type.annotation"),
-        "NUMBER",     List.of("constant.numeric", "constant.numeric.decimal"),
-        "DEFAULT",    List.of("variable", "source", "meta")
+            "KEYWORD", List.of("keyword", "keyword.control", "storage.type"),
+            "STRING", List.of("string", "string.quoted"),
+            "COMMENT", List.of("comment", "comment.line", "comment.block"),
+            "ANNOTATION", List.of("keyword.other.annotation", "storage.type.annotation"),
+            "NUMBER", List.of("constant.numeric", "constant.numeric.decimal"),
+            "DEFAULT", List.of("variable", "source", "meta")
     );
 
     private static final Pattern TOKEN_PATTERN = Pattern.compile(
-        "(?<MULTICOMMENT>/\\*[\\s\\S]*?\\*/)"
-      + "|(?<SINGLECOMMENT>//[^\n]*)"
-      + "|(?<STRING>\"(?:\\\\.|[^\"\\\\])*\")"
-      + "|(?<ANNOTATION>@[a-zA-Z_][a-zA-Z0-9_.]*)"
-      + "|(?<NUMBER>\\b\\d+\\.?\\d*[fFlLdD]?\\b)"
-      + "|(?<IDENTIFIER>\\b[a-zA-Z_][a-zA-Z0-9_]*\\b)"
+            "(?<MULTICOMMENT>/\\*[\\s\\S]*?\\*/)"
+                    + "|(?<SINGLECOMMENT>//[^\n]*)"
+                    + "|(?<STRING>\"(?:\\\\.|[^\"\\\\])*\")"
+                    + "|(?<ANNOTATION>@[a-zA-Z_][a-zA-Z0-9_.]*)"
+                    + "|(?<NUMBER>\\b\\d+\\.?\\d*[fFlLdD]?\\b)"
+                    + "|(?<IDENTIFIER>\\b[a-zA-Z_][a-zA-Z0-9_]*\\b)"
     );
 
     private final StyleAttributeMap styleDefault;
@@ -1756,12 +1796,12 @@ public class RegexHighlighter implements SyntaxDecorator {
     /** 用外部主题数据 */
     public RegexHighlighter(VsCodeThemeLoader.ThemeData theme) {
         Map<String, StyleAttributeMap> styles = theme.tokenStyles();
-        this.styleDefault    = resolveStyle(styles, TOKEN_TO_SCOPES.get("DEFAULT"));
-        this.styleKeyword    = resolveStyle(styles, TOKEN_TO_SCOPES.get("KEYWORD"));
-        this.styleString     = resolveStyle(styles, TOKEN_TO_SCOPES.get("STRING"));
-        this.styleComment    = resolveStyle(styles, TOKEN_TO_SCOPES.get("COMMENT"));
+        this.styleDefault = resolveStyle(styles, TOKEN_TO_SCOPES.get("DEFAULT"));
+        this.styleKeyword = resolveStyle(styles, TOKEN_TO_SCOPES.get("KEYWORD"));
+        this.styleString = resolveStyle(styles, TOKEN_TO_SCOPES.get("STRING"));
+        this.styleComment = resolveStyle(styles, TOKEN_TO_SCOPES.get("COMMENT"));
         this.styleAnnotation = resolveStyle(styles, TOKEN_TO_SCOPES.get("ANNOTATION"));
-        this.styleNumber     = resolveStyle(styles, TOKEN_TO_SCOPES.get("NUMBER"));
+        this.styleNumber = resolveStyle(styles, TOKEN_TO_SCOPES.get("NUMBER"));
     }
 
     private StyleAttributeMap resolveStyle(Map<String, StyleAttributeMap> styles, List<String> scopes) {
@@ -1776,7 +1816,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         }
         // 回退到 default
         return styles.getOrDefault("default",
-            StyleAttributeMap.builder().setTextColor(Color.web("#d4d4d4")).build());
+                StyleAttributeMap.builder().setTextColor(Color.web("#d4d4d4")).build());
     }
 
     @Override
@@ -1825,7 +1865,7 @@ public class RegexHighlighter implements SyntaxDecorator {
 
     @Override
     public void handleChange(CodeTextModel model, TextPos start, TextPos end,
-                              int linesRemoved, int linesAdded, int charIndex) {
+                             int linesRemoved, int linesAdded, int charIndex) {
         // 模型自动重建
     }
 }
@@ -1931,19 +1971,19 @@ Expected: BUILD SUCCESS. Open a .jar file, click a .class node, should see decom
 ### Task 7: Export Functionality
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/io/ExportService.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java` — wire menu items
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/io/ExportService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java` — wire menu items
 
 - [ ] **Step 1: Create ExportService.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.io;
+package com.bingbaihanji.fxdecomplie.io;
 
-import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbihanji.fxdecomplie.decompiler.DecompilerType;
-import com.bingbihanji.fxdecomplie.decompiler.IDecompiler;
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerType;
+import com.bingbaihanji.fxdecomplie.decompiler.IDecompiler;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import javafx.scene.control.TreeItem;
 
 import java.io.*;
@@ -1966,14 +2006,14 @@ public class ExportService {
      * 导出 Workspace 中所有 .class 文件为 .java 到指定目录。
      */
     public static void exportAllToDir(TreeItem<FileTreeNode> root, DecompilerType engine,
-                                       Path outputDir) throws IOException {
+                                      Path outputDir) throws IOException {
         IDecompiler decompiler = DecompilerFactory.getDecompiler(engine);
         Files.createDirectories(outputDir);
         exportTree(root, "", decompiler, outputDir);
     }
 
     private static void exportTree(TreeItem<FileTreeNode> node, String parentPath,
-                                    IDecompiler decompiler, Path outputDir) throws IOException {
+                                   IDecompiler decompiler, Path outputDir) throws IOException {
         FileTreeNode data = node.getValue();
         if (data != null && data.isClassFile()) {
             byte[] bytes = data.getCachedBytes();
@@ -2002,7 +2042,7 @@ public class ExportService {
      * 导出 Workspace 中所有 .class 文件为 ZIP。
      */
     public static void exportAllToZip(TreeItem<FileTreeNode> root, DecompilerType engine,
-                                       Path zipPath) throws IOException {
+                                      Path zipPath) throws IOException {
         IDecompiler decompiler = DecompilerFactory.getDecompiler(engine);
         try (ZipOutputStream zos = new ZipOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
@@ -2011,7 +2051,7 @@ public class ExportService {
     }
 
     private static void exportTreeToZip(TreeItem<FileTreeNode> node, String parentPath,
-                                         IDecompiler decompiler, ZipOutputStream zos) throws IOException {
+                                        IDecompiler decompiler, ZipOutputStream zos) throws IOException {
         FileTreeNode data = node.getValue();
         if (data != null && data.isClassFile()) {
             byte[] bytes = data.getCachedBytes();
@@ -2089,14 +2129,14 @@ Expected: BUILD SUCCESS
 ### Task 8: Config System — AppConfig + Theme Switcher
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/config/AppConfig.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/FxDecompilerApp.java` — load config on startup
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java` — use config values
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java` — load config on startup
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java` — use config values
 
 - [ ] **Step 1: Create AppConfig.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.config;
+package com.bingbaihanji.fxdecomplie.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -2148,7 +2188,8 @@ public class AppConfig {
                 String json = Files.readString(CONFIG_FILE);
                 return GSON.fromJson(json, AppConfig.class);
             }
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
         return new AppConfig();
     }
 
@@ -2157,7 +2198,8 @@ public class AppConfig {
         try {
             Files.createDirectories(CONFIG_DIR);
             Files.writeString(CONFIG_FILE, GSON.toJson(this));
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
     }
 }
 ```
@@ -2165,9 +2207,9 @@ public class AppConfig {
 - [ ] **Step 2: Update FxDecompilerApp to load config**
 
 ```java
-package com.bingbihanji.fxdecomplie;
+package com.bingbaihanji.fxdecomplie;
 
-import com.bingbihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import javafx.application.Application;
 import javafx.stage.Stage;
 

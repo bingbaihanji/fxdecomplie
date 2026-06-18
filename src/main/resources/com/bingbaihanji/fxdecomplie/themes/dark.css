@@ -1,0 +1,431 @@
+.root {
+    -fx-base: #1f1f1f;
+    -fx-background: #1e1e1e;
+    -fx-control-inner-background: #1e1e1e;
+    -fx-accent: #23475f;
+    -fx-focus-color: #23475f;
+    -fx-faint-focus-color: transparent;
+    -fx-font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+.app-root {
+    -fx-background-color: #1e1e1e;
+}
+
+.app-header-bar {
+    -fx-background-color: #181818;
+    -fx-border-color: #2d2d2d;
+    -fx-border-width: 0 0 1 0;
+}
+
+.app-brand {
+    -fx-alignment: center-left;
+    -fx-spacing: 8;
+    -fx-padding: 0 10 0 12;
+}
+
+.app-icon {
+    -fx-background-color: #007acc;
+    -fx-background-radius: 4;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-min-width: 24px;
+    -fx-pref-width: 24px;
+    -fx-min-height: 22px;
+    -fx-pref-height: 22px;
+    -fx-alignment: center;
+}
+
+.app-title {
+    -fx-text-fill: #dcdcdc;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.main-menu-bar,
+.menu-bar {
+    -fx-background-color: #202020;
+    -fx-border-color: #2d2d2d;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0;
+}
+
+.header-menu-bar {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+.header-menu-bar .container {
+    -fx-background-color: transparent;
+}
+
+.header-center {
+    -fx-alignment: center-left;
+    -fx-spacing: 0;
+}
+
+.header-drag-space {
+    -fx-background-color: transparent;
+    -fx-min-width: 48px;
+}
+
+.menu-bar .label,
+.menu .label,
+.menu-item .label {
+    -fx-text-fill: #cccccc;
+}
+
+.menu:hover,
+.menu:showing,
+.menu-item:focused {
+    -fx-background-color: #2a2d2e;
+}
+
+.context-menu {
+    -fx-background-color: #252526;
+    -fx-border-color: #3c3c3c;
+    -fx-border-width: 1;
+}
+
+.menu-item {
+    -fx-background-color: transparent;
+}
+
+.menu-item:disabled .label {
+    -fx-text-fill: #6a6a6a;
+}
+
+.separator:horizontal .line {
+    -fx-border-color: #3c3c3c transparent transparent transparent;
+}
+
+.tab-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+.tab-pane > .tab-header-area {
+    -fx-padding: 0;
+}
+
+.tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color: #252526;
+    -fx-border-color: #2d2d2d;
+    -fx-border-width: 0 0 1 0;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 0;
+    -fx-border-color: #252526 #252526 #2d2d2d #252526;
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 5 12 5 12;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: #007acc #2d2d2d #1e1e1e #2d2d2d;
+    -fx-border-width: 2 1 0 0;
+}
+
+.tab .tab-label {
+    -fx-text-fill: #cccccc;
+}
+
+.tab:selected .tab-label {
+    -fx-text-fill: #ffffff;
+}
+
+.split-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+.split-pane-divider {
+    -fx-background-color: #3c3c3c;
+    -fx-padding: 0 1 0 1;
+}
+
+.split-pane:vertical > .split-pane-divider {
+    -fx-padding: 1 0 1 0;
+}
+
+.editor-split-pane:vertical > .split-pane-divider {
+    -fx-padding: 4 0 4 0;
+    -fx-background-color: transparent, #3c3c3c;
+    -fx-background-insets: 0, 4 0 4 0;
+}
+
+.editor-split-pane:vertical > .split-pane-divider:hover {
+    -fx-background-color: #262a2e, #2B7B77;
+    -fx-background-insets: 0, 4 0 4 0;
+}
+
+.bottom-tool-container {
+    -fx-background-color: #1e1e1e;
+}
+
+.bottom-tool-resize-handle {
+    -fx-background-color: transparent, #3c3c3c;
+    -fx-background-insets: 0, 5 0 6 0;
+}
+
+.bottom-tool-resize-handle:hover,
+.bottom-tool-resize-handle:pressed {
+    -fx-background-color: #262a2e, #2B7B77;
+    -fx-background-insets: 0, 5 0 6 0;
+}
+
+.bottom-tool-window {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: #2d2d2d;
+    -fx-border-width: 1 0 0 0;
+}
+
+.bottom-tool-window > .tab-header-area > .tab-header-background {
+    -fx-background-color: #202020;
+}
+
+.file-tree-view,
+.tree-view {
+    -fx-background-color: #252526;
+    -fx-control-inner-background: #252526;
+    -fx-background-insets: 0;
+}
+
+.tree-cell {
+    -fx-background-color: #252526;
+    -fx-text-fill: #cccccc;
+    -fx-padding: 3 8 3 8;
+}
+
+.tree-cell:filled:selected,
+.tree-cell:filled:focused:selected {
+    -fx-background-color: #04395e;
+    -fx-text-fill: #ffffff;
+}
+
+.tree-cell:filled:hover {
+    -fx-background-color: #2a2d2e;
+}
+
+.file-tree-icon {
+    -fx-font-family: "Consolas", monospace;
+    -fx-font-size: 11px;
+    -fx-min-width: 28px;
+    -fx-text-fill: #858585;
+}
+
+.file-tree-icon-package {
+    -fx-text-fill: #c586c0;
+}
+
+.file-tree-icon-class {
+    -fx-text-fill: #4ec9b0;
+}
+
+.file-tree-icon-java {
+    -fx-text-fill: #569cd6;
+}
+
+.file-tree-icon-resource {
+    -fx-text-fill: #d7ba7d;
+}
+
+.file-tree-icon-binary {
+    -fx-text-fill: #858585;
+}
+
+.empty-state {
+    -fx-background-color: #1e1e1e;
+}
+
+.empty-state-label {
+    -fx-text-fill: #858585;
+    -fx-font-size: 16px;
+}
+
+.welcome-panel {
+    -fx-padding: 28 32 28 32;
+    -fx-spacing: 14;
+}
+
+.welcome-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+}
+
+.welcome-subtitle,
+.welcome-muted {
+    -fx-text-fill: #a6a6a6;
+    -fx-font-size: 13px;
+}
+
+.welcome-actions {
+    -fx-padding: 6 0 8 0;
+}
+
+.welcome-section-title {
+    -fx-text-fill: #dcdcdc;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.welcome-recent {
+    -fx-padding: 8 0 0 0;
+}
+
+.welcome-recent-button {
+    -fx-alignment: center-left;
+    -fx-background-color: transparent;
+    -fx-text-fill: #cccccc;
+    -fx-padding: 5 8 5 8;
+    -fx-border-color: transparent transparent #2a2a2a transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.welcome-recent-button:hover {
+    -fx-background-color: #2a2d2e;
+}
+
+.status-bar {
+    -fx-background-color: #181818;
+    -fx-border-color: #2d2d2d;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 2 8 2 8;
+}
+
+.status-label {
+    -fx-text-fill: #b8b8b8;
+    -fx-font-size: 12px;
+}
+
+.code-editor {
+    -fx-background-color: #191b1d;
+    -fx-control-inner-background: #191b1d;
+    -fx-text-fill: #9aa7b0;
+    -fx-highlight-fill: #23475f;
+    -fx-highlight-text-fill: #ffffff;
+    -fx-font-feature-settings: "calt" on, "liga" on, "dlig" off;
+}
+
+.rich-text-area .content-region,
+.code-area .content-region {
+    -fx-background-color: #191b1d;
+    -fx-highlight-fill: #23475f;
+    -fx-highlight-text-fill: #e0e0e0;
+}
+
+.code-area,
+.rich-text-area {
+    -fx-highlight-fill: #23475f;
+    -fx-accent: #23475f;
+    -fx-font-feature-settings: "calt" on, "liga" on, "dlig" off;
+}
+
+.code-editor .left-decorator,
+.code-editor .paragraph-graphic,
+.code-area .left-decorator,
+.code-area .paragraph-graphic,
+.rich-text-area .left-decorator,
+.rich-text-area .paragraph-graphic {
+    -fx-background-color: #252526;
+    -fx-font-family: "Fira Code Light", "Consolas", monospace;
+}
+
+.code-editor .line-number,
+.code-editor .lineno,
+.code-editor .line-number-decorator,
+.code-editor .line-number .text,
+.code-editor .lineno .text,
+.code-editor .line-number-decorator .text,
+.code-editor .line-number .label,
+.code-editor .lineno .label,
+.code-editor .left-decorator .text,
+.code-editor .left-decorator .label,
+.code-editor .paragraph-graphic .text,
+.code-editor .paragraph-graphic .label,
+.code-area .line-number,
+.code-area .lineno,
+.code-area .line-number-decorator,
+.code-area .line-number .text,
+.code-area .lineno .text,
+.code-area .line-number-decorator .text,
+.code-area .line-number .label,
+.code-area .lineno .label,
+.code-area .left-decorator .text,
+.code-area .left-decorator .label,
+.code-area .paragraph-graphic .text,
+.code-area .paragraph-graphic .label,
+.rich-text-area .line-number,
+.rich-text-area .lineno,
+.rich-text-area .line-number-decorator,
+.rich-text-area .line-number .text,
+.rich-text-area .lineno .text,
+.rich-text-area .line-number-decorator .text,
+.rich-text-area .line-number .label,
+.rich-text-area .lineno .label,
+.rich-text-area .left-decorator .text,
+.rich-text-area .left-decorator .label,
+.rich-text-area .paragraph-graphic .text,
+.rich-text-area .paragraph-graphic .label {
+    -fx-text-fill: #6f7a82;
+    -fx-fill: #6f7a82;
+    -fx-font-family: "Fira Code Light", "Consolas", monospace;
+}
+
+.line-number-decorator {
+    -fx-background-color: #252526;
+    -fx-text-fill: #6f7a82;
+    -fx-padding: 0 8 0 8;
+}
+
+.line-number-decorator .text {
+    -fx-fill: #6f7a82;
+}
+
+.scroll-bar {
+    -fx-background-color: #1e1e1e;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #424242;
+    -fx-background-radius: 0;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #4f4f4f;
+}
+
+.scroll-bar .track,
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: #1e1e1e;
+    -fx-background-radius: 0;
+}
+
+.dialog-pane {
+    -fx-background-color: #252526;
+}
+
+.dialog-pane .content.label,
+.dialog-pane .header-panel .label {
+    -fx-text-fill: #cccccc;
+}
+
+.button {
+    -fx-background-color: #3a3d41;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+
+.button:hover {
+    -fx-background-color: #45494e;
+}
+
+/* Current caret line highlight */
+.code-editor .caret-line {
+    -fx-fill: rgba(255, 255, 255, 0.04);
+    -fx-stroke: transparent;
+}

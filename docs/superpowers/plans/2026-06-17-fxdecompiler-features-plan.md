@@ -75,21 +75,21 @@ Expected: BUILD SUCCESS (无新代码，仅添加依赖)
 ### Task 2: 基础设施 — CodeEditorTab 改为三标签结构
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/CodeEditorTab.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/BytecodeViewTab.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/code/ClassInfoView.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/app/ClassTabOpener.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeViewTab.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassInfoView.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/app/ClassTabOpener.java`
 
 - [ ] **Step 1: 修改 CodeEditorTab — 构造器中接收 byte[] 并创建子标签页**
 
 读取当前 `CodeEditorTab.java`，改为内部嵌入 TabPane：
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbihanji.fxdecomplie.model.OpenFile;
-import com.bingbihanji.fxdecomplie.ui.theme.RegexHighlighter;
-import com.bingbihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
+import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.text.Font;
@@ -146,7 +146,7 @@ public class CodeEditorTab extends Tab {
         codeArea.setWrapText(wrapText);
         codeArea.setLineNumbersEnabled(lineNumbersEnabled);
         codeArea.setFont(loadCodeFont(fontFamily, fontSize));
-        codeArea.setText(openFile.getSourceCode());
+        codeArea.setText(openFile.sourceCode());
         codeArea.setSyntaxDecorator(new RegexHighlighter(theme));
         Tab sourceTab = new Tab("Java 源码", codeArea);
         sourceTab.setClosable(false);
@@ -167,24 +167,39 @@ public class CodeEditorTab extends Tab {
         subTabPane.getTabs().addAll(sourceTab, bytecodeTab, infoTab);
         subTabPane.getSelectionModel().select(sourceTab);
 
-        setText(openFile.getClassName() + ".java");
+        setText(openFile.className() + ".java");
         setContent(subTabPane);
     }
 
     /** @return Java 源码的 CodeArea（供主代码操作） */
-    public CodeArea getCodeArea() { return codeArea; }
+    public CodeArea getCodeArea() {
+        return codeArea;
+    }
 
     /** @return 打开的文件 */
-    public OpenFile getOpenFile() { return openFile; }
+    public OpenFile getOpenFile() {
+        return openFile;
+    }
 
     /** 放大字号 */
-    public void zoomIn() { setFontSize(codeArea.getFont().getSize() + 1); }
+    public void zoomIn() {
+        setFontSize(codeArea.getFont().getSize() + 1);
+    }
+
     /** 缩小字号 */
-    public void zoomOut() { setFontSize(Math.max(8, codeArea.getFont().getSize() - 1)); }
+    public void zoomOut() {
+        setFontSize(Math.max(8, codeArea.getFont().getSize() - 1));
+    }
+
     /** 重置字号 */
-    public void resetZoom() { setFontSize(defaultFontSize); }
+    public void resetZoom() {
+        setFontSize(defaultFontSize);
+    }
+
     /** 设置行号显示 */
-    public void setLineNumbersEnabled(boolean enabled) { codeArea.setLineNumbersEnabled(enabled); }
+    public void setLineNumbersEnabled(boolean enabled) {
+        codeArea.setLineNumbersEnabled(enabled);
+    }
 
     /** 设置编辑器字号 */
     private void setFontSize(double size) {
@@ -208,7 +223,9 @@ public class CodeEditorTab extends Tab {
     private Font loadResourceFont(int fontSize) {
         try (InputStream input = CodeEditorTab.class.getResourceAsStream(FIRA_CODE_RESOURCE)) {
             return input == null ? null : Font.loadFont(input, fontSize);
-        } catch (Exception ignored) { return null; }
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }
 ```
@@ -216,7 +233,7 @@ public class CodeEditorTab extends Tab {
 - [ ] **Step 2: 创建 BytecodeViewTab.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
 import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
@@ -234,7 +251,9 @@ import java.io.StringWriter;
  */
 public final class BytecodeViewTab {
 
-    private BytecodeViewTab() { throw new AssertionError("utility class"); }
+    private BytecodeViewTab() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 创建字节码视图 CodeArea。
@@ -272,7 +291,7 @@ public final class BytecodeViewTab {
 - [ ] **Step 3: 创建 ClassInfoView.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
@@ -286,7 +305,9 @@ import org.objectweb.asm.ClassReader;
  */
 public final class ClassInfoView {
 
-    private ClassInfoView() { throw new AssertionError("utility class"); }
+    private ClassInfoView() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 创建类信息视图面板。
@@ -392,15 +413,15 @@ Expected: BUILD SUCCESS
 ### Task 3: 全文搜索系统
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchResult.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchProvider.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchService.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/search/SearchDialog.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchResult.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchProvider.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchService.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchDialog.java`
 
 - [ ] **Step 1: 创建 SearchResult.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 /**
  * 单条搜索结果记录。
@@ -433,7 +454,7 @@ public record SearchResult(
 - [ ] **Step 2: 创建 SearchProvider.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 import java.util.List;
 import java.util.Map;
@@ -456,11 +477,12 @@ public interface SearchProvider {
 - [ ] **Step 3: 创建 SearchService.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javafx.application.Platform;
 
 /**
@@ -471,7 +493,9 @@ import javafx.application.Platform;
  */
 public final class SearchService {
 
-    private SearchService() { throw new AssertionError("utility class"); }
+    private SearchService() {
+        throw new AssertionError("utility class");
+    }
 
     /** 搜索结果回调 */
     @FunctionalInterface
@@ -487,15 +511,15 @@ public final class SearchService {
      * @param onComplete   搜索完成回调（FX 线程）
      */
     public static void search(String query,
-                               Map<String, String> sourceCache,
-                               ResultCallback onResult,
-                               Runnable onComplete) {
+                              Map<String, String> sourceCache,
+                              ResultCallback onResult,
+                              Runnable onComplete) {
         if (query == null || query.isBlank()) {
             if (onComplete != null) Platform.runLater(onComplete);
             return;
         }
         String lowerQuery = query.toLowerCase();
-        com.bingbihanji.fxdecomplie.app.BackgroundTasks.run("search-worker", () -> {
+        com.bingbaihanji.fxdecomplie.app.BackgroundTasks.run("search-worker", () -> {
             List<SearchResult> classResults = new ArrayList<>();
             List<SearchResult> codeResults = new ArrayList<>();
             List<SearchResult> memberResults = new ArrayList<>();
@@ -559,7 +583,7 @@ public final class SearchService {
 - [ ] **Step 4: 创建 SearchDialog.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
@@ -587,7 +611,9 @@ public final class SearchDialog {
 
     private static final int MAX_RESULTS = 200;
 
-    private SearchDialog() { throw new AssertionError("utility class"); }
+    private SearchDialog() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 显示搜索对话框。
@@ -628,32 +654,32 @@ public final class SearchDialog {
                 int[] count = {0};
 
                 SearchService.search(text, sourceCache,
-                    result -> {
-                        if (count[0]++ >= MAX_RESULTS) return;
-                        TreeItem<String> leaf = new TreeItem<>(result.matchLine());
-                        leaf.setValue(result.fullPath() + " : " + result.lineNumber() + "  " + result.matchLine());
-                        switch (result.matchType()) {
-                            case CLASS_NAME -> classNameGroup.getChildren().add(leaf);
-                            case METHOD_NAME, FIELD_NAME -> memberGroup.getChildren().add(leaf);
-                            case CODE_TEXT -> codeGroup.getChildren().add(leaf);
+                        result -> {
+                            if (count[0]++ >= MAX_RESULTS) return;
+                            TreeItem<String> leaf = new TreeItem<>(result.matchLine());
+                            leaf.setValue(result.fullPath() + " : " + result.lineNumber() + "  " + result.matchLine());
+                            switch (result.matchType()) {
+                                case CLASS_NAME -> classNameGroup.getChildren().add(leaf);
+                                case METHOD_NAME, FIELD_NAME -> memberGroup.getChildren().add(leaf);
+                                case CODE_TEXT -> codeGroup.getChildren().add(leaf);
+                            }
+                        },
+                        () -> {
+                            if (count[0] >= MAX_RESULTS) {
+                                statusLabel.setText("结果过多，仅显示前 " + MAX_RESULTS + " 条");
+                            } else {
+                                statusLabel.setText(count[0] + " 条结果");
+                            }
+                            if (!classNameGroup.getChildren().isEmpty())
+                                root.getChildren().add(classNameGroup);
+                            if (!memberGroup.getChildren().isEmpty())
+                                root.getChildren().add(memberGroup);
+                            if (!codeGroup.getChildren().isEmpty())
+                                root.getChildren().add(codeGroup);
+                            resultTree.setRoot(root);
+                            resultTree.getRoot().setExpanded(true);
+                            classNameGroup.setExpanded(true);
                         }
-                    },
-                    () -> {
-                        if (count[0] >= MAX_RESULTS) {
-                            statusLabel.setText("结果过多，仅显示前 " + MAX_RESULTS + " 条");
-                        } else {
-                            statusLabel.setText(count[0] + " 条结果");
-                        }
-                        if (!classNameGroup.getChildren().isEmpty())
-                            root.getChildren().add(classNameGroup);
-                        if (!memberGroup.getChildren().isEmpty())
-                            root.getChildren().add(memberGroup);
-                        if (!codeGroup.getChildren().isEmpty())
-                            root.getChildren().add(codeGroup);
-                        resultTree.setRoot(root);
-                        resultTree.getRoot().setExpanded(true);
-                        classNameGroup.setExpanded(true);
-                    }
                 );
             });
             debounce.playFromStart();
@@ -686,7 +712,7 @@ public final class SearchDialog {
         root.setStyle("-fx-background-color: #2d2d2d;");
         Scene scene = new Scene(root, 700, 500);
         scene.getStylesheets().add(
-            com.bingbihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
+                com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
         dialog.show();
         input.requestFocus();
@@ -710,14 +736,14 @@ Expected: BUILD SUCCESS
 ### Task 4: 大纲面板
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/outline/OutlineMember.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/outline/OutlineParser.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/outline/OutlinePane.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlineMember.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlineParser.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlinePane.java`
 
 - [ ] **Step 1: 创建 OutlineMember.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.outline;
+package com.bingbaihanji.fxdecomplie.ui.outline;
 
 /**
  * 大纲成员记录。从反编译源码中提取的字段、方法或内部类。
@@ -733,14 +759,14 @@ public record OutlineMember(
         String modifiers,
         int lineNumber
 ) {
-    public enum MemberType { FIELD, METHOD, INNER_CLASS }
+    public enum MemberType {FIELD, METHOD, INNER_CLASS}
 }
 ```
 
 - [ ] **Step 2: 创建 OutlineParser.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.outline;
+package com.bingbaihanji.fxdecomplie.ui.outline;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -757,17 +783,19 @@ import java.util.regex.Pattern;
 public final class OutlineParser {
 
     private static final Pattern METHOD_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|final|synchronized|abstract|native|\\s)*" +
-        "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
+            "^\\s*(public|protected|private|static|final|synchronized|abstract|native|\\s)*" +
+                    "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
 
     private static final Pattern FIELD_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|final|volatile|transient|\\s)*" +
-        "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*(?:=\\s*[^;]+)?;");
+            "^\\s*(public|protected|private|static|final|volatile|transient|\\s)*" +
+                    "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*(?:=\\s*[^;]+)?;");
 
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|\\s)*\\b(class|interface|enum|record)\\s+(\\w+)");
+            "^\\s*(public|protected|private|static|\\s)*\\b(class|interface|enum|record)\\s+(\\w+)");
 
-    private OutlineParser() { throw new AssertionError("utility class"); }
+    private OutlineParser() {
+        throw new AssertionError("utility class");
+    }
 
     /** @param sourceCode 反编译后的 Java 源码 */
     public static List<OutlineMember> parse(String sourceCode) {
@@ -815,7 +843,7 @@ public final class OutlineParser {
 - [ ] **Step 3: 创建 OutlinePane.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.outline;
+package com.bingbaihanji.fxdecomplie.ui.outline;
 
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;
@@ -874,8 +902,8 @@ public final class OutlinePane extends VBox {
                     };
                     setText(icon + item.name() + "  — " + item.modifiers());
                     setTextFill(javafx.scene.paint.Color.web(
-                        item.type() == OutlineMember.MemberType.METHOD ? "#dcdcaa" :
-                            item.type() == OutlineMember.MemberType.FIELD ? "#9cdcfe" : "#4ec9b0"));
+                            item.type() == OutlineMember.MemberType.METHOD ? "#dcdcaa" :
+                                    item.type() == OutlineMember.MemberType.FIELD ? "#9cdcfe" : "#4ec9b0"));
                     setStyle("-fx-background-color: transparent; -fx-font-family: 'Consolas', monospace;");
                 }
             }
@@ -915,7 +943,9 @@ public final class OutlinePane extends VBox {
     }
 
     /** 设置跳转处理器 */
-    public void setJumpHandler(JumpHandler handler) { this.jumpHandler = handler; }
+    public void setJumpHandler(JumpHandler handler) {
+        this.jumpHandler = handler;
+    }
 
     @FunctionalInterface
     public interface JumpHandler {
@@ -934,14 +964,14 @@ Expected: BUILD SUCCESS
 ### Task 5: 类继承层次
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/inheritance/InheritanceNode.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/inheritance/InheritanceService.java`
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/inheritance/InheritancePane.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritanceNode.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritanceService.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritancePane.java`
 
 - [ ] **Step 1: 创建 InheritanceNode.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.inheritance;
+package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 /**
  * 类继承层次节点记录。
@@ -973,9 +1003,9 @@ public record InheritanceNode(
 - [ ] **Step 2: 创建 InheritanceService.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.inheritance;
+package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
-import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
+import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
 import javafx.scene.control.TreeItem;
 import org.objectweb.asm.ClassReader;
 
@@ -993,7 +1023,9 @@ public final class InheritanceService {
     private static final int MAX_DEPTH = 20;
     private static final Set<String> visited = new HashSet<>();
 
-    private InheritanceService() { throw new AssertionError("utility class"); }
+    private InheritanceService() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 构建继承树。
@@ -1024,7 +1056,8 @@ public final class InheritanceService {
                         simpleName(itf), InheritanceNode.RelationType.INTERFACE, 1));
                 root.getChildren().add(ifNode);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // 向下查找子类
         findSubClasses(internalName, root);
@@ -1054,7 +1087,8 @@ public final class InheritanceService {
                             simpleName(itf), InheritanceNode.RelationType.INTERFACE, depth + 1));
                     node.getChildren().add(ifNode);
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -1076,7 +1110,8 @@ public final class InheritanceService {
                         root.getChildren().add(new TreeItem<>(data));
                     }
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         });
     }
 
@@ -1106,7 +1141,7 @@ Add this method to `BytecodeCache.java`.
 - [ ] **Step 3: 创建 InheritancePane.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.inheritance;
+package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
@@ -1142,7 +1177,8 @@ public final class InheritancePane extends VBox {
             protected void updateItem(InheritanceNode item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
-                    setText(null); setGraphic(null);
+                    setText(null);
+                    setGraphic(null);
                 } else {
                     String prefix = switch (item.relation()) {
                         case SELF -> "● ";
@@ -1152,9 +1188,9 @@ public final class InheritancePane extends VBox {
                     };
                     setText(prefix + item.displayName());
                     setTextFill(javafx.scene.paint.Color.web(
-                        item.relation() == InheritanceNode.RelationType.SELF ? "#dcdcaa" :
-                            item.relation() == InheritanceNode.RelationType.SUPER_CLASS ? "#c586c0" :
-                                "#9cdcfe"));
+                            item.relation() == InheritanceNode.RelationType.SELF ? "#dcdcaa" :
+                                    item.relation() == InheritanceNode.RelationType.SUPER_CLASS ? "#c586c0" :
+                                    "#9cdcfe"));
                     setStyle("-fx-background-color: transparent; -fx-font-family: 'Consolas', monospace;");
                 }
             }
@@ -1185,10 +1221,14 @@ public final class InheritancePane extends VBox {
     }
 
     /** 清空 */
-    public void clear() { treeView.setRoot(null); }
+    public void clear() {
+        treeView.setRoot(null);
+    }
 
     /** 设置打开处理器 */
-    public void setOpenHandler(OpenHandler handler) { this.openHandler = handler; }
+    public void setOpenHandler(OpenHandler handler) {
+        this.openHandler = handler;
+    }
 
     @FunctionalInterface
     public interface OpenHandler {
@@ -1213,12 +1253,12 @@ Expected: BUILD SUCCESS
 ### Task 6: 快速打开类
 
 **Files:**
-- Create: `src/main/java/com/bingbihanji/fxdecomplie/ui/quickopen/QuickOpenDialog.java`
+- Create: `src/main/java/com/bingbaihanji/fxdecomplie/ui/quickopen/QuickOpenDialog.java`
 
 - [ ] **Step 1: 创建 QuickOpenDialog.java**
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.quickopen;
+package com.bingbaihanji.fxdecomplie.ui.quickopen;
 
 import javafx.animation.PauseTransition;
 import javafx.collections.FXCollections;
@@ -1246,7 +1286,9 @@ import java.util.List;
  */
 public final class QuickOpenDialog {
 
-    private QuickOpenDialog() { throw new AssertionError("utility class"); }
+    private QuickOpenDialog() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 显示快速打开对话框。
@@ -1276,8 +1318,9 @@ public final class QuickOpenDialog {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else {
+                if (empty || item == null) {
+                    setText(null);
+                } else {
                     int idx = item.lastIndexOf('/');
                     String display = idx >= 0 ? item.substring(idx + 1) + "  —  " + item : item;
                     setText(display);
@@ -1310,7 +1353,10 @@ public final class QuickOpenDialog {
                 e.consume();
             } else if (e.getCode() == KeyCode.ENTER) {
                 String selected = listView.getSelectionModel().getSelectedItem();
-                if (selected != null) { dialog.close(); onSelect.accept(selected); }
+                if (selected != null) {
+                    dialog.close();
+                    onSelect.accept(selected);
+                }
             } else if (e.getCode() == KeyCode.ESCAPE) {
                 dialog.close();
             }
@@ -1320,14 +1366,20 @@ public final class QuickOpenDialog {
         listView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 String selected = listView.getSelectionModel().getSelectedItem();
-                if (selected != null) { dialog.close(); onSelect.accept(selected); }
+                if (selected != null) {
+                    dialog.close();
+                    onSelect.accept(selected);
+                }
             }
         });
 
         // 失去焦点关闭
         dialog.focusedProperty().addListener((obs, was, now) -> {
-            if (!now) { PauseTransition pt = new PauseTransition(Duration.millis(200));
-                pt.setOnFinished(ev -> dialog.close()); pt.play(); }
+            if (!now) {
+                PauseTransition pt = new PauseTransition(Duration.millis(200));
+                pt.setOnFinished(ev -> dialog.close());
+                pt.play();
+            }
         });
 
         VBox root = new VBox(6, input, listView);
@@ -1337,7 +1389,7 @@ public final class QuickOpenDialog {
 
         Scene scene = new Scene(root, 550, 400);
         scene.getStylesheets().add(
-            com.bingbihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
+                com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
         dialog.show();
         input.requestFocus();
@@ -1355,7 +1407,7 @@ Expected: BUILD SUCCESS
 ### Task 7: MainWindow 集成 — DnD + 大纲绑定 + 快速打开
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java`
 
 - [ ] **Step 1: 添加 DnD 监听器**
 
@@ -1449,7 +1501,7 @@ Expected: BUILD SUCCESS
 ### Task 8: 菜单扩展 — 搜索 + 最近文件 + 快速打开
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/menu/MainMenuBar.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/MainMenuBar.java`
 
 - [ ] **Step 1: 修改 Actions 接口 — 新增方法**
 
@@ -1550,10 +1602,10 @@ Expected: BUILD SUCCESS (此时 MainWindow 编译错误，因为尚未实现 Act
 ### Task 9: 集成收尾 — AppConfig 最近文件 + ExportService 进度 + MainWindow 全部实现
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/config/AppConfig.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/io/ExportService.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/MainWindow.java`
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/app/ClassTabOpener.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/io/ExportService.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/app/ClassTabOpener.java`
 
 - [ ] **Step 1: AppConfig — 添加 addRecentFile 方法**
 
@@ -1709,7 +1761,7 @@ Expected: BUILD SUCCESS（可能会有未解析引用，逐个修复）
 ### Task 10: 最终集成 — 大纲面板 UI 布局 + 继承面板布局
 
 **Files:**
-- Modify: `src/main/java/com/bingbihanji/fxdecomplie/ui/WorkspaceTabManager.java`
+- Modify: `src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java`
 
 - [ ] **Step 1: 在 addWorkspaceTab 中添加大纲和继承面板到右侧区域**
 

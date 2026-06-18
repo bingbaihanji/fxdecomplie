@@ -7,7 +7,7 @@
 新增 4 个功能包，扩展现有菜单栏和 MainWindow：
 
 ```
-com.bingbihanji.fxdecomplie/
+com.bingbaihanji.fxdecomplie/
 ├── decompiler/           # 已有
 ├── io/                   # 已有 (ExportService 扩展进度回调)
 ├── model/                # 已有 (新增 OutlineMember, SearchResult 等数据类)
@@ -67,27 +67,27 @@ com.bingbihanji.fxdecomplie/
 #### `ui/search/SearchResult.java` — 搜索结果记录
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 /** 单条搜索结果 */
 public record SearchResult(
-    /** 所属类完整路径 */
-    String fullPath,
-    /** 匹配行内容 */
-    String matchLine,
-    /** 行号 (1-based) */
-    int lineNumber,
-    /** 匹配类型 */
-    MatchType matchType
+        /** 所属类完整路径 */
+        String fullPath,
+        /** 匹配行内容 */
+        String matchLine,
+        /** 行号 (1-based) */
+        int lineNumber,
+        /** 匹配类型 */
+        MatchType matchType
 ) {
-    public enum MatchType { CLASS_NAME, METHOD_NAME, FIELD_NAME, CODE_TEXT }
+    public enum MatchType {CLASS_NAME, METHOD_NAME, FIELD_NAME, CODE_TEXT}
 }
 ```
 
 #### `ui/search/SearchProvider.java` — 搜索提供者接口
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 import java.util.List;
 
@@ -106,11 +106,12 @@ public interface SearchProvider {
 #### `ui/search/SearchService.java` — 搜索协调器
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.ui.search;
 
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import javafx.application.Platform;
 
 /**
@@ -124,7 +125,9 @@ public final class SearchService {
         return t;
     });
 
-    private SearchService() { throw new AssertionError("utility class"); }
+    private SearchService() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 异步执行搜索。结果通过回调返回。
@@ -134,18 +137,18 @@ public final class SearchService {
      * @param onComplete   搜索完成回调（在 FX 线程）
      */
     public static void search(String query,
-                               Map<String, String> sourceCache,
-                               ResultCallback onResult,
-                               Runnable onComplete) {
+                              Map<String, String> sourceCache,
+                              ResultCallback onResult,
+                              Runnable onComplete) {
         if (query == null || query.isBlank()) {
             if (onComplete != null) Platform.runLater(onComplete);
             return;
         }
         POOL.execute(() -> {
             List<SearchProvider> providers = List.of(
-                new ClassNameSearchProvider(),
-                new CodeTextSearchProvider(),
-                new MethodFieldSearchProvider()
+                    new ClassNameSearchProvider(),
+                    new CodeTextSearchProvider(),
+                    new MethodFieldSearchProvider()
             );
             for (SearchProvider provider : providers) {
                 List<SearchResult> results = provider.search(query, sourceCache);
@@ -163,9 +166,14 @@ public final class SearchService {
     }
 
     // --- 内部 Provider 实现 ---
-    private static class ClassNameSearchProvider implements SearchProvider { ... }
-    private static class CodeTextSearchProvider implements SearchProvider { ... }
-    private static class MethodFieldSearchProvider implements SearchProvider { ... }
+    private static class ClassNameSearchProvider implements SearchProvider { ...
+    }
+
+    private static class CodeTextSearchProvider implements SearchProvider { ...
+    }
+
+    private static class MethodFieldSearchProvider implements SearchProvider { ...
+    }
 }
 ```
 
@@ -222,23 +230,23 @@ root.setOnDragDropped(event -> {
 #### `ui/outline/OutlineMember.java`
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.outline;
+package com.bingbaihanji.fxdecomplie.ui.outline;
 
 /** 大纲成员 */
 public record OutlineMember(
-    String name,        // 方法名/字段名/内部类名
-    MemberType type,    // FIELD / METHOD / INNER_CLASS
-    String modifiers,   // "public static" / "private" 等
-    int lineNumber      // 1-based 行号
+        String name,        // 方法名/字段名/内部类名
+        MemberType type,    // FIELD / METHOD / INNER_CLASS
+        String modifiers,   // "public static" / "private" 等
+        int lineNumber      // 1-based 行号
 ) {
-    public enum MemberType { FIELD, METHOD, INNER_CLASS }
+    public enum MemberType {FIELD, METHOD, INNER_CLASS}
 }
 ```
 
 #### `ui/outline/OutlineParser.java`
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.outline;
+package com.bingbaihanji.fxdecomplie.ui.outline;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -253,22 +261,24 @@ public final class OutlineParser {
 
     // 方法声明: 修饰符* 返回类型 方法名 (参数)
     private static final Pattern METHOD_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|final|synchronized|abstract|native|\\s)*" +
-        "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]"
+            "^\\s*(public|protected|private|static|final|synchronized|abstract|native|\\s)*" +
+                    "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]"
     );
 
     // 字段声明: 修饰符* 类型 名称 [= 初始值];
     private static final Pattern FIELD_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|final|volatile|transient|\\s)*" +
-        "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*(?:=\\s*[^;]+)?;"
+            "^\\s*(public|protected|private|static|final|volatile|transient|\\s)*" +
+                    "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*(?:=\\s*[^;]+)?;"
     );
 
     // 内部类/接口声明
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|\\s)*(class|interface|enum|record)\\s+(\\w+)"
+            "^\\s*(public|protected|private|static|\\s)*(class|interface|enum|record)\\s+(\\w+)"
     );
 
-    private OutlineParser() { throw new AssertionError("utility class"); }
+    private OutlineParser() {
+        throw new AssertionError("utility class");
+    }
 
     public static List<OutlineMember> parse(String sourceCode) {
         List<OutlineMember> members = new ArrayList<>();
@@ -302,6 +312,7 @@ public final class OutlineParser {
     }
 
     private static int countChar(String s, char c) { /* ... */ }
+
     private static String extractModifiers(String s) { /* ... */ }
 }
 ```
@@ -406,32 +417,31 @@ Platform.runLater(() -> statusBar.setFilePath(formatClassPath(node.getFullPath()
 #### `ui/inheritance/InheritanceNode.java`
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.inheritance;
+package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 public record InheritanceNode(
-    String className,     // 全路径
-    String displayName,   // 简短类名
-    RelationType type,    // SUPER_CLASS / SUBCLASS / INTERFACE
-    int depth             // 相对当前类的深度
+        String className,     // 全路径
+        String displayName,   // 简短类名
+        RelationType type,    // SUPER_CLASS / SUBCLASS / INTERFACE
+        int depth             // 相对当前类的深度
 ) {
-    public enum RelationType { SUPER_CLASS, SUBCLASS, INTERFACE }
+    public enum RelationType {SUPER_CLASS, SUBCLASS, INTERFACE}
 }
 ```
 
 #### `ui/inheritance/InheritanceService.java`
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.inheritance;
-
-import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
-import org.objectweb.asm.ClassReader;
+package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 /**
  * 类继承关系分析服务。使用 ASM 读取常量池中的 super_class 和 interfaces。
  */
 public final class InheritanceService {
 
-    private InheritanceService() { throw new AssertionError("utility class"); }
+    private InheritanceService() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 构建继承树。
@@ -455,10 +465,12 @@ public final class InheritanceService {
     }
 
     private static void findSuperClasses(String internalName,
-            javafx.scene.control.TreeItem<InheritanceNode> parent, int depth) { ... }
+                                         javafx.scene.control.TreeItem<InheritanceNode> parent, int depth) { ...}
+
     private static void findSubClasses(String internalName,
-            javafx.scene.control.TreeItem<InheritanceNode> parent, int depth) { ... }
-    private static String simpleName(String fullName) { ... }
+                                       javafx.scene.control.TreeItem<InheritanceNode> parent, int depth) { ...}
+
+    private static String simpleName(String fullName) { ...}
 }
 ```
 
@@ -480,7 +492,7 @@ public final class InheritanceService {
 #### `ui/quickopen/QuickOpenDialog.java`
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.quickopen;
+package com.bingbaihanji.fxdecomplie.ui.quickopen;
 
 /**
  * 快速打开类对话框。类似 IntelliJ Ctrl+N。
@@ -488,7 +500,9 @@ package com.bingbihanji.fxdecomplie.ui.quickopen;
  */
 public final class QuickOpenDialog {
 
-    private QuickOpenDialog() { throw new AssertionError("utility class"); }
+    private QuickOpenDialog() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 显示快速打开对话框。
@@ -556,7 +570,7 @@ public class com.example.MyClass {
 #### `ui/code/BytecodeViewTab.java`
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
 import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
@@ -569,7 +583,9 @@ import java.io.StringWriter;
 /** 字节码视图。将 .class 字节码转为标准汇编文本显示。 */
 public final class BytecodeViewTab {
 
-    private BytecodeViewTab() { throw new AssertionError("utility class"); }
+    private BytecodeViewTab() {
+        throw new AssertionError("utility class");
+    }
 
     /** 将 class 字节码转为汇编文本并设置到 CodeArea */
     public static CodeArea createView(byte[] classBytes) {
@@ -622,20 +638,20 @@ CodeEditorTab
 #### `ui/code/ClassInfoView.java`
 
 ```java
-package com.bingbihanji.fxdecomplie.ui.code;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
-import javafx.scene.control.ListView;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import org.objectweb.asm.ClassReader;
-import java.util.*;
 
 /**
  * 类信息视图。展示 class 文件的版本号、访问标志、常量池等结构化元数据。
  */
 public final class ClassInfoView {
 
-    private ClassInfoView() { throw new AssertionError("utility class"); }
+    private ClassInfoView() {
+        throw new AssertionError("utility class");
+    }
 
     public static VBox createView(byte[] classBytes) {
         ClassReader reader = new ClassReader(classBytes);
