@@ -1,39 +1,30 @@
 package com.bingbihanji.fxdecomplie;
 
-import com.bingbihanji.fxdecomplie.app.BackgroundTasks;
-import com.bingbihanji.fxdecomplie.app.ClassTabOpener;
-import com.bingbihanji.fxdecomplie.app.ProcessService;
 import com.bingbihanji.fxdecomplie.config.AppConfig;
 import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbihanji.fxdecomplie.di.ServiceRegistry;
-import com.bingbihanji.fxdecomplie.io.ClassDiscoverer;
-import com.bingbihanji.fxdecomplie.io.ExportService;
-import com.bingbihanji.fxdecomplie.io.FileTreeBuilder;
-import com.bingbihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbihanji.fxdecomplie.model.Workspace;
+import com.bingbihanji.fxdecomplie.model.*;
+import com.bingbihanji.fxdecomplie.service.*;
 import com.bingbihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbihanji.fxdecomplie.ui.export.ExportDialog;
 import com.bingbihanji.fxdecomplie.ui.menu.MainMenuBar;
 import com.bingbihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
+import com.bingbihanji.fxdecomplie.ui.search.*;
 import com.bingbihanji.fxdecomplie.ui.settings.SettingsDialog;
-import com.bingbihanji.fxdecomplie.ui.search.BytecodeSearchProvider;
-import com.bingbihanji.fxdecomplie.ui.search.ClassSearchProvider;
-import com.bingbihanji.fxdecomplie.ui.search.CodeSearchProvider;
-import com.bingbihanji.fxdecomplie.ui.search.CommentSearchProvider;
-import com.bingbihanji.fxdecomplie.ui.search.MethodSearchProvider;
-import com.bingbihanji.fxdecomplie.ui.search.ResourceSearchProvider;
-import com.bingbihanji.fxdecomplie.ui.search.SearchDialog;
-import com.bingbihanji.fxdecomplie.ui.search.SearchService;
 import com.bingbihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbihanji.fxdecomplie.ui.tree.FileTreeView;
+import com.bingbihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbihanji.fxdecomplie.ui.window.AppHeaderBar;
+import com.bingbihanji.fxdecomplie.utils.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TreeItem;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -43,13 +34,25 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Central controller of the FxDecompiler application window.
+ * Manages the outer workspace TabPane, inner code tabs, menu bar actions,
+ * file loading, search, export, and all user interactions.
+ *
+ * @author bingbaihanji
+ * @date 2026-06-18
+ */
 public class MainWindow implements MainMenuBar.Actions {
 
     /** 应用配置 */
     private final AppConfig config;
-    /** 服务注册表 */
-    private final ServiceRegistry serviceRegistry;
     /** 编辑器主题数据 */
     private final VsCodeThemeLoader.ThemeData editorTheme;
     /** 是否使用自定义标题栏 */
@@ -71,12 +74,11 @@ public class MainWindow implements MainMenuBar.Actions {
     private boolean lineNumbersEnabled;
 
     public MainWindow(AppConfig config) {
-        this(config, new ServiceRegistry(), false);
+        this(config, false);
     }
 
-    public MainWindow(AppConfig config, ServiceRegistry serviceRegistry, boolean useHeaderBar) {
+    public MainWindow(AppConfig config, boolean useHeaderBar) {
         this.config = config;
-        this.serviceRegistry = serviceRegistry;
         this.useHeaderBar = useHeaderBar;
         this.editorTheme = AppTheme.loadEditorTheme(config);
         this.lineNumbersEnabled = config.decompiler.lineNumbersEnabled;
@@ -145,7 +147,7 @@ public class MainWindow implements MainMenuBar.Actions {
     @Override
     public void openFile() {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("打开文件");
+        chooser.setTitle(I18nUtil.getString("dialog.openFile.title"));
         chooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Java Archives & Class Files", "*.jar", "*.zip", "*.class"),
                 new FileChooser.ExtensionFilter("All Files", "*.*")
@@ -160,10 +162,82 @@ public class MainWindow implements MainMenuBar.Actions {
     @Override
     public void openDirectory() {
         DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("打开目录");
+        chooser.setTitle(I18nUtil.getString("dialog.openDir.title"));
         File dir = chooser.showDialog(stage);
         if (dir != null) {
             loadFile(dir);
+        }
+    }
+
+    /** 打开项目文件 */
+    @Override
+    public void openProject() {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(I18nUtil.getString("project.open"));
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("FxDecompiler Project", "*.fxdproj"));
+        File file = chooser.showOpenDialog(stage);
+        if (file == null) {
+            return;
+        }
+        try {
+            DecompilerProject project = ProjectFileManager.load(file.toPath());
+            currentEngine = parseDecompiler(project.engine());
+            config.decompiler.defaultEngine = currentEngine.name();
+            if (!project.exportPath().isBlank()) {
+                config.export.lastPath = project.exportPath();
+            }
+            for (String inputPath : project.inputPaths()) {
+                File input = new File(inputPath);
+                if (input.exists()) {
+                    loadFile(input);
+                }
+            }
+            statusBar.setFilePath(I18nUtil.getString("project.opened", file.getAbsolutePath()));
+        } catch (IOException ex) {
+            showError(I18nUtil.getString("dialog.error.title"),
+                    I18nUtil.getString("project.open.failed", ex.getMessage()));
+        }
+    }
+
+    /** 保存当前项目文件 */
+    @Override
+    public void saveProject() {
+        List<String> inputPaths = new ArrayList<>();
+        String selectedPath = "";
+        Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
+        for (Tab tab : outerTabPane.getTabs()) {
+            WorkspaceView view = tabManager.getWorkspaceViews().get(tab);
+            if (view == null) {
+                continue;
+            }
+            String path = view.workspace().getSourceFile().getAbsolutePath();
+            inputPaths.add(path);
+            if (tab == selected) {
+                selectedPath = path;
+            }
+        }
+        if (inputPaths.isEmpty()) {
+            showWarning(I18nUtil.getString("project.save"), I18nUtil.getString("dialog.export.noworkspace"));
+            return;
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(I18nUtil.getString("project.save"));
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("FxDecompiler Project", "*.fxdproj"));
+        chooser.setInitialFileName("workspace.fxdproj");
+        File file = chooser.showSaveDialog(stage);
+        if (file == null) {
+            return;
+        }
+        try {
+            ProjectFileManager.save(file.toPath(), new DecompilerProject(
+                    1, currentEngine.name(), inputPaths, selectedPath, config.export.lastPath));
+            statusBar.setFilePath(I18nUtil.getString("project.saved", file.getAbsolutePath()));
+        } catch (IOException ex) {
+            showError(I18nUtil.getString("dialog.error.title"),
+                    I18nUtil.getString("project.save.failed", ex.getMessage()));
         }
     }
 
@@ -196,7 +270,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
 
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("保存文件");
+        chooser.setTitle(I18nUtil.getString("dialog.saveFile.title"));
         chooser.setInitialFileName(codeTab.getOpenFile().getClassName() + ".java");
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Java Source", "*.java"));
         File file = chooser.showSaveDialog(stage);
@@ -206,9 +280,10 @@ public class MainWindow implements MainMenuBar.Actions {
 
         try {
             ExportService.exportCurrentCode(codeTab.getOpenFile().getSourceCode(), file.toPath());
-            statusBar.setFilePath("已保存: " + file.getAbsolutePath());
+            statusBar.setFilePath(I18nUtil.getString("status.saved", file.getAbsolutePath()));
         } catch (IOException ex) {
-            showError(I18nUtil.getString("dialog.error.title"), "保存失败: " + ex.getMessage());
+            showError(I18nUtil.getString("dialog.error.title"),
+                    I18nUtil.getString("dialog.save.failed", ex.getMessage()));
         }
     }
 
@@ -221,24 +296,120 @@ public class MainWindow implements MainMenuBar.Actions {
             return;
         }
 
-        DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("选择导出目录");
-        File dir = chooser.showDialog(stage);
-        if (dir == null) {
+        var configOpt = ExportDialog.show(stage, config, currentEngine);
+        if (configOpt.isEmpty()) {
             return;
         }
+        ExportConfig exportConfig = configOpt.get();
+        persistExportConfig(exportConfig);
 
-        BackgroundTasks.run("ExportAll", () -> {
+        ExportDialog.ProgressHandle progressHandle = ExportDialog.showProgress(stage);
+        final Future<?>[] exportTask = new Future<?>[1];
+        AtomicBoolean exportCanceled = new AtomicBoolean(false);
+        progressHandle.setOnCancel(() -> {
+            exportCanceled.set(true);
+            BackgroundTasks.cancel(exportTask[0]);
+        });
+        exportTask[0] = BackgroundTasks.run("ExportAll", () -> {
             try {
-                ExportService.exportAllToDir(view.workspace().getTreeRoot(), currentEngine,
-                        dir.toPath(), pct -> Platform.runLater(() ->
-                                statusBar.setFilePath(I18nUtil.getString("status.exporting", pct))));
+                ExportResult result = ExportService.exportAll(
+                        view.workspace().getTreeRoot(),
+                        exportConfig,
+                        view.workspace().getIndex(),
+                        (path, pct) -> Platform.runLater(() -> {
+                            statusBar.setFilePath(I18nUtil.getString(
+                                    "status.exporting.detail", pct, path));
+                            progressHandle.update(path, pct);
+                        }));
                 Platform.runLater(() -> {
-                    statusBar.setFilePath(I18nUtil.getString("status.exportDone", dir.getAbsolutePath()));
-                    showInfo("导出成功", "导出完成到: " + dir.getAbsolutePath());
+                    progressHandle.close();
+                    if (exportCanceled.get()) {
+                        statusBar.setFilePath(I18nUtil.getString("dialog.export.canceled"));
+                        showWarning(I18nUtil.getString("dialog.export.title"),
+                                I18nUtil.getString("dialog.export.canceled"));
+                        return;
+                    }
+                    statusBar.setFilePath(I18nUtil.getString(
+                            "status.exportDone", exportConfig.outputPath()));
+                    showExportResult(exportConfig, result);
                 });
             } catch (IOException ex) {
-                Platform.runLater(() -> showError(I18nUtil.getString("dialog.error.title"), "导出失败: " + ex.getMessage()));
+                Platform.runLater(() -> {
+                    progressHandle.close();
+                    showError(I18nUtil.getString("dialog.error.title"),
+                            I18nUtil.getString("dialog.export.failed", ex.getMessage()));
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    progressHandle.close();
+                    if (exportCanceled.get()) {
+                        showWarning(I18nUtil.getString("dialog.export.title"),
+                                I18nUtil.getString("dialog.export.canceled"));
+                    } else {
+                        showError(I18nUtil.getString("dialog.error.title"),
+                                I18nUtil.getString("dialog.export.failed", ex.getMessage()));
+                    }
+                });
+            }
+        });
+    }
+
+    private void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
+        if (rootItem == null || rootItem.getValue() == null) {
+            return;
+        }
+        var configOpt = ExportDialog.show(stage, config, currentEngine);
+        if (configOpt.isEmpty()) {
+            return;
+        }
+        ExportConfig exportConfig = configOpt.get();
+        persistExportConfig(exportConfig);
+
+        ExportDialog.ProgressHandle progressHandle = ExportDialog.showProgress(stage);
+        final Future<?>[] exportTask = new Future<?>[1];
+        AtomicBoolean exportCanceled = new AtomicBoolean(false);
+        progressHandle.setOnCancel(() -> {
+            exportCanceled.set(true);
+            BackgroundTasks.cancel(exportTask[0]);
+        });
+        exportTask[0] = BackgroundTasks.run("ExportNode", () -> {
+            try {
+                ExportResult result = ExportService.exportAll(rootItem, exportConfig,
+                        WorkspaceIndex.build(rootItem),
+                        (path, pct) -> Platform.runLater(() -> {
+                            statusBar.setFilePath(I18nUtil.getString(
+                                    "status.exporting.detail", pct, path));
+                            progressHandle.update(path, pct);
+                        }));
+                Platform.runLater(() -> {
+                    progressHandle.close();
+                    if (exportCanceled.get()) {
+                        statusBar.setFilePath(I18nUtil.getString("dialog.export.canceled"));
+                        showWarning(I18nUtil.getString("dialog.export.title"),
+                                I18nUtil.getString("dialog.export.canceled"));
+                        return;
+                    }
+                    statusBar.setFilePath(I18nUtil.getString(
+                            "status.exportDone", exportConfig.outputPath()));
+                    showExportResult(exportConfig, result);
+                });
+            } catch (IOException ex) {
+                Platform.runLater(() -> {
+                    progressHandle.close();
+                    showError(I18nUtil.getString("dialog.error.title"),
+                            I18nUtil.getString("dialog.export.failed", ex.getMessage()));
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    progressHandle.close();
+                    if (exportCanceled.get()) {
+                        showWarning(I18nUtil.getString("dialog.export.title"),
+                                I18nUtil.getString("dialog.export.canceled"));
+                    } else {
+                        showError(I18nUtil.getString("dialog.error.title"),
+                                I18nUtil.getString("dialog.export.failed", ex.getMessage()));
+                    }
+                });
             }
         });
     }
@@ -340,7 +511,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
         currentEngine = engine;
         config.decompiler.defaultEngine = engine.name();
-        statusBar.setFilePath("当前引擎: " + engine.name());
+        statusBar.setFilePath(I18nUtil.getString("status.currentEngine", engine.name()));
 
         WorkspaceView view = tabManager.currentWorkspaceView();
         CodeEditorTab currentTab = tabManager.currentCodeTab();
@@ -355,7 +526,12 @@ public class MainWindow implements MainMenuBar.Actions {
     @Override
     public void openSearch() {
         var view = tabManager.currentWorkspaceView();
-        if (view == null) { showWarning("提示", "请先打开文件"); return; }
+        if (view == null) {
+            showWarning(I18nUtil.getString("search.title"),
+                    I18nUtil.getString("dialog.needOpenFile"));
+            return;
+        }
+        var index = view.workspace().getIndex();
 
         // Build source cache from open tabs
         java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
@@ -366,37 +542,43 @@ public class MainWindow implements MainMenuBar.Actions {
             }
         }
 
-        // Build class name list for ClassSearchProvider
-        java.util.List<String> classNames = new java.util.ArrayList<>();
-        collectClassNames(view.workspace().getTreeRoot(), classNames);
-
-        // Build resource cache for ResourceSearchProvider
-        java.util.Map<String, byte[]> resourceCache = new java.util.HashMap<>();
-        collectResourceBytes(view.workspace().getTreeRoot(), resourceCache);
-
-        // Build bytecode cache for BytecodeSearchProvider (javap text)
-        java.util.Map<String, String> bytecodeCache = new java.util.HashMap<>();
-        // TODO: populate with javap-style output when bytecode view is available
-
         // Create SearchService with all providers
         SearchService searchService = new SearchService();
-        searchService.addProvider(new ClassSearchProvider(classNames));
+        searchService.addProvider(new ClassSearchProvider(index.classPaths()));
+        searchService.addProvider(new IndexedMemberSearchProvider(index));
         searchService.addProvider(new MethodSearchProvider());
         searchService.addProvider(new CodeSearchProvider());
         searchService.addProvider(new CommentSearchProvider());
-        searchService.addProvider(new ResourceSearchProvider(resourceCache));
-        searchService.addProvider(new BytecodeSearchProvider(bytecodeCache));
+        searchService.addProvider(new ResourceSearchProvider(index.resourceBytesByPath()));
+        searchService.addProvider(new BytecodeSearchProvider(index.bytecodeTextByPath()));
 
-        SearchDialog.show(stage, searchService, sourceCache, (fullPath, lineNumber) -> {
-            openClassByPath(view, fullPath, lineNumber);
-        });
+        SearchDialog.show(stage, searchService, sourceCache,
+                () -> buildFullSourceCache(view, sourceCache),
+                config.search.fullSourceSearch, config.search.resultLimit,
+                (fullPath, lineNumber) -> openClassByPath(view, fullPath, lineNumber));
+    }
+
+    /** 查找当前工作区内的类/方法/字段使用。 */
+    @Override
+    public void openFindUsages() {
+        var view = tabManager.currentWorkspaceView();
+        if (view == null) {
+            showWarning(I18nUtil.getString("usage.title"), I18nUtil.getString("dialog.export.noworkspace"));
+            return;
+        }
+        FindUsageDialog.show(stage, view.workspace().getIndex(),
+                (fullPath, lineNumber) -> openClassByPath(view, fullPath, lineNumber));
     }
 
     /** 快速打开类 */
     @Override
     public void quickOpenClass() {
         var view = tabManager.currentWorkspaceView();
-        if (view == null) { showWarning(I18nUtil.getString("dialog.export.title"), "请先打开文件"); return; }
+        if (view == null) {
+            showWarning(I18nUtil.getString("menu.edit.quickOpen"),
+                    I18nUtil.getString("dialog.needOpenFile"));
+            return;
+        }
         java.util.List<String> classNames = new java.util.ArrayList<>();
         collectClassNames(view.workspace().getTreeRoot(), classNames);
         QuickOpenDialog.show(stage, classNames, fullPath -> {
@@ -414,6 +596,13 @@ public class MainWindow implements MainMenuBar.Actions {
         loadFile(new java.io.File(path));
     }
 
+    /** 启动参数或外部入口打开文件/目录。 */
+    public void openInitialFile(File file) {
+        if (file != null && file.exists()) {
+            loadFile(file);
+        }
+    }
+
     /** 获取最近文件列表 */
     @Override
     public java.util.List<String> getRecentFiles() {
@@ -429,6 +618,34 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
+    /** 显示关于对话框 */
+    @Override
+    public void about() {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.initOwner(stage);
+        alert.setTitle("关于 FxDecompiler");
+        alert.setHeaderText("FxDecompiler");
+
+        javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink("www.bingbaihanji.com");
+        link.setOnAction(e -> {
+            try {
+                java.awt.Desktop.getDesktop().browse(java.net.URI.create("https://www.bingbaihanji.com"));
+            } catch (java.io.IOException ignored) {
+            }
+        });
+
+        javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(8,
+                new javafx.scene.control.Label("基于 JavaFX 的 Java 反编译工具。"),
+                new javafx.scene.control.Label("支持 Procyon / CFR / Vineflower / JD-Core 四种引擎。"),
+                new javafx.scene.control.Label(""),
+                new javafx.scene.control.Label("开发者: 冰白寒祭"),
+                new javafx.scene.control.Label("开发日期: 2026-06-18"),
+                new javafx.scene.control.Label("网站: "),
+                link);
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
+    }
+
     /** 打开设置对话框 */
     @Override
     public void openSettings() {
@@ -440,6 +657,38 @@ public class MainWindow implements MainMenuBar.Actions {
             selectEngine(parseDecompiler(updated.decompiler.defaultEngine));
         }
         lineNumbersEnabled = updated.decompiler.lineNumbersEnabled;
+    }
+
+    private void persistExportConfig(ExportConfig exportConfig) {
+        config.export.defaultEngine = exportConfig.engine().name();
+        config.export.defaultFormat = exportConfig.format().name();
+        config.export.conflictPolicy = exportConfig.conflictPolicy().name();
+        config.export.exportResources = exportConfig.exportResources();
+        config.export.lastPath = exportConfig.outputPath().toString();
+        config.save();
+    }
+
+    private void showExportResult(ExportConfig exportConfig, ExportResult result) {
+        if (!result.hasErrors()) {
+            showInfo(I18nUtil.getString("dialog.export.success.title"),
+                    I18nUtil.getString("dialog.export.success.message",
+                            result.successCount(), exportConfig.outputPath()));
+            return;
+        }
+
+        int limit = Math.min(8, result.errors().size());
+        StringBuilder message = new StringBuilder(I18nUtil.getString(
+                "dialog.export.partial.message",
+                result.successCount(), result.totalFiles(), result.failedCount()));
+        message.append(System.lineSeparator()).append(System.lineSeparator());
+        for (int i = 0; i < limit; i++) {
+            message.append("- ").append(result.errors().get(i)).append(System.lineSeparator());
+        }
+        if (result.errors().size() > limit) {
+            message.append(I18nUtil.getString(
+                    "dialog.export.moreErrors", result.errors().size() - limit));
+        }
+        showWarning(I18nUtil.getString("dialog.export.partial.title"), message.toString());
     }
 
     // helpers
@@ -473,18 +722,20 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    private void collectResourceBytes(TreeItem<FileTreeNode> item,
-                                       java.util.Map<String, byte[]> result) {
-        FileTreeNode data = item.getValue();
-        if (data != null) {
-            byte[] bytes = data.getCachedBytes();
-            if (bytes != null && bytes.length > 0) {
-                result.putIfAbsent(data.getFullPath(), bytes);
+    private Map<String, String> buildFullSourceCache(WorkspaceView view,
+                                                     Map<String, String> openTabSourceCache) {
+        Map<String, String> fullSourceCache = new LinkedHashMap<>(openTabSourceCache);
+        var decompiler = DecompilerFactory.getDecompiler(currentEngine);
+        for (var cls : view.workspace().getIndex().classes()) {
+            if (Thread.currentThread().isInterrupted()) {
+                break;
             }
+            fullSourceCache.computeIfAbsent(cls.fullPath(),
+                    path -> decompiler.decompile(cls.fullPath(), cls.bytes(),
+                            com.bingbihanji.fxdecomplie.decompiler.DecompilerContext
+                                    .fromWorkspaceIndex(view.workspace().getIndex())));
         }
-        for (TreeItem<FileTreeNode> child : item.getChildren()) {
-            collectResourceBytes(child, result);
-        }
+        return fullSourceCache;
     }
 
     /** 加载并打开文件 */
@@ -493,16 +744,22 @@ public class MainWindow implements MainMenuBar.Actions {
         boolean isArchive = isArchive(file);
         statusBar.setFilePath(I18nUtil.getString("status.loading", file.getAbsolutePath()));
 
+        // ---- Pipeline: discover -> build tree -> create workspace -> add tab (all on background thread) ----
         BackgroundTasks.run("FileLoader-" + name, () -> {
             try {
+                // ---- Step 1: scan JAR/ZIP/directory for all .class and resource entries ----
                 var entries = ClassDiscoverer.discover(file);
+                // ---- Step 2: build hierarchical file tree with bytecode caching ----
                 TreeItem<FileTreeNode> treeRoot = FileTreeBuilder.build(name, entries);
+                // ---- Step 3: create workspace model with index ----
                 Workspace workspace = new Workspace(name, file, treeRoot, isArchive);
+                // ---- Step 4: create UI (file tree + code tabs) on JavaFX thread ----
                 Platform.runLater(() -> tabManager.addWorkspaceTab(workspace,
                         (node, codeTabPane) -> classTabOpener.openClassTab(
                                 node, workspace, codeTabPane, currentEngine, lineNumbersEnabled),
                         (node, codeTabPane) -> classTabOpener.openTextFileTab(
-                                node, workspace, codeTabPane)));
+                                node, workspace, codeTabPane),
+                        this::exportTreeItem));
                 config.addRecentFile(file.getAbsolutePath());
             } catch (IOException e) {
                 Platform.runLater(() -> showError(I18nUtil.getString("dialog.error.title"), I18nUtil.getString("dialog.load.error") + ": " + e.getMessage()));

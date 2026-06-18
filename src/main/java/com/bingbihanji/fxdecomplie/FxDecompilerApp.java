@@ -2,16 +2,18 @@ package com.bingbihanji.fxdecomplie;
 
 import com.bingbihanji.fxdecomplie.config.AppConfig;
 import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbihanji.fxdecomplie.di.ServiceRegistry;
-import com.bingbihanji.fxdecomplie.events.EventBus;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 /**
  * FxDecompiler 应用启动器，负责启用 JavaFX 预览特性并引导 Application 启动。
@@ -20,6 +22,8 @@ import java.nio.file.Path;
  * @date 2026-06-17
  */
 public final class FxDecompilerApp {
+
+    private static final Logger logger = LoggerFactory.getLogger(FxDecompilerApp.class);
 
     /** JavaFX 预览属性名 */
     private static final String JAVAFX_PREVIEW_PROPERTY = "javafx.enablePreview";
@@ -41,8 +45,7 @@ public final class FxDecompilerApp {
             Thread.setDefaultUncaughtExceptionHandler((thread, error) -> writeStartupFailure(error));
             Application.launch(FxApplication.class, args);
         } catch (Throwable ex) {
-            System.err.println("FxDecompiler launcher failed:");
-            ex.printStackTrace(System.err);
+            logger.error("FxDecompiler launcher failed", ex);
             writeStartupFailure(ex);
             throw ex;
         }
@@ -65,8 +68,7 @@ public final class FxDecompilerApp {
             }
             Files.writeString(STARTUP_ERROR_LOG, buffer.toString());
         } catch (Exception e) {
-            System.getLogger(FxDecompilerApp.class.getName())
-                    .log(System.Logger.Level.WARNING, "Failed to write startup error log", e);
+            logger.warn("Failed to write startup error log", e);
         }
     }
 
@@ -80,8 +82,7 @@ public final class FxDecompilerApp {
             try {
                 startApplication(primaryStage);
             } catch (Throwable ex) {
-                System.err.println("FxDecompiler startup failed:");
-                ex.printStackTrace(System.err);
+                logger.error("FxDecompiler startup failed", ex);
                 writeStartupFailure(ex);
                 throw ex;
             }
@@ -91,12 +92,9 @@ public final class FxDecompilerApp {
         @SuppressWarnings("deprecation")
         /** 启动 JavaFX 应用 */
         private void startApplication(Stage primaryStage) {
-            System.err.println("FxDecompiler startup build: headerBar-2026-06-17");
+            logger.info("FxDecompiler startup build: headerBar-2026-06-17");
             config = AppConfig.load();
-
-            // Initialize service registry and event bus
-            ServiceRegistry registry = new ServiceRegistry();
-            registry.registerSingleton(EventBus.class, new EventBus());
+            applyConfiguredLocale();
 
             primaryStage.initStyle(StageStyle.EXTENDED);
 
@@ -106,10 +104,33 @@ public final class FxDecompilerApp {
             primaryStage.setHeight(config.window.height);
             primaryStage.setMaximized(config.window.maximized);
 
-            MainWindow window = new MainWindow(config, registry, true);
+            MainWindow window = new MainWindow(config, true);
             window.show(primaryStage);
+            openStartupPath(window);
 
             primaryStage.setOnCloseRequest(e -> saveWindowState(primaryStage));
+        }
+
+        /** 处理 --open <path> 启动参数。 */
+        private void openStartupPath(MainWindow window) {
+            var args = getParameters().getRaw();
+            for (int i = 0; i < args.size(); i++) {
+                String arg = args.get(i);
+                if ("--open".equals(arg) && i + 1 < args.size()) {
+                    Path path = Path.of(args.get(++i));
+                    if (Files.exists(path)) {
+                        window.openInitialFile(path.toFile());
+                    }
+                }
+            }
+        }
+
+        private void applyConfiguredLocale() {
+            if ("en".equalsIgnoreCase(config.language)) {
+                com.bingbihanji.fxdecomplie.utils.I18nUtil.switchLocale(Locale.ENGLISH);
+            } else if ("zh-CN".equalsIgnoreCase(config.language)) {
+                com.bingbihanji.fxdecomplie.utils.I18nUtil.switchLocale(Locale.SIMPLIFIED_CHINESE);
+            }
         }
 
         @Override

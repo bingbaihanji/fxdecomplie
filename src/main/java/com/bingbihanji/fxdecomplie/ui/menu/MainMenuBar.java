@@ -24,36 +24,38 @@ public class MainMenuBar extends MenuBar {
                 createEditMenu(actions),
                 createViewMenu(actions),
                 createEngineMenu(actions, currentEngine),
-                createThemeMenu(),
                 createWindowMenu(actions),
-                createHelpMenu()
+                createHelpMenu(actions)
         );
     }
 
     /** 创建文件菜单 */
     private Menu createFileMenu(Actions actions) {
-        Menu fileMenu = new Menu("文件(F)");
+        Menu fileMenu = new Menu(I18nUtil.getString("menu.file"));
 
-        MenuItem openFile = item("打开文件...", "Shortcut+O", actions::openFile);
-        MenuItem openDir = item("打开目录...", "Shortcut+Shift+O", actions::openDirectory);
-        MenuItem closeCurrent = item("关闭当前", "Shortcut+W", actions::closeCurrentWorkspace);
-        MenuItem closeOthers = item("关闭其他", null, actions::closeOtherWorkspaces);
-        MenuItem saveFile = item("保存当前文件", "Shortcut+S", actions::saveCurrentFile);
-        MenuItem exportAll = item("全部导出...", "Shortcut+Shift+E", actions::exportAllFiles);
-        MenuItem exit = item("退出", null, actions::exit);
+        MenuItem openFile = item(I18nUtil.getString("menu.file.open"), "Shortcut+O", actions::openFile);
+        MenuItem openDir = item(I18nUtil.getString("menu.file.openDir"), "Shortcut+Shift+O", actions::openDirectory);
+        MenuItem openProject = item(I18nUtil.getString("project.open"), null, actions::openProject);
+        MenuItem saveProject = item(I18nUtil.getString("project.save"), null, actions::saveProject);
+        MenuItem closeCurrent = item(I18nUtil.getString("menu.file.close"), "Shortcut+W", actions::closeCurrentWorkspace);
+        MenuItem closeOthers = item(I18nUtil.getString("menu.file.closeOthers"), null, actions::closeOtherWorkspaces);
+        MenuItem saveFile = item(I18nUtil.getString("menu.file.save"), "Shortcut+S", actions::saveCurrentFile);
+        MenuItem exportAll = item(I18nUtil.getString("menu.file.exportAll"), "Shortcut+Shift+E", actions::exportAllFiles);
+        MenuItem exit = item(I18nUtil.getString("menu.file.exit"), null, actions::exit);
 
         fileMenu.getItems().addAll(
-                openFile, openDir, new SeparatorMenuItem(),
+                openFile, openDir, openProject, saveProject, new SeparatorMenuItem(),
                 closeCurrent, closeOthers, new SeparatorMenuItem(),
                 saveFile, exportAll
         );
 
-        Menu recentMenu = new Menu("最近打开");
+        Menu recentMenu = new Menu(I18nUtil.getString("menu.file.recent"));
         recentMenu.setOnShowing(e -> {
             recentMenu.getItems().clear();
             java.util.List<String> recents = actions.getRecentFiles();
             if (recents.isEmpty()) {
-                javafx.scene.control.MenuItem none = new javafx.scene.control.MenuItem("(无)");
+                javafx.scene.control.MenuItem none = new javafx.scene.control.MenuItem(
+                        I18nUtil.getString("menu.file.recent.empty"));
                 none.setDisable(true);
                 recentMenu.getItems().add(none);
             } else {
@@ -74,28 +76,29 @@ public class MainMenuBar extends MenuBar {
 
     /** 创建编辑菜单 */
     private Menu createEditMenu(Actions actions) {
-        Menu editMenu = new Menu("编辑(E)");
-        MenuItem copy = item("复制", "Shortcut+C", actions::copySelection);
-        MenuItem selectAll = item("全选", "Shortcut+A", actions::selectAll);
-        MenuItem quickOpen = item("快速打开类...", "Shortcut+N", actions::quickOpenClass);
-        MenuItem search = item("全文搜索...", "Shortcut+Shift+F", actions::openSearch);
+        Menu editMenu = new Menu(I18nUtil.getString("menu.edit"));
+        MenuItem copy = item(I18nUtil.getString("menu.edit.copy"), "Shortcut+C", actions::copySelection);
+        MenuItem selectAll = item(I18nUtil.getString("menu.edit.selectAll"), "Shortcut+A", actions::selectAll);
+        MenuItem quickOpen = item(I18nUtil.getString("menu.edit.quickOpen"), "Shortcut+N", actions::quickOpenClass);
+        MenuItem search = item(I18nUtil.getString("menu.edit.search"), "Shortcut+Shift+F", actions::openSearch);
+        MenuItem findUsages = item(I18nUtil.getString("usage.title"), "Shortcut+U", actions::openFindUsages);
         MenuItem settings = item(I18nUtil.getString("menu.edit.settings"), null, actions::openSettings);
-        editMenu.getItems().addAll(copy, selectAll, new SeparatorMenuItem(), quickOpen, search,
+        editMenu.getItems().addAll(copy, selectAll, new SeparatorMenuItem(), quickOpen, search, findUsages,
                 new SeparatorMenuItem(), settings);
         return editMenu;
     }
 
     /** 创建视图菜单 */
     private Menu createViewMenu(Actions actions) {
-        Menu viewMenu = new Menu("视图(V)");
-        MenuItem zoomIn = item("放大", "Shortcut+PLUS", actions::zoomIn);
-        MenuItem zoomOut = item("缩小", "Shortcut+MINUS", actions::zoomOut);
-        MenuItem zoomReset = item("重置缩放", "Shortcut+0", actions::resetZoom);
-        MenuItem toggleLineNumbers = item("切换行号显示", null, actions::toggleLineNumbers);
-        MenuItem collapseTree = item("文件树折叠", null, actions::collapseTree);
-        MenuItem showOutline = item("大纲", null, actions::showOutline);
-        MenuItem showInheritance = item("继承", null, actions::showInheritance);
-        MenuItem hideBottomTools = item("隐藏底部工具窗口", null, actions::hideBottomTools);
+        Menu viewMenu = new Menu(I18nUtil.getString("menu.view"));
+        MenuItem zoomIn = item(I18nUtil.getString("menu.view.zoomIn"), "Shortcut+PLUS", actions::zoomIn);
+        MenuItem zoomOut = item(I18nUtil.getString("menu.view.zoomOut"), "Shortcut+MINUS", actions::zoomOut);
+        MenuItem zoomReset = item(I18nUtil.getString("menu.view.resetZoom"), "Shortcut+0", actions::resetZoom);
+        MenuItem toggleLineNumbers = item(I18nUtil.getString("menu.view.toggleLineNumbers"), null, actions::toggleLineNumbers);
+        MenuItem collapseTree = item(I18nUtil.getString("menu.view.collapseTree"), null, actions::collapseTree);
+        MenuItem showOutline = item(I18nUtil.getString("menu.view.outline"), null, actions::showOutline);
+        MenuItem showInheritance = item(I18nUtil.getString("menu.view.inheritance"), null, actions::showInheritance);
+        MenuItem hideBottomTools = item(I18nUtil.getString("menu.view.hideTools"), null, actions::hideBottomTools);
         viewMenu.getItems().addAll(
                 zoomIn, zoomOut, zoomReset,
                 new SeparatorMenuItem(), toggleLineNumbers, collapseTree,
@@ -106,7 +109,7 @@ public class MainMenuBar extends MenuBar {
 
     /** 创建引擎选择菜单 */
     private Menu createEngineMenu(Actions actions, DecompilerTypeEnum currentEngine) {
-        Menu engineMenu = new Menu("引擎(G)");
+        Menu engineMenu = new Menu(I18nUtil.getString("menu.engine"));
         ToggleGroup engineGroup = new ToggleGroup();
 
         RadioMenuItem procyonItem = engineItem("Procyon", DecompilerTypeEnum.PROCYON, currentEngine, engineGroup, actions);
@@ -118,21 +121,10 @@ public class MainMenuBar extends MenuBar {
         return engineMenu;
     }
 
-    /** 创建主题菜单 */
-    private Menu createThemeMenu() {
-        Menu themeMenu = new Menu("主题(T)");
-        RadioMenuItem darkPlus = new RadioMenuItem("Dark+");
-        darkPlus.setSelected(true);
-        darkPlus.setDisable(true);
-        themeMenu.getItems().add(darkPlus);
-        return themeMenu;
-    }
-
     /** 创建帮助菜单 */
-    private Menu createHelpMenu() {
-        Menu helpMenu = new Menu("帮助(H)");
-        MenuItem about = new MenuItem("关于");
-        about.setDisable(true);
+    private Menu createHelpMenu(Actions actions) {
+        Menu helpMenu = new Menu(I18nUtil.getString("menu.help"));
+        MenuItem about = item(I18nUtil.getString("menu.help.about"), null, actions::about);
         helpMenu.getItems().add(about);
         return helpMenu;
     }
@@ -167,7 +159,8 @@ public class MainMenuBar extends MenuBar {
 
     /** 创建清除最近历史菜单项 */
     private javafx.scene.control.MenuItem clearRecentItem(Actions actions) {
-        javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem("清除历史");
+        javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(
+                I18nUtil.getString("menu.file.recent.clear"));
         item.setOnAction(e -> {
             actions.getRecentFiles().clear();
         });
@@ -180,6 +173,12 @@ public class MainMenuBar extends MenuBar {
 
         /** 打开目录 */
         void openDirectory();
+
+        /** 打开项目文件 */
+        void openProject();
+
+        /** 保存项目文件 */
+        void saveProject();
 
         /** 关闭当前工作区 */
         void closeCurrentWorkspace();
@@ -232,6 +231,9 @@ public class MainMenuBar extends MenuBar {
         /** 打开搜索对话框 (Ctrl+Shift+F) */
         void openSearch();
 
+        /** 查找使用 */
+        void openFindUsages();
+
         /** 快速打开类 (Ctrl+N) */
         void quickOpenClass();
 
@@ -246,5 +248,8 @@ public class MainMenuBar extends MenuBar {
 
         /** 新窗口打开当前文件 */
         void openNewWindow();
+
+        /** 显示关于对话框 */
+        void about();
     }
 }

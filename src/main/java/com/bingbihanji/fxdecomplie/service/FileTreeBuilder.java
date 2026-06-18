@@ -1,4 +1,4 @@
-package com.bingbihanji.fxdecomplie.io;
+package com.bingbihanji.fxdecomplie.service;
 
 import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
 import com.bingbihanji.fxdecomplie.model.FileTreeNode;
@@ -70,7 +70,7 @@ public final class FileTreeBuilder {
         StringBuilder pathBuilder = new StringBuilder();
 
         for (String part : parts) {
-            if (pathBuilder.length() > 0) pathBuilder.append('/');
+            if (!pathBuilder.isEmpty()) pathBuilder.append('/');
             pathBuilder.append(part);
             String currentPath = pathBuilder.toString();
 

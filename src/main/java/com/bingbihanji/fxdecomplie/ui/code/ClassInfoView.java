@@ -15,7 +15,9 @@ import java.util.List;
  */
 public final class ClassInfoView {
 
-    private ClassInfoView() { throw new AssertionError("utility class"); }
+    private ClassInfoView() {
+        throw new AssertionError("utility class");
+    }
 
     public static VBox createView(byte[] classBytes) {
         VBox root = new VBox(6);

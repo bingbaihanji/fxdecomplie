@@ -21,15 +21,29 @@ public class ProcyonDecompiler implements Decompiler {
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
         String internalName = normalizeInternalName(classFilePath);
-        return decompileType(internalName, classBytes);
+        return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
     /** {@inheritDoc} */
     @Override
     public String decompileType(String typeName, byte[] classBytes) {
+        return decompileType(typeName, classBytes, DecompilerContext.EMPTY);
+    }
+
+    @Override
+    public String decompile(String classFilePath, byte[] classBytes,
+                            DecompilerContext context) {
+        String internalName = normalizeInternalName(classFilePath);
+        return decompileType(internalName, classBytes, context);
+    }
+
+    @Override
+    public String decompileType(String typeName, byte[] classBytes,
+                                DecompilerContext context) {
         String internalName = normalizeInternalName(typeName);
+        DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
         DecompilerSettings localSettings = DecompilerSettings.javaDefaults();
-        localSettings.setTypeLoader(new CachedTypeLoader(internalName, classBytes));
+        localSettings.setTypeLoader(new CachedTypeLoader(internalName, classBytes, effectiveContext));
         localSettings.setLanguage(Languages.java());
         localSettings.setUnicodeOutputEnabled(true);
         localSettings.setPreviewFeaturesEnabled(true);
@@ -81,11 +95,15 @@ public class ProcyonDecompiler implements Decompiler {
         private final String targetName;
         /** 目标字节码 */
         private final byte[] targetBytes;
+        /** 当前反编译上下文 */
+        private final DecompilerContext context;
 
         /** @param targetName 目标类型名 @param targetBytes 目标字节码 */
-        private CachedTypeLoader(String targetName, byte[] targetBytes) {
+        private CachedTypeLoader(String targetName, byte[] targetBytes,
+                                 DecompilerContext context) {
             this.targetName = targetName;
             this.targetBytes = targetBytes;
+            this.context = context;
         }
 
         @Override
@@ -96,7 +114,7 @@ public class ProcyonDecompiler implements Decompiler {
                 bytes = targetBytes;
             }
             if (bytes == null) {
-                bytes = BytecodeCache.get(normalized.replace(".class", ""));
+                bytes = context.resolveClassBytes(normalized.replace(".class", ""));
             }
             if (bytes == null) {
                 return false;

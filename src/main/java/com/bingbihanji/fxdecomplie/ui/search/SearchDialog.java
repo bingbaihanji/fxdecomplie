@@ -1,16 +1,13 @@
 package com.bingbihanji.fxdecomplie.ui.search;
 
-import com.bingbihanji.fxdecomplie.app.BackgroundTasks;
+import com.bingbihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbihanji.fxdecomplie.service.SearchService;
+import com.bingbihanji.fxdecomplie.utils.I18nUtil;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TreeCell;
-import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -32,31 +29,57 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class SearchDialog {
 
-    private static final int MAX_RESULTS = 200;
+    private static final int DEFAULT_MAX_RESULTS = 200;
 
-    private SearchDialog() { throw new AssertionError("utility class"); }
-
-    @FunctionalInterface
-    public interface JumpCallback { void jump(String fullPath, int lineNumber); }
+    private SearchDialog() {
+        throw new AssertionError("utility class");
+    }
 
     public static void show(javafx.stage.Window owner, SearchService searchService,
                             Map<String, String> sourceCache, JumpCallback onJump) {
+        show(owner, searchService, sourceCache, null, false, DEFAULT_MAX_RESULTS, onJump);
+    }
+
+    public static void show(javafx.stage.Window owner, SearchService searchService,
+                            Map<String, String> sourceCache, SourceCacheLoader fullSourceLoader,
+                            JumpCallback onJump) {
+        show(owner, searchService, sourceCache, fullSourceLoader, false,
+                DEFAULT_MAX_RESULTS, onJump);
+    }
+
+    public static void show(javafx.stage.Window owner, SearchService searchService,
+                            Map<String, String> sourceCache, SourceCacheLoader fullSourceLoader,
+                            boolean defaultFullSourceSearch, int maxResults,
+                            JumpCallback onJump) {
+        int resultLimit = Math.clamp(maxResults, 50, 2000);
         Stage dialog = new Stage();
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
-        dialog.setTitle("全文搜索");
+        dialog.setTitle(I18nUtil.getString("search.title"));
 
         TextField input = new TextField();
-        input.setPromptText("输入关键词搜索...");
+        input.setPromptText(I18nUtil.getString("search.prompt"));
         input.setStyle("-fx-font-size: 14px; -fx-padding: 8px;");
 
         ComboBox<String> searchTypeCombo = new ComboBox<>();
-        searchTypeCombo.getItems().addAll("全部", "类名", "方法", "代码", "资源", "注释", "字节码");
-        searchTypeCombo.setValue("全部");
+        searchTypeCombo.getItems().addAll(
+                I18nUtil.getString("search.type.all"),
+                I18nUtil.getString("search.type.class"),
+                I18nUtil.getString("search.type.method"),
+                I18nUtil.getString("search.type.code"),
+                I18nUtil.getString("search.type.resource"),
+                I18nUtil.getString("search.type.comment"),
+                I18nUtil.getString("search.type.bytecode"));
+        searchTypeCombo.setValue(I18nUtil.getString("search.type.all"));
         searchTypeCombo.setStyle("-fx-font-size: 13px;");
 
-        Label comboLabel = new Label("搜索范围:");
+        Label comboLabel = new Label(I18nUtil.getString("search.scope"));
         comboLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
+
+        CheckBox fullSourceSearch = new CheckBox(I18nUtil.getString("search.fullSource"));
+        fullSourceSearch.setStyle("-fx-text-fill: #cccccc;");
+        fullSourceSearch.setDisable(fullSourceLoader == null);
+        fullSourceSearch.setSelected(fullSourceLoader != null && defaultFullSourceSearch);
 
         TreeView<SearchResult> resultTree = new TreeView<>();
         resultTree.setStyle("-fx-background-color: #252526;");
@@ -79,62 +102,69 @@ public final class SearchDialog {
         Label statusLabel = new Label("");
         statusLabel.setStyle("-fx-text-fill: #858585; -fx-padding: 4px;");
 
-        VBox rootPane = new VBox(6, input, comboLabel, searchTypeCombo, resultTree, statusLabel);
+        VBox rootPane = new VBox(6, input, comboLabel, searchTypeCombo,
+                fullSourceSearch, resultTree, statusLabel);
         rootPane.setPadding(new Insets(8));
         rootPane.setStyle("-fx-background-color: #2d2d2d;");
 
         // Track search generation to discard stale results
         AtomicInteger searchGen = new AtomicInteger(0);
-
-        /** Build the result tree from a filtered list of results */
-        Runnable buildTree = () -> { /* placeholder — set inside listener */ };
+        // Store last full search results for combo re-filtering
+        final List<SearchResult>[] lastAllResults = new List[]{new ArrayList<>()};
 
         // Debounce 200ms
         PauseTransition debounce = new PauseTransition(Duration.millis(200));
         input.textProperty().addListener((obs, old, text) -> {
             debounce.stop();
             resultTree.setRoot(null);
-            statusLabel.setText(text.isEmpty() ? "" : "搜索中...");
+            statusLabel.setText(text.isEmpty() ? "" : I18nUtil.getString("search.searching"));
             int gen = searchGen.incrementAndGet();
             debounce.setOnFinished(e -> {
-                if (text.isEmpty()) { statusLabel.setText(""); return; }
+                if (text.isEmpty()) {
+                    statusLabel.setText("");
+                    return;
+                }
                 String selectedType = searchTypeCombo.getValue();
                 BackgroundTasks.run("search-worker", () -> {
-                    List<SearchResult> all = searchService.searchAll(text, sourceCache);
+                    Map<String, String> effectiveSourceCache = sourceCache;
+                    if (fullSourceSearch.isSelected() && fullSourceLoader != null) {
+                        Platform.runLater(() -> statusLabel.setText(
+                                I18nUtil.getString("search.preparingFullSource")));
+                        effectiveSourceCache = fullSourceLoader.load();
+                    }
+                    List<SearchResult> all = searchService.searchAll(text, effectiveSourceCache);
+                    lastAllResults[0] = all;
                     List<SearchResult> filtered = filterByType(all, selectedType);
                     Platform.runLater(() -> {
                         if (gen != searchGen.get()) return; // stale search
-                        TreeItem<SearchResult> rootNode = buildResultTree(filtered);
+                        TreeItem<SearchResult> rootNode = buildResultTree(filtered, resultLimit);
                         resultTree.setRoot(rootNode);
                         if (rootNode != null) rootNode.setExpanded(true);
                         int shown = rootNode != null
                                 ? countLeaves(rootNode) : 0;
-                        statusLabel.setText(shown >= MAX_RESULTS
-                                ? "结果过多，仅显示前 " + MAX_RESULTS + " 条" : shown + " 条结果");
+                        statusLabel.setText(shown >= resultLimit
+                                ? I18nUtil.getString("search.tooMany", resultLimit)
+                                : I18nUtil.getString("search.resultCount", shown));
                     });
                 });
             });
             debounce.playFromStart();
         });
 
-        // Re-apply filter when combo changes (no re-search needed)
+        // Re-filter existing results when combo changes (no re-search)
         searchTypeCombo.valueProperty().addListener((obs, old, val) -> {
             String text = input.getText();
             if (text == null || text.isBlank()) return;
-            int gen = searchGen.incrementAndGet();
-            BackgroundTasks.run("search-worker", () -> {
-                List<SearchResult> all = searchService.searchAll(text, sourceCache);
-                List<SearchResult> filtered = filterByType(all, val);
-                Platform.runLater(() -> {
-                    if (gen != searchGen.get()) return;
-                    TreeItem<SearchResult> rootNode = buildResultTree(filtered);
-                    resultTree.setRoot(rootNode);
-                    if (rootNode != null) rootNode.setExpanded(true);
-                    int shown = rootNode != null ? countLeaves(rootNode) : 0;
-                    statusLabel.setText(shown >= MAX_RESULTS
-                            ? "结果过多，仅显示前 " + MAX_RESULTS + " 条" : shown + " 条结果");
-                });
-            });
+            List<SearchResult> all = lastAllResults[0];
+            if (all == null || all.isEmpty()) return;
+            List<SearchResult> filtered = filterByType(all, val);
+            TreeItem<SearchResult> rootNode = buildResultTree(filtered, resultLimit);
+            resultTree.setRoot(rootNode);
+            if (rootNode != null) rootNode.setExpanded(true);
+            int shown = rootNode != null ? countLeaves(rootNode) : 0;
+            statusLabel.setText(shown >= resultLimit
+                    ? I18nUtil.getString("search.tooMany", resultLimit)
+                    : I18nUtil.getString("search.resultCount", shown));
         });
 
         // Double-click to jump
@@ -162,7 +192,7 @@ public final class SearchDialog {
 
     /** Filter results by the selected search type in the combo box */
     private static List<SearchResult> filterByType(List<SearchResult> results, String filterType) {
-        if (filterType == null || "全部".equals(filterType)) {
+        if (filterType == null || I18nUtil.getString("search.type.all").equals(filterType)) {
             return results;
         }
         List<SearchResult> filtered = new ArrayList<>();
@@ -176,20 +206,28 @@ public final class SearchDialog {
 
     private static boolean matchesFilter(SearchResult.MatchType type, String filter) {
         return switch (filter) {
-            case "类名" -> type == SearchResult.MatchType.CLASS_NAME;
-            case "方法" -> type == SearchResult.MatchType.METHOD_NAME
-                        || type == SearchResult.MatchType.FIELD_NAME;
-            case "代码" -> type == SearchResult.MatchType.CODE_TEXT;
-            case "资源" -> type == SearchResult.MatchType.RESOURCE_TEXT;
-            case "注释" -> type == SearchResult.MatchType.COMMENT_TEXT;
-            case "字节码" -> type == SearchResult.MatchType.BYTECODE_TEXT;
+            case String value when value.equals(I18nUtil.getString("search.type.class")) ->
+                    type == SearchResult.MatchType.CLASS_NAME;
+            case String value when value.equals(I18nUtil.getString("search.type.method")) ->
+                    type == SearchResult.MatchType.METHOD_NAME
+                            || type == SearchResult.MatchType.FIELD_NAME;
+            case String value when value.equals(I18nUtil.getString("search.type.code")) ->
+                    type == SearchResult.MatchType.CODE_TEXT;
+            case String value when value.equals(I18nUtil.getString("search.type.resource")) ->
+                    type == SearchResult.MatchType.RESOURCE_TEXT;
+            case String value when value.equals(I18nUtil.getString("search.type.comment")) ->
+                    type == SearchResult.MatchType.COMMENT_TEXT;
+            case String value when value.equals(I18nUtil.getString("search.type.bytecode")) ->
+                    type == SearchResult.MatchType.BYTECODE_TEXT;
             default -> true;
         };
     }
 
-    /** Build TreeView structure grouped by match type label, limited to MAX_RESULTS leaves */
-    private static TreeItem<SearchResult> buildResultTree(List<SearchResult> results) {
-        TreeItem<SearchResult> rootNode = new TreeItem<>(new SearchResult("", "搜索结果", 0, SearchResult.MatchType.CODE_TEXT));
+    /** Build TreeView structure grouped by match type label, limited to maxResults leaves */
+    private static TreeItem<SearchResult> buildResultTree(List<SearchResult> results,
+                                                          int maxResults) {
+        TreeItem<SearchResult> rootNode = new TreeItem<>(new SearchResult("",
+                I18nUtil.getString("search.root"), 0, SearchResult.MatchType.CODE_TEXT));
 
         // Use LinkedHashMap to preserve group order
         Map<String, List<SearchResult>> groups = new LinkedHashMap<>();
@@ -200,12 +238,12 @@ public final class SearchDialog {
 
         int leafCount = 0;
         for (var entry : groups.entrySet()) {
-            if (leafCount >= MAX_RESULTS) break;
+            if (leafCount >= maxResults) break;
             // Group header uses a special SearchResult with empty path and group label as matchLine
             TreeItem<SearchResult> groupItem = new TreeItem<>(
                     new SearchResult("", entry.getKey(), 0, SearchResult.MatchType.CODE_TEXT));
             for (SearchResult r : entry.getValue()) {
-                if (leafCount >= MAX_RESULTS) break;
+                if (leafCount >= maxResults) break;
                 groupItem.getChildren().add(new TreeItem<>(r));
                 leafCount++;
             }
@@ -220,12 +258,13 @@ public final class SearchDialog {
     /** Map match type to display label */
     private static String groupLabel(SearchResult.MatchType type) {
         return switch (type) {
-            case CLASS_NAME -> "[类名]";
-            case METHOD_NAME, FIELD_NAME -> "[方法]";
-            case CODE_TEXT -> "[代码]";
-            case RESOURCE_TEXT -> "[资源]";
-            case COMMENT_TEXT -> "[注释]";
-            case BYTECODE_TEXT -> "[字节码]";
+            case CLASS_NAME -> I18nUtil.getString("search.group.class");
+            case METHOD_NAME, FIELD_NAME -> I18nUtil.getString("search.group.method");
+            case CODE_TEXT -> I18nUtil.getString("search.group.code");
+            case RESOURCE_TEXT -> I18nUtil.getString("search.group.resource");
+            case COMMENT_TEXT -> I18nUtil.getString("search.group.comment");
+            case BYTECODE_TEXT -> I18nUtil.getString("search.group.bytecode");
+            default -> I18nUtil.getString("search.group.code");
         };
     }
 
@@ -240,5 +279,15 @@ public final class SearchDialog {
             }
         }
         return count;
+    }
+
+    @FunctionalInterface
+    public interface JumpCallback {
+        void jump(String fullPath, int lineNumber);
+    }
+
+    @FunctionalInterface
+    public interface SourceCacheLoader {
+        Map<String, String> load();
     }
 }

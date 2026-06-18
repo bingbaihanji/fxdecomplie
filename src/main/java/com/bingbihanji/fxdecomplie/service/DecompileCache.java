@@ -1,9 +1,9 @@
-package com.bingbihanji.fxdecomplie.cache;
+package com.bingbihanji.fxdecomplie.service;
 
 import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * L2 反编译源码内存缓存。key = internalName + engine + optionsHash。
@@ -15,6 +15,10 @@ import java.util.Map;
 public class DecompileCache {
 
     private final Map<String, String> cache = new ConcurrentHashMap<>();
+
+    private static String cacheKey(String internalName, DecompilerTypeEnum engine, String optionsHash) {
+        return internalName + "#" + engine.name() + "#" + optionsHash;
+    }
 
     public String get(String internalName, DecompilerTypeEnum engine, String optionsHash) {
         return cache.get(cacheKey(internalName, engine, optionsHash));
@@ -28,11 +32,11 @@ public class DecompileCache {
         cache.keySet().removeIf(k -> k.startsWith(internalName + "#"));
     }
 
-    public void clear() { cache.clear(); }
+    public void clear() {
+        cache.clear();
+    }
 
-    public int size() { return cache.size(); }
-
-    private static String cacheKey(String internalName, DecompilerTypeEnum engine, String optionsHash) {
-        return internalName + "#" + engine.name() + "#" + optionsHash;
+    public int size() {
+        return cache.size();
     }
 }

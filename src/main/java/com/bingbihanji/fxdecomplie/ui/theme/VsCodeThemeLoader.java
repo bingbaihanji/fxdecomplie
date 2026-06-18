@@ -23,12 +23,12 @@ import java.util.Map;
  */
 public final class VsCodeThemeLoader {
 
+    /** 内置默认暗色主题（懒加载） */
+    private static final ThemeData DEFAULT_DARK = buildDefaultDark();
+
     private VsCodeThemeLoader() {
         throw new AssertionError("utility class");
     }
-
-    /** 内置默认暗色主题（懒加载） */
-    private static final ThemeData DEFAULT_DARK = buildDefaultDark();
 
     public static ThemeData defaultDark() {
         return DEFAULT_DARK;

@@ -16,5 +16,5 @@ public record OutlineMember(
         String modifiers,
         int lineNumber
 ) {
-    public enum MemberType { FIELD, METHOD, INNER_CLASS }
+    public enum MemberType {FIELD, METHOD, INNER_CLASS}
 }

@@ -1,5 +1,6 @@
 package com.bingbihanji.fxdecomplie.ui.inheritance;
 
+import com.bingbihanji.fxdecomplie.model.WorkspaceIndex;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeCell;
@@ -36,15 +37,20 @@ public final class InheritancePane extends VBox {
             @Override
             protected void updateItem(InheritanceNode item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); setGraphic(null); }
-                else {
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
                     String prefix = switch (item.relation()) {
-                        case SELF -> ""; case SUPER_CLASS -> "↑ "; case SUBCLASS -> "↓ "; case INTERFACE -> "I ";
+                        case SELF -> "";
+                        case SUPER_CLASS -> "↑ ";
+                        case SUBCLASS -> "↓ ";
+                        case INTERFACE -> "I ";
                     };
                     setText(prefix + item.displayName());
                     Color c = item.relation() == InheritanceNode.RelationType.SELF ? Color.web("#dcdcaa")
                             : item.relation() == InheritanceNode.RelationType.SUPER_CLASS ? Color.web("#c586c0")
-                            : Color.web("#9cdcfe");
+                              : Color.web("#9cdcfe");
                     setTextFill(c);
                     setStyle("-fx-background-color: transparent; -fx-font-family: 'Consolas', monospace;");
                 }
@@ -64,15 +70,26 @@ public final class InheritancePane extends VBox {
         getChildren().addAll(title, treeView);
     }
 
-    public void load(String fullPath) {
-        TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath);
-        if (root != null) { treeView.setRoot(root); root.setExpanded(true); }
-        else { treeView.setRoot(new TreeItem<>(new InheritanceNode("", "无法加载", InheritanceNode.RelationType.SELF, 0))); }
+    public void load(String fullPath, WorkspaceIndex index) {
+        TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
+        if (root != null) {
+            treeView.setRoot(root);
+            root.setExpanded(true);
+        } else {
+            treeView.setRoot(new TreeItem<>(new InheritanceNode("", "无法加载", InheritanceNode.RelationType.SELF, 0)));
+        }
     }
 
-    public void clear() { treeView.setRoot(null); }
-    public void setOpenHandler(OpenHandler handler) { this.openHandler = handler; }
+    public void clear() {
+        treeView.setRoot(null);
+    }
+
+    public void setOpenHandler(OpenHandler handler) {
+        this.openHandler = handler;
+    }
 
     @FunctionalInterface
-    public interface OpenHandler { void open(String className); }
+    public interface OpenHandler {
+        void open(String className);
+    }
 }

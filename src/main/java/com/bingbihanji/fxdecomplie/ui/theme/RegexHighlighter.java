@@ -158,6 +158,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         int lastEnd = 0;
 
         while (matcher.find()) {
+            // ---- Plain text before this token: apply default style ----
             if (matcher.start() > lastEnd) {
                 builder.addSegment(text.substring(lastEnd, matcher.start()), styleDefault);
             }
@@ -165,26 +166,37 @@ public class RegexHighlighter implements SyntaxDecorator {
             String matched = matcher.group();
             StyleAttributeMap style;
 
+            // ---- Comment handling: multi-line (/* */) and single-line (//) ----
             if (matcher.group("MULTICOMMENT") != null || matcher.group("SINGLECOMMENT") != null) {
                 style = styleComment;
+                // ---- String literal: double-quoted with escape sequences ----
             } else if (matcher.group("STRING") != null) {
                 style = styleString;
+                // ---- Annotation: @Override, @Deprecated, etc. ----
             } else if (matcher.group("ANNOTATION") != null) {
                 style = styleAnnotation;
+                // ---- Number literal: integers, floats, with suffixes (L, F, D) ----
             } else if (matcher.group("NUMBER") != null) {
                 style = styleNumber;
+                // ---- Identifier: word boundary token, needs context-based disambiguation ----
             } else if (matcher.group("IDENTIFIER") != null) {
                 if (KEYWORDS.contains(matched)) {
+                    // ---- Java keyword: if, class, public, etc. ----
                     style = styleKeyword;
                 } else if (isMethod(text, matcher.end())) {
+                    // ---- Method name: identifier followed by '(' ----
                     style = styleMethod;
                 } else if (isField(text, matcher.end())) {
+                    // ---- Field name: identifier followed by '=' or ';' ----
                     style = styleField;
                 } else if (isType(matched)) {
+                    // ---- Type name: identifier starting with uppercase letter ----
                     style = styleType;
                 } else if (isParameter(text, matcher.start(), matcher.end())) {
+                    // ---- Parameter name: identifier inside method parens ----
                     style = styleParameter;
                 } else {
+                    // ---- Fallback: generic identifier ----
                     style = styleDefault;
                 }
             } else {

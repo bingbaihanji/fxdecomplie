@@ -16,5 +16,5 @@ public record InheritanceNode(
         RelationType relation,
         int depth
 ) {
-    public enum RelationType { SELF, SUPER_CLASS, SUBCLASS, INTERFACE }
+    public enum RelationType {SELF, SUPER_CLASS, SUBCLASS, INTERFACE}
 }

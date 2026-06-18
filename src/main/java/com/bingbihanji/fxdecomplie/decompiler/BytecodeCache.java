@@ -11,12 +11,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class BytecodeCache {
 
+    /** 全局字节码缓存（internalName → byte[]） */
+    private static final ConcurrentHashMap<String, byte[]> CACHE = new ConcurrentHashMap<>();
+
     private BytecodeCache() {
         throw new AssertionError("utility class");
     }
-
-    /** 全局字节码缓存（internalName → byte[]） */
-    private static final ConcurrentHashMap<String, byte[]> CACHE = new ConcurrentHashMap<>();
 
     /**
      * 缓存字节码。

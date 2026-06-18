@@ -4,9 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** 跨所有已反编译源码全文搜索（逐行匹配） */
+/**
+ * 跨所有已反编译源码全文搜索（逐行匹配）。
+ *
+ * @author bingbaihanji
+ * @date 2026-06-18
+ */
 public class CodeSearchProvider implements SearchProvider {
 
+    /** Maximum number of code text results to return */
     private static final int MAX_RESULTS = 500;
 
     @Override

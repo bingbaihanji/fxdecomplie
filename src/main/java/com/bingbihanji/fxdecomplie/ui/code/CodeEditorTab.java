@@ -1,11 +1,11 @@
 package com.bingbihanji.fxdecomplie.ui.code;
 
+import com.bingbihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbihanji.fxdecomplie.model.OpenFile;
-import com.bingbihanji.fxdecomplie.navigation.CodeLinkHandler;
-import com.bingbihanji.fxdecomplie.navigation.CodeMetadata;
 import com.bingbihanji.fxdecomplie.ui.theme.RegexHighlighter;
-import com.bingbihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbihanji.fxdecomplie.utils.CodeLinkHandler;
+import com.bingbihanji.fxdecomplie.utils.I18nUtil;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.text.Font;
@@ -58,7 +58,7 @@ public class CodeEditorTab extends Tab {
                          CodeMetadata metadata, Consumer<CodeMetadata.Reference> onNavigate) {
         this.openFile = openFile;
         this.defaultFontSize = fontSize;
-        this.metadata = metadata;
+        this.metadata = metadata != null ? metadata : new CodeMetadata(java.util.Map.of());
         this.onNavigate = onNavigate;
 
         // 1. 创建 Java 源码编辑区
@@ -84,6 +84,16 @@ public class CodeEditorTab extends Tab {
         setContent(subTabPane);
     }
 
+    /** 将源码/字节码/类信息组装为不可关闭的子标签页面板 */
+    private static TabPane buildSubTabPane(Tab sourceTab, Tab bytecodeTab, Tab infoTab) {
+        TabPane pane = new TabPane();
+        pane.getStyleClass().add("code-sub-tab-pane");
+        pane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        pane.getTabs().addAll(sourceTab, bytecodeTab, infoTab);
+        pane.getSelectionModel().select(sourceTab);
+        return pane;
+    }
+
     /** 构建源码编辑区 CodeArea，配置样式、字体、高亮器 */
     private CodeArea buildSourceArea(VsCodeThemeLoader.ThemeData theme, String fontFamily,
                                      int fontSize, boolean wrapText, boolean lineNumbersEnabled) {
@@ -100,20 +110,10 @@ public class CodeEditorTab extends Tab {
         area.setSyntaxDecorator(new RegexHighlighter(theme));
 
         if (onNavigate != null) {
-            CodeLinkHandler.install(area, metadata != null ? metadata : new CodeMetadata(java.util.Map.of()), onNavigate);
+            CodeLinkHandler.install(area, this.metadata, onNavigate);
         }
 
         return area;
-    }
-
-    /** 将源码/字节码/类信息组装为不可关闭的子标签页面板 */
-    private static TabPane buildSubTabPane(Tab sourceTab, Tab bytecodeTab, Tab infoTab) {
-        TabPane pane = new TabPane();
-        pane.getStyleClass().add("code-sub-tab-pane");
-        pane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        pane.getTabs().addAll(sourceTab, bytecodeTab, infoTab);
-        pane.getSelectionModel().select(sourceTab);
-        return pane;
     }
 
     /** @return Java 源码编辑器 */

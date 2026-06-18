@@ -1,5 +1,8 @@
 package com.bingbihanji.fxdecomplie.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
@@ -19,6 +22,7 @@ import java.util.*;
  * @updated 2025-12-31 添加外部语言文件支持,兼容模块化系统
  */
 public class I18nUtil {
+    private static final Logger logger = LoggerFactory.getLogger(I18nUtil.class);
     private static final String BASE_NAME = "language/language";
     // 语言变化监听器列表
     private static final List<Runnable> localeChangeListeners = new ArrayList<>();
@@ -37,8 +41,7 @@ public class I18nUtil {
                 resourceBundle = loadResourceBundle(currentLocale);
             } catch (Exception e2) {
                 // 如果简体中文也加载失败,尝试使用默认 Locale
-                System.err.println("无法加载语言资源文件,使用默认配置");
-                e2.printStackTrace();
+                logger.error("无法加载语言资源文件,使用默认配置", e2);
             }
         }
     }
@@ -92,8 +95,7 @@ public class I18nUtil {
             // 通知所有监听器
             notifyLocaleChange();
         } catch (Exception e) {
-            System.err.println("切换语言失败: " + locale);
-            e.printStackTrace();
+            logger.error("切换语言失败: {}", locale, e);
         }
     }
 
@@ -166,8 +168,7 @@ public class I18nUtil {
             }
         } catch (Exception e) {
             // classpath 资源加载失败
-            System.err.println("Failed to load resource from classpath: " + resourceName);
-            e.printStackTrace();
+            logger.error("Failed to load resource from classpath: {}", resourceName, e);
         }
         return null;
     }
@@ -268,7 +269,7 @@ public class I18nUtil {
             try {
                 listener.run();
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Locale change listener error", e);
             }
         }
     }

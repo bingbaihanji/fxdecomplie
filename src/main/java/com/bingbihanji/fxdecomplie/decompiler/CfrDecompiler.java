@@ -7,11 +7,7 @@ import org.benf.cfr.reader.api.SinkReturns;
 import org.benf.cfr.reader.bytecode.analysis.parse.utils.Pair;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * CFR 反编译引擎适配器。
@@ -59,13 +55,27 @@ public class CfrDecompiler implements Decompiler {
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
         String internalName = classFilePath.replace(".class", "");
-        return decompileType(internalName, classBytes);
+        return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
     /** {@inheritDoc} */
     @Override
     public String decompileType(String typeName, byte[] classBytes) {
+        return decompileType(typeName, classBytes, DecompilerContext.EMPTY);
+    }
+
+    @Override
+    public String decompile(String classFilePath, byte[] classBytes,
+                            DecompilerContext context) {
+        String internalName = classFilePath.replace(".class", "");
+        return decompileType(internalName, classBytes, context);
+    }
+
+    @Override
+    public String decompileType(String typeName, byte[] classBytes,
+                                DecompilerContext context) {
         final StringBuilder result = new StringBuilder();
+        DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
 
         ClassFileSource classFileSource = new ClassFileSource() {
             @Override
@@ -95,7 +105,7 @@ public class CfrDecompiler implements Decompiler {
                 }
 
                 String internalName = normalizedPath.replace(".class", "");
-                byte[] otherBytes = BytecodeCache.get(internalName);
+                byte[] otherBytes = effectiveContext.resolveClassBytes(internalName);
                 if (otherBytes != null) {
                     return Pair.make(otherBytes, normalizedPath);
                 }

@@ -16,12 +16,26 @@ public class JdDecompiler implements Decompiler {
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
         String internalName = classFilePath.replace(".class", "");
-        return decompileType(internalName, classBytes);
+        return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
     @Override
     public String decompileType(String typeName, byte[] classBytes) {
+        return decompileType(typeName, classBytes, DecompilerContext.EMPTY);
+    }
+
+    @Override
+    public String decompile(String classFilePath, byte[] classBytes,
+                            DecompilerContext context) {
+        String internalName = classFilePath.replace(".class", "");
+        return decompileType(internalName, classBytes, context);
+    }
+
+    @Override
+    public String decompileType(String typeName, byte[] classBytes,
+                                DecompilerContext context) {
         StringBuilder result = new StringBuilder();
+        DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
 
         int lastSlash = typeName.lastIndexOf('/');
         if (lastSlash > 0) {
@@ -32,13 +46,14 @@ public class JdDecompiler implements Decompiler {
         Loader loader = new Loader() {
             @Override
             public boolean canLoad(String internalName) {
-                return internalName.equals(typeName) || BytecodeCache.get(internalName) != null;
+                return internalName.equals(typeName)
+                        || effectiveContext.resolveClassBytes(internalName) != null;
             }
 
             @Override
             public byte[] load(String internalName) {
                 if (internalName.equals(typeName)) return classBytes;
-                return BytecodeCache.get(internalName);
+                return effectiveContext.resolveClassBytes(internalName);
             }
         };
 
@@ -72,10 +87,21 @@ public class JdDecompiler implements Decompiler {
             this.builder = builder;
         }
 
-        @Override public void start(int maxLineNumber, int majorVersion, int minorVersion) {}
-        @Override public void end() {}
-        @Override public void startMarker(int type) {}
-        @Override public void endMarker(int type) {}
+        @Override
+        public void start(int maxLineNumber, int majorVersion, int minorVersion) {
+        }
+
+        @Override
+        public void end() {
+        }
+
+        @Override
+        public void startMarker(int type) {
+        }
+
+        @Override
+        public void endMarker(int type) {
+        }
 
         @Override
         public void startLine(int lineNumber) {
@@ -93,7 +119,9 @@ public class JdDecompiler implements Decompiler {
         }
 
         @Override
-        public void indent() { indent++; }
+        public void indent() {
+            indent++;
+        }
 
         @Override
         public void unindent() {
@@ -101,10 +129,14 @@ public class JdDecompiler implements Decompiler {
         }
 
         @Override
-        public void printText(String text) { builder.append(text); }
+        public void printText(String text) {
+            builder.append(text);
+        }
 
         @Override
-        public void printKeyword(String keyword) { builder.append(keyword); }
+        public void printKeyword(String keyword) {
+            builder.append(keyword);
+        }
 
         @Override
         public void printStringConstant(String constant, String ownerInternalName) {
@@ -112,7 +144,9 @@ public class JdDecompiler implements Decompiler {
         }
 
         @Override
-        public void printNumericConstant(String constant) { builder.append(constant); }
+        public void printNumericConstant(String constant) {
+            builder.append(constant);
+        }
 
         @Override
         public void printDeclaration(int type, String internalTypeName, String name, String descriptor) {
@@ -121,7 +155,7 @@ public class JdDecompiler implements Decompiler {
 
         @Override
         public void printReference(int type, String internalTypeName, String name,
-                                    String descriptor, String ownerInternalName) {
+                                   String descriptor, String ownerInternalName) {
             builder.append(name);
         }
     }

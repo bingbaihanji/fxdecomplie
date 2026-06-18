@@ -2,6 +2,9 @@ package com.bingbihanji.fxdecomplie.ui.theme;
 
 import com.bingbihanji.fxdecomplie.config.AppConfig;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -13,6 +16,8 @@ import java.nio.file.Path;
  * @date 2026-06-17
  */
 public final class AppTheme {
+
+    private static final Logger logger = LoggerFactory.getLogger(AppTheme.class);
 
     /** 暗色 CSS 样式表路径 */
     private static final String DARK_STYLESHEET =
@@ -48,8 +53,7 @@ public final class AppTheme {
             }
             return VsCodeThemeLoader.loadResource(DARK_PLUS_THEME);
         } catch (IOException | RuntimeException e) {
-            System.getLogger(AppTheme.class.getName())
-                    .log(System.Logger.Level.WARNING, "Failed to load editor theme, using default dark", e);
+            logger.warn("Failed to load editor theme, using default dark", e);
             return VsCodeThemeLoader.defaultDark();
         }
     }

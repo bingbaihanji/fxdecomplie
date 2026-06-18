@@ -23,10 +23,13 @@ public final class TextFileDecorator implements SyntaxDecorator {
 
     private static final TextFileDecorator INSTANCE = new TextFileDecorator();
 
-    private TextFileDecorator() {}
+    private TextFileDecorator() {
+    }
 
     /** 获取单例 */
-    public static TextFileDecorator instance() { return INSTANCE; }
+    public static TextFileDecorator instance() {
+        return INSTANCE;
+    }
 
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {

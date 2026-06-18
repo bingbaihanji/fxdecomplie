@@ -1,4 +1,4 @@
-package com.bingbihanji.fxdecomplie.cache;
+package com.bingbihanji.fxdecomplie.service;
 
 import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
@@ -20,7 +20,13 @@ public final class DiskCodeCache {
     private static final Path CACHE_ROOT = Path.of(
             System.getProperty("user.home"), ".fxdecompiler", "cache");
 
-    private DiskCodeCache() { throw new AssertionError("utility class"); }
+    private DiskCodeCache() {
+        throw new AssertionError("utility class");
+    }
+
+    public static Path cacheRoot() {
+        return CACHE_ROOT;
+    }
 
     public static String load(String workspaceHash, String internalName, DecompilerTypeEnum engine) {
         Path file = cachePath(workspaceHash, internalName, engine);
@@ -46,7 +52,10 @@ public final class DiskCodeCache {
             if (Files.exists(CACHE_ROOT)) {
                 try (var files = Files.walk(CACHE_ROOT).sorted(Comparator.reverseOrder())) {
                     files.forEach(p -> {
-                        try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                        try {
+                            Files.deleteIfExists(p);
+                        } catch (IOException ignored) {
+                        }
                     });
                 }
             }

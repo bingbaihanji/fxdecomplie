@@ -1,6 +1,9 @@
-package com.bingbihanji.fxdecomplie.io;
+package com.bingbihanji.fxdecomplie.service;
 
 import com.bingbihanji.fxdecomplie.model.FileTreeNode;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,8 +25,7 @@ import java.util.stream.Stream;
  */
 public final class ClassDiscoverer {
 
-    /** 日志记录器 */
-    private static final System.Logger LOG = System.getLogger(ClassDiscoverer.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(ClassDiscoverer.class);
 
     /** 资源文件扩展名匹配模式 */
     private static final Pattern RESOURCE_PATTERN = Pattern.compile(
@@ -93,7 +95,7 @@ public final class ClassDiscoverer {
                     try {
                         bytes = Files.readAllBytes(p);
                     } catch (IOException e) {
-                        LOG.log(System.Logger.Level.WARNING, "Failed to read file: " + p, e);
+                        logger.warn("Failed to read file: {}", p, e);
                     }
                 }
                 entries.add(new ClassEntry(displayName, relativePath, type, bytes));

@@ -10,12 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class DecompilerFactory {
 
+    /** 引擎单例缓存，按类型索引 */
+    private static final ConcurrentHashMap<DecompilerTypeEnum, Decompiler> CACHE = new ConcurrentHashMap<>();
+
     private DecompilerFactory() {
         throw new AssertionError("utility class");
     }
-
-    /** 引擎单例缓存，按类型索引 */
-    private static final ConcurrentHashMap<DecompilerTypeEnum, Decompiler> CACHE = new ConcurrentHashMap<>();
 
     /**
      * 获取指定类型的反编译引擎实例（单例缓存）。
@@ -29,6 +29,7 @@ public final class DecompilerFactory {
                 case CFR -> new CfrDecompiler();
                 case VINEFLOWER -> new VineflowerDecompiler();
                 case JD -> new JdDecompiler();
+                default -> throw new IllegalStateException("Unknown engine: " + t);
             };
             engine.initialize();
             return engine;

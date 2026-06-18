@@ -1,8 +1,12 @@
 package com.bingbihanji.fxdecomplie.ui.inheritance;
 
 import com.bingbihanji.fxdecomplie.decompiler.BytecodeCache;
+import com.bingbihanji.fxdecomplie.model.WorkspaceIndex;
 import javafx.scene.control.TreeItem;
 import org.objectweb.asm.ClassReader;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,9 +19,13 @@ import java.util.Set;
  */
 public final class InheritanceService {
 
+    private static final Logger logger = LoggerFactory.getLogger(InheritanceService.class);
+
     private static final int MAX_DEPTH = 20;
 
-    private InheritanceService() { throw new AssertionError("utility class"); }
+    private InheritanceService() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 构建继承树。
@@ -25,9 +33,19 @@ public final class InheritanceService {
      * @return 继承树根节点，失败返回 null
      */
     public static TreeItem<InheritanceNode> buildTree(String fullPath) {
+        return buildTree(fullPath, null);
+    }
+
+    /**
+     * 构建继承树。
+     * @param fullPath 目标类全路径（如 "com/example/MyClass.class"）
+     * @param index 当前工作区索引，优先用于读取字节码
+     * @return 继承树根节点，失败返回 null
+     */
+    public static TreeItem<InheritanceNode> buildTree(String fullPath, WorkspaceIndex index) {
         Set<String> visited = new HashSet<>();
         String internalName = toInternal(fullPath);
-        byte[] bytes = BytecodeCache.get(internalName);
+        byte[] bytes = getBytes(index, internalName);
         if (bytes == null) return null;
 
         InheritanceNode rootData = new InheritanceNode(internalName, simpleName(internalName),
@@ -40,7 +58,7 @@ public final class InheritanceService {
             ClassReader reader = new ClassReader(bytes);
             String superName = reader.getSuperName();
             if (superName != null && !"java/lang/Object".equals(superName)) {
-                buildSuperChain(superName, root, 1, visited);
+                buildSuperChain(superName, root, 1, visited, index);
             }
             for (String itf : reader.getInterfaces()) {
                 TreeItem<InheritanceNode> ifNode = new TreeItem<>(
@@ -49,16 +67,20 @@ public final class InheritanceService {
                 root.getChildren().add(ifNode);
             }
         } catch (Exception e) {
-            System.getLogger(InheritanceService.class.getName())
-                    .log(System.Logger.Level.WARNING, "Failed to analyze class in inheritance tree", e);
+            logger.warn("Failed to analyze class in inheritance tree", e);
         }
 
-        findSubClasses(internalName, root, visited);
+        findSubClasses(internalName, root, visited, index);
         return root;
     }
 
     private static void buildSuperChain(String internalName, TreeItem<InheritanceNode> parent,
-                                         int depth, Set<String> visited) {
+                                        int depth, Set<String> visited) {
+        buildSuperChain(internalName, parent, depth, visited, null);
+    }
+
+    private static void buildSuperChain(String internalName, TreeItem<InheritanceNode> parent,
+                                        int depth, Set<String> visited, WorkspaceIndex index) {
         if (depth > MAX_DEPTH || visited.contains(internalName)) return;
         visited.add(internalName);
 
@@ -67,13 +89,13 @@ public final class InheritanceService {
         TreeItem<InheritanceNode> node = new TreeItem<>(data);
         parent.getChildren().add(0, node);
 
-        byte[] bytes = BytecodeCache.get(internalName);
+        byte[] bytes = getBytes(index, internalName);
         if (bytes != null) {
             try {
                 ClassReader reader = new ClassReader(bytes);
                 String superName = reader.getSuperName();
                 if (superName != null && !"java/lang/Object".equals(superName)) {
-                    buildSuperChain(superName, node, depth + 1, visited);
+                    buildSuperChain(superName, node, depth + 1, visited, index);
                 }
                 for (String itf : reader.getInterfaces()) {
                     TreeItem<InheritanceNode> ifNode = new TreeItem<>(
@@ -82,35 +104,53 @@ public final class InheritanceService {
                     node.getChildren().add(ifNode);
                 }
             } catch (Exception e) {
-                System.getLogger(InheritanceService.class.getName())
-                        .log(System.Logger.Level.WARNING, "Failed to analyze class in inheritance tree", e);
+                logger.warn("Failed to analyze class in inheritance tree", e);
             }
         }
     }
 
     private static void findSubClasses(String targetName, TreeItem<InheritanceNode> root,
-                                        Set<String> visited) {
+                                       Set<String> visited) {
+        findSubClasses(targetName, root, visited, null);
+    }
+
+    private static void findSubClasses(String targetName, TreeItem<InheritanceNode> root,
+                                       Set<String> visited, WorkspaceIndex index) {
+        if (index != null) {
+            index.classBytesByInternalName().forEach((name, bytes) ->
+                    addSubClassIfMatches(targetName, root, visited, name, bytes));
+            return;
+        }
         BytecodeCache.forEach((name, bytes) -> {
-            if (visited.contains(name) || name.equals(targetName)) return;
-            try {
-                ClassReader reader = new ClassReader(bytes);
-                if (targetName.equals(reader.getSuperName())) {
+            addSubClassIfMatches(targetName, root, visited, name, bytes);
+        });
+    }
+
+    private static void addSubClassIfMatches(String targetName, TreeItem<InheritanceNode> root,
+                                             Set<String> visited, String name, byte[] bytes) {
+        if (visited.contains(name) || name.equals(targetName)) return;
+        try {
+            ClassReader reader = new ClassReader(bytes);
+            if (targetName.equals(reader.getSuperName())) {
+                InheritanceNode data = new InheritanceNode(name, simpleName(name),
+                        InheritanceNode.RelationType.SUBCLASS, 1);
+                root.getChildren().add(new TreeItem<>(data));
+            }
+            for (String itf : reader.getInterfaces()) {
+                if (targetName.equals(itf)) {
                     InheritanceNode data = new InheritanceNode(name, simpleName(name),
                             InheritanceNode.RelationType.SUBCLASS, 1);
                     root.getChildren().add(new TreeItem<>(data));
                 }
-                for (String itf : reader.getInterfaces()) {
-                    if (targetName.equals(itf)) {
-                        InheritanceNode data = new InheritanceNode(name, simpleName(name),
-                                InheritanceNode.RelationType.SUBCLASS, 1);
-                        root.getChildren().add(new TreeItem<>(data));
-                    }
-                }
-            } catch (Exception e) {
-                System.getLogger(InheritanceService.class.getName())
-                        .log(System.Logger.Level.WARNING, "Failed to analyze class in inheritance tree", e);
             }
-        });
+        } catch (Exception e) {
+            logger.warn("Failed to analyze class in inheritance tree", e);
+        }
+    }
+
+    private static byte[] getBytes(WorkspaceIndex index, String internalName) {
+        byte[] bytes = index == null ? null : index.getClassBytes(internalName);
+        return bytes != null ? bytes : BytecodeCache.get(internalName);
     }
 
     private static String toInternal(String path) {

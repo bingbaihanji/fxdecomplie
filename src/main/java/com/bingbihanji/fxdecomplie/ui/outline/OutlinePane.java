@@ -51,15 +51,19 @@ public final class OutlinePane extends VBox {
             @Override
             protected void updateItem(OutlineMember item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); setGraphic(null); }
-                else {
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
                     String icon = switch (item.type()) {
-                        case FIELD -> "F "; case METHOD -> "M "; case INNER_CLASS -> "C ";
+                        case FIELD -> "F ";
+                        case METHOD -> "M ";
+                        case INNER_CLASS -> "C ";
                     };
                     setText(icon + item.name() + "  —  " + item.modifiers());
                     Color c = item.type() == OutlineMember.MemberType.METHOD ? Color.web("#dcdcaa")
                             : item.type() == OutlineMember.MemberType.FIELD ? Color.web("#9cdcfe")
-                            : Color.web("#4ec9b0");
+                              : Color.web("#4ec9b0");
                     setTextFill(c);
                     setStyle("-fx-background-color: transparent; -fx-font-family: 'Consolas', monospace;");
                 }
@@ -96,8 +100,12 @@ public final class OutlinePane extends VBox {
         filterField.clear();
     }
 
-    public void setJumpHandler(JumpHandler handler) { this.jumpHandler = handler; }
+    public void setJumpHandler(JumpHandler handler) {
+        this.jumpHandler = handler;
+    }
 
     @FunctionalInterface
-    public interface JumpHandler { void jump(int lineNumber); }
+    public interface JumpHandler {
+        void jump(int lineNumber);
+    }
 }

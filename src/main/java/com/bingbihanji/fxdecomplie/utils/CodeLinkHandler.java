@@ -1,5 +1,6 @@
-package com.bingbihanji.fxdecomplie.navigation;
+package com.bingbihanji.fxdecomplie.utils;
 
+import com.bingbihanji.fxdecomplie.model.CodeMetadata;
 import javafx.scene.input.MouseButton;
 import jfx.incubator.scene.control.richtext.CodeArea;
 
@@ -14,7 +15,9 @@ import java.util.function.Consumer;
  */
 public final class CodeLinkHandler {
 
-    private CodeLinkHandler() { throw new AssertionError("utility class"); }
+    private CodeLinkHandler() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 在 CodeArea 上安装 Ctrl+Click 导航。

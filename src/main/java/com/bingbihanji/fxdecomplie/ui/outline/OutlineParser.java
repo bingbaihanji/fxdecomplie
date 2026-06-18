@@ -1,6 +1,6 @@
 package com.bingbihanji.fxdecomplie.ui.outline;
 
-import com.bingbihanji.fxdecomplie.navigation.CodeMetadata;
+import com.bingbihanji.fxdecomplie.model.CodeMetadata;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,17 +18,19 @@ import java.util.regex.Pattern;
 public final class OutlineParser {
 
     private static final Pattern METHOD_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|final|synchronized|abstract|native|\\s)*"
-        + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
+            "^\\s*(public|protected|private|static|final|synchronized|abstract|native|\\s)*"
+                    + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
 
     private static final Pattern FIELD_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|final|volatile|transient|\\s)*"
-        + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*(?:=\\s*[^;]+)?;");
+            "^\\s*(public|protected|private|static|final|volatile|transient|\\s)*"
+                    + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*(?:=\\s*[^;]+)?;");
 
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
-        "^\\s*(public|protected|private|static|\\s)*\\b(class|interface|enum|record)\\s+(\\w+)");
+            "^\\s*(public|protected|private|static|\\s)*\\b(class|interface|enum|record)\\s+(\\w+)");
 
-    private OutlineParser() { throw new AssertionError("utility class"); }
+    private OutlineParser() {
+        throw new AssertionError("utility class");
+    }
 
     /** @param sourceCode 反编译后的 Java 源码 */
     public static List<OutlineMember> parse(String sourceCode) {
@@ -63,7 +65,9 @@ public final class OutlineParser {
 
     private static int count(String s, char c) {
         int n = 0;
-        for (int i = 0; i < s.length(); i++) { if (s.charAt(i) == c) n++; }
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == c) n++;
+        }
         return n;
     }
 

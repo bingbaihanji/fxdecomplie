@@ -4,8 +4,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-/** 搜索非 class 资源文件内容（XML/JSON/YML/properties/.java 等文本资源） */
+/**
+ * 搜索非 class 资源文件内容（XML/JSON/YML/properties/.java 等文本资源）。
+ *
+ * @author bingbaihanji
+ * @date 2026-06-18
+ */
 public class ResourceSearchProvider implements SearchProvider {
 
     private static final int MAX_RESULTS = 500;
@@ -13,7 +19,7 @@ public class ResourceSearchProvider implements SearchProvider {
     private final Map<String, byte[]> resourceCache; // path to raw bytes
 
     public ResourceSearchProvider(Map<String, byte[]> resourceCache) {
-        this.resourceCache = resourceCache;
+        this.resourceCache = Objects.requireNonNull(resourceCache, "resourceCache");
     }
 
     @Override

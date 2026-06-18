@@ -16,6 +16,11 @@ public interface Decompiler {
      */
     String decompile(String classFilePath, byte[] classBytes);
 
+    default String decompile(String classFilePath, byte[] classBytes,
+                             DecompilerContext context) {
+        return decompile(classFilePath, classBytes);
+    }
+
     /**
      * 按内部类型名反编译。
      * @param typeName   内部类型名（如 "com.example.Main"）
@@ -23,6 +28,11 @@ public interface Decompiler {
      * @return 反编译后的 Java 源码
      */
     String decompileType(String typeName, byte[] classBytes);
+
+    default String decompileType(String typeName, byte[] classBytes,
+                                 DecompilerContext context) {
+        return decompileType(typeName, classBytes);
+    }
 
     /** @return 引擎类型标识 */
     DecompilerTypeEnum getType();

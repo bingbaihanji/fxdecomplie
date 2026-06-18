@@ -1,26 +1,22 @@
 package com.bingbihanji.fxdecomplie.ui;
 
 import com.bingbihanji.fxdecomplie.MainWindow;
-
 import com.bingbihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbihanji.fxdecomplie.model.Workspace;
+import com.bingbihanji.fxdecomplie.service.NavigationService;
 import com.bingbihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbihanji.fxdecomplie.ui.inheritance.InheritancePane;
 import com.bingbihanji.fxdecomplie.ui.outline.OutlinePane;
 import com.bingbihanji.fxdecomplie.ui.tree.FileTreeView;
-import javafx.scene.Cursor;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.TreeItem;
+import com.bingbihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.control.*;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -38,6 +34,12 @@ import java.util.function.BiConsumer;
  */
 public final class WorkspaceTabManager {
 
+    /** 编辑区上下分割条的实际鼠标命中高度 */
+    private static final double EDITOR_DIVIDER_HIT_HEIGHT = 12.0;
+    /** 编辑区最小保留高度，避免底部工具窗口拖得过高 */
+    private static final double MIN_EDITOR_HEIGHT = 160.0;
+    /** 底部工具窗口最小保留高度 */
+    private static final double MIN_TOOL_WINDOW_HEIGHT = 120.0;
     /** 外层标签页 */
     private final TabPane outerTabPane;
     /** 状态栏 */
@@ -46,16 +48,138 @@ public final class WorkspaceTabManager {
     private final Map<Tab, MainWindow.WorkspaceView> workspaceViews = new HashMap<>();
     /** 工作区标签页 → 底部工具窗口状态 */
     private final Map<Tab, WorkspaceTools> workspaceTools = new HashMap<>();
-    /** 编辑区上下分割条的实际鼠标命中高度 */
-    private static final double EDITOR_DIVIDER_HIT_HEIGHT = 12.0;
-    /** 编辑区最小保留高度，避免底部工具窗口拖得过高 */
-    private static final double MIN_EDITOR_HEIGHT = 160.0;
-    /** 底部工具窗口最小保留高度 */
-    private static final double MIN_TOOL_WINDOW_HEIGHT = 120.0;
 
     public WorkspaceTabManager(TabPane outerTabPane, StatusBar statusBar) {
         this.outerTabPane = outerTabPane;
         this.statusBar = statusBar;
+    }
+
+    /** 创建底部工具窗口顶部的独立拖拽手柄。 */
+    private static Region createBottomToolResizeHandle(SplitPane splitPane) {
+        Region handle = new Region();
+        handle.getStyleClass().add("bottom-tool-resize-handle");
+        handle.setMinHeight(EDITOR_DIVIDER_HIT_HEIGHT);
+        handle.setPrefHeight(EDITOR_DIVIDER_HIT_HEIGHT);
+        handle.setMaxHeight(EDITOR_DIVIDER_HIT_HEIGHT);
+        handle.setPickOnBounds(true);
+        handle.setCursor(Cursor.V_RESIZE);
+        installBottomToolResizeDrag(splitPane, handle);
+        return handle;
+    }
+
+    /** 通过拖拽手柄主动调整纵向 SplitPane 的分割比例。 */
+    private static void installBottomToolResizeDrag(SplitPane splitPane, Region handle) {
+        double[] dragStartY = new double[1];
+        double[] dragStartDivider = new double[]{0.72};
+
+        handle.setOnMousePressed(event -> {
+            double[] positions = splitPane.getDividerPositions();
+            if (positions.length > 0) {
+                dragStartDivider[0] = positions[0];
+            }
+            dragStartY[0] = event.getScreenY();
+            event.consume();
+        });
+
+        handle.setOnMouseDragged(event -> {
+            double height = splitPane.getHeight();
+            if (height <= 0) {
+                return;
+            }
+
+            double delta = (event.getScreenY() - dragStartY[0]) / height;
+            double minPosition = Math.min(0.8, MIN_EDITOR_HEIGHT / height);
+            double maxPosition = Math.max(minPosition, 1.0 - MIN_TOOL_WINDOW_HEIGHT / height);
+            splitPane.setDividerPositions(clamp(dragStartDivider[0] + delta, minPosition, maxPosition));
+            event.consume();
+        });
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /** 格式化类路径显示（/ → &gt;，去 .class 后缀） */
+    public static String formatClassPath(String fullPath) {
+        String display = fullPath.replace('/', '>').replace('\\', '>');
+        return display.endsWith(".class")
+                ? display.substring(0, display.length() - 6)
+                : display;
+    }
+
+    private static void installTreeContextMenu(FileTreeView treeView, Workspace workspace,
+                                               TabPane codeTabPane, NavigationService navigationService,
+                                               BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                               BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                               TreeItemAction onExportNode) {
+        treeView.setOnContextMenuRequested(event -> {
+            TreeItem<FileTreeNode> item = treeView.getSelectionModel().getSelectedItem();
+            if (item == null || item.getValue() == null) {
+                return;
+            }
+            FileTreeNode node = item.getValue();
+            ContextMenu menu = new ContextMenu();
+
+            MenuItem open = new MenuItem(I18nUtil.getString("context.open"));
+            open.setDisable(!node.isClassFile() && !node.isTextFile());
+            open.setOnAction(e -> {
+                if (node.isClassFile()) {
+                    navigationService.openPath(navigationService.classPath(workspace, node),
+                            workspace, codeTabPane, onClassClick, onTextFileClick);
+                } else if (node.isTextFile()) {
+                    navigationService.openPath(navigationService.resourcePath(workspace, node),
+                            workspace, codeTabPane, onClassClick, onTextFileClick);
+                }
+            });
+
+            MenuItem export = new MenuItem(I18nUtil.getString("context.exportNode"));
+            export.setOnAction(e -> onExportNode.accept(item));
+
+            MenuItem back = new MenuItem(I18nUtil.getString("context.back"));
+            back.setDisable(!navigationService.canGoBack());
+            back.setOnAction(e -> navigationService.goBack(workspace, codeTabPane,
+                    onClassClick, onTextFileClick));
+
+            MenuItem forward = new MenuItem(I18nUtil.getString("context.forward"));
+            forward.setDisable(!navigationService.canGoForward());
+            forward.setOnAction(e -> navigationService.goForward(workspace, codeTabPane,
+                    onClassClick, onTextFileClick));
+
+            MenuItem copyPath = new MenuItem(I18nUtil.getString("context.copyPath"));
+            copyPath.setOnAction(e -> copyToClipboard(node.getFullPath()));
+
+            MenuItem copyClassName = new MenuItem(I18nUtil.getString("context.copyClassName"));
+            copyClassName.setDisable(!node.isClassFile());
+            copyClassName.setOnAction(e -> copyToClipboard(
+                    node.getFullPath().replace(".class", "").replace('/', '.').replace('\\', '.')));
+
+            MenuItem expand = new MenuItem(I18nUtil.getString("context.expand"));
+            expand.setOnAction(e -> expand(item));
+
+            MenuItem collapse = new MenuItem(I18nUtil.getString("context.collapse"));
+            collapse.setOnAction(e -> collapseStatic(item));
+
+            menu.getItems().addAll(open, back, forward, export, new SeparatorMenuItem(),
+                    copyPath, copyClassName, new SeparatorMenuItem(), expand, collapse);
+            menu.show(treeView, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
+    }
+
+    private static void copyToClipboard(String value) {
+        ClipboardContent content = new ClipboardContent();
+        content.putString(value == null ? "" : value);
+        Clipboard.getSystemClipboard().setContent(content);
+    }
+
+    private static void expand(TreeItem<FileTreeNode> item) {
+        item.setExpanded(true);
+        item.getChildren().forEach(WorkspaceTabManager::expand);
+    }
+
+    private static void collapseStatic(TreeItem<FileTreeNode> item) {
+        item.setExpanded(false);
+        item.getChildren().forEach(WorkspaceTabManager::collapseStatic);
     }
 
     /** 获取所有工作区视图 */
@@ -71,12 +195,29 @@ public final class WorkspaceTabManager {
      * @param onTextFileClick 点击文本文件节点时的回调
      */
     public void addWorkspaceTab(Workspace workspace,
-            BiConsumer<FileTreeNode, TabPane> onClassClick,
-            BiConsumer<FileTreeNode, TabPane> onTextFileClick) {
+                                BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                BiConsumer<FileTreeNode, TabPane> onTextFileClick) {
+        addWorkspaceTab(workspace, onClassClick, onTextFileClick, item -> {
+        });
+    }
+
+    /**
+     * 添加工作区标签页。
+     *
+     * @param workspace       工作区
+     * @param onClassClick    点击类节点时的回调
+     * @param onTextFileClick 点击文本文件节点时的回调
+     * @param onExportNode    导出当前树节点的回调
+     */
+    public void addWorkspaceTab(Workspace workspace,
+                                BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                TreeItemAction onExportNode) {
         removeWelcomeTab();
 
         FileTreeView treeView = new FileTreeView(workspace.getTreeRoot());
         treeView.setPrefWidth(280);
+        NavigationService navigationService = new NavigationService();
 
         TabPane codeTabPane = new TabPane();
         codeTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -107,12 +248,16 @@ public final class WorkspaceTabManager {
             FileTreeNode node = item.getValue();
             if (node != null) {
                 if (node.isClassFile()) {
-                    onClassClick.accept(node, codeTabPane);
+                    navigationService.openPath(navigationService.classPath(workspace, node),
+                            workspace, codeTabPane, onClassClick, onTextFileClick);
                 } else if (node.isTextFile()) {
-                    onTextFileClick.accept(node, codeTabPane);
+                    navigationService.openPath(navigationService.resourcePath(workspace, node),
+                            workspace, codeTabPane, onClassClick, onTextFileClick);
                 }
             }
         });
+        installTreeContextMenu(treeView, workspace, codeTabPane, navigationService,
+                onClassClick, onTextFileClick, onExportNode);
 
         OutlinePane outlinePane = new OutlinePane();
         InheritancePane inheritancePane = new InheritancePane();
@@ -150,7 +295,7 @@ public final class WorkspaceTabManager {
         codeTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab instanceof CodeEditorTab codeTab) {
                 outlinePane.update(codeTab.getOpenFile().getSourceCode());
-                inheritancePane.load(codeTab.getOpenFile().getFullPath());
+                inheritancePane.load(codeTab.getOpenFile().getFullPath(), workspace.getIndex());
             } else {
                 outlinePane.clear();
                 inheritancePane.clear();
@@ -336,51 +481,6 @@ public final class WorkspaceTabManager {
         }
     }
 
-    /** 创建底部工具窗口顶部的独立拖拽手柄。 */
-    private static Region createBottomToolResizeHandle(SplitPane splitPane) {
-        Region handle = new Region();
-        handle.getStyleClass().add("bottom-tool-resize-handle");
-        handle.setMinHeight(EDITOR_DIVIDER_HIT_HEIGHT);
-        handle.setPrefHeight(EDITOR_DIVIDER_HIT_HEIGHT);
-        handle.setMaxHeight(EDITOR_DIVIDER_HIT_HEIGHT);
-        handle.setPickOnBounds(true);
-        handle.setCursor(Cursor.V_RESIZE);
-        installBottomToolResizeDrag(splitPane, handle);
-        return handle;
-    }
-
-    /** 通过拖拽手柄主动调整纵向 SplitPane 的分割比例。 */
-    private static void installBottomToolResizeDrag(SplitPane splitPane, Region handle) {
-        double[] dragStartY = new double[1];
-        double[] dragStartDivider = new double[] { 0.72 };
-
-        handle.setOnMousePressed(event -> {
-            double[] positions = splitPane.getDividerPositions();
-            if (positions.length > 0) {
-                dragStartDivider[0] = positions[0];
-            }
-            dragStartY[0] = event.getScreenY();
-            event.consume();
-        });
-
-        handle.setOnMouseDragged(event -> {
-            double height = splitPane.getHeight();
-            if (height <= 0) {
-                return;
-            }
-
-            double delta = (event.getScreenY() - dragStartY[0]) / height;
-            double minPosition = Math.min(0.8, MIN_EDITOR_HEIGHT / height);
-            double maxPosition = Math.max(minPosition, 1.0 - MIN_TOOL_WINDOW_HEIGHT / height);
-            splitPane.setDividerPositions(clamp(dragStartDivider[0] + delta, minPosition, maxPosition));
-            event.consume();
-        });
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
     /** 获取当前代码标签页 */
     private CodeEditorTab getCurrentCodeTab(TabPane codeTabPane) {
         javafx.scene.control.Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
@@ -425,17 +525,14 @@ public final class WorkspaceTabManager {
         item.getChildren().forEach(this::collapse);
     }
 
-    /** 格式化类路径显示（/ → &gt;，去 .class 后缀） */
-    public static String formatClassPath(String fullPath) {
-        String display = fullPath.replace('/', '>').replace('\\', '>');
-        return display.endsWith(".class")
-                ? display.substring(0, display.length() - 6)
-                : display;
-    }
-
     private enum ToolTab {
         OUTLINE,
         INHERITANCE
+    }
+
+    @FunctionalInterface
+    public interface TreeItemAction {
+        void accept(TreeItem<FileTreeNode> item);
     }
 
     private static final class WorkspaceTools {

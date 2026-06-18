@@ -5,6 +5,9 @@ import org.jetbrains.java.decompiler.main.extern.IBytecodeProvider;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,8 +26,7 @@ import java.util.jar.Manifest;
  */
 public class VineflowerDecompiler implements Decompiler {
 
-    /** 日志记录器 */
-    private static final System.Logger LOG = System.getLogger(VineflowerDecompiler.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(VineflowerDecompiler.class);
 
     /** Vineflower 默认反编译选项 */
     private static final Map<String, Object> DEFAULT_OPTIONS = createDefaultOptions();
@@ -62,17 +64,45 @@ public class VineflowerDecompiler implements Decompiler {
         return Collections.unmodifiableMap(opts);
     }
 
+    private static void deleteRecursively(java.nio.file.Path dir) {
+        if (dir == null || !java.nio.file.Files.exists(dir)) return;
+        try (var files = java.nio.file.Files.walk(dir).sorted(Comparator.reverseOrder())) {
+            files.forEach(p -> {
+                try {
+                    java.nio.file.Files.deleteIfExists(p);
+                } catch (java.io.IOException ignored) {
+                }
+            });
+        } catch (java.io.IOException e) {
+            logger.warn("Failed to clean temp dir: {}", dir, e);
+        }
+    }
+
     /** {@inheritDoc} */
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
         String internalName = classFilePath.replace(".class", "");
-        return decompileType(internalName, classBytes);
+        return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
     /** {@inheritDoc} */
     @Override
     public String decompileType(String typeName, byte[] classBytes) {
+        return decompileType(typeName, classBytes, DecompilerContext.EMPTY);
+    }
+
+    @Override
+    public String decompile(String classFilePath, byte[] classBytes,
+                            DecompilerContext context) {
+        String internalName = classFilePath.replace(".class", "");
+        return decompileType(internalName, classBytes, context);
+    }
+
+    @Override
+    public String decompileType(String typeName, byte[] classBytes,
+                                DecompilerContext context) {
         final StringBuilder result = new StringBuilder();
+        DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
 
         File tempDir = null;
         File tempClassFile = null;
@@ -95,10 +125,7 @@ public class VineflowerDecompiler implements Decompiler {
                     if (key.endsWith("/" + getSimpleName(typeName)) || key.equals(typeName)) {
                         return classBytes;
                     }
-                    byte[] cached = BytecodeCache.get(key);
-                    if (cached != null) {
-                        return cached;
-                    }
+                    return effectiveContext.resolveClassBytes(key);
                 }
                 return null;
             };
@@ -166,7 +193,7 @@ public class VineflowerDecompiler implements Decompiler {
                 try {
                     Files.deleteIfExists(tempClassFile.toPath());
                 } catch (IOException e) {
-                    LOG.log(System.Logger.Level.WARNING, "Failed to delete temp class file: " + tempClassFile, e);
+                    logger.warn("Failed to delete temp class file: {}", tempClassFile, e);
                 }
             }
             if (tempDir != null) {
@@ -189,17 +216,6 @@ public class VineflowerDecompiler implements Decompiler {
     private String getSimpleName(String typeName) {
         int idx = typeName.lastIndexOf('/');
         return idx >= 0 ? typeName.substring(idx + 1) : typeName;
-    }
-
-    private static void deleteRecursively(java.nio.file.Path dir) {
-        if (dir == null || !java.nio.file.Files.exists(dir)) return;
-        try (var files = java.nio.file.Files.walk(dir).sorted(Comparator.reverseOrder())) {
-            files.forEach(p -> {
-                try { java.nio.file.Files.deleteIfExists(p); } catch (java.io.IOException ignored) {}
-            });
-        } catch (java.io.IOException e) {
-            LOG.log(System.Logger.Level.WARNING, "Failed to clean temp dir: " + dir, e);
-        }
     }
 
     /** @return 引擎类型 VINEFLOWER */

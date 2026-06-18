@@ -4,11 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** 按类名搜索（匹配 sourceCache 的 key 即全路径中的类名部分，以及独立的类名列表） */
+/**
+ * 按类名搜索（匹配 sourceCache 的 key 即全路径中的类名部分，以及独立的类名列表）。
+ *
+ * @author bingbaihanji
+ * @date 2026-06-18
+ */
 public class ClassSearchProvider implements SearchProvider {
 
+    /** Maximum number of class name results to return */
     private static final int MAX_RESULTS = 500;
 
+    /** Pre-indexed list of class full paths (from workspace index) */
     private final List<String> classNames;
 
     public ClassSearchProvider() {

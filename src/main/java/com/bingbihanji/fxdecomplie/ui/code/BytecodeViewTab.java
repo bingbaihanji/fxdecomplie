@@ -16,7 +16,9 @@ import java.io.StringWriter;
  */
 public final class BytecodeViewTab {
 
-    private BytecodeViewTab() { throw new AssertionError("utility class"); }
+    private BytecodeViewTab() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 创建字节码视图 CodeArea。

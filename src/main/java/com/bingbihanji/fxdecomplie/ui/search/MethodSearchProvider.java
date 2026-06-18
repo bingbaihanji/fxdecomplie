@@ -7,7 +7,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** 按方法名搜索（匹配已反编译源码中的方法声明） */
+/**
+ * 按方法名搜索（匹配已反编译源码中的方法声明）。
+ *
+ * @author bingbaihanji
+ * @date 2026-06-18
+ */
 public class MethodSearchProvider implements SearchProvider {
 
     private static final int MAX_RESULTS = 500;
@@ -20,9 +25,9 @@ public class MethodSearchProvider implements SearchProvider {
 
     private static final Pattern METHOD_DECL = Pattern.compile(
             "^\\s*(?:public|protected|private|static|final|synchronized|abstract|native)" +
-            "(?:\\s+(?:static|final|synchronized|abstract|native))*\\s+" +
-            "(?:<[\\w\\s,<>?]+>\\s+)?" +  // optional generic type params
-            "(\\w+)\\s*\\(",
+                    "(?:\\s+(?:static|final|synchronized|abstract|native))*\\s+" +
+                    "(?:<[\\w\\s,<>?]+>\\s+)?" +  // optional generic type params
+                    "(\\w+)\\s*\\(",
             Pattern.MULTILINE);
 
     @Override

@@ -1,4 +1,7 @@
-package com.bingbihanji.fxdecomplie.ui.search;
+package com.bingbihanji.fxdecomplie.service;
+
+import com.bingbihanji.fxdecomplie.ui.search.SearchProvider;
+import com.bingbihanji.fxdecomplie.ui.search.SearchResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.Map;
  */
 public class SearchService {
 
+    /** Registered search strategy providers, invoked in insertion order */
     private final List<SearchProvider> providers = new ArrayList<>();
 
     public void addProvider(SearchProvider provider) {
@@ -22,7 +26,13 @@ public class SearchService {
         providers.clear();
     }
 
-    /** Run all providers and merge results, sorted by match type priority then line number */
+    /**
+     * Run all registered providers and merge results, sorted by match type priority then line number.
+     *
+     * @param query       search string
+     * @param sourceCache map of class paths to decompiled source code
+     * @return merged and sorted results, capped at 500
+     */
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache) {
         if (query == null || query.isBlank()) return List.of();
         List<SearchResult> all = new ArrayList<>();

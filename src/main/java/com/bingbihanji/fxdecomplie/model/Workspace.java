@@ -21,6 +21,8 @@ public class Workspace {
     private final TreeItem<FileTreeNode> treeRoot;
     /** 是否为归档文件（JAR/ZIP） */
     private final boolean isArchive;
+    /** 工作区索引，用于全局搜索、字节码搜索和后续分析 */
+    private final WorkspaceIndex index;
 
     /**
      * 构造工作区。
@@ -35,6 +37,7 @@ public class Workspace {
         this.sourceFile = sourceFile;
         this.treeRoot = treeRoot;
         this.isArchive = isArchive;
+        this.index = WorkspaceIndex.build(treeRoot);
     }
 
     /** @return 显示名称 */
@@ -55,6 +58,11 @@ public class Workspace {
     /** @return 是否为归档文件 */
     public boolean isArchive() {
         return isArchive;
+    }
+
+    /** @return 工作区索引 */
+    public WorkspaceIndex getIndex() {
+        return index;
     }
 
     @Override

@@ -3,16 +3,24 @@ package com.bingbihanji.fxdecomplie.ui.search;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-/** 搜索字节码/汇编文本视图（如 javap 输出） */
+/**
+ * 搜索字节码/汇编文本视图（如 javap 输出）。
+ *
+ * @author bingbaihanji
+ * @date 2026-06-18
+ */
 public class BytecodeSearchProvider implements SearchProvider {
 
+    /** Maximum number of bytecode text results to return */
     private static final int MAX_RESULTS = 500;
 
-    private final Map<String, String> bytecodeCache; // internalName to javap text
+    /** Internal class name to javap-style disassembly text */
+    private final Map<String, String> bytecodeCache;
 
     public BytecodeSearchProvider(Map<String, String> bytecodeCache) {
-        this.bytecodeCache = bytecodeCache;
+        this.bytecodeCache = Objects.requireNonNull(bytecodeCache, "bytecodeCache");
     }
 
     @Override

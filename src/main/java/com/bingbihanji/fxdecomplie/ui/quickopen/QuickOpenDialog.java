@@ -24,7 +24,9 @@ import java.util.function.Consumer;
  */
 public final class QuickOpenDialog {
 
-    private QuickOpenDialog() { throw new AssertionError("utility class"); }
+    private QuickOpenDialog() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * 显示快速打开对话框。
@@ -54,8 +56,9 @@ public final class QuickOpenDialog {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); }
-                else {
+                if (empty || item == null) {
+                    setText(null);
+                } else {
                     int idx = item.lastIndexOf('/');
                     String display = idx >= 0 ? item.substring(idx + 1) + "  —  " + item : item;
                     setText(display);
@@ -88,7 +91,10 @@ public final class QuickOpenDialog {
                 e.consume();
             } else if (e.getCode() == KeyCode.ENTER) {
                 String selected = listView.getSelectionModel().getSelectedItem();
-                if (selected != null) { dialog.close(); onSelect.accept(selected); }
+                if (selected != null) {
+                    dialog.close();
+                    onSelect.accept(selected);
+                }
             } else if (e.getCode() == KeyCode.ESCAPE) {
                 dialog.close();
             }
@@ -98,7 +104,10 @@ public final class QuickOpenDialog {
         listView.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 String selected = listView.getSelectionModel().getSelectedItem();
-                if (selected != null) { dialog.close(); onSelect.accept(selected); }
+                if (selected != null) {
+                    dialog.close();
+                    onSelect.accept(selected);
+                }
             }
         });
 
