@@ -112,6 +112,25 @@ class ExportServiceTest {
         return root;
     }
 
+    @Test
+    void exportHandlesSkipConflictPolicy() throws Exception {
+        // Pre-create a file to simulate a conflict
+        Path outputDir = tempDir.resolve("out");
+        Files.createDirectories(outputDir.resolve("config"));
+        Files.writeString(outputDir.resolve("config/app.properties"), "original");
+
+        TreeItem<FileTreeNode> root = root(resource("config/app.properties", "new-content"));
+
+        ExportResult result = ExportService.exportAll(root, config(outputDir,
+                ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.SKIP, true),
+                WorkspaceIndex.build(root), null);
+
+        assertEquals(1, result.totalFiles());
+        assertEquals(0, result.successCount());
+        assertFalse(result.hasErrors());
+        assertEquals("original", Files.readString(outputDir.resolve("config/app.properties")));
+    }
+
     private static TreeItem<FileTreeNode> resource(String path, String content) {
         int slash = path.lastIndexOf('/');
         String name = slash >= 0 ? path.substring(slash + 1) : path;
