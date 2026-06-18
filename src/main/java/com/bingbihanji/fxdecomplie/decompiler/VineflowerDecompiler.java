@@ -172,17 +172,29 @@ public class VineflowerDecompiler implements Decompiler {
                 }
             };
 
-            IFernflowerLogger logger = new IFernflowerLogger() {
+            IFernflowerLogger fernflowerLogger = new IFernflowerLogger() {
                 @Override
                 public void writeMessage(String message, Severity severity) {
+                    switch (severity) {
+                        case ERROR -> logger.error("[Vineflower] {}", message);
+                        case WARN -> logger.warn("[Vineflower] {}", message);
+                        case INFO -> logger.debug("[Vineflower] {}", message);
+                        case TRACE -> logger.trace("[Vineflower] {}", message);
+                    }
                 }
 
                 @Override
                 public void writeMessage(String message, Severity severity, Throwable t) {
+                    switch (severity) {
+                        case ERROR -> logger.error("[Vineflower] {}", message, t);
+                        case WARN -> logger.warn("[Vineflower] {}", message, t);
+                        case INFO -> logger.debug("[Vineflower] {}", message, t);
+                        case TRACE -> logger.trace("[Vineflower] {}", message, t);
+                    }
                 }
             };
 
-            BaseDecompiler decompiler = new BaseDecompiler(bytecodeProvider, resultSaver, DEFAULT_OPTIONS, logger);
+            BaseDecompiler decompiler = new BaseDecompiler(bytecodeProvider, resultSaver, DEFAULT_OPTIONS, fernflowerLogger);
             decompiler.addSource(tempClassFile);
             decompiler.decompileContext();
 

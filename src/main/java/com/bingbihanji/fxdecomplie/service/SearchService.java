@@ -4,6 +4,7 @@ import com.bingbihanji.fxdecomplie.ui.search.SearchProvider;
 import com.bingbihanji.fxdecomplie.ui.search.SearchResult;
 
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +17,7 @@ import java.util.Map;
 public class SearchService {
 
     /** Registered search strategy providers, invoked in insertion order */
-    private final List<SearchProvider> providers = new ArrayList<>();
+    private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
 
     public void addProvider(SearchProvider provider) {
         providers.add(provider);
@@ -31,12 +32,20 @@ public class SearchService {
      *
      * @param query       search string
      * @param sourceCache map of class paths to decompiled source code
-     * @return merged and sorted results, capped at 500
+     * @return merged and sorted results, capped at the given limit
      */
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache) {
+        return searchAll(query, sourceCache, 500);
+    }
+
+    public List<SearchResult> searchAll(String query, Map<String, String> sourceCache, int limit) {
         if (query == null || query.isBlank()) return List.of();
+        int resultLimit = Math.max(1, limit);
         List<SearchResult> all = new ArrayList<>();
         for (SearchProvider provider : providers) {
+            if (Thread.currentThread().isInterrupted()) {
+                return List.of();
+            }
             List<SearchResult> results = provider.search(query, sourceCache);
             all.addAll(results);
         }
@@ -45,6 +54,6 @@ public class SearchService {
             if (typeCmp != 0) return typeCmp;
             return Integer.compare(a.lineNumber(), b.lineNumber());
         });
-        return all.size() > 500 ? all.subList(0, 500) : all;
+        return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
     }
 }
