@@ -2,8 +2,9 @@ package com.bingbihanji.fxdecomplie.service;
 
 import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * L2 反编译源码内存缓存。key = workspaceKey + internalName + engine + optionsHash。
@@ -14,7 +15,14 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DecompileCache {
 
-    private final Map<String, String> cache = new ConcurrentHashMap<>();
+    private static final int MAX_CACHE_SIZE = 1_000;
+    private final Map<String, String> cache = Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                    return size() > MAX_CACHE_SIZE;
+                }
+            });
 
     private static String cacheKey(String workspaceKey, String internalName,
                                    DecompilerTypeEnum engine, String optionsHash) {
