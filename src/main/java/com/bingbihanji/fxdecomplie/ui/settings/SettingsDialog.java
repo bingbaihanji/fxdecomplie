@@ -5,6 +5,9 @@ import com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbihanji.fxdecomplie.model.ExportConfig;
 import com.bingbihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbihanji.fxdecomplie.utils.I18nUtil;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -13,6 +16,7 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -41,8 +45,29 @@ public final class SettingsDialog {
         ComboBox<String> engineCombo = new ComboBox<>();
         engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD");
         engineCombo.setValue(config.decompiler.defaultEngine.name());
+
+        // Engine options JSON editor
+        Label engineOptionsLabel = new Label(I18nUtil.getString("settings.decompiler.engineOptions"));
+        engineOptionsLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
+
+        TextArea engineOptionsArea = new TextArea();
+        engineOptionsArea.setPromptText(I18nUtil.getString("settings.decompiler.engineOptionsHint"));
+        engineOptionsArea.setPrefRowCount(6);
+        engineOptionsArea.setStyle("-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
+                + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px;");
+
+        // Load current options as JSON
+        try {
+            String json = new GsonBuilder().setPrettyPrinting().create()
+                    .toJson(config.decompiler.engineOptions);
+            engineOptionsArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
+        } catch (Exception ignored) {
+            engineOptionsArea.setText("");
+        }
+
         decompilerTab.setContent(new VBox(10,
-                new Label(I18nUtil.getString("settings.defaultEngine")), engineCombo));
+                new Label(I18nUtil.getString("settings.defaultEngine")), engineCombo,
+                engineOptionsLabel, engineOptionsArea));
 
         // 界面标签页
         Tab uiTab = new Tab(I18nUtil.getString("settings.ui"));
@@ -133,6 +158,7 @@ public final class SettingsDialog {
             conflictCombo.setValue("OVERWRITE");
             exportResourcesCheck.setSelected(true);
             exportPathField.setText("");
+            engineOptionsArea.setText("");
             langCombo.setValue("简体中文");
         });
 
@@ -156,6 +182,22 @@ public final class SettingsDialog {
             config.export.exportResources = exportResourcesCheck.isSelected();
             config.export.lastPath = exportPathField.getText() == null
                     ? "" : exportPathField.getText();
+
+            // Save engine options
+            try {
+                String json = engineOptionsArea.getText();
+                if (json != null && !json.isBlank()) {
+                    Map<String, Map<String, String>> opts =
+                            new Gson().fromJson(json,
+                                    new TypeToken<Map<String, Map<String, String>>>(){}.getType());
+                    config.decompiler.engineOptions.clear();
+                    config.decompiler.engineOptions.putAll(opts);
+                } else {
+                    config.decompiler.engineOptions.clear();
+                }
+            } catch (Exception ignored) {
+                // Invalid JSON — keep existing options
+            }
 
             // Apply language change
             String selectedLang = langCombo.getValue();
