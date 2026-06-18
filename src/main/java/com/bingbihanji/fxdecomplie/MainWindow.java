@@ -655,19 +655,31 @@ public class MainWindow implements MainMenuBar.Actions {
         if (node != null) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
                     currentEngine, lineNumbersEnabled);
-            // scroll to line after a short delay for decompilation
-            javafx.application.Platform.runLater(() -> {
-                for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
-                    if (tab instanceof CodeEditorTab codeTab
-                            && codeTab.getOpenFile().getFullPath().equals(fullPath)) {
-                        var area = codeTab.getCodeArea();
+            // Navigate to the target line after decompilation completes
+            navigateToLine(view, fullPath, lineNumber, 0);
+        }
+    }
+
+    private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
+        if (retries > 20) return; // max ~2 seconds
+        javafx.application.Platform.runLater(() -> {
+            for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
+                if (tab instanceof CodeEditorTab codeTab
+                        && codeTab.getOpenFile().getFullPath().equals(fullPath)) {
+                    var area = codeTab.getCodeArea();
+                    if (area.getText() != null && !area.getText().isEmpty()) {
+                        // Navigate to line
                         area.moveDocumentStart();
                         for (int i = 1; i < lineNumber; i++) area.moveParagraphDown();
                         area.requestFocus();
+                        return;
                     }
+                    // Tab exists but decompilation not done yet — retry
+                    navigateToLine(view, fullPath, lineNumber, retries + 1);
+                    return;
                 }
-            });
-        }
+            }
+        });
     }
 
     private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {
