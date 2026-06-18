@@ -24,8 +24,9 @@ public class MethodSearchProvider implements SearchProvider {
             "instanceof", "import", "package");
 
     private static final Pattern METHOD_DECL = Pattern.compile(
-            "^\\s*(?:public|protected|private|static|final|synchronized|abstract|native)" +
-                    "(?:\\s+(?:static|final|synchronized|abstract|native))*\\s+" +
+            "^(?:@\\w+(?:\\([^)]*\\))?\\s*)*\\s*" +
+                    "(?:(?:public|protected|private|static|final|synchronized|abstract|native)" +
+                    "(?:\\s+(?:static|final|synchronized|abstract|native))*\\s+)?" +
                     "(?:<[\\w\\s,<>?]+>\\s+)?" +  // optional generic type params
                     "(\\w+)\\s*\\(",
             Pattern.MULTILINE);
