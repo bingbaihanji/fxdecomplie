@@ -19,6 +19,7 @@ import com.bingbihanji.fxdecomplie.ui.tree.FileTreeView;
 import com.bingbihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbihanji.fxdecomplie.ui.window.AppHeaderBar;
 import com.bingbihanji.fxdecomplie.utils.I18nUtil;
+import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -57,6 +58,8 @@ public class MainWindow implements MainMenuBar.Actions {
     private final VsCodeThemeLoader.ThemeData editorTheme;
     /** 是否使用自定义标题栏 */
     private final boolean useHeaderBar;
+    /** HostServices 用于打开外部链接 */
+    private final HostServices hostServices;
 
     /** 主窗口 Stage */
     private Stage stage;
@@ -74,12 +77,17 @@ public class MainWindow implements MainMenuBar.Actions {
     private boolean lineNumbersEnabled;
 
     public MainWindow(AppConfig config) {
-        this(config, false);
+        this(config, false, null);
     }
 
     public MainWindow(AppConfig config, boolean useHeaderBar) {
+        this(config, useHeaderBar, null);
+    }
+
+    public MainWindow(AppConfig config, boolean useHeaderBar, HostServices hostServices) {
         this.config = config;
         this.useHeaderBar = useHeaderBar;
+        this.hostServices = hostServices;
         this.editorTheme = AppTheme.loadEditorTheme(config);
         this.lineNumbersEnabled = config.decompiler().lineNumbersEnabled();
     }
@@ -612,8 +620,9 @@ public class MainWindow implements MainMenuBar.Actions {
         javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink("www.bingbaihanji.com");
         link.setOnAction(e -> {
             try {
-                java.awt.Desktop.getDesktop().browse(java.net.URI.create("https://www.bingbaihanji.com"));
-            } catch (java.io.IOException ignored) {
+                java.awt.Desktop.getDesktop().browse(new java.net.URI("https://www.bingbaihanji.com"));
+            } catch (Exception ignored) {
+                // browse not supported on this platform
             }
         });
 

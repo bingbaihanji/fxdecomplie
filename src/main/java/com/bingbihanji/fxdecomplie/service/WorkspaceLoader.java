@@ -47,7 +47,9 @@ public final class WorkspaceLoader {
 						WorkspaceIndex.EMPTY);
 				// ---- Step 4: notify UI on JavaFX thread and kick off async index build ----
 				Platform.runLater(() -> {
-					onSuccess.accept(workspace);
+					if (onSuccess != null) {
+						onSuccess.accept(workspace);
+					}
 					// Async: build full index after UI is shown
 					BackgroundTasks.run("Index-" + name, () -> {
 						WorkspaceIndex fullIndex = WorkspaceIndex.build(treeRoot);
@@ -56,7 +58,11 @@ public final class WorkspaceLoader {
 				});
 				config.addRecentFile(file.getAbsolutePath());
 			} catch (IOException e) {
-				Platform.runLater(() -> onError.accept(e.getMessage()));
+				Platform.runLater(() -> {
+					if (onError != null) {
+						onError.accept(e.getMessage());
+					}
+				});
 			}
 		});
 	}

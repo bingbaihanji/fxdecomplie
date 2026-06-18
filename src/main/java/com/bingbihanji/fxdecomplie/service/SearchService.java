@@ -21,7 +21,7 @@ public class SearchService {
     private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
 
     /** Patterns to exclude from search results (simple wildcard matching) */
-    private List<String> excludePatterns = List.of();
+    private volatile List<String> excludePatterns = List.of();
 
     public void addProvider(SearchProvider provider) {
         providers.add(provider);
