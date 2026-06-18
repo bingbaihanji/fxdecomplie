@@ -29,6 +29,9 @@ public class I18nUtil {
     private static ResourceBundle resourceBundle;
     private static Locale currentLocale;
 
+    /** 实例级 bundle，用于独立于全局状态的场景（如测试）。 */
+    private final ResourceBundle bundle;
+
     static {
         // 默认使用系统语言,如果不支持则使用简体中文
         currentLocale = Locale.getDefault();
@@ -43,6 +46,18 @@ public class I18nUtil {
                 // 如果简体中文也加载失败,尝试使用默认 Locale
                 logger.error("无法加载语言资源文件,使用默认配置", e2);
             }
+        }
+    }
+
+    /**
+     * 私有构造函数，创建具有指定语言环境的 I18nUtil 实例。
+     * 使用 {@link #createInstance(Locale)} 工厂方法获取实例。
+     */
+    private I18nUtil(Locale locale) {
+        try {
+            this.bundle = loadResourceBundle(locale);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load bundle for locale: " + locale, e);
         }
     }
 
@@ -78,6 +93,37 @@ public class I18nUtil {
                 return pattern;
             }
             return MessageFormat.format(pattern, params);
+        } catch (Exception e) {
+            return key;
+        }
+    }
+
+    /**
+     * 获取国际化文本（实例方法）
+     *
+     * @param key 配置文件中的key
+     * @return 对应的值
+     */
+    public String get(String key) {
+        try {
+            return bundle.getString(key);
+        } catch (Exception e) {
+            return key;
+        }
+    }
+
+    /**
+     * 获取带参数格式化的国际化文本（实例方法）
+     *
+     * @param key    配置文件中的key
+     * @param params 格式化参数
+     * @return 格式化后的文本
+     */
+    public String get(String key, Object... params) {
+        try {
+            String pattern = bundle.getString(key);
+            if (params == null || params.length == 0) return pattern;
+            return java.text.MessageFormat.format(pattern, params);
         } catch (Exception e) {
             return key;
         }
@@ -246,6 +292,17 @@ public class I18nUtil {
         } catch (IOException e) {
             throw new RuntimeException("Failed to load bundle for locale: " + locale, e);
         }
+    }
+
+    /**
+     * 创建具有指定语言环境的独立 I18nUtil 实例，用于测试或需要独立 bundle 的场景。
+     * 不影响全局静态状态。
+     *
+     * @param locale 目标语言环境
+     * @return 独立的 I18nUtil 实例
+     */
+    public static I18nUtil createInstance(Locale locale) {
+        return new I18nUtil(locale);
     }
 
     /**
