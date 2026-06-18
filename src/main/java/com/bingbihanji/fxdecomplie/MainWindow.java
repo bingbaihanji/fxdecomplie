@@ -297,69 +297,18 @@ public class MainWindow implements MainMenuBar.Actions {
             showWarning(I18nUtil.getString("dialog.export.title"), I18nUtil.getString("dialog.export.noworkspace"));
             return;
         }
-
-        var configOpt = ExportDialog.show(stage, config, currentEngine);
-        if (configOpt.isEmpty()) {
-            return;
-        }
-        ExportConfig exportConfig = configOpt.get();
-        persistExportConfig(exportConfig);
-
-        ExportDialog.ProgressHandle progressHandle = ExportDialog.showProgress(stage);
-        final Future<?>[] exportTask = new Future<?>[1];
-        AtomicBoolean exportCanceled = new AtomicBoolean(false);
-        progressHandle.setOnCancel(() -> {
-            exportCanceled.set(true);
-            BackgroundTasks.cancel(exportTask[0]);
-        });
-        exportTask[0] = BackgroundTasks.run("ExportAll", () -> {
-            try {
-                ExportResult result = ExportService.exportAll(
-                        view.workspace().getTreeRoot(),
-                        exportConfig,
-                        view.workspace().getIndex(),
-                        (path, pct) -> Platform.runLater(() -> {
-                            statusBar.setFilePath(I18nUtil.getString(
-                                    "status.exporting.detail", pct, path));
-                            progressHandle.update(path, pct);
-                        }));
-                Platform.runLater(() -> {
-                    progressHandle.close();
-                    if (exportCanceled.get()) {
-                        statusBar.setFilePath(I18nUtil.getString("dialog.export.canceled"));
-                        showWarning(I18nUtil.getString("dialog.export.title"),
-                                I18nUtil.getString("dialog.export.canceled"));
-                        return;
-                    }
-                    statusBar.setFilePath(I18nUtil.getString(
-                            "status.exportDone", exportConfig.outputPath()));
-                    showExportResult(exportConfig, result);
-                });
-            } catch (IOException ex) {
-                Platform.runLater(() -> {
-                    progressHandle.close();
-                    showError(I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.export.failed", ex.getMessage()));
-                });
-            } catch (Exception ex) {
-                Platform.runLater(() -> {
-                    progressHandle.close();
-                    if (exportCanceled.get()) {
-                        showWarning(I18nUtil.getString("dialog.export.title"),
-                                I18nUtil.getString("dialog.export.canceled"));
-                    } else {
-                        showError(I18nUtil.getString("dialog.error.title"),
-                                I18nUtil.getString("dialog.export.failed", ex.getMessage()));
-                    }
-                });
-            }
-        });
+        doExport(view.workspace().getTreeRoot(), view.workspace().getIndex());
     }
 
     private void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
         if (rootItem == null || rootItem.getValue() == null) {
             return;
         }
+        doExport(rootItem, WorkspaceIndex.build(rootItem));
+    }
+
+    private void doExport(javafx.scene.control.TreeItem<FileTreeNode> rootItem,
+                          com.bingbihanji.fxdecomplie.model.WorkspaceIndex index) {
         var configOpt = ExportDialog.show(stage, config, currentEngine);
         if (configOpt.isEmpty()) {
             return;
@@ -369,15 +318,15 @@ public class MainWindow implements MainMenuBar.Actions {
 
         ExportDialog.ProgressHandle progressHandle = ExportDialog.showProgress(stage);
         final Future<?>[] exportTask = new Future<?>[1];
-        AtomicBoolean exportCanceled = new AtomicBoolean(false);
+        java.util.concurrent.atomic.AtomicBoolean exportCanceled = new java.util.concurrent.atomic.AtomicBoolean(false);
         progressHandle.setOnCancel(() -> {
             exportCanceled.set(true);
             BackgroundTasks.cancel(exportTask[0]);
         });
-        exportTask[0] = BackgroundTasks.run("ExportNode", () -> {
+        exportTask[0] = BackgroundTasks.run("Export", () -> {
             try {
-                ExportResult result = ExportService.exportAll(rootItem, exportConfig,
-                        WorkspaceIndex.build(rootItem),
+                ExportResult result = ExportService.exportAll(
+                        rootItem, exportConfig, index,
                         (path, pct) -> Platform.runLater(() -> {
                             statusBar.setFilePath(I18nUtil.getString(
                                     "status.exporting.detail", pct, path));
@@ -395,7 +344,7 @@ public class MainWindow implements MainMenuBar.Actions {
                             "status.exportDone", exportConfig.outputPath()));
                     showExportResult(exportConfig, result);
                 });
-            } catch (IOException ex) {
+            } catch (java.io.IOException ex) {
                 Platform.runLater(() -> {
                     progressHandle.close();
                     showError(I18nUtil.getString("dialog.error.title"),
