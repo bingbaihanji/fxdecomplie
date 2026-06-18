@@ -20,6 +20,5 @@ public class FileTreeView extends TreeView<FileTreeNode> {
         setShowRoot(true);
         getStyleClass().add("file-tree-view");
         // Cell factory set by WorkspaceTabManager.installTreeContextMenu (includes context menu wiring)
-        setCellFactory(tv -> new FileTreeCell());
     }
 }
