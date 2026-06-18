@@ -1,6 +1,6 @@
 package com.bingbihanji.fxdecomplie.ui;
 
-import com.bingbihanji.fxdecomplie.MainWindow;
+import com.bingbihanji.fxdecomplie.model.WorkspaceView;
 import com.bingbihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbihanji.fxdecomplie.model.Workspace;
 import com.bingbihanji.fxdecomplie.service.NavigationService;
@@ -45,7 +45,7 @@ public final class WorkspaceTabManager {
     /** 状态栏 */
     private final StatusBar statusBar;
     /** 标签页 → 工作区视图映射 */
-    private final Map<Tab, MainWindow.WorkspaceView> workspaceViews = new HashMap<>();
+    private final Map<Tab, WorkspaceView> workspaceViews = new HashMap<>();
     /** 工作区标签页 → 底部工具窗口状态 */
     private final Map<Tab, WorkspaceTools> workspaceTools = new HashMap<>();
 
@@ -200,7 +200,7 @@ public final class WorkspaceTabManager {
     }
 
     /** 获取所有工作区视图 */
-    public Map<Tab, MainWindow.WorkspaceView> getWorkspaceViews() {
+    public Map<Tab, WorkspaceView> getWorkspaceViews() {
         return workspaceViews;
     }
 
@@ -343,7 +343,7 @@ public final class WorkspaceTabManager {
                 editorSplitPane, bottomToolContainer, sideTabPane, outlineTab, inheritTab);
         outlineTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
         inheritTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
-        MainWindow.WorkspaceView view = new MainWindow.WorkspaceView(workspace, treeView, codeTabPane, tab);
+        WorkspaceView view = new WorkspaceView(workspace, treeView, codeTabPane, tab);
         workspaceViews.put(tab, view);
         workspaceTools.put(tab, tools);
         tab.setOnClosed(event -> cleanupClosedWorkspace(tab));
@@ -368,14 +368,14 @@ public final class WorkspaceTabManager {
     }
 
     /** 获取当前选中的工作区视图 */
-    public MainWindow.WorkspaceView currentWorkspaceView() {
+    public WorkspaceView currentWorkspaceView() {
         Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
         return selected == null ? null : workspaceViews.get(selected);
     }
 
     /** 获取当前选中的代码标签页 */
     public CodeEditorTab currentCodeTab() {
-        MainWindow.WorkspaceView view = currentWorkspaceView();
+        WorkspaceView view = currentWorkspaceView();
         if (view == null) return null;
         Tab selected = view.codeTabPane().getSelectionModel().getSelectedItem();
         return selected instanceof CodeEditorTab codeTab ? codeTab : null;
@@ -383,7 +383,7 @@ public final class WorkspaceTabManager {
 
     /** 更新状态栏以反映当前工作区 */
     public void updateStatusForWorkspace(Tab tab) {
-        MainWindow.WorkspaceView view = tab == null ? null : workspaceViews.get(tab);
+        WorkspaceView view = tab == null ? null : workspaceViews.get(tab);
         if (view == null) {
             statusBar.clear();
             return;
@@ -405,7 +405,7 @@ public final class WorkspaceTabManager {
 
     /** 折叠当前工作区文件树 */
     public void collapseTreeInCurrentWorkspace() {
-        MainWindow.WorkspaceView view = currentWorkspaceView();
+        WorkspaceView view = currentWorkspaceView();
         if (view != null) {
             collapse(view.workspace().getTreeRoot());
             view.workspace().getTreeRoot().setExpanded(true);
