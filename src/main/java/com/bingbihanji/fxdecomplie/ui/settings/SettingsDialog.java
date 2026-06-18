@@ -119,7 +119,25 @@ public final class SettingsDialog {
         langTab.setContent(new VBox(10, new Label(I18nUtil.getString("settings.uiLang")), langCombo));
 
         tabPane.getTabs().addAll(decompilerTab, uiTab, searchTab, exportTab, cacheTab, langTab);
-        dialog.getDialogPane().setContent(tabPane);
+
+        Button restoreDefaultsBtn = new Button(I18nUtil.getString("settings.restoreDefaults"));
+        restoreDefaultsBtn.setStyle("-fx-font-size: 12px; -fx-text-fill: #f44747;");
+        restoreDefaultsBtn.setOnAction(e -> {
+            engineCombo.setValue("VINEFLOWER");
+            lineNumCheck.setSelected(true);
+            wrapCheck.setSelected(true);
+            fullSourceSearchCheck.setSelected(false);
+            resultLimitSpinner.getValueFactory().setValue(200);
+            exportEngineCombo.setValue("FOLLOW_CURRENT");
+            exportFormatCombo.setValue("DIR");
+            conflictCombo.setValue("OVERWRITE");
+            exportResourcesCheck.setSelected(true);
+            exportPathField.setText("");
+            langCombo.setValue("简体中文");
+        });
+
+        VBox content = new VBox(10, tabPane, restoreDefaultsBtn);
+        dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         var result = dialog.showAndWait();

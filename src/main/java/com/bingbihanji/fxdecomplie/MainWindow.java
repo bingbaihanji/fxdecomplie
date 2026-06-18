@@ -781,28 +781,16 @@ public class MainWindow implements MainMenuBar.Actions {
         return name.endsWith(".jar") || name.endsWith(".zip");
     }
 
-    /** 显示信息弹窗 */
     private void showInfo(String title, String message) {
-        showAlert(Alert.AlertType.INFORMATION, title, message);
+        com.bingbihanji.fxdecomplie.ui.DialogHelper.showInfo(stage, title, message);
     }
 
-    /** 显示警告弹窗 */
     private void showWarning(String title, String message) {
-        showAlert(Alert.AlertType.WARNING, title, message);
+        com.bingbihanji.fxdecomplie.ui.DialogHelper.showWarning(stage, title, message);
     }
 
-    /** 显示错误弹窗 */
     private void showError(String title, String message) {
-        showAlert(Alert.AlertType.ERROR, title, message);
-    }
-
-    /** 显示弹窗对话框 */
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type, message);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.initOwner(stage);
-        alert.showAndWait();
+        com.bingbihanji.fxdecomplie.ui.DialogHelper.showError(stage, title, message);
     }
 
 }
