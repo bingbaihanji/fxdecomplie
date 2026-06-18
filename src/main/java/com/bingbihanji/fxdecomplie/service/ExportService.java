@@ -136,7 +136,11 @@ public final class ExportService {
     private static byte[] resolveClassBytes(FileTreeNode data) {
         byte[] bytes = data.getCachedBytes();
         if (bytes == null) {
-            bytes = BytecodeCache.get(data.getFullPath().replace(".class", ""));
+            String internalName = data.getFullPath();
+            if (internalName.endsWith(".class")) {
+                internalName = internalName.substring(0, internalName.length() - 6);
+            }
+            bytes = BytecodeCache.get(internalName);
         }
         return bytes;
     }

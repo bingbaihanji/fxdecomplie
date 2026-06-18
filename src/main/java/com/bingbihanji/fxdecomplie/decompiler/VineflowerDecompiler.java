@@ -81,7 +81,7 @@ public class VineflowerDecompiler implements Decompiler {
     /** {@inheritDoc} */
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
-        String internalName = classFilePath.replace(".class", "");
+        String internalName = DecompilerContext.normalizeInternalName(classFilePath);
         return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
@@ -94,7 +94,7 @@ public class VineflowerDecompiler implements Decompiler {
     @Override
     public String decompile(String classFilePath, byte[] classBytes,
                             DecompilerContext context) {
-        String internalName = classFilePath.replace(".class", "");
+        String internalName = DecompilerContext.normalizeInternalName(classFilePath);
         return decompileType(internalName, classBytes, context);
     }
 

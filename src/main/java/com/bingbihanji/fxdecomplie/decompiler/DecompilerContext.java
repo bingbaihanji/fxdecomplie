@@ -32,7 +32,7 @@ public final class DecompilerContext {
         return of(index::getClassBytes);
     }
 
-    private static String normalizeInternalName(String internalName) {
+    public static String normalizeInternalName(String internalName) {
         String normalized = internalName.replace('\\', '/');
         return normalized.endsWith(".class")
                 ? normalized.substring(0, normalized.length() - 6)

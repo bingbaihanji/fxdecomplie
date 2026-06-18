@@ -619,10 +619,8 @@ public class MainWindow implements MainMenuBar.Actions {
 
         javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink("www.bingbaihanji.com");
         link.setOnAction(e -> {
-            try {
-                java.awt.Desktop.getDesktop().browse(new java.net.URI("https://www.bingbaihanji.com"));
-            } catch (Exception ignored) {
-                // browse not supported on this platform
+            if (hostServices != null) {
+                hostServices.showDocument("https://www.bingbaihanji.com");
             }
         });
 

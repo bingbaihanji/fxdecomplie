@@ -106,7 +106,7 @@ public final class FxDecompilerApp {
             primaryStage.setHeight(config.window().height());
             primaryStage.setMaximized(config.window().maximized());
 
-            MainWindow window = new MainWindow(config, true);
+            MainWindow window = new MainWindow(config, true, getHostServices());
             window.show(primaryStage);
             openStartupPath(window);
 
