@@ -39,9 +39,6 @@ public class CodeEditorTab extends Tab {
     private final Consumer<CodeMetadata.Reference> onNavigate;
     /** 编辑器内搜索栏 */
     private EditorSearchBar editorSearchBar;
-    /** 防止括号匹配高亮触发递归重入 */
-    private boolean bracketMatchSuppressed;
-
     /** 简化构造器（使用默认主题和字体配置） */
     public CodeEditorTab(OpenFile openFile) {
         this(openFile, VsCodeThemeLoader.defaultDark(), "Consolas", 14, true, true, null, null, null);
@@ -121,40 +118,6 @@ public class CodeEditorTab extends Tab {
         area.setText(openFile.getSourceCode());
         area.setSyntaxDecorator(new RegexHighlighter(theme));
         area.setHighlightCurrentParagraph(true);
-
-        // Bracket matching: highlight paired brackets when caret is adjacent
-        area.caretPositionProperty().addListener((obs, oldPos, newPos) -> {
-            if (bracketMatchSuppressed || newPos == null) return;
-            String text = area.getText();
-            if (text == null || text.isEmpty()) return;
-
-            int pos = toFlatIndex(text, newPos.index(), newPos.charIndex());
-            if (pos < 0 || pos > text.length()) return;
-
-            // Check bracket at caret position, then before caret
-            int match = -1;
-            int bracketPos = pos;
-            if (pos < text.length() && isBracket(text.charAt(pos))) {
-                match = findMatchingBracket(text, pos);
-            }
-            if (match < 0 && pos > 0 && isBracket(text.charAt(pos - 1))) {
-                bracketPos = pos - 1;
-                match = findMatchingBracket(text, pos - 1);
-            }
-
-            if (match >= 0) {
-                int selStart = Math.min(bracketPos, match);
-                int selEnd = Math.max(bracketPos, match) + 1;
-                TextPos tpStart = toTextPos(text, selStart);
-                TextPos tpEnd = toTextPos(text, selEnd);
-                bracketMatchSuppressed = true;
-                try {
-                    area.select(tpStart, tpEnd);
-                } finally {
-                    bracketMatchSuppressed = false;
-                }
-            }
-        });
 
         // Keyboard shortcuts: Ctrl+F for search, Ctrl+G for goto line
         area.setOnKeyPressed(e -> {
