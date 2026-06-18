@@ -56,6 +56,10 @@ public class OpenFile {
         return engine;
     }
 
+    /**
+     * 基于 fullPath + engine 比较，不包括 sourceCode。
+     * 同一类用同一引擎反编译的两个 OpenFile 对象视为相等（用于缓存键语义）。
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
