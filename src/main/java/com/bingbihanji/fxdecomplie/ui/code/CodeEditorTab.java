@@ -10,6 +10,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.text.Font;
 import jfx.incubator.scene.control.richtext.CodeArea;
+import jfx.incubator.scene.control.richtext.TextPos;
 
 import java.util.function.Consumer;
 
@@ -125,6 +126,9 @@ public class CodeEditorTab extends Tab {
                     editorSearchBar.show();
                 }
                 e.consume();
+            } else if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.G) {
+                CodeEditorTab.this.goToLine();
+                e.consume();
             }
         });
 
@@ -158,6 +162,35 @@ public class CodeEditorTab extends Tab {
     /** 重置字号为默认值 */
     public void resetZoom() {
         setFontSize(defaultFontSize);
+    }
+
+    /** 跳转到指定行（Ctrl+G） */
+    public void goToLine() {
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+        dialog.setTitle(I18nUtil.getString("editor.gotoLine.title"));
+        dialog.setHeaderText(null);
+        String text = codeArea.getText();
+        int totalLines = text != null ? (int) text.chars().filter(ch -> ch == '\n').count() + 1 : 1;
+        dialog.setContentText(I18nUtil.getString("editor.gotoLine.prompt", totalLines));
+
+        dialog.showAndWait().ifPresent(input -> {
+            try {
+                int line = Integer.parseInt(input.trim());
+                if (line < 1 || line > totalLines) {
+                    throw new NumberFormatException();
+                }
+                TextPos pos = TextPos.ofLeading(line - 1, 0);
+                codeArea.select(pos, pos);
+                codeArea.requestFocus();
+            } catch (NumberFormatException e) {
+                javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                        javafx.scene.control.Alert.AlertType.WARNING);
+                alert.setTitle(I18nUtil.getString("editor.gotoLine.title"));
+                alert.setHeaderText(null);
+                alert.setContentText(I18nUtil.getString("editor.gotoLine.invalid"));
+                alert.showAndWait();
+            }
+        });
     }
 
     /** 设置行号开关 */
