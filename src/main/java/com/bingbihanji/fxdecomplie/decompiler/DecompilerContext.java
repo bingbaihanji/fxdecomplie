@@ -54,4 +54,10 @@ public final class DecompilerContext {
         }
         return BytecodeCache.get(normalizeInternalName(internalName));
     }
+
+    /** Extract simple class name from internal name (e.g. "com/example/Foo" -> "Foo") */
+    public static String simpleName(String internalName) {
+        int idx = internalName.lastIndexOf('/');
+        return idx >= 0 ? internalName.substring(idx + 1) : internalName;
+    }
 }

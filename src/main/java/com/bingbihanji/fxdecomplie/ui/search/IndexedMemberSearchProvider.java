@@ -51,6 +51,6 @@ public class IndexedMemberSearchProvider implements SearchProvider {
                 break;
             }
         }
-        return results.size() > MAX_RESULTS ? results.subList(0, MAX_RESULTS) : results;
+        return results;
     }
 }

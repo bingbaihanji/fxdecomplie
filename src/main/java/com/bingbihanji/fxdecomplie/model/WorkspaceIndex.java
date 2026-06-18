@@ -5,6 +5,9 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -17,6 +20,8 @@ import java.util.*;
  * @date 2026-06-18
  */
 public final class WorkspaceIndex {
+
+    private static final Logger logger = LoggerFactory.getLogger(WorkspaceIndex.class);
 
     private final List<ClassIndexEntry> classes;
     private final List<ResourceIndexEntry> resources;
@@ -89,8 +94,8 @@ public final class WorkspaceIndex {
                     return super.visitMethod(access, name, descriptor, signature, exceptions);
                 }
             }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-        } catch (Exception ignored) {
-            // Keep path-based metadata for malformed classes.
+        } catch (Exception e) {
+            logger.warn("Failed to index class: {}", node.getFullPath(), e);
         }
 
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName, bytes,

@@ -106,8 +106,8 @@ public class CfrDecompiler implements Decompiler {
 
                 if (normalizedPath.equals(normalizedTypeName)
                         || normalizedPath.equals(normalizedTypeName + ".class")
-                        || normalizedPath.endsWith("/" + getSimpleName(normalizedTypeName) + ".class")
-                        || normalizedPath.endsWith("/" + getSimpleName(normalizedTypeName))) {
+                        || normalizedPath.endsWith("/" + DecompilerContext.simpleName(normalizedTypeName) + ".class")
+                        || normalizedPath.endsWith("/" + DecompilerContext.simpleName(normalizedTypeName))) {
                     return Pair.make(classBytes, normalizedPath);
                 }
 
@@ -118,11 +118,6 @@ public class CfrDecompiler implements Decompiler {
                 }
 
                 return null;
-            }
-
-            private String getSimpleName(String name) {
-                int idx = name.lastIndexOf('/');
-                return idx >= 0 ? name.substring(idx + 1) : name;
             }
         };
 

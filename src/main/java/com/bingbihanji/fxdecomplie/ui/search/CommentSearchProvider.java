@@ -25,7 +25,8 @@ public class CommentSearchProvider implements SearchProvider {
             for (int i = 0; i < lines.length; i++) {
                 String trimmed = lines[i].trim();
                 if (trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("* ")
-                        || trimmed.startsWith("*\t") || trimmed.equals("*") || trimmed.startsWith("*/")) {
+                        || trimmed.startsWith("*\t") || trimmed.equals("*") || trimmed.startsWith("*/")
+                        || trimmed.contains("/*") || trimmed.contains("*/") || trimmed.startsWith("*")) {
                     if (trimmed.toLowerCase().contains(lowerQuery)) {
                         results.add(new SearchResult(entry.getKey(), trimmed, i + 1,
                                 SearchResult.MatchType.COMMENT_TEXT));

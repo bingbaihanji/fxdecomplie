@@ -34,7 +34,7 @@ public final class BytecodeViewTab {
         LineNumberGutter.setEnabled(codeArea, true);
 
         if (classBytes == null) {
-            codeArea.setText("// 无可用字节码");
+            codeArea.setText("// " + com.bingbihanji.fxdecomplie.utils.I18nUtil.getString("bytecode.notavailable"));
             return codeArea;
         }
 
@@ -48,7 +48,7 @@ public final class BytecodeViewTab {
             pw.flush();
             codeArea.setText(sw.toString());
         } catch (Exception e) {
-            codeArea.setText("// 字节码解析失败: " + e.getMessage());
+            codeArea.setText("// " + com.bingbihanji.fxdecomplie.utils.I18nUtil.getString("bytecode.parseFailed") + ": " + e.getMessage());
         }
         return codeArea;
     }

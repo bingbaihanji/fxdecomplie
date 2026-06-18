@@ -122,7 +122,7 @@ public class VineflowerDecompiler implements Decompiler {
                 String key = internalPath != null ? internalPath : externalPath;
                 if (key != null) {
                     key = key.replace(".class", "").replace("\\", "/");
-                    if (key.endsWith("/" + getSimpleName(typeName)) || key.equals(typeName)) {
+                    if (key.endsWith("/" + DecompilerContext.simpleName(typeName)) || key.equals(typeName)) {
                         return classBytes;
                     }
                     return effectiveContext.resolveClassBytes(key);
@@ -219,17 +219,6 @@ public class VineflowerDecompiler implements Decompiler {
         }
         return decompiled;
     }
-
-    /**
-     * 从完整路径中提取简单类名。
-     * @param typeName 类型名（如 "com/example/Main"）
-     * @return 简单类名（如 "Main"）
-     */
-    private String getSimpleName(String typeName) {
-        int idx = typeName.lastIndexOf('/');
-        return idx >= 0 ? typeName.substring(idx + 1) : typeName;
-    }
-
     /** @return 引擎类型 VINEFLOWER */
     @Override
     public DecompilerTypeEnum getType() {
