@@ -118,6 +118,7 @@ public class CodeEditorTab extends Tab {
         area.setFont(loadCodeFont(fontFamily, fontSize));
         area.setText(openFile.getSourceCode());
         area.setSyntaxDecorator(new RegexHighlighter(theme));
+        area.setHighlightCurrentParagraph(true);
 
         // Keyboard shortcuts: Ctrl+F for search, Ctrl+G for goto line
         area.setOnKeyPressed(e -> {
