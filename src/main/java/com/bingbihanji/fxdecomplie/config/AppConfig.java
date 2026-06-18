@@ -173,11 +173,14 @@ public class AppConfig {
         public boolean fullSourceSearch = false;
         /** 搜索结果显示上限 */
         public int resultLimit = 200;
+        /** 搜索排除路径模式（支持通配符 *） */
+        public List<String> excludePatterns = new java.util.ArrayList<>();
 
         @Override
         public String toString() {
             return "Search{fullSourceSearch=" + fullSourceSearch
-                    + ", resultLimit=" + resultLimit + "}";
+                    + ", resultLimit=" + resultLimit
+                    + ", excludePatterns=" + excludePatterns + "}";
         }
     }
 }

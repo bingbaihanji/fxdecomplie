@@ -473,6 +473,31 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
+    /** 用全部引擎反编译当前类并排打开标签页，方便对比输出 */
+    @Override
+    public void compareEngines() {
+        WorkspaceView view = tabManager.currentWorkspaceView();
+        CodeEditorTab currentTab = tabManager.currentCodeTab();
+        if (view == null || currentTab == null) {
+            showWarning(I18nUtil.getString("menu.engine.compareAll"),
+                    I18nUtil.getString("dialog.needOpenFile"));
+            return;
+        }
+
+        String fullPath = currentTab.getOpenFile().getFullPath();
+        FileTreeNode node = classTabOpener.findNodeByPath(view.workspace().getTreeRoot(), fullPath);
+        if (node == null) {
+            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
+            return;
+        }
+
+        statusBar.setFilePath(I18nUtil.getString("status.compareAllEngines", node.getFullPath()));
+        for (DecompilerTypeEnum engine : DecompilerTypeEnum.values()) {
+            classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
+                    engine, lineNumbersEnabled);
+        }
+    }
+
     /** 打开搜索对话框 */
     @Override
     public void openSearch() {
@@ -495,6 +520,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
         // Create SearchService with all providers
         SearchService searchService = new SearchService();
+        searchService.setExcludePatterns(config.search.excludePatterns);
         searchService.addProvider(new ClassSearchProvider(index.classPaths()));
         searchService.addProvider(new IndexedMemberSearchProvider(index));
         searchService.addProvider(new MethodSearchProvider());

@@ -20,12 +20,19 @@ public class SearchService {
     /** Registered search strategy providers, invoked in insertion order */
     private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
 
+    /** Patterns to exclude from search results (simple wildcard matching) */
+    private List<String> excludePatterns = List.of();
+
     public void addProvider(SearchProvider provider) {
         providers.add(provider);
     }
 
     public void clearProviders() {
         providers.clear();
+    }
+
+    public void setExcludePatterns(List<String> patterns) {
+        this.excludePatterns = patterns != null ? List.copyOf(patterns) : List.of();
     }
 
     /**
@@ -50,6 +57,10 @@ public class SearchService {
             List<SearchResult> results = provider.search(query, sourceCache);
             all.addAll(results);
         }
+        // Filter by exclude patterns if any
+        if (!excludePatterns.isEmpty()) {
+            all.removeIf(result -> matchesExcludePattern(result.fullPath(), excludePatterns));
+        }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
             if (typeCmp != 0) return typeCmp;
@@ -68,11 +79,28 @@ public class SearchService {
             List<SearchResult> results = provider.search(query, sourceCache, options);
             all.addAll(results);
         }
+        // Filter by exclude patterns if any
+        if (!excludePatterns.isEmpty()) {
+            all.removeIf(result -> matchesExcludePattern(result.fullPath(), excludePatterns));
+        }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
             if (typeCmp != 0) return typeCmp;
             return Integer.compare(a.lineNumber(), b.lineNumber());
         });
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
+    }
+
+    static boolean matchesExcludePattern(String path, List<String> patterns) {
+        if (path == null) return false;
+        for (String pattern : patterns) {
+            // Simple wildcard matching: * matches any sequence, ? matches any single char
+            String regex = pattern
+                    .replace(".", "\\.")
+                    .replace("*", ".*")
+                    .replace("?", ".");
+            if (path.matches(".*" + regex + ".*")) return true;
+        }
+        return false;
     }
 }
