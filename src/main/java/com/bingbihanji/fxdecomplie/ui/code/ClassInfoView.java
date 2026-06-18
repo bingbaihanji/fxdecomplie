@@ -3,6 +3,10 @@ package com.bingbihanji.fxdecomplie.ui.code;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,6 +54,52 @@ public final class ClassInfoView {
             } else {
                 root.getChildren().add(label("接口: (无)", "#6a6a6a"));
             }
+
+            // ---- Extract methods and fields via ASM visitor ----
+            List<String> methods = new ArrayList<>();
+            List<String> fields = new ArrayList<>();
+            try {
+                reader.accept(new ClassVisitor(Opcodes.ASM9) {
+                    @Override
+                    public FieldVisitor visitField(int access, String name, String descriptor,
+                                                   String signature, Object value) {
+                        String accessStr = formatMemberAccess(access);
+                        String typeStr = descriptorToJava(descriptor);
+                        fields.add(accessStr + typeStr + " " + name);
+                        return super.visitField(access, name, descriptor, signature, value);
+                    }
+
+                    @Override
+                    public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                                     String signature, String[] exceptions) {
+                        String accessStr = formatMemberAccess(access);
+                        String returnType = extractReturnType(descriptor);
+                        String params = extractParams(descriptor);
+                        methods.add(accessStr + returnType + " " + name + "(" + params + ")");
+                        return super.visitMethod(access, name, descriptor, signature, exceptions);
+                    }
+                }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            } catch (Exception ignored) { }
+
+            // ---- Methods section ----
+            root.getChildren().add(sectionLabel("方法 (" + methods.size() + ")"));
+            if (methods.isEmpty()) {
+                root.getChildren().add(label("  (无)", "#6a6a6a"));
+            } else {
+                for (String m : methods) {
+                    root.getChildren().add(label("  " + m, "#dcdcaa"));
+                }
+            }
+
+            // ---- Fields section ----
+            root.getChildren().add(sectionLabel("字段 (" + fields.size() + ")"));
+            if (fields.isEmpty()) {
+                root.getChildren().add(label("  (无)", "#6a6a6a"));
+            } else {
+                for (String f : fields) {
+                    root.getChildren().add(label("  " + f, "#9cdcfe"));
+                }
+            }
         } catch (Exception e) {
             root.getChildren().add(label("解析失败: " + e.getMessage(), "#f44747"));
         }
@@ -77,5 +127,54 @@ public final class ClassInfoView {
         Label l = new Label(text);
         l.setStyle("-fx-text-fill: " + color + "; -fx-font-size: 13px; -fx-font-family: 'Consolas', monospace;");
         return l;
+    }
+
+    private static Label sectionLabel(String text) {
+        Label l = new Label(text);
+        l.setStyle("-fx-text-fill: #569cd6; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 8 0 2 0;");
+        return l;
+    }
+
+    private static String formatMemberAccess(int access) {
+        StringBuilder sb = new StringBuilder();
+        if ((access & Opcodes.ACC_PUBLIC) != 0) sb.append("public ");
+        else if ((access & Opcodes.ACC_PRIVATE) != 0) sb.append("private ");
+        else if ((access & Opcodes.ACC_PROTECTED) != 0) sb.append("protected ");
+        if ((access & Opcodes.ACC_STATIC) != 0) sb.append("static ");
+        if ((access & Opcodes.ACC_FINAL) != 0) sb.append("final ");
+        if ((access & Opcodes.ACC_ABSTRACT) != 0) sb.append("abstract ");
+        return sb.toString();
+    }
+
+    private static String descriptorToJava(String descriptor) {
+        return descriptor.replace('/', '.').replace(";", "");
+    }
+
+    private static String extractReturnType(String descriptor) {
+        int paren = descriptor.lastIndexOf(')');
+        if (paren < 0 || paren + 1 >= descriptor.length()) return "void";
+        String ret = descriptor.substring(paren + 1);
+        if ("V".equals(ret)) return "void";
+        if ("I".equals(ret)) return "int";
+        if ("J".equals(ret)) return "long";
+        if ("Z".equals(ret)) return "boolean";
+        if ("F".equals(ret)) return "float";
+        if ("D".equals(ret)) return "double";
+        if ("C".equals(ret)) return "char";
+        if ("B".equals(ret)) return "byte";
+        if ("S".equals(ret)) return "short";
+        if (ret.startsWith("L")) return ret.substring(1, ret.length() - 1).replace('/', '.');
+        if (ret.startsWith("[")) return ret.replace('/', '.');
+        return ret;
+    }
+
+    private static String extractParams(String descriptor) {
+        int paren = descriptor.indexOf('(');
+        int endParen = descriptor.lastIndexOf(')');
+        if (paren < 0 || endParen <= paren) return "";
+        String params = descriptor.substring(paren + 1, endParen);
+        if (params.isEmpty()) return "";
+        // Simplify: just show the raw descriptor for params
+        return params;
     }
 }
