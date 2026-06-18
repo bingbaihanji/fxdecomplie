@@ -37,11 +37,10 @@ public class JdDecompiler implements Decompiler {
         StringBuilder result = new StringBuilder();
         DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
 
-        int lastSlash = typeName.lastIndexOf('/');
-        if (lastSlash > 0) {
-            String pkg = typeName.substring(0, lastSlash).replace('/', '.');
-            result.append("package ").append(pkg).append(";\n\n");
-        }
+        final int lastSlash = typeName.lastIndexOf('/');
+        final String expectedPackage = lastSlash > 0
+                ? typeName.substring(0, lastSlash).replace('/', '.')
+                : null;
 
         Loader loader = new Loader() {
             @Override
@@ -63,12 +62,21 @@ public class JdDecompiler implements Decompiler {
             ClassFileToJavaSourceDecompiler decompiler = new ClassFileToJavaSourceDecompiler();
             decompiler.decompile(loader, printer, typeName);
         } catch (Exception e) {
+            if (expectedPackage != null) {
+                return "package " + expectedPackage + ";\n\n// JD-Core Error: " + e.getMessage();
+            }
             return "// JD-Core Error: " + e.getMessage();
         }
 
         String decompiled = result.toString();
         if (decompiled.isEmpty()) {
+            if (expectedPackage != null) {
+                return "package " + expectedPackage + ";\n\n// JD-Core decompile failed\n// Class: " + typeName;
+            }
             return "// JD-Core decompile failed\n// Class: " + typeName;
+        }
+        if (expectedPackage != null && !decompiled.trim().startsWith("package ")) {
+            decompiled = "package " + expectedPackage + ";\n\n" + decompiled;
         }
         return decompiled;
     }
