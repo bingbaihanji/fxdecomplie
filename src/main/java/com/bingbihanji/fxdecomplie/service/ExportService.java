@@ -240,7 +240,9 @@ public final class ExportService {
         if (data.isClassFile()) {
             byte[] bytes = resolveClassBytes(data);
             if (bytes == null) {
-                throw new IllegalStateException("class bytes not found");
+                throw new IllegalStateException(
+                        "class bytes not found for " + data.getFullPath()
+                                + " — open the class first or re-index the workspace");
             }
             String source = decompiler.decompile(data.getFullPath(), bytes, context);
             return new ExportContent(data.getFullPath().replace(".class", ".java"),
