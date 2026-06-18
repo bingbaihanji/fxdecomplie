@@ -2,6 +2,7 @@ package com.bingbihanji.fxdecomplie;
 
 import com.bingbihanji.fxdecomplie.config.AppConfig;
 import com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory;
+import com.bingbihanji.fxdecomplie.service.DiskCodeCache;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
@@ -94,6 +95,7 @@ public final class FxDecompilerApp {
         private void startApplication(Stage primaryStage) {
             logger.info("FxDecompiler startup build: headerBar-2026-06-17");
             config = AppConfig.load();
+            DiskCodeCache.cleanIfNeeded();
             applyConfiguredLocale();
 
             primaryStage.initStyle(StageStyle.EXTENDED);
