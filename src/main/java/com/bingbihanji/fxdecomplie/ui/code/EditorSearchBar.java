@@ -91,11 +91,15 @@ public final class EditorSearchBar extends HBox {
         }
 
         int idx = 0;
-        String lowerContent = content.toLowerCase();
-        String lowerText = text.toLowerCase();
-        while ((idx = lowerContent.indexOf(lowerText, idx)) >= 0) {
-            matchPositions.add(idx);
-            idx += text.length();
+        int textLen = text.length();
+        while (idx <= content.length() - textLen) {
+            boolean found = content.regionMatches(true, idx, text, 0, textLen);
+            if (found) {
+                matchPositions.add(idx);
+                idx += textLen;
+            } else {
+                idx++;
+            }
         }
 
         if (!matchPositions.isEmpty()) {

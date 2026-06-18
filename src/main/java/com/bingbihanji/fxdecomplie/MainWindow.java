@@ -694,24 +694,27 @@ public class MainWindow implements MainMenuBar.Actions {
 
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
         if (retries > 20) return; // max ~2 seconds
-        javafx.application.Platform.runLater(() -> {
+        javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(
+                javafx.util.Duration.millis(100));
+        delay.setOnFinished(e -> {
             for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
                 if (tab instanceof CodeEditorTab codeTab
                         && codeTab.getOpenFile().getFullPath().equals(fullPath)) {
                     var area = codeTab.getCodeArea();
                     if (area.getText() != null && !area.getText().isEmpty()) {
-                        // Navigate to line
-                        area.moveDocumentStart();
-                        for (int i = 1; i < lineNumber; i++) area.moveParagraphDown();
-                        area.requestFocus();
+                        try {
+                            area.moveDocumentStart();
+                            for (int i = 1; i < lineNumber; i++) area.moveParagraphDown();
+                            area.requestFocus();
+                        } catch (Exception ignored) { }
                         return;
                     }
-                    // Tab exists but decompilation not done yet — retry
                     navigateToLine(view, fullPath, lineNumber, retries + 1);
                     return;
                 }
             }
         });
+        delay.play();
     }
 
     private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {

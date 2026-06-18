@@ -209,11 +209,9 @@ public final class SettingsDialog {
             }
 
             // Apply language change
-            String selectedLang = langCombo.getValue();
-            Locale newLocale = "English".equals(selectedLang)
-                    ? Locale.ENGLISH
-                    : Locale.SIMPLIFIED_CHINESE;
-            config.language("English".equals(selectedLang) ? "en" : "zh-CN");
+            int langIdx = langCombo.getSelectionModel().getSelectedIndex();
+            Locale newLocale = (langIdx == 1) ? Locale.ENGLISH : Locale.SIMPLIFIED_CHINESE;
+            config.language(langIdx == 1 ? "en" : "zh-CN");
             I18nUtil.switchLocale(newLocale);
 
             config.save();

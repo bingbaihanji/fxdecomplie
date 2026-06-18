@@ -113,6 +113,8 @@ public final class ClassInfoView {
     private static String formatAccess(int access) {
         List<String> flags = new ArrayList<>();
         if ((access & 0x0001) != 0) flags.add("public");
+        if ((access & 0x0002) != 0) flags.add("private");
+        if ((access & 0x0004) != 0) flags.add("protected");
         if ((access & 0x0010) != 0) flags.add("final");
         if ((access & 0x0020) != 0) flags.add("super");
         if ((access & 0x0200) != 0) flags.add("interface");
