@@ -742,43 +742,17 @@ public class MainWindow implements MainMenuBar.Actions {
 
     /** 加载并打开文件 */
     private void loadFile(File file) {
-        String name = file.getName();
-        boolean isArchive = isArchive(file);
         statusBar.setFilePath(I18nUtil.getString("status.loading", file.getAbsolutePath()));
 
-        // ---- Pipeline: discover -> build tree -> create workspace -> add tab (all on background thread) ----
-        BackgroundTasks.run("FileLoader-" + name, () -> {
-            try {
-                // ---- Step 1: scan JAR/ZIP/directory for all .class and resource entries ----
-                var entries = ClassDiscoverer.discover(file);
-                // ---- Step 2: build hierarchical file tree with bytecode caching ----
-                TreeItem<FileTreeNode> treeRoot = FileTreeBuilder.build(name, entries);
-                // ---- Step 3: create workspace model with index ----
-                Workspace workspace = new Workspace(name, file, treeRoot, isArchive,
-                        WorkspaceIndex.EMPTY);
-                // ---- Step 4: create UI (file tree + code tabs) on JavaFX thread ----
-                Platform.runLater(() -> tabManager.addWorkspaceTab(workspace,
+        WorkspaceLoader.loadAsync(file, config,
+                workspace -> tabManager.addWorkspaceTab(workspace,
                         (node, codeTabPane) -> classTabOpener.openClassTab(
                                 node, workspace, codeTabPane, currentEngine, lineNumbersEnabled),
                         (node, codeTabPane) -> classTabOpener.openTextFileTab(
                                 node, workspace, codeTabPane),
-                        this::exportTreeItem));
-                config.addRecentFile(file.getAbsolutePath());
-                // Async: build full index after UI is shown
-                BackgroundTasks.run("Index-" + name, () -> {
-                    WorkspaceIndex fullIndex = WorkspaceIndex.build(treeRoot);
-                    workspace.setIndex(fullIndex);
-                });
-            } catch (IOException e) {
-                Platform.runLater(() -> showError(I18nUtil.getString("dialog.error.title"), I18nUtil.getString("dialog.load.error") + ": " + e.getMessage()));
-            }
-        });
-    }
-
-    /** 判断文件是否为归档文件（JAR/ZIP） */
-    private boolean isArchive(File file) {
-        String name = file.getName().toLowerCase();
-        return name.endsWith(".jar") || name.endsWith(".zip");
+                        this::exportTreeItem),
+                errorMsg -> showError(I18nUtil.getString("dialog.error.title"),
+                        I18nUtil.getString("dialog.load.error") + ": " + errorMsg));
     }
 
     private void showInfo(String title, String message) {
