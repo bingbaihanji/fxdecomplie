@@ -24,11 +24,11 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
             icon.getStyleClass().clear();
         } else {
             String iconText = switch (item.getNodeType()) {
-                case PACKAGE -> "PKG";
-                case CLASS_FILE -> "CLS";
-                case JAVA_FILE -> "JAVA";
-                case RESOURCE -> "RES";
-                case BINARY -> "BIN";
+                case PACKAGE -> "📁";   // 📁 folder
+                case CLASS_FILE -> "📄"; // 📄 document
+                case JAVA_FILE -> "☕";        // ☕ coffee
+                case RESOURCE -> "📋";   // 📋 clipboard
+                case BINARY -> "🔑";     // 🔑 key
             };
             String iconStyle = switch (item.getNodeType()) {
                 case PACKAGE -> "file-tree-icon-package";
