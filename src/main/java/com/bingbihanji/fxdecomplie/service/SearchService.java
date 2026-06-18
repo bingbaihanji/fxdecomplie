@@ -1,5 +1,6 @@
 package com.bingbihanji.fxdecomplie.service;
 
+import com.bingbihanji.fxdecomplie.model.SearchOptions;
 import com.bingbihanji.fxdecomplie.ui.search.SearchProvider;
 import com.bingbihanji.fxdecomplie.ui.search.SearchResult;
 
@@ -47,6 +48,24 @@ public class SearchService {
                 return List.of();
             }
             List<SearchResult> results = provider.search(query, sourceCache);
+            all.addAll(results);
+        }
+        all.sort((a, b) -> {
+            int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
+            if (typeCmp != 0) return typeCmp;
+            return Integer.compare(a.lineNumber(), b.lineNumber());
+        });
+        return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
+    }
+
+    public List<SearchResult> searchAll(String query, Map<String, String> sourceCache,
+                                         SearchOptions options, int limit) {
+        if (query == null || query.isBlank()) return List.of();
+        int resultLimit = Math.max(1, limit);
+        List<SearchResult> all = new ArrayList<>();
+        for (SearchProvider provider : providers) {
+            if (Thread.currentThread().isInterrupted()) return List.of();
+            List<SearchResult> results = provider.search(query, sourceCache, options);
             all.addAll(results);
         }
         all.sort((a, b) -> {

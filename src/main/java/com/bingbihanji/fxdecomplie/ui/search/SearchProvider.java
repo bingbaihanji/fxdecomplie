@@ -1,5 +1,7 @@
 package com.bingbihanji.fxdecomplie.ui.search;
 
+import com.bingbihanji.fxdecomplie.model.SearchOptions;
+
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +11,12 @@ import java.util.Map;
  * @author bingbaihanji
  * @date 2026-06-17
  */
-@FunctionalInterface
 public interface SearchProvider {
     List<SearchResult> search(String query, Map<String, String> sourceCache);
+
+    /** 带搜索选项的搜索（默认忽略选项，向后兼容） */
+    default List<SearchResult> search(String query, Map<String, String> sourceCache,
+                                       SearchOptions options) {
+        return search(query, sourceCache);
+    }
 }

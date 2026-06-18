@@ -1,5 +1,6 @@
 package com.bingbihanji.fxdecomplie.ui.search;
 
+import com.bingbihanji.fxdecomplie.model.SearchOptions;
 import com.bingbihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbihanji.fxdecomplie.service.SearchService;
 import com.bingbihanji.fxdecomplie.utils.I18nUtil;
@@ -83,6 +84,22 @@ public final class SearchDialog {
         fullSourceSearch.setDisable(fullSourceLoader == null);
         fullSourceSearch.setSelected(fullSourceLoader != null && defaultFullSourceSearch);
 
+        // Search option toggles
+        javafx.scene.control.ToggleButton regexToggle = new javafx.scene.control.ToggleButton(".*");
+        regexToggle.setStyle("-fx-font-size: 11px; -fx-padding: 2 8;");
+        regexToggle.setTooltip(new javafx.scene.control.Tooltip("Regex"));
+
+        javafx.scene.control.ToggleButton caseToggle = new javafx.scene.control.ToggleButton("Aa");
+        caseToggle.setStyle("-fx-font-size: 11px; -fx-padding: 2 8;");
+        caseToggle.setTooltip(new javafx.scene.control.Tooltip("Case sensitive"));
+
+        javafx.scene.control.ToggleButton wordToggle = new javafx.scene.control.ToggleButton("W");
+        wordToggle.setStyle("-fx-font-size: 11px; -fx-padding: 2 8;");
+        wordToggle.setTooltip(new javafx.scene.control.Tooltip("Whole word"));
+
+        javafx.scene.layout.HBox searchOptionsBar = new javafx.scene.layout.HBox(4,
+                regexToggle, caseToggle, wordToggle);
+
         TreeView<SearchResult> resultTree = new TreeView<>();
         resultTree.setStyle("-fx-background-color: #252526;");
         VBox.setVgrow(resultTree, Priority.ALWAYS);
@@ -105,7 +122,7 @@ public final class SearchDialog {
         statusLabel.setStyle("-fx-text-fill: #858585; -fx-padding: 4px;");
 
         VBox rootPane = new VBox(6, input, comboLabel, searchTypeCombo,
-                fullSourceSearch, resultTree, statusLabel);
+                fullSourceSearch, searchOptionsBar, resultTree, statusLabel);
         rootPane.setPadding(new Insets(8));
         rootPane.setStyle("-fx-background-color: #2d2d2d;");
 
@@ -139,8 +156,12 @@ public final class SearchDialog {
                             return;
                         }
                     }
+                    SearchOptions options = new SearchOptions(
+                            regexToggle.isSelected(),
+                            caseToggle.isSelected(),
+                            wordToggle.isSelected());
                     List<SearchResult> all = searchService.searchAll(
-                            text, effectiveSourceCache, resultLimit);
+                            text, effectiveSourceCache, options, resultLimit);
                     if (Thread.currentThread().isInterrupted()) {
                         return;
                     }
