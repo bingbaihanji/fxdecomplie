@@ -51,10 +51,17 @@ public class CfrDecompiler implements Decompiler {
         return Collections.unmodifiableMap(opts);
     }
 
+    private static String removeClassSuffix(String path) {
+        if (path.endsWith(".class")) {
+            return path.substring(0, path.length() - 6);
+        }
+        return path;
+    }
+
     /** {@inheritDoc} */
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
-        String internalName = classFilePath.replace(".class", "");
+        String internalName = removeClassSuffix(classFilePath);
         return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
@@ -67,7 +74,7 @@ public class CfrDecompiler implements Decompiler {
     @Override
     public String decompile(String classFilePath, byte[] classBytes,
                             DecompilerContext context) {
-        String internalName = classFilePath.replace(".class", "");
+        String internalName = removeClassSuffix(classFilePath);
         return decompileType(internalName, classBytes, context);
     }
 
@@ -104,7 +111,7 @@ public class CfrDecompiler implements Decompiler {
                     return Pair.make(classBytes, normalizedPath);
                 }
 
-                String internalName = normalizedPath.replace(".class", "");
+                String internalName = removeClassSuffix(normalizedPath);
                 byte[] otherBytes = effectiveContext.resolveClassBytes(internalName);
                 if (otherBytes != null) {
                     return Pair.make(otherBytes, normalizedPath);
