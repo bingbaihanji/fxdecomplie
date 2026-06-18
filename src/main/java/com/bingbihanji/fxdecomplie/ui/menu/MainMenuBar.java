@@ -117,7 +117,11 @@ public class MainMenuBar extends MenuBar {
         RadioMenuItem vineflowerItem = engineItem("Vineflower", DecompilerTypeEnum.VINEFLOWER, currentEngine, engineGroup, actions);
         RadioMenuItem jdItem = engineItem("JD-Core", DecompilerTypeEnum.JD, currentEngine, engineGroup, actions);
 
-        engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem);
+        MenuItem compareAllItem = new MenuItem(I18nUtil.getString("menu.engine.compareAll"));
+        compareAllItem.setOnAction(e -> actions.compareEngines());
+
+        engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem,
+                new SeparatorMenuItem(), compareAllItem);
         return engineMenu;
     }
 
@@ -167,88 +171,7 @@ public class MainMenuBar extends MenuBar {
         return item;
     }
 
-    public interface Actions {
-        /** 打开 JAR/ZIP/Class 文件 */
-        void openFile();
-
-        /** 打开目录 */
-        void openDirectory();
-
-        /** 打开项目文件 */
-        void openProject();
-
-        /** 保存项目文件 */
-        void saveProject();
-
-        /** 关闭当前工作区 */
-        void closeCurrentWorkspace();
-
-        /** 关闭其他工作区 */
-        void closeOtherWorkspaces();
-
-        /** 保存当前文件 */
-        void saveCurrentFile();
-
-        /** 导出所有文件 */
-        void exportAllFiles();
-
-        /** 退出应用 */
-        void exit();
-
-        /** 复制选中文本 */
-        void copySelection();
-
-        /** 全选 */
-        void selectAll();
-
-        /** 放大 */
-        void zoomIn();
-
-        /** 缩小 */
-        void zoomOut();
-
-        /** 重置缩放 */
-        void resetZoom();
-
-        /** 切换行号 */
-        void toggleLineNumbers();
-
-        /** 折叠文件树 */
-        void collapseTree();
-
-        /** 显示大纲工具窗口 */
-        void showOutline();
-
-        /** 显示继承工具窗口 */
-        void showInheritance();
-
-        /** 隐藏底部工具窗口 */
-        void hideBottomTools();
-
-        /** 切换反编译引擎 */
-        void selectEngine(DecompilerTypeEnum engine);
-
-        /** 打开搜索对话框 (Ctrl+Shift+F) */
-        void openSearch();
-
-        /** 查找使用 */
-        void openFindUsages();
-
-        /** 快速打开类 (Ctrl+N) */
-        void quickOpenClass();
-
-        /** 打开最近文件 */
-        void openRecentFile(String path);
-
-        /** 获取最近文件列表 */
-        java.util.List<String> getRecentFiles();
-
-        /** 打开设置对话框 */
-        void openSettings();
-
-        /** 新窗口打开当前文件 */
-        void openNewWindow();
-
+    public interface Actions extends FileActions, EditActions, ViewActions, EngineActions {
         /** 显示关于对话框 */
         void about();
     }
