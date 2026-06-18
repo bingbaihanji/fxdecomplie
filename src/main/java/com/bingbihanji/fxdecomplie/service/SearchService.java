@@ -91,15 +91,18 @@ public class SearchService {
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
     }
 
-    static boolean matchesExcludePattern(String path, List<String> patterns) {
+    private static boolean matchesExcludePattern(String path, List<String> patterns) {
         if (path == null) return false;
         for (String pattern : patterns) {
-            // Simple wildcard matching: * matches any sequence, ? matches any single char
-            String regex = pattern
-                    .replace(".", "\\.")
-                    .replace("*", ".*")
-                    .replace("?", ".");
-            if (path.matches(".*" + regex + ".*")) return true;
+            try {
+                // Convert glob-style wildcards to regex, escape everything else
+                String regex = java.util.regex.Pattern.quote(pattern)
+                        .replace("\\*", "\\E.*\\Q")
+                        .replace("\\?", "\\E.\\Q");
+                if (path.matches(".*" + regex + ".*")) return true;
+            } catch (java.util.regex.PatternSyntaxException e) {
+                // Invalid pattern — skip it
+            }
         }
         return false;
     }

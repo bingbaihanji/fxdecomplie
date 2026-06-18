@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -70,9 +71,11 @@ public final class DiskCodeCache {
     public static void cleanIfNeeded() {
         try {
             if (!Files.exists(CACHE_ROOT)) return;
-            var files = Files.walk(CACHE_ROOT)
-                    .filter(Files::isRegularFile)
-                    .collect(Collectors.toList());
+            List<Path> files;
+            try (var stream = Files.walk(CACHE_ROOT)) {
+                files = stream.filter(Files::isRegularFile)
+                        .collect(Collectors.toList());
+            }
             long totalSize = 0;
             for (Path f : files) {
                 try { totalSize += Files.size(f); } catch (IOException e) {}

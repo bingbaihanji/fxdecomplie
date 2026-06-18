@@ -79,7 +79,7 @@ public class AppConfig {
                     return loaded;
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | com.google.gson.JsonSyntaxException | com.google.gson.JsonIOException e) {
             logger.warn("Failed to load config, using defaults", e);
         }
         return new AppConfig();

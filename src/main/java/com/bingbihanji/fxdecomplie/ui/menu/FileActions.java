@@ -39,6 +39,9 @@ public interface FileActions {
     /** 获取最近文件列表 */
     List<String> getRecentFiles();
 
+    /** 清除最近文件列表并持久化 */
+    void clearRecentFiles();
+
     /** 新窗口打开当前文件 */
     void openNewWindow();
 

@@ -165,9 +165,7 @@ public class MainMenuBar extends MenuBar {
     private javafx.scene.control.MenuItem clearRecentItem(Actions actions) {
         javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(
                 I18nUtil.getString("menu.file.recent.clear"));
-        item.setOnAction(e -> {
-            actions.getRecentFiles().clear();
-        });
+        item.setOnAction(e -> actions.clearRecentFiles());
         return item;
     }
 

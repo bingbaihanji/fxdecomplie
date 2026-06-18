@@ -586,6 +586,12 @@ public class MainWindow implements MainMenuBar.Actions {
         return config.recentFiles();
     }
 
+    @Override
+    public void clearRecentFiles() {
+        config.recentFiles().clear();
+        config.save();
+    }
+
     /** 打开新窗口 */
     @Override
     public void openNewWindow() {

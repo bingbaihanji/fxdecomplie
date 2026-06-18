@@ -86,6 +86,15 @@ public final class SettingsDialog {
         Spinner<Integer> resultLimitSpinner = new Spinner<>(50, 2000,
                 Math.clamp(config.search().resultLimit(), 50, 2000), 50);
         resultLimitSpinner.setEditable(true);
+        // Validate numeric input to prevent NumberFormatException
+        resultLimitSpinner.getEditor().setTextFormatter(
+                new javafx.scene.control.TextFormatter<>(change -> {
+                    String newText = change.getControlNewText();
+                    if (newText.isEmpty() || newText.matches("\\d{1,4}")) {
+                        return change;
+                    }
+                    return null;
+                }));
         searchTab.setContent(new VBox(10,
                 fullSourceSearchCheck,
                 new Label(I18nUtil.getString("settings.search.resultLimit")),

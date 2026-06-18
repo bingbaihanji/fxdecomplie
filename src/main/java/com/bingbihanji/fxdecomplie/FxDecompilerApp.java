@@ -43,10 +43,6 @@ public final class FxDecompilerApp {
     public static void main(String[] args) {
         try {
             enableJavaFxPreview();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                com.bingbihanji.fxdecomplie.decompiler.DecompilerFactory.cleanup();
-                com.bingbihanji.fxdecomplie.decompiler.BytecodeCache.clear();
-            }, "FxDecompiler-shutdown"));
             Thread.setDefaultUncaughtExceptionHandler((thread, error) -> writeStartupFailure(error));
             Application.launch(FxApplication.class, args);
         } catch (Throwable ex) {
