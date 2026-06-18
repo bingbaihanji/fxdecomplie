@@ -259,8 +259,31 @@ public final class ExportService {
     private static Path resolveSafeOutputPath(Path outputDir, String relativePath) {
         String normalized = normalizeRelativePath(relativePath);
         Path target = outputDir.resolve(normalized).normalize();
-        if (!target.startsWith(outputDir)) {
-            throw new IllegalArgumentException("unsafe output path");
+        // Resolve symlinks in outputDir to get the real path for prefix check
+        Path realDir;
+        try {
+            Files.createDirectories(outputDir);
+            realDir = outputDir.toRealPath();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("cannot resolve output directory: " + outputDir, e);
+        }
+        Path realTarget = outputDir.resolve(normalized).normalize();
+        // Normalize resolves ".." but not symlinks; use real path for final check
+        try {
+            // Create parent dirs and resolve real path for the check
+            Files.createDirectories(realTarget.getParent());
+            if (Files.exists(realTarget)) {
+                realTarget = realTarget.toRealPath();
+            } else {
+                // File doesn't exist yet — check the parent's real path instead
+                Path realParent = realTarget.getParent().toRealPath();
+                realTarget = realParent.resolve(realTarget.getFileName());
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("cannot resolve target path: " + realTarget, e);
+        }
+        if (!realTarget.startsWith(realDir)) {
+            throw new IllegalArgumentException("unsafe output path: resolves outside target directory");
         }
         return target;
     }
