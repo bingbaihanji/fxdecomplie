@@ -2,6 +2,7 @@ package com.bingbihanji.fxdecomplie.ui.search;
 
 import com.bingbihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbihanji.fxdecomplie.model.MemberIndexEntry;
+import com.bingbihanji.fxdecomplie.model.SearchOptions;
 import com.bingbihanji.fxdecomplie.model.WorkspaceIndex;
 
 import java.util.ArrayList;
@@ -24,11 +25,24 @@ public class IndexedMemberSearchProvider implements SearchProvider {
         this.index = index;
     }
 
-    private static void addMatches(List<SearchResult> results, List<MemberIndexEntry> members,
-                                   String lowerQuery, SearchResult.MatchType type) {
+    private void addMatches(List<SearchResult> results, List<MemberIndexEntry> members,
+                            String lowerQuery, SearchResult.MatchType type) {
         for (MemberIndexEntry member : members) {
             if (member.name().toLowerCase().contains(lowerQuery)
                     || member.displayName().toLowerCase().contains(lowerQuery)) {
+                results.add(new SearchResult(member.ownerPath(), member.displayName(), 1, type));
+            }
+            if (results.size() >= MAX_RESULTS) {
+                return;
+            }
+        }
+    }
+
+    private void addMatchesOptions(List<SearchResult> results, List<MemberIndexEntry> members,
+                                   String query, SearchOptions options, SearchResult.MatchType type) {
+        for (MemberIndexEntry member : members) {
+            if (lineMatches(member.name(), query, options)
+                    || lineMatches(member.displayName(), query, options)) {
                 results.add(new SearchResult(member.ownerPath(), member.displayName(), 1, type));
             }
             if (results.size() >= MAX_RESULTS) {
@@ -47,6 +61,28 @@ public class IndexedMemberSearchProvider implements SearchProvider {
         for (ClassIndexEntry cls : index.classes()) {
             addMatches(results, cls.methods(), lowerQuery, SearchResult.MatchType.METHOD_NAME);
             addMatches(results, cls.fields(), lowerQuery, SearchResult.MatchType.FIELD_NAME);
+            if (results.size() >= MAX_RESULTS) {
+                break;
+            }
+        }
+        return results;
+    }
+
+    @Override
+    public List<SearchResult> search(String query, Map<String, String> sourceCache,
+                                      SearchOptions options) {
+        if (SearchOptions.DEFAULT.equals(options)) {
+            return search(query, sourceCache);
+        }
+        List<SearchResult> results = new ArrayList<>();
+        if (query == null || query.isBlank() || index == null) {
+            return results;
+        }
+        for (ClassIndexEntry cls : index.classes()) {
+            addMatchesOptions(results, cls.methods(), query, options,
+                    SearchResult.MatchType.METHOD_NAME);
+            addMatchesOptions(results, cls.fields(), query, options,
+                    SearchResult.MatchType.FIELD_NAME);
             if (results.size() >= MAX_RESULTS) {
                 break;
             }

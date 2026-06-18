@@ -1,5 +1,7 @@
 package com.bingbihanji.fxdecomplie.ui.search;
 
+import com.bingbihanji.fxdecomplie.model.SearchOptions;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,35 @@ public class ClassSearchProvider implements SearchProvider {
         if (results.size() < MAX_RESULTS) {
             for (String path : sourceCache.keySet()) {
                 if (path.toLowerCase().contains(lowerQuery)) {
+                    results.add(new SearchResult(path, path, 1, SearchResult.MatchType.CLASS_NAME));
+                }
+                if (results.size() >= MAX_RESULTS) break;
+            }
+        }
+        return results;
+    }
+
+    @Override
+    public List<SearchResult> search(String query, Map<String, String> sourceCache,
+                                      SearchOptions options) {
+        if (SearchOptions.DEFAULT.equals(options)) {
+            return search(query, sourceCache);
+        }
+        List<SearchResult> results = new ArrayList<>();
+        if (query == null || query.isBlank()) return results;
+
+        // 先搜索显式传入的类名列表
+        for (String name : classNames) {
+            if (lineMatches(name, query, options)) {
+                results.add(new SearchResult(name, name, 1, SearchResult.MatchType.CLASS_NAME));
+            }
+            if (results.size() >= MAX_RESULTS) break;
+        }
+
+        // 再搜索 sourceCache 中的路径
+        if (results.size() < MAX_RESULTS) {
+            for (String path : sourceCache.keySet()) {
+                if (lineMatches(path, query, options)) {
                     results.add(new SearchResult(path, path, 1, SearchResult.MatchType.CLASS_NAME));
                 }
                 if (results.size() >= MAX_RESULTS) break;
