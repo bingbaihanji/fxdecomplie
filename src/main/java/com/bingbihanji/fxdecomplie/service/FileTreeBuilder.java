@@ -36,16 +36,18 @@ public final class FileTreeBuilder {
         pathMap.put("", root);
 
         for (ClassDiscoverer.ClassEntry entry : entries) {
-            if (entry.bytes() != null && entry.nodeType() == FileTreeNode.NodeTypeEnum.CLASS_FILE) {
-                String internalName = entry.fullPath();
-                if (internalName.endsWith(".class")) {
-                    internalName = internalName.substring(0, internalName.length() - 6);
-                }
-                BytecodeCache.put(internalName, entry.bytes());
-            }
-
             FileTreeNode nodeData = new FileTreeNode(entry.name(), entry.fullPath(), entry.nodeType());
-            nodeData.setCachedBytes(entry.bytes());
+            if (entry.bytes() != null) {
+                if (entry.nodeType() == FileTreeNode.NodeTypeEnum.CLASS_FILE) {
+                    String internalName = entry.fullPath();
+                    if (internalName.endsWith(".class")) {
+                        internalName = internalName.substring(0, internalName.length() - 6);
+                    }
+                    BytecodeCache.put(internalName, entry.bytes());
+                } else {
+                    nodeData.setCachedBytes(entry.bytes());
+                }
+            }
 
             TreeItem<FileTreeNode> parent = getOrCreateParent(root, entry.fullPath(), pathMap);
             TreeItem<FileTreeNode> child = new TreeItem<>(nodeData);
