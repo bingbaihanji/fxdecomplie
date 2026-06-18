@@ -406,9 +406,37 @@ public final class ClassTabOpener {
         if (sourceCode == null) {
             // 线程复用可能残留中断标志，反编译前再次清除
             Thread.interrupted();
-            sourceCode = DecompilerFactory.getDecompiler(engine)
-                    .decompile(node.getFullPath(), bytes,
-                            DecompilerContext.fromWorkspaceIndex(workspace.getIndex()));
+            final byte[] finalBytes = bytes;
+            final String finalPath = node.getFullPath();
+            final DecompilerTypeEnum finalEngine = engine;
+            final DecompilerContext ctx = DecompilerContext.fromWorkspaceIndex(workspace.getIndex());
+            java.util.concurrent.ExecutorService timeoutExecutor =
+                    java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+                        Thread t = new Thread(r, "decompile-timeout");
+                        t.setDaemon(true);
+                        return t;
+                    });
+            try {
+                java.util.concurrent.Future<String> decompileFuture = timeoutExecutor.submit(() ->
+                        DecompilerFactory.getDecompiler(finalEngine)
+                                .decompile(finalPath, finalBytes, ctx));
+                sourceCode = decompileFuture.get(30, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException e) {
+                timeoutExecutor.shutdownNow();
+                return new DecompileResult(
+                        "// Decompilation timed out (30s) for: " + finalPath +
+                        "\n// The class may be obfuscated or malformed. Try a different engine.",
+                        new CodeMetadata(java.util.Map.of()));
+            } catch (InterruptedException e) {
+                timeoutExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Decompilation interrupted: " + finalPath, e);
+            } catch (java.util.concurrent.ExecutionException e) {
+                timeoutExecutor.shutdownNow();
+                throw new RuntimeException("Decompilation failed: " + finalPath, e.getCause());
+            } finally {
+                timeoutExecutor.shutdownNow();
+            }
             // ---- Save decompiled result to L2 (immediate) ----
             decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
 
