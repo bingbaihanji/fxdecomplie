@@ -31,21 +31,38 @@ public class AppConfig {
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
     private static final int MAX_RECENT_FILES = 20;
     /** 配置结构版本，后续用于迁移旧配置 */
-    public int schemaVersion = 1;
+    private int schemaVersion = 1;
     /** 界面语言: zh-CN / en，空字符串表示跟随系统 */
-    public String language = "";
+    private String language = "";
     /** 窗口配置 */
-    public Window window = new Window();
+    private Window window = new Window();
     /** 主题配置 */
-    public Theme theme = new Theme();
+    private Theme theme = new Theme();
     /** 反编译器配置 */
-    public Decompiler decompiler = new Decompiler();
+    private Decompiler decompiler = new Decompiler();
     /** 导出配置 */
-    public Export export = new Export();
+    private Export export = new Export();
     /** 搜索配置 */
-    public Search search = new Search();
+    private Search search = new Search();
     /** 最近打开的文件列表（路径字符串），预留后续实现最近文件菜单 */
-    public List<String> recentFiles = new ArrayList<>();
+    private List<String> recentFiles = new ArrayList<>();
+
+    public int schemaVersion() { return schemaVersion; }
+    public void schemaVersion(int v) { schemaVersion = v; }
+    public String language() { return language; }
+    public void language(String v) { language = v; }
+    public Window window() { return window; }
+    public void window(Window v) { window = v; }
+    public Theme theme() { return theme; }
+    public void theme(Theme v) { theme = v; }
+    public Decompiler decompiler() { return decompiler; }
+    public void decompiler(Decompiler v) { decompiler = v; }
+    public Export export() { return export; }
+    public void export(Export v) { export = v; }
+    public Search search() { return search; }
+    public void search(Search v) { search = v; }
+    public List<String> recentFiles() { return recentFiles; }
+    public void recentFiles(List<String> v) { recentFiles = v; }
 
     /**
      * 加载配置。如果配置文件不存在或读取失败，返回默认配置。
@@ -102,15 +119,26 @@ public class AppConfig {
 
     public static class Window {
         /** 窗口宽度 */
-        public int width = 1200;
+        private int width = 1200;
         /** 窗口高度 */
-        public int height = 800;
+        private int height = 800;
         /** 窗口 X 坐标 */
-        public int x = 100;
+        private int x = 100;
         /** 窗口 Y 坐标 */
-        public int y = 100;
+        private int y = 100;
         /** 是否最大化 */
-        public boolean maximized = false;
+        private boolean maximized = false;
+
+        public int width() { return width; }
+        public void width(int v) { width = v; }
+        public int height() { return height; }
+        public void height(int v) { height = v; }
+        public int x() { return x; }
+        public void x(int v) { x = v; }
+        public int y() { return y; }
+        public void y(int v) { y = v; }
+        public boolean maximized() { return maximized; }
+        public void maximized(boolean v) { maximized = v; }
 
         @Override
         public String toString() {
@@ -120,11 +148,18 @@ public class AppConfig {
 
     public static class Theme {
         /** 主题文件路径（空字符串表示使用内置默认主题） */
-        public String path = "";
+        private String path = "";
         /** 编辑器字体 */
-        public String fontFamily = "Consolas";
+        private String fontFamily = "Consolas";
         /** 编辑器字号 */
-        public int fontSize = 14;
+        private int fontSize = 14;
+
+        public String path() { return path; }
+        public void path(String v) { path = v; }
+        public String fontFamily() { return fontFamily; }
+        public void fontFamily(String v) { fontFamily = v; }
+        public int fontSize() { return fontSize; }
+        public void fontSize(int v) { fontSize = v; }
 
         @Override
         public String toString() {
@@ -134,14 +169,23 @@ public class AppConfig {
 
     public static class Decompiler {
         /** 默认反编译引擎 */
-        public com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum defaultEngine =
+        private com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum defaultEngine =
                 com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum.VINEFLOWER;
         /** 是否显示行号 */
-        public boolean lineNumbersEnabled = true;
+        private boolean lineNumbersEnabled = true;
         /** 是否自动换行 */
-        public boolean wrapText = true;
+        private boolean wrapText = true;
         /** 各引擎的自定义选项 (引擎名 → 选项键值对) */
-        public java.util.Map<String, java.util.Map<String, String>> engineOptions = new java.util.LinkedHashMap<>();
+        private java.util.Map<String, java.util.Map<String, String>> engineOptions = new java.util.LinkedHashMap<>();
+
+        public com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum defaultEngine() { return defaultEngine; }
+        public void defaultEngine(com.bingbihanji.fxdecomplie.decompiler.DecompilerTypeEnum v) { defaultEngine = v; }
+        public boolean lineNumbersEnabled() { return lineNumbersEnabled; }
+        public void lineNumbersEnabled(boolean v) { lineNumbersEnabled = v; }
+        public boolean wrapText() { return wrapText; }
+        public void wrapText(boolean v) { wrapText = v; }
+        public java.util.Map<String, java.util.Map<String, String>> engineOptions() { return engineOptions; }
+        public void engineOptions(java.util.Map<String, java.util.Map<String, String>> v) { engineOptions = v; }
 
         @Override
         public String toString() {
@@ -151,15 +195,26 @@ public class AppConfig {
 
     public static class Export {
         /** 默认导出引擎，空字符串表示跟随当前菜单引擎 */
-        public String defaultEngine = "";
+        private String defaultEngine = "";
         /** 默认导出格式，有效值: DIR, ZIP */
-        public String defaultFormat = "DIR";
+        private String defaultFormat = "DIR";
         /** 默认冲突策略，有效值: SKIP, OVERWRITE, RENAME */
-        public String conflictPolicy = "OVERWRITE";
+        private String conflictPolicy = "OVERWRITE";
         /** 是否默认导出资源文件 */
-        public boolean exportResources = true;
+        private boolean exportResources = true;
         /** 最近一次导出路径 */
-        public String lastPath = "";
+        private String lastPath = "";
+
+        public String defaultEngine() { return defaultEngine; }
+        public void defaultEngine(String v) { defaultEngine = v; }
+        public String defaultFormat() { return defaultFormat; }
+        public void defaultFormat(String v) { defaultFormat = v; }
+        public String conflictPolicy() { return conflictPolicy; }
+        public void conflictPolicy(String v) { conflictPolicy = v; }
+        public boolean exportResources() { return exportResources; }
+        public void exportResources(boolean v) { exportResources = v; }
+        public String lastPath() { return lastPath; }
+        public void lastPath(String v) { lastPath = v; }
 
         @Override
         public String toString() {
@@ -172,11 +227,18 @@ public class AppConfig {
 
     public static class Search {
         /** 是否默认启用完整源码搜索 */
-        public boolean fullSourceSearch = false;
+        private boolean fullSourceSearch = false;
         /** 搜索结果显示上限 */
-        public int resultLimit = 200;
+        private int resultLimit = 200;
         /** 搜索排除路径模式（支持通配符 *） */
-        public List<String> excludePatterns = new java.util.ArrayList<>();
+        private List<String> excludePatterns = new java.util.ArrayList<>();
+
+        public boolean fullSourceSearch() { return fullSourceSearch; }
+        public void fullSourceSearch(boolean v) { fullSourceSearch = v; }
+        public int resultLimit() { return resultLimit; }
+        public void resultLimit(int v) { resultLimit = v; }
+        public List<String> excludePatterns() { return excludePatterns; }
+        public void excludePatterns(List<String> v) { excludePatterns = v; }
 
         @Override
         public String toString() {

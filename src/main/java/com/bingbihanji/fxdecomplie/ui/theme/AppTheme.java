@@ -46,7 +46,7 @@ public final class AppTheme {
      * @return 主题数据（优先配置文件路径 → 内置 Dark+ → 硬编码默认）
      */
     public static VsCodeThemeLoader.ThemeData loadEditorTheme(AppConfig config) {
-        String configuredPath = config.theme.path == null ? "" : config.theme.path.trim();
+        String configuredPath = config.theme().path() == null ? "" : config.theme().path().trim();
         try {
             if (!configuredPath.isEmpty()) {
                 return VsCodeThemeLoader.load(Path.of(configuredPath));

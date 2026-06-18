@@ -104,11 +104,11 @@ public final class FxDecompilerApp {
 
             primaryStage.initStyle(StageStyle.EXTENDED);
 
-            primaryStage.setX(config.window.x);
-            primaryStage.setY(config.window.y);
-            primaryStage.setWidth(config.window.width);
-            primaryStage.setHeight(config.window.height);
-            primaryStage.setMaximized(config.window.maximized);
+            primaryStage.setX(config.window().x());
+            primaryStage.setY(config.window().y());
+            primaryStage.setWidth(config.window().width());
+            primaryStage.setHeight(config.window().height());
+            primaryStage.setMaximized(config.window().maximized());
 
             MainWindow window = new MainWindow(config, true);
             window.show(primaryStage);
@@ -132,9 +132,9 @@ public final class FxDecompilerApp {
         }
 
         private void applyConfiguredLocale() {
-            if ("en".equalsIgnoreCase(config.language)) {
+            if ("en".equalsIgnoreCase(config.language())) {
                 com.bingbihanji.fxdecomplie.utils.I18nUtil.switchLocale(Locale.ENGLISH);
-            } else if ("zh-CN".equalsIgnoreCase(config.language)) {
+            } else if ("zh-CN".equalsIgnoreCase(config.language())) {
                 com.bingbihanji.fxdecomplie.utils.I18nUtil.switchLocale(Locale.SIMPLIFIED_CHINESE);
             }
         }
@@ -150,12 +150,12 @@ public final class FxDecompilerApp {
         /** 保存窗口状态到配置 */
         private void saveWindowState(Stage stage) {
             if (!stage.isMaximized()) {
-                config.window.x = (int) stage.getX();
-                config.window.y = (int) stage.getY();
-                config.window.width = (int) stage.getWidth();
-                config.window.height = (int) stage.getHeight();
+                config.window().x((int) stage.getX());
+                config.window().y((int) stage.getY());
+                config.window().width((int) stage.getWidth());
+                config.window().height((int) stage.getHeight());
             }
-            config.window.maximized = stage.isMaximized();
+            config.window().maximized(stage.isMaximized());
             config.save();
         }
 

@@ -277,10 +277,10 @@ public final class ClassTabOpener {
                     codeArea.setSyntaxDecorator(
                             com.bingbihanji.fxdecomplie.ui.code.TextFileDecorator.instance());
                     codeArea.setEditable(false);
-                    codeArea.setWrapText(config.decompiler.wrapText);
+                    codeArea.setWrapText(config.decompiler().wrapText());
                     LineNumberGutter.setEnabled(codeArea, true);
                     codeArea.setText(text);
-                    codeArea.setFont(javafx.scene.text.Font.font(config.theme.fontFamily, config.theme.fontSize));
+                    codeArea.setFont(javafx.scene.text.Font.font(config.theme().fontFamily(), config.theme().fontSize()));
 
                     Tab tab = new Tab(node.getName(), codeArea);
                     tab.setOnClosed(e -> {
@@ -320,8 +320,8 @@ public final class ClassTabOpener {
                                               Consumer<CodeMetadata.Reference> onNavigate) {
         return new CodeEditorTab(
                 openFile, editorTheme,
-                config.theme.fontFamily, config.theme.fontSize,
-                config.decompiler.wrapText, lineNumbersEnabled,
+                config.theme().fontFamily(), config.theme().fontSize(),
+                config.decompiler().wrapText(), lineNumbersEnabled,
                 classBytes, metadata, onNavigate
         );
     }
@@ -493,7 +493,7 @@ public final class ClassTabOpener {
      * 若无自定义选项则返回 "default"。
      */
     private static String computeOptionsHash(AppConfig config, DecompilerTypeEnum engine) {
-        var engineOpts = config.decompiler.engineOptions;
+        var engineOpts = config.decompiler().engineOptions();
         if (engineOpts == null || !engineOpts.containsKey(engine.name())) {
             return "default";
         }

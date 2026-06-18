@@ -81,13 +81,13 @@ public class MainWindow implements MainMenuBar.Actions {
         this.config = config;
         this.useHeaderBar = useHeaderBar;
         this.editorTheme = AppTheme.loadEditorTheme(config);
-        this.lineNumbersEnabled = config.decompiler.lineNumbersEnabled;
+        this.lineNumbersEnabled = config.decompiler().lineNumbersEnabled();
     }
 
     /** 显示主窗口 */
     public void show(Stage stage) {
         this.stage = stage;
-        this.currentEngine = config.decompiler.defaultEngine;
+        this.currentEngine = config.decompiler().defaultEngine();
 
         outerTabPane = new TabPane();
         outerTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -136,7 +136,7 @@ public class MainWindow implements MainMenuBar.Actions {
         root.setCenter(outerTabPane);
         root.setBottom(statusBar);
 
-        Scene scene = new Scene(root, config.window.width, config.window.height);
+        Scene scene = new Scene(root, config.window().width(), config.window().height());
         scene.setFill(Color.web("#1e1e1e"));
         scene.getStylesheets().add(AppTheme.darkStylesheet());
 
@@ -185,9 +185,9 @@ public class MainWindow implements MainMenuBar.Actions {
         try {
             DecompilerProject project = ProjectFileManager.load(file.toPath());
             currentEngine = DecompilerTypeEnum.valueOf(project.engine());
-            config.decompiler.defaultEngine = currentEngine;
+            config.decompiler().defaultEngine(currentEngine);
             if (!project.exportPath().isBlank()) {
-                config.export.lastPath = project.exportPath();
+                config.export().lastPath(project.exportPath());
             }
             for (String inputPath : project.inputPaths()) {
                 File input = new File(inputPath);
@@ -235,7 +235,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
         try {
             ProjectFileManager.save(file.toPath(), new DecompilerProject(
-                    1, currentEngine.name(), inputPaths, selectedPath, config.export.lastPath));
+                    1, currentEngine.name(), inputPaths, selectedPath, config.export().lastPath()));
             statusBar.setFilePath(I18nUtil.getString("project.saved", file.getAbsolutePath()));
         } catch (IOException ex) {
             showError(I18nUtil.getString("dialog.error.title"),
@@ -421,7 +421,7 @@ public class MainWindow implements MainMenuBar.Actions {
     @Override
     public void toggleLineNumbers() {
         lineNumbersEnabled = !lineNumbersEnabled;
-        config.decompiler.lineNumbersEnabled = lineNumbersEnabled;
+        config.decompiler().lineNumbersEnabled(lineNumbersEnabled);
         tabManager.getWorkspaceViews().values().forEach(view ->
                 view.codeTabPane().getTabs().stream()
                         .filter(CodeEditorTab.class::isInstance)
@@ -461,7 +461,7 @@ public class MainWindow implements MainMenuBar.Actions {
             return;
         }
         currentEngine = engine;
-        config.decompiler.defaultEngine = engine;
+        config.decompiler().defaultEngine(engine);
         statusBar.setFilePath(I18nUtil.getString("status.currentEngine", engine.name()));
 
         WorkspaceView view = tabManager.currentWorkspaceView();
@@ -520,7 +520,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
         // Create SearchService with all providers
         SearchService searchService = new SearchService();
-        searchService.setExcludePatterns(config.search.excludePatterns);
+        searchService.setExcludePatterns(config.search().excludePatterns());
         searchService.addProvider(new ClassSearchProvider(index.classPaths()));
         searchService.addProvider(new IndexedMemberSearchProvider(index));
         searchService.addProvider(new MethodSearchProvider());
@@ -531,7 +531,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
         SearchDialog.show(stage, searchService, sourceCache,
                 () -> buildFullSourceCache(view, sourceCache),
-                config.search.fullSourceSearch, config.search.resultLimit,
+                config.search().fullSourceSearch(), config.search().resultLimit(),
                 (fullPath, lineNumber) -> openClassByPath(view, fullPath, lineNumber));
     }
 
@@ -583,7 +583,7 @@ public class MainWindow implements MainMenuBar.Actions {
     /** 获取最近文件列表 */
     @Override
     public java.util.List<String> getRecentFiles() {
-        return config.recentFiles;
+        return config.recentFiles();
     }
 
     /** 打开新窗口 */
@@ -630,11 +630,11 @@ public class MainWindow implements MainMenuBar.Actions {
     }
 
     private void applySettings(AppConfig updated) {
-        DecompilerTypeEnum configuredEngine = updated.decompiler.defaultEngine;
+        DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
         if (configuredEngine != currentEngine) {
             selectEngine(configuredEngine);
         }
-        lineNumbersEnabled = updated.decompiler.lineNumbersEnabled;
+        lineNumbersEnabled = updated.decompiler().lineNumbersEnabled();
         tabManager.getWorkspaceViews().values().forEach(view ->
                 view.codeTabPane().getTabs().stream()
                         .filter(CodeEditorTab.class::isInstance)
@@ -644,11 +644,11 @@ public class MainWindow implements MainMenuBar.Actions {
     }
 
     private void persistExportConfig(ExportConfig exportConfig) {
-        config.export.defaultEngine = exportConfig.engine().name();
-        config.export.defaultFormat = exportConfig.format().name();
-        config.export.conflictPolicy = exportConfig.conflictPolicy().name();
-        config.export.exportResources = exportConfig.exportResources();
-        config.export.lastPath = exportConfig.outputPath().toString();
+        config.export().defaultEngine(exportConfig.engine().name());
+        config.export().defaultFormat(exportConfig.format().name());
+        config.export().conflictPolicy(exportConfig.conflictPolicy().name());
+        config.export().exportResources(exportConfig.exportResources());
+        config.export().lastPath(exportConfig.outputPath().toString());
         config.save();
     }
 

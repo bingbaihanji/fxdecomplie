@@ -44,7 +44,7 @@ public final class SettingsDialog {
         decompilerTab.setClosable(false);
         ComboBox<String> engineCombo = new ComboBox<>();
         engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD");
-        engineCombo.setValue(config.decompiler.defaultEngine.name());
+        engineCombo.setValue(config.decompiler().defaultEngine().name());
 
         // Engine options JSON editor
         Label engineOptionsLabel = new Label(I18nUtil.getString("settings.decompiler.engineOptions"));
@@ -59,7 +59,7 @@ public final class SettingsDialog {
         // Load current options as JSON
         try {
             String json = new GsonBuilder().setPrettyPrinting().create()
-                    .toJson(config.decompiler.engineOptions);
+                    .toJson(config.decompiler().engineOptions());
             engineOptionsArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ignored) {
             engineOptionsArea.setText("");
@@ -73,18 +73,18 @@ public final class SettingsDialog {
         Tab uiTab = new Tab(I18nUtil.getString("settings.ui"));
         uiTab.setClosable(false);
         CheckBox lineNumCheck = new CheckBox(I18nUtil.getString("settings.lineNumbers"));
-        lineNumCheck.setSelected(config.decompiler.lineNumbersEnabled);
+        lineNumCheck.setSelected(config.decompiler().lineNumbersEnabled());
         CheckBox wrapCheck = new CheckBox(I18nUtil.getString("settings.wordWrap"));
-        wrapCheck.setSelected(config.decompiler.wrapText);
+        wrapCheck.setSelected(config.decompiler().wrapText());
         uiTab.setContent(new VBox(10, lineNumCheck, wrapCheck));
 
         // 搜索标签页
         Tab searchTab = new Tab(I18nUtil.getString("settings.search"));
         searchTab.setClosable(false);
         CheckBox fullSourceSearchCheck = new CheckBox(I18nUtil.getString("settings.search.fullSource"));
-        fullSourceSearchCheck.setSelected(config.search.fullSourceSearch);
+        fullSourceSearchCheck.setSelected(config.search().fullSourceSearch());
         Spinner<Integer> resultLimitSpinner = new Spinner<>(50, 2000,
-                Math.clamp(config.search.resultLimit, 50, 2000), 50);
+                Math.clamp(config.search().resultLimit(), 50, 2000), 50);
         resultLimitSpinner.setEditable(true);
         searchTab.setContent(new VBox(10,
                 fullSourceSearchCheck,
@@ -96,16 +96,16 @@ public final class SettingsDialog {
         exportTab.setClosable(false);
         ComboBox<String> exportEngineCombo = new ComboBox<>();
         exportEngineCombo.getItems().addAll(exportEngineOptions());
-        exportEngineCombo.setValue(exportEngineValue(config.export.defaultEngine));
+        exportEngineCombo.setValue(exportEngineValue(config.export().defaultEngine()));
         ComboBox<String> exportFormatCombo = new ComboBox<>();
         exportFormatCombo.getItems().addAll("DIR", "ZIP");
-        exportFormatCombo.setValue(config.export.defaultFormat);
+        exportFormatCombo.setValue(config.export().defaultFormat());
         ComboBox<String> conflictCombo = new ComboBox<>();
         conflictCombo.getItems().addAll("SKIP", "OVERWRITE", "RENAME");
-        conflictCombo.setValue(config.export.conflictPolicy);
+        conflictCombo.setValue(config.export().conflictPolicy());
         CheckBox exportResourcesCheck = new CheckBox(I18nUtil.getString("settings.export.resources"));
-        exportResourcesCheck.setSelected(config.export.exportResources);
-        TextField exportPathField = new TextField(config.export.lastPath);
+        exportResourcesCheck.setSelected(config.export().exportResources());
+        TextField exportPathField = new TextField(config.export().lastPath());
         exportPathField.setPromptText(I18nUtil.getString("settings.export.path"));
         exportTab.setContent(new VBox(10,
                 new Label(I18nUtil.getString("dialog.export.engine")), exportEngineCombo,
@@ -168,20 +168,20 @@ public final class SettingsDialog {
 
         var result = dialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.APPLY) {
-            config.decompiler.defaultEngine = DecompilerTypeEnum.valueOf(engineCombo.getValue());
-            config.decompiler.lineNumbersEnabled = lineNumCheck.isSelected();
-            config.decompiler.wrapText = wrapCheck.isSelected();
-            config.search.fullSourceSearch = fullSourceSearchCheck.isSelected();
-            config.search.resultLimit = resultLimitSpinner.getValue();
-            config.export.defaultEngine = "FOLLOW_CURRENT".equals(exportEngineCombo.getValue())
-                    ? "" : exportEngineCombo.getValue();
-            config.export.defaultFormat = safeEnum(exportFormatCombo.getValue(),
-                    ExportConfig.Format.DIR).name();
-            config.export.conflictPolicy = safeEnum(conflictCombo.getValue(),
-                    ExportConfig.ConflictPolicy.OVERWRITE).name();
-            config.export.exportResources = exportResourcesCheck.isSelected();
-            config.export.lastPath = exportPathField.getText() == null
-                    ? "" : exportPathField.getText();
+            config.decompiler().defaultEngine(DecompilerTypeEnum.valueOf(engineCombo.getValue()));
+            config.decompiler().lineNumbersEnabled(lineNumCheck.isSelected());
+            config.decompiler().wrapText(wrapCheck.isSelected());
+            config.search().fullSourceSearch(fullSourceSearchCheck.isSelected());
+            config.search().resultLimit(resultLimitSpinner.getValue());
+            config.export().defaultEngine("FOLLOW_CURRENT".equals(exportEngineCombo.getValue())
+                    ? "" : exportEngineCombo.getValue());
+            config.export().defaultFormat(safeEnum(exportFormatCombo.getValue(),
+                    ExportConfig.Format.DIR).name());
+            config.export().conflictPolicy(safeEnum(conflictCombo.getValue(),
+                    ExportConfig.ConflictPolicy.OVERWRITE).name());
+            config.export().exportResources(exportResourcesCheck.isSelected());
+            config.export().lastPath(exportPathField.getText() == null
+                    ? "" : exportPathField.getText());
 
             // Save engine options
             try {
@@ -190,10 +190,10 @@ public final class SettingsDialog {
                     Map<String, Map<String, String>> opts =
                             new Gson().fromJson(json,
                                     new TypeToken<Map<String, Map<String, String>>>(){}.getType());
-                    config.decompiler.engineOptions.clear();
-                    config.decompiler.engineOptions.putAll(opts);
+                    config.decompiler().engineOptions().clear();
+                    config.decompiler().engineOptions().putAll(opts);
                 } else {
-                    config.decompiler.engineOptions.clear();
+                    config.decompiler().engineOptions().clear();
                 }
             } catch (Exception ignored) {
                 // Invalid JSON — keep existing options
@@ -204,7 +204,7 @@ public final class SettingsDialog {
             Locale newLocale = "English".equals(selectedLang)
                     ? Locale.ENGLISH
                     : Locale.SIMPLIFIED_CHINESE;
-            config.language = "English".equals(selectedLang) ? "en" : "zh-CN";
+            config.language("English".equals(selectedLang) ? "en" : "zh-CN");
             I18nUtil.switchLocale(newLocale);
 
             config.save();

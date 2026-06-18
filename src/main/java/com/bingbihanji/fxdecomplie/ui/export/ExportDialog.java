@@ -46,23 +46,23 @@ public final class ExportDialog {
 
         ComboBox<DecompilerTypeEnum> engineCombo = new ComboBox<>();
         engineCombo.getItems().addAll(DecompilerTypeEnum.values());
-        engineCombo.setValue(parseEngine(appConfig.export.defaultEngine, currentEngine));
+        engineCombo.setValue(parseEngine(appConfig.export().defaultEngine(), currentEngine));
         engineCombo.setMaxWidth(Double.MAX_VALUE);
 
         ComboBox<ExportConfig.Format> formatCombo = new ComboBox<>();
         formatCombo.getItems().addAll(ExportConfig.Format.values());
-        formatCombo.setValue(parseFormat(appConfig.export.defaultFormat));
+        formatCombo.setValue(parseFormat(appConfig.export().defaultFormat()));
         formatCombo.setMaxWidth(Double.MAX_VALUE);
 
         ComboBox<ExportConfig.ConflictPolicy> conflictCombo = new ComboBox<>();
         conflictCombo.getItems().addAll(ExportConfig.ConflictPolicy.values());
-        conflictCombo.setValue(parseConflictPolicy(appConfig.export.conflictPolicy));
+        conflictCombo.setValue(parseConflictPolicy(appConfig.export().conflictPolicy()));
         conflictCombo.setMaxWidth(Double.MAX_VALUE);
 
         CheckBox resourcesCheck = new CheckBox(I18nUtil.getString("dialog.export.resources"));
-        resourcesCheck.setSelected(appConfig.export.exportResources);
+        resourcesCheck.setSelected(appConfig.export().exportResources());
 
-        TextField outputField = new TextField(appConfig.export.lastPath);
+        TextField outputField = new TextField(appConfig.export().lastPath());
         outputField.setPromptText(I18nUtil.getString("dialog.export.path.prompt"));
         HBox.setHgrow(outputField, Priority.ALWAYS);
 
