@@ -36,6 +36,8 @@ public class CodeEditorTab extends Tab {
     private final CodeMetadata metadata;
     /** Ctrl+Click 导航回调（null 时禁用） */
     private final Consumer<CodeMetadata.Reference> onNavigate;
+    /** 编辑器内搜索栏 */
+    private EditorSearchBar editorSearchBar;
 
     /** 简化构造器（使用默认主题和字体配置） */
     public CodeEditorTab(OpenFile openFile) {
@@ -79,9 +81,16 @@ public class CodeEditorTab extends Tab {
         // 4. 将三个子标签页组装到 TabPane
         TabPane subTabPane = buildSubTabPane(sourceTab, bytecodeTab, infoTab);
 
-        // 5. 设置外层标签页标题和内容
+        // 5. 创建搜索栏（默认隐藏，Ctrl+F 唤醒）
+        editorSearchBar = new EditorSearchBar(codeArea);
+        editorSearchBar.setVisible(false);
+        editorSearchBar.setManaged(false);
+
+        // 6. 将搜索栏和子标签页包装到 VBox 中
+        javafx.scene.layout.VBox wrapper = new javafx.scene.layout.VBox(editorSearchBar, subTabPane);
+        javafx.scene.layout.VBox.setVgrow(subTabPane, javafx.scene.layout.Priority.ALWAYS);
         setText(openFile.getClassName() + ".java");
-        setContent(subTabPane);
+        setContent(wrapper);
     }
 
     /** 将源码/字节码/类信息组装为不可关闭的子标签页面板 */
@@ -108,6 +117,16 @@ public class CodeEditorTab extends Tab {
         area.setFont(loadCodeFont(fontFamily, fontSize));
         area.setText(openFile.getSourceCode());
         area.setSyntaxDecorator(new RegexHighlighter(theme));
+
+        // Keyboard shortcuts: Ctrl+F for search, Ctrl+G for goto line
+        area.setOnKeyPressed(e -> {
+            if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.F) {
+                if (editorSearchBar != null) {
+                    editorSearchBar.show();
+                }
+                e.consume();
+            }
+        });
 
         if (onNavigate != null) {
             CodeLinkHandler.install(area, this.metadata, onNavigate);
