@@ -112,58 +112,75 @@ public final class WorkspaceTabManager {
                                                BiConsumer<FileTreeNode, TabPane> onClassClick,
                                                BiConsumer<FileTreeNode, TabPane> onTextFileClick,
                                                TreeItemAction onExportNode) {
-        treeView.setOnContextMenuRequested(event -> {
-            TreeItem<FileTreeNode> item = treeView.getSelectionModel().getSelectedItem();
-            if (item == null || item.getValue() == null) {
-                return;
-            }
-            FileTreeNode node = item.getValue();
-            ContextMenu menu = new ContextMenu();
-
-            MenuItem open = new MenuItem(I18nUtil.getString("context.open"));
-            open.setDisable(!node.isClassFile() && !node.isTextFile());
-            open.setOnAction(e -> {
-                if (node.isClassFile()) {
-                    navigationService.openPath(navigationService.classPath(workspace, node),
-                            workspace, codeTabPane, onClassClick, onTextFileClick);
-                } else if (node.isTextFile()) {
-                    navigationService.openPath(navigationService.resourcePath(workspace, node),
-                            workspace, codeTabPane, onClassClick, onTextFileClick);
+        treeView.setCellFactory(tv -> {
+            com.bingbihanji.fxdecomplie.ui.tree.FileTreeCell cell =
+                    new com.bingbihanji.fxdecomplie.ui.tree.FileTreeCell();
+            cell.setOnContextMenuRequested(event -> {
+                TreeItem<FileTreeNode> item = cell.getTreeItem();
+                if (cell.isEmpty() || item == null || item.getValue() == null) {
+                    return;
                 }
+                treeView.getSelectionModel().select(item);
+                ContextMenu menu = buildTreeContextMenu(item, workspace, codeTabPane,
+                        navigationService, onClassClick, onTextFileClick, onExportNode);
+                menu.show(cell, event.getScreenX(), event.getScreenY());
+                event.consume();
             });
-
-            MenuItem export = new MenuItem(I18nUtil.getString("context.exportNode"));
-            export.setOnAction(e -> onExportNode.accept(item));
-
-            MenuItem back = new MenuItem(I18nUtil.getString("context.back"));
-            back.setDisable(!navigationService.canGoBack());
-            back.setOnAction(e -> navigationService.goBack(workspace, codeTabPane,
-                    onClassClick, onTextFileClick));
-
-            MenuItem forward = new MenuItem(I18nUtil.getString("context.forward"));
-            forward.setDisable(!navigationService.canGoForward());
-            forward.setOnAction(e -> navigationService.goForward(workspace, codeTabPane,
-                    onClassClick, onTextFileClick));
-
-            MenuItem copyPath = new MenuItem(I18nUtil.getString("context.copyPath"));
-            copyPath.setOnAction(e -> copyToClipboard(node.getFullPath()));
-
-            MenuItem copyClassName = new MenuItem(I18nUtil.getString("context.copyClassName"));
-            copyClassName.setDisable(!node.isClassFile());
-            copyClassName.setOnAction(e -> copyToClipboard(
-                    node.getFullPath().replace(".class", "").replace('/', '.').replace('\\', '.')));
-
-            MenuItem expand = new MenuItem(I18nUtil.getString("context.expand"));
-            expand.setOnAction(e -> expand(item));
-
-            MenuItem collapse = new MenuItem(I18nUtil.getString("context.collapse"));
-            collapse.setOnAction(e -> collapseStatic(item));
-
-            menu.getItems().addAll(open, back, forward, export, new SeparatorMenuItem(),
-                    copyPath, copyClassName, new SeparatorMenuItem(), expand, collapse);
-            menu.show(treeView, event.getScreenX(), event.getScreenY());
-            event.consume();
+            return cell;
         });
+    }
+
+    private static ContextMenu buildTreeContextMenu(TreeItem<FileTreeNode> item, Workspace workspace,
+                                                    TabPane codeTabPane,
+                                                    NavigationService navigationService,
+                                                    BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                                    BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                                    TreeItemAction onExportNode) {
+        FileTreeNode node = item.getValue();
+        ContextMenu menu = new ContextMenu();
+
+        MenuItem open = new MenuItem(I18nUtil.getString("context.open"));
+        open.setDisable(!node.isClassFile() && !node.isTextFile());
+        open.setOnAction(e -> {
+            if (node.isClassFile()) {
+                navigationService.openPath(navigationService.classPath(workspace, node),
+                        workspace, codeTabPane, onClassClick, onTextFileClick);
+            } else if (node.isTextFile()) {
+                navigationService.openPath(navigationService.resourcePath(workspace, node),
+                        workspace, codeTabPane, onClassClick, onTextFileClick);
+            }
+        });
+
+        MenuItem export = new MenuItem(I18nUtil.getString("context.exportNode"));
+        export.setOnAction(e -> onExportNode.accept(item));
+
+        MenuItem back = new MenuItem(I18nUtil.getString("context.back"));
+        back.setDisable(!navigationService.canGoBack());
+        back.setOnAction(e -> navigationService.goBack(workspace, codeTabPane,
+                onClassClick, onTextFileClick));
+
+        MenuItem forward = new MenuItem(I18nUtil.getString("context.forward"));
+        forward.setDisable(!navigationService.canGoForward());
+        forward.setOnAction(e -> navigationService.goForward(workspace, codeTabPane,
+                onClassClick, onTextFileClick));
+
+        MenuItem copyPath = new MenuItem(I18nUtil.getString("context.copyPath"));
+        copyPath.setOnAction(e -> copyToClipboard(node.getFullPath()));
+
+        MenuItem copyClassName = new MenuItem(I18nUtil.getString("context.copyClassName"));
+        copyClassName.setDisable(!node.isClassFile());
+        copyClassName.setOnAction(e -> copyToClipboard(
+                node.getFullPath().replace(".class", "").replace('/', '.').replace('\\', '.')));
+
+        MenuItem expand = new MenuItem(I18nUtil.getString("context.expand"));
+        expand.setOnAction(e -> expand(item));
+
+        MenuItem collapse = new MenuItem(I18nUtil.getString("context.collapse"));
+        collapse.setOnAction(e -> collapseStatic(item));
+
+        menu.getItems().addAll(open, back, forward, export, new SeparatorMenuItem(),
+                copyPath, copyClassName, new SeparatorMenuItem(), expand, collapse);
+        return menu;
     }
 
     private static void copyToClipboard(String value) {

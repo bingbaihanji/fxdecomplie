@@ -58,7 +58,7 @@ public final class SettingsDialog {
         CheckBox fullSourceSearchCheck = new CheckBox(I18nUtil.getString("settings.search.fullSource"));
         fullSourceSearchCheck.setSelected(config.search.fullSourceSearch);
         Spinner<Integer> resultLimitSpinner = new Spinner<>(50, 2000,
-                Math.max(50, Math.min(2000, config.search.resultLimit)), 50);
+                Math.clamp(config.search.resultLimit, 50, 2000), 50);
         resultLimitSpinner.setEditable(true);
         searchTab.setContent(new VBox(10,
                 fullSourceSearchCheck,

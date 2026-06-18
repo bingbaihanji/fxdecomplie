@@ -19,7 +19,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 全文搜索对话框。带防抖的实时搜索，TreeView 按类型分组显示结果。
@@ -110,7 +112,8 @@ public final class SearchDialog {
         // Track search generation to discard stale results
         AtomicInteger searchGen = new AtomicInteger(0);
         // Store last full search results for combo re-filtering
-        final List<SearchResult>[] lastAllResults = new List[]{new ArrayList<>()};
+        AtomicReference<List<SearchResult>> lastAllResults = new AtomicReference<>(new ArrayList<>());
+        AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
 
         // Debounce 200ms
         PauseTransition debounce = new PauseTransition(Duration.millis(200));
@@ -119,21 +122,29 @@ public final class SearchDialog {
             resultTree.setRoot(null);
             statusLabel.setText(text.isEmpty() ? "" : I18nUtil.getString("search.searching"));
             int gen = searchGen.incrementAndGet();
+            BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
             debounce.setOnFinished(e -> {
                 if (text.isEmpty()) {
                     statusLabel.setText("");
                     return;
                 }
                 String selectedType = searchTypeCombo.getValue();
-                BackgroundTasks.run("search-worker", () -> {
+                Future<?> task = BackgroundTasks.run("search-worker", () -> {
                     Map<String, String> effectiveSourceCache = sourceCache;
                     if (fullSourceSearch.isSelected() && fullSourceLoader != null) {
                         Platform.runLater(() -> statusLabel.setText(
                                 I18nUtil.getString("search.preparingFullSource")));
                         effectiveSourceCache = fullSourceLoader.load();
+                        if (Thread.currentThread().isInterrupted()) {
+                            return;
+                        }
                     }
-                    List<SearchResult> all = searchService.searchAll(text, effectiveSourceCache);
-                    lastAllResults[0] = all;
+                    List<SearchResult> all = searchService.searchAll(
+                            text, effectiveSourceCache, resultLimit);
+                    if (Thread.currentThread().isInterrupted()) {
+                        return;
+                    }
+                    lastAllResults.set(all);
                     List<SearchResult> filtered = filterByType(all, selectedType);
                     Platform.runLater(() -> {
                         if (gen != searchGen.get()) return; // stale search
@@ -147,6 +158,7 @@ public final class SearchDialog {
                                 : I18nUtil.getString("search.resultCount", shown));
                     });
                 });
+                currentSearchTask.set(task);
             });
             debounce.playFromStart();
         });
@@ -155,7 +167,7 @@ public final class SearchDialog {
         searchTypeCombo.valueProperty().addListener((obs, old, val) -> {
             String text = input.getText();
             if (text == null || text.isBlank()) return;
-            List<SearchResult> all = lastAllResults[0];
+            List<SearchResult> all = lastAllResults.get();
             if (all == null || all.isEmpty()) return;
             List<SearchResult> filtered = filterByType(all, val);
             TreeItem<SearchResult> rootNode = buildResultTree(filtered, resultLimit);
@@ -173,7 +185,10 @@ public final class SearchDialog {
                 TreeItem<SearchResult> selected = resultTree.getSelectionModel().getSelectedItem();
                 if (selected != null && selected.isLeaf()) {
                     SearchResult result = selected.getValue();
-                    onJump.jump(result.fullPath(), result.lineNumber());
+                    if (result != null && result.fullPath() != null
+                            && !result.fullPath().isBlank()) {
+                        onJump.jump(result.fullPath(), result.lineNumber());
+                    }
                 }
             }
         });
@@ -186,6 +201,7 @@ public final class SearchDialog {
         scene.getStylesheets().add(
                 com.bingbihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
+        dialog.setOnCloseRequest(event -> BackgroundTasks.cancel(currentSearchTask.get()));
         dialog.show();
         input.requestFocus();
     }

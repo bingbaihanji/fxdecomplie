@@ -123,8 +123,10 @@ public class MainWindow implements MainMenuBar.Actions {
         });
         root.setOnDragDropped(event -> {
             java.util.List<java.io.File> files = event.getDragboard().getFiles();
-            for (java.io.File f : files) {
-                loadFile(f);
+            if (files != null) {
+                for (java.io.File f : files) {
+                    loadFile(f);
+                }
             }
             event.setDropCompleted(true);
             event.consume();
@@ -653,10 +655,17 @@ public class MainWindow implements MainMenuBar.Actions {
     }
 
     private void applySettings(AppConfig updated) {
-        if (!updated.decompiler.defaultEngine.equals(config.decompiler.defaultEngine)) {
-            selectEngine(parseDecompiler(updated.decompiler.defaultEngine));
+        DecompilerTypeEnum configuredEngine = parseDecompiler(updated.decompiler.defaultEngine);
+        if (configuredEngine != currentEngine) {
+            selectEngine(configuredEngine);
         }
         lineNumbersEnabled = updated.decompiler.lineNumbersEnabled;
+        tabManager.getWorkspaceViews().values().forEach(view ->
+                view.codeTabPane().getTabs().stream()
+                        .filter(CodeEditorTab.class::isInstance)
+                        .map(CodeEditorTab.class::cast)
+                        .forEach(tab -> tab.setLineNumbersEnabled(lineNumbersEnabled))
+        );
     }
 
     private void persistExportConfig(ExportConfig exportConfig) {
@@ -731,10 +740,16 @@ public class MainWindow implements MainMenuBar.Actions {
                 break;
             }
             fullSourceCache.computeIfAbsent(cls.fullPath(),
-                    path -> decompiler.decompile(cls.fullPath(), cls.bytes(),
-                            com.bingbihanji.fxdecomplie.decompiler.DecompilerContext
-                                    .fromWorkspaceIndex(view.workspace().getIndex())));
+                    path -> {
+                        if (Thread.currentThread().isInterrupted()) {
+                            return "";
+                        }
+                        return decompiler.decompile(cls.fullPath(), cls.bytes(),
+                                com.bingbihanji.fxdecomplie.decompiler.DecompilerContext
+                                        .fromWorkspaceIndex(view.workspace().getIndex()));
+                    });
         }
+        fullSourceCache.values().removeIf(String::isEmpty);
         return fullSourceCache;
     }
 
@@ -752,7 +767,8 @@ public class MainWindow implements MainMenuBar.Actions {
                 // ---- Step 2: build hierarchical file tree with bytecode caching ----
                 TreeItem<FileTreeNode> treeRoot = FileTreeBuilder.build(name, entries);
                 // ---- Step 3: create workspace model with index ----
-                Workspace workspace = new Workspace(name, file, treeRoot, isArchive);
+                Workspace workspace = new Workspace(name, file, treeRoot, isArchive,
+                        WorkspaceIndex.EMPTY);
                 // ---- Step 4: create UI (file tree + code tabs) on JavaFX thread ----
                 Platform.runLater(() -> tabManager.addWorkspaceTab(workspace,
                         (node, codeTabPane) -> classTabOpener.openClassTab(
@@ -761,6 +777,11 @@ public class MainWindow implements MainMenuBar.Actions {
                                 node, workspace, codeTabPane),
                         this::exportTreeItem));
                 config.addRecentFile(file.getAbsolutePath());
+                // Async: build full index after UI is shown
+                BackgroundTasks.run("Index-" + name, () -> {
+                    WorkspaceIndex fullIndex = WorkspaceIndex.build(treeRoot);
+                    workspace.setIndex(fullIndex);
+                });
             } catch (IOException e) {
                 Platform.runLater(() -> showError(I18nUtil.getString("dialog.error.title"), I18nUtil.getString("dialog.load.error") + ": " + e.getMessage()));
             }

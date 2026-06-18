@@ -10,11 +10,11 @@ import java.util.concurrent.*;
  */
 public final class BackgroundTasks {
 
-    /** Daemon thread pool (0-core, 8-max) for background file loading and decompilation */
+    /** Daemon thread pool (0-core, 8-max) with bounded queue to avoid task rejection */
     private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(
             0, 8,
             60L, TimeUnit.SECONDS,
-            new SynchronousQueue<>(),
+            new LinkedBlockingQueue<>(),
             r -> {
                 Thread t = new Thread(r);
                 t.setDaemon(true);

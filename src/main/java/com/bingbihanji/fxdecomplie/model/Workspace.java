@@ -22,7 +22,7 @@ public class Workspace {
     /** 是否为归档文件（JAR/ZIP） */
     private final boolean isArchive;
     /** 工作区索引，用于全局搜索、字节码搜索和后续分析 */
-    private final WorkspaceIndex index;
+    private volatile WorkspaceIndex index;
 
     /**
      * 构造工作区。
@@ -33,11 +33,21 @@ public class Workspace {
      * @param isArchive  是否为归档文件
      */
     public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot, boolean isArchive) {
+        this(name, sourceFile, treeRoot, isArchive, WorkspaceIndex.build(treeRoot));
+    }
+
+    public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot,
+                     boolean isArchive, WorkspaceIndex index) {
         this.name = name;
         this.sourceFile = sourceFile;
         this.treeRoot = treeRoot;
         this.isArchive = isArchive;
-        this.index = WorkspaceIndex.build(treeRoot);
+        this.index = index;
+    }
+
+    /** 更新工作区索引（用于异步构建完成后替换） */
+    public void setIndex(WorkspaceIndex index) {
+        this.index = index;
     }
 
     /** @return 显示名称 */

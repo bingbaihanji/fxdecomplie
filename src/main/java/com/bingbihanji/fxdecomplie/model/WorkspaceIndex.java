@@ -22,6 +22,10 @@ public final class WorkspaceIndex {
     private final List<ResourceIndexEntry> resources;
     private final Map<String, byte[]> classBytesByInternalName;
 
+    /** 空占位索引，用于 Workspace 异步索引构建完成前的过渡期 */
+    public static final WorkspaceIndex EMPTY = new WorkspaceIndex(
+            List.of(), List.of(), Map.of());
+
     private WorkspaceIndex(List<ClassIndexEntry> classes, List<ResourceIndexEntry> resources,
                            Map<String, byte[]> classBytesByInternalName) {
         this.classes = List.copyOf(classes);
