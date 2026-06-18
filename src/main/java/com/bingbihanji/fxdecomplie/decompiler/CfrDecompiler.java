@@ -163,4 +163,9 @@ public class CfrDecompiler implements Decompiler {
     public DecompilerTypeEnum getType() {
         return DecompilerTypeEnum.CFR;
     }
+
+    @Override
+    public java.util.Map<String, String> getDefaultOptions() {
+        return DEFAULT_OPTIONS;
+    }
 }

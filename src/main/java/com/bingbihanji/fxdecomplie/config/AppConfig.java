@@ -140,6 +140,8 @@ public class AppConfig {
         public boolean lineNumbersEnabled = true;
         /** 是否自动换行 */
         public boolean wrapText = true;
+        /** 各引擎的自定义选项 (引擎名 → 选项键值对) */
+        public java.util.Map<String, java.util.Map<String, String>> engineOptions = new java.util.LinkedHashMap<>();
 
         @Override
         public String toString() {

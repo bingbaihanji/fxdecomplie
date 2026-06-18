@@ -49,4 +49,9 @@ public interface Decompiler {
     /** 引擎清理（应用退出时调用） */
     default void cleanup() {
     }
+
+    /** 反编译选项（默认空，子类可覆盖返回引擎特定配置） */
+    default java.util.Map<String, String> getDefaultOptions() {
+        return java.util.Map.of();
+    }
 }

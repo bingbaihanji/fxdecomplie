@@ -387,7 +387,7 @@ public final class ClassTabOpener {
      */
     private DecompileResult decompileWithCache(String internalName, DecompilerTypeEnum engine,
                                                byte[] bytes, FileTreeNode node, Workspace workspace) {
-        String optionsHash = "default";
+        String optionsHash = computeOptionsHash(config, engine);
         String wsKey = computeWorkspaceKey(workspace);
 
         // ---- L2: in-memory decompile cache (fastest path) ----
@@ -486,6 +486,22 @@ public final class ClassTabOpener {
 
     /** 反编译结果，包含源码和元数据 */
     private record DecompileResult(String sourceCode, CodeMetadata metadata) {
+    }
+
+    /**
+     * 根据配置中的引擎选项计算选项哈希值，用于缓存键区分不同选项组合。
+     * 若无自定义选项则返回 "default"。
+     */
+    private static String computeOptionsHash(AppConfig config, DecompilerTypeEnum engine) {
+        var engineOpts = config.decompiler.engineOptions;
+        if (engineOpts == null || !engineOpts.containsKey(engine.name())) {
+            return "default";
+        }
+        var opts = engineOpts.get(engine.name());
+        return opts.entrySet().stream()
+                .sorted(java.util.Map.Entry.comparingByKey())
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(java.util.stream.Collectors.joining(","));
     }
 
 }

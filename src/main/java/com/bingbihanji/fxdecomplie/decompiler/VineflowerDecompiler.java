@@ -224,4 +224,11 @@ public class VineflowerDecompiler implements Decompiler {
     public DecompilerTypeEnum getType() {
         return DecompilerTypeEnum.VINEFLOWER;
     }
+
+    @Override
+    public java.util.Map<String, String> getDefaultOptions() {
+        java.util.Map<String, String> stringOpts = new java.util.LinkedHashMap<>();
+        DEFAULT_OPTIONS.forEach((k, v) -> stringOpts.put(k, String.valueOf(v)));
+        return stringOpts;
+    }
 }
