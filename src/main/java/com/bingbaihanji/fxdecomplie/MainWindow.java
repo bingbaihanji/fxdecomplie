@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
@@ -105,6 +106,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
         tabManager = new WorkspaceTabManager(outerTabPane, statusBar);
         tabManager.setCurrentEngineName(currentEngine.name());
+        tabManager.setDragDropConfig(config, editorTheme);
         tabManager.setWelcomeActions(new WorkspaceTabManager.WelcomeActions(
                 this::openFile,
                 this::openDirectory,
@@ -121,12 +123,12 @@ public class MainWindow implements MainMenuBar.Actions {
 
         MainMenuBar menuBar = new MainMenuBar(this, currentEngine);
         VBox topBars = new VBox();
+        topBars.setOpacity(0.5);
         if (useHeaderBar) {
             topBars.getChildren().add(AppHeaderBar.create(stage, "FxDecompiler", menuBar));
         } else {
             topBars.getChildren().add(menuBar);
         }
-
         BorderPane root = new BorderPane();
         root.getStyleClass().add("app-root");
 
@@ -622,10 +624,13 @@ public class MainWindow implements MainMenuBar.Actions {
     /** 打开新窗口 */
     @Override
     public void openNewWindow() {
-        var view = tabManager.currentWorkspaceView();
-        if (view != null) {
-            ProcessService.launchNewInstance(view.workspace().getSourceFile().getAbsolutePath());
+        CodeEditorTab currentTab = tabManager.currentCodeTab();
+        if (currentTab == null) {
+            showWarning(I18nUtil.getString("dialog.warning.title"),
+                    I18nUtil.getString("dialog.needOpenFile"));
+            return;
         }
+        CodeOnlyWindow.openFrom(currentTab, config, stage);
     }
 
     /** 显示关于对话框 */
@@ -635,6 +640,11 @@ public class MainWindow implements MainMenuBar.Actions {
         alert.initOwner(stage);
         alert.setTitle("关于 FxDecompiler");
         alert.setHeaderText("FxDecompiler");
+        alert.setOnShown(e -> {
+            var win = alert.getDialogPane().getScene().getWindow();
+            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(win);
+            if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
+        });
 
         javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink("www.bingbaihanji.com");
         link.setOnAction(e -> {
@@ -820,6 +830,11 @@ public class MainWindow implements MainMenuBar.Actions {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
+        alert.setOnShown(e -> {
+            var win = alert.getDialogPane().getScene().getWindow();
+            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(win);
+            if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
+        });
         ButtonType openOutput = new ButtonType(I18nUtil.getString("dialog.export.openOutput"));
         alert.getButtonTypes().add(openOutput);
         if (details != null && !details.isEmpty()) {
@@ -890,6 +905,16 @@ public class MainWindow implements MainMenuBar.Actions {
 
     private void showError(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showError(stage, title, message);
+    }
+
+    private static void setAlertIcon(javafx.stage.Stage s) {
+        try {
+            var stream = MainWindow.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                s.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 
 }

@@ -41,6 +41,7 @@ public final class QuickOpenDialog {
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
         dialog.setTitle("快速打开类");
+        setDialogIcon(dialog);
 
         TextField input = new TextField();
         input.setPromptText("输入类名...");
@@ -121,6 +122,17 @@ public final class QuickOpenDialog {
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
         dialog.show();
+        com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
         input.requestFocus();
+    }
+
+    private static void setDialogIcon(Stage stage) {
+        try {
+            var stream = QuickOpenDialog.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

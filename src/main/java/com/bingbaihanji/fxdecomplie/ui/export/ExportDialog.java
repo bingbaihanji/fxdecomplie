@@ -39,6 +39,11 @@ public final class ExportDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("dialog.export.options.title"));
         dialog.setHeaderText(null);
+        dialog.setOnShown(e -> {
+            var window = dialog.getDialogPane().getScene().getWindow();
+            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            if (window instanceof javafx.stage.Stage s) setDialogIcon(s);
+        });
 
         ButtonType exportButtonType = new ButtonType(
                 I18nUtil.getString("dialog.export.start"), ButtonBar.ButtonData.OK_DONE);
@@ -117,6 +122,11 @@ public final class ExportDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("dialog.export.progress.title"));
         dialog.setHeaderText(null);
+        dialog.setOnShown(e -> {
+            var window = dialog.getDialogPane().getScene().getWindow();
+            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            if (window instanceof javafx.stage.Stage s) setDialogIcon(s);
+        });
 
         ProgressBar progressBar = new ProgressBar(0);
         progressBar.setMaxWidth(Double.MAX_VALUE);
@@ -233,6 +243,16 @@ public final class ExportDialog {
             return ExportConfig.ConflictPolicy.valueOf(value);
         } catch (IllegalArgumentException | NullPointerException e) {
             return ExportConfig.ConflictPolicy.OVERWRITE;
+        }
+    }
+
+    private static void setDialogIcon(javafx.stage.Stage stage) {
+        try {
+            var stream = ExportDialog.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
         }
     }
 

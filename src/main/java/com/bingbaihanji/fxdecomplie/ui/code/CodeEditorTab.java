@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.utils.CodeLinkHandler;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.text.Font;
@@ -31,12 +32,18 @@ public class CodeEditorTab extends Tab {
     private final CodeArea bytecodeArea;
     /** 打开的文件 */
     private final OpenFile openFile;
+    /** 标签页显示标题 */
+    private final String displayTitle;
+    /** 可拖拽的标签标题节点 */
+    private final Label titleLabel;
     /** 默认字号 */
     private final int defaultFontSize;
     /** Ctrl+Click 导航元数据 */
     private final CodeMetadata metadata;
     /** Ctrl+Click 导航回调（null 时禁用） */
     private final Consumer<CodeMetadata.Reference> onNavigate;
+    /** 类文件原始字节码（用于复制标签到独立窗口） */
+    private final byte[] classBytes;
     /** 编辑器内搜索栏 */
     private EditorSearchBar editorSearchBar;
 
@@ -60,9 +67,11 @@ public class CodeEditorTab extends Tab {
                          int fontSize, boolean wrapText, boolean lineNumbersEnabled, byte[] classBytes,
                          CodeMetadata metadata, Consumer<CodeMetadata.Reference> onNavigate) {
         this.openFile = openFile;
+        this.displayTitle = openFile.className() + " [" + openFile.engine().name() + "]";
         this.defaultFontSize = fontSize;
         this.metadata = metadata != null ? metadata : new CodeMetadata(java.util.Map.of());
         this.onNavigate = onNavigate;
+        this.classBytes = classBytes == null ? null : classBytes.clone();
 
         // 1. 创建 Java 源码编辑区
         codeArea = buildSourceArea(theme, fontFamily, fontSize, wrapText, lineNumbersEnabled);
@@ -70,12 +79,12 @@ public class CodeEditorTab extends Tab {
         sourceTab.setClosable(false);
 
         // 2. 创建字节码汇编视图
-        bytecodeArea = BytecodeViewTab.createView(classBytes);
+        bytecodeArea = BytecodeViewTab.createView(this.classBytes);
         Tab bytecodeTab = new Tab(I18nUtil.getString("tab.bytecode"), bytecodeArea);
         bytecodeTab.setClosable(false);
 
         // 3. 创建类元信息视图
-        javafx.scene.layout.VBox infoView = ClassInfoView.createView(classBytes);
+        javafx.scene.layout.VBox infoView = ClassInfoView.createView(this.classBytes);
         Tab infoTab = new Tab(I18nUtil.getString("tab.classinfo"), infoView);
         infoTab.setClosable(false);
 
@@ -90,8 +99,19 @@ public class CodeEditorTab extends Tab {
         // 6. 将搜索栏和子标签页包装到 VBox 中
         javafx.scene.layout.VBox wrapper = new javafx.scene.layout.VBox(editorSearchBar, subTabPane);
         javafx.scene.layout.VBox.setVgrow(subTabPane, javafx.scene.layout.Priority.ALWAYS);
-        setText(openFile.className() + " [" + openFile.engine().name() + "]");
+        titleLabel = createTitleLabel(displayTitle);
+        setText("");
+        setGraphic(titleLabel);
         setContent(wrapper);
+    }
+
+    private static Label createTitleLabel(String title) {
+        Label label = new Label(title);
+        label.getStyleClass().add("code-tab-title");
+        label.setMaxWidth(240);
+        label.setMinWidth(0);
+        label.setTextOverrun(javafx.scene.control.OverrunStyle.CENTER_ELLIPSIS);
+        return label;
     }
 
     /** 将源码/字节码/类信息组装为不可关闭的子标签页面板 */
@@ -264,6 +284,26 @@ public class CodeEditorTab extends Tab {
         return openFile;
     }
 
+    /** @return 标签页显示标题 */
+    public String getDisplayTitle() {
+        return titleLabel.getText();
+    }
+
+    /** 更新固定标签视觉前缀。 */
+    public void setPinnedIndicator(boolean pinned) {
+        titleLabel.setText(pinned ? "● " + displayTitle : displayTitle);
+    }
+
+    /** @return 类文件字节码副本 */
+    public byte[] getClassBytes() {
+        return classBytes == null ? null : classBytes.clone();
+    }
+
+    /** @return 代码导航元数据 */
+    public CodeMetadata getMetadata() {
+        return metadata;
+    }
+
     /** 放大字号 */
     public void zoomIn() {
         setFontSize(codeArea.getFont().getSize() + 1);
@@ -287,6 +327,11 @@ public class CodeEditorTab extends Tab {
         String text = codeArea.getText();
         int totalLines = text != null ? (int) text.chars().filter(ch -> ch == '\n').count() + 1 : 1;
         dialog.setContentText(I18nUtil.getString("editor.gotoLine.prompt", totalLines));
+        dialog.setOnShown(e -> {
+            var win = dialog.getDialogPane().getScene().getWindow();
+            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(win);
+            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
+        });
 
         dialog.showAndWait().ifPresent(input -> {
             try {
@@ -344,6 +389,16 @@ public class CodeEditorTab extends Tab {
             return Font.font(configuredFamily, fontSize);
         }
         return Font.font("Consolas", fontSize);
+    }
+
+    private static void setDialogIcon(javafx.stage.Stage stage) {
+        try {
+            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     /** 从 classpath 加载 Fira Code 字体（优先 Regular 字重，回退 Light） */

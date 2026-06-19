@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.Textifier;
@@ -48,7 +49,9 @@ public final class BytecodeViewTab {
             pw.flush();
             codeArea.setText(sw.toString());
         } catch (Exception e) {
-            codeArea.setText("// " + com.bingbaihanji.fxdecomplie.utils.I18nUtil.getString("bytecode.parseFailed") + ": " + e.getMessage());
+            codeArea.setText("// " + com.bingbaihanji.fxdecomplie.utils.I18nUtil.getString("bytecode.parseFailed") + ": " + e.getMessage()
+                    + "\n// Falling back to class metadata because ASM cannot parse this bytecode version.\n\n"
+                    + ClassFileParser.summary(classBytes));
         }
         return codeArea;
     }

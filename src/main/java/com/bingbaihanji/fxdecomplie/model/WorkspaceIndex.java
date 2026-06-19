@@ -1,7 +1,9 @@
 package com.bingbaihanji.fxdecomplie.model;
 
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import javafx.scene.control.TreeItem;
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -70,30 +72,19 @@ public final class WorkspaceIndex {
         List<MemberIndexEntry> methods = new ArrayList<>();
         List<MemberIndexEntry> fields = new ArrayList<>();
 
-        try {
-            ClassReader reader = new ClassReader(bytes);
-            internalName = reader.getClassName();
+        Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
+        if (metadata.isPresent()) {
+            ClassFileMetadata meta = metadata.get();
+            internalName = meta.internalName();
             simpleName = simpleName(internalName);
-            // ---- Member scan: traverse class structure via ASM visitor (skip code bodies) ----
-            reader.accept(new ClassVisitor(Opcodes.ASM9) {
-                @Override
-                public FieldVisitor visitField(int access, String name, String descriptor,
-                                               String signature, Object value) {
-                    // ---- Field index: record name + descriptor for search/outline ----
-                    fields.add(new MemberIndexEntry(node.getFullPath(), name, descriptor));
-                    return super.visitField(access, name, descriptor, signature, value);
-                }
-
-                @Override
-                public MethodVisitor visitMethod(int access, String name, String descriptor,
-                                                 String signature, String[] exceptions) {
-                    // ---- Method index: record name + descriptor for search/outline ----
-                    methods.add(new MemberIndexEntry(node.getFullPath(), name, descriptor));
-                    return super.visitMethod(access, name, descriptor, signature, exceptions);
-                }
-            }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-        } catch (Exception e) {
-            logger.warn("Failed to index class: {}", node.getFullPath(), e);
+            for (ClassFileMetadata.MemberInfo field : meta.fields()) {
+                fields.add(new MemberIndexEntry(node.getFullPath(), field.name(), field.descriptor()));
+            }
+            for (ClassFileMetadata.MemberInfo method : meta.methods()) {
+                methods.add(new MemberIndexEntry(node.getFullPath(), method.name(), method.descriptor()));
+            }
+        } else {
+            logger.warn("Failed to parse class metadata: {}", node.getFullPath());
         }
 
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName, bytes,
@@ -111,7 +102,7 @@ public final class WorkspaceIndex {
             pw.flush();
             return sw.toString();
         } catch (Exception e) {
-            return new String(bytes, StandardCharsets.ISO_8859_1);
+            return ClassFileParser.summary(bytes);
         }
     }
 

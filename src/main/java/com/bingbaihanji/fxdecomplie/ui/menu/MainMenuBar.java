@@ -5,6 +5,8 @@ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 
+import java.util.List;
+
 /**
  * 主菜单栏组件，提供文件、编辑、视图、引擎、主题和帮助菜单。
  *
@@ -52,9 +54,9 @@ public class MainMenuBar extends MenuBar {
         Menu recentMenu = new Menu(I18nUtil.getString("menu.file.recent"));
         recentMenu.setOnShowing(e -> {
             recentMenu.getItems().clear();
-            java.util.List<String> recents = actions.getRecentFiles();
+            List<String> recents = actions.getRecentFiles();
             if (recents.isEmpty()) {
-                javafx.scene.control.MenuItem none = new javafx.scene.control.MenuItem(
+                MenuItem none = new MenuItem(
                         I18nUtil.getString("menu.file.recent.empty"));
                 none.setDisable(true);
                 recentMenu.getItems().add(none);
@@ -63,7 +65,7 @@ public class MainMenuBar extends MenuBar {
                     String display = path;
                     int sep = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
                     if (sep > 0) display = path.substring(sep + 1) + "  —  " + path;
-                    javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(display);
+                    MenuItem item = new MenuItem(display);
                     item.setOnAction(ev -> actions.openRecentFile(path));
                     recentMenu.getItems().add(item);
                 }
@@ -162,8 +164,8 @@ public class MainMenuBar extends MenuBar {
     }
 
     /** 创建清除最近历史菜单项 */
-    private javafx.scene.control.MenuItem clearRecentItem(Actions actions) {
-        javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(
+    private MenuItem clearRecentItem(Actions actions) {
+        MenuItem item = new MenuItem(
                 I18nUtil.getString("menu.file.recent.clear"));
         item.setOnAction(e -> actions.clearRecentFiles());
         return item;

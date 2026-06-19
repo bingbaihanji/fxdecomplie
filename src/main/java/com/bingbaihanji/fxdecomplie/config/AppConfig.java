@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * Application configuration POJO. Loaded from and persisted to {@code ~/.fxdecompiler/config.json}.
+ * Application configuration POJO. Loaded from and persisted to {@code <appDir>/config/config.json}.
  * Holds window geometry, theme settings, decompiler preferences, export defaults,
  * search options, language selection, and recent file history.
  *
@@ -22,10 +22,33 @@ import java.util.*;
  */
 public class AppConfig {
 
-    /** 配置目录 (~/.fxdecompiler) */
-    private static final Path CONFIG_DIR = Path.of(System.getProperty("user.home"), ".fxdecompiler");
+    /** 应用根目录（JAR 所在目录，开发期回退到 user.dir） */
+    private static final Path APP_DIR = resolveAppDir();
+    /** 配置目录 (<appDir>/config) */
+    private static final Path CONFIG_DIR = APP_DIR.resolve("config");
     /** 配置文件路径 */
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
+
+    /**
+     * 解析应用根目录：优先取 JAR 包所在目录，开发期回退到 user.dir。
+     * 所有应用数据（配置、缓存、日志）均存放在此目录下。
+     */
+    public static Path appDir() {
+        return APP_DIR;
+    }
+
+    private static Path resolveAppDir() {
+        try {
+            var codeSource = AppConfig.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null && codeSource.getLocation() != null) {
+                Path jarPath = Path.of(codeSource.getLocation().toURI());
+                Path parent = jarPath.getParent();
+                if (parent != null) return parent;
+            }
+        } catch (Exception ignored) {
+        }
+        return Path.of(System.getProperty("user.dir"));
+    }
     /** JSON 序列化/反序列化器 */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
@@ -44,7 +67,9 @@ public class AppConfig {
     private Export export = new Export();
     /** 搜索配置 */
     private Search search = new Search();
-    /** 最近打开的文件列表（路径字符串），预留后续实现最近文件菜单 */
+    /** 平台原生窗口配置 */
+    private Platform platform = new Platform();
+    /** 最近打开的文件列表（路径字符串） */
     private List<String> recentFiles = new ArrayList<>();
 
     /**
@@ -124,6 +149,14 @@ public class AppConfig {
         search = v;
     }
 
+    public Platform platform() {
+        return platform;
+    }
+
+    public void platform(Platform v) {
+        platform = v;
+    }
+
     public List<String> recentFiles() {
         return recentFiles;
     }
@@ -160,6 +193,7 @@ public class AppConfig {
         if (decompiler == null) decompiler = new Decompiler();
         if (export == null) export = new Export();
         if (search == null) search = new Search();
+        if (platform == null) platform = new Platform();
         if (recentFiles == null) recentFiles = new ArrayList<>();
         if (language == null) language = "";
         if (decompiler.defaultEngine == null) {
@@ -180,6 +214,9 @@ public class AppConfig {
         }
         if (export.lastPath == null) export.lastPath = "";
         search.resultLimit = Math.clamp(search.resultLimit, 50, 2000);
+        if (platform.cornerPreference == null || platform.cornerPreference.isBlank()) {
+            platform.cornerPreference = "DO_NOT_ROUND";
+        }
         if (search.excludePatterns == null) {
             search.excludePatterns = new ArrayList<>();
         }
@@ -438,6 +475,39 @@ public class AppConfig {
             return "Search{fullSourceSearch=" + fullSourceSearch
                     + ", resultLimit=" + resultLimit
                     + ", excludePatterns=" + excludePatterns + "}";
+        }
+    }
+
+    /** Windows 平台原生窗口外观配置，通过 DWM API 应用。非 Windows 平台此项被忽略。 */
+    public static class Platform {
+        /** 窗口边框颜色 (COLORREF: 0x00BBGGRR) */
+        private int windowBorderColor = 0x00888800;
+        /** 窗口圆角偏好: DO_NOT_ROUND / ROUND / DEFAULT */
+        private String cornerPreference = "DO_NOT_ROUND";
+
+
+        public int windowBorderColor() {
+            return windowBorderColor;
+        }
+
+        public void windowBorderColor(int v) {
+            windowBorderColor = v;
+        }
+
+        public String cornerPreference() {
+            return cornerPreference;
+        }
+
+        public void cornerPreference(String v) {
+            cornerPreference = v;
+        }
+
+        @Override
+        public String toString() {
+            return "Platform{" +
+                    "windowBorderColor=" + windowBorderColor +
+                    ", cornerPreference='" + cornerPreference + '\'' +
+                    '}';
         }
     }
 }

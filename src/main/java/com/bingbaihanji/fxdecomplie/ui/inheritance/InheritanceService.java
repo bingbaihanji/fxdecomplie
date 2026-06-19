@@ -1,13 +1,16 @@
 package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
-import org.objectweb.asm.ClassReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -45,7 +48,7 @@ public final class InheritanceService {
         Set<String> visited = new HashSet<>();
         String internalName = toInternal(fullPath);
         byte[] bytes = getBytes(index, internalName);
-        if (bytes == null) return null;
+        if (bytes == null){ return null;}
 
         InheritanceNode rootData = new InheritanceNode(internalName, simpleName(internalName),
                 InheritanceNode.RelationType.SELF, 0);
@@ -53,20 +56,21 @@ public final class InheritanceService {
         root.setExpanded(true);
         visited.add(internalName);
 
-        try {
-            ClassReader reader = new ClassReader(bytes);
-            String superName = reader.getSuperName();
+        Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
+        if (metadata.isPresent()) {
+            ClassFileMetadata meta = metadata.get();
+            String superName = meta.superName();
             if (superName != null && !"java/lang/Object".equals(superName)) {
                 buildSuperChain(superName, root, 1, visited, index);
             }
-            for (String itf : reader.getInterfaces()) {
+            for (String itf : meta.interfaces()) {
                 TreeItem<InheritanceNode> ifNode = new TreeItem<>(
                         new InheritanceNode(itf, simpleName(itf),
                                 InheritanceNode.RelationType.INTERFACE, 1));
                 root.getChildren().add(ifNode);
             }
-        } catch (Exception e) {
-            logger.warn("Failed to analyze class in inheritance tree", e);
+        } else {
+            logger.warn("Failed to parse class metadata for inheritance tree: {}", fullPath);
         }
 
         findSubClasses(internalName, root, visited, index);
@@ -90,20 +94,21 @@ public final class InheritanceService {
 
         byte[] bytes = getBytes(index, internalName);
         if (bytes != null) {
-            try {
-                ClassReader reader = new ClassReader(bytes);
-                String superName = reader.getSuperName();
+            Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
+            if (metadata.isPresent()) {
+                ClassFileMetadata meta = metadata.get();
+                String superName = meta.superName();
                 if (superName != null && !"java/lang/Object".equals(superName)) {
                     buildSuperChain(superName, node, depth + 1, visited, index);
                 }
-                for (String itf : reader.getInterfaces()) {
+                for (String itf : meta.interfaces()) {
                     TreeItem<InheritanceNode> ifNode = new TreeItem<>(
                             new InheritanceNode(itf, simpleName(itf),
                                     InheritanceNode.RelationType.INTERFACE, depth + 1));
                     node.getChildren().add(ifNode);
                 }
-            } catch (Exception e) {
-                logger.warn("Failed to analyze class in inheritance tree", e);
+            } else {
+                logger.warn("Failed to parse class metadata for inheritance tree: {}", internalName);
             }
         }
     }
@@ -124,22 +129,25 @@ public final class InheritanceService {
     private static void addSubClassIfMatches(String targetName, TreeItem<InheritanceNode> root,
                                              Set<String> visited, String name, byte[] bytes) {
         if (visited.contains(name) || name.equals(targetName)) return;
-        try {
-            ClassReader reader = new ClassReader(bytes);
-            if (targetName.equals(reader.getSuperName())) {
+        Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
+        if (metadata.isEmpty()) {
+            logger.warn("Failed to parse class metadata for inheritance tree: {}", name);
+            return;
+        }
+        ClassFileMetadata meta = metadata.get();
+        if (targetName.equals(meta.superName())) {
+            InheritanceNode data = new InheritanceNode(name, simpleName(name),
+                    InheritanceNode.RelationType.SUBCLASS, 1);
+            root.getChildren().add(new TreeItem<>(data));
+            return;
+        }
+        for (String itf : meta.interfaces()) {
+            if (targetName.equals(itf)) {
                 InheritanceNode data = new InheritanceNode(name, simpleName(name),
                         InheritanceNode.RelationType.SUBCLASS, 1);
                 root.getChildren().add(new TreeItem<>(data));
+                return;
             }
-            for (String itf : reader.getInterfaces()) {
-                if (targetName.equals(itf)) {
-                    InheritanceNode data = new InheritanceNode(name, simpleName(name),
-                            InheritanceNode.RelationType.SUBCLASS, 1);
-                    root.getChildren().add(new TreeItem<>(data));
-                }
-            }
-        } catch (Exception e) {
-            logger.warn("Failed to analyze class in inheritance tree", e);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui;
 
 import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 /**
@@ -32,6 +33,21 @@ public final class DialogHelper {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.initOwner(owner);
+        alert.setOnShown(e -> {
+            var window = alert.getDialogPane().getScene().getWindow();
+            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            if (window instanceof Stage s) setDialogIcon(s);
+        });
         alert.showAndWait();
+    }
+
+    private static void setDialogIcon(Stage stage) {
+        try {
+            var stream = DialogHelper.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

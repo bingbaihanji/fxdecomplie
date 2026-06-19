@@ -15,8 +15,10 @@
         <junit.version>5.12.1</junit.version>
         <java.version>25</java.version>
         <javafx.version>25.0.1</javafx.version>
+        <asm.version>9.9</asm.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <jna.version>5.17.0</jna.version>
     </properties>
 
     <dependencies>
@@ -43,6 +45,17 @@
             <version>${javafx.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>jfx-incubator-input</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>jfx-incubator-richtext</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
         <!-- JSON -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -119,13 +132,26 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
-            <version>9.7.1</version>
+            <version>${asm.version}</version>
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-util</artifactId>
-            <version>9.7.1</version>
+            <version>${asm.version}</version>
         </dependency>
+
+        <!--jna 依赖-->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>${jna.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>${jna.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -179,10 +205,20 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.basedir}/bin</outputDirectory>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <!-- 自定义JAR名称（无original前缀） -->
                             <finalName>fxdecomplie</finalName>
                             <!--  关闭双JAR生成（只输出 fatJAR，不生成original-JAR） -->
                             <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/*/module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">

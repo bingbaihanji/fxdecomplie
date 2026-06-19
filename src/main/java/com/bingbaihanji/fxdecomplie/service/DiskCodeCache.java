@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +16,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * L3 磁盘持久化缓存。将反编译结果序列化到 ~/.fxdecompiler/cache/ 下。
- * 应用版本升级时自动清理旧缓存。
+ * L3 磁盘持久化缓存。将反编译结果序列化到 {@code <appDir>/cache/} 下。
+ * 超量时自动清理旧缓存。
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -25,8 +26,7 @@ public final class DiskCodeCache {
 
     private static final Logger logger = LoggerFactory.getLogger(DiskCodeCache.class);
 
-    private static final Path CACHE_ROOT = Path.of(
-            System.getProperty("user.home"), ".fxdecompiler", "cache");
+    private static final Path CACHE_ROOT = AppConfig.appDir().resolve("cache");
 
     private static final long MAX_CACHE_SIZE_BYTES = 500L * 1024 * 1024; // 500 MB
     private static final int CACHE_SCHEMA_VERSION = 2;

@@ -1,5 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
@@ -37,6 +39,7 @@ public final class UsageSearchService {
 
     private static void scanClass(ClassIndexEntry cls, Target target,
                                   List<UsageResult> results, Set<String> seen) {
+        addClassHeaderUsages(cls, target, results, seen);
         try {
             ClassReader reader = new ClassReader(cls.bytes());
             reader.accept(new ClassVisitor(Opcodes.ASM9) {
@@ -140,8 +143,41 @@ public final class UsageSearchService {
                 }
             }, ClassReader.SKIP_FRAMES);
         } catch (Exception ignored) {
-            // Malformed classes are ignored for usage search; they remain visible in class search.
+            // Method-body usage scanning depends on ASM. If ASM does not support a
+            // newer class version yet, header references above still remain searchable.
         }
+    }
+
+    private static void addClassHeaderUsages(ClassIndexEntry cls, Target target,
+                                             List<UsageResult> results, Set<String> seen) {
+        ClassFileParser.tryParse(cls.bytes()).ifPresent(metadata -> {
+            if (matchesClass(target, metadata.superName())) {
+                add(results, seen, cls.fullPath(), 1,
+                        UsageResult.UsageType.CLASS_REFERENCE,
+                        "extends " + metadata.superName());
+            }
+            for (String iface : metadata.interfaces()) {
+                if (matchesClass(target, iface)) {
+                    add(results, seen, cls.fullPath(), 1,
+                            UsageResult.UsageType.CLASS_REFERENCE,
+                            "implements " + iface);
+                }
+            }
+            for (ClassFileMetadata.MemberInfo field : metadata.fields()) {
+                if (matchesDescriptor(target, field.descriptor())) {
+                    add(results, seen, cls.fullPath(), 1,
+                            UsageResult.UsageType.FIELD_ACCESS,
+                            "field " + field.name() + " " + field.descriptor());
+                }
+            }
+            for (ClassFileMetadata.MemberInfo method : metadata.methods()) {
+                if (matchesDescriptor(target, method.descriptor())) {
+                    add(results, seen, cls.fullPath(), 1,
+                            UsageResult.UsageType.METHOD_CALL,
+                            "method " + method.name() + method.descriptor());
+                }
+            }
+        });
     }
 
     private static void scanHandle(ClassIndexEntry cls, Target target,
@@ -204,6 +240,13 @@ public final class UsageSearchService {
                     && matchesClass(target, owner);
         }
         return normalizedName.contains(target.raw);
+    }
+
+    private static boolean matchesDescriptor(Target target, String descriptor) {
+        if (descriptor == null || descriptor.isBlank()) {
+            return false;
+        }
+        return descriptor.toLowerCase(Locale.ROOT).contains('L' + target.classPart + ';');
     }
 
     private static void add(List<UsageResult> results, Set<String> seen, String sourcePath,

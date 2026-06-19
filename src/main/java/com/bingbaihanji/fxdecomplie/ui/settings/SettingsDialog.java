@@ -36,6 +36,11 @@ public final class SettingsDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("menu.edit.settings"));
         dialog.setHeaderText(null);
+        dialog.setOnShown(e -> {
+            var window = dialog.getDialogPane().getScene().getWindow();
+            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            if (window instanceof Stage s) setDialogIcon(s);
+        });
 
         TabPane tabPane = new TabPane();
 
@@ -136,6 +141,8 @@ public final class SettingsDialog {
             alert.initOwner(owner);
             alert.setHeaderText(null);
             alert.setTitle(I18nUtil.getString("settings.cache"));
+            alert.setOnShown(ev -> com.bingbaihanji.fxdecomplie.platform.FxTools
+                    .applyWindowDarkMode(alert.getDialogPane().getScene().getWindow()));
             alert.showAndWait();
         });
         cacheTab.setContent(new VBox(10,
@@ -239,6 +246,16 @@ public final class SettingsDialog {
             return Enum.valueOf(fallback.getDeclaringClass(), value);
         } catch (IllegalArgumentException | NullPointerException e) {
             return fallback;
+        }
+    }
+
+    private static void setDialogIcon(javafx.stage.Stage stage) {
+        try {
+            var stream = SettingsDialog.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
         }
     }
 }

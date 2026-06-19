@@ -44,6 +44,7 @@ public final class FindUsageDialog {
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
         dialog.setTitle(I18nUtil.getString("usage.title"));
+        setDialogIcon(dialog);
 
         TextField input = new TextField();
         input.setPromptText(I18nUtil.getString("usage.query.prompt"));
@@ -118,6 +119,7 @@ public final class FindUsageDialog {
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
         dialog.show();
+        com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
         input.requestFocus();
         if (input.getText() != null && !input.getText().isBlank()) {
             runSearch.run();
@@ -153,5 +155,15 @@ public final class FindUsageDialog {
     @FunctionalInterface
     public interface JumpCallback {
         void jump(String fullPath, int lineNumber);
+    }
+
+    private static void setDialogIcon(Stage stage) {
+        try {
+            var stream = FindUsageDialog.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

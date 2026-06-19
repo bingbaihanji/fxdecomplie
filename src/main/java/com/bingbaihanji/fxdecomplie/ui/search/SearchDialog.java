@@ -67,6 +67,7 @@ public final class SearchDialog {
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
         dialog.setTitle(I18nUtil.getString("search.title"));
+        setDialogIcon(dialog);
 
         TextField input = new TextField();
         input.setPromptText(I18nUtil.getString("search.prompt"));
@@ -237,6 +238,7 @@ public final class SearchDialog {
         dialog.setScene(scene);
         dialog.setOnCloseRequest(event -> BackgroundTasks.cancel(currentSearchTask.get()));
         dialog.show();
+        com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
         input.requestFocus();
         if (initialQuery != null && !initialQuery.isBlank()) {
             input.setText(initialQuery);
@@ -343,5 +345,15 @@ public final class SearchDialog {
     @FunctionalInterface
     public interface SourceCacheLoader {
         Map<String, String> load();
+    }
+
+    private static void setDialogIcon(Stage stage) {
+        try {
+            var stream = SearchDialog.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

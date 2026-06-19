@@ -9,8 +9,11 @@ module FXGeometricView {
     requires org.slf4j;
     requires ch.qos.logback.core;
     requires ch.qos.logback.classic;
+    requires java.desktop;
     requires java.logging;
+    requires java.sql;
     requires com.github.benmanes.caffeine;
+    requires org.objectweb.asm;
     requires org.objectweb.asm.util;
     requires com.google.gson;
     requires jfx.incubator.richtext;
@@ -18,8 +21,8 @@ module FXGeometricView {
     requires vineflower;
     requires procyon.compilertools;
     requires cfr;
-
-
+    requires com.sun.jna.platform;
+    requires com.sun.jna;
 
     // 导出 decompiler 包供 Gson 访问枚举
     exports com.bingbaihanji.fxdecomplie.decompiler;
@@ -31,4 +34,7 @@ module FXGeometricView {
 
     // 开放 decompiler 包给 Gson（用于枚举反序列化）
     opens com.bingbaihanji.fxdecomplie.decompiler to com.google.gson;
+
+    // 开放 platform.win32 包给 JNA（用于 Structure 反射读取字段）
+    opens com.bingbaihanji.fxdecomplie.platform.win32 to com.sun.jna;
 }

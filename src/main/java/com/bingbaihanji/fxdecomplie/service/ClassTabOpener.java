@@ -9,6 +9,7 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.LineNumberGutter;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
@@ -303,7 +304,7 @@ public final class ClassTabOpener {
     public void openTextFileTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
         // 去重检查
         for (Tab tab : codeTabPane.getTabs()) {
-            if (tab.getText().equals(node.getName())) {
+            if (node.getName().equals(tab.getText())) {
                 codeTabPane.getSelectionModel().select(tab);
                 return;
             }
@@ -373,12 +374,14 @@ public final class ClassTabOpener {
     private CodeEditorTab createCodeEditorTab(OpenFile openFile, boolean lineNumbersEnabled,
                                               byte[] classBytes, CodeMetadata metadata,
                                               Consumer<CodeMetadata.Reference> onNavigate) {
-        return new CodeEditorTab(
+        CodeEditorTab tab = new CodeEditorTab(
                 openFile, editorTheme,
                 config.theme().fontFamily(), config.theme().fontSize(),
                 config.decompiler().wrapText(), lineNumbersEnabled,
                 classBytes, metadata, onNavigate
         );
+        CodeOnlyWindow.enableTabDrag(tab);
+        return tab;
     }
 
     /** 查找已打开的同名 class 标签页，移除不同引擎的重复标签页 */

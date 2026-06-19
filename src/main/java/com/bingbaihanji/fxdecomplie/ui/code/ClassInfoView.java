@@ -1,11 +1,13 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
-import org.objectweb.asm.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 类信息视图。展示 class 文件的版本号、访问标志、常量池数量、父类、接口列表等结构化元数据。
@@ -30,21 +32,26 @@ public final class ClassInfoView {
         }
 
         try {
-            ClassReader reader = new ClassReader(classBytes);
-            int minor = reader.readShort(4);
-            int major = reader.readShort(6);
+            Optional<ClassFileMetadata> parsed = ClassFileParser.tryParse(classBytes);
+            if (parsed.isEmpty()) {
+                root.getChildren().add(label("解析失败: 无法读取 class 文件元数据", "#f44747"));
+                return root;
+            }
 
-            root.getChildren().add(label("主版本号: " + major + "  (Java " + toJavaVersion(major) + ")", "#dcdcaa"));
+            ClassFileMetadata metadata = parsed.get();
+            int minor = metadata.minorVersion();
+            int major = metadata.majorVersion();
+
+            root.getChildren().add(label("主版本号: " + major + "  (Java " + ClassFileParser.javaVersion(major) + ")", "#dcdcaa"));
             root.getChildren().add(label("次版本号: " + minor, "#9aa7b0"));
-            root.getChildren().add(label("访问标志: " + formatAccess(reader.getAccess()), "#9aa7b0"));
-            root.getChildren().add(label("本类: " + reader.getClassName().replace('/', '.'), "#4ec9b0"));
-            String superName = reader.getSuperName();
+            root.getChildren().add(label("访问标志: " + formatAccess(metadata.accessFlags()), "#9aa7b0"));
+            root.getChildren().add(label("本类: " + metadata.internalName().replace('/', '.'), "#4ec9b0"));
+            String superName = metadata.superName();
             root.getChildren().add(label("父类: " + (superName != null ? superName.replace('/', '.') : "(无)"), "#c586c0"));
-            root.getChildren().add(label("常量池条目: " + reader.getItemCount(), "#9aa7b0"));
+            root.getChildren().add(label("常量池条目: " + metadata.constantPoolCount(), "#9aa7b0"));
 
-            String[] interfaces = reader.getInterfaces();
-            if (interfaces.length > 0) {
-                for (String itf : interfaces) {
+            if (!metadata.interfaces().isEmpty()) {
+                for (String itf : metadata.interfaces()) {
                     root.getChildren().add(label("接口: " + itf.replace('/', '.'), "#b5cea8"));
                 }
             } else {
@@ -54,28 +61,16 @@ public final class ClassInfoView {
             // ---- Extract methods and fields via ASM visitor ----
             List<String> methods = new ArrayList<>();
             List<String> fields = new ArrayList<>();
-            try {
-                reader.accept(new ClassVisitor(Opcodes.ASM9) {
-                    @Override
-                    public FieldVisitor visitField(int access, String name, String descriptor,
-                                                   String signature, Object value) {
-                        String accessStr = formatMemberAccess(access);
-                        String typeStr = descriptorToJava(descriptor);
-                        fields.add(accessStr + typeStr + " " + name);
-                        return super.visitField(access, name, descriptor, signature, value);
-                    }
-
-                    @Override
-                    public MethodVisitor visitMethod(int access, String name, String descriptor,
-                                                     String signature, String[] exceptions) {
-                        String accessStr = formatMemberAccess(access);
-                        String returnType = extractReturnType(descriptor);
-                        String params = extractParams(descriptor);
-                        methods.add(accessStr + returnType + " " + name + "(" + params + ")");
-                        return super.visitMethod(access, name, descriptor, signature, exceptions);
-                    }
-                }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            } catch (Exception ignored) {
+            for (ClassFileMetadata.MemberInfo field : metadata.fields()) {
+                String accessStr = formatMemberAccess(field.accessFlags());
+                String typeStr = descriptorToJava(field.descriptor());
+                fields.add(accessStr + typeStr + " " + field.name());
+            }
+            for (ClassFileMetadata.MemberInfo method : metadata.methods()) {
+                String accessStr = formatMemberAccess(method.accessFlags());
+                String returnType = extractReturnType(method.descriptor());
+                String params = extractParams(method.descriptor());
+                methods.add(accessStr + returnType + " " + method.name() + "(" + params + ")");
             }
 
             // ---- Methods section ----
@@ -101,10 +96,6 @@ public final class ClassInfoView {
             root.getChildren().add(label("解析失败: " + e.getMessage(), "#f44747"));
         }
         return root;
-    }
-
-    private static int toJavaVersion(int major) {
-        return major - 44;
     }
 
     private static String formatAccess(int access) {
@@ -136,12 +127,12 @@ public final class ClassInfoView {
 
     private static String formatMemberAccess(int access) {
         StringBuilder sb = new StringBuilder();
-        if ((access & Opcodes.ACC_PUBLIC) != 0) sb.append("public ");
-        else if ((access & Opcodes.ACC_PRIVATE) != 0) sb.append("private ");
-        else if ((access & Opcodes.ACC_PROTECTED) != 0) sb.append("protected ");
-        if ((access & Opcodes.ACC_STATIC) != 0) sb.append("static ");
-        if ((access & Opcodes.ACC_FINAL) != 0) sb.append("final ");
-        if ((access & Opcodes.ACC_ABSTRACT) != 0) sb.append("abstract ");
+        if ((access & 0x0001) != 0) sb.append("public ");
+        else if ((access & 0x0002) != 0) sb.append("private ");
+        else if ((access & 0x0004) != 0) sb.append("protected ");
+        if ((access & 0x0008) != 0) sb.append("static ");
+        if ((access & 0x0010) != 0) sb.append("final ");
+        if ((access & 0x0400) != 0) sb.append("abstract ");
         return sb.toString();
     }
 

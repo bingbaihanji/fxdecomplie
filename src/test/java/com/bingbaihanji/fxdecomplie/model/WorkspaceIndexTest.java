@@ -56,6 +56,29 @@ class WorkspaceIndexTest {
     }
 
     @Test
+    void indexesJava25ClassFileWithoutAsmVersionFailure() throws Exception {
+        TreeItem<FileTreeNode> root = new TreeItem<>(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+
+        FileTreeNode clsNode = new FileTreeNode("Test.class", "com/example/Test.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        clsNode.setCachedBytes(withMajorVersion(compileClass("com.example", "Test", """
+                package com.example;
+                public class Test {
+                    public void run() {}
+                }
+                """), 69));
+        root.getChildren().add(new TreeItem<>(clsNode));
+
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+        assertEquals(1, index.classes().size());
+        assertEquals("com/example/Test", index.classes().getFirst().internalName());
+        assertTrue(index.classes().getFirst().methods().stream()
+                .anyMatch(method -> method.name().equals("run")));
+        assertNotNull(index.getClassBytes("com/example/Test"));
+    }
+
+    @Test
     void indexesResourceNodes() {
         TreeItem<FileTreeNode> root = new TreeItem<>(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
@@ -102,5 +125,12 @@ class WorkspaceIndexTest {
 
         Path classFile = outputDir.resolve(packageName.replace('.', '/')).resolve(className + ".class");
         return Files.readAllBytes(classFile);
+    }
+
+    private static byte[] withMajorVersion(byte[] bytes, int majorVersion) {
+        byte[] copy = bytes.clone();
+        copy[6] = (byte) ((majorVersion >>> 8) & 0xff);
+        copy[7] = (byte) (majorVersion & 0xff);
+        return copy;
     }
 }

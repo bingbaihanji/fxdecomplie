@@ -1,13 +1,16 @@
 package com.bingbaihanji.fxdecomplie.ui;
 
+import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
+import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Orientation;
@@ -24,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * 管理外层 TabPane 中工作区标签页的创建和销毁。
@@ -51,10 +55,19 @@ public final class WorkspaceTabManager {
     private WelcomeActions welcomeActions = WelcomeActions.empty();
     /** 当前引擎显示名 */
     private String currentEngineName = "";
+    /** 拖放配置（用于主窗口安装代码标签拖拽处理器） */
+    private AppConfig dragDropConfig;
+    private VsCodeThemeLoader.ThemeData dragDropTheme;
 
     public WorkspaceTabManager(TabPane outerTabPane, StatusBar statusBar) {
         this.outerTabPane = outerTabPane;
         this.statusBar = statusBar;
+    }
+
+    /** 设置拖放配置，用于在 workspace 代码标签页面板安装跨窗口拖拽支持。 */
+    public void setDragDropConfig(AppConfig config, VsCodeThemeLoader.ThemeData theme) {
+        this.dragDropConfig = config;
+        this.dragDropTheme = theme;
     }
 
     /** 创建底部工具窗口顶部的独立拖拽手柄。 */
@@ -227,6 +240,10 @@ public final class WorkspaceTabManager {
             return;
         }
         boolean pinned = Boolean.TRUE.equals(tab.getProperties().get("pinned"));
+        if (tab instanceof CodeEditorTab codeTab) {
+            codeTab.setPinnedIndicator(pinned);
+            return;
+        }
         String text = tab.getText();
         if (pinned && !text.startsWith("● ")) {
             tab.setText("● " + text);
@@ -312,6 +329,11 @@ public final class WorkspaceTabManager {
                 (obs, oldTab, newTab) -> updateStatusForCodeTab(newTab)
         );
 
+        // 安装跨窗口标签拖放支持
+        if (dragDropConfig != null && dragDropTheme != null) {
+            CodeOnlyWindow.installDragDropHandlers(codeTabPane, dragDropConfig, dragDropTheme);
+        }
+
         // 右键菜单：关闭其他 / 关闭全部
         codeTabPane.setOnContextMenuRequested(event -> {
             ContextMenu menu = new ContextMenu();
@@ -349,10 +371,19 @@ public final class WorkspaceTabManager {
             MenuItem closeUnpinned = new MenuItem(I18nUtil.getString("context.closeUnpinned"));
             closeUnpinned.setOnAction(e -> codeTabPane.getTabs().removeIf(t ->
                     !Boolean.TRUE.equals(t.getProperties().get("pinned"))));
+            MenuItem openInNewWindow = new MenuItem(I18nUtil.getString("context.openInNewWindow"));
+            openInNewWindow.setDisable(!(current instanceof CodeEditorTab));
+            openInNewWindow.setOnAction(e -> {
+                if (current instanceof CodeEditorTab codeTab) {
+                    javafx.stage.Window window = codeTabPane.getScene().getWindow();
+                    javafx.stage.Stage owner = window instanceof javafx.stage.Stage s ? s : null;
+                    CodeOnlyWindow.openFrom(codeTab, dragDropConfig, owner);
+                }
+            });
             MenuItem closeAll = new MenuItem(I18nUtil.getString("context.closeAll"));
             closeAll.setOnAction(e -> codeTabPane.getTabs().clear());
-            menu.getItems().addAll(pin, new SeparatorMenuItem(), closeOthers, closeRight,
-                    closeUnpinned, closeAll);
+            menu.getItems().addAll(pin, new SeparatorMenuItem(), openInNewWindow,
+                    new SeparatorMenuItem(), closeOthers, closeRight, closeUnpinned, closeAll);
             menu.show(codeTabPane, event.getScreenX(), event.getScreenY());
             event.consume();
         });
@@ -659,6 +690,7 @@ public final class WorkspaceTabManager {
         FlowPane actions = new FlowPane(8, 8, openFile, openDir, openProject);
         actions.getStyleClass().add("welcome-actions");
 
+        // 最近打开
         VBox recentBox = new VBox(4);
         recentBox.getStyleClass().add("welcome-recent");
         Label recentTitle = new Label(I18nUtil.getString("welcome.recent"));
@@ -713,7 +745,7 @@ public final class WorkspaceTabManager {
             Runnable openDirectory,
             Runnable openProject,
             List<String> recentFiles,
-            java.util.function.Consumer<String> openRecent
+            Consumer<String> openRecent
     ) {
         public WelcomeActions {
             openFile = openFile == null ? () -> {
