@@ -85,7 +85,6 @@ public final class FxTools {
     }
 
 
-
     // ==================== 窗口句柄 ====================
 
     /**
@@ -205,6 +204,7 @@ public final class FxTools {
                 NativeWindowsTools.setSystemStageStyle(handle, SystemBackdropType.TRANSIENTWINDOW);
                 NativeWindowsTools.setWindowCornerPreference(handle, cornerPreference);
                 NativeWindowsTools.setWindowBorderColor(handle, windowBorderColor);
+                NativeWindowsTools.extendFrameIntoClientArea(handle);
 
             });
             return;
