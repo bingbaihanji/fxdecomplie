@@ -165,14 +165,28 @@ public final class AppHeaderBar {
         return titleLabel;
     }
 
-    /** 创建品牌图标区域 */
+    /** 创建品牌图标区域（标题栏左侧 logo） */
     private static HBox createBrand(String title) {
-        Label icon = new Label("Fx");
-        icon.getStyleClass().add("app-icon");
-
-        HBox brand = new HBox(icon);
+        ImageView logoView = logoIcon();
+        HBox brand = new HBox(logoView);
         brand.getStyleClass().add("app-brand");
         brand.setAlignment(Pos.CENTER_LEFT);
         return brand;
+    }
+
+    private static ImageView logoIcon() {
+        ImageView iv = new ImageView();
+        iv.setFitWidth(20);
+        iv.setFitHeight(20);
+        iv.setPreserveRatio(true);
+        try {
+            var stream = AppHeaderBar.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                iv.setImage(new Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
+        iv.getStyleClass().add("app-icon");
+        return iv;
     }
 }

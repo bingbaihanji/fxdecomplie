@@ -25,16 +25,9 @@
 }
 
 .app-icon {
-    -fx-background-color: #007acc;
-    -fx-background-radius: 4;
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 11px;
-    -fx-font-weight: 700;
-    -fx-min-width: 24px;
-    -fx-pref-width: 24px;
-    -fx-min-height: 22px;
-    -fx-pref-height: 22px;
-    -fx-alignment: center;
+    -fx-background-color: transparent;
+    -fx-fit-width: 20px;
+    -fx-fit-height: 20px;
 }
 
 .app-title {
