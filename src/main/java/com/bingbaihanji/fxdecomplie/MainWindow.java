@@ -536,7 +536,7 @@ public class MainWindow implements MainMenuBar.Actions {
         statusBar.setFilePath(I18nUtil.getString("status.compareAllEngines", node.getFullPath()));
         for (DecompilerTypeEnum engine : DecompilerTypeEnum.values()) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
-                    engine, lineNumbersEnabled, false, false);
+                    engine, lineNumbersEnabled, engine == DecompilerTypeEnum.values()[0] ? true : false, true);
         }
     }
 
@@ -613,6 +613,8 @@ public class MainWindow implements MainMenuBar.Actions {
             if (node != null) {
                 classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
                         currentEngine, lineNumbersEnabled);
+            } else {
+                statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
             }
         });
     }
@@ -753,9 +755,11 @@ public class MainWindow implements MainMenuBar.Actions {
 
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
         if (retries > 20) return; // max ~2 seconds
+        if (!tabManager.isWorkspaceActive(view)) return; // workspace was closed
         javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(
                 javafx.util.Duration.millis(100));
         delay.setOnFinished(e -> {
+            if (!tabManager.isWorkspaceActive(view)) return;
             for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
                 if (tab instanceof CodeEditorTab codeTab
                         && codeTab.getOpenFile().fullPath().equals(fullPath)) {
@@ -794,9 +798,18 @@ public class MainWindow implements MainMenuBar.Actions {
         var index = awaitWorkspaceIndex(view.workspace());
         var context = com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext
                 .fromWorkspaceIndex(index, ExportService.engineOptions(config, currentEngine));
-        for (var cls : index.classes()) {
+        var classes = index.classes();
+        int total = classes.size();
+        int processed = 0;
+        for (var cls : classes) {
             if (Thread.currentThread().isInterrupted()) {
                 break;
+            }
+            processed++;
+            if (total > 100 && processed % 100 == 0) {
+                int pct = processed * 100 / total;
+                Platform.runLater(() -> statusBar.setTask(
+                        I18nUtil.getString("task.indexing") + " (" + pct + "%)"));
             }
             fullSourceCache.computeIfAbsent(cls.fullPath(),
                     path -> {
@@ -818,12 +831,6 @@ public class MainWindow implements MainMenuBar.Actions {
         WorkspaceLoader.loadAsync(file, config,
                 workspace -> {
                     statusBar.clearTask();
-                    tabManager.setWelcomeActions(new WorkspaceTabManager.WelcomeActions(
-                            this::openFile,
-                            this::openDirectory,
-                            this::openProject,
-                            config.recentFiles(),
-                            this::openRecentFile));
                     tabManager.addWorkspaceTab(workspace,
                             (node, codeTabPane) -> classTabOpener.openClassTab(
                                     node, workspace, codeTabPane, currentEngine, lineNumbersEnabled),

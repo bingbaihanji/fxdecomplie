@@ -808,6 +808,12 @@ public final class ClassTabOpener {
                     javafx.scene.control.Alert.AlertType.ERROR, message);
             alert.setTitle(title);
             alert.setHeaderText(null);
+            javafx.stage.Window owner = javafx.stage.Window.getWindows().stream()
+                    .filter(javafx.stage.Window::isShowing)
+                    .findFirst().orElse(null);
+            if (owner != null) {
+                alert.initOwner(owner);
+            }
             alert.showAndWait();
         });
     }

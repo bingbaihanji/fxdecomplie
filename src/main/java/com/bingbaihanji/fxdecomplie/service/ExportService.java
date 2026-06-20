@@ -11,6 +11,9 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import javafx.scene.control.TreeItem;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +32,8 @@ import java.util.zip.ZipOutputStream;
  * @date 2026-06-17
  */
 public final class ExportService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExportService.class);
 
     private ExportService() {
         throw new AssertionError("utility class");
@@ -229,7 +234,8 @@ public final class ExportService {
                     state.errors.add("Export canceled");
                     try {
                         zos.closeEntry();
-                    } catch (IOException ignored) {
+                    } catch (IOException e) {
+                        logger.debug("Failed to close zip entry during cancellation", e);
                     }
                     return;
                 }

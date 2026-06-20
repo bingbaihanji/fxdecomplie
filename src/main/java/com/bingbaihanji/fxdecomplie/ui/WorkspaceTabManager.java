@@ -536,6 +536,11 @@ public final class WorkspaceTabManager {
         return selected == null ? null : workspaceViews.get(selected);
     }
 
+    /** 检查工作区视图是否仍然活跃（未被用户关闭） */
+    public boolean isWorkspaceActive(WorkspaceView view) {
+        return view != null && workspaceViews.containsKey(view.workspaceTab());
+    }
+
     /** 获取当前选中的代码标签页 */
     public CodeEditorTab currentCodeTab() {
         WorkspaceView view = currentWorkspaceView();
@@ -607,16 +612,25 @@ public final class WorkspaceTabManager {
 
     /** 清理已关闭的工作区 */
     private void cleanupClosedWorkspace(Tab tab) {
-        workspaceViews.remove(tab);
-        workspaceTools.remove(tab);
+        WorkspaceView view = workspaceViews.remove(tab);
+        WorkspaceTools tools = workspaceTools.remove(tab);
+
+        // 清理内部代码标签页，释放内存，阻止已排队的 Platform.runLater 继续操作
+        if (view != null) {
+            view.codeTabPane().getTabs().clear();
+        }
 
         if (workspaceViews.isEmpty()) {
             statusBar.clear();
-            if (outerTabPane.getTabs().stream().noneMatch(existing -> I18nUtil.getString("tab.welcome").equals(existing.getText()))) {
+            if (outerTabPane.getTabs().stream().noneMatch(this::isWelcomeTab)) {
                 outerTabPane.getTabs().add(createWelcomeTab());
             }
         }
 
+    }
+
+    private boolean isWelcomeTab(Tab tab) {
+        return Boolean.TRUE.equals(tab.getProperties().get("welcome"));
     }
 
     /** 显示并选中指定工具窗口标签页 */
@@ -702,6 +716,7 @@ public final class WorkspaceTabManager {
     /** 创建欢迎标签页 */
     private Tab createWelcomeTab() {
         Tab tab = new Tab(I18nUtil.getString("tab.welcome"), createWelcomeContent());
+        tab.getProperties().put("welcome", true);
         tab.setClosable(false);
         return tab;
     }
