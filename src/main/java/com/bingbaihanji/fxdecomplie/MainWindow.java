@@ -262,7 +262,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    /** 关闭当前工作区标签页 */
+    /** 关闭当前选中的工作区标签页（含解编译结果和文件树） */
     @Override
     public void closeCurrentWorkspace() {
         Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
@@ -271,7 +271,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    /** 关闭其他工作区标签页 */
+    /** 关闭除当前选中之外的所有工作区标签页 */
     @Override
     public void closeOtherWorkspaces() {
         Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
@@ -320,6 +320,7 @@ public class MainWindow implements MainMenuBar.Actions {
                 index -> doExport(view.workspace().getTreeRoot(), index));
     }
 
+    /** 为单个树节点构建临时索引并弹出导出对话框（右键菜单入口） */
     private void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
         if (rootItem == null || rootItem.getValue() == null) {
             return;
@@ -343,6 +344,7 @@ public class MainWindow implements MainMenuBar.Actions {
         });
     }
 
+    /** 弹出导出配置对话框，提交后台导出任务并显示进度 */
     private void doExport(javafx.scene.control.TreeItem<FileTreeNode> rootItem,
                           com.bingbaihanji.fxdecomplie.model.WorkspaceIndex index) {
         var configOpt = ExportDialog.show(stage, config, currentEngine);
@@ -565,6 +567,7 @@ public class MainWindow implements MainMenuBar.Actions {
         openSearch("");
     }
 
+    /** 打开搜索对话框，可预填初始查询关键词 */
     private void openSearch(String initialQuery) {
         var view = tabManager.currentWorkspaceView();
         if (view == null) {
@@ -575,6 +578,7 @@ public class MainWindow implements MainMenuBar.Actions {
         withWorkspaceIndex(view.workspace(), index -> openSearchWithIndex(view, index, initialQuery));
     }
 
+    /** 装配所有搜索 Provider、构建源码缓存并弹出搜索对话框 */
     private void openSearchWithIndex(WorkspaceView view, WorkspaceIndex index, String initialQuery) {
         // Build source cache from open tabs
         java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
@@ -715,6 +719,7 @@ public class MainWindow implements MainMenuBar.Actions {
         SettingsDialog.show(stage, config, this::applySettings);
     }
 
+    /** 应用设置对话框确认后的配置变更：切换引擎、更新行号 */
     private void applySettings(AppConfig updated) {
         DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
         if (configuredEngine != currentEngine) {
@@ -729,6 +734,7 @@ public class MainWindow implements MainMenuBar.Actions {
         );
     }
 
+    /** 将导出对话框中选择的选项写回全局配置，下次打开时记住 */
     private void persistExportConfig(ExportConfig exportConfig) {
         config.export().defaultEngine(exportConfig.engine().name());
         config.export().defaultFormat(exportConfig.format().name());
@@ -738,6 +744,7 @@ public class MainWindow implements MainMenuBar.Actions {
         config.save();
     }
 
+    /** 根据导出结果弹出成功/部分成功对话框，支持打开输出目录和复制错误详情 */
     private void showExportResult(ExportConfig exportConfig, ExportResult result) {
         if (!result.hasErrors()) {
             showExportDoneDialog(I18nUtil.getString("dialog.export.success.title"),
@@ -763,7 +770,9 @@ public class MainWindow implements MainMenuBar.Actions {
                 message.toString(), exportConfig.outputPath(), result.errors());
     }
 
-    // helpers
+    // ── 内部辅助方法 ──
+
+    /** 在工作区中按完整路径打开类并延迟跳转到指定行（搜索/FindUsages 双击回调） */
     private void openClassByPath(WorkspaceView view, String fullPath, int lineNumber) {
         FileTreeNode node = view.workspace().findNodeByPath(fullPath);
         if (node != null) {
@@ -774,6 +783,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
+    /** 延迟轮询工作区标签页，等待解编译完成并将 CodeArea 滚动到目标行（最多 2 秒） */
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
         if (retries > 20) return; // max ~2 seconds
         if (!tabManager.isWorkspaceActive(view)) return; // workspace was closed
@@ -802,6 +812,7 @@ public class MainWindow implements MainMenuBar.Actions {
         delay.play();
     }
 
+    /** 递归遍历文件树，收集所有 .class 节点的完整路径（用于快速打开对话框） */
     private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {
         FileTreeNode data = item.getValue();
         if (data != null && data.isClassFile()) {
@@ -821,6 +832,11 @@ public class MainWindow implements MainMenuBar.Actions {
                 .replace(':', '_').replace('\\', '_').replace('/', '_');
     }
 
+    /**
+     * 构建完整源码缓存供全文搜索使用，优先复用工作区级缓存和 L2 标签页缓存。
+     * 对未缓存的类逐类解编译（含 30 秒超时和 JD-Core 回退），完成后存入工作区缓存。
+     * 单次调用最多运行 120 秒，中间可被中断取消。
+     */
     private Map<String, String> buildFullSourceCache(WorkspaceView view,
                                                       Map<String, String> openTabSourceCache) {
         Map<String, String> safeOpenTabs = openTabSourceCache == null ? Map.of() : openTabSourceCache;
@@ -900,7 +916,7 @@ public class MainWindow implements MainMenuBar.Actions {
                                     node, workspace, codeTabPane),
                             this::exportTreeItem,
                             node -> openFindUsagesForNode(workspace, node),
-                            node -> openSearchForPackage(node));
+                            this::openSearchForPackage);
                 },
                 errorMsg -> {
                     statusBar.clearTask();
@@ -909,10 +925,12 @@ public class MainWindow implements MainMenuBar.Actions {
                 });
     }
 
+    /** 显示导出成功对话框（无错误详情） */
     private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath) {
         showExportDoneDialog(title, message, outputPath, java.util.List.of());
     }
 
+    /** 显示导出完成对话框（含错误详情列表和打开输出目录/复制详情按钮） */
     private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath,
                                       java.util.List<String> details) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -946,6 +964,7 @@ public class MainWindow implements MainMenuBar.Actions {
         });
     }
 
+    /** 使用操作系统资源管理器打开导出目录（依赖 HostServices） */
     private void openOutputLocation(java.nio.file.Path outputPath) {
         if (outputPath == null) {
             return;
@@ -957,6 +976,10 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
+    /**
+     * 确保工作区索引可用后执行回调。若索引已就绪则同步回调；否则触发后台构建并异步等待。
+     * 工作区关闭后不再执行回调，避免操作已释放的 UI。
+     */
     private void withWorkspaceIndex(Workspace workspace, Consumer<WorkspaceIndex> onReady) {
         if (workspace == null || onReady == null) {
             return;
@@ -984,6 +1007,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }));
     }
 
+    /** 同步等待工作区索引构建完成（阻塞调用线程，仅后台线程使用） */
     private WorkspaceIndex awaitWorkspaceIndex(Workspace workspace) {
         if (workspace == null) {
             return WorkspaceIndex.EMPTY;
@@ -999,6 +1023,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
+    /** 将项目文件中保存的引擎名字符串还原为枚举值，非法值回退到默认引擎 */
     private static DecompilerTypeEnum parseEngine(String value, DecompilerTypeEnum fallback) {
         try {
             return DecompilerTypeEnum.valueOf(value);
@@ -1011,6 +1036,7 @@ public class MainWindow implements MainMenuBar.Actions {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(stage, title, message);
     }
 
+    /** 为文件树右键菜单触发的 Find Usages 打开对话框 */
     private void openFindUsagesForNode(Workspace workspace, FileTreeNode node) {
         if (workspace == null || node == null || !node.isClassFile()) {
             return;
@@ -1026,6 +1052,7 @@ public class MainWindow implements MainMenuBar.Actions {
                         node.getFullPath().replace(".class", "")));
     }
 
+    /** 提取节点所在的包路径作为搜索关键词并打开搜索对话框 */
     private void openSearchForPackage(FileTreeNode node) {
         String query = "";
         if (node != null) {
@@ -1040,14 +1067,17 @@ public class MainWindow implements MainMenuBar.Actions {
         openSearch(query);
     }
 
+    /** 弹出警告对话框 */
     private void showWarning(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showWarning(stage, title, message);
     }
 
+    /** 弹出错误对话框 */
     private void showError(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showError(stage, title, message);
     }
 
+    /** 为对话框/Stage 设置应用 Logo 图标 */
     private static void setAlertIcon(javafx.stage.Stage s) {
         try {
             var stream = MainWindow.class.getResourceAsStream("/icon/logo.png");
