@@ -110,7 +110,7 @@ public final class ExportDialog {
                     formatCombo.getValue());
             return new ExportConfig(outputPath, engineCombo.getValue(), formatCombo.getValue(),
                     conflictCombo.getValue(), resourcesCheck.isSelected(),
-                    com.bingbaihanji.fxdecomplie.service.ExportService.engineOptions(
+                    com.bingbaihanji.fxdecomplie.service.DecompilerOptions.forEngine(
                             appConfig, engineCombo.getValue()));
         });
 

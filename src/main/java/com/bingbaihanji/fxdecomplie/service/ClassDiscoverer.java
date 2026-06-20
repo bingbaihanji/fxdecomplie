@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -60,7 +62,6 @@ public final class ClassDiscoverer {
     private static List<ClassEntry> discoverJar(File file) throws IOException {
         List<ClassEntry> entries = new ArrayList<>();
         SharedJarArchive archive = new SharedJarArchive(file);
-        java.util.concurrent.atomic.AtomicInteger refCount = new java.util.concurrent.atomic.AtomicInteger(0);
         boolean success = false;
         try {
             Enumeration<JarEntry> e = archive.entries();
@@ -70,16 +71,13 @@ public final class ClassDiscoverer {
                 String path = entry.getName();
                 FileTreeNode.NodeTypeEnum type = guessType(path);
                 FileTreeNode.ByteLoader loader = null;
-                Runnable cleanup = () -> {
-                    if (refCount.decrementAndGet() <= 0) {
-                        archive.close();
-                    }
-                };
+                Runnable cleanup = null;
                 if (type == FileTreeNode.NodeTypeEnum.CLASS_FILE
                         || type == FileTreeNode.NodeTypeEnum.RESOURCE
                         || type == FileTreeNode.NodeTypeEnum.JAVA_FILE) {
+                    archive.retain();
                     loader = () -> archive.read(path);
-                    refCount.incrementAndGet();
+                    cleanup = archive::release;
                 }
                 String displayName = path.substring(path.lastIndexOf('/') + 1);
                 entries.add(new ClassEntry(displayName, path, type, null, loader,
@@ -88,7 +86,7 @@ public final class ClassDiscoverer {
             success = true;
             return entries;
         } finally {
-            if (!success || entries.isEmpty()) {
+            if (!success || archive.referenceCount() == 0) {
                 archive.close();
             }
         }
@@ -182,6 +180,8 @@ public final class ClassDiscoverer {
 
     private static final class SharedJarArchive implements AutoCloseable {
         private final JarFile jar;
+        private final AtomicInteger references = new AtomicInteger();
+        private final AtomicBoolean closed = new AtomicBoolean();
 
         private SharedJarArchive(File file) throws IOException {
             this.jar = new JarFile(file);
@@ -189,6 +189,24 @@ public final class ClassDiscoverer {
 
         private Enumeration<JarEntry> entries() {
             return jar.entries();
+        }
+
+        private void retain() {
+            references.incrementAndGet();
+        }
+
+        private void release() {
+            int remaining = references.decrementAndGet();
+            if (remaining <= 0) {
+                if (remaining < 0) {
+                    logger.debug("Shared archive released more times than retained");
+                }
+                close();
+            }
+        }
+
+        private int referenceCount() {
+            return references.get();
         }
 
         private byte[] read(String entryName) throws IOException {
@@ -205,6 +223,9 @@ public final class ClassDiscoverer {
 
         @Override
         public void close() {
+            if (!closed.compareAndSet(false, true)) {
+                return;
+            }
             try {
                 jar.close();
             } catch (IOException e) {

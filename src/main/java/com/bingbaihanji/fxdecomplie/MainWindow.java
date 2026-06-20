@@ -812,11 +812,20 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
+    /** 计算与 ClassTabOpener 一致的 L2 缓存工作区键，确保跨组件缓存复用 */
+    private static String workspaceKey(Workspace workspace) {
+        File source = workspace.getSourceFile();
+        long mtime = source.lastModified();
+        long size = source.isFile() ? source.length() : 0L;
+        return (source.getAbsolutePath() + "_" + mtime + "_" + size)
+                .replace(':', '_').replace('\\', '_').replace('/', '_');
+    }
+
     private Map<String, String> buildFullSourceCache(WorkspaceView view,
                                                       Map<String, String> openTabSourceCache) {
         Map<String, String> safeOpenTabs = openTabSourceCache == null ? Map.of() : openTabSourceCache;
-        Map<String, String> engineOptions = ExportService.engineOptions(config, currentEngine);
-        String cacheKey = currentEngine.name() + "|" + DecompilerRunner.optionsHash(engineOptions);
+        Map<String, String> engineOptions = DecompilerOptions.forEngine(config, currentEngine);
+        String cacheKey = currentEngine.name() + "|" + DecompilerOptions.hash(engineOptions);
         Map<String, String> cached = view.workspace().getSourceSearchCache(cacheKey);
         if (cached != null) {
             Map<String, String> merged = new LinkedHashMap<>(cached);
@@ -854,9 +863,16 @@ public class MainWindow implements MainMenuBar.Actions {
                     completed = false;
                     break;
                 }
-                String source = DecompilerRunner.decompileWithTimeout(
-                        cls.fullPath(), cls.bytes(), currentEngine, context,
-                        () -> !Thread.currentThread().isInterrupted());
+                // 优先查询 L2 内存缓存（复用已打开标签页的解编译结果，避免重复解编）
+                String source = classTabOpener.getDecompileCache().get(
+                        workspaceKey(view.workspace()), cls.internalName(),
+                        currentEngine, DecompilerOptions.hash(engineOptions));
+                if (source == null) {
+                    // L2 miss: 带超时和 JD 回退的全量解编译
+                    source = DecompilerRunner.decompileWithTimeout(
+                            cls.fullPath(), cls.bytes(), currentEngine, context,
+                            () -> !Thread.currentThread().isInterrupted());
+                }
                 if (!DecompilerRunner.isTransientFailureOutput(source)) {
                     fullSourceCache.put(cls.fullPath(), source);
                 }

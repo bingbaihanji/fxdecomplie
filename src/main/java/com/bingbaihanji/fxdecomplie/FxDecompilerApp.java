@@ -101,6 +101,8 @@ public final class FxDecompilerApp {
         private AppConfig config;
         /** 主窗口控制器，用于直接关闭窗口时释放工作区资源。 */
         private MainWindow window;
+        /** Primary stage used to persist window state on all exit paths. */
+        private Stage primaryStage;
 
         @Override
         public void start(Stage stage) {
@@ -118,6 +120,7 @@ public final class FxDecompilerApp {
         @SuppressWarnings("deprecation")
         /** 启动 JavaFX 应用 */
         private void startApplication(Stage stage) {
+            primaryStage = stage;
             logger.info("FxDecompiler startup build: headerBar-2026-06-17");
             config = AppConfig.load();
             FxTools.loadPlatformConfig(config);
@@ -177,6 +180,9 @@ public final class FxDecompilerApp {
             }
             DecompilerFactory.cleanup();
             if (config != null) {
+                if (primaryStage != null) {
+                    saveWindowState(primaryStage);
+                }
                 config.save();
             }
         }
@@ -199,7 +205,6 @@ public final class FxDecompilerApp {
                 config.window().height((int) stage.getHeight());
             }
             config.window().maximized(stage.isMaximized());
-            config.save();
         }
 
     }

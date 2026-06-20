@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
@@ -147,15 +146,6 @@ public final class ExportService {
         }
         String internalName = data.getFullPath().replace(".class", "");
         return context == null ? null : context.getClassBytes(internalName);
-    }
-
-    public static java.util.Map<String, String> engineOptions(AppConfig appConfig,
-                                                              DecompilerTypeEnum engine) {
-        if (appConfig == null || appConfig.decompiler().engineOptions() == null || engine == null) {
-            return java.util.Map.of();
-        }
-        var options = appConfig.decompiler().engineOptions().get(engine.name());
-        return options == null ? java.util.Map.of() : java.util.Map.copyOf(options);
     }
 
     private static List<TreeItem<FileTreeNode>> collectExportableItems(TreeItem<FileTreeNode> root,

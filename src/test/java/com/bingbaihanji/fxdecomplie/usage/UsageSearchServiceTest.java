@@ -85,6 +85,9 @@ class UsageSearchServiceTest {
                 r.sourcePath().equals("com/example/Caller.class")
                         && r.type() == UsageResult.UsageType.FIELD_ACCESS));
 
+        List<UsageResult> ownerlessMemberResults = UsageSearchService.findUsages(index, "#call");
+        assertTrue(ownerlessMemberResults.isEmpty());
+
         assertTrue(classResults.stream().anyMatch(r ->
                 r.sourcePath().equals("com/example/Holder.class")
                         && r.displayText().contains("field target Lcom/example/Target;")));

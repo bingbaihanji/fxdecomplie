@@ -122,16 +122,6 @@ public final class DecompilerRunner {
                 || normalized.startsWith("// decompile failed");
     }
 
-    public static String optionsHash(Map<String, String> options) {
-        if (options == null || options.isEmpty()) {
-            return "default";
-        }
-        return options.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(e -> e.getKey() + "=" + e.getValue())
-                .collect(java.util.stream.Collectors.joining(","));
-    }
-
     private static String decompileWithFallback(String classFilePath, byte[] classBytes,
                                                 DecompilerTypeEnum engine,
                                                 DecompilerContext context) {

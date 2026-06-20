@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,6 +49,11 @@ public final class ClassTabOpener {
     private final StatusBar statusBar;
     /** L2 反编译源码缓存，避免重复反编译已打开的类 */
     private final DecompileCache decompileCache = new DecompileCache();
+
+    /** 暴露 L2 缓存给全文搜索等批量解编译场景复用已打开的标签页结果 */
+    public DecompileCache getDecompileCache() {
+        return decompileCache;
+    }
     /** 当前运行的反编译任务，用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
     /** 当前由主导航创建的占位标签，用于任务取消时清理 */
@@ -111,18 +115,6 @@ public final class ClassTabOpener {
         } catch (Exception e) {
             return new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1);
         }
-    }
-
-    /**
-     * 根据配置中的引擎选项计算选项哈希值，用于缓存键区分不同选项组合。
-     * 若无自定义选项则返回 "default"。
-     */
-    private static String computeOptionsHash(AppConfig config, DecompilerTypeEnum engine) {
-        return DecompilerRunner.optionsHash(engineOptions(config, engine));
-    }
-
-    static Map<String, String> engineOptions(AppConfig config, DecompilerTypeEnum engine) {
-        return ExportService.engineOptions(config, engine);
     }
 
     /**
@@ -575,7 +567,8 @@ public final class ClassTabOpener {
     private DecompileResult decompileWithCache(String internalName, DecompilerTypeEnum engine,
                                                byte[] bytes, FileTreeNode node, Workspace workspace,
                                                BooleanSupplier active) {
-        String optionsHash = computeOptionsHash(config, engine);
+        var engineOptions = DecompilerOptions.forEngine(config, engine);
+        String optionsHash = DecompilerOptions.hash(engineOptions);
         String wsKey = computeWorkspaceKey(workspace);
 
         // ---- L2: in-memory decompile cache (fastest path) ----
@@ -598,7 +591,7 @@ public final class ClassTabOpener {
             Thread.interrupted();
             String finalPath = node.getFullPath();
             DecompilerContext context = DecompilerRunner.contextForWorkspace(
-                    workspace, engineOptions(config, engine));
+                    workspace, engineOptions);
             sourceCode = DecompilerRunner.decompileWithTimeout(finalPath, bytes,
                     engine, context, active);
             if (!active.getAsBoolean()) {
