@@ -618,6 +618,7 @@ public final class WorkspaceTabManager {
         // 清理内部代码标签页，释放内存，阻止已排队的 Platform.runLater 继续操作
         if (view != null) {
             view.codeTabPane().getTabs().clear();
+            view.codeTabPane().getSelectionModel().clearSelection();
         }
 
         if (workspaceViews.isEmpty()) {

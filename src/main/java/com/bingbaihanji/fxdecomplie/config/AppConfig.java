@@ -160,7 +160,9 @@ public class AppConfig {
     }
 
     public List<String> recentFiles() {
-        return Collections.unmodifiableList(recentFiles);
+        synchronized (this) {
+            return List.copyOf(recentFiles);
+        }
     }
 
     public void recentFiles(List<String> v) {
@@ -176,6 +178,14 @@ public class AppConfig {
             while (recentFiles.size() > MAX_RECENT_FILES) {
                 recentFiles.removeLast();
             }
+        }
+        saveAsync();
+    }
+
+    /** 清空最近文件列表（异步保存） */
+    public void clearRecentFiles() {
+        synchronized (this) {
+            recentFiles.clear();
         }
         saveAsync();
     }

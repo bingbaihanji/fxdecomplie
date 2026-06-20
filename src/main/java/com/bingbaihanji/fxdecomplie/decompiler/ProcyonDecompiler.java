@@ -126,6 +126,7 @@ public class ProcyonDecompiler implements Decompiler {
             String normalized = internalName.replace('\\', '/');
             byte[] bytes = null;
             if (normalized.equals(targetName) || normalized.equals(targetName + ".class")) {
+                if (targetBytes == null) return false;
                 bytes = targetBytes;
             }
             if (bytes == null) {

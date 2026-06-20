@@ -87,40 +87,44 @@ public final class DiskCodeCache {
         }
     }
 
-    /** 检查并在缓存超过 500MB 时清理最早的条目（应在启动时调用） */
+    /** 检查并在缓存超过 500MB 时清理最早的条目（应在启动时调用），使用两遍扫描避免收集所有路径到内存。 */
     public static void cleanIfNeeded() {
         try {
             if (!Files.exists(CACHE_ROOT)) return;
+            // First pass: calculate total size without collecting all paths
+            long totalSize;
+            try (var stream = Files.walk(CACHE_ROOT)) {
+                totalSize = stream.filter(Files::isRegularFile)
+                        .mapToLong(p -> {
+                            try {
+                                return Files.size(p);
+                            } catch (IOException e) {
+                                return 0L;
+                            }
+                        }).sum();
+            }
+            if (totalSize <= MAX_CACHE_SIZE_BYTES) return;
+            // Second pass: collect, sort by age, and delete oldest until under target
+            long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
             List<Path> files;
             try (var stream = Files.walk(CACHE_ROOT)) {
                 files = stream.filter(Files::isRegularFile)
+                        .sorted(Comparator.comparingLong(p -> {
+                            try {
+                                return Files.getLastModifiedTime(p).toMillis();
+                            } catch (IOException e) {
+                                return 0L;
+                            }
+                        }))
                         .collect(Collectors.toList());
             }
-            long totalSize = 0;
             for (Path f : files) {
+                if (totalSize <= targetSize) break;
                 try {
-                    totalSize += Files.size(f);
-                } catch (IOException e) {
-                    logger.debug("Failed to measure cache file: {}", f, e);
-                }
-            }
-            if (totalSize > MAX_CACHE_SIZE_BYTES) {
-                long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
-                files.sort(Comparator.comparingLong(p -> {
-                    try {
-                        return Files.getLastModifiedTime(p).toMillis();
-                    } catch (IOException e) {
-                        return 0L;
-                    }
-                }));
-                for (Path f : files) {
-                    if (totalSize <= targetSize) break;
-                    try {
-                        long sz = Files.size(f);
-                        Files.deleteIfExists(f);
-                        totalSize -= sz;
-                    } catch (IOException ignored) {
-                    }
+                    long sz = Files.size(f);
+                    Files.deleteIfExists(f);
+                    totalSize -= sz;
+                } catch (IOException ignored) {
                 }
             }
         } catch (IOException ignored) {

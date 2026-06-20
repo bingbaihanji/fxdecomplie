@@ -285,6 +285,21 @@ public class I18nUtil {
     }
 
     /**
+     * 检查指定语言环境是否有可用的资源文件。
+     *
+     * @param locale 目标语言环境
+     * @return true 如果该语言环境有可用的资源文件
+     */
+    public static boolean isLocaleAvailable(Locale locale) {
+        try {
+            loadResourceBundle(locale);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
      * 获取当前语言环境
      *
      * @return 当前Locale

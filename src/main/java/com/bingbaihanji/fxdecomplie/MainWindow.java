@@ -408,8 +408,14 @@ public class MainWindow implements MainMenuBar.Actions {
     /** 退出应用 */
     @Override
     public void exit() {
+        BackgroundTasks.shutdown();
+        ClassTabOpener.shutdown();
         DecompilerFactory.cleanup();
+        javafx.stage.Window.getWindows().stream()
+                .filter(w -> w instanceof javafx.stage.Stage && w != stage)
+                .forEach(w -> ((javafx.stage.Stage) w).close());
         stage.close();
+        javafx.application.Platform.exit();
     }
 
     /** 复制选中文本 */
@@ -606,16 +612,18 @@ public class MainWindow implements MainMenuBar.Actions {
                     I18nUtil.getString("dialog.needOpenFile"));
             return;
         }
-        java.util.List<String> classNames = new java.util.ArrayList<>();
-        collectClassNames(view.workspace().getTreeRoot(), classNames);
-        QuickOpenDialog.show(stage, classNames, fullPath -> {
-            FileTreeNode node = view.workspace().findNodeByPath(fullPath);
-            if (node != null) {
-                classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
-                        currentEngine, lineNumbersEnabled);
-            } else {
-                statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
-            }
+        BackgroundTasks.run("QuickOpen-" + view.workspace().getName(), () -> {
+            java.util.List<String> classNames = new java.util.ArrayList<>();
+            collectClassNames(view.workspace().getTreeRoot(), classNames);
+            Platform.runLater(() -> QuickOpenDialog.show(stage, classNames, fullPath -> {
+                FileTreeNode node = view.workspace().findNodeByPath(fullPath);
+                if (node != null) {
+                    classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
+                            currentEngine, lineNumbersEnabled);
+                } else {
+                    statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
+                }
+            }));
         });
     }
 
@@ -640,8 +648,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
     @Override
     public void clearRecentFiles() {
-        config.recentFiles().clear();
-        config.save();
+        config.clearRecentFiles();
     }
 
     /** 打开新窗口 */
@@ -801,8 +808,12 @@ public class MainWindow implements MainMenuBar.Actions {
         var classes = index.classes();
         int total = classes.size();
         int processed = 0;
+        long startTime = System.currentTimeMillis();
         for (var cls : classes) {
             if (Thread.currentThread().isInterrupted()) {
+                break;
+            }
+            if (System.currentTimeMillis() - startTime > 120_000) { // 2 min total timeout
                 break;
             }
             processed++;
@@ -911,6 +922,11 @@ public class MainWindow implements MainMenuBar.Actions {
             if (error != null) {
                 showError(I18nUtil.getString("dialog.error.title"),
                         I18nUtil.getString("dialog.index.failed", error.getMessage()));
+                return;
+            }
+            if (tabManager.currentWorkspaceView() == null
+                    || !workspace.equals(tabManager.currentWorkspaceView().workspace())) {
+                statusBar.setFilePath(I18nUtil.getString("status.indexingComplete"));
                 return;
             }
             onReady.accept(index);

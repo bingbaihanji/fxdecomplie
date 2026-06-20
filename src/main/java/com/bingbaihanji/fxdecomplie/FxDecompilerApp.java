@@ -173,8 +173,7 @@ public final class FxDecompilerApp {
         }
 
         private static void setAppIcon(Stage stage) {
-            try {
-                var stream = FxApplication.class.getResourceAsStream("/icon/logo.png");
+            try (var stream = FxApplication.class.getResourceAsStream("/icon/logo.png")) {
                 if (stream != null) {
                     stage.getIcons().add(new javafx.scene.image.Image(stream));
                 }

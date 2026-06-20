@@ -47,7 +47,7 @@ public class MethodSearchProvider implements SearchProvider {
         String lowerQuery = query.toLowerCase();
         for (var entry : sourceCache.entrySet()) {
             if (results.size() >= MAX_RESULTS) break;
-            String[] lines = entry.getValue().split("\n");
+            String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 Matcher m = METHOD_DECL.matcher(lines[i]);
                 if (m.find()) {
@@ -77,7 +77,7 @@ public class MethodSearchProvider implements SearchProvider {
 
         for (var entry : sourceCache.entrySet()) {
             if (results.size() >= MAX_RESULTS) break;
-            String[] lines = entry.getValue().split("\n");
+            String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 Matcher m = methodDecl.matcher(lines[i]);
                 if (m.find()) {

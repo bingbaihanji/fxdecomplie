@@ -43,6 +43,14 @@ public final class FxTools {
 
     // ==================== 平台配置（启动时注入） ====================
 
+    /** Executor for DWM retry tasks (daemon threads to avoid blocking shutdown). */
+    private static final java.util.concurrent.ExecutorService DWM_EXECUTOR =
+            java.util.concurrent.Executors.newCachedThreadPool(r -> {
+                Thread t = new Thread(r, "dwm-retry");
+                t.setDaemon(true);
+                return t;
+            });
+
     /** 窗口边框颜色 (COLORREF: 0x00BBGGRR)，默认 0x00888800（暗黄绿） */
     private static int windowBorderColor = 0x00888800;
     /** 主窗口圆角偏好 */
@@ -180,7 +188,7 @@ public final class FxTools {
     public static void applyWindowDarkMode(Window window) {
         if (!com.sun.jna.Platform.isWindows()) return;
         if (!(window instanceof Stage stage)) return;
-        new Thread(() -> scheduleDwmRetry(stage, 0)).start();
+        DWM_EXECUTOR.execute(() -> scheduleDwmRetry(stage, 0));
     }
 
 

@@ -34,7 +34,7 @@ public class ResourceSearchProvider implements SearchProvider {
             if (results.size() >= MAX_RESULTS) break;
             try {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
-                String[] lines = text.split("\n");
+                String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
                 for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                     if (lines[i].toLowerCase().contains(lowerQuery)) {
                         results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
@@ -61,7 +61,7 @@ public class ResourceSearchProvider implements SearchProvider {
             if (results.size() >= MAX_RESULTS) break;
             try {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
-                String[] lines = text.split("\n");
+                String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
                 for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                     if (lineMatches(lines[i], query, options)) {
                         results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,

@@ -62,4 +62,17 @@ public final class BackgroundTasks {
             future.cancel(true);
         }
     }
+
+    /** Shut down the executor gracefully, waiting up to 3 seconds for tasks to finish. */
+    public static void shutdown() {
+        EXECUTOR.shutdown();
+        try {
+            if (!EXECUTOR.awaitTermination(3, TimeUnit.SECONDS)) {
+                EXECUTOR.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            EXECUTOR.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 }

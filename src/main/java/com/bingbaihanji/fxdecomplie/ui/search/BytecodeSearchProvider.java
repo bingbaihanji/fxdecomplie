@@ -43,7 +43,7 @@ public class BytecodeSearchProvider implements SearchProvider {
         String lowerQuery = query.toLowerCase();
         forEachBytecodeText((path, text) -> {
             if (results.size() >= MAX_RESULTS) return;
-            String[] lines = text.split("\n");
+            String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lines[i].toLowerCase().contains(lowerQuery)) {
                     results.add(new SearchResult(path, lines[i].trim(), i + 1,
@@ -65,7 +65,7 @@ public class BytecodeSearchProvider implements SearchProvider {
 
         forEachBytecodeText((path, text) -> {
             if (results.size() >= MAX_RESULTS) return;
-            String[] lines = text.split("\n");
+            String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lineMatches(lines[i], query, options)) {
                     results.add(new SearchResult(path, lines[i].trim(), i + 1,

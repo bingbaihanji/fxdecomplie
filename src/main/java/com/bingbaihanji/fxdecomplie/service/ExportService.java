@@ -211,7 +211,7 @@ public final class ExportService {
                     state.successCount++;
                 }
             } catch (Exception e) {
-                state.errors.add(data.getFullPath() + ": " + e);
+                state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
             } finally {
                 state.advance(data.getFullPath());
             }
@@ -252,7 +252,7 @@ public final class ExportService {
                         state.successCount++;
                     }
                 } catch (Exception e) {
-                    state.errors.add(data.getFullPath() + ": " + e);
+                    state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
                 } finally {
                     state.advance(data.getFullPath());
                 }

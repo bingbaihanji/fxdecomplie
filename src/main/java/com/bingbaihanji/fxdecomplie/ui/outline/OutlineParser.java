@@ -39,7 +39,7 @@ public final class OutlineParser {
     public static List<OutlineMember> parse(String sourceCode) {
         if (sourceCode == null || sourceCode.isEmpty()) return List.of();
         List<OutlineMember> members = new ArrayList<>();
-        String[] lines = sourceCode.split("\n");
+        String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
         int depth = 0;
 
         for (int i = 0; i < lines.length; i++) {
@@ -84,7 +84,7 @@ public final class OutlineParser {
             return new CodeMetadata(refsByLine);
         }
 
-        String[] lines = sourceCode.split("\n");
+        String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];

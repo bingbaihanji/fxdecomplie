@@ -89,7 +89,8 @@ public class StatusBar extends HBox {
 
     /** 更新当前反编译引擎显示 */
     public void setEngine(String engine) {
-        engineLabel.setText(engine == null || engine.isBlank() ? "" : "Engine: " + engine);
+        engineLabel.setText(engine == null || engine.isBlank() ? ""
+                : com.bingbaihanji.fxdecomplie.utils.I18nUtil.getString("status.engine", engine));
     }
 
     /** 更新当前任务提示 */

@@ -305,7 +305,7 @@ public final class ClassTabOpener {
                     boolean clearTask = shouldClearTaskFor(loadingTab);
                     removeLoadingTab(codeTabPane, loadingTab);
                     showAlert(I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.decompile.failed", ex.getMessage()));
+                            I18nUtil.getString("dialog.decompile.failed"));
                     if (clearTask) {
                         statusBar.clearTask();
                     }
@@ -384,6 +384,11 @@ public final class ClassTabOpener {
                     };
                     CodeEditorTab replacement = createCodeEditorTab(openFile, lineNumbersEnabled, bytes,
                             metadata, onNavigate);
+                    if (tabIndex < 0 || tabIndex >= codeTabPane.getTabs().size()
+                            || codeTabPane.getTabs().get(tabIndex) != currentTab) {
+                        statusBar.clearTask();
+                        return;
+                    }
                     codeTabPane.getTabs().set(tabIndex, replacement);
                     codeTabPane.getSelectionModel().select(replacement);
                     bindCaretPosition(replacement);
@@ -400,7 +405,7 @@ public final class ClassTabOpener {
                     return;
                 }
                 Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
-                        I18nUtil.getString("dialog.decompile.failed", ex.getMessage())));
+                        I18nUtil.getString("dialog.decompile.failed")));
                 Platform.runLater(statusBar::clearTask);
             }
         });
@@ -469,7 +474,7 @@ public final class ClassTabOpener {
                     return;
                 }
                 Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
-                        I18nUtil.getString("dialog.read.failed", ex.getMessage())));
+                        I18nUtil.getString("dialog.read.failed")));
                 Platform.runLater(statusBar::clearTask);
             }
         });
@@ -645,7 +650,7 @@ public final class ClassTabOpener {
                 sourceCode = decompileFuture.get(30, TimeUnit.SECONDS);
             } catch (RejectedExecutionException e) {
                 return new DecompileResult(
-                        "// Decompiler is busy. Please wait for the previous class to finish, then try again.\n"
+                        "// " + I18nUtil.getString("decompile.busy") + "\n"  // TODO i18n: needs key decompile.busy
                                 + "// Class: " + finalPath,
                         new CodeMetadata(java.util.Map.of()));
             } catch (java.util.concurrent.TimeoutException e) {
@@ -653,8 +658,8 @@ public final class ClassTabOpener {
                     decompileFuture.cancel(true);
                 }
                 return new DecompileResult(
-                        "// Decompilation timed out (30s) for: " + finalPath +
-                                "\n// The class may be obfuscated or malformed. Try a different engine.",
+                        "// " + I18nUtil.getString("decompile.timeout") + " " + finalPath +  // TODO i18n: needs key decompile.timeout
+                                "\n// " + I18nUtil.getString("decompile.timeoutHint"),
                         new CodeMetadata(java.util.Map.of()));
             } catch (InterruptedException e) {
                 if (decompileFuture != null) {
@@ -788,7 +793,7 @@ public final class ClassTabOpener {
 
     private static String withFallbackNotice(String source, DecompilerTypeEnum fallback,
                                              String reason) {
-        String notice = "// JD-Core failed; displayed using " + fallback.name() + ".\n"
+        String notice = "// " + I18nUtil.getString("decompile.jdFallback", fallback.name()) + "\n"  // TODO i18n: needs key decompile.jdFallback
                 + "// Reason: " + reason + "\n\n";
         String normalized = source.replace("\r\n", "\n");
         if (normalized.startsWith("package ")) {
@@ -826,6 +831,19 @@ public final class ClassTabOpener {
             return workspace.getIndex();
         }
         return WorkspaceIndex.EMPTY;
+    }
+
+    /** Shut down the decompiler executor gracefully, waiting up to 2 seconds. */
+    public static void shutdown() {
+        DECOMPILER_EXECUTOR.shutdown();
+        try {
+            if (!DECOMPILER_EXECUTOR.awaitTermination(2, TimeUnit.SECONDS)) {
+                DECOMPILER_EXECUTOR.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            DECOMPILER_EXECUTOR.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     /** 反编译结果，包含源码和元数据 */

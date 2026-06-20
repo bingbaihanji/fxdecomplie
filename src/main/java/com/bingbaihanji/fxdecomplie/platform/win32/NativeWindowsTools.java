@@ -363,8 +363,10 @@ public final class NativeWindowsTools {
 
     // ==================== 调试 ====================
 
-    /** 打印当前进程所有窗口信息 */
+    /** 打印当前进程所有窗口信息（仅在 DEBUG 日志级别时输出） */
     public static void printAllWindowsInfo() {
+        org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(NativeWindowsTools.class);
+        if (!logger.isDebugEnabled()) return;
         int currentPid = Win32Api.Kernel32Api.INSTANCE.GetCurrentProcessId();
         final int[] windowCount = {0};
 
@@ -378,19 +380,17 @@ public final class NativeWindowsTools {
                 char[] windowText = new char[256];
                 User32.INSTANCE.GetWindowText(hWnd, windowText, windowText.length);
                 long hwndValue = Pointer.nativeValue(hWnd.getPointer());
-                System.out.println("窗口 " + windowCount[0] + ":");
-                System.out.println("  句柄: 0x" + Long.toHexString(hwndValue).toUpperCase());
-                System.out.println("  类名: " + new String(className).trim());
-                System.out.println("  标题: " + (new String(windowText).trim().isEmpty() ? "(无标题)" : new String(windowText).trim()));
-                System.out.println();
+                logger.debug("窗口 {}:", windowCount[0]);
+                logger.debug("  句柄: 0x{}", Long.toHexString(hwndValue).toUpperCase());
+                logger.debug("  类名: {}", new String(className).trim());
+                logger.debug("  标题: {}", (new String(windowText).trim().isEmpty() ? "(无标题)" : new String(windowText).trim()));
             }
             return true;
         }, null);
 
         if (windowCount[0] == 0) {
-            System.out.println("未找到任何窗口");
+            logger.debug("未找到任何窗口");
         }
-        System.out.println();
     }
 
     // ==================== 内部工具 ====================

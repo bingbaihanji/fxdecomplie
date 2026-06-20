@@ -50,8 +50,8 @@ public final class WorkspaceLoader {
                     if (onSuccess != null) {
                         onSuccess.accept(workspace);
                     }
+                    config.addRecentFile(file.getAbsolutePath());
                 });
-                config.addRecentFile(file.getAbsolutePath());
             } catch (IOException e) {
                 Platform.runLater(() -> {
                     if (onError != null) {

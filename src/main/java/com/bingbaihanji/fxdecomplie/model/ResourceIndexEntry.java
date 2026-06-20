@@ -13,5 +13,11 @@ public record ResourceIndexEntry(String fullPath, byte[] bytes, boolean text) {
     public ResourceIndexEntry {
         Objects.requireNonNull(fullPath, "fullPath");
         Objects.requireNonNull(bytes, "bytes");
+        bytes = bytes.clone();
+    }
+
+    @Override
+    public byte[] bytes() {
+        return bytes.clone();
     }
 }

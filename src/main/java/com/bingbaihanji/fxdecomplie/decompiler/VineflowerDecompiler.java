@@ -133,7 +133,8 @@ public class VineflowerDecompiler implements Decompiler {
                 }
                 String key = internalPath != null ? internalPath : externalPath;
                 if (key != null) {
-                    key = key.replace(".class", "").replace("\\", "/");
+                    key = (key.endsWith(".class") ? key.substring(0, key.length() - 6) : key)
+                            .replace("\\", "/");
                     if (key.endsWith("/" + DecompilerContext.simpleName(typeName)) || key.equals(typeName)) {
                         return classBytes;
                     }

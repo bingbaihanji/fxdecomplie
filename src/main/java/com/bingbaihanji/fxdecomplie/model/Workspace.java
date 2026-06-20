@@ -162,7 +162,7 @@ public class Workspace {
     }
 
     /** 更新工作区索引（用于异步构建完成后替换） */
-    public void setIndex(WorkspaceIndex index) {
+    public synchronized void setIndex(WorkspaceIndex index) {
         WorkspaceIndex next = index == null ? WorkspaceIndex.EMPTY : index;
         this.index = next;
         if (next != WorkspaceIndex.EMPTY && !indexFuture.isDone()) {
@@ -171,7 +171,7 @@ public class Workspace {
     }
 
     /** 标记异步索引构建失败。 */
-    public void failIndex(Throwable error) {
+    public synchronized void failIndex(Throwable error) {
         if (!indexFuture.isDone()) {
             indexFuture.completeExceptionally(error);
         }
