@@ -38,5 +38,13 @@ build/
 ### VS Code ###
 .vscode/
 
+### Project runtime data ###
+/cache/
+/config/
+/logs/
+
+### Claude Code ###
+.claude/
+
 ### Mac OS ###
 .DS_Store
