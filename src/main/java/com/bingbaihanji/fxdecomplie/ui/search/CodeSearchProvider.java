@@ -24,13 +24,13 @@ public class CodeSearchProvider implements SearchProvider {
 
         String lowerQuery = query.toLowerCase();
         for (var entry : sourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             String[] lines = entry.getValue().split("\n");
-            for (int i = 0; i < lines.length; i++) {
+            for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lines[i].toLowerCase().contains(lowerQuery)) {
                     results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                             SearchResult.MatchType.CODE_TEXT));
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;
@@ -46,13 +46,13 @@ public class CodeSearchProvider implements SearchProvider {
         if (query == null || query.isBlank()) return results;
 
         for (var entry : sourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             String[] lines = entry.getValue().split("\n");
-            for (int i = 0; i < lines.length; i++) {
+            for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lineMatches(lines[i], query, options)) {
                     results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                             SearchResult.MatchType.CODE_TEXT));
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;

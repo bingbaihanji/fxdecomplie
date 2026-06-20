@@ -1,4 +1,4 @@
-module FXGeometricView {
+module fxdecomplie {
     // JavaFX 模块
     requires javafx.controls;
     requires javafx.fxml;

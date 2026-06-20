@@ -41,7 +41,7 @@ public final class NavigationService {
      * @param classOpener  callback to open a class file
      * @param resourceOpener callback to open a resource file
      */
-    public void openPath(PathNode<?> path, Workspace workspace, TabPane codeTabPane,
+    public synchronized void openPath(PathNode<?> path, Workspace workspace, TabPane codeTabPane,
                          BiConsumer<FileTreeNode, TabPane> classOpener,
                          BiConsumer<FileTreeNode, TabPane> resourceOpener) {
         openPath(path, workspace, codeTabPane, classOpener, resourceOpener, true);
@@ -50,7 +50,7 @@ public final class NavigationService {
     /**
      * Navigate backward in history.
      */
-    public void goBack(Workspace workspace, TabPane codeTabPane,
+    public synchronized void goBack(Workspace workspace, TabPane codeTabPane,
                        BiConsumer<FileTreeNode, TabPane> classOpener,
                        BiConsumer<FileTreeNode, TabPane> resourceOpener) {
         if (backStack.isEmpty() || currentPath == null) {
@@ -64,7 +64,7 @@ public final class NavigationService {
     /**
      * Navigate forward in history.
      */
-    public void goForward(Workspace workspace, TabPane codeTabPane,
+    public synchronized void goForward(Workspace workspace, TabPane codeTabPane,
                           BiConsumer<FileTreeNode, TabPane> classOpener,
                           BiConsumer<FileTreeNode, TabPane> resourceOpener) {
         if (forwardStack.isEmpty() || currentPath == null) {

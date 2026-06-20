@@ -70,7 +70,10 @@ public class VineflowerDecompiler implements Decompiler {
             files.forEach(p -> {
                 try {
                     java.nio.file.Files.deleteIfExists(p);
-                } catch (java.io.IOException ignored) {
+                } catch (java.io.IOException e) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Failed to delete temp file: {}", p, e);
+                    }
                 }
             });
         } catch (java.io.IOException e) {

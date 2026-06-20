@@ -31,15 +31,15 @@ public class ResourceSearchProvider implements SearchProvider {
 
         String lowerQuery = query.toLowerCase();
         for (var entry : resourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             try {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
                 String[] lines = text.split("\n");
-                for (int i = 0; i < lines.length; i++) {
+                for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                     if (lines[i].toLowerCase().contains(lowerQuery)) {
                         results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                                 SearchResult.MatchType.RESOURCE_TEXT));
                     }
-                    if (results.size() >= MAX_RESULTS) break;
                 }
             } catch (Exception ignored) {
                 // skip binary or unreadable resources
@@ -58,15 +58,15 @@ public class ResourceSearchProvider implements SearchProvider {
         if (query == null || query.isBlank()) return results;
 
         for (var entry : resourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             try {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
                 String[] lines = text.split("\n");
-                for (int i = 0; i < lines.length; i++) {
+                for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                     if (lineMatches(lines[i], query, options)) {
                         results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                                 SearchResult.MatchType.RESOURCE_TEXT));
                     }
-                    if (results.size() >= MAX_RESULTS) break;
                 }
             } catch (Exception ignored) {
                 // skip binary or unreadable resources

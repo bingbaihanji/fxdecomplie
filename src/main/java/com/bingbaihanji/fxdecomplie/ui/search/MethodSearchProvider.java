@@ -29,7 +29,8 @@ public class MethodSearchProvider implements SearchProvider {
             "^(?:@\\w+(?:\\([^)]*\\))?\\s*)*\\s*" +
                     "(?:(?:public|protected|private|static|final|synchronized|abstract|native)" +
                     "(?:\\s+(?:static|final|synchronized|abstract|native))*\\s+)?" +
-                    "(?:<[\\w\\s,<>?]+>\\s+)?" +  // optional generic type params
+                    "(?:<[\\w\\s,<>?]+>\\s+)?" +  // optional type params on method (e.g., <T>)
+                    "(?:[\\w.]+(?:<[^>]+>)?(?:\\[\\])*\\s+)?" + // optional return type (e.g., List<String>)
                     "(\\w+)\\s*\\(";
 
     private static final Pattern METHOD_DECL = Pattern.compile(METHOD_DECL_PATTERN,
@@ -45,18 +46,18 @@ public class MethodSearchProvider implements SearchProvider {
 
         String lowerQuery = query.toLowerCase();
         for (var entry : sourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             String[] lines = entry.getValue().split("\n");
-            for (int i = 0; i < lines.length; i++) {
+            for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 Matcher m = METHOD_DECL.matcher(lines[i]);
                 if (m.find()) {
                     String methodName = m.group(1);
-                    if (NON_METHOD_KEYWORDS.contains(methodName)) continue; // skip keywords
+                    if (NON_METHOD_KEYWORDS.contains(methodName)) continue;
                     if (methodName.toLowerCase().contains(lowerQuery)) {
                         results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                                 SearchResult.MatchType.METHOD_NAME));
                     }
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;
@@ -75,8 +76,9 @@ public class MethodSearchProvider implements SearchProvider {
                 ? METHOD_DECL : METHOD_DECL_CASE_INSENSITIVE;
 
         for (var entry : sourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             String[] lines = entry.getValue().split("\n");
-            for (int i = 0; i < lines.length; i++) {
+            for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 Matcher m = methodDecl.matcher(lines[i]);
                 if (m.find()) {
                     String methodName = m.group(1);
@@ -86,7 +88,6 @@ public class MethodSearchProvider implements SearchProvider {
                                 SearchResult.MatchType.METHOD_NAME));
                     }
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;

@@ -126,7 +126,7 @@ public class CfrDecompiler implements Decompiler {
                     return Pair.make(otherBytes, normalizedPath);
                 }
 
-                return null;
+                throw new IOException("Class not found: " + path);
             }
         };
 

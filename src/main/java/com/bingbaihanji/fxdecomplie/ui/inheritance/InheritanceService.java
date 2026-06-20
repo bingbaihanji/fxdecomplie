@@ -121,8 +121,12 @@ public final class InheritanceService {
     private static void findSubClasses(String targetName, TreeItem<InheritanceNode> root,
                                        Set<String> visited, WorkspaceIndex index) {
         if (index != null) {
-            index.classBytesByInternalName().forEach((name, bytes) ->
-                    addSubClassIfMatches(targetName, root, visited, name, bytes));
+            index.classes().forEach(cls -> {
+                byte[] bytes = cls.bytes();
+                if (bytes != null) {
+                    addSubClassIfMatches(targetName, root, visited, cls.internalName(), bytes);
+                }
+            });
         }
     }
 

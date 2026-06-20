@@ -136,10 +136,15 @@ public final class ExportService {
         exportAll(root, config, WorkspaceIndex.build(root), null);
     }
 
-    /** 解析类节点的字节码（优先节点缓存，其次全局缓存） */
-    private static byte[] resolveClassBytes(FileTreeNode data) {
-        byte[] bytes = data.getCachedBytes();
-        return bytes;
+    /** 解析类节点的字节码（优先节点懒加载来源，其次工作区索引上下文） */
+    private static byte[] resolveClassBytes(FileTreeNode data, DecompilerContext context)
+            throws IOException {
+        byte[] bytes = data.resolveBytes();
+        if (bytes != null) {
+            return bytes;
+        }
+        String internalName = data.getFullPath().replace(".class", "");
+        return context == null ? null : context.getClassBytes(internalName);
     }
 
     public static java.util.Map<String, String> engineOptions(AppConfig appConfig,
@@ -201,7 +206,7 @@ public final class ExportService {
                     state.successCount++;
                 }
             } catch (Exception e) {
-                state.errors.add(data.getFullPath() + ": " + e.getMessage());
+                state.errors.add(data.getFullPath() + ": " + e);
             } finally {
                 state.advance(data.getFullPath());
             }
@@ -241,7 +246,7 @@ public final class ExportService {
                         state.successCount++;
                     }
                 } catch (Exception e) {
-                    state.errors.add(data.getFullPath() + ": " + e.getMessage());
+                    state.errors.add(data.getFullPath() + ": " + e);
                 } finally {
                     state.advance(data.getFullPath());
                 }
@@ -250,20 +255,19 @@ public final class ExportService {
     }
 
     private static ExportContent buildExportContent(FileTreeNode data, Decompiler decompiler,
-                                                    DecompilerContext context) {
+                                                    DecompilerContext context) throws IOException {
         if (data.isClassFile()) {
-            byte[] bytes = resolveClassBytes(data);
+            byte[] bytes = resolveClassBytes(data, context);
             if (bytes == null) {
                 throw new IllegalStateException(
-                        "class bytes not found for " + data.getFullPath()
-                                + " — open the class first or re-index the workspace");
+                        "class bytes not found for " + data.getFullPath());
             }
             String source = decompiler.decompile(data.getFullPath(), bytes, context);
             return new ExportContent(data.getFullPath().replace(".class", ".java"),
                     source.getBytes(StandardCharsets.UTF_8));
         }
 
-        byte[] bytes = data.getCachedBytes();
+        byte[] bytes = data.resolveBytes();
         if (bytes == null) {
             throw new IllegalStateException("resource bytes not found");
         }

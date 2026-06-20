@@ -109,6 +109,33 @@ class WorkspaceIndexTest {
         assertTrue(empty.classPaths().isEmpty());
     }
 
+    @Test
+    void indexReadsLazyClassBytesWithoutCachingNodeDuringBuild() throws Exception {
+        byte[] bytes = compileClass("com.example", "Lazy", """
+                package com.example;
+                public class Lazy {
+                    public int value() { return 1; }
+                }
+                """);
+        FileTreeNode clsNode = new FileTreeNode("Lazy.class", "com/example/Lazy.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+        clsNode.setByteLoader(() -> {
+            reads.incrementAndGet();
+            return bytes;
+        });
+        TreeItem<FileTreeNode> root = new TreeItem<>(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().add(new TreeItem<>(clsNode));
+
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+
+        assertEquals(1, reads.get());
+        assertNull(clsNode.getCachedBytes());
+        assertNotNull(index.getClassBytes("com/example/Lazy"));
+        assertNotNull(clsNode.getCachedBytes());
+    }
+
     private byte[] compileClass(String packageName, String className, String source) throws Exception {
         Path sourceDir = Files.createDirectories(tempDir.resolve("src"));
         Path outputDir = Files.createDirectories(tempDir.resolve("classes"));

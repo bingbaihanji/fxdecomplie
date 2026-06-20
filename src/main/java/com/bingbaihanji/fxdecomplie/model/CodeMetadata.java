@@ -15,7 +15,7 @@ public class CodeMetadata {
     private final Map<Integer, List<Reference>> refsByLine;
 
     public CodeMetadata(Map<Integer, List<Reference>> refsByLine) {
-        this.refsByLine = refsByLine;
+        this.refsByLine = Map.copyOf(refsByLine);
     }
 
     /** @param lineNumber 1-based line number

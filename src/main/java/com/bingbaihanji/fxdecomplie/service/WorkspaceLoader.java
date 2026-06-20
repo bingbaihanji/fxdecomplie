@@ -45,16 +45,11 @@ public final class WorkspaceLoader {
                 boolean isArchive = isArchiveFile(file);
                 Workspace workspace = new Workspace(name, file, treeRoot, isArchive,
                         WorkspaceIndex.EMPTY);
-                // ---- Step 4: notify UI on JavaFX thread and kick off async index build ----
+                // ---- Step 4: notify UI on JavaFX thread. Full index is built on demand. ----
                 Platform.runLater(() -> {
                     if (onSuccess != null) {
                         onSuccess.accept(workspace);
                     }
-                    // Async: build full index after UI is shown
-                    BackgroundTasks.run("Index-" + name, () -> {
-                        WorkspaceIndex fullIndex = WorkspaceIndex.build(treeRoot);
-                        workspace.setIndex(fullIndex);
-                    });
                 });
                 config.addRecentFile(file.getAbsolutePath());
             } catch (IOException e) {

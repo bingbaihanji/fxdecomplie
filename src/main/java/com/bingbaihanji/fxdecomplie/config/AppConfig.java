@@ -42,8 +42,10 @@ public class AppConfig {
             var codeSource = AppConfig.class.getProtectionDomain().getCodeSource();
             if (codeSource != null && codeSource.getLocation() != null) {
                 Path jarPath = Path.of(codeSource.getLocation().toURI());
-                Path parent = jarPath.getParent();
-                if (parent != null) return parent;
+                if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
+                    Path parent = jarPath.getParent();
+                    if (parent != null) return parent;
+                }
             }
         } catch (Exception ignored) {
         }
@@ -158,33 +160,42 @@ public class AppConfig {
     }
 
     public List<String> recentFiles() {
-        return recentFiles;
+        return Collections.unmodifiableList(recentFiles);
     }
 
     public void recentFiles(List<String> v) {
         recentFiles = v;
     }
 
-    /** 添加最近文件（去重，最新在前，自动保存） */
+    /** 添加最近文件（去重，最新在前，异步保存） */
     public void addRecentFile(String path) {
         if (path == null || path.isBlank()) return;
-        recentFiles.remove(path);
-        recentFiles.addFirst(path);
-        while (recentFiles.size() > MAX_RECENT_FILES) {
-            recentFiles.removeLast();
+        synchronized (this) {
+            recentFiles.remove(path);
+            recentFiles.addFirst(path);
+            while (recentFiles.size() > MAX_RECENT_FILES) {
+                recentFiles.removeLast();
+            }
         }
-        save();
+        saveAsync();
     }
 
-    /** 保存配置到文件。失败时记录日志但不抛出异常。 */
+    /** 保存配置到文件（同步）。失败时记录日志但不抛出异常。 */
     public void save() {
-        try {
-            normalize();
-            Files.createDirectories(CONFIG_DIR);
-            Files.writeString(CONFIG_FILE, GSON.toJson(this));
-        } catch (IOException e) {
-            logger.warn("Failed to save config", e);
+        synchronized (this) {
+            try {
+                normalize();
+                Files.createDirectories(CONFIG_DIR);
+                Files.writeString(CONFIG_FILE, GSON.toJson(this));
+            } catch (IOException e) {
+                logger.warn("Failed to save config", e);
+            }
         }
+    }
+
+    /** 异步保存，避免阻塞 UI 线程 */
+    private void saveAsync() {
+        Thread.ofVirtual().start(this::save);
     }
 
     private void normalize() {

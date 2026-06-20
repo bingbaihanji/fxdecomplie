@@ -66,17 +66,29 @@ public final class ClassDiscoverer {
                 if (entry.isDirectory()) continue;
                 String path = entry.getName();
                 FileTreeNode.NodeTypeEnum type = guessType(path);
-                byte[] bytes = null;
+                FileTreeNode.ByteLoader loader = null;
                 if (type == FileTreeNode.NodeTypeEnum.CLASS_FILE
                         || type == FileTreeNode.NodeTypeEnum.RESOURCE
                         || type == FileTreeNode.NodeTypeEnum.JAVA_FILE) {
-                    bytes = jar.getInputStream(entry).readAllBytes();
+                    loader = () -> readJarEntry(file, path);
                 }
                 String displayName = path.substring(path.lastIndexOf('/') + 1);
-                entries.add(new ClassEntry(displayName, path, type, bytes));
+                entries.add(new ClassEntry(displayName, path, type, null, loader));
             }
         }
         return entries;
+    }
+
+    private static byte[] readJarEntry(File archive, String entryName) throws IOException {
+        try (JarFile jar = new JarFile(archive)) {
+            JarEntry entry = jar.getJarEntry(entryName);
+            if (entry == null || entry.isDirectory()) {
+                throw new IOException("Archive entry not found: " + entryName);
+            }
+            try (var in = jar.getInputStream(entry)) {
+                return in.readAllBytes();
+            }
+        }
     }
 
     /** 从目录递归发现条目 */
@@ -94,17 +106,13 @@ public final class ClassDiscoverer {
                 String relativePath = root.relativize(p).toString().replace('\\', '/');
                 String displayName = p.getFileName().toString();
                 FileTreeNode.NodeTypeEnum type = guessType(displayName);
-                byte[] bytes = null;
+                FileTreeNode.ByteLoader loader = null;
                 if (type == FileTreeNode.NodeTypeEnum.CLASS_FILE
                         || type == FileTreeNode.NodeTypeEnum.RESOURCE
                         || type == FileTreeNode.NodeTypeEnum.JAVA_FILE) {
-                    try {
-                        bytes = Files.readAllBytes(p);
-                    } catch (IOException e) {
-                        logger.warn("Failed to read file: {}", p, e);
-                    }
+                    loader = () -> Files.readAllBytes(p);
                 }
-                entries.add(new ClassEntry(displayName, relativePath, type, bytes));
+                entries.add(new ClassEntry(displayName, relativePath, type, null, loader));
             });
         }
         return entries;
@@ -112,9 +120,9 @@ public final class ClassDiscoverer {
 
     /** 从单个 .class 文件创建条目 */
     private static List<ClassEntry> discoverClassFile(File file) throws IOException {
-        byte[] bytes = Files.readAllBytes(file.toPath());
         return List.of(new ClassEntry(file.getName(), file.getName(),
-                FileTreeNode.NodeTypeEnum.CLASS_FILE, bytes));
+                FileTreeNode.NodeTypeEnum.CLASS_FILE, null,
+                () -> Files.readAllBytes(file.toPath())));
     }
 
     /** 根据文件扩展名判断节点类型 */
@@ -140,7 +148,12 @@ public final class ClassDiscoverer {
             String name,
             String fullPath,
             FileTreeNode.NodeTypeEnum nodeType,
-            byte[] bytes
+            byte[] bytes,
+            FileTreeNode.ByteLoader byteLoader
     ) {
+        public ClassEntry(String name, String fullPath,
+                          FileTreeNode.NodeTypeEnum nodeType, byte[] bytes) {
+            this(name, fullPath, nodeType, bytes, null);
+        }
     }
 }

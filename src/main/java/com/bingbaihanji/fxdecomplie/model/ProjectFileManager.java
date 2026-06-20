@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.model;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,6 +31,14 @@ public final class ProjectFileManager {
     }
 
     public static DecompilerProject load(Path path) throws IOException {
-        return GSON.fromJson(Files.readString(path), DecompilerProject.class);
+        try {
+            DecompilerProject project = GSON.fromJson(Files.readString(path), DecompilerProject.class);
+            if (project == null) {
+                throw new IOException("Project file is empty");
+            }
+            return project;
+        } catch (JsonParseException e) {
+            throw new IOException("Invalid project file: " + path, e);
+        }
     }
 }

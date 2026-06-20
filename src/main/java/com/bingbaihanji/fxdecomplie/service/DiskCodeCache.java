@@ -45,9 +45,8 @@ public final class DiskCodeCache {
 
     public static String load(String workspaceHash, String internalName,
                               DecompilerTypeEnum engine, String optionsHash) {
-        Path file = cachePath(workspaceHash, internalName, engine);
+        Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
         try {
-            file = cachePath(workspaceHash, internalName, engine, optionsHash);
             return Files.exists(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
         } catch (IOException e) {
             logger.debug("Failed to load disk code cache: {}", file, e);

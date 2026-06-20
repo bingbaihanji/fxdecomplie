@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 全文搜索服务。管理多个 SearchProvider 并聚合结果。
@@ -22,21 +24,33 @@ public class SearchService {
 
     /** Patterns to exclude from search results (simple wildcard matching) */
     private volatile List<String> excludePatterns = List.of();
+    /** Pre-compiled exclude patterns for performance */
+    private volatile List<Pattern> compiledExcludePatterns = List.of();
 
     private static boolean matchesExcludePattern(String path, List<String> patterns) {
         if (path == null) return false;
         for (String pattern : patterns) {
-            try {
-                // Convert glob-style wildcards to regex, escape everything else
-                String regex = java.util.regex.Pattern.quote(pattern)
-                        .replace("\\*", "\\E.*\\Q")
-                        .replace("\\?", "\\E.\\Q");
-                if (path.matches(".*" + regex + ".*")) return true;
-            } catch (java.util.regex.PatternSyntaxException e) {
-                // Invalid pattern — skip it
+            if (pattern == null || pattern.isBlank()) {
+                continue;
             }
+            if (globContainsPattern(pattern).matcher(path).find()) return true;
         }
         return false;
+    }
+
+    private static Pattern globContainsPattern(String glob) {
+        StringBuilder regex = new StringBuilder();
+        for (int i = 0; i < glob.length(); i++) {
+            char ch = glob.charAt(i);
+            if (ch == '*') {
+                regex.append(".*");
+            } else if (ch == '?') {
+                regex.append('.');
+            } else {
+                regex.append(Pattern.quote(String.valueOf(ch)));
+            }
+        }
+        return Pattern.compile(regex.toString(), Pattern.CASE_INSENSITIVE);
     }
 
     public void addProvider(SearchProvider provider) {
@@ -49,6 +63,9 @@ public class SearchService {
 
     public void setExcludePatterns(List<String> patterns) {
         this.excludePatterns = patterns != null ? List.copyOf(patterns) : List.of();
+        this.compiledExcludePatterns = this.excludePatterns.stream()
+                .map(SearchService::globContainsPattern)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -74,8 +91,14 @@ public class SearchService {
             all.addAll(results);
         }
         // Filter by exclude patterns if any
-        if (!excludePatterns.isEmpty()) {
-            all.removeIf(result -> matchesExcludePattern(result.fullPath(), excludePatterns));
+        if (!compiledExcludePatterns.isEmpty()) {
+            all.removeIf(result -> {
+                String path = result.fullPath();
+                for (Pattern pattern : compiledExcludePatterns) {
+                    if (pattern.matcher(path).find()) return true;
+                }
+                return false;
+            });
         }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
@@ -96,8 +119,14 @@ public class SearchService {
             all.addAll(results);
         }
         // Filter by exclude patterns if any
-        if (!excludePatterns.isEmpty()) {
-            all.removeIf(result -> matchesExcludePattern(result.fullPath(), excludePatterns));
+        if (!compiledExcludePatterns.isEmpty()) {
+            all.removeIf(result -> {
+                String path = result.fullPath();
+                for (Pattern pattern : compiledExcludePatterns) {
+                    if (pattern.matcher(path).find()) return true;
+                }
+                return false;
+            });
         }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());

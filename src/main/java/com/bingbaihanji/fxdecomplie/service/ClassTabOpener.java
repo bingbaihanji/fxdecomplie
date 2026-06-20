@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
@@ -19,14 +20,24 @@ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.control.TreeItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
@@ -36,6 +47,31 @@ import java.util.function.Consumer;
  * @date 2026-06-17
  */
 public final class ClassTabOpener {
+
+    private static final Logger logger = LoggerFactory.getLogger(ClassTabOpener.class);
+    private static final DecompilerTypeEnum[] JD_FALLBACK_ENGINES = {
+            DecompilerTypeEnum.VINEFLOWER,
+            DecompilerTypeEnum.CFR,
+            DecompilerTypeEnum.PROCYON
+    };
+    private static final int MAX_DECOMPILER_THREADS = Math.max(1,
+            Math.min(2, Runtime.getRuntime().availableProcessors() / 2));
+    private static final AtomicInteger DECOMPILER_THREAD_ID = new AtomicInteger();
+    private static final ThreadPoolExecutor DECOMPILER_EXECUTOR = new ThreadPoolExecutor(
+            MAX_DECOMPILER_THREADS,
+            MAX_DECOMPILER_THREADS,
+            60L,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(MAX_DECOMPILER_THREADS * 2),
+            r -> {
+                Thread t = new Thread(r, "decompiler-" + DECOMPILER_THREAD_ID.incrementAndGet());
+                t.setDaemon(true);
+                return t;
+            });
+
+    static {
+        DECOMPILER_EXECUTOR.allowCoreThreadTimeOut(true);
+    }
 
     /** 应用配置 */
     private final AppConfig config;
@@ -47,6 +83,10 @@ public final class ClassTabOpener {
     private final DecompileCache decompileCache = new DecompileCache();
     /** 当前运行的反编译任务，用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
+    /** 当前由主导航创建的占位标签，用于任务取消时清理 */
+    private volatile Tab currentLoadingTab;
+    /** 主导航反编译请求序号，用于丢弃快速切换产生的过期结果。 */
+    private final AtomicLong decompileGeneration = new AtomicLong();
 
     public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar) {
         this.config = config;
@@ -63,28 +103,10 @@ public final class ClassTabOpener {
     /** 计算工作区缓存键：使用完整路径 + mtime + size，消除路径碰撞和同路径替换误命中 */
     private static String computeWorkspaceKey(Workspace workspace) {
         File source = workspace.getSourceFile();
-        Path path = source.toPath();
         long mtime = source.lastModified();
-        long size = source.isFile() ? source.length() : directoryFingerprint(path);
+        long size = source.isFile() ? source.length() : 0L;
         return (source.getAbsolutePath() + "_" + mtime + "_" + size)
                 .replace(':', '_').replace('\\', '_').replace('/', '_');
-    }
-
-    private static long directoryFingerprint(Path dir) {
-        try (var stream = Files.walk(dir)) {
-            return stream
-                    .filter(Files::isRegularFile)
-                    .mapToLong(p -> {
-                        try {
-                            return Files.size(p) ^ Files.getLastModifiedTime(p).toMillis();
-                        } catch (IOException e) {
-                            return 0L;
-                        }
-                    })
-                    .reduce(0L, (a, b) -> a * 31 + b);
-        } catch (IOException e) {
-            return 0L;
-        }
     }
 
     /**
@@ -95,6 +117,7 @@ public final class ClassTabOpener {
         Throwable cause = ex;
         while (cause != null) {
             if (cause instanceof InterruptedException) return true;
+            if (cause instanceof CancellationException) return true;
             cause = cause.getCause();
         }
         return Thread.currentThread().isInterrupted();
@@ -156,7 +179,13 @@ public final class ClassTabOpener {
      */
     public void openClassTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane,
                              DecompilerTypeEnum engine, boolean lineNumbersEnabled) {
-        Tab existingTab = findOrRemoveOpenClassTab(codeTabPane, node, engine);
+        openClassTab(node, workspace, codeTabPane, engine, lineNumbersEnabled, true, true);
+    }
+
+    public void openClassTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane,
+                             DecompilerTypeEnum engine, boolean lineNumbersEnabled,
+                             boolean cancelPrevious, boolean replaceDifferentEngine) {
+        Tab existingTab = findOrRemoveOpenClassTab(codeTabPane, node, engine, replaceDifferentEngine);
         if (existingTab != null) {
             codeTabPane.getSelectionModel().select(existingTab);
             return;
@@ -165,30 +194,73 @@ public final class ClassTabOpener {
         statusBar.setFilePath(I18nUtil.getString("status.decompiling", node.getFullPath()));
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
-        BackgroundTasks.cancel(currentDecompileTask);
-        currentDecompileTask = BackgroundTasks.run("Decompile-" + node.getName(), () -> {
+        if (cancelPrevious) {
+            BackgroundTasks.cancel(currentDecompileTask);
+            removeLoadingTab(codeTabPane, currentLoadingTab);
+        }
+        long requestId = cancelPrevious ? decompileGeneration.incrementAndGet() : -1L;
+
+        Tab loadingTab = createLoadingTab(node, engine);
+        AtomicReference<Future<?>> taskRef = new AtomicReference<>();
+        loadingTab.setOnClosed(e -> BackgroundTasks.cancel(taskRef.get()));
+        codeTabPane.getTabs().add(loadingTab);
+        codeTabPane.getSelectionModel().select(loadingTab);
+        if (cancelPrevious) {
+            currentLoadingTab = loadingTab;
+        }
+
+        Future<?> task = BackgroundTasks.run("Decompile-" + node.getName(), () -> {
             try {
+                if (!isRequestCurrent(requestId, cancelPrevious)) {
+                    return;
+                }
                 byte[] bytes = readClassBytes(node, workspace);
+                if (!isRequestCurrent(requestId, cancelPrevious)) {
+                    return;
+                }
                 if (bytes == null) {
-                    Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.read.unable", node.getFullPath())));
+                    Platform.runLater(() -> {
+                        if (!isRequestCurrent(requestId, cancelPrevious)) {
+                            removeLoadingTab(codeTabPane, loadingTab);
+                            return;
+                        }
+                        if (!isTabOpen(codeTabPane, loadingTab)) {
+                            clearTaskIfCurrent(loadingTab);
+                            return;
+                        }
+                        boolean clearTask = shouldClearTaskFor(loadingTab);
+                        removeLoadingTab(codeTabPane, loadingTab);
+                        showAlert(I18nUtil.getString("dialog.error.title"),
+                                I18nUtil.getString("dialog.read.unable", node.getFullPath()));
+                        if (clearTask) {
+                            statusBar.clearTask();
+                        }
+                    });
                     return;
                 }
 
                 String internalName = node.getFullPath().replace(".class", "");
-                DecompileResult result = decompileWithCache(internalName, engine, bytes, node, workspace);
+                DecompileResult result = decompileWithCache(internalName, engine, bytes, node, workspace,
+                        () -> isRequestCurrent(requestId, cancelPrevious));
+                if (!isRequestCurrent(requestId, cancelPrevious)) {
+                    return;
+                }
                 String sourceCode = result.sourceCode();
                 CodeMetadata metadata = result.metadata();
                 OpenFile openFile = new OpenFile(className(node), node.getFullPath(), sourceCode, engine);
 
                 Platform.runLater(() -> {
+                    if (!isRequestCurrent(requestId, cancelPrevious)) {
+                        removeLoadingTab(codeTabPane, loadingTab);
+                        return;
+                    }
                     // ---- Ctrl+Click navigation callback: resolves class refs in decompiled source ----
                     Consumer<CodeMetadata.Reference> onNavigate = ref -> {
-                        if (ref.type() == CodeMetadata.RefType.CLASS_REF) {
+                        if (ref.type() == CodeMetadata.RefType.CLASS_REF && ref.targetClass() != null) {
                             // ---- Convert dotted class ref (e.g. "com.example.Foo") to file path ----
                             String targetPath = ref.targetClass().replace('.', '/') + ".class";
                             // ---- Search the file tree for the referenced class node ----
-                            FileTreeNode targetNode = findNodeByPath(workspace.getTreeRoot(), targetPath);
+                            FileTreeNode targetNode = workspace.findNodeByPath(targetPath);
                             if (targetNode != null) {
                                 // ---- Recursively open the target class in a new code tab ----
                                 openClassTab(targetNode, workspace, codeTabPane, engine, lineNumbersEnabled);
@@ -197,7 +269,9 @@ public final class ClassTabOpener {
                     };
                     CodeEditorTab codeTab = createCodeEditorTab(openFile, lineNumbersEnabled, bytes,
                             metadata, onNavigate);
-                    codeTabPane.getTabs().add(codeTab);
+                    if (!replaceLoadingTab(codeTabPane, loadingTab, codeTab)) {
+                        return;
+                    }
                     codeTabPane.getSelectionModel().select(codeTab);
                     statusBar.setFilePath(
                             WorkspaceTabManager.formatClassPath(node.getFullPath()));
@@ -210,13 +284,38 @@ public final class ClassTabOpener {
                 // 用户导航到其他类时任务被取消，中断异常是预期行为，不弹窗
                 if (isInterruptRelated(ex)) {
                     Thread.interrupted();
+                    Platform.runLater(() -> {
+                        boolean clearTask = shouldClearTaskFor(loadingTab);
+                        removeLoadingTab(codeTabPane, loadingTab);
+                        if (clearTask) {
+                            statusBar.clearTask();
+                        }
+                    });
                     return;
                 }
-                Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
-                        I18nUtil.getString("dialog.decompile.failed", ex.getMessage())));
-                Platform.runLater(statusBar::clearTask);
+                Platform.runLater(() -> {
+                    if (!isRequestCurrent(requestId, cancelPrevious)) {
+                        removeLoadingTab(codeTabPane, loadingTab);
+                        return;
+                    }
+                    if (!isTabOpen(codeTabPane, loadingTab)) {
+                        clearTaskIfCurrent(loadingTab);
+                        return;
+                    }
+                    boolean clearTask = shouldClearTaskFor(loadingTab);
+                    removeLoadingTab(codeTabPane, loadingTab);
+                    showAlert(I18nUtil.getString("dialog.error.title"),
+                            I18nUtil.getString("dialog.decompile.failed", ex.getMessage()));
+                    if (clearTask) {
+                        statusBar.clearTask();
+                    }
+                });
             }
         });
+        taskRef.set(task);
+        if (cancelPrevious) {
+            currentDecompileTask = task;
+        }
     }
 
     /**
@@ -231,7 +330,7 @@ public final class ClassTabOpener {
     public void refreshCurrentClassTab(Workspace workspace, TabPane codeTabPane, CodeEditorTab currentTab,
                                        DecompilerTypeEnum engine, boolean lineNumbersEnabled) {
         String fullPath = currentTab.getOpenFile().fullPath();
-        FileTreeNode node = findNodeByPath(workspace.getTreeRoot(), fullPath);
+        FileTreeNode node = workspace.findNodeByPath(fullPath);
         if (node == null) {
             statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
             return;
@@ -243,26 +342,41 @@ public final class ClassTabOpener {
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
         BackgroundTasks.cancel(currentDecompileTask);
+        long requestId = decompileGeneration.incrementAndGet();
         currentDecompileTask = BackgroundTasks.run("Redecompile-" + node.getName(), () -> {
             try {
+                if (!isRequestCurrent(requestId, true)) {
+                    return;
+                }
                 byte[] bytes = readClassBytes(node, workspace);
+                if (!isRequestCurrent(requestId, true)) {
+                    return;
+                }
                 if (bytes == null) {
                     Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
                             I18nUtil.getString("dialog.read.unable", fullPath)));
+                    Platform.runLater(statusBar::clearTask);
                     return;
                 }
 
                 String internalName = fullPath.replace(".class", "");
-                DecompileResult result = decompileWithCache(internalName, engine, bytes, node, workspace);
+                DecompileResult result = decompileWithCache(internalName, engine, bytes, node, workspace,
+                        () -> isRequestCurrent(requestId, true));
+                if (!isRequestCurrent(requestId, true)) {
+                    return;
+                }
                 String sourceCode = result.sourceCode();
                 CodeMetadata metadata = result.metadata();
                 OpenFile openFile = new OpenFile(className(node), fullPath, sourceCode, engine);
 
                 Platform.runLater(() -> {
+                    if (!isRequestCurrent(requestId, true)) {
+                        return;
+                    }
                     Consumer<CodeMetadata.Reference> onNavigate = ref -> {
-                        if (ref.type() == CodeMetadata.RefType.CLASS_REF) {
+                        if (ref.type() == CodeMetadata.RefType.CLASS_REF && ref.targetClass() != null) {
                             String targetPath = ref.targetClass().replace('.', '/') + ".class";
-                            FileTreeNode targetNode = findNodeByPath(workspace.getTreeRoot(), targetPath);
+                            FileTreeNode targetNode = workspace.findNodeByPath(targetPath);
                             if (targetNode != null) {
                                 openClassTab(targetNode, workspace, codeTabPane, engine, lineNumbersEnabled);
                             }
@@ -294,6 +408,7 @@ public final class ClassTabOpener {
 
     /** 取消当前运行的反编译任务 */
     public void cancelCurrentTask() {
+        decompileGeneration.incrementAndGet();
         BackgroundTasks.cancel(currentDecompileTask);
     }
 
@@ -302,9 +417,9 @@ public final class ClassTabOpener {
      * 读取字节码转为 UTF-8 文本，在只读 CodeArea 中显示。
      */
     public void openTextFileTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
-        // 去重检查
+        // 去重检查：使用完整路径避免同名不同路径文件冲突
         for (Tab tab : codeTabPane.getTabs()) {
-            if (node.getName().equals(tab.getText())) {
+            if (node.getFullPath().equals(tab.getUserData())) {
                 codeTabPane.getSelectionModel().select(tab);
                 return;
             }
@@ -319,6 +434,7 @@ public final class ClassTabOpener {
                 if (bytes == null) {
                     Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
                             I18nUtil.getString("dialog.read.unable", node.getFullPath())));
+                    Platform.runLater(statusBar::clearTask);
                     return;
                 }
 
@@ -337,6 +453,7 @@ public final class ClassTabOpener {
                     codeArea.setFont(javafx.scene.text.Font.font(config.theme().fontFamily(), config.theme().fontSize()));
 
                     Tab tab = new Tab(node.getName(), codeArea);
+                    tab.setUserData(node.getFullPath());
                     tab.setOnClosed(e -> {
                     }); // no cleanup needed
                     codeTabPane.getTabs().add(tab);
@@ -360,7 +477,7 @@ public final class ClassTabOpener {
 
     /** 读取文件字节码（文本文件版本，和 readClassBytes 逻辑相同） */
     private byte[] readFileBytes(FileTreeNode node, Workspace workspace) throws IOException {
-        byte[] bytes = node.getCachedBytes();
+        byte[] bytes = node.resolveBytes();
         if (bytes != null) return bytes;
         if (!workspace.isArchive()) {
             File source = workspace.getSourceFile();
@@ -384,8 +501,71 @@ public final class ClassTabOpener {
         return tab;
     }
 
+    private Tab createLoadingTab(FileTreeNode node, DecompilerTypeEnum engine) {
+        javafx.scene.control.ProgressIndicator indicator = new javafx.scene.control.ProgressIndicator();
+        indicator.setMaxSize(28, 28);
+        javafx.scene.control.Label label = new javafx.scene.control.Label(
+                I18nUtil.getString("tab.decompiling.message", node.getFullPath()));
+        label.setWrapText(true);
+        javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(10, indicator, label);
+        content.setAlignment(javafx.geometry.Pos.CENTER);
+        content.setPadding(new javafx.geometry.Insets(24));
+        Tab tab = new Tab(className(node) + " [" + engine.name() + "]");
+        tab.setContent(content);
+        return tab;
+    }
+
+    private boolean replaceLoadingTab(TabPane codeTabPane, Tab loadingTab, CodeEditorTab codeTab) {
+        if (codeTabPane == null || loadingTab == null || codeTab == null) {
+            return false;
+        }
+        int index = codeTabPane.getTabs().indexOf(loadingTab);
+        if (index < 0) {
+            return false;
+        }
+        loadingTab.setOnClosed(null);
+        codeTabPane.getTabs().set(index, codeTab);
+        clearCurrentLoadingTab(loadingTab);
+        return true;
+    }
+
+    private void removeLoadingTab(TabPane codeTabPane, Tab loadingTab) {
+        if (codeTabPane == null || loadingTab == null) {
+            return;
+        }
+        loadingTab.setOnClosed(null);
+        codeTabPane.getTabs().remove(loadingTab);
+        clearCurrentLoadingTab(loadingTab);
+    }
+
+    private void clearCurrentLoadingTab(Tab loadingTab) {
+        if (currentLoadingTab == loadingTab) {
+            currentLoadingTab = null;
+        }
+    }
+
+    private static boolean isTabOpen(TabPane codeTabPane, Tab tab) {
+        return codeTabPane != null && tab != null && codeTabPane.getTabs().contains(tab);
+    }
+
+    private boolean shouldClearTaskFor(Tab loadingTab) {
+        return currentLoadingTab == null || currentLoadingTab == loadingTab;
+    }
+
+    private void clearTaskIfCurrent(Tab loadingTab) {
+        if (shouldClearTaskFor(loadingTab)) {
+            statusBar.clearTask();
+        }
+    }
+
+    private boolean isRequestCurrent(long requestId, boolean guarded) {
+        return !guarded || decompileGeneration.get() == requestId;
+    }
+
     /** 查找已打开的同名 class 标签页，移除不同引擎的重复标签页 */
-    private Tab findOrRemoveOpenClassTab(TabPane codeTabPane, FileTreeNode node, DecompilerTypeEnum engine) {
+    private Tab findOrRemoveOpenClassTab(TabPane codeTabPane, FileTreeNode node,
+                                         DecompilerTypeEnum engine,
+                                         boolean removeDifferentEngine) {
         java.util.List<Tab> toRemove = new java.util.ArrayList<>();
         for (Tab tab : codeTabPane.getTabs()) {
             if (tab instanceof CodeEditorTab codeTab
@@ -393,7 +573,9 @@ public final class ClassTabOpener {
                 if (codeTab.getOpenFile().engine() == engine) {
                     return tab;
                 }
-                toRemove.add(tab);
+                if (removeDifferentEngine) {
+                    toRemove.add(tab);
+                }
             }
         }
         codeTabPane.getTabs().removeAll(toRemove);
@@ -402,27 +584,14 @@ public final class ClassTabOpener {
 
     /** 读取类字节码（依次尝试节点缓存、工作区索引、全局缓存、磁盘读取） */
     private byte[] readClassBytes(FileTreeNode node, Workspace workspace) throws IOException {
-        byte[] bytes = node.getCachedBytes();
+        byte[] bytes = node.resolveBytes();
         if (bytes != null) return bytes;
         String internalName = node.getFullPath().replace(".class", "");
-        bytes = workspace.getOrBuildIndex().getClassBytes(internalName);
+        bytes = workspaceIndexForBackground(workspace).getClassBytes(internalName);
         if (bytes != null) return bytes;
         if (!workspace.isArchive()) {
             File source = workspace.getSourceFile();
             return Files.readAllBytes(new File(source, node.getFullPath()).toPath());
-        }
-        return null;
-    }
-
-    /** 在文件树中查找指定路径的节点（迭代 BFS，防止深层包结构栈溢出） */
-    public FileTreeNode findNodeByPath(TreeItem<FileTreeNode> root, String fullPath) {
-        java.util.ArrayDeque<TreeItem<FileTreeNode>> queue = new java.util.ArrayDeque<>();
-        queue.add(root);
-        while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> item = queue.removeFirst();
-            FileTreeNode node = item.getValue();
-            if (node != null && fullPath.equals(node.getFullPath())) return node;
-            queue.addAll(item.getChildren());
         }
         return null;
     }
@@ -442,7 +611,8 @@ public final class ClassTabOpener {
      * workspaceKey 使用路径 + mtime + size，避免同路径文件替换后命中旧缓存。
      */
     private DecompileResult decompileWithCache(String internalName, DecompilerTypeEnum engine,
-                                               byte[] bytes, FileTreeNode node, Workspace workspace) {
+                                               byte[] bytes, FileTreeNode node, Workspace workspace,
+                                               BooleanSupplier active) {
         String optionsHash = computeOptionsHash(config, engine);
         String wsKey = computeWorkspaceKey(workspace);
 
@@ -460,39 +630,43 @@ public final class ClassTabOpener {
 
         // ---- L2+L3 miss: execute actual decompilation ----
         if (sourceCode == null) {
+            if (!active.getAsBoolean()) {
+                throw new CancellationException("decompile request superseded");
+            }
             // 线程复用可能残留中断标志，反编译前再次清除
             Thread.interrupted();
             final byte[] finalBytes = bytes;
             final String finalPath = node.getFullPath();
             final DecompilerTypeEnum finalEngine = engine;
-            final DecompilerContext ctx = DecompilerContext.fromWorkspaceIndex(
-                    workspace.getOrBuildIndex(), engineOptions(config, finalEngine));
-            java.util.concurrent.ExecutorService timeoutExecutor =
-                    java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
-                        Thread t = new Thread(r, "decompile-timeout");
-                        t.setDaemon(true);
-                        return t;
-                    });
+            Future<String> decompileFuture = null;
             try {
-                java.util.concurrent.Future<String> decompileFuture = timeoutExecutor.submit(() ->
-                        DecompilerFactory.getDecompiler(finalEngine)
-                                .decompile(finalPath, finalBytes, ctx));
-                sourceCode = decompileFuture.get(30, java.util.concurrent.TimeUnit.SECONDS);
+                decompileFuture = DECOMPILER_EXECUTOR.submit(() ->
+                        decompileWithFallback(finalPath, finalBytes, finalEngine, workspace));
+                sourceCode = decompileFuture.get(30, TimeUnit.SECONDS);
+            } catch (RejectedExecutionException e) {
+                return new DecompileResult(
+                        "// Decompiler is busy. Please wait for the previous class to finish, then try again.\n"
+                                + "// Class: " + finalPath,
+                        new CodeMetadata(java.util.Map.of()));
             } catch (java.util.concurrent.TimeoutException e) {
-                timeoutExecutor.shutdownNow();
+                if (decompileFuture != null) {
+                    decompileFuture.cancel(true);
+                }
                 return new DecompileResult(
                         "// Decompilation timed out (30s) for: " + finalPath +
                                 "\n// The class may be obfuscated or malformed. Try a different engine.",
                         new CodeMetadata(java.util.Map.of()));
             } catch (InterruptedException e) {
-                timeoutExecutor.shutdownNow();
+                if (decompileFuture != null) {
+                    decompileFuture.cancel(true);
+                }
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("Decompilation interrupted: " + finalPath, e);
             } catch (java.util.concurrent.ExecutionException e) {
-                timeoutExecutor.shutdownNow();
                 throw new RuntimeException("Decompilation failed: " + finalPath, e.getCause());
-            } finally {
-                timeoutExecutor.shutdownNow();
+            }
+            if (!active.getAsBoolean()) {
+                throw new CancellationException("decompile request superseded");
             }
             // ---- Save decompiled result to L2 (immediate) ----
             decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
@@ -509,6 +683,124 @@ public final class ClassTabOpener {
         return new DecompileResult(sourceCode, metadata);
     }
 
+    private String decompileWithFallback(String classFilePath, byte[] classBytes,
+                                         DecompilerTypeEnum engine, Workspace workspace) {
+        String source = decompileWithEngine(classFilePath, classBytes, engine, workspace);
+        if (engine != DecompilerTypeEnum.JD || !isJdFailureOutput(source)) {
+            return source;
+        }
+
+        String jdReason = extractJdFailureReason(source);
+        for (DecompilerTypeEnum fallback : JD_FALLBACK_ENGINES) {
+            try {
+                String fallbackSource = decompileWithEngine(classFilePath, classBytes, fallback, workspace);
+                if (fallbackSource != null && !fallbackSource.isBlank()
+                        && !isDecompilerFailureOutput(fallbackSource)) {
+                    logger.warn("JD-Core failed for {}; using {} fallback. Reason: {}",
+                            classFilePath, fallback, jdReason);
+                    return withFallbackNotice(fallbackSource, fallback, jdReason);
+                }
+            } catch (RuntimeException e) {
+                logger.warn("Fallback decompiler {} failed for {}", fallback, classFilePath, e);
+            }
+        }
+        return source;
+    }
+
+    private String decompileWithEngine(String classFilePath, byte[] classBytes,
+                                       DecompilerTypeEnum engine, Workspace workspace) {
+        DecompilerContext ctx = createDecompilerContext(workspace, engineOptions(config, engine));
+        return DecompilerFactory.getDecompiler(engine).decompile(classFilePath, classBytes, ctx);
+    }
+
+    private DecompilerContext createDecompilerContext(Workspace workspace, Map<String, String> options) {
+        return DecompilerContext.of(internalName -> resolveWorkspaceClassBytes(workspace, internalName), options);
+    }
+
+    private byte[] resolveWorkspaceClassBytes(Workspace workspace, String internalName) {
+        if (workspace == null || internalName == null || internalName.isBlank()) {
+            return null;
+        }
+        String normalized = DecompilerContext.normalizeInternalName(internalName);
+        if (workspace.isIndexReady()) {
+            byte[] bytes = workspace.getIndex().getClassBytes(normalized);
+            if (bytes != null) {
+                return bytes;
+            }
+        }
+
+        FileTreeNode node = workspace.findNodeByPath(normalized + ".class");
+        if (node != null) {
+            try {
+                return node.resolveBytes();
+            } catch (IOException e) {
+                logger.debug("Failed to resolve dependency class: {}", normalized, e);
+            }
+        }
+
+        if (!workspace.isArchive()) {
+            try {
+                Path path = new File(workspace.getSourceFile(), normalized + ".class").toPath();
+                return Files.exists(path) ? Files.readAllBytes(path) : null;
+            } catch (IOException e) {
+                logger.debug("Failed to read dependency class from disk: {}", normalized, e);
+            }
+        }
+        return null;
+    }
+
+    private static boolean isJdFailureOutput(String source) {
+        if (source == null) {
+            return false;
+        }
+        return source.contains("JD-Core Error:")
+                || source.contains("JD-Core decompile failed");
+    }
+
+    private static boolean isDecompilerFailureOutput(String source) {
+        if (source == null) {
+            return true;
+        }
+        String trimmed = source.trim();
+        return trimmed.startsWith("// CFR decompile failed")
+                || trimmed.startsWith("// Procyon decompile failed")
+                || trimmed.startsWith("// Vineflower decompile failed")
+                || isJdFailureOutput(source);
+    }
+
+    private static String extractJdFailureReason(String source) {
+        if (source == null || source.isBlank()) {
+            return "unknown JD-Core failure";
+        }
+        String normalized = source.replace("\r\n", "\n");
+        int errorIndex = normalized.indexOf("JD-Core Error:");
+        if (errorIndex < 0) {
+            errorIndex = normalized.indexOf("JD-Core decompile failed");
+        }
+        String reason = errorIndex >= 0 ? normalized.substring(errorIndex) : normalized;
+        int lineEnd = reason.indexOf('\n');
+        if (lineEnd >= 0) {
+            reason = reason.substring(0, lineEnd);
+        }
+        reason = reason.replace("*/", "* /").trim();
+        return reason.length() > 220 ? reason.substring(0, 220) + "..." : reason;
+    }
+
+    private static String withFallbackNotice(String source, DecompilerTypeEnum fallback,
+                                             String reason) {
+        String notice = "// JD-Core failed; displayed using " + fallback.name() + ".\n"
+                + "// Reason: " + reason + "\n\n";
+        String normalized = source.replace("\r\n", "\n");
+        if (normalized.startsWith("package ")) {
+            int packageEnd = normalized.indexOf(";\n");
+            if (packageEnd > 0) {
+                int insertAt = packageEnd + 2;
+                return normalized.substring(0, insertAt) + "\n" + notice + normalized.substring(insertAt);
+            }
+        }
+        return notice + source;
+    }
+
     /** 显示错误弹窗 */
     private void showAlert(String title, String message) {
         Platform.runLater(() -> {
@@ -518,6 +810,16 @@ public final class ClassTabOpener {
             alert.setHeaderText(null);
             alert.showAndWait();
         });
+    }
+
+    private WorkspaceIndex workspaceIndexForBackground(Workspace workspace) {
+        if (workspace == null) {
+            return WorkspaceIndex.EMPTY;
+        }
+        if (workspace.isIndexReady()) {
+            return workspace.getIndex();
+        }
+        return WorkspaceIndex.EMPTY;
     }
 
     /** 反编译结果，包含源码和元数据 */

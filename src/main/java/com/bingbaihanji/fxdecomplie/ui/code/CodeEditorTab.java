@@ -29,7 +29,9 @@ public class CodeEditorTab extends Tab {
     /** Java 源码编辑器 */
     private final CodeArea codeArea;
     /** 字节码文本视图 */
-    private final CodeArea bytecodeArea;
+    private CodeArea bytecodeArea;
+    /** 类信息视图 */
+    private javafx.scene.layout.VBox classInfoView;
     /** 打开的文件 */
     private final OpenFile openFile;
     /** 标签页显示标题 */
@@ -46,6 +48,9 @@ public class CodeEditorTab extends Tab {
     private final byte[] classBytes;
     /** 编辑器内搜索栏 */
     private EditorSearchBar editorSearchBar;
+    /** 延迟加载状态：避免打开源码标签时同步生成字节码/类信息视图 */
+    private boolean bytecodeLoaded;
+    private boolean classInfoLoaded;
 
     /** 简化构造器（使用默认主题和字体配置） */
     public CodeEditorTab(OpenFile openFile) {
@@ -78,15 +83,23 @@ public class CodeEditorTab extends Tab {
         Tab sourceTab = new Tab(I18nUtil.getString("tab.source"), codeArea);
         sourceTab.setClosable(false);
 
-        // 2. 创建字节码汇编视图
-        bytecodeArea = BytecodeViewTab.createView(this.classBytes);
-        Tab bytecodeTab = new Tab(I18nUtil.getString("tab.bytecode"), bytecodeArea);
+        // 2. 字节码和类信息按需构建，避免快速切换 class 时阻塞 JavaFX 线程
+        Tab bytecodeTab = new Tab(I18nUtil.getString("tab.bytecode"), lazyPlaceholder());
         bytecodeTab.setClosable(false);
+        bytecodeTab.selectedProperty().addListener((obs, wasSelected, selected) -> {
+            if (selected) {
+                ensureBytecodeLoaded(bytecodeTab);
+            }
+        });
 
-        // 3. 创建类元信息视图
-        javafx.scene.layout.VBox infoView = ClassInfoView.createView(this.classBytes);
-        Tab infoTab = new Tab(I18nUtil.getString("tab.classinfo"), infoView);
+        // 3. 创建类元信息视图占位
+        Tab infoTab = new Tab(I18nUtil.getString("tab.classinfo"), lazyPlaceholder());
         infoTab.setClosable(false);
+        infoTab.selectedProperty().addListener((obs, wasSelected, selected) -> {
+            if (selected) {
+                ensureClassInfoLoaded(infoTab);
+            }
+        });
 
         // 4. 将三个子标签页组装到 TabPane
         TabPane subTabPane = buildSubTabPane(sourceTab, bytecodeTab, infoTab);
@@ -103,6 +116,32 @@ public class CodeEditorTab extends Tab {
         setText("");
         setGraphic(titleLabel);
         setContent(wrapper);
+    }
+
+    private static javafx.scene.Node lazyPlaceholder() {
+        javafx.scene.layout.StackPane pane = new javafx.scene.layout.StackPane();
+        pane.setMinHeight(120);
+        pane.getStyleClass().add("code-editor");
+        return pane;
+    }
+
+    private void ensureBytecodeLoaded(Tab bytecodeTab) {
+        if (bytecodeLoaded) {
+            return;
+        }
+        bytecodeLoaded = true;
+        bytecodeArea = BytecodeViewTab.createView(this.classBytes);
+        bytecodeArea.setFont(Font.font(bytecodeArea.getFont().getFamily(), codeArea.getFont().getSize()));
+        bytecodeTab.setContent(bytecodeArea);
+    }
+
+    private void ensureClassInfoLoaded(Tab infoTab) {
+        if (classInfoLoaded) {
+            return;
+        }
+        classInfoLoaded = true;
+        classInfoView = ClassInfoView.createView(this.classBytes);
+        infoTab.setContent(classInfoView);
     }
 
     private static Label createTitleLabel(String title) {
@@ -322,6 +361,8 @@ public class CodeEditorTab extends Tab {
     /** 跳转到指定行（Ctrl+G） */
     public void goToLine() {
         javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+        javafx.stage.Window owner = codeArea.getScene() != null ? codeArea.getScene().getWindow() : null;
+        dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("editor.gotoLine.title"));
         dialog.setHeaderText(null);
         String text = codeArea.getText();
@@ -378,7 +419,9 @@ public class CodeEditorTab extends Tab {
     private void setFontSize(double size) {
         Font current = codeArea.getFont();
         codeArea.setFont(Font.font(current.getFamily(), size));
-        bytecodeArea.setFont(Font.font(bytecodeArea.getFont().getFamily(), size));
+        if (bytecodeArea != null) {
+            bytecodeArea.setFont(Font.font(bytecodeArea.getFont().getFamily(), size));
+        }
     }
 
     /** 加载代码字体：优先资源内嵌 Fira Code → 配置字体 → 系统 Consolas */

@@ -41,4 +41,29 @@ class BackgroundTasksTest {
     void cancelNullFutureIsSafe() {
         assertDoesNotThrow(() -> BackgroundTasks.cancel(null));
     }
+
+    @Test
+    void longTaskDoesNotBlockFollowingTask() throws Exception {
+        CountDownLatch blockerStarted = new CountDownLatch(1);
+        CountDownLatch releaseBlocker = new CountDownLatch(1);
+        CountDownLatch secondRan = new CountDownLatch(1);
+
+        Future<?> blocker = BackgroundTasks.run("index-blocker", () -> {
+            blockerStarted.countDown();
+            try {
+                releaseBlocker.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        assertTrue(blockerStarted.await(2, TimeUnit.SECONDS));
+
+        Future<?> second = BackgroundTasks.run("decompile-after-index", secondRan::countDown);
+
+        assertTrue(secondRan.await(1, TimeUnit.SECONDS),
+                "a long index task must not queue all later decompile tasks");
+        releaseBlocker.countDown();
+        second.get(1, TimeUnit.SECONDS);
+        blocker.get(1, TimeUnit.SECONDS);
+    }
 }

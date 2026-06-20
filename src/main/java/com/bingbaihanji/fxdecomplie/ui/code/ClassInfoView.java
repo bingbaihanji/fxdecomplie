@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
+import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
@@ -27,14 +28,14 @@ public final class ClassInfoView {
         root.setStyle("-fx-padding: 12px; -fx-background-color: #1e1e1e;");
 
         if (classBytes == null) {
-            root.getChildren().add(label("无可用字节码", "#858585"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.noBytecode"), "#858585"));
             return root;
         }
 
         try {
             Optional<ClassFileMetadata> parsed = ClassFileParser.tryParse(classBytes);
             if (parsed.isEmpty()) {
-                root.getChildren().add(label("解析失败: 无法读取 class 文件元数据", "#f44747"));
+                root.getChildren().add(label(I18nUtil.getString("classinfo.parseFailed"), "#f44747"));
                 return root;
             }
 
@@ -42,20 +43,28 @@ public final class ClassInfoView {
             int minor = metadata.minorVersion();
             int major = metadata.majorVersion();
 
-            root.getChildren().add(label("主版本号: " + major + "  (Java " + ClassFileParser.javaVersion(major) + ")", "#dcdcaa"));
-            root.getChildren().add(label("次版本号: " + minor, "#9aa7b0"));
-            root.getChildren().add(label("访问标志: " + formatAccess(metadata.accessFlags()), "#9aa7b0"));
-            root.getChildren().add(label("本类: " + metadata.internalName().replace('/', '.'), "#4ec9b0"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.major",
+                    major, ClassFileParser.javaVersion(major)), "#dcdcaa"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.minor", minor), "#9aa7b0"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.access",
+                    formatAccess(metadata.accessFlags())), "#9aa7b0"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.thisClass",
+                    metadata.internalName().replace('/', '.')), "#4ec9b0"));
             String superName = metadata.superName();
-            root.getChildren().add(label("父类: " + (superName != null ? superName.replace('/', '.') : "(无)"), "#c586c0"));
-            root.getChildren().add(label("常量池条目: " + metadata.constantPoolCount(), "#9aa7b0"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.superClass",
+                    superName != null ? superName.replace('/', '.') : I18nUtil.getString("classinfo.noneInline")),
+                    "#c586c0"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.constantPool",
+                    metadata.constantPoolCount()), "#9aa7b0"));
 
             if (!metadata.interfaces().isEmpty()) {
                 for (String itf : metadata.interfaces()) {
-                    root.getChildren().add(label("接口: " + itf.replace('/', '.'), "#b5cea8"));
+                    root.getChildren().add(label(I18nUtil.getString("classinfo.interface",
+                            itf.replace('/', '.')), "#b5cea8"));
                 }
             } else {
-                root.getChildren().add(label("接口: (无)", "#6a6a6a"));
+                root.getChildren().add(label(I18nUtil.getString("classinfo.interface",
+                        I18nUtil.getString("classinfo.noneInline")), "#6a6a6a"));
             }
 
             // ---- Extract methods and fields via ASM visitor ----
@@ -74,9 +83,9 @@ public final class ClassInfoView {
             }
 
             // ---- Methods section ----
-            root.getChildren().add(sectionLabel("方法 (" + methods.size() + ")"));
+            root.getChildren().add(sectionLabel(I18nUtil.getString("classinfo.methods", methods.size())));
             if (methods.isEmpty()) {
-                root.getChildren().add(label("  (无)", "#6a6a6a"));
+                root.getChildren().add(label("  " + I18nUtil.getString("classinfo.noneInline"), "#6a6a6a"));
             } else {
                 for (String m : methods) {
                     root.getChildren().add(label("  " + m, "#dcdcaa"));
@@ -84,16 +93,17 @@ public final class ClassInfoView {
             }
 
             // ---- Fields section ----
-            root.getChildren().add(sectionLabel("字段 (" + fields.size() + ")"));
+            root.getChildren().add(sectionLabel(I18nUtil.getString("classinfo.fields", fields.size())));
             if (fields.isEmpty()) {
-                root.getChildren().add(label("  (无)", "#6a6a6a"));
+                root.getChildren().add(label("  " + I18nUtil.getString("classinfo.noneInline"), "#6a6a6a"));
             } else {
                 for (String f : fields) {
                     root.getChildren().add(label("  " + f, "#9cdcfe"));
                 }
             }
         } catch (Exception e) {
-            root.getChildren().add(label("解析失败: " + e.getMessage(), "#f44747"));
+            root.getChildren().add(label(I18nUtil.getString("classinfo.parseFailedWithMessage",
+                    e.getMessage()), "#f44747"));
         }
         return root;
     }

@@ -22,4 +22,19 @@ class SearchServiceTest {
 
         assertEquals(7, results.size());
     }
+
+    @Test
+    void excludePatternsUseGlobWildcards() {
+        SearchService service = new SearchService();
+        service.setExcludePatterns(List.of("*/internal/*", "*Generated.class"));
+        service.addProvider((query, sourceCache) -> List.of(
+                new SearchResult("com/example/App.class", "match", 1, SearchResult.MatchType.CLASS_NAME),
+                new SearchResult("com/example/internal/Hidden.class", "match", 1, SearchResult.MatchType.CLASS_NAME),
+                new SearchResult("com/example/FooGenerated.class", "match", 1, SearchResult.MatchType.CLASS_NAME)));
+
+        List<SearchResult> results = service.searchAll("match", Map.of(), 10);
+
+        assertEquals(1, results.size());
+        assertEquals("com/example/App.class", results.getFirst().fullPath());
+    }
 }

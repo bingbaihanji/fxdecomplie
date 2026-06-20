@@ -38,4 +38,20 @@ class FileTreeNodeTest {
         node.setCachedBytes(data);
         assertArrayEquals(data, node.getCachedBytes());
     }
+
+    @Test
+    void resolveBytesLoadsAndCachesLazySource() throws Exception {
+        FileTreeNode node = new FileTreeNode("Test.class", "Test.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+        node.setByteLoader(() -> {
+            reads.incrementAndGet();
+            return new byte[]{5, 6, 7};
+        });
+
+        assertTrue(node.hasByteSource());
+        assertArrayEquals(new byte[]{5, 6, 7}, node.resolveBytes());
+        assertArrayEquals(new byte[]{5, 6, 7}, node.resolveBytes());
+        assertEquals(1, reads.get());
+    }
 }

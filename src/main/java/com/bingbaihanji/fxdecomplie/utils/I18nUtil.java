@@ -25,9 +25,9 @@ public class I18nUtil {
     private static final Logger logger = LoggerFactory.getLogger(I18nUtil.class);
     private static final String BASE_NAME = "language/language";
     // 语言变化监听器列表
-    private static final List<Runnable> localeChangeListeners = new ArrayList<>();
-    private static ResourceBundle resourceBundle;
-    private static Locale currentLocale;
+    private static final List<Runnable> localeChangeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private static volatile ResourceBundle resourceBundle;
+    private static volatile Locale currentLocale;
 
     static {
         // 默认使用系统语言,如果不支持则使用简体中文
@@ -123,23 +123,33 @@ public class I18nUtil {
      * @throws IOException 加载失败时抛出异常
      */
     static ResourceBundle loadResourceBundle(Locale locale) throws IOException {
-        // 构建资源文件名
-        String bundleName = toBundleName(BASE_NAME, locale);
-        String resourceName = toResourceName(bundleName);
+        for (String resourceName : candidateResourceNames(locale)) {
+            // 1. 尝试从外部文件加载
+            ResourceBundle bundle = loadFromExternalFile(resourceName);
 
-        // 1. 尝试从外部文件加载
-        ResourceBundle bundle = loadFromExternalFile(resourceName);
+            // 2. 如果外部文件不存在,从 classpath 加载
+            if (bundle == null) {
+                bundle = loadFromClasspath(resourceName);
+            }
 
-        // 2. 如果外部文件不存在,从 classpath 加载
-        if (bundle == null) {
-            bundle = loadFromClasspath(resourceName);
+            if (bundle != null) {
+                return bundle;
+            }
         }
+        throw new IOException("Cannot load resource bundle for locale: " + locale);
+    }
 
-        if (bundle == null) {
-            throw new IOException("Cannot load resource bundle: " + resourceName);
+    private static List<String> candidateResourceNames(Locale locale) {
+        LinkedHashSet<String> names = new LinkedHashSet<>();
+        if (locale != null && locale != Locale.ROOT && !locale.getLanguage().isEmpty()) {
+            names.add(toResourceName(toBundleName(BASE_NAME, locale)));
+            if (!locale.getCountry().isEmpty() || !locale.getVariant().isEmpty()) {
+                names.add(toResourceName(BASE_NAME + '_' + locale.getLanguage()));
+            }
         }
-
-        return bundle;
+        names.add(toResourceName(BASE_NAME + "_zh_CN"));
+        names.add(toResourceName(BASE_NAME + "_en"));
+        return new ArrayList<>(names);
     }
 
     /**

@@ -39,6 +39,9 @@ public final class FileTreeBuilder {
             if (entry.bytes() != null) {
                 nodeData.setCachedBytes(entry.bytes());
             }
+            if (entry.byteLoader() != null) {
+                nodeData.setByteLoader(entry.byteLoader());
+            }
 
             TreeItem<FileTreeNode> parent = getOrCreateParent(root, entry.fullPath(), pathMap);
             TreeItem<FileTreeNode> child = new TreeItem<>(nodeData);

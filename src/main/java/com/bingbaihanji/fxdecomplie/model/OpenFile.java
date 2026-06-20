@@ -25,30 +25,10 @@ public record OpenFile(String className, String fullPath, String sourceCode, Dec
      * @param engine     使用的引擎
      */
     public OpenFile {
-    }
-
-    /** @return 简短类名 */
-    @Override
-    public String className() {
-        return className;
-    }
-
-    /** @return 完整内部路径 */
-    @Override
-    public String fullPath() {
-        return fullPath;
-    }
-
-    /** @return 反编译后的源码 */
-    @Override
-    public String sourceCode() {
-        return sourceCode;
-    }
-
-    /** @return 使用的引擎 */
-    @Override
-    public DecompilerTypeEnum engine() {
-        return engine;
+        Objects.requireNonNull(className, "className");
+        Objects.requireNonNull(fullPath, "fullPath");
+        Objects.requireNonNull(sourceCode, "sourceCode");
+        Objects.requireNonNull(engine, "engine");
     }
 
     /**

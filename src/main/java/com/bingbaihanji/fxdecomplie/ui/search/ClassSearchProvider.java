@@ -37,19 +37,19 @@ public class ClassSearchProvider implements SearchProvider {
 
         // 先搜索显式传入的类名列表（可能包含尚未在 sourceCache 中打开的类）
         for (String name : classNames) {
+            if (results.size() >= MAX_RESULTS) break;
             if (name.toLowerCase().contains(lowerQuery)) {
                 results.add(new SearchResult(name, name, 1, SearchResult.MatchType.CLASS_NAME));
             }
-            if (results.size() >= MAX_RESULTS) break;
         }
 
         // 再搜索 sourceCache 中的路径
         if (results.size() < MAX_RESULTS) {
             for (String path : sourceCache.keySet()) {
+                if (results.size() >= MAX_RESULTS) break;
                 if (path.toLowerCase().contains(lowerQuery)) {
                     results.add(new SearchResult(path, path, 1, SearchResult.MatchType.CLASS_NAME));
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;
@@ -66,19 +66,19 @@ public class ClassSearchProvider implements SearchProvider {
 
         // 先搜索显式传入的类名列表
         for (String name : classNames) {
+            if (results.size() >= MAX_RESULTS) break;
             if (lineMatches(name, query, options)) {
                 results.add(new SearchResult(name, name, 1, SearchResult.MatchType.CLASS_NAME));
             }
-            if (results.size() >= MAX_RESULTS) break;
         }
 
         // 再搜索 sourceCache 中的路径
         if (results.size() < MAX_RESULTS) {
             for (String path : sourceCache.keySet()) {
+                if (results.size() >= MAX_RESULTS) break;
                 if (lineMatches(path, query, options)) {
                     results.add(new SearchResult(path, path, 1, SearchResult.MatchType.CLASS_NAME));
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;

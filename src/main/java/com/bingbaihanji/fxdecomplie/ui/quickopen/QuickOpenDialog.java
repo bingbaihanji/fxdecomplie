@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.quickopen;
 
+import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
@@ -40,11 +41,11 @@ public final class QuickOpenDialog {
         Stage dialog = new Stage();
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
-        dialog.setTitle("快速打开类");
+        dialog.setTitle(I18nUtil.getString("quickopen.title"));
         setDialogIcon(dialog);
 
         TextField input = new TextField();
-        input.setPromptText("输入类名...");
+        input.setPromptText(I18nUtil.getString("quickopen.prompt"));
         input.setStyle("-fx-font-size: 15px; -fx-padding: 10px; -fx-background-color: #3c3c3c; -fx-text-fill: #cccccc;");
 
         ListView<String> listView = new ListView<>();

@@ -30,7 +30,12 @@ public final class CodeLinkHandler {
                                Consumer<CodeMetadata.Reference> onNavigate) {
         codeArea.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.isControlDown()) {
-                int line = codeArea.getCaretPosition().index();
+                int caretIdx = codeArea.getCaretPosition().index();
+                String text = codeArea.getText();
+                int line = 1;
+                for (int i = 0; i < caretIdx && i < text.length(); i++) {
+                    if (text.charAt(i) == '\n') line++;
+                }
                 var refs = metadata.getRefsAtLine(line);
                 if (!refs.isEmpty()) {
                     onNavigate.accept(refs.get(0));

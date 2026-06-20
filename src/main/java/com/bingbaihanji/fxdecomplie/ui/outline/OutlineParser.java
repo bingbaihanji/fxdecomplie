@@ -18,15 +18,18 @@ import java.util.regex.Pattern;
 public final class OutlineParser {
 
     private static final Pattern METHOD_PATTERN = Pattern.compile(
-            "^\\s*(public|protected|private|static|final|synchronized|abstract|native|\\s)*"
+            "^\\s*((?:public|protected|private|static|final|synchronized|abstract|native|\\s)*)"
                     + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
 
     private static final Pattern FIELD_PATTERN = Pattern.compile(
-            "^\\s*(public|protected|private|static|final|volatile|transient|\\s)*"
+            "^\\s*((?:public|protected|private|static|final|volatile|transient|\\s)*)"
                     + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*(?:=\\s*[^;]+)?;");
 
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
-            "^\\s*(public|protected|private|static|\\s)*\\b(class|interface|enum|record)\\s+(\\w+)");
+            "^\\s*((?:public|protected|private|static|\\s)*)\\b(class|interface|enum|record)\\s+(\\w+)");
+
+    private static final Pattern CLASS_REF_PATTERN = Pattern.compile(
+            "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+(?:\\.[A-Z][a-zA-Z0-9_]*)*)\\b");
 
     private OutlineParser() {
         throw new AssertionError("utility class");
@@ -83,10 +86,6 @@ public final class OutlineParser {
 
         String[] lines = sourceCode.split("\n");
 
-        // Pattern: matches fully qualified class names (com.example.Something) used as types
-        Pattern classRefPat = Pattern.compile(
-                "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+(?:\\.[A-Z][a-zA-Z0-9_]*)*)\\b");
-
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             int lineNum = i + 1;
@@ -98,7 +97,7 @@ public final class OutlineParser {
                 continue;
             }
 
-            Matcher m = classRefPat.matcher(line);
+            Matcher m = CLASS_REF_PATTERN.matcher(line);
             while (m.find()) {
                 String match = m.group(1);
                 // Only consider it a class reference if it looks like a package path

@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 /**
  * Central controller of the FxDecompiler application window.
@@ -202,7 +203,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
         try {
             DecompilerProject project = ProjectFileManager.load(file.toPath());
-            currentEngine = DecompilerTypeEnum.valueOf(project.engine());
+            currentEngine = parseEngine(project.engine(), currentEngine);
             config.decompiler().defaultEngine(currentEngine);
             if (!project.exportPath().isBlank()) {
                 config.export().lastPath(project.exportPath());
@@ -315,14 +316,31 @@ public class MainWindow implements MainMenuBar.Actions {
             showWarning(I18nUtil.getString("dialog.export.title"), I18nUtil.getString("dialog.export.noworkspace"));
             return;
         }
-        doExport(view.workspace().getTreeRoot(), view.workspace().getOrBuildIndex());
+        withWorkspaceIndex(view.workspace(),
+                index -> doExport(view.workspace().getTreeRoot(), index));
     }
 
     private void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
         if (rootItem == null || rootItem.getValue() == null) {
             return;
         }
-        doExport(rootItem, WorkspaceIndex.build(rootItem));
+        statusBar.setTask(I18nUtil.getString("task.indexing"));
+        statusBar.setFilePath(I18nUtil.getString("status.indexing", rootItem.getValue().getName()));
+        BackgroundTasks.run("Index-ExportNode", () -> {
+            try {
+                WorkspaceIndex index = WorkspaceIndex.build(rootItem);
+                Platform.runLater(() -> {
+                    statusBar.clearTask();
+                    doExport(rootItem, index);
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> {
+                    statusBar.clearTask();
+                    showError(I18nUtil.getString("dialog.error.title"),
+                            I18nUtil.getString("dialog.index.failed", ex.getMessage()));
+                });
+            }
+        });
     }
 
     private void doExport(javafx.scene.control.TreeItem<FileTreeNode> rootItem,
@@ -509,7 +527,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
 
         String fullPath = currentTab.getOpenFile().fullPath();
-        FileTreeNode node = classTabOpener.findNodeByPath(view.workspace().getTreeRoot(), fullPath);
+        FileTreeNode node = view.workspace().findNodeByPath(fullPath);
         if (node == null) {
             statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
             return;
@@ -518,7 +536,7 @@ public class MainWindow implements MainMenuBar.Actions {
         statusBar.setFilePath(I18nUtil.getString("status.compareAllEngines", node.getFullPath()));
         for (DecompilerTypeEnum engine : DecompilerTypeEnum.values()) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
-                    engine, lineNumbersEnabled);
+                    engine, lineNumbersEnabled, false, false);
         }
     }
 
@@ -535,8 +553,10 @@ public class MainWindow implements MainMenuBar.Actions {
                     I18nUtil.getString("dialog.needOpenFile"));
             return;
         }
-        var index = view.workspace().getOrBuildIndex();
+        withWorkspaceIndex(view.workspace(), index -> openSearchWithIndex(view, index, initialQuery));
+    }
 
+    private void openSearchWithIndex(WorkspaceView view, WorkspaceIndex index, String initialQuery) {
         // Build source cache from open tabs
         java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
         for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
@@ -555,7 +575,7 @@ public class MainWindow implements MainMenuBar.Actions {
         searchService.addProvider(new CodeSearchProvider());
         searchService.addProvider(new CommentSearchProvider());
         searchService.addProvider(new ResourceSearchProvider(index.resourceBytesByPath()));
-        searchService.addProvider(new BytecodeSearchProvider(index.bytecodeTextByPath()));
+        searchService.addProvider(new BytecodeSearchProvider(index));
 
         SearchDialog.show(stage, searchService, sourceCache,
                 () -> buildFullSourceCache(view, sourceCache),
@@ -572,8 +592,9 @@ public class MainWindow implements MainMenuBar.Actions {
             showWarning(I18nUtil.getString("usage.title"), I18nUtil.getString("dialog.export.noworkspace"));
             return;
         }
-        FindUsageDialog.show(stage, view.workspace().getOrBuildIndex(),
-                (fullPath, lineNumber) -> openClassByPath(view, fullPath, lineNumber));
+        withWorkspaceIndex(view.workspace(), index ->
+                FindUsageDialog.show(stage, index,
+                        (fullPath, lineNumber) -> openClassByPath(view, fullPath, lineNumber)));
     }
 
     /** 快速打开类 */
@@ -588,7 +609,7 @@ public class MainWindow implements MainMenuBar.Actions {
         java.util.List<String> classNames = new java.util.ArrayList<>();
         collectClassNames(view.workspace().getTreeRoot(), classNames);
         QuickOpenDialog.show(stage, classNames, fullPath -> {
-            FileTreeNode node = classTabOpener.findNodeByPath(view.workspace().getTreeRoot(), fullPath);
+            FileTreeNode node = view.workspace().findNodeByPath(fullPath);
             if (node != null) {
                 classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
                         currentEngine, lineNumbersEnabled);
@@ -638,7 +659,7 @@ public class MainWindow implements MainMenuBar.Actions {
     public void about() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.initOwner(stage);
-        alert.setTitle("关于 FxDecompiler");
+        alert.setTitle(I18nUtil.getString("about.title"));
         alert.setHeaderText("FxDecompiler");
         alert.setOnShown(e -> {
             var win = alert.getDialogPane().getScene().getWindow();
@@ -654,12 +675,12 @@ public class MainWindow implements MainMenuBar.Actions {
         });
 
         javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(8,
-                new javafx.scene.control.Label("基于 JavaFX 的 Java 反编译工具。"),
-                new javafx.scene.control.Label("支持 Procyon / CFR / Vineflower / JD-Core 四种引擎。"),
+                new javafx.scene.control.Label(I18nUtil.getString("about.description")),
+                new javafx.scene.control.Label(I18nUtil.getString("about.engines")),
                 new javafx.scene.control.Label(""),
-                new javafx.scene.control.Label("开发者: 冰白寒祭"),
-                new javafx.scene.control.Label("开发日期: 2026-06-18"),
-                new javafx.scene.control.Label("网站: "),
+                new javafx.scene.control.Label(I18nUtil.getString("about.developer")),
+                new javafx.scene.control.Label(I18nUtil.getString("about.date")),
+                new javafx.scene.control.Label(I18nUtil.getString("about.website")),
                 link);
         alert.getDialogPane().setContent(content);
         alert.showAndWait();
@@ -721,7 +742,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
     // helpers
     private void openClassByPath(WorkspaceView view, String fullPath, int lineNumber) {
-        FileTreeNode node = classTabOpener.findNodeByPath(view.workspace().getTreeRoot(), fullPath);
+        FileTreeNode node = view.workspace().findNodeByPath(fullPath);
         if (node != null) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
                     currentEngine, lineNumbersEnabled);
@@ -770,7 +791,7 @@ public class MainWindow implements MainMenuBar.Actions {
                                                      Map<String, String> openTabSourceCache) {
         Map<String, String> fullSourceCache = new LinkedHashMap<>(openTabSourceCache);
         var decompiler = DecompilerFactory.getDecompiler(currentEngine);
-        var index = view.workspace().getOrBuildIndex();
+        var index = awaitWorkspaceIndex(view.workspace());
         var context = com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext
                 .fromWorkspaceIndex(index, ExportService.engineOptions(config, currentEngine));
         for (var cls : index.classes()) {
@@ -867,6 +888,51 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
+    private void withWorkspaceIndex(Workspace workspace, Consumer<WorkspaceIndex> onReady) {
+        if (workspace == null || onReady == null) {
+            return;
+        }
+        if (workspace.isIndexReady()) {
+            onReady.accept(workspace.getIndex());
+            return;
+        }
+        WorkspaceIndexService.ensureIndexingStarted(workspace);
+        statusBar.setTask(I18nUtil.getString("task.indexing"));
+        statusBar.setFilePath(I18nUtil.getString("status.indexing", workspace.getName()));
+        workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
+            statusBar.clearTask();
+            if (error != null) {
+                showError(I18nUtil.getString("dialog.error.title"),
+                        I18nUtil.getString("dialog.index.failed", error.getMessage()));
+                return;
+            }
+            onReady.accept(index);
+        }));
+    }
+
+    private WorkspaceIndex awaitWorkspaceIndex(Workspace workspace) {
+        if (workspace == null) {
+            return WorkspaceIndex.EMPTY;
+        }
+        if (workspace.isIndexReady()) {
+            return workspace.getIndex();
+        }
+        WorkspaceIndexService.ensureIndexingStarted(workspace);
+        try {
+            return workspace.getIndexFuture().get();
+        } catch (Exception e) {
+            return WorkspaceIndex.EMPTY;
+        }
+    }
+
+    private static DecompilerTypeEnum parseEngine(String value, DecompilerTypeEnum fallback) {
+        try {
+            return DecompilerTypeEnum.valueOf(value);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return fallback == null ? DecompilerTypeEnum.VINEFLOWER : fallback;
+        }
+    }
+
     private void showInfo(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(stage, title, message);
     }
@@ -875,14 +941,15 @@ public class MainWindow implements MainMenuBar.Actions {
         if (workspace == null || node == null || !node.isClassFile()) {
             return;
         }
-        FindUsageDialog.show(stage, workspace.getOrBuildIndex(),
-                (fullPath, lineNumber) -> {
-                    WorkspaceView view = tabManager.currentWorkspaceView();
-                    if (view != null) {
-                        openClassByPath(view, fullPath, lineNumber);
-                    }
-                },
-                node.getFullPath().replace(".class", ""));
+        withWorkspaceIndex(workspace, index ->
+                FindUsageDialog.show(stage, index,
+                        (fullPath, lineNumber) -> {
+                            WorkspaceView view = tabManager.currentWorkspaceView();
+                            if (view != null) {
+                                openClassByPath(view, fullPath, lineNumber);
+                            }
+                        },
+                        node.getFullPath().replace(".class", "")));
     }
 
     private void openSearchForPackage(FileTreeNode node) {

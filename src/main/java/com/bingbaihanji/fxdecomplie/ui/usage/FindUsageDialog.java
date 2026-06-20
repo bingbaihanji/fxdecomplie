@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Dialog for ASM-backed class/member usage search.
@@ -75,6 +77,8 @@ public final class FindUsageDialog {
         Label status = new Label("");
         status.setStyle("-fx-text-fill: #858585;");
 
+        AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
+
         Runnable runSearch = () -> {
             String query = input.getText();
             if (query == null || query.isBlank()) {
@@ -83,13 +87,15 @@ public final class FindUsageDialog {
                 return;
             }
             status.setText(I18nUtil.getString("usage.searching"));
-            BackgroundTasks.run("FindUsages", () -> {
+            BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+            Future<?> task = BackgroundTasks.run("FindUsages", () -> {
                 List<UsageResult> results = UsageSearchService.findUsages(index, query);
                 Platform.runLater(() -> {
                     resultTree.setRoot(buildTree(results));
                     status.setText(I18nUtil.getString("usage.resultCount", results.size()));
                 });
             });
+            currentSearchTask.set(task);
         };
         searchButton.setOnAction(event -> runSearch.run());
         input.setOnAction(event -> runSearch.run());
@@ -118,6 +124,7 @@ public final class FindUsageDialog {
         scene.getStylesheets().add(
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
+        dialog.setOnHidden(event -> BackgroundTasks.cancel(currentSearchTask.get()));
         dialog.show();
         com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
         input.requestFocus();

@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeCell;
@@ -26,7 +27,7 @@ public final class InheritancePane extends VBox {
         setSpacing(4);
         setStyle("-fx-background-color: #252526;");
 
-        Label title = new Label("类继承层次");
+        Label title = new Label(I18nUtil.getString("inheritance.title"));
         title.setStyle("-fx-text-fill: #cccccc; -fx-font-weight: bold; -fx-padding: 2px 4px;");
 
         treeView = new TreeView<>();
@@ -76,8 +77,26 @@ public final class InheritancePane extends VBox {
             treeView.setRoot(root);
             root.setExpanded(true);
         } else {
-            treeView.setRoot(new TreeItem<>(new InheritanceNode("", "无法加载", InheritanceNode.RelationType.SELF, 0)));
+            showUnavailable();
         }
+    }
+
+    public void showIndexing() {
+        treeView.setRoot(new TreeItem<>(new InheritanceNode("",
+                I18nUtil.getString("inheritance.indexing"),
+                InheritanceNode.RelationType.SELF, 0)));
+    }
+
+    public void showUnavailable() {
+        treeView.setRoot(new TreeItem<>(new InheritanceNode("",
+                I18nUtil.getString("inheritance.unavailable"),
+                InheritanceNode.RelationType.SELF, 0)));
+    }
+
+    public void showIndexPending() {
+        treeView.setRoot(new TreeItem<>(new InheritanceNode("",
+                I18nUtil.getString("inheritance.indexPending"),
+                InheritanceNode.RelationType.SELF, 0)));
     }
 
     public void clear() {

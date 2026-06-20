@@ -46,7 +46,7 @@ public class ProcyonDecompiler implements Decompiler {
     /** {@inheritDoc} */
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
-        String internalName = normalizeInternalName(classFilePath);
+        String internalName = DecompilerContext.normalizeInternalName(classFilePath);
         return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
@@ -59,14 +59,14 @@ public class ProcyonDecompiler implements Decompiler {
     @Override
     public String decompile(String classFilePath, byte[] classBytes,
                             DecompilerContext context) {
-        String internalName = normalizeInternalName(classFilePath);
+        String internalName = DecompilerContext.normalizeInternalName(classFilePath);
         return decompileType(internalName, classBytes, context);
     }
 
     @Override
     public String decompileType(String typeName, byte[] classBytes,
                                 DecompilerContext context) {
-        String internalName = normalizeInternalName(typeName);
+        String internalName = DecompilerContext.normalizeInternalName(typeName);
         DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
         DecompilerSettings localSettings = DecompilerSettings.javaDefaults();
         localSettings.setTypeLoader(new CachedTypeLoader(internalName, classBytes, effectiveContext));
@@ -104,18 +104,6 @@ public class ProcyonDecompiler implements Decompiler {
         return DecompilerTypeEnum.PROCYON;
     }
 
-    /**
-     * 规范化内部名称（反斜杠转正斜杠，去掉 .class 后缀）。
-     * @param name 原始名称
-     * @return 规范化后的内部名称
-     */
-    private String normalizeInternalName(String name) {
-        String normalized = name.replace('\\', '/');
-        return normalized.endsWith(".class")
-                ? normalized.substring(0, normalized.length() - 6)
-                : normalized;
-    }
-
     /** Procyon 类型加载器，优先从缓存获取字节码 */
     private static class CachedTypeLoader implements ITypeLoader {
         /** 目标类型名 */
@@ -141,7 +129,7 @@ public class ProcyonDecompiler implements Decompiler {
                 bytes = targetBytes;
             }
             if (bytes == null) {
-                bytes = context.resolveClassBytes(normalized.replace(".class", ""));
+                bytes = context.resolveClassBytes(DecompilerContext.normalizeInternalName(normalized));
             }
             if (bytes == null) {
                 return false;

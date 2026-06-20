@@ -25,6 +25,10 @@ import java.util.Locale;
  */
 public final class FxDecompilerApp {
 
+    static {
+        System.setProperty("fxdecomplie.appDir", resolveAppDirForLogging().toString());
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(FxDecompilerApp.class);
 
     /** JavaFX 预览属性名 */
@@ -36,6 +40,19 @@ public final class FxDecompilerApp {
             AppConfig.appDir().resolve("logs").resolve("startup-error.log");
 
     private FxDecompilerApp() {
+    }
+
+    private static Path resolveAppDirForLogging() {
+        try {
+            var codeSource = FxDecompilerApp.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null && codeSource.getLocation() != null) {
+                Path jarPath = Path.of(codeSource.getLocation().toURI());
+                Path parent = jarPath.getParent();
+                if (parent != null) return parent;
+            }
+        } catch (Exception ignored) {
+        }
+        return Path.of(System.getProperty("user.dir"));
     }
 
     public static void main(String[] args) {
@@ -73,9 +90,6 @@ public final class FxDecompilerApp {
 
     public static final class FxApplication extends Application {
 
-        private static final Stage primaryStage = new Stage();
-
-
         /** 为主窗口应用平台原生窗口外观（DWM 暗色主题、阴影、圆角等） */
         public void initWindows(Stage primaryStage) {
             FxTools.applyWindowDarkMode(primaryStage);
@@ -87,7 +101,6 @@ public final class FxDecompilerApp {
         @Override
         public void start(Stage stage) {
             try {
-                stage = primaryStage;
                 startApplication(stage);
                 initWindows(stage);
             } catch (Throwable ex) {
@@ -109,7 +122,12 @@ public final class FxDecompilerApp {
 
             setAppIcon(stage);
 
-            stage.initStyle(StageStyle.EXTENDED);
+            try {
+                stage.initStyle(StageStyle.EXTENDED);
+            } catch (Exception e) {
+                logger.warn("EXTENDED stage style not supported, falling back to DECORATED", e);
+                stage.initStyle(StageStyle.DECORATED);
+            }
 
             stage.setX(config.window().x());
             stage.setY(config.window().y());

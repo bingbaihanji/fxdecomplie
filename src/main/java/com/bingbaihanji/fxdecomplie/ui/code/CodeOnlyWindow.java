@@ -23,6 +23,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -43,6 +45,8 @@ public final class CodeOnlyWindow {
     private static final Map<String, CodeTabPayload> DRAG_PAYLOADS =
             new ConcurrentHashMap<>();
     private static final Map<String, TabPane> DRAG_SOURCES =
+            new ConcurrentHashMap<>();
+    private static final Map<String, CodeEditorTab> DRAG_SOURCE_TABS =
             new ConcurrentHashMap<>();
 
     private final AppConfig config;
@@ -90,17 +94,19 @@ public final class CodeOnlyWindow {
         tabPane.addEventFilter(DragEvent.DRAG_OVER, event -> {
             TabPane sourcePane = resolveSourcePane(event.getDragboard(), false);
             if (sourcePane != tabPane && hasPayload(event.getDragboard())) {
-                event.acceptTransferModes(TransferMode.COPY);
+                event.acceptTransferModes(TransferMode.MOVE);
                 event.consume();
             }
         });
         tabPane.addEventFilter(DragEvent.DRAG_DROPPED, event -> {
-            TabPane sourcePane = resolveSourcePane(event.getDragboard(), true);
-            CodeTabPayload payload = resolvePayload(event.getDragboard(), true);
+            String token = getDragToken(event.getDragboard());
+            TabPane sourcePane = resolveSourcePane(token, true);
+            CodeEditorTab sourceTab = resolveSourceTab(token, true);
+            CodeTabPayload payload = resolvePayload(token, true);
             if (payload != null && sourcePane != tabPane) {
                 CodeEditorTab newTab = createTab(payload, config, editorTheme);
                 if (sourcePane != null) {
-                    removeMatchingTab(sourcePane, payload);
+                    removeSourceTab(sourcePane, sourceTab, payload);
                 }
                 addTab(newTab);
                 event.setDropCompleted(true);
@@ -155,9 +161,10 @@ public final class CodeOnlyWindow {
     }
 
     private static void startCodeTabDrag(Node source, CodeEditorTab tab) {
-        var dragboard = source.startDragAndDrop(TransferMode.COPY);
+        var dragboard = source.startDragAndDrop(TransferMode.MOVE);
         String token = UUID.randomUUID().toString();
         DRAG_PAYLOADS.put(token, toPayload(tab));
+        DRAG_SOURCE_TABS.put(token, tab);
         TabPane sourcePane = tab.getTabPane();
         if (sourcePane != null) {
             DRAG_SOURCES.put(token, sourcePane);
@@ -167,6 +174,8 @@ public final class CodeOnlyWindow {
         content.put(CODE_TAB_FORMAT, token);
         content.putString(TOKEN_PREFIX + token);
         dragboard.setContent(content);
+        DragCleanupHandler cleanup = new DragCleanupHandler(source, token);
+        source.addEventHandler(DragEvent.DRAG_DONE, cleanup);
     }
 
     // ==================== Drag Target (shared, usable by any TabPane) ====================
@@ -180,17 +189,19 @@ public final class CodeOnlyWindow {
         tabPane.addEventFilter(DragEvent.DRAG_OVER, event -> {
             TabPane sourcePane = resolveSourcePane(event.getDragboard(), false);
             if (sourcePane != tabPane && hasPayload(event.getDragboard())) {
-                event.acceptTransferModes(TransferMode.COPY);
+                event.acceptTransferModes(TransferMode.MOVE);
                 event.consume();
             }
         });
         tabPane.addEventFilter(DragEvent.DRAG_DROPPED, event -> {
-            TabPane sourcePane = resolveSourcePane(event.getDragboard(), true);
-            CodeTabPayload payload = resolvePayload(event.getDragboard(), true);
+            String token = getDragToken(event.getDragboard());
+            TabPane sourcePane = resolveSourcePane(token, true);
+            CodeEditorTab sourceTab = resolveSourceTab(token, true);
+            CodeTabPayload payload = resolvePayload(token, true);
             if (payload != null && sourcePane != tabPane) {
                 CodeEditorTab newTab = createTab(payload, config, editorTheme);
                 if (sourcePane != null) {
-                    removeMatchingTab(sourcePane, payload);
+                    removeSourceTab(sourcePane, sourceTab, payload);
                 }
                 tabPane.getTabs().add(newTab);
                 tabPane.getSelectionModel().select(newTab);
@@ -241,6 +252,11 @@ public final class CodeOnlyWindow {
         return null;
     }
 
+    private static CodeTabPayload resolvePayload(String token, boolean remove) {
+        if (token == null) return null;
+        return remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
+    }
+
     private static CodeTabPayload resolvePayload(Object content, boolean remove) {
         if (content instanceof CodeTabPayload payload) {
             return payload;
@@ -265,19 +281,41 @@ public final class CodeOnlyWindow {
 
     private static TabPane resolveSourcePane(Dragboard dragboard, boolean remove) {
         String token = getDragToken(dragboard);
+        return resolveSourcePane(token, remove);
+    }
+
+    private static TabPane resolveSourcePane(String token, boolean remove) {
         if (token == null) return null;
         return remove ? DRAG_SOURCES.remove(token) : DRAG_SOURCES.get(token);
     }
 
-    private static void removeMatchingTab(TabPane pane, CodeTabPayload payload) {
+    private static CodeEditorTab resolveSourceTab(String token, boolean remove) {
+        if (token == null) return null;
+        return remove ? DRAG_SOURCE_TABS.remove(token) : DRAG_SOURCE_TABS.get(token);
+    }
+
+    private static void removeSourceTab(TabPane pane, CodeEditorTab sourceTab,
+                                        CodeTabPayload payload) {
         if (pane == null || payload == null) return;
-        Platform.runLater(() -> pane.getTabs().removeIf(tab -> {
-            if (tab instanceof CodeEditorTab codeTab) {
-                return Objects.equals(codeTab.getOpenFile().fullPath(), payload.fullPath())
-                        && codeTab.getOpenFile().engine() == payload.engine();
+        Platform.runLater(() -> {
+            if (sourceTab != null && pane.getTabs().remove(sourceTab)) {
+                return;
             }
-            return false;
-        }));
+            removeMatchingTabNow(pane, payload);
+        });
+    }
+
+    private static void removeMatchingTabNow(TabPane pane, CodeTabPayload payload) {
+        if (pane == null || payload == null) return;
+        List<Tab> toRemove = new ArrayList<>();
+        for (Tab tab : pane.getTabs()) {
+            if (tab instanceof CodeEditorTab codeTab
+                    && Objects.equals(codeTab.getOpenFile().fullPath(), payload.fullPath())
+                    && codeTab.getOpenFile().engine() == payload.engine()) {
+                toRemove.add(tab);
+            }
+        }
+        pane.getTabs().removeAll(toRemove);
     }
 
     private static void trimDragPayloads() {
@@ -287,9 +325,15 @@ public final class CodeOnlyWindow {
                 return;
             }
             String key = iterator.next();
-            DRAG_PAYLOADS.remove(key);
-            DRAG_SOURCES.remove(key);
+            cleanupDragToken(key);
         }
+    }
+
+    private static void cleanupDragToken(String token) {
+        if (token == null) return;
+        DRAG_PAYLOADS.remove(token);
+        DRAG_SOURCES.remove(token);
+        DRAG_SOURCE_TABS.remove(token);
     }
 
     // ==================== Tab creation ====================
@@ -334,5 +378,23 @@ public final class CodeOnlyWindow {
             com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum engine,
             byte[] classBytes
     ) implements java.io.Serializable {
+    }
+
+    private static final class DragCleanupHandler
+            implements javafx.event.EventHandler<DragEvent> {
+
+        private final Node source;
+        private final String token;
+
+        private DragCleanupHandler(Node source, String token) {
+            this.source = source;
+            this.token = token;
+        }
+
+        @Override
+        public void handle(DragEvent event) {
+            cleanupDragToken(token);
+            source.removeEventHandler(DragEvent.DRAG_DONE, this);
+        }
     }
 }

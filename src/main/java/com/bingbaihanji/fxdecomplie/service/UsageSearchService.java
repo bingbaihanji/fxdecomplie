@@ -6,6 +6,8 @@ import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import org.objectweb.asm.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -16,6 +18,8 @@ import java.util.*;
  * @date 2026-06-18
  */
 public final class UsageSearchService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UsageSearchService.class);
 
     private UsageSearchService() {
         throw new AssertionError("utility class");
@@ -39,9 +43,13 @@ public final class UsageSearchService {
 
     private static void scanClass(ClassIndexEntry cls, Target target,
                                   List<UsageResult> results, Set<String> seen) {
-        addClassHeaderUsages(cls, target, results, seen);
+        byte[] bytes = cls.bytes();
+        if (bytes == null) {
+            return;
+        }
+        addClassHeaderUsages(cls, target, results, seen, bytes);
         try {
-            ClassReader reader = new ClassReader(cls.bytes());
+            ClassReader reader = new ClassReader(bytes);
             reader.accept(new ClassVisitor(Opcodes.ASM9) {
                 @Override
                 public void visit(int version, int access, String name, String signature,
@@ -142,15 +150,15 @@ public final class UsageSearchService {
                     };
                 }
             }, ClassReader.SKIP_FRAMES);
-        } catch (Exception ignored) {
-            // Method-body usage scanning depends on ASM. If ASM does not support a
-            // newer class version yet, header references above still remain searchable.
+        } catch (Exception e) {
+            logger.debug("Failed to scan class body with ASM: {}", cls.fullPath(), e);
         }
     }
 
     private static void addClassHeaderUsages(ClassIndexEntry cls, Target target,
-                                             List<UsageResult> results, Set<String> seen) {
-        ClassFileParser.tryParse(cls.bytes()).ifPresent(metadata -> {
+                                             List<UsageResult> results, Set<String> seen,
+                                             byte[] bytes) {
+        ClassFileParser.tryParse(bytes).ifPresent(metadata -> {
             if (matchesClass(target, metadata.superName())) {
                 add(results, seen, cls.fullPath(), 1,
                         UsageResult.UsageType.CLASS_REFERENCE,

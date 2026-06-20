@@ -23,6 +23,13 @@ class I18nUtilTest {
     }
 
     @Test
+    void languageOnlyFallbackLoadsForRegionalEnglishLocale() {
+        ResourceBundle bundle = I18nUtil.createBundleFor(Locale.US);
+        assertNotNull(bundle);
+        assertEquals("File", bundle.getString("menu.file"));
+    }
+
+    @Test
     void createBundleForUnsupportedLocaleFallsBack() {
         // Norwegian — should fall back to default or throw
         try {

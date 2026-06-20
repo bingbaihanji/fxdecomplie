@@ -138,7 +138,6 @@ public class RegexHighlighter implements SyntaxDecorator {
             if (styles.containsKey(scope)) return styles.get(scope);
             for (var entry : styles.entrySet()) {
                 String key = entry.getKey();
-                if (key.equals(scope)) return entry.getValue();
                 if (key.startsWith(scope + ".")) return entry.getValue();
             }
         }

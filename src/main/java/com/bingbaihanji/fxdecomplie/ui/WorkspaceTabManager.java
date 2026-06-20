@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
+import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
@@ -13,6 +14,7 @@ import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -442,7 +444,37 @@ public final class WorkspaceTabManager {
         codeTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab instanceof CodeEditorTab codeTab) {
                 outlinePane.update(codeTab.getOpenFile().sourceCode());
-                inheritancePane.load(codeTab.getOpenFile().fullPath(), workspace.getIndex());
+                String selectedPath = codeTab.getOpenFile().fullPath();
+                if (workspace.isIndexReady()) {
+                    inheritancePane.load(selectedPath, workspace.getIndex());
+                } else if (workspace.isIndexBuildStarted()) {
+                    inheritancePane.showIndexing();
+                    workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
+                        if (error != null) {
+                            inheritancePane.showUnavailable();
+                            return;
+                        }
+                        Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
+                        if (selected instanceof CodeEditorTab selectedCodeTab
+                                && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
+                            inheritancePane.load(selectedPath, index);
+                        }
+                    }));
+                } else {
+                    WorkspaceIndexService.ensureIndexingStarted(workspace);
+                    inheritancePane.showIndexing();
+                    workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
+                        if (error != null) {
+                            inheritancePane.showUnavailable();
+                            return;
+                        }
+                        Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
+                        if (selected instanceof CodeEditorTab selectedCodeTab
+                                && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
+                            inheritancePane.load(selectedPath, index);
+                        }
+                    }));
+                }
             } else {
                 outlinePane.clear();
                 inheritancePane.clear();
@@ -454,8 +486,8 @@ public final class WorkspaceTabManager {
             CodeEditorTab codeTab = getCurrentCodeTab(codeTabPane);
             if (codeTab != null) {
                 var area = codeTab.getCodeArea();
-                area.moveDocumentStart();
-                for (int i = 1; i < line; i++) area.moveParagraphDown();
+                area.select(jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0),
+                            jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0));
                 area.requestFocus();
             }
         });

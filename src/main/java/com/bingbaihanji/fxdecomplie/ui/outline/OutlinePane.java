@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.outline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -33,11 +34,11 @@ public final class OutlinePane extends VBox {
         setSpacing(4);
         setStyle("-fx-background-color: #252526;");
 
-        Label title = new Label("大纲");
+        Label title = new Label(I18nUtil.getString("outline.title"));
         title.setStyle("-fx-text-fill: #cccccc; -fx-font-weight: bold; -fx-padding: 2px 4px;");
 
         filterField = new TextField();
-        filterField.setPromptText("过滤成员...");
+        filterField.setPromptText(I18nUtil.getString("outline.filter"));
         filterField.setStyle("-fx-background-color: #3c3c3c; -fx-text-fill: #cccccc; -fx-font-size: 12px;");
 
         listView = new ListView<>();

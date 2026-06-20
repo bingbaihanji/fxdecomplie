@@ -1,5 +1,7 @@
 package com.bingbaihanji.fxdecomplie.model;
 
+import java.io.IOException;
+
 /**
  * 文件树节点数据模型。表示文件树中的单个节点，可以是包、类文件、Java源文件等。
  *
@@ -14,8 +16,10 @@ public class FileTreeNode {
     private final String fullPath;
     /** 节点类型 */
     private final NodeTypeEnum nodeType;
-    /** 缓存的字节码，仅 class 文件有效 */
-    private byte[] cachedBytes;
+    /** 缓存的文件字节，按需加载后保留，避免重复读取同一打开文件。 */
+    private volatile byte[] cachedBytes;
+    /** 懒加载字节来源，用于 JAR/ZIP/目录条目。 */
+    private volatile ByteLoader byteLoader;
 
     /**
      * 构造文件树节点。
@@ -51,8 +55,44 @@ public class FileTreeNode {
     }
 
     /** @param cachedBytes 缓存的字节码 */
-    public void setCachedBytes(byte[] cachedBytes) {
+    public synchronized void setCachedBytes(byte[] cachedBytes) {
         this.cachedBytes = cachedBytes;
+    }
+
+    /** @param byteLoader 懒加载字节来源 */
+    public void setByteLoader(ByteLoader byteLoader) {
+        this.byteLoader = byteLoader;
+    }
+
+    /** @return 当前节点是否存在可读取的字节来源 */
+    public boolean hasByteSource() {
+        return cachedBytes != null || byteLoader != null;
+    }
+
+    /**
+     * 读取字节但不写入节点缓存。适合索引构建等批处理场景，避免预热阶段占用过多内存。
+     */
+    public byte[] readBytes() throws IOException {
+        if (cachedBytes != null) {
+            return cachedBytes;
+        }
+        return byteLoader == null ? null : byteLoader.load();
+    }
+
+    /**
+     * 读取并缓存字节。适合打开单个文件、导出当前节点等用户显式操作。
+     */
+    public byte[] resolveBytes() throws IOException {
+        byte[] current = cachedBytes;
+        if (current != null) {
+            return current;
+        }
+        synchronized (this) {
+            if (cachedBytes == null && byteLoader != null) {
+                cachedBytes = byteLoader.load();
+            }
+            return cachedBytes;
+        }
     }
 
     /** @return 是否为 class 文件 */
@@ -81,5 +121,10 @@ public class FileTreeNode {
         RESOURCE,
         /** 二进制文件 */
         BINARY
+    }
+
+    @FunctionalInterface
+    public interface ByteLoader {
+        byte[] load() throws IOException;
     }
 }

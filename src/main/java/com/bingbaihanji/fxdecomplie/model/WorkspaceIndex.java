@@ -3,70 +3,75 @@ package com.bingbaihanji.fxdecomplie.model;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import javafx.scene.control.TreeItem;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceClassVisitor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Workspace-wide index built from the file tree.
- *
- * @author bingbaihanji
- * @date 2026-06-18
  */
 public final class WorkspaceIndex {
 
     /** 空占位索引，用于 Workspace 异步索引构建完成前的过渡期 */
     public static final WorkspaceIndex EMPTY = new WorkspaceIndex(
             List.of(), List.of(), Map.of());
+
     private static final Logger logger = LoggerFactory.getLogger(WorkspaceIndex.class);
+
     private final List<ClassIndexEntry> classes;
     private final List<ResourceIndexEntry> resources;
-    private final Map<String, byte[]> classBytesByInternalName;
+    private final Map<String, ClassIndexEntry> classesByInternalName;
 
     private WorkspaceIndex(List<ClassIndexEntry> classes, List<ResourceIndexEntry> resources,
-                           Map<String, byte[]> classBytesByInternalName) {
+                           Map<String, ClassIndexEntry> classesByInternalName) {
         this.classes = List.copyOf(classes);
         this.resources = List.copyOf(resources);
-        this.classBytesByInternalName = Collections.unmodifiableMap(new LinkedHashMap<>(classBytesByInternalName));
+        this.classesByInternalName = Collections.unmodifiableMap(new LinkedHashMap<>(classesByInternalName));
     }
 
     public static WorkspaceIndex build(TreeItem<FileTreeNode> root) {
         List<ClassIndexEntry> classes = new ArrayList<>();
         List<ResourceIndexEntry> resources = new ArrayList<>();
-        Map<String, byte[]> classBytes = new LinkedHashMap<>();
+        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
 
-        // ---- Breadth-first tree walk over file tree ----
         ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
         queue.add(root);
         while (!queue.isEmpty()) {
             TreeItem<FileTreeNode> item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null) {
-                if (node.isClassFile() && node.getCachedBytes() != null) {
-                    // ---- Class scan: index bytecode, extract methods/fields via ASM ----
+                if (node.isClassFile() && node.hasByteSource()) {
                     ClassIndexEntry entry = indexClass(node);
-                    classes.add(entry);
-                    classBytes.put(entry.internalName(), entry.bytes());
-                } else if (node.isTextFile() && node.getCachedBytes() != null) {
-                    // ---- Resource scan: index text resources (XML, JSON, YAML, etc.) ----
-                    resources.add(new ResourceIndexEntry(node.getFullPath(), node.getCachedBytes(), true));
+                    if (entry != null) {
+                        classes.add(entry);
+                        classEntries.put(entry.internalName(), entry);
+                    }
+                } else if (node.isTextFile() && node.hasByteSource()) {
+                    byte[] bytes = readNodeBytes(node);
+                    if (bytes != null) {
+                        resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
+                    }
                 }
             }
             queue.addAll(item.getChildren());
         }
-        return new WorkspaceIndex(classes, resources, classBytes);
+        return new WorkspaceIndex(classes, resources, classEntries);
     }
 
     private static ClassIndexEntry indexClass(FileTreeNode node) {
-        byte[] bytes = node.getCachedBytes();
+        byte[] bytes = readNodeBytes(node);
+        if (bytes == null) {
+            return null;
+        }
+
         String internalName = node.getFullPath().replace(".class", "");
         String simpleName = simpleName(internalName);
         List<MemberIndexEntry> methods = new ArrayList<>();
@@ -87,22 +92,16 @@ public final class WorkspaceIndex {
             logger.warn("Failed to parse class metadata: {}", node.getFullPath());
         }
 
-        return new ClassIndexEntry(node.getFullPath(), internalName, simpleName, bytes,
-                methods, fields, bytecodeText(bytes));
+        return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
+                node::resolveBytes, methods, fields);
     }
 
-    private static String bytecodeText(byte[] bytes) {
+    private static byte[] readNodeBytes(FileTreeNode node) {
         try {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            ClassReader reader = new ClassReader(bytes);
-            Textifier textifier = new Textifier();
-            TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
-            reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            pw.flush();
-            return sw.toString();
-        } catch (Exception e) {
-            return ClassFileParser.summary(bytes);
+            return node.readBytes();
+        } catch (IOException e) {
+            logger.warn("Failed to read indexed file: {}", node.getFullPath(), e);
+            return null;
         }
     }
 
@@ -120,11 +119,19 @@ public final class WorkspaceIndex {
     }
 
     public Map<String, byte[]> classBytesByInternalName() {
-        return classBytesByInternalName;
+        Map<String, byte[]> map = new LinkedHashMap<>();
+        for (ClassIndexEntry cls : classes) {
+            byte[] bytes = cls.bytes();
+            if (bytes != null) {
+                map.put(cls.internalName(), bytes);
+            }
+        }
+        return Collections.unmodifiableMap(map);
     }
 
     public byte[] getClassBytes(String internalName) {
-        return classBytesByInternalName.get(internalName);
+        ClassIndexEntry entry = classesByInternalName.get(internalName);
+        return entry == null ? null : entry.bytes();
     }
 
     public List<String> classPaths() {

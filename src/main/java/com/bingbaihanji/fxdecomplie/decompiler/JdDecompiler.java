@@ -62,10 +62,11 @@ public class JdDecompiler implements Decompiler {
             ClassFileToJavaSourceDecompiler decompiler = new ClassFileToJavaSourceDecompiler();
             decompiler.decompile(loader, printer, typeName);
         } catch (Exception e) {
+            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             if (expectedPackage != null) {
-                return "package " + expectedPackage + ";\n\n// JD-Core Error: " + e.getMessage();
+                return "package " + expectedPackage + ";\n\n// JD-Core Error: " + msg;
             }
-            return "// JD-Core Error: " + e.getMessage();
+            return "// JD-Core Error: " + msg;
         }
 
         String decompiled = result.toString();

@@ -18,8 +18,7 @@ public class CommentSearchProvider implements SearchProvider {
 
     private static boolean isCommentLine(String trimmed) {
         return trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("* ")
-                || trimmed.startsWith("*\t") || trimmed.equals("*") || trimmed.startsWith("*/")
-                || trimmed.contains("/*") || trimmed.contains("*/") || trimmed.startsWith("*");
+                || trimmed.startsWith("*\t") || trimmed.equals("*") || trimmed.startsWith("*/");
     }
 
     @Override
@@ -29,14 +28,14 @@ public class CommentSearchProvider implements SearchProvider {
 
         String lowerQuery = query.toLowerCase();
         for (var entry : sourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             String[] lines = entry.getValue().split("\n");
-            for (int i = 0; i < lines.length; i++) {
+            for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 String trimmed = lines[i].trim();
                 if (isCommentLine(trimmed) && trimmed.toLowerCase().contains(lowerQuery)) {
                     results.add(new SearchResult(entry.getKey(), trimmed, i + 1,
                             SearchResult.MatchType.COMMENT_TEXT));
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;
@@ -52,14 +51,14 @@ public class CommentSearchProvider implements SearchProvider {
         if (query == null || query.isBlank()) return results;
 
         for (var entry : sourceCache.entrySet()) {
+            if (results.size() >= MAX_RESULTS) break;
             String[] lines = entry.getValue().split("\n");
-            for (int i = 0; i < lines.length; i++) {
+            for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 String trimmed = lines[i].trim();
                 if (isCommentLine(trimmed) && lineMatches(trimmed, query, options)) {
                     results.add(new SearchResult(entry.getKey(), trimmed, i + 1,
                             SearchResult.MatchType.COMMENT_TEXT));
                 }
-                if (results.size() >= MAX_RESULTS) break;
             }
         }
         return results;

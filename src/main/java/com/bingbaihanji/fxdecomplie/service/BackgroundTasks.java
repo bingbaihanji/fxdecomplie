@@ -1,5 +1,8 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.*;
 
 /**
@@ -10,11 +13,16 @@ import java.util.concurrent.*;
  */
 public final class BackgroundTasks {
 
+    private static final Logger logger = LoggerFactory.getLogger(BackgroundTasks.class);
+
+    private static final int CORE_POOL_SIZE = Math.max(2,
+            Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
+    private static final int MAX_POOL_SIZE = Math.max(8, CORE_POOL_SIZE);
     private static final int MAX_QUEUE_SIZE = 100;
 
-    /** Daemon thread pool (0-core, 8-max) with bounded queue to avoid task rejection */
-    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(
-            0, 8,
+    /** 保底并发避免索引任务阻塞反编译；有界队列避免无限堆积。 */
+    private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(
+            CORE_POOL_SIZE, MAX_POOL_SIZE,
             60L, TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(MAX_QUEUE_SIZE),
             r -> {
@@ -22,6 +30,10 @@ public final class BackgroundTasks {
                 t.setDaemon(true);
                 return t;
             });
+
+    static {
+        EXECUTOR.allowCoreThreadTimeOut(true);
+    }
 
     private BackgroundTasks() {
         throw new AssertionError("utility class");
@@ -37,8 +49,10 @@ public final class BackgroundTasks {
                 task.run();
             });
         } catch (RejectedExecutionException e) {
-            task.run();
-            return CompletableFuture.completedFuture(null);
+            logger.warn("Background task rejected: {}", name, e);
+            CompletableFuture<Void> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
         }
     }
 

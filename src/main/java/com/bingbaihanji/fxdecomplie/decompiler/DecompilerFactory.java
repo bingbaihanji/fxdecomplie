@@ -34,7 +34,6 @@ public final class DecompilerFactory {
                 case CFR -> new CfrDecompiler();
                 case VINEFLOWER -> new VineflowerDecompiler();
                 case JD -> new JdDecompiler();
-                default -> throw new IllegalStateException("Unknown engine: " + t);
             };
             engine.initialize();
             return engine;

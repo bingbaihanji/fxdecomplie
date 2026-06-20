@@ -160,9 +160,14 @@ public final class SearchDialog {
                     return;
                 }
                 String selectedType = searchTypeCombo.getValue();
+                boolean includeFullSource = fullSourceSearch.isSelected();
+                SearchOptions options = new SearchOptions(
+                        regexToggle.isSelected(),
+                        caseToggle.isSelected(),
+                        wordToggle.isSelected());
                 Future<?> task = BackgroundTasks.run("search-worker", () -> {
                     Map<String, String> effectiveSourceCache = sourceCache;
-                    if (fullSourceSearch.isSelected() && fullSourceLoader != null) {
+                    if (includeFullSource && fullSourceLoader != null) {
                         Platform.runLater(() -> statusLabel.setText(
                                 I18nUtil.getString("search.preparingFullSource")));
                         effectiveSourceCache = fullSourceLoader.load();
@@ -170,10 +175,6 @@ public final class SearchDialog {
                             return;
                         }
                     }
-                    SearchOptions options = new SearchOptions(
-                            regexToggle.isSelected(),
-                            caseToggle.isSelected(),
-                            wordToggle.isSelected());
                     List<SearchResult> all = searchService.searchAll(
                             text, effectiveSourceCache, options, resultLimit);
                     if (Thread.currentThread().isInterrupted()) {
@@ -237,6 +238,10 @@ public final class SearchDialog {
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
         dialog.setOnCloseRequest(event -> BackgroundTasks.cancel(currentSearchTask.get()));
+        dialog.setOnHidden(event -> {
+            debounce.stop();
+            BackgroundTasks.cancel(currentSearchTask.get());
+        });
         dialog.show();
         com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
         input.requestFocus();
