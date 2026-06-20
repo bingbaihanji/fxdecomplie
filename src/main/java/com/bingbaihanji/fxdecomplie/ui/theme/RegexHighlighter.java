@@ -97,7 +97,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         this.styleType = resolveStyle(styles, TOKEN_TO_SCOPES.get("TYPE"));
     }
 
-    /** 检查标识符是否以大写开头(类/接口/枚举名) */
+    /** 检查标识符是否以大写开头(类名/接口名/枚举名) */
     private static boolean isType(String identifier) {
         return Character.isUpperCase(identifier.charAt(0));
     }
@@ -157,7 +157,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         int lastEnd = 0;
 
         while (matcher.find()) {
-            // ---- Plain text before this token: apply default style ----
+            // ---- 此 token 之前的普通文本: 应用默认样式 ----
             if (matcher.start() > lastEnd) {
                 builder.addSegment(text.substring(lastEnd, matcher.start()), styleDefault);
             }
@@ -165,37 +165,37 @@ public class RegexHighlighter implements SyntaxDecorator {
             String matched = matcher.group();
             StyleAttributeMap style;
 
-            // ---- Comment handling: multi-line (/* */) and single-line (//) ----
+            // ---- 注释处理: 多行(/* */)和单行(//) ----
             if (matcher.group("MULTICOMMENT") != null || matcher.group("SINGLECOMMENT") != null) {
                 style = styleComment;
-                // ---- String literal: double-quoted with escape sequences ----
+                // ---- 字符串字面量: 双引号带转义序列 ----
             } else if (matcher.group("STRING") != null) {
                 style = styleString;
-                // ---- Annotation: @Override, @Deprecated, etc. ----
+                // ---- 注解: @Override, @Deprecated 等 ----
             } else if (matcher.group("ANNOTATION") != null) {
                 style = styleAnnotation;
-                // ---- Number literal: integers, floats, with suffixes (L, F, D) ----
+                // ---- 数字字面量: 整数、浮点数,可带后缀(L, F, D) ----
             } else if (matcher.group("NUMBER") != null) {
                 style = styleNumber;
-                // ---- Identifier: word boundary token, needs context-based disambiguation ----
+                // ---- 标识符: 词边界 token,需根据上下文消歧 ----
             } else if (matcher.group("IDENTIFIER") != null) {
                 if (KEYWORDS.contains(matched)) {
-                    // ---- Java keyword: if, class, public, etc. ----
+                    // ---- Java 关键字: if, class, public 等 ----
                     style = styleKeyword;
                 } else if (isMethod(text, matcher.end())) {
-                    // ---- Method name: identifier followed by '(' ----
+                    // ---- 方法名: 标识符后跟 '(' ----
                     style = styleMethod;
                 } else if (isField(text, matcher.end())) {
-                    // ---- Field name: identifier followed by '=' or ';' ----
+                    // ---- 字段名: 标识符后跟 '=' 或 ';' ----
                     style = styleField;
                 } else if (isType(matched)) {
-                    // ---- Type name: identifier starting with uppercase letter ----
+                    // ---- 类型名: 标识符以大写字母开头 ----
                     style = styleType;
                 } else if (isParameter(text, matcher.start(), matcher.end())) {
-                    // ---- Parameter name: identifier inside method parens ----
+                    // ---- 参数名: 方法括号内的标识符 ----
                     style = styleParameter;
                 } else {
-                    // ---- Fallback: generic identifier ----
+                    // ---- 回退: 通用标识符 ----
                     style = styleDefault;
                 }
             } else {

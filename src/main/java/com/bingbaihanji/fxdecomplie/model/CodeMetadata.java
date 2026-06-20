@@ -11,34 +11,34 @@ import java.util.Map;
  */
 public class CodeMetadata {
 
-    /** Line number (1-based) to list of navigable references found on that line */
+    /** 行号(从1开始)到该行上所有可导航引用的映射 */
     private final Map<Integer, List<Reference>> refsByLine;
 
     public CodeMetadata(Map<Integer, List<Reference>> refsByLine) {
         this.refsByLine = Map.copyOf(refsByLine);
     }
 
-    /** @param lineNumber 1-based line number
-     *  @return all references on the given line, or empty list */
+    /** @param lineNumber 从1开始的行号
+     *  @return 该行上所有引用，无引用时返回空列表 */
     public List<Reference> getRefsAtLine(int lineNumber) {
         return refsByLine.getOrDefault(lineNumber, List.of());
     }
 
-    /** @return true if no references were extracted */
+    /** @return 如果没有提取到任何引用，返回 true */
     public boolean isEmpty() {
         return refsByLine.isEmpty();
     }
 
-    /** Type of navigable reference found in source code */
+    /** 反编译源码中发现的可导航引用类型 */
     public enum RefType {CLASS_REF, METHOD_REF, FIELD_REF}
 
     /**
-     * A single navigable reference in decompiled source.
+     * 反编译源码中的单个可导航引用
      *
-     * @param type         type of reference
-     * @param targetClass  fully qualified target class name (e.g. "com.example.Foo")
-     * @param targetMember target member name, or null for class-only refs
-     * @param lineNumber   1-based line number in the source
+     * @param type         引用类型
+     * @param targetClass  完全限定目标类名(例如 "com.example.Foo")
+     * @param targetMember 目标成员名，纯类引用时为 null
+     * @param lineNumber   源码中从1开始的行号
      */
     public record Reference(RefType type, String targetClass, String targetMember, int lineNumber) {
     }

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Per-decompilation context. Prefer this over the legacy global BytecodeCache when resolving dependency classes.
+ * 每次反编译的上下文在解析依赖类时，应优先使用此上下文而非旧版全局 BytecodeCache
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -68,7 +68,7 @@ public final class DecompilerContext {
                 : normalized;
     }
 
-    /** Extract simple class name from internal name (e.g. "com/example/Foo" -> "Foo") */
+    /** 从内部名称中提取简单类名(例如 "com/example/Foo" → "Foo") */
     public static String simpleName(String internalName) {
         int idx = internalName.lastIndexOf('/');
         return idx >= 0 ? internalName.substring(idx + 1) : internalName;

@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.model;
 import java.util.Objects;
 
 /**
- * Indexed class member metadata.
+ * 索引化的类成员元数据
  *
  * @author bingbaihanji
  * @date 2026-06-18

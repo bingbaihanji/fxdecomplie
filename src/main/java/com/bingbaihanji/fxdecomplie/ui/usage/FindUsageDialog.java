@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.UsageSearchService;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -25,7 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Dialog for ASM-backed class/member usage search.
+ * 基于 ASM 的类/成员使用搜索对话框
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -126,7 +127,7 @@ public final class FindUsageDialog {
         dialog.setScene(scene);
         dialog.setOnHidden(event -> BackgroundTasks.cancel(currentSearchTask.get()));
         dialog.show();
-        com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
+        DefaultWindowTheme.applyWindowDarkMode(dialog);
         input.requestFocus();
         if (input.getText() != null && !input.getText().isBlank()) {
             runSearch.run();

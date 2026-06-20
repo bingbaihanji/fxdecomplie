@@ -37,15 +37,15 @@ public final class WorkspaceLoader {
         String name = file.getName();
         BackgroundTasks.run("FileLoader-" + name, () -> {
             try {
-                // ---- Step 1: scan JAR/ZIP/directory for all .class and resource entries ----
+                // ---- 步骤 1: 扫描 JAR/ZIP/目录中的所有 .class 和资源条目 ----
                 var entries = ClassDiscoverer.discover(file);
-                // ---- Step 2: build hierarchical file tree with bytecode caching ----
+                // ---- 步骤 2: 构建带字节码缓存的层级文件树 ----
                 TreeItem<FileTreeNode> treeRoot = FileTreeBuilder.build(name, entries);
-                // ---- Step 3: create workspace model with empty index ----
+                // ---- 步骤 3: 创建带空索引的工作区模型 ----
                 boolean isArchive = isArchiveFile(file);
                 Workspace workspace = new Workspace(name, file, treeRoot, isArchive,
                         WorkspaceIndex.EMPTY);
-                // ---- Step 4: notify UI on JavaFX thread. Full index is built on demand. ----
+                // ---- 步骤 4: 在 JavaFX 线程上通知 UI完整索引按需构建 ----
                 Platform.runLater(() -> {
                     if (onSuccess != null) {
                         onSuccess.accept(workspace);

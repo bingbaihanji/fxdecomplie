@@ -2,7 +2,10 @@ package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbaihanji.fxdecomplie.platform.FxTools;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import com.bingbaihanji.windows.platform.WindowAppearance;
+import com.bingbaihanji.windows.platform.WindowCornerPreference;
+import com.bingbaihanji.windows.jfx.WindowToolkit;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
@@ -63,7 +66,7 @@ public final class FxDecompilerApp {
             Thread.setDefaultUncaughtExceptionHandler((thread, error) -> writeStartupFailure(error));
             Application.launch(FxApplication.class, args);
         } catch (Throwable ex) {
-            logger.error("FxDecompiler launcher failed", ex);
+            logger.error("FxDecompiler 启动器失败", ex);
             writeStartupFailure(ex);
             throw ex;
         }
@@ -81,12 +84,12 @@ public final class FxDecompilerApp {
             Files.createDirectories(STARTUP_ERROR_LOG.getParent());
             StringWriter buffer = new StringWriter();
             try (PrintWriter writer = new PrintWriter(buffer)) {
-                writer.println("FxDecompiler startup failed:");
+                writer.println("FxDecompiler 启动失败:");
                 ex.printStackTrace(writer);
             }
             Files.writeString(STARTUP_ERROR_LOG, buffer.toString());
         } catch (Exception e) {
-            logger.warn("Failed to write startup error log", e);
+            logger.warn("写入启动错误日志失败", e);
         }
     }
 
@@ -94,14 +97,14 @@ public final class FxDecompilerApp {
 
         /** 为主窗口应用平台原生窗口外观(DWM 暗色主题、阴影、圆角等) */
         public void initWindows(Stage primaryStage) {
-            FxTools.applyWindowDarkMode(primaryStage);
+            DefaultWindowTheme.applyWindowDarkMode(primaryStage);
         }
 
         /** 应用配置引用 */
         private AppConfig config;
         /** 主窗口控制器,用于直接关闭窗口时释放工作区资源 */
         private MainWindow window;
-        /** Primary stage used to persist window state on all exit paths. */
+        /** 主 Stage,用于在所有退出路径上持久化窗口状态 */
         private Stage primaryStage;
 
         @Override
@@ -110,7 +113,7 @@ public final class FxDecompilerApp {
                 startApplication(stage);
                 initWindows(stage);
             } catch (Throwable ex) {
-                logger.error("FxDecompiler startup failed", ex);
+                logger.error("FxDecompiler 启动失败", ex);
                 writeStartupFailure(ex);
                 throw ex;
             }
@@ -121,9 +124,9 @@ public final class FxDecompilerApp {
         /** 启动 JavaFX 应用 */
         private void startApplication(Stage stage) {
             primaryStage = stage;
-            logger.info("FxDecompiler startup build: headerBar-2026-06-17");
+            logger.info("FxDecompiler 启动构建版本: headerBar-2026-06-17");
             config = AppConfig.load();
-            FxTools.loadPlatformConfig(config);
+            DefaultWindowTheme.configure(windowAppearance(config));
             DiskCodeCache.cleanIfNeeded();
             applyConfiguredLocale();
 
@@ -132,7 +135,7 @@ public final class FxDecompilerApp {
             try {
                 stage.initStyle(StageStyle.EXTENDED);
             } catch (Exception e) {
-                logger.warn("EXTENDED stage style not supported, falling back to DECORATED", e);
+                logger.warn("EXTENDED 窗口样式不支持,回退到 DECORATED", e);
                 stage.initStyle(StageStyle.DECORATED);
             }
 
@@ -171,6 +174,25 @@ public final class FxDecompilerApp {
             }
         }
 
+        private static WindowAppearance windowAppearance(AppConfig config) {
+            AppConfig.Platform platform = config == null ? null : config.platform();
+            int borderColor = platform == null ? 0x00888800 : platform.windowBorderColor();
+            WindowCornerPreference cornerPreference = parseCornerPreference(
+                    platform == null ? null : platform.cornerPreference());
+            return WindowAppearance.darkDialog(borderColor, cornerPreference);
+        }
+
+        private static WindowCornerPreference parseCornerPreference(String value) {
+            if (value == null || value.isBlank()) {
+                return WindowCornerPreference.DO_NOT_ROUND;
+            }
+            try {
+                return WindowCornerPreference.valueOf(value);
+            } catch (IllegalArgumentException ignored) {
+                return WindowCornerPreference.DO_NOT_ROUND;
+            }
+        }
+
         @Override
         public void stop() {
             BackgroundTasks.shutdown();
@@ -178,6 +200,7 @@ public final class FxDecompilerApp {
             if (window != null) {
                 window.shutdownResources();
             }
+            WindowToolkit.shutdown();
             DecompilerFactory.cleanup();
             if (config != null) {
                 if (primaryStage != null) {

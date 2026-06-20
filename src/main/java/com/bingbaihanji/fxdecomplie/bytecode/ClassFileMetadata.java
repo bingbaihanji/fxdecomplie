@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Lightweight class file metadata that can be read without ASM.
+ * 轻量级 class 文件元数据,可在无 ASM 的情况下读取
  */
 public record ClassFileMetadata(
         int minorVersion,

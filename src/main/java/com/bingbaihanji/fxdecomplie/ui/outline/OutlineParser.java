@@ -75,8 +75,8 @@ public final class OutlineParser {
     }
 
     /**
-     * Extract code metadata from decompiled source for Ctrl+Click navigation.
-     * Scans each line for class references, method calls, and field accesses.
+     * 从反编译源码中提取代码元数据,用于 Ctrl+Click 导航
+     * 逐行扫描类引用、方法调用和字段访问
      */
     public static CodeMetadata extractMetadata(String sourceCode) {
         Map<Integer, List<CodeMetadata.Reference>> refsByLine = new HashMap<>();
@@ -91,7 +91,7 @@ public final class OutlineParser {
             int lineNum = i + 1;
             List<CodeMetadata.Reference> refs = new ArrayList<>();
 
-            // Skip comment-only lines
+            // 跳过纯注释行
             String trimmed = line.trim();
             if (trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("* ")) {
                 continue;
@@ -100,7 +100,7 @@ public final class OutlineParser {
             Matcher m = CLASS_REF_PATTERN.matcher(line);
             while (m.find()) {
                 String match = m.group(1);
-                // Only consider it a class reference if it looks like a package path
+                // 仅当匹配片段看似包路径时才视为类引用
                 if (match.contains(".") && Character.isUpperCase(match.charAt(match.lastIndexOf('.') + 1))) {
                     refs.add(new CodeMetadata.Reference(
                             CodeMetadata.RefType.CLASS_REF, match, null, lineNum));

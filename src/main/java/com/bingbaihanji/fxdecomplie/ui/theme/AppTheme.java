@@ -53,7 +53,7 @@ public final class AppTheme {
             }
             return VsCodeThemeLoader.loadResource(DARK_PLUS_THEME);
         } catch (IOException | RuntimeException e) {
-            logger.warn("Failed to load editor theme, using default dark", e);
+            logger.warn("加载编辑器主题失败,使用默认暗色主题", e);
             return VsCodeThemeLoader.defaultDark();
         }
     }

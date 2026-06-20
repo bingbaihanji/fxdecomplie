@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Minimal class-file parser for metadata paths that must keep working when ASM
- * does not yet understand the latest class file major version.
+ * 最小化的 class 文件解析器,用于元数据路径,确保在 ASM 尚不支持最新 class 文件主版本号时仍可正常工作
  */
 public final class ClassFileParser {
 
@@ -30,12 +29,12 @@ public final class ClassFileParser {
 
     public static ClassFileMetadata parse(byte[] bytes) throws IOException, ClassFormatException {
         if (bytes == null || bytes.length < 10) {
-            throw new ClassFormatException("Class file is empty or truncated");
+            throw new ClassFormatException("class 文件为空或被截断");
         }
         try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes))) {
             int magic = in.readInt();
             if (magic != CLASS_MAGIC) {
-                throw new ClassFormatException("Invalid class file magic");
+                throw new ClassFormatException("无效的 class 文件魔数");
             }
 
             int minor = in.readUnsignedShort();
@@ -64,29 +63,29 @@ public final class ClassFileParser {
     public static String summary(byte[] bytes) {
         return tryParse(bytes)
                 .map(ClassFileParser::summary)
-                .orElse("// Unable to parse class file metadata");
+                .orElse("// 无法解析 class 文件元数据");
     }
 
     public static String summary(ClassFileMetadata metadata) {
         StringBuilder sb = new StringBuilder();
-        sb.append("// Class file metadata\n");
-        sb.append("// Version: ").append(metadata.majorVersion())
+        sb.append("// class 文件元数据\n");
+        sb.append("// 版本: ").append(metadata.majorVersion())
                 .append('.').append(metadata.minorVersion())
                 .append(" (Java ").append(javaVersion(metadata.majorVersion())).append(")\n");
-        sb.append("// Class: ").append(metadata.internalName()).append('\n');
-        sb.append("// Super: ").append(metadata.superName() == null ? "(none)" : metadata.superName()).append('\n');
+        sb.append("// 类: ").append(metadata.internalName()).append('\n');
+        sb.append("// 父类: ").append(metadata.superName() == null ? "(无)" : metadata.superName()).append('\n');
         if (metadata.interfaces().isEmpty()) {
-            sb.append("// Interfaces: (none)\n");
+            sb.append("// 接口: (无)\n");
         } else {
-            sb.append("// Interfaces: ").append(String.join(", ", metadata.interfaces())).append('\n');
+            sb.append("// 接口: ").append(String.join(", ", metadata.interfaces())).append('\n');
         }
         sb.append('\n');
-        sb.append("// Fields\n");
+        sb.append("// 字段\n");
         for (ClassFileMetadata.MemberInfo field : metadata.fields()) {
             sb.append(field.descriptor()).append(' ').append(field.name()).append('\n');
         }
         sb.append('\n');
-        sb.append("// Methods\n");
+        sb.append("// 方法\n");
         for (ClassFileMetadata.MemberInfo method : metadata.methods()) {
             sb.append(method.name()).append(method.descriptor()).append('\n');
         }
@@ -113,7 +112,7 @@ public final class ClassFileParser {
                 case 8, 16, 19, 20 -> skipFully(in, 2);
                 case 9, 10, 11, 12, 17, 18 -> skipFully(in, 4);
                 case 15 -> skipFully(in, 3);
-                default -> throw new ClassFormatException("Unsupported constant pool tag: " + tag);
+                default -> throw new ClassFormatException("不支持的常量池标签: " + tag);
             }
         }
         return cp;
@@ -150,7 +149,7 @@ public final class ClassFileParser {
         if (entry instanceof ClassRef ref) {
             return utf(cp, ref.nameIndex());
         }
-        throw new ClassFormatException("Expected class reference at constant pool index " + classIndex);
+        throw new ClassFormatException("期望常量池索引 " + classIndex + " 处为类引用");
     }
 
     private static String utf(Object[] cp, int index) throws ClassFormatException {
@@ -158,16 +157,16 @@ public final class ClassFileParser {
         if (entry instanceof String value) {
             return value;
         }
-        throw new ClassFormatException("Expected UTF-8 entry at constant pool index " + index);
+        throw new ClassFormatException("期望常量池索引 " + index + " 处为 UTF-8 条目");
     }
 
     private static Object cpEntry(Object[] cp, int index) throws ClassFormatException {
         if (index <= 0 || index >= cp.length) {
-            throw new ClassFormatException("Invalid constant pool index: " + index);
+            throw new ClassFormatException("无效的常量池索引: " + index);
         }
         Object entry = cp[index];
         if (entry == null) {
-            throw new ClassFormatException("Missing constant pool entry: " + index);
+            throw new ClassFormatException("缺失常量池条目: " + index);
         }
         return entry;
     }
@@ -178,7 +177,7 @@ public final class ClassFileParser {
             int skipped = in.skipBytes((int) Math.min(remaining, Integer.MAX_VALUE));
             if (skipped <= 0) {
                 if (in.read() == -1) {
-                    throw new EOFException("Unexpected end of class file");
+                    throw new EOFException("意外的 class 文件结尾");
                 }
                 skipped = 1;
             }

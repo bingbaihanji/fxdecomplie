@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
-import com.bingbaihanji.fxdecomplie.platform.FxTools;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
@@ -21,8 +21,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Lightweight code-only window used for detached editor tabs.
- * Supports cross-window tab drag-and-drop with the main window.
+ * 轻量级纯代码窗口，用于分离的编辑器标签页
+ * 支持与主窗口之间的跨窗口标签拖放
  */
 public final class CodeOnlyWindow {
 
@@ -70,7 +70,7 @@ public final class CodeOnlyWindow {
         return window;
     }
 
-    /** Enable drag on a single CodeEditorTab header. */
+    /** 为单个 CodeEditorTab 标题启用拖拽 */
     public static void enableTabDrag(CodeEditorTab tab) {
         Node title = tab.getGraphic();
         if (title == null || Boolean.TRUE.equals(title.getProperties().get(DRAG_SOURCE_INSTALLED))) {
@@ -106,8 +106,8 @@ public final class CodeOnlyWindow {
     }
 
     /**
-     * Install cross-window tab drag-drop handlers on any TabPane.
-     * Called by main window and secondary windows.
+     * 在任意 TabPane 上安装跨窗口标签拖放处理器
+     * 由主窗口和辅助窗口调用
      */
     public static void installDragDropHandlers(TabPane tabPane, AppConfig config,
                                                VsCodeThemeLoader.ThemeData editorTheme) {
@@ -140,10 +140,10 @@ public final class CodeOnlyWindow {
         enableTabDragListener(tabPane);
     }
 
-    // ==================== Drag Source ====================
+    // ==================== 拖拽源 ====================
 
     /**
-     * Add a listener that calls enableTabDrag on every CodeEditorTab added to the TabPane.
+     * 添加一个监听器，每当 CodeEditorTab 添加到 TabPane 时调用 enableTabDrag
      */
     public static void enableTabDragListener(TabPane tabPane) {
         tabPane.getTabs().addListener(
@@ -164,7 +164,7 @@ public final class CodeOnlyWindow {
         return resolvePayload(dragboard, false) != null;
     }
 
-    // ==================== Drag Target (shared, usable by any TabPane) ====================
+    // ==================== 拖拽目标(共享，任意 TabPane 均可使用) ====================
 
     private static CodeTabPayload resolvePayload(Dragboard dragboard, boolean remove) {
         CodeTabPayload payload = resolvePayload(
@@ -184,7 +184,7 @@ public final class CodeOnlyWindow {
         return remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
     }
 
-    // ==================== Payload helpers ====================
+    // ==================== 负载辅助方法 ====================
 
     private static CodeTabPayload resolvePayload(Object content, boolean remove) {
         if (content instanceof CodeTabPayload payload) {
@@ -286,7 +286,7 @@ public final class CodeOnlyWindow {
                 openFile.sourceCode(), openFile.engine(), tab.getClassBytes());
     }
 
-    // ==================== Tab creation ====================
+    // ==================== 标签页创建 ====================
 
     private static void setAppIcon(Stage stage) {
         try {
@@ -308,7 +308,7 @@ public final class CodeOnlyWindow {
     private void show() {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
 
-        // Accept drops from OTHER TabPanes only (prevent self-drop)
+        // 仅接受来自其他 TabPane 的拖放(阻止自拖放)
         tabPane.addEventFilter(DragEvent.DRAG_OVER, event -> {
             TabPane sourcePane = resolveSourcePane(event.getDragboard(), false);
             if (sourcePane != tabPane && hasPayload(event.getDragboard())) {
@@ -347,10 +347,10 @@ public final class CodeOnlyWindow {
         updateTitle();
         stage.setScene(scene);
         stage.show();
-        FxTools.applyWindowDarkMode(stage);
+        DefaultWindowTheme.applyWindowDarkMode(stage);
     }
 
-    // ==================== App icon ====================
+    // ==================== 应用图标 ====================
 
     private void updateTitle() {
         Tab selected = tabPane.getSelectionModel().getSelectedItem();

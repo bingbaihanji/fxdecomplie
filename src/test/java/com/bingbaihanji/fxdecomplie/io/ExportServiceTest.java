@@ -100,7 +100,7 @@ class ExportServiceTest {
         assertEquals(1, result.totalFiles());
         assertEquals(0, result.successCount());
         assertEquals(1, result.errors().size());
-        assertTrue(result.errors().get(0).contains("unsafe"));
+        assertTrue(result.errors().get(0).contains("不安全"));
         assertFalse(Files.exists(tempDir.resolve("evil.properties")));
     }
 
@@ -151,7 +151,7 @@ class ExportServiceTest {
 
         assertEquals(1, result.totalFiles());
         assertEquals(0, result.successCount());
-        assertTrue(result.errors().getFirst().contains("class bytes not found"));
+        assertTrue(result.errors().getFirst().contains("未找到类字节码"));
         assertFalse(Files.exists(tempDir.resolve("out/com/example/Missing.java")));
     }
 

@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.window;
 
+import com.bingbaihanji.windows.jfx.WindowToolkit;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -123,7 +124,7 @@ public final class AppHeaderBar {
 
         button.selectedProperty().addListener((obs, oldValue, selected) -> {
             if (stage.isAlwaysOnTop() != selected) {
-                stage.setAlwaysOnTop(selected);
+                WindowToolkit.setAlwaysOnTop(stage, selected);
             }
             update.run();
         });

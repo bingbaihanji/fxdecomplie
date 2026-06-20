@@ -70,7 +70,7 @@ public final class InheritanceService {
                 root.getChildren().add(ifNode);
             }
         } else {
-            logger.warn("Failed to parse class metadata for inheritance tree: {}", fullPath);
+            logger.warn("解析类元数据用于继承树失败：{}", fullPath);
         }
 
         findSubClasses(internalName, root, visited, index);
@@ -108,7 +108,7 @@ public final class InheritanceService {
                     node.getChildren().add(ifNode);
                 }
             } else {
-                logger.warn("Failed to parse class metadata for inheritance tree: {}", internalName);
+                logger.warn("解析类元数据用于继承树失败：{}", internalName);
             }
         }
     }
@@ -135,7 +135,7 @@ public final class InheritanceService {
         if (visited.contains(name) || name.equals(targetName)) return;
         Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
         if (metadata.isEmpty()) {
-            logger.warn("Failed to parse class metadata for inheritance tree: {}", name);
+            logger.warn("解析类元数据用于继承树失败：{}", name);
             return;
         }
         ClassFileMetadata meta = metadata.get();

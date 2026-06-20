@@ -67,7 +67,7 @@ public final class ClassInfoView {
                         I18nUtil.getString("classinfo.noneInline")), "#6a6a6a"));
             }
 
-            // ---- Extract methods and fields via ASM visitor ----
+            // ---- 通过 ASM 访问者提取方法和字段 ----
             List<String> methods = new ArrayList<>();
             List<String> fields = new ArrayList<>();
             for (ClassFileMetadata.MemberInfo field : metadata.fields()) {
@@ -82,7 +82,7 @@ public final class ClassInfoView {
                 methods.add(accessStr + returnType + " " + method.name() + "(" + params + ")");
             }
 
-            // ---- Methods section ----
+            // ---- 方法区域 ----
             root.getChildren().add(sectionLabel(I18nUtil.getString("classinfo.methods", methods.size())));
             if (methods.isEmpty()) {
                 root.getChildren().add(label("  " + I18nUtil.getString("classinfo.noneInline"), "#6a6a6a"));
@@ -92,7 +92,7 @@ public final class ClassInfoView {
                 }
             }
 
-            // ---- Fields section ----
+            // ---- 字段区域 ----
             root.getChildren().add(sectionLabel(I18nUtil.getString("classinfo.fields", fields.size())));
             if (fields.isEmpty()) {
                 root.getChildren().add(label("  " + I18nUtil.getString("classinfo.noneInline"), "#6a6a6a"));

@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Batch export configuration selected by the user.
+ * 用户选择的批量导出配置
  *
  * @author bingbaihanji
  * @date 2026-06-18

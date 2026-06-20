@@ -37,7 +37,7 @@ public class ProcyonDecompiler implements Decompiler {
                 case "includeLineNumbersInBytecode" ->
                         settings.setIncludeLineNumbersInBytecode(Boolean.parseBoolean(value));
                 default -> {
-                    // Unknown Procyon options are ignored so users can keep shared option JSON.
+                    // 未知的 Procyon 选项将被忽略，以便用户可以使用共享的选项 JSON
                 }
             }
         }

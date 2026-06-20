@@ -13,9 +13,9 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * Application configuration POJO. Loaded from and persisted to {@code <appDir>/config/config.json}.
- * Holds window geometry, theme settings, decompiler preferences, export defaults,
- * search options, language selection, and recent file history.
+ * 应用配置 POJO,从 {@code <appDir>/config/config.json} 加载并持久化
+ * 包含窗口几何信息、主题设置、反编译器偏好、导出默认值、
+ * 搜索选项、语言选择及最近文件历史
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -54,8 +54,9 @@ public class AppConfig {
     /** JSON 序列化/反序列化器 */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
+    /** 最近文件最大数量 */
     private static final int MAX_RECENT_FILES = 20;
-    /** 配置结构版本,后续用于迁移旧配置 */
+    /** 配置结构版本,用于后续迁移旧配置 */
     private int schemaVersion = 1;
     /** 界面语言: zh-CN / en,空字符串表示跟随系统 */
     private String language = "";
@@ -90,7 +91,7 @@ public class AppConfig {
                 }
             }
         } catch (IOException | com.google.gson.JsonSyntaxException | com.google.gson.JsonIOException e) {
-            logger.warn("Failed to load config, using defaults", e);
+            logger.warn("加载配置失败,使用默认配置", e);
         }
         return new AppConfig();
     }
@@ -198,7 +199,7 @@ public class AppConfig {
                 Files.createDirectories(CONFIG_DIR);
                 Files.writeString(CONFIG_FILE, GSON.toJson(this));
             } catch (IOException e) {
-                logger.warn("Failed to save config", e);
+                logger.warn("保存配置失败", e);
             }
         }
     }

@@ -18,7 +18,7 @@ public class ResourceSearchProvider implements SearchProvider {
 
     private static final int MAX_RESULTS = 500;
 
-    private final Map<String, byte[]> resourceCache; // path to raw bytes
+    private final Map<String, byte[]> resourceCache; // 路径 → 原始字节
 
     public ResourceSearchProvider(Map<String, byte[]> resourceCache) {
         this.resourceCache = Objects.requireNonNull(resourceCache, "resourceCache");

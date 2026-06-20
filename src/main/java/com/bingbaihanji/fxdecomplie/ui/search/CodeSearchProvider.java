@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class CodeSearchProvider implements SearchProvider {
 
-    /** Maximum number of code text results to return */
+    /** 返回的代码文本结果上限 */
     private static final int MAX_RESULTS = 500;
 
     @Override

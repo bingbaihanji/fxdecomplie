@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.model;
 import java.util.List;
 
 /**
- * Lightweight project file model.
+ * 轻量级项目文件模型
  *
  * @author bingbaihanji
  * @date 2026-06-18

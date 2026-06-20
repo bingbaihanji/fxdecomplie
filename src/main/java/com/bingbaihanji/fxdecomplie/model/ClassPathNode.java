@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.model;
 
 /**
- * Path node for a class file in the navigation chain.
+ * 导航链中的类文件路径节点
  *
  * @author bingbaihanji
  * @date 2026-06-18

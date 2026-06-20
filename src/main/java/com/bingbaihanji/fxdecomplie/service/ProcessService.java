@@ -22,24 +22,24 @@ public final class ProcessService {
 
     public static void launchNewInstance(String filePath) {
         try {
-            // ---- Locate the current JVM's java executable ----
+            // ---- 定位当前 JVM 的 java 可执行文件 ----
             String javaHome = System.getProperty("java.home");
             String java = javaHome + File.separator + "bin" + File.separator + "java";
-            // ---- Resolve this application's own JAR path from the classloader ----
+            // ---- 从 classloader 解析本应用的 JAR 路径 ----
             var codeSource = ProcessService.class.getProtectionDomain().getCodeSource();
             if (codeSource == null || codeSource.getLocation() == null) {
-                logger.warn("Cannot determine JAR path, new instance not available");
+                logger.warn("无法确定 JAR 路径,新实例不可用");
                 return;
             }
             String jarPath = codeSource.getLocation().toURI().getPath();
-            // ---- Fix Windows path prefix (e.g. "/C:/..." -> "C:/...") ----
+            // ---- 修正 Windows 路径前缀(如 "/C:/..." → "C:/...") ----
             if (jarPath.startsWith("/") && jarPath.contains(":")) {
                 jarPath = jarPath.substring(1);
             }
-            // ---- Launch new process: java -jar <this.jar> --open <filePath> ----
+            // ---- 启动新进程: java -jar <this.jar> --open <filePath> ----
             new ProcessBuilder(java, "-jar", jarPath, "--open", filePath).start();
         } catch (Exception e) {
-            logger.error("Failed to launch new instance", e);
+            logger.error("启动新实例失败", e);
         }
     }
 }

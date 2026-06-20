@@ -18,10 +18,10 @@ import java.util.function.BiConsumer;
  */
 public class BytecodeSearchProvider implements SearchProvider {
 
-    /** Maximum number of bytecode text results to return */
+    /** 返回的字节码文本结果上限 */
     private static final int MAX_RESULTS = 500;
 
-    /** Internal class name to javap-style disassembly text */
+    /** 内部类名 → javap 风格反汇编文本 */
     private final Map<String, String> bytecodeCache;
     private final WorkspaceIndex index;
 

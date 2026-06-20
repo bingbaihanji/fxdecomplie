@@ -203,15 +203,15 @@ public final class ClassTabOpener {
                         removeLoadingTab(codeTabPane, loadingTab);
                         return;
                     }
-                    // ---- Ctrl+Click navigation callback: resolves class refs in decompiled source ----
+                    // ---- Ctrl+Click 导航回调:解析反编译源码中的类引用 ----
                     Consumer<CodeMetadata.Reference> onNavigate = ref -> {
                         if (ref.type() == CodeMetadata.RefType.CLASS_REF && ref.targetClass() != null) {
-                            // ---- Convert dotted class ref (e.g. "com.example.Foo") to file path ----
+                            // ---- 将点分隔的类引用(如 "com.example.Foo")转换为文件路径 ----
                             String targetPath = ref.targetClass().replace('.', '/') + ".class";
-                            // ---- Search the file tree for the referenced class node ----
+                            // ---- 在文件树中搜索引用的类节点 ----
                             FileTreeNode targetNode = workspace.findNodeByPath(targetPath);
                             if (targetNode != null) {
-                                // ---- Recursively open the target class in a new code tab ----
+                                // ---- 在新代码标签页中递归打开目标类 ----
                                 openClassTab(targetNode, workspace, codeTabPane, engine, lineNumbersEnabled);
                             }
                         }
@@ -437,7 +437,7 @@ public final class ClassTabOpener {
             File source = workspace.getSourceFile();
             return Files.readAllBytes(new File(source, node.getFullPath()).toPath());
         }
-        // For archives, bytes should have been cached in ClassDiscoverer
+        // 对于归档文件,字节码应已在 ClassDiscoverer 中缓存
         return null;
     }
 
@@ -571,22 +571,22 @@ public final class ClassTabOpener {
         String optionsHash = DecompilerOptions.hash(engineOptions);
         String wsKey = computeWorkspaceKey(workspace);
 
-        // ---- L2: in-memory decompile cache (fastest path) ----
+        // ---- L2: 内存反编译缓存(最快路径) ----
         String sourceCode = decompileCache.get(wsKey, internalName, engine, optionsHash);
 
-        // ---- L2 miss: try L3 disk-persisted cache ----
+        // ---- L2 未命中:尝试 L3 磁盘持久化缓存 ----
         if (sourceCode == null) {
             sourceCode = DiskCodeCache.load(wsKey, internalName, engine, optionsHash);
             if (sourceCode != null) {
-                // ---- L3 hit: back-fill L2 so next lookup is instantaneous ----
+                // ---- L3 命中:回填 L2,使下次查询即时完成 ----
                 decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
             }
         }
 
-        // ---- L2+L3 miss: execute actual decompilation ----
+        // ---- L2+L3 均未命中:执行实际反编译 ----
         if (sourceCode == null) {
             if (!active.getAsBoolean()) {
-                throw new CancellationException("decompile request superseded");
+                throw new CancellationException("反编译请求已被替换");
             }
             Thread.interrupted();
             String finalPath = node.getFullPath();
@@ -595,13 +595,13 @@ public final class ClassTabOpener {
             sourceCode = DecompilerRunner.decompileWithTimeout(finalPath, bytes,
                     engine, context, active);
             if (!active.getAsBoolean()) {
-                throw new CancellationException("decompile request superseded");
+                throw new CancellationException("反编译请求已被替换");
             }
             if (!DecompilerRunner.isTransientFailureOutput(sourceCode)) {
-                // ---- Save decompiled result to L2 (immediate) ----
+                // ---- 保存反编译结果到 L2(即时) ----
                 decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
 
-                // ---- Save to L3 disk cache asynchronously (non-blocking) ----
+                // ---- 异步保存到 L3 磁盘缓存(非阻塞) ----
                 final String finalSource = sourceCode;
                 BackgroundTasks.run("DiskCache-" + internalName, () -> {
                     DiskCodeCache.save(wsKey, internalName, engine, optionsHash, finalSource);
@@ -609,7 +609,7 @@ public final class ClassTabOpener {
             }
         }
 
-        // ---- Extract metadata for Ctrl+Click navigation ----
+        // ---- 提取元数据用于 Ctrl+Click 导航 ----
         CodeMetadata metadata = OutlineParser.extractMetadata(sourceCode);
         return new DecompileResult(sourceCode, metadata);
     }
@@ -641,7 +641,7 @@ public final class ClassTabOpener {
         return WorkspaceIndex.EMPTY;
     }
 
-    /** Shut down the decompiler executor gracefully, waiting up to 2 seconds. */
+    /** 优雅关闭反编译器执行器,最多等待 2 秒 */
     public static void shutdown() {
         DecompilerRunner.shutdown();
     }

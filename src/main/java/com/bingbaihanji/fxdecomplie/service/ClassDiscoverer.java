@@ -121,7 +121,7 @@ public final class ClassDiscoverer {
                 try {
                     size = Files.size(p);
                 } catch (IOException ex) {
-                    logger.debug("Failed to read file size: {}", p, ex);
+                    logger.debug("读取文件大小失败: {}", p, ex);
                 }
                 entries.add(new ClassEntry(displayName, relativePath, type, null, loader,
                         size, null));
@@ -199,7 +199,7 @@ public final class ClassDiscoverer {
             int remaining = references.decrementAndGet();
             if (remaining <= 0) {
                 if (remaining < 0) {
-                    logger.debug("Shared archive released more times than retained");
+                    logger.debug("共享归档释放次数超过保留次数");
                 }
                 close();
             }
@@ -213,7 +213,7 @@ public final class ClassDiscoverer {
             synchronized (jar) {
                 JarEntry entry = jar.getJarEntry(entryName);
                 if (entry == null || entry.isDirectory()) {
-                    throw new IOException("Archive entry not found: " + entryName);
+                    throw new IOException("归档条目未找到: " + entryName);
                 }
                 try (var in = jar.getInputStream(entry)) {
                     return in.readAllBytes();
@@ -229,7 +229,7 @@ public final class ClassDiscoverer {
             try {
                 jar.close();
             } catch (IOException e) {
-                logger.debug("Failed to close archive", e);
+                logger.debug("关闭归档失败", e);
             }
         }
     }

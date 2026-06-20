@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Workspace-wide index built from the file tree.
+ * 基于文件树构建的工作区全局索引
  */
 public final class WorkspaceIndex {
 
@@ -91,7 +91,7 @@ public final class WorkspaceIndex {
                 methods.add(new MemberIndexEntry(node.getFullPath(), method.name(), method.descriptor()));
             }
         } else {
-            logger.warn("Failed to parse class metadata: {}", node.getFullPath());
+            logger.warn("解析类元数据失败: {}", node.getFullPath());
         }
 
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
@@ -101,7 +101,7 @@ public final class WorkspaceIndex {
     private static boolean shouldIndexResource(FileTreeNode node) {
         long size = node.getSize();
         if (size > MAX_INDEXED_RESOURCE_BYTES) {
-            logger.info("Skipping large resource from workspace index: {} ({} bytes)",
+            logger.info("跳过过大资源文件，不加入工作区索引: {} ({} 字节)",
                     node.getFullPath(), size);
             return false;
         }
@@ -112,7 +112,7 @@ public final class WorkspaceIndex {
         try {
             return node.readBytes();
         } catch (IOException e) {
-            logger.warn("Failed to read indexed file: {}", node.getFullPath(), e);
+            logger.warn("读取索引文件失败: {}", node.getFullPath(), e);
             return null;
         }
     }

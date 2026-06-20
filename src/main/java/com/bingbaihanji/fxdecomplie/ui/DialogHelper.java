@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui;
 
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
@@ -35,7 +36,7 @@ public final class DialogHelper {
         alert.initOwner(owner);
         alert.setOnShown(e -> {
             var window = alert.getDialogPane().getScene().getWindow();
-            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof Stage s) setDialogIcon(s);
         });
         alert.showAndWait();

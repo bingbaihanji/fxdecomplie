@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.quickopen;
 
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
@@ -123,7 +124,7 @@ public final class QuickOpenDialog {
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
         dialog.show();
-        com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
+        DefaultWindowTheme.applyWindowDarkMode(dialog);
         input.requestFocus();
     }
 

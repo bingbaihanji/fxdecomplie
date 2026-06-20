@@ -20,12 +20,12 @@ import java.util.stream.Collectors;
  */
 public class SearchService {
 
-    /** Registered search strategy providers, invoked in insertion order */
+    /** 已注册的搜索策略提供器,按插入顺序调用 */
     private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
 
-    /** Patterns to exclude from search results (simple wildcard matching) */
+    /** 搜索结果中要排除的模式(简单通配符匹配) */
     private volatile List<String> excludePatterns = List.of();
-    /** Pre-compiled exclude patterns for performance */
+    /** 预编译的排除模式,用于性能优化 */
     private volatile List<Pattern> compiledExcludePatterns = List.of();
 
     private static boolean matchesExcludePattern(String path, List<String> patterns) {
@@ -70,11 +70,11 @@ public class SearchService {
     }
 
     /**
-     * Run all registered providers and merge results, sorted by match type priority then line number.
+     * 运行所有已注册的提供器并合并结果,按匹配类型优先级和行号排序
      *
-     * @param query       search string
-     * @param sourceCache map of class paths to decompiled source code
-     * @return merged and sorted results, capped at the given limit
+     * @param query       搜索字符串
+     * @param sourceCache 类路径到反编译源码的映射
+     * @return 合并排序后的结果,限制在给定的上限内
      */
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache) {
         return searchAll(query, sourceCache, 500);
@@ -91,7 +91,7 @@ public class SearchService {
             List<SearchResult> results = provider.search(query, sourceCache);
             all.addAll(results);
         }
-        // Filter by exclude patterns if any
+        // 根据排除模式过滤结果
         if (!compiledExcludePatterns.isEmpty()) {
             all.removeIf(result -> {
                 String path = result.fullPath();
@@ -128,7 +128,7 @@ public class SearchService {
             List<SearchResult> results = provider.search(query, sourceCache, options);
             all.addAll(results);
         }
-        // Filter by exclude patterns if any
+        // 根据排除模式过滤结果
         if (!compiledExcludePatterns.isEmpty()) {
             all.removeIf(result -> {
                 String path = result.fullPath();

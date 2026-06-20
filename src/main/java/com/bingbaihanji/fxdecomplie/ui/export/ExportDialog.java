@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -22,7 +23,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * Export option and progress dialogs.
+ * 导出选项和进度对话框
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -41,7 +42,7 @@ public final class ExportDialog {
         dialog.setHeaderText(null);
         dialog.setOnShown(e -> {
             var window = dialog.getDialogPane().getScene().getWindow();
-            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof javafx.stage.Stage s) setDialogIcon(s);
         });
 
@@ -124,7 +125,7 @@ public final class ExportDialog {
         dialog.setHeaderText(null);
         dialog.setOnShown(e -> {
             var window = dialog.getDialogPane().getScene().getWindow();
-            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof javafx.stage.Stage s) setDialogIcon(s);
         });
 

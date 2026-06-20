@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.SearchService;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -93,18 +94,18 @@ public final class SearchDialog {
         fullSourceSearch.setDisable(fullSourceLoader == null);
         fullSourceSearch.setSelected(fullSourceLoader != null && defaultFullSourceSearch);
 
-        // Search option toggles
+        // 搜索选项开关
         javafx.scene.control.ToggleButton regexToggle = new javafx.scene.control.ToggleButton(".*");
         regexToggle.setStyle("-fx-font-size: 11px; -fx-padding: 2 8;");
-        regexToggle.setTooltip(new javafx.scene.control.Tooltip("Regex"));
+        regexToggle.setTooltip(new javafx.scene.control.Tooltip("正则表达式"));
 
         javafx.scene.control.ToggleButton caseToggle = new javafx.scene.control.ToggleButton("Aa");
         caseToggle.setStyle("-fx-font-size: 11px; -fx-padding: 2 8;");
-        caseToggle.setTooltip(new javafx.scene.control.Tooltip("Case sensitive"));
+        caseToggle.setTooltip(new javafx.scene.control.Tooltip("区分大小写"));
 
         javafx.scene.control.ToggleButton wordToggle = new javafx.scene.control.ToggleButton("W");
         wordToggle.setStyle("-fx-font-size: 11px; -fx-padding: 2 8;");
-        wordToggle.setTooltip(new javafx.scene.control.Tooltip("Whole word"));
+        wordToggle.setTooltip(new javafx.scene.control.Tooltip("全词匹配"));
 
         javafx.scene.layout.HBox searchOptionsBar = new javafx.scene.layout.HBox(4,
                 regexToggle, caseToggle, wordToggle);
@@ -140,11 +141,11 @@ public final class SearchDialog {
         rootPane.setPadding(new Insets(8));
         rootPane.setStyle("-fx-background-color: #2d2d2d;");
 
-        // Track search generation to discard stale results
+        // 跟踪搜索代数,用于丢弃过时结果
         AtomicInteger searchGen = new AtomicInteger(0);
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
 
-        // Debounce 200ms
+        // 200ms 防抖
         PauseTransition debounce = new PauseTransition(Duration.millis(200));
         Runnable scheduleSearch = () -> {
             String text = input.getText();
@@ -183,7 +184,7 @@ public final class SearchDialog {
                         return;
                     }
                     Platform.runLater(() -> {
-                        if (gen != searchGen.get()) return; // stale search
+                        if (gen != searchGen.get()) return; // 过时搜索,丢弃
                         TreeItem<SearchResult> rootNode = buildResultTree(results, resultLimit);
                         resultTree.setRoot(rootNode);
                         if (rootNode != null) rootNode.setExpanded(true);
@@ -215,7 +216,7 @@ public final class SearchDialog {
         wordToggle.selectedProperty().addListener((obs, old, val) -> scheduleSearch.run());
         updateFullSourceState.run();
 
-        // Double-click to jump
+        // 双击跳转
         resultTree.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 TreeItem<SearchResult> selected = resultTree.getSelectionModel().getSelectedItem();
@@ -243,7 +244,7 @@ public final class SearchDialog {
             BackgroundTasks.cancel(currentSearchTask.get());
         });
         dialog.show();
-        com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(dialog);
+        DefaultWindowTheme.applyWindowDarkMode(dialog);
         input.requestFocus();
         if (initialQuery != null && !initialQuery.isBlank()) {
             input.setText(initialQuery);
@@ -276,13 +277,13 @@ public final class SearchDialog {
         return SearchScope.ALL;
     }
 
-    /** Build TreeView structure grouped by match type label, limited to maxResults leaves */
+    /** 构建 TreeView 结构,按匹配类型分组,限制最多 maxResults 个叶子节点 */
     private static TreeItem<SearchResult> buildResultTree(List<SearchResult> results,
                                                           int maxResults) {
         TreeItem<SearchResult> rootNode = new TreeItem<>(new SearchResult("",
                 I18nUtil.getString("search.root"), 0, SearchResult.MatchType.CODE_TEXT));
 
-        // Use LinkedHashMap to preserve group order
+        // 使用 LinkedHashMap 保持分组顺序
         Map<String, List<SearchResult>> groups = new LinkedHashMap<>();
         for (SearchResult r : results) {
             String label = groupLabel(r.matchType());
@@ -292,7 +293,7 @@ public final class SearchDialog {
         int leafCount = 0;
         for (var entry : groups.entrySet()) {
             if (leafCount >= maxResults) break;
-            // Group header uses a special SearchResult with empty path and group label as matchLine
+            // 分组标题使用特殊的 SearchResult: 空路径,以分组标签作为 matchLine
             TreeItem<SearchResult> groupItem = new TreeItem<>(
                     new SearchResult("", entry.getKey(), 0, SearchResult.MatchType.CODE_TEXT));
             for (SearchResult r : entry.getValue()) {
@@ -308,7 +309,7 @@ public final class SearchDialog {
         return rootNode;
     }
 
-    /** Map match type to display label */
+    /** 将匹配类型映射为显示标签 */
     private static String groupLabel(SearchResult.MatchType type) {
         return switch (type) {
             case CLASS_NAME -> I18nUtil.getString("search.group.class");
@@ -321,7 +322,7 @@ public final class SearchDialog {
         };
     }
 
-    /** Count leaf nodes under a tree item (recursive) */
+    /** 统计树节点下的叶子节点数量(递归) */
     private static int countLeaves(TreeItem<SearchResult> root) {
         int count = 0;
         for (TreeItem<SearchResult> child : root.getChildren()) {

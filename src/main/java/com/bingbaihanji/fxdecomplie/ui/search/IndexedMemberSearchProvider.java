@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Searches method and field names from the workspace bytecode index.
+ * 从工作区字节码索引中搜索方法和字段名
  *
  * @author bingbaihanji
  * @date 2026-06-18

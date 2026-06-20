@@ -29,8 +29,8 @@ public class MethodSearchProvider implements SearchProvider {
             "^(?:@\\w+(?:\\([^)]*\\))?\\s*)*\\s*" +
                     "(?:(?:public|protected|private|static|final|synchronized|abstract|native)" +
                     "(?:\\s+(?:static|final|synchronized|abstract|native))*\\s+)?" +
-                    "(?:<[\\w\\s,<>?]+>\\s+)?" +  // optional type params on method (e.g., <T>)
-                    "(?:[\\w.]+(?:<[^>]+>)?(?:\\[\\])*\\s+)?" + // optional return type (e.g., List<String>)
+                    "(?:<[\\w\\s,<>?]+>\\s+)?" +  // 可选的方法类型参数(如 <T>)
+                    "(?:[\\w.]+(?:<[^>]+>)?(?:\\[\\])*\\s+)?" + // 可选的返回类型(如 List<String>)
                     "(\\w+)\\s*\\(";
 
     private static final Pattern METHOD_DECL = Pattern.compile(METHOD_DECL_PATTERN,

@@ -49,7 +49,7 @@ public final class DiskCodeCache {
         try {
             return Files.exists(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
         } catch (IOException e) {
-            logger.debug("Failed to load disk code cache: {}", file, e);
+            logger.debug("加载磁盘代码缓存失败: {}", file, e);
             return null;
         }
     }
@@ -67,7 +67,7 @@ public final class DiskCodeCache {
             Files.createDirectories(file.getParent());
             Files.writeString(file, sourceCode, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            logger.debug("Failed to save disk code cache: {}/{}", workspaceHash, internalName, e);
+            logger.debug("保存磁盘代码缓存失败: {}/{}", workspaceHash, internalName, e);
         }
     }
 
@@ -91,7 +91,7 @@ public final class DiskCodeCache {
     public static void cleanIfNeeded() {
         try {
             if (!Files.exists(CACHE_ROOT)) return;
-            // First pass: calculate total size without collecting all paths
+            // 第一遍扫描:计算总大小,不收集所有路径
             long totalSize;
             try (var stream = Files.walk(CACHE_ROOT)) {
                 totalSize = stream.filter(Files::isRegularFile)
@@ -104,7 +104,7 @@ public final class DiskCodeCache {
                         }).sum();
             }
             if (totalSize <= MAX_CACHE_SIZE_BYTES) return;
-            // Second pass: collect, sort by age, and delete oldest until under target
+            // 第二遍扫描:收集、按时间排序,删除最旧的直至低于目标大小
             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
             List<Path> files;
             try (var stream = Files.walk(CACHE_ROOT)) {

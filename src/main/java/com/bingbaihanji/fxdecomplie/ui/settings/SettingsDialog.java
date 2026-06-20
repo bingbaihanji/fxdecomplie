@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -38,7 +39,7 @@ public final class SettingsDialog {
         dialog.setHeaderText(null);
         dialog.setOnShown(e -> {
             var window = dialog.getDialogPane().getScene().getWindow();
-            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(window);
+            DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof Stage s) setDialogIcon(s);
         });
 
@@ -51,7 +52,7 @@ public final class SettingsDialog {
         engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD");
         engineCombo.setValue(config.decompiler().defaultEngine().name());
 
-        // Engine options JSON editor
+        // 引擎选项 JSON 编辑器
         Label engineOptionsLabel = new Label(I18nUtil.getString("settings.decompiler.engineOptions"));
         engineOptionsLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
 
@@ -61,7 +62,7 @@ public final class SettingsDialog {
         engineOptionsArea.setStyle("-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
                 + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px;");
 
-        // Load current options as JSON
+        // 将当前选项加载为 JSON
         try {
             String json = new GsonBuilder().setPrettyPrinting().create()
                     .toJson(config.decompiler().engineOptions());
@@ -91,7 +92,7 @@ public final class SettingsDialog {
         Spinner<Integer> resultLimitSpinner = new Spinner<>(50, 2000,
                 Math.clamp(config.search().resultLimit(), 50, 2000), 50);
         resultLimitSpinner.setEditable(true);
-        // Validate numeric input to prevent NumberFormatException
+        // 验证数字输入,防止 NumberFormatException
         resultLimitSpinner.getEditor().setTextFormatter(
                 new javafx.scene.control.TextFormatter<>(change -> {
                     String newText = change.getControlNewText();
@@ -141,7 +142,7 @@ public final class SettingsDialog {
             alert.initOwner(owner);
             alert.setHeaderText(null);
             alert.setTitle(I18nUtil.getString("settings.cache"));
-            alert.setOnShown(ev -> com.bingbaihanji.fxdecomplie.platform.FxTools
+            alert.setOnShown(ev -> DefaultWindowTheme
                     .applyWindowDarkMode(alert.getDialogPane().getScene().getWindow()));
             alert.showAndWait();
         });
@@ -199,7 +200,7 @@ public final class SettingsDialog {
             config.export().lastPath(exportPathField.getText() == null
                     ? "" : exportPathField.getText());
 
-            // Save engine options
+            // 保存引擎选项
             try {
                 String json = engineOptionsArea.getText();
                 if (json != null && !json.isBlank()) {
@@ -213,10 +214,10 @@ public final class SettingsDialog {
                     config.decompiler().engineOptions().clear();
                 }
             } catch (Exception ignored) {
-                // Invalid JSON — keep existing options
+                // JSON 无效 — 保留现有选项
             }
 
-            // Apply language change
+            // 应用语言变更
             int langIdx = langCombo.getSelectionModel().getSelectedIndex();
             Locale newLocale = (langIdx == 1) ? Locale.ENGLISH : Locale.SIMPLIFIED_CHINESE;
             config.language(langIdx == 1 ? "en" : "zh-CN");

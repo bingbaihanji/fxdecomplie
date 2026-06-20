@@ -14,10 +14,10 @@ import java.util.Map;
  */
 public class ClassSearchProvider implements SearchProvider {
 
-    /** Maximum number of class name results to return */
+    /** 返回的类名结果上限 */
     private static final int MAX_RESULTS = 500;
 
-    /** Pre-indexed list of class full paths (from workspace index) */
+    /** 预索引的类全路径列表(来自工作区索引) */
     private final List<String> classNames;
 
     public ClassSearchProvider() {

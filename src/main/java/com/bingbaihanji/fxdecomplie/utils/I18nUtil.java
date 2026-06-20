@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -57,7 +58,7 @@ public class I18nUtil {
         try {
             this.bundle = loadResourceBundle(locale);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load bundle for locale: " + locale, e);
+            throw new RuntimeException("无法加载语言资源包,语言环境: " + locale, e);
         }
     }
 
@@ -136,7 +137,7 @@ public class I18nUtil {
                 return bundle;
             }
         }
-        throw new IOException("Cannot load resource bundle for locale: " + locale);
+        throw new IOException("无法加载语言资源包,语言环境: " + locale);
     }
 
     private static List<String> candidateResourceNames(Locale locale) {
@@ -164,7 +165,7 @@ public class I18nUtil {
 
                 if (externalFile.exists() && externalFile.isFile()) {
                     try (InputStream stream = new FileInputStream(externalFile);
-                         InputStreamReader reader = new InputStreamReader(stream, "UTF-8")) {
+                         InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
                         return new PropertyResourceBundle(reader);
                     }
                 }
@@ -187,13 +188,13 @@ public class I18nUtil {
 
             if (stream != null) {
                 try (InputStream is = stream;
-                     InputStreamReader reader = new InputStreamReader(is, "UTF-8")) {
+                     InputStreamReader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
                     return new PropertyResourceBundle(reader);
                 }
             }
         } catch (Exception e) {
             // classpath 资源加载失败
-            logger.error("Failed to load resource from classpath: {}", resourceName, e);
+            logger.error("从 classpath 加载资源失败: {}", resourceName, e);
         }
         return null;
     }
@@ -269,7 +270,7 @@ public class I18nUtil {
         try {
             return loadResourceBundle(locale);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load bundle for locale: " + locale, e);
+            throw new RuntimeException("无法加载语言资源包,语言环境: " + locale, e);
         }
     }
 
@@ -336,7 +337,7 @@ public class I18nUtil {
             try {
                 listener.run();
             } catch (Exception e) {
-                logger.error("Locale change listener error", e);
+                logger.error("语言变更监听器异常", e);
             }
         }
     }

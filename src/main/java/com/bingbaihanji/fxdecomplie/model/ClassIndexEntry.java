@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Indexed class metadata for workspace-wide search and analysis.
+ * 索引化的类元数据，用于工作区范围的搜索和分析
  */
 public final class ClassIndexEntry {
 
@@ -66,7 +66,7 @@ public final class ClassIndexEntry {
         try {
             return byteLoader.load();
         } catch (IOException e) {
-            LOGGER.debug("Failed to load bytes for {}", fullPath, e);
+            LOGGER.debug("加载字节失败: {}", fullPath, e);
             return null;
         }
     }

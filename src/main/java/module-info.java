@@ -26,6 +26,10 @@ module fxdecomplie {
 
     // 导出 decompiler 包供 Gson 访问枚举
     exports com.bingbaihanji.fxdecomplie.decompiler;
+    // 导出 JavaFX 原生窗口工具包
+    exports com.bingbaihanji.windows.platform;
+    // 导出 JavaFX 窗口平台工具包
+    exports com.bingbaihanji.windows.jfx;
 
     // 运行时反射访问
     opens com.bingbaihanji.fxdecomplie to javafx.graphics;
@@ -35,6 +39,6 @@ module fxdecomplie {
     // 开放 decompiler 包给 Gson(用于枚举反序列化)
     opens com.bingbaihanji.fxdecomplie.decompiler to com.google.gson;
 
-    // 开放 platform.win32 包给 JNA(用于 Structure 反射读取字段)
-    opens com.bingbaihanji.fxdecomplie.platform.win32 to com.sun.jna;
+    // 开放 native.win32 包给 JNA(用于 Structure 反射读取字段)
+    opens com.bingbaihanji.windows.platform.win32 to com.sun.jna;
 }

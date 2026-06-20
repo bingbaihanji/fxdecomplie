@@ -3,10 +3,10 @@ package com.bingbaihanji.fxdecomplie.model;
 import java.util.Objects;
 
 /**
- * Base class for path nodes with parent linkage.
- * Stores the parent reference, value, and its runtime type for type-safe retrieval.
+ * 带父节点链接的路径节点基类
+ * 存储父节点引用、值及其运行时类型，用于类型安全的检索
  *
- * @param <T> wrapped value type
+ * @param <T> 包装的值类型
  * @author bingbaihanji
  * @date 2026-06-18
  */

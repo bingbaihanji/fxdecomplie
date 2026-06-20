@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.utils.CodeLinkHandler;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -314,7 +315,7 @@ public class CodeEditorTab extends Tab {
             area.setHighlightCurrentParagraph(false);
         }
 
-        // Keyboard shortcuts: Ctrl+F for search, Ctrl+G for goto line
+        // 键盘快捷键：Ctrl+F 搜索，Ctrl+G 跳转到行
         area.setOnKeyPressed(e -> {
             if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.F) {
                 if (editorSearchBar != null) {
@@ -390,7 +391,7 @@ public class CodeEditorTab extends Tab {
         dialog.setContentText(I18nUtil.getString("editor.gotoLine.prompt", totalLines));
         dialog.setOnShown(e -> {
             var win = dialog.getDialogPane().getScene().getWindow();
-            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(win);
+            DefaultWindowTheme.applyWindowDarkMode(win);
             if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
         });
 

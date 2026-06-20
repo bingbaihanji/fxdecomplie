@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
 /**
- * Shared guarded decompilation runner used by tabs, full-source search and export.
+ * 共享的带保护的反编译运行器,用于标签页、全文搜索和导出
  */
 public final class DecompilerRunner {
 
@@ -69,11 +69,11 @@ public final class DecompilerRunner {
                                               DecompilerContext context,
                                               BooleanSupplier active) {
         if (classBytes == null) {
-            return failureOutput(classFilePath, "class bytes not found");
+            return failureOutput(classFilePath, "类字节码未找到");
         }
         BooleanSupplier requestActive = active == null ? () -> true : active;
         if (!requestActive.getAsBoolean()) {
-            throw new CancellationException("decompile request superseded");
+            throw new CancellationException("反编译请求已被替换");
         }
 
         Future<String> future = null;
@@ -82,7 +82,7 @@ public final class DecompilerRunner {
                     classFilePath, classBytes, engine, context));
             String source = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!requestActive.getAsBoolean()) {
-                throw new CancellationException("decompile request superseded");
+                throw new CancellationException("反编译请求已被替换");
             }
             return source;
         } catch (RejectedExecutionException e) {
@@ -94,7 +94,7 @@ public final class DecompilerRunner {
         } catch (InterruptedException e) {
             future.cancel(true);
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Decompilation interrupted: " + classFilePath, e);
+            throw new RuntimeException("反编译被中断: " + classFilePath, e);
         } catch (java.util.concurrent.ExecutionException e) {
             Throwable cause = e.getCause() == null ? e : e.getCause();
             return failureOutput(classFilePath, cause.getMessage() != null
@@ -142,12 +142,12 @@ public final class DecompilerRunner {
                         fallback, effectiveContext);
                 if (fallbackSource != null && !fallbackSource.isBlank()
                         && !isDecompilerFailureOutput(fallbackSource)) {
-                    logger.warn("JD-Core failed for {}; using {} fallback. Reason: {}",
+                    logger.warn("JD-Core 反编译 {} 失败;使用 {} 回退引擎原因: {}",
                             classFilePath, fallback, jdReason);
                     return withFallbackNotice(fallbackSource, fallback, jdReason);
                 }
             } catch (RuntimeException e) {
-                logger.warn("Fallback decompiler {} failed for {}", fallback, classFilePath, e);
+                logger.warn("回退反编译器 {} 对 {} 反编译失败", fallback, classFilePath, e);
             }
         }
         return source;
@@ -177,7 +177,7 @@ public final class DecompilerRunner {
             try {
                 return node.resolveBytes();
             } catch (IOException e) {
-                logger.debug("Failed to resolve dependency class: {}", normalized, e);
+                logger.debug("解析依赖类失败: {}", normalized, e);
             }
         }
 
@@ -186,15 +186,15 @@ public final class DecompilerRunner {
                 Path path = new File(workspace.getSourceFile(), normalized + ".class").toPath();
                 return Files.exists(path) ? Files.readAllBytes(path) : null;
             } catch (IOException e) {
-                logger.debug("Failed to read dependency class from disk: {}", normalized, e);
+                logger.debug("从磁盘读取依赖类失败: {}", normalized, e);
             }
         }
         return null;
     }
 
     private static String failureOutput(String classFilePath, String reason) {
-        return "// Decompile failed: " + classFilePath
-                + "\n// " + (reason == null || reason.isBlank() ? "unknown error" : reason);
+        return "// 反编译失败: " + classFilePath
+                + "\n// " + (reason == null || reason.isBlank() ? "未知错误" : reason);
     }
 
     private static boolean isJdFailureOutput(String source) {
@@ -219,7 +219,7 @@ public final class DecompilerRunner {
 
     private static String extractJdFailureReason(String source) {
         if (source == null || source.isBlank()) {
-            return "unknown JD-Core failure";
+            return "未知的 JD-Core 错误";
         }
         String normalized = source.replace("\r\n", "\n");
         int errorIndex = normalized.indexOf("JD-Core Error:");

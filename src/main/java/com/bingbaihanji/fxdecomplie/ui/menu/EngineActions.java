@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.menu;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 
 /**
- * Engine-related menu actions.
+ * 引擎相关菜单动作
  *
  * @author bingbaihanji
  * @date 2026-06-17

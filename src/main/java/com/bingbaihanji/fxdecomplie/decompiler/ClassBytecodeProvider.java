@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
 /**
- * Provides class bytes by JVM internal name.
+ * 通过 JVM 内部名称提供类字节码
  *
  * @author bingbaihanji
  * @date 2026-06-18

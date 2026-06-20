@@ -50,14 +50,14 @@ public final class ExportService {
     }
 
     /**
-     * Export all supported workspace files according to user selected options.
+     * 根据用户选择的选项导出所有支持的工作区文件
      *
-     * @param root       workspace tree root
-     * @param config     export configuration
-     * @param index      workspace index (pre-built)
-     * @param onProgress progress callback receiving current path and percent
-     * @return export summary
-     * @throws IOException when output container cannot be created
+     * @param root       工作区树根节点
+     * @param config     导出配置
+     * @param index      工作区索引(预构建)
+     * @param onProgress 进度回调,接收当前路径和百分比
+     * @return 导出摘要
+     * @throws IOException 无法创建输出容器时抛出
      */
     public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
                                          WorkspaceIndex index,
@@ -67,12 +67,12 @@ public final class ExportService {
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(index, "index");
 
-        // ---- Step 1: tree walk — collect all exportable class/resource items ----
+        // ---- 步骤 1: 树遍历 — 收集所有可导出的类/资源条目 ----
         List<TreeItem<FileTreeNode>> items = collectExportableItems(root, config.exportResources());
         ExportState state = new ExportState(items.size(), onProgress);
         DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
 
-        // ---- Step 2: decompile & write — dispatch to ZIP or directory path ----
+        // ---- 步骤 2: 反编译并写入 — 分发到 ZIP 或目录路径 ----
         if (config.format() == ExportConfig.Format.ZIP) {
             exportAllToZip(items, context, config, state);
         } else {
@@ -179,19 +179,19 @@ public final class ExportService {
         Files.createDirectories(outputDir);
         for (TreeItem<FileTreeNode> item : items) {
             if (Thread.currentThread().isInterrupted()) {
-                state.errors.add("Export canceled");
+                state.errors.add("导出已取消");
                 return;
             }
             FileTreeNode data = item.getValue();
             try {
-                // ---- Decompile: class -> .java source, resource -> raw bytes ----
+                // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
                 ExportContent content = buildExportContent(data, context, config);
-                // ---- Path validate: ensure output stays inside the target directory ----
+                // ---- 路径验证: 确保输出保持在目标目录内 ----
                 Path target = resolveSafeOutputPath(outputDir, content.relativePath());
-                // ---- Conflict resolve: OVERWRITE / SKIP / RENAME ----
+                // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
                 target = applyDirConflictPolicy(target, config.conflictPolicy());
                 if (target != null) {
-                    // ---- Write: create parent directories and write content ----
+                    // ---- 写入: 创建父目录并写入内容 ----
                     Files.createDirectories(target.getParent());
                     Files.write(target, content.bytes());
                     state.successCount++;
@@ -217,12 +217,12 @@ public final class ExportService {
             boolean entryOpen = false;
             for (TreeItem<FileTreeNode> item : items) {
                 if (Thread.currentThread().isInterrupted()) {
-                    state.errors.add("Export canceled");
+                    state.errors.add("导出已取消");
                     if (entryOpen) {
                         try {
                             zos.closeEntry();
                         } catch (IOException e) {
-                            logger.debug("Failed to close zip entry during cancellation", e);
+                            logger.debug("取消导出时关闭 ZIP 条目失败", e);
                         }
                     }
                     return;
@@ -256,7 +256,7 @@ public final class ExportService {
             byte[] bytes = resolveClassBytes(data, context);
             if (bytes == null) {
                 throw new IllegalStateException(
-                        "class bytes not found for " + data.getFullPath());
+                        "未找到类字节码: " + data.getFullPath());
             }
             String source = DecompilerRunner.decompileWithTimeout(
                     data.getFullPath(), bytes, config.engine(), context,
@@ -270,14 +270,14 @@ public final class ExportService {
 
         byte[] bytes = data.resolveBytes();
         if (bytes == null) {
-            throw new IllegalStateException("resource bytes not found");
+            throw new IllegalStateException("资源字节码未找到");
         }
         return new ExportContent(data.getFullPath(), bytes);
     }
 
     private static String firstLine(String text) {
         if (text == null || text.isBlank()) {
-            return "decompile failed";
+            return "反编译失败";
         }
         int end = text.indexOf('\n');
         return end >= 0 ? text.substring(0, end).trim() : text.trim();
@@ -287,13 +287,13 @@ public final class ExportService {
         String normalized = normalizeRelativePath(relativePath);
         Path relative = Path.of(normalized).normalize();
         if (relative.isAbsolute() || relative.startsWith("..")) {
-            throw new IllegalArgumentException("unsafe output path");
+            throw new IllegalArgumentException("不安全的输出路径");
         }
 
         Path targetRoot = outputDir.toAbsolutePath().normalize();
         Path target = targetRoot.resolve(relative).normalize();
         if (!target.startsWith(targetRoot)) {
-            throw new IllegalArgumentException("unsafe output path: resolves outside target directory");
+            throw new IllegalArgumentException("不安全的输出路径: 解析到目标目录之外");
         }
 
         try {
@@ -305,11 +305,11 @@ public final class ExportService {
                 Path realParent = parent.toRealPath();
                 Path realTarget = realParent.resolve(target.getFileName()).normalize();
                 if (!realTarget.startsWith(realRoot)) {
-                    throw new IllegalArgumentException("unsafe output path: resolves outside target directory");
+                    throw new IllegalArgumentException("不安全的输出路径: 解析到目标目录之外");
                 }
             }
         } catch (IOException e) {
-            throw new IllegalArgumentException("cannot resolve output path: " + target, e);
+            throw new IllegalArgumentException("无法解析输出路径: " + target, e);
         }
         return target;
     }
@@ -320,12 +320,12 @@ public final class ExportService {
         for (Path part : relativeParent) {
             current = current.resolve(part).normalize();
             if (!current.startsWith(targetRoot)) {
-                throw new IllegalArgumentException("unsafe output path");
+                throw new IllegalArgumentException("不安全的输出路径");
             }
             if (Files.exists(current, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
                 Path realCurrent = current.toRealPath();
                 if (!realCurrent.startsWith(realRoot)) {
-                    throw new IllegalArgumentException("unsafe output path: resolves outside target directory");
+                    throw new IllegalArgumentException("不安全的输出路径: 解析到目标目录之外");
                 }
             } else {
                 Files.createDirectory(current);
@@ -337,18 +337,18 @@ public final class ExportService {
         String normalized = normalizeRelativePath(relativePath);
         Path path = Path.of(normalized).normalize();
         if (path.isAbsolute() || path.startsWith("..")) {
-            throw new IllegalArgumentException("unsafe ZIP entry path");
+            throw new IllegalArgumentException("不安全的 ZIP 条目路径");
         }
         return path.toString().replace('\\', '/');
     }
 
     private static String normalizeRelativePath(String relativePath) {
         if (relativePath == null || relativePath.isBlank()) {
-            throw new IllegalArgumentException("empty output path");
+            throw new IllegalArgumentException("输出路径为空");
         }
         String normalized = relativePath.replace('\\', '/');
         if (normalized.startsWith("/") || normalized.contains(":")) {
-            throw new IllegalArgumentException("unsafe output path");
+            throw new IllegalArgumentException("不安全的输出路径");
         }
         return normalized;
     }
@@ -386,7 +386,7 @@ public final class ExportService {
                 return candidate;
             }
         }
-        throw new IOException("unable to find available output path: " + target);
+        throw new IOException("无法找到可用的输出路径: " + target);
     }
 
     private static String nextAvailableEntry(String entryName, Set<String> writtenEntries) {
@@ -401,7 +401,7 @@ public final class ExportService {
                 return candidate;
             }
         }
-        throw new IllegalStateException("unable to find available ZIP entry: " + entryName);
+        throw new IllegalStateException("无法找到可用的 ZIP 条目: " + entryName);
     }
 
     private static String baseName(String fileName) {

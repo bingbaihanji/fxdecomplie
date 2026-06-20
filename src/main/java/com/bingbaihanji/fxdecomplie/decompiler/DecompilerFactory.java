@@ -46,7 +46,7 @@ public final class DecompilerFactory {
             try {
                 engine.cleanup();
             } catch (Exception e) {
-                logger.warn("Failed to cleanup decompiler engine: {}", engine.getType(), e);
+                logger.warn("清理反编译引擎失败: {}", engine.getType(), e);
             }
         });
         CACHE.clear();

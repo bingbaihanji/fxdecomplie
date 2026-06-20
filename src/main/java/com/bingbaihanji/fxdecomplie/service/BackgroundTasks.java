@@ -38,7 +38,7 @@ public final class BackgroundTasks {
         throw new AssertionError("utility class");
     }
 
-    /** @return a Future that can be cancelled via {@link #cancel(Future)} */
+    /** @return 可通过 {@link #cancel(Future)} 取消的 Future */
     public static Future<?> run(String name, Runnable task) {
         try {
             return EXECUTOR.submit(() -> {
@@ -48,21 +48,21 @@ public final class BackgroundTasks {
                 task.run();
             });
         } catch (RejectedExecutionException e) {
-            logger.warn("Background task rejected: {}", name, e);
+            logger.warn("后台任务被拒绝: {}", name, e);
             CompletableFuture<Void> failed = new CompletableFuture<>();
             failed.completeExceptionally(e);
             return failed;
         }
     }
 
-    /** @param future the task to cancel (null-safe, no-op if already done) */
+    /** @param future 要取消的任务(null 安全,已完成时为 no-op) */
     public static void cancel(Future<?> future) {
         if (future != null && !future.isDone()) {
             future.cancel(true);
         }
     }
 
-    /** Shut down the executor gracefully, waiting up to 3 seconds for tasks to finish. */
+    /** 优雅关闭执行器,最多等待 3 秒让任务完成 */
     public static void shutdown() {
         EXECUTOR.shutdown();
         try {

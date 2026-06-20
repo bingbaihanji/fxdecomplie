@@ -9,7 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Reads and writes .fxdproj project files.
+ * 读取与写入 .fxdproj 项目文件
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -19,7 +19,7 @@ public final class ProjectFileManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private ProjectFileManager() {
-        throw new AssertionError("utility class");
+        throw new AssertionError("工具类不可实例化");
     }
 
     public static void save(Path path, DecompilerProject project) throws IOException {
@@ -34,11 +34,11 @@ public final class ProjectFileManager {
         try {
             DecompilerProject project = GSON.fromJson(Files.readString(path), DecompilerProject.class);
             if (project == null) {
-                throw new IOException("Project file is empty");
+                throw new IOException("项目文件为空");
             }
             return project;
         } catch (JsonParseException e) {
-            throw new IOException("Invalid project file: " + path, e);
+            throw new IOException("无效的项目文件: " + path, e);
         }
     }
 }

@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.menu;
 import java.util.List;
 
 /**
- * File-related menu actions.
+ * 文件相关菜单动作
  *
  * @author bingbaihanji
  * @date 2026-06-17

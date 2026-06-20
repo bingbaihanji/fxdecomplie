@@ -154,7 +154,7 @@ public final class UsageSearchService {
                 }
             }, ClassReader.SKIP_FRAMES);
         } catch (Exception e) {
-            logger.debug("Failed to scan class body with ASM: {}", cls.fullPath(), e);
+            logger.debug("ASM 扫描类体失败: {}", cls.fullPath(), e);
         }
     }
 
@@ -347,8 +347,8 @@ public final class UsageSearchService {
                 memberQuery = classQuery.substring(hash + 1);
                 classQuery = classQuery.substring(0, hash);
                 if (classQuery.isBlank()) {
-                    // Reject "#" and "#member"; owner-less member searches would match every class.
-                    classQuery = "\0"; // sentinel that matches nothing
+                    // 拒绝 "#" 和 "#member";无所有者的成员搜索会匹配所有类
+                    classQuery = "\0"; // 哨兵值,不匹配任何类
                 }
             }
             return new Target(rawQuery.replace('.', '/'), classQuery, memberQuery);

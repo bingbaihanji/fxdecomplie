@@ -8,38 +8,38 @@ import java.util.Deque;
 import java.util.function.BiConsumer;
 
 /**
- * Minimal path-based navigation service with linear back/forward history.
+ * 基于路径的最小导航服务,支持线性的前进/后退历史记录
  *
  * @author bingbaihanji
  * @date 2026-06-18
  */
 public final class NavigationService {
 
-    /** Backward navigation history (LIFO stack) */
+    /** 后退导航历史(LIFO 栈) */
     private final Deque<PathNode<?>> backStack = new ArrayDeque<>();
-    /** Forward navigation history (cleared on new navigation) */
+    /** 前进导航历史(新导航时清空) */
     private final Deque<PathNode<?>> forwardStack = new ArrayDeque<>();
-    /** Currently active navigation path */
+    /** 当前活跃的导航路径 */
     private PathNode<?> currentPath;
 
-    /** @return a path node chain wrapping a workspace and class file for navigation tracking */
+    /** @return 包装工作区和类文件的路径节点链,用于导航跟踪 */
     public PathNode<?> classPath(Workspace workspace, FileTreeNode node) {
         return new ClassPathNode(new WorkspacePathNode(workspace), node);
     }
 
-    /** @return a path node chain wrapping a workspace and resource file for navigation tracking */
+    /** @return 包装工作区和资源文件的路径节点链,用于导航跟踪 */
     public PathNode<?> resourcePath(Workspace workspace, FileTreeNode node) {
         return new ResourcePathNode(new WorkspacePathNode(workspace), node);
     }
 
     /**
-     * Navigate to a path node, recording the current position in history.
+     * 导航到路径节点,记录当前在历史中的位置
      *
-     * @param path         target path node
-     * @param workspace    current workspace
-     * @param codeTabPane  code tab container
-     * @param classOpener  callback to open a class file
-     * @param resourceOpener callback to open a resource file
+     * @param path          目标路径节点
+     * @param workspace     当前工作区
+     * @param codeTabPane   代码标签页容器
+     * @param classOpener   打开类文件的回调
+     * @param resourceOpener 打开资源文件的回调
      */
     public synchronized void openPath(PathNode<?> path, Workspace workspace, TabPane codeTabPane,
                          BiConsumer<FileTreeNode, TabPane> classOpener,
@@ -48,7 +48,7 @@ public final class NavigationService {
     }
 
     /**
-     * Navigate backward in history.
+     * 在历史中向后导航
      */
     public synchronized void goBack(Workspace workspace, TabPane codeTabPane,
                        BiConsumer<FileTreeNode, TabPane> classOpener,
@@ -62,7 +62,7 @@ public final class NavigationService {
     }
 
     /**
-     * Navigate forward in history.
+     * 在历史中向前导航
      */
     public synchronized void goForward(Workspace workspace, TabPane codeTabPane,
                           BiConsumer<FileTreeNode, TabPane> classOpener,
@@ -75,12 +75,12 @@ public final class NavigationService {
         openPath(target, workspace, codeTabPane, classOpener, resourceOpener, false);
     }
 
-    /** @return true if there is a previous path in the back stack */
+    /** @return 如果后退栈中存在上一个路径则返回 true */
     public boolean canGoBack() {
         return !backStack.isEmpty();
     }
 
-    /** @return true if there is a next path in the forward stack */
+    /** @return 如果前进栈中存在下一个路径则返回 true */
     public boolean canGoForward() {
         return !forwardStack.isEmpty();
     }
@@ -89,22 +89,22 @@ public final class NavigationService {
                           BiConsumer<FileTreeNode, TabPane> classOpener,
                           BiConsumer<FileTreeNode, TabPane> resourceOpener,
                           boolean recordHistory) {
-        // ---- Path resolution: extract FileTreeNode from the path chain ----
+        // ---- 路径解析: 从路径链中提取 FileTreeNode ----
         FileTreeNode node = path.getValueOfType(FileTreeNode.class);
         if (node == null) {
             return;
         }
-        // ---- History recording: push current position to backStack, clear forward ----
+        // ---- 历史记录: 将当前位置推入 backStack,清空 forward ----
         if (recordHistory && currentPath != null) {
             backStack.push(currentPath);
             forwardStack.clear();
-            // Limit history to prevent unbounded memory growth
+            // 限制历史记录防止无限内存增长
             while (backStack.size() > 100) {
                 backStack.removeLast();
             }
         }
         currentPath = path;
-        // ---- Dispatch: route to class opener or resource opener based on node type ----
+        // ---- 分发: 根据节点类型路由到类打开器或资源打开器 ----
         if (node.isClassFile()) {
             classOpener.accept(node, codeTabPane);
         } else if (node.isTextFile()) {

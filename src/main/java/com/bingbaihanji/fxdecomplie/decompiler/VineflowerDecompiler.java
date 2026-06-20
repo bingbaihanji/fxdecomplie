@@ -34,33 +34,33 @@ public class VineflowerDecompiler implements Decompiler {
     /** @return Vineflower 默认选项配置 */
     private static Map<String, Object> createDefaultOptions() {
         Map<String, Object> opts = new HashMap<>();
-        opts.put("den", "1");           // 反编译内部/匿名类 (decompile inner)
-        opts.put("dgs", "1");           // 反编译泛型签名 (decompile generic signatures)
-        opts.put("din", "1");           // 反编译内联方法 (decompile inline)
-        opts.put("rbr", "1");           // 移除桥接方法 (remove bridge methods)
-        opts.put("rsy", "1");           // 移除合成成员 (remove synthetic)
-        opts.put("bto", "1");           // 字节码转源码优化 (bytecode to source)
-        opts.put("nns", "1");           // 新数字表示法 (new numeric syntax)
+        opts.put("den", "1");           // 反编译内部/匿名类
+        opts.put("dgs", "1");           // 反编译泛型签名
+        opts.put("din", "1");           // 反编译内联方法
+        opts.put("rbr", "1");           // 移除桥接方法
+        opts.put("rsy", "1");           // 移除合成成员
+        opts.put("bto", "1");           // 字节码转源码优化
+        opts.put("nns", "1");           // 新数字表示法
         opts.put("uto", "0");           // 未定义类型优化: 关闭
-        opts.put("udv", "1");           // 未定义变量处理 (undefined variable)
-        opts.put("ump", "1");           // 使用方法参数名 (use method parameters)
-        opts.put("fdi", "1");           // 最终去混淆 (final deobfuscation)
+        opts.put("udv", "1");           // 未定义变量处理
+        opts.put("ump", "1");           // 使用方法参数名
+        opts.put("fdi", "1");           // 最终去混淆
         opts.put("asc", "0");           // ASCII 编码限制: 保持 Unicode
-        opts.put("rer", "1");           // 移除空 return (remove empty returns)
-        opts.put("rgn", "1");           // 移除无用 goto (remove gotos)
-        opts.put("lit", "1");           // 字面量简化 (literal simplification)
-        opts.put("bsm", "1");           // Bootstrap 方法还原 (bootstrap methods)
-        opts.put("mpm", "60");          // 单方法最大处理时间(秒) (max process millis)
+        opts.put("rer", "1");           // 移除空 return
+        opts.put("rgn", "1");           // 移除无用 goto
+        opts.put("lit", "1");           // 字面量简化
+        opts.put("bsm", "1");           // Bootstrap 方法还原
+        opts.put("mpm", "60");          // 单方法最大处理时间(秒)
         opts.put("lac", "0");           // 本地匿名类: 关闭
-        opts.put("nls", "1");           // 换行符样式 (new line separator)
+        opts.put("nls", "1");           // 换行符样式
         opts.put("ind", "    ");        // 缩进: 4空格
         opts.put("log", "ERROR");       // 日志级别：批量反编译时避免 WARN 噪音
-        opts.put("pll", "130");         // 建议行长度 (preferred line length)
+        opts.put("pll", "130");         // 建议行长度
         opts.put("rec", "1");           // 支持 record 类型
         opts.put("sea", "1");           // 支持 sealed class
-        opts.put("pam", "1");           // 支持模式匹配 (pattern matching)
+        opts.put("pam", "1");           // 支持模式匹配
         opts.put("swi", "1");           // 支持 switch 表达式
-        opts.put("vac", "1");           // 变量访问优化 (variable access)
+        opts.put("vac", "1");           // 变量访问优化
         return Collections.unmodifiableMap(opts);
     }
 
@@ -72,12 +72,12 @@ public class VineflowerDecompiler implements Decompiler {
                     java.nio.file.Files.deleteIfExists(p);
                 } catch (java.io.IOException e) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Failed to delete temp file: {}", p, e);
+                        logger.debug("删除临时文件失败: {}", p, e);
                     }
                 }
             });
         } catch (java.io.IOException e) {
-            logger.warn("Failed to clean temp dir: {}", dir, e);
+            logger.warn("清理临时目录失败: {}", dir, e);
         }
     }
 
@@ -219,7 +219,7 @@ public class VineflowerDecompiler implements Decompiler {
                 try {
                     Files.deleteIfExists(tempClassFile.toPath());
                 } catch (IOException e) {
-                    logger.warn("Failed to delete temp class file: {}", tempClassFile, e);
+                    logger.warn("删除临时类文件失败: {}", tempClassFile, e);
                 }
             }
             if (tempDir != null) {

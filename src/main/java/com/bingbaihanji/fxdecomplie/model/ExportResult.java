@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Result summary for a batch export.
+ * 批量导出的结果摘要
  *
  * @author bingbaihanji
  * @date 2026-06-18

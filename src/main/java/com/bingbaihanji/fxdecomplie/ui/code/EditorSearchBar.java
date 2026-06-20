@@ -125,7 +125,7 @@ public final class EditorSearchBar extends HBox {
         codeArea.requestFocus();
     }
 
-    /** Convert a flat character offset to a TextPos (line, column). */
+    /** 将平坦字符偏移转换为 TextPos(行列坐标) */
     private TextPos offsetToTextPos(int targetOffset) {
         String content = codeArea.getText();
         if (content == null || targetOffset <= 0) {

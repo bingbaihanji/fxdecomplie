@@ -21,6 +21,7 @@ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbaihanji.fxdecomplie.ui.window.AppHeaderBar;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -42,9 +43,9 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 /**
- * Central controller of the FxDecompiler application window.
- * Manages the outer workspace TabPane, inner code tabs, menu bar actions,
- * file loading, search, export, and all user interactions.
+ * FxDecompiler 应用窗口的中央控制器
+ * 管理外层工作区 TabPane、内部代码标签页、菜单栏操作、
+ * 文件加载、搜索、导出及所有用户交互
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -582,7 +583,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
     /** 装配所有搜索 Provider、构建源码缓存并弹出搜索对话框 */
     private void openSearchWithIndex(WorkspaceView view, WorkspaceIndex index, String initialQuery) {
-        // Build source cache from open tabs
+        // 从已打开标签页构建源码缓存
         java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
         for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
             if (tab instanceof CodeEditorTab codeTab
@@ -592,7 +593,7 @@ public class MainWindow implements MainMenuBar.Actions {
             }
         }
 
-        // Create SearchService with all providers
+        // 创建包含所有 Provider 的 SearchService
         SearchService searchService = new SearchService();
         searchService.setExcludePatterns(config.search().excludePatterns());
         searchService.addProvider(new ClassSearchProvider(index.classPaths()));
@@ -692,7 +693,7 @@ public class MainWindow implements MainMenuBar.Actions {
         alert.setHeaderText("FxDecompiler");
         alert.setOnShown(e -> {
             var win = alert.getDialogPane().getScene().getWindow();
-            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(win);
+            DefaultWindowTheme.applyWindowDarkMode(win);
             if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
         });
 
@@ -780,18 +781,18 @@ public class MainWindow implements MainMenuBar.Actions {
         if (node != null) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
                     currentEngine, lineNumbersEnabled);
-            // Navigate to the target line after decompilation completes
+            // 反编译完成后导航到目标行
             navigateToLine(view, fullPath, lineNumber, 0);
         }
     }
 
     /** 延迟轮询工作区标签页,等待解编译完成并将 CodeArea 滚动到目标行(最多 2 秒) */
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
-        // max ~2 seconds
+        // 最多约 2 秒
         if (retries > 20) {
             return;
         }
-        if (!tabManager.isWorkspaceActive(view)) return; // workspace was closed
+        if (!tabManager.isWorkspaceActive(view)) return; // 工作区已关闭
         javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(
                 javafx.util.Duration.millis(100));
         delay.setOnFinished(e -> {
@@ -868,7 +869,7 @@ public class MainWindow implements MainMenuBar.Actions {
                 completed = false;
                 break;
             }
-            if (System.currentTimeMillis() - startTime > 120_000) { // 2 min total timeout
+            if (System.currentTimeMillis() - startTime > 120_000) { // 总计 2 分钟超时
                 completed = false;
                 break;
             }
@@ -944,7 +945,7 @@ public class MainWindow implements MainMenuBar.Actions {
         alert.setContentText(message);
         alert.setOnShown(e -> {
             var win = alert.getDialogPane().getScene().getWindow();
-            com.bingbaihanji.fxdecomplie.platform.FxTools.applyWindowDarkMode(win);
+            DefaultWindowTheme.applyWindowDarkMode(win);
             if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
         });
         ButtonType openOutput = new ButtonType(I18nUtil.getString("dialog.export.openOutput"));

@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.model;
 import java.util.Objects;
 
 /**
- * Bytecode-level usage search result.
+ * 字节码级别的用法搜索结果
  *
  * @author bingbaihanji
  * @date 2026-06-18

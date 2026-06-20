@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
 /**
- * Search execution scope selected by the search dialog.
+ * 搜索对话框中选定的搜索执行范围
  */
 public enum SearchScope {
     ALL(true),
@@ -19,7 +19,7 @@ public enum SearchScope {
     }
 
     /**
-     * @return true when full-source cache can change the result set for this scope
+     * @return true 表示完整源码缓存可能改变此范围的搜索结果集
      */
     public boolean sourceCacheRelevant() {
         return sourceCacheRelevant;

@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.menu;
 
 /**
- * Edit-related menu actions.
+ * 编辑相关菜单动作
  *
  * @author bingbaihanji
  * @date 2026-06-17

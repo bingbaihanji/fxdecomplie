@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.model;
 
 /**
- * Path node for a workspace. Root of a navigation path chain.
+ * 工作区路径节点导航路径链的根节点
  *
  * @author bingbaihanji
  * @date 2026-06-18

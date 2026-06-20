@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import java.util.Map;
 
 /**
- * Shared helpers for resolving decompiler-specific options and cache keys.
+ * 解析反编译器特定选项和缓存键的共享辅助方法
  */
 public final class DecompilerOptions {
 
