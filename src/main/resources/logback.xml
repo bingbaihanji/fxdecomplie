@@ -48,6 +48,9 @@
     <!-- 项目包的日志级别 -->
     <logger name="com.bingbaihanji" level="INFO"/>
 
+    <!-- Vineflower 批量反编译时会产生大量嵌套类缺失/枚举switch错误日志，功能不受影响 -->
+    <logger name="com.bingbaihanji.fxdecomplie.decompiler.VineflowerDecompiler" level="OFF"/>
+
     <!-- Root Logger -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

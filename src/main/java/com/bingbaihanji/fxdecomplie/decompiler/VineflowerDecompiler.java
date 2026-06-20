@@ -54,7 +54,7 @@ public class VineflowerDecompiler implements Decompiler {
         opts.put("lac", "0");           // 本地匿名类: 关闭
         opts.put("nls", "1");           // 换行符样式 (new line separator)
         opts.put("ind", "    ");        // 缩进: 4空格
-        opts.put("log", "WARN");        // 日志级别
+        opts.put("log", "ERROR");       // 日志级别：批量反编译时避免 WARN 噪音
         opts.put("pll", "130");         // 建议行长度 (preferred line length)
         opts.put("rec", "1");           // 支持 record 类型
         opts.put("sea", "1");           // 支持 sealed class
