@@ -5,7 +5,7 @@ import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 /**
- * 通用对话框工具方法。
+ * 通用对话框工具方法
  *
  * @author bingbaihanji
  * @date 2026-06-18

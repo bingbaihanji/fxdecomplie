@@ -5,8 +5,8 @@ import org.jd.core.v1.api.loader.Loader;
 import org.jd.core.v1.api.printer.Printer;
 
 /**
- * JD-Core 反编译引擎适配器。
- * 从 moe.sota.decompiler 项目移植。
+ * JD-Core 反编译引擎适配器
+ * 从 moe.sota.decompiler 项目移植
  *
  * @author bingbaihanji
  * @date 2026-06-18

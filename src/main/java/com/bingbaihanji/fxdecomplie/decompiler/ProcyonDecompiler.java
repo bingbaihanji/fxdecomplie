@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 /**
- * Procyon 反编译引擎适配器。
+ * Procyon 反编译引擎适配器
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -104,7 +104,7 @@ public class ProcyonDecompiler implements Decompiler {
         return DecompilerTypeEnum.PROCYON;
     }
 
-    /** Procyon 类型加载器，优先从缓存获取字节码 */
+    /** Procyon 类型加载器,优先从缓存获取字节码 */
     private static class CachedTypeLoader implements ITypeLoader {
         /** 目标类型名 */
         private final String targetName;

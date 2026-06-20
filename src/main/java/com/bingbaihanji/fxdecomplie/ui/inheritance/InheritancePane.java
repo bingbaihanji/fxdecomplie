@@ -12,7 +12,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 /**
- * 类继承层次面板。显示当前类的父类链和已知子类。
+ * 类继承层次面板显示当前类的父类链和已知子类
  *
  * @author bingbaihanji
  * @date 2026-06-17

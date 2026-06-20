@@ -8,7 +8,7 @@ import jfx.incubator.scene.control.richtext.model.RichParagraph;
 import jfx.incubator.scene.control.richtext.model.StyleAttributeMap;
 
 /**
- * 文本文件语法装饰器。将所有文本应用浅色前景色以适配暗色主题。
+ * 文本文件语法装饰器将所有文本应用浅色前景色以适配暗色主题
  *
  * @author bingbaihanji
  * @date 2026-06-17

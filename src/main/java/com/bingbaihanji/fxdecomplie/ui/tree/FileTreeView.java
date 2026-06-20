@@ -5,7 +5,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 
 /**
- * 文件树视图组件，展示反编译项目的包和类层级结构。
+ * 文件树视图组件,展示反编译项目的包和类层级结构
  *
  * @author bingbaihanji
  * @date 2026-06-17

@@ -32,9 +32,9 @@ module fxdecomplie {
     opens com.bingbaihanji.fxdecomplie.config to com.google.gson;
     opens com.bingbaihanji.fxdecomplie.model to com.google.gson;
 
-    // 开放 decompiler 包给 Gson（用于枚举反序列化）
+    // 开放 decompiler 包给 Gson(用于枚举反序列化)
     opens com.bingbaihanji.fxdecomplie.decompiler to com.google.gson;
 
-    // 开放 platform.win32 包给 JNA（用于 Structure 反射读取字段）
+    // 开放 platform.win32 包给 JNA(用于 Structure 反射读取字段)
     opens com.bingbaihanji.fxdecomplie.platform.win32 to com.sun.jna;
 }

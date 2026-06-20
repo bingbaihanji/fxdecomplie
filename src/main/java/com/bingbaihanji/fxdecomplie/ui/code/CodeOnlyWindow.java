@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbaihanji.fxdecomplie.FxDecompilerApp;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import com.bingbaihanji.fxdecomplie.platform.FxTools;
@@ -13,21 +12,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DataFormat;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
+import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -80,69 +70,6 @@ public final class CodeOnlyWindow {
         return window;
     }
 
-    public void addTab(CodeEditorTab tab) {
-        tabPane.getTabs().add(tab);
-        enableTabDrag(tab);
-        tabPane.getSelectionModel().select(tab);
-        updateTitle();
-    }
-
-    private void show() {
-        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
-
-        // Accept drops from OTHER TabPanes only (prevent self-drop)
-        tabPane.addEventFilter(DragEvent.DRAG_OVER, event -> {
-            TabPane sourcePane = resolveSourcePane(event.getDragboard(), false);
-            if (sourcePane != tabPane && hasPayload(event.getDragboard())) {
-                event.acceptTransferModes(TransferMode.MOVE);
-                event.consume();
-            }
-        });
-        tabPane.addEventFilter(DragEvent.DRAG_DROPPED, event -> {
-            String token = getDragToken(event.getDragboard());
-            TabPane sourcePane = resolveSourcePane(token, true);
-            CodeEditorTab sourceTab = resolveSourceTab(token, true);
-            CodeTabPayload payload = resolvePayload(token, true);
-            if (payload != null && sourcePane != tabPane) {
-                CodeEditorTab newTab = createTab(payload, config, editorTheme);
-                if (sourcePane != null) {
-                    removeSourceTab(sourcePane, sourceTab, payload);
-                }
-                addTab(newTab);
-                event.setDropCompleted(true);
-                event.consume();
-                return;
-            }
-            event.setDropCompleted(false);
-        });
-
-        tabPane.getSelectionModel().selectedItemProperty()
-                .addListener((obs, oldTab, newTab) -> updateTitle());
-
-        BorderPane root = new BorderPane(tabPane);
-        root.getStyleClass().add("app-root");
-
-        Scene scene = new Scene(root, stage.getWidth(), stage.getHeight());
-        scene.setFill(Color.web("#1e1e1e"));
-        scene.getStylesheets().add(AppTheme.darkStylesheet());
-
-        updateTitle();
-        stage.setScene(scene);
-        stage.show();
-        FxTools.applyWindowDarkMode(stage);
-    }
-
-    private void updateTitle() {
-        Tab selected = tabPane.getSelectionModel().getSelectedItem();
-        if (selected instanceof CodeEditorTab codeTab) {
-            stage.setTitle("FxDecompiler - " + codeTab.getDisplayTitle());
-        } else {
-            stage.setTitle(selected == null ? "FxDecompiler" : "FxDecompiler - " + selected.getText());
-        }
-    }
-
-    // ==================== Drag Source ====================
-
     /** Enable drag on a single CodeEditorTab header. */
     public static void enableTabDrag(CodeEditorTab tab) {
         Node title = tab.getGraphic();
@@ -177,8 +104,6 @@ public final class CodeOnlyWindow {
         DragCleanupHandler cleanup = new DragCleanupHandler(source, token);
         source.addEventHandler(DragEvent.DRAG_DONE, cleanup);
     }
-
-    // ==================== Drag Target (shared, usable by any TabPane) ====================
 
     /**
      * Install cross-window tab drag-drop handlers on any TabPane.
@@ -215,6 +140,8 @@ public final class CodeOnlyWindow {
         enableTabDragListener(tabPane);
     }
 
+    // ==================== Drag Source ====================
+
     /**
      * Add a listener that calls enableTabDrag on every CodeEditorTab added to the TabPane.
      */
@@ -233,11 +160,11 @@ public final class CodeOnlyWindow {
                 });
     }
 
-    // ==================== Payload helpers ====================
-
     private static boolean hasPayload(Dragboard dragboard) {
         return resolvePayload(dragboard, false) != null;
     }
+
+    // ==================== Drag Target (shared, usable by any TabPane) ====================
 
     private static CodeTabPayload resolvePayload(Dragboard dragboard, boolean remove) {
         CodeTabPayload payload = resolvePayload(
@@ -256,6 +183,8 @@ public final class CodeOnlyWindow {
         if (token == null) return null;
         return remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
     }
+
+    // ==================== Payload helpers ====================
 
     private static CodeTabPayload resolvePayload(Object content, boolean remove) {
         if (content instanceof CodeTabPayload payload) {
@@ -336,8 +265,6 @@ public final class CodeOnlyWindow {
         DRAG_SOURCE_TABS.remove(token);
     }
 
-    // ==================== Tab creation ====================
-
     public static CodeEditorTab copyTab(CodeEditorTab sourceTab, AppConfig config,
                                         VsCodeThemeLoader.ThemeData editorTheme) {
         return createTab(toPayload(sourceTab), config, editorTheme);
@@ -359,7 +286,7 @@ public final class CodeOnlyWindow {
                 openFile.sourceCode(), openFile.engine(), tab.getClassBytes());
     }
 
-    // ==================== App icon ====================
+    // ==================== Tab creation ====================
 
     private static void setAppIcon(Stage stage) {
         try {
@@ -368,6 +295,69 @@ public final class CodeOnlyWindow {
                 stage.getIcons().add(new Image(stream));
             }
         } catch (Exception ignored) {
+        }
+    }
+
+    public void addTab(CodeEditorTab tab) {
+        tabPane.getTabs().add(tab);
+        enableTabDrag(tab);
+        tabPane.getSelectionModel().select(tab);
+        updateTitle();
+    }
+
+    private void show() {
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
+
+        // Accept drops from OTHER TabPanes only (prevent self-drop)
+        tabPane.addEventFilter(DragEvent.DRAG_OVER, event -> {
+            TabPane sourcePane = resolveSourcePane(event.getDragboard(), false);
+            if (sourcePane != tabPane && hasPayload(event.getDragboard())) {
+                event.acceptTransferModes(TransferMode.MOVE);
+                event.consume();
+            }
+        });
+        tabPane.addEventFilter(DragEvent.DRAG_DROPPED, event -> {
+            String token = getDragToken(event.getDragboard());
+            TabPane sourcePane = resolveSourcePane(token, true);
+            CodeEditorTab sourceTab = resolveSourceTab(token, true);
+            CodeTabPayload payload = resolvePayload(token, true);
+            if (payload != null && sourcePane != tabPane) {
+                CodeEditorTab newTab = createTab(payload, config, editorTheme);
+                if (sourcePane != null) {
+                    removeSourceTab(sourcePane, sourceTab, payload);
+                }
+                addTab(newTab);
+                event.setDropCompleted(true);
+                event.consume();
+                return;
+            }
+            event.setDropCompleted(false);
+        });
+
+        tabPane.getSelectionModel().selectedItemProperty()
+                .addListener((obs, oldTab, newTab) -> updateTitle());
+
+        BorderPane root = new BorderPane(tabPane);
+        root.getStyleClass().add("app-root");
+
+        Scene scene = new Scene(root, stage.getWidth(), stage.getHeight());
+        scene.setFill(Color.web("#1e1e1e"));
+        scene.getStylesheets().add(AppTheme.darkStylesheet());
+
+        updateTitle();
+        stage.setScene(scene);
+        stage.show();
+        FxTools.applyWindowDarkMode(stage);
+    }
+
+    // ==================== App icon ====================
+
+    private void updateTitle() {
+        Tab selected = tabPane.getSelectionModel().getSelectedItem();
+        if (selected instanceof CodeEditorTab codeTab) {
+            stage.setTitle("FxDecompiler - " + codeTab.getDisplayTitle());
+        } else {
+            stage.setTitle(selected == null ? "FxDecompiler" : "FxDecompiler - " + selected.getText());
         }
     }
 

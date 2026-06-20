@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * 设置对话框 — 分类标签页式配置界面。
+ * 设置对话框 — 分类标签页式配置界面
  *
  * @author bingbaihanji
  * @date 2026-06-18

@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie;
 
 /**
- * 应用启动器，委托到 FxDecompilerApp.main()。
+ * 应用启动器,委托到 FxDecompilerApp.main()
  *
  * @author bingbaihanji
  * @date 2026-06-17

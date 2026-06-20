@@ -159,11 +159,6 @@ public final class FindUsageDialog {
         };
     }
 
-    @FunctionalInterface
-    public interface JumpCallback {
-        void jump(String fullPath, int lineNumber);
-    }
-
     private static void setDialogIcon(Stage stage) {
         try (var stream = FindUsageDialog.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
@@ -171,5 +166,10 @@ public final class FindUsageDialog {
             }
         } catch (Exception ignored) {
         }
+    }
+
+    @FunctionalInterface
+    public interface JumpCallback {
+        void jump(String fullPath, int lineNumber);
     }
 }

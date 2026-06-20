@@ -16,14 +16,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * VS Code 主题加载器，解析 VS Code 主题 JSON 文件并生成编辑器配色方案。
+ * VS Code 主题加载器,解析 VS Code 主题 JSON 文件并生成编辑器配色方案
  *
  * @author bingbaihanji
  * @date 2026-06-17
  */
 public final class VsCodeThemeLoader {
 
-    /** 内置默认暗色主题（懒加载） */
+    /** 内置默认暗色主题(懒加载) */
     private static final ThemeData DEFAULT_DARK = buildDefaultDark();
 
     private VsCodeThemeLoader() {
@@ -136,10 +136,10 @@ public final class VsCodeThemeLoader {
     }
 
     /**
-     * 主题数据。
+     * 主题数据
      *
      * @param name                  主题名称
-     * @param type                  主题类型（dark/light）
+     * @param type                  主题类型(dark/light)
      * @param editorBackground      编辑器背景色
      * @param editorForeground      编辑器前景色
      * @param lineNumberForeground  行号颜色

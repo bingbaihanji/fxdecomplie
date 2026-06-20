@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * L3 磁盘持久化缓存。将反编译结果序列化到 {@code <appDir>/cache/} 下。
- * 超量时自动清理旧缓存。
+ * L3 磁盘持久化缓存将反编译结果序列化到 {@code <appDir>/cache/} 下
+ * 超量时自动清理旧缓存
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -87,7 +87,7 @@ public final class DiskCodeCache {
         }
     }
 
-    /** 检查并在缓存超过 500MB 时清理最早的条目（应在启动时调用），使用两遍扫描避免收集所有路径到内存。 */
+    /** 检查并在缓存超过 500MB 时清理最早的条目(应在启动时调用),使用两遍扫描避免收集所有路径到内存 */
     public static void cleanIfNeeded() {
         try {
             if (!Files.exists(CACHE_ROOT)) return;

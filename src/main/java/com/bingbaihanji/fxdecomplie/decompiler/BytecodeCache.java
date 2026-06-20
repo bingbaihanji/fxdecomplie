@@ -8,15 +8,15 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 
 /**
- * 全局字节码缓存。在打开 JAR/ZIP 时预加载 class 字节码，供反编译器解析类型依赖时查找。
- * 最大 5000 条目，30 分钟过期，软引用值以允许 GC 回收。
+ * 全局字节码缓存在打开 JAR/ZIP 时预加载 class 字节码,供反编译器解析类型依赖时查找
+ * 最大 5000 条目,30 分钟过期,软引用值以允许 GC 回收
  *
  * @author bingbaihanji
  * @date 2026-06-17
  */
 public final class BytecodeCache {
 
-    /** 有界字节码缓存，internalName → byte[]，软引用值，最大 5000 条目，30 分钟 TTL */
+    /** 有界字节码缓存,internalName → byte[],软引用值,最大 5000 条目,30 分钟 TTL */
     private static final Cache<String, byte[]> CACHE = Caffeine.newBuilder()
             .maximumSize(5_000)
             .expireAfterAccess(Duration.ofMinutes(30))
@@ -46,7 +46,7 @@ public final class BytecodeCache {
         CACHE.invalidateAll();
     }
 
-    /** 遍历所有缓存条目（供继承分析等模块使用） */
+    /** 遍历所有缓存条目(供继承分析等模块使用) */
     public static void forEach(BiConsumer<String, byte[]> action) {
         CACHE.asMap().forEach(action);
     }

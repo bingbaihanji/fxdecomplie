@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.util.Locale;
 
 /**
- * FxDecompiler 应用启动器，负责启用 JavaFX 预览特性并引导 Application 启动。
+ * FxDecompiler 应用启动器,负责启用 JavaFX 预览特性并引导 Application 启动
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -37,7 +37,7 @@ public final class FxDecompilerApp {
     private static final String JAVAFX_PREVIEW_PROPERTY = "javafx.enablePreview";
     /** 抑制预览警告属性名 */
     private static final String JAVAFX_SUPPRESS_PREVIEW_WARNING_PROPERTY = "javafx.suppressPreviewWarning";
-    /** 启动错误日志文件路径（位于应用根目录 logs 子目录下） */
+    /** 启动错误日志文件路径(位于应用根目录 logs 子目录下) */
     private static final Path STARTUP_ERROR_LOG =
             AppConfig.appDir().resolve("logs").resolve("startup-error.log");
 
@@ -92,14 +92,14 @@ public final class FxDecompilerApp {
 
     public static final class FxApplication extends Application {
 
-        /** 为主窗口应用平台原生窗口外观（DWM 暗色主题、阴影、圆角等） */
+        /** 为主窗口应用平台原生窗口外观(DWM 暗色主题、阴影、圆角等) */
         public void initWindows(Stage primaryStage) {
             FxTools.applyWindowDarkMode(primaryStage);
         }
 
         /** 应用配置引用 */
         private AppConfig config;
-        /** 主窗口控制器，用于直接关闭窗口时释放工作区资源。 */
+        /** 主窗口控制器,用于直接关闭窗口时释放工作区资源 */
         private MainWindow window;
         /** Primary stage used to persist window state on all exit paths. */
         private Stage primaryStage;
@@ -116,7 +116,7 @@ public final class FxDecompilerApp {
             }
         }
 
-        // initStyle(EXTENDED) 在 JavaFX 中被标记为 deprecated，当前配合 AppHeaderBar 提供完整窗口交互，功能正常，暂时保留。
+        // initStyle(EXTENDED) 在 JavaFX 中被标记为 deprecated,当前配合 AppHeaderBar 提供完整窗口交互,功能正常,暂时保留
         @SuppressWarnings("deprecation")
         /** 启动 JavaFX 应用 */
         private void startApplication(Stage stage) {
@@ -149,7 +149,7 @@ public final class FxDecompilerApp {
             stage.setOnCloseRequest(e -> saveWindowState(stage));
         }
 
-        /** 处理 --open <path> 启动参数。 */
+        /** 处理 --open <path> 启动参数 */
         private void openStartupPath(MainWindow window) {
             var args = getParameters().getRaw();
             for (int i = 0; i < args.size(); i++) {

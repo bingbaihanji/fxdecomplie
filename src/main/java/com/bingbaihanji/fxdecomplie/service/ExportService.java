@@ -23,7 +23,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * 导出服务。支持单文件保存、批量导出到目录和 ZIP 归档。
+ * 导出服务支持单文件保存、批量导出到目录和 ZIP 归档
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -37,7 +37,7 @@ public final class ExportService {
     }
 
     /**
-     * 导出当前源码到磁盘文件。
+     * 导出当前源码到磁盘文件
      *
      * @param code       源码内容
      * @param outputPath 输出路径
@@ -83,7 +83,7 @@ public final class ExportService {
     }
 
     /**
-     * 导出工作区所有 .class 文件为 .java 到目录。
+     * 导出工作区所有 .class 文件为 .java 到目录
      *
      * @param root      文件树根节点
      * @param engine    反编译引擎
@@ -101,7 +101,7 @@ public final class ExportService {
     }
 
     /**
-     * 导出所有类到目录（带进度回调）。
+     * 导出所有类到目录(带进度回调)
      * @param onProgress 进度回调 0-100
      */
     public static void exportAllToDir(TreeItem<FileTreeNode> root, DecompilerTypeEnum engine,
@@ -120,7 +120,7 @@ public final class ExportService {
     }
 
     /**
-     * 导出工作区所有 .class 文件为 ZIP。
+     * 导出工作区所有 .class 文件为 ZIP
      *
      * @param root    文件树根节点
      * @param engine  反编译引擎
@@ -137,7 +137,7 @@ public final class ExportService {
         exportAll(root, config, WorkspaceIndex.build(root), null);
     }
 
-    /** 解析类节点的字节码（优先节点懒加载来源，其次工作区索引上下文） */
+    /** 解析类节点的字节码(优先节点懒加载来源,其次工作区索引上下文) */
     private static byte[] resolveClassBytes(FileTreeNode data, DecompilerContext context)
             throws IOException {
         byte[] bytes = data.resolveBytes();

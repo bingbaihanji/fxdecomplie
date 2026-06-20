@@ -8,7 +8,7 @@ import javafx.scene.input.KeyCombination;
 import java.util.List;
 
 /**
- * 主菜单栏组件，提供文件、编辑、视图、引擎、主题和帮助菜单。
+ * 主菜单栏组件,提供文件、编辑、视图、引擎、主题和帮助菜单
  *
  * @author bingbaihanji
  * @date 2026-06-17

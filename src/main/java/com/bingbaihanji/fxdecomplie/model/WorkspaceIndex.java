@@ -20,7 +20,7 @@ import java.util.Optional;
  */
 public final class WorkspaceIndex {
 
-    /** 空占位索引，用于 Workspace 异步索引构建完成前的过渡期 */
+    /** 空占位索引,用于 Workspace 异步索引构建完成前的过渡期 */
     public static final WorkspaceIndex EMPTY = new WorkspaceIndex(
             List.of(), List.of(), Map.of());
 

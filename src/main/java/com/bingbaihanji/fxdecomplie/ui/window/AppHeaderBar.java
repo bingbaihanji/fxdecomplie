@@ -3,18 +3,18 @@ package com.bingbaihanji.fxdecomplie.ui.window;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.net.URL;
 
 /**
- * 应用标题栏工具类，创建自定义窗口标题栏。
+ * 应用标题栏工具类,创建自定义窗口标题栏
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -33,7 +33,7 @@ public final class AppHeaderBar {
     }
 
     /**
-     * 创建自定义标题栏。
+     * 创建自定义标题栏
      *
      * @param stage  主窗口 Stage
      * @param title  窗口标题
@@ -69,7 +69,7 @@ public final class AppHeaderBar {
         return headerBar;
     }
 
-    /** 创建居中区域（菜单栏 + 拖拽区域） */
+    /** 创建居中区域(菜单栏 + 拖拽区域) */
     private static Node createCenterArea(Node menuBar) {
         menuBar.getStyleClass().add("header-menu-bar");
         HeaderBar.setDragType(menuBar, HeaderDragType.NONE);
@@ -85,7 +85,7 @@ public final class AppHeaderBar {
         return center;
     }
 
-    /** 创建窗口控制扩展区域（位于系统最小化按钮左侧） */
+    /** 创建窗口控制扩展区域(位于系统最小化按钮左侧) */
     private static Node createWindowTools(Stage stage) {
         ToggleButton alwaysOnTopButton = createAlwaysOnTopButton(stage);
 
@@ -165,7 +165,7 @@ public final class AppHeaderBar {
         return titleLabel;
     }
 
-    /** 创建品牌图标区域（标题栏左侧 logo） */
+    /** 创建品牌图标区域(标题栏左侧 logo) */
     private static HBox createBrand(String title) {
         ImageView logoView = logoIcon();
         HBox brand = new HBox(logoView);

@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 /**
- * 类继承层次节点记录。
+ * 类继承层次节点记录
  *
  * @param className   类的全内部路径
  * @param displayName 显示用的简短类名

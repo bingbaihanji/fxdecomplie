@@ -16,7 +16,7 @@ import jfx.incubator.scene.control.richtext.TextPos;
 import java.util.function.Consumer;
 
 /**
- * 单个代码标签页。包含三个子标签：Java源码、字节码、类信息。
+ * 单个代码标签页包含三个子标签：Java源码、字节码、类信息
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -25,15 +25,11 @@ public class CodeEditorTab extends Tab {
 
     /** Fira Code 字体资源路径 (回退 Light) */
     private static final String FIRA_CODE_LIGHT = "/ttf/FiraCode-Light.ttf";
-    /** 超大源码禁用正则高亮和链接扫描，避免 JavaFX 线程长时间停顿。 */
+    /** 超大源码禁用正则高亮和链接扫描,避免 JavaFX 线程长时间停顿 */
     private static final int LARGE_SOURCE_THRESHOLD = 500_000;
 
     /** Java 源码编辑器 */
     private final CodeArea codeArea;
-    /** 字节码文本视图 */
-    private CodeArea bytecodeArea;
-    /** 类信息视图 */
-    private javafx.scene.layout.VBox classInfoView;
     /** 打开的文件 */
     private final OpenFile openFile;
     /** 标签页显示标题 */
@@ -44,11 +40,15 @@ public class CodeEditorTab extends Tab {
     private final int defaultFontSize;
     /** Ctrl+Click 导航元数据 */
     private final CodeMetadata metadata;
-    /** Ctrl+Click 导航回调（null 时禁用） */
+    /** Ctrl+Click 导航回调(null 时禁用) */
     private final Consumer<CodeMetadata.Reference> onNavigate;
-    /** 类文件原始字节码（用于复制标签到独立窗口） */
+    /** 类文件原始字节码(用于复制标签到独立窗口) */
     private final byte[] classBytes;
-    /** 缓存的总行数，避免 goToLine 时 O(n) 计数 */
+    /** 字节码文本视图 */
+    private CodeArea bytecodeArea;
+    /** 类信息视图 */
+    private javafx.scene.layout.VBox classInfoView;
+    /** 缓存的总行数,避免 goToLine 时 O(n) 计数 */
     private volatile int cachedLineCount = -1;
     /** 编辑器内搜索栏 */
     private EditorSearchBar editorSearchBar;
@@ -56,13 +56,13 @@ public class CodeEditorTab extends Tab {
     private boolean bytecodeLoaded;
     private boolean classInfoLoaded;
 
-    /** 简化构造器（使用默认主题和字体配置） */
+    /** 简化构造器(使用默认主题和字体配置) */
     public CodeEditorTab(OpenFile openFile) {
         this(openFile, VsCodeThemeLoader.defaultDark(), "Consolas", 14, true, true, null, null, null);
     }
 
     /**
-     * 完整构造器，按顺序装配三大区域。
+     * 完整构造器,按顺序装配三大区域
      *
      * @param openFile            打开的文件元数据
      * @param theme               编辑器语法高亮主题
@@ -70,7 +70,7 @@ public class CodeEditorTab extends Tab {
      * @param fontSize            默认字号
      * @param wrapText            是否自动换行
      * @param lineNumbersEnabled  是否显示行号
-     * @param classBytes  类文件原始字节码（用于字节码视图和类信息视图，可为 null）
+     * @param classBytes  类文件原始字节码(用于字节码视图和类信息视图,可为 null)
      */
     public CodeEditorTab(OpenFile openFile, VsCodeThemeLoader.ThemeData theme, String fontFamily,
                          int fontSize, boolean wrapText, boolean lineNumbersEnabled, byte[] classBytes,
@@ -87,7 +87,7 @@ public class CodeEditorTab extends Tab {
         Tab sourceTab = new Tab(I18nUtil.getString("tab.source"), codeArea);
         sourceTab.setClosable(false);
 
-        // 2. 字节码和类信息按需构建，避免快速切换 class 时阻塞 JavaFX 线程
+        // 2. 字节码和类信息按需构建,避免快速切换 class 时阻塞 JavaFX 线程
         Tab bytecodeTab = new Tab(I18nUtil.getString("tab.bytecode"), lazyPlaceholder());
         bytecodeTab.setClosable(false);
         bytecodeTab.selectedProperty().addListener((obs, wasSelected, selected) -> {
@@ -108,7 +108,7 @@ public class CodeEditorTab extends Tab {
         // 4. 将三个子标签页组装到 TabPane
         TabPane subTabPane = buildSubTabPane(sourceTab, bytecodeTab, infoTab);
 
-        // 5. 创建搜索栏（默认隐藏，Ctrl+F 唤醒）
+        // 5. 创建搜索栏(默认隐藏,Ctrl+F 唤醒)
         editorSearchBar = new EditorSearchBar(codeArea);
         editorSearchBar.setVisible(false);
         editorSearchBar.setManaged(false);
@@ -127,25 +127,6 @@ public class CodeEditorTab extends Tab {
         pane.setMinHeight(120);
         pane.getStyleClass().add("code-editor");
         return pane;
-    }
-
-    private void ensureBytecodeLoaded(Tab bytecodeTab) {
-        if (bytecodeLoaded) {
-            return;
-        }
-        bytecodeLoaded = true;
-        bytecodeArea = BytecodeViewTab.createView(this.classBytes);
-        bytecodeArea.setFont(Font.font(bytecodeArea.getFont().getFamily(), codeArea.getFont().getSize()));
-        bytecodeTab.setContent(bytecodeArea);
-    }
-
-    private void ensureClassInfoLoaded(Tab infoTab) {
-        if (classInfoLoaded) {
-            return;
-        }
-        classInfoLoaded = true;
-        classInfoView = ClassInfoView.createView(this.classBytes);
-        infoTab.setContent(classInfoView);
     }
 
     private static Label createTitleLabel(String title) {
@@ -172,7 +153,7 @@ public class CodeEditorTab extends Tab {
         return c == '(' || c == ')' || c == '{' || c == '}' || c == '[' || c == ']';
     }
 
-    /** 在文本中查找与 pos 处括号配对的括号位置，找不到返回 -1 */
+    /** 在文本中查找与 pos 处括号配对的括号位置,找不到返回 -1 */
     private static int findMatchingBracket(String text, int pos) {
         if (pos < 0 || pos >= text.length()) return -1;
         char c = text.charAt(pos);
@@ -281,7 +262,36 @@ public class CodeEditorTab extends Tab {
         return text.length();
     }
 
-    /** 构建源码编辑区 CodeArea，配置样式、字体、高亮器 */
+    private static void setDialogIcon(javafx.stage.Stage stage) {
+        try {
+            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void ensureBytecodeLoaded(Tab bytecodeTab) {
+        if (bytecodeLoaded) {
+            return;
+        }
+        bytecodeLoaded = true;
+        bytecodeArea = BytecodeViewTab.createView(this.classBytes);
+        bytecodeArea.setFont(Font.font(bytecodeArea.getFont().getFamily(), codeArea.getFont().getSize()));
+        bytecodeTab.setContent(bytecodeArea);
+    }
+
+    private void ensureClassInfoLoaded(Tab infoTab) {
+        if (classInfoLoaded) {
+            return;
+        }
+        classInfoLoaded = true;
+        classInfoView = ClassInfoView.createView(this.classBytes);
+        infoTab.setContent(classInfoView);
+    }
+
+    /** 构建源码编辑区 CodeArea,配置样式、字体、高亮器 */
     private CodeArea buildSourceArea(VsCodeThemeLoader.ThemeData theme, String fontFamily,
                                      int fontSize, boolean wrapText, boolean lineNumbersEnabled) {
         CodeArea area = new CodeArea();
@@ -339,7 +349,7 @@ public class CodeEditorTab extends Tab {
         return titleLabel.getText();
     }
 
-    /** 更新固定标签视觉前缀。 */
+    /** 更新固定标签视觉前缀 */
     public void setPinnedIndicator(boolean pinned) {
         titleLabel.setText(pinned ? "● " + displayTitle : displayTitle);
     }
@@ -369,7 +379,7 @@ public class CodeEditorTab extends Tab {
         setFontSize(defaultFontSize);
     }
 
-    /** 跳转到指定行（Ctrl+G） */
+    /** 跳转到指定行(Ctrl+G) */
     public void goToLine() {
         javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
         javafx.stage.Window owner = codeArea.getScene() != null ? codeArea.getScene().getWindow() : null;
@@ -404,7 +414,7 @@ public class CodeEditorTab extends Tab {
         });
     }
 
-    /** 跳转并选中指定行。 */
+    /** 跳转并选中指定行 */
     private int getLineCount() {
         int c = cachedLineCount;
         if (c < 0) {
@@ -454,17 +464,7 @@ public class CodeEditorTab extends Tab {
         return Font.font("Consolas", fontSize);
     }
 
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    /** 从 classpath 加载 Fira Code 字体（优先 Regular 字重，回退 Light） */
+    /** 从 classpath 加载 Fira Code 字体(优先 Regular 字重,回退 Light) */
     private Font loadResourceFont(int fontSize) {
         try {
             java.net.URL fontUrl = CodeEditorTab.class.getResource(FIRA_CODE_LIGHT);

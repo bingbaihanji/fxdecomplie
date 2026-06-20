@@ -1,13 +1,15 @@
 package com.bingbaihanji.fxdecomplie;
 
+
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
 import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
@@ -62,7 +64,7 @@ public class MainWindow implements MainMenuBar.Actions {
     private Stage stage;
     /** 状态栏 */
     private StatusBar statusBar;
-    /** 外层标签页（JAR/ZIP/目录级别） */
+    /** 外层标签页(JAR/ZIP/目录级别) */
     private TabPane outerTabPane;
     /** 工作区标签页管理器 */
     private WorkspaceTabManager tabManager;
@@ -115,7 +117,7 @@ public class MainWindow implements MainMenuBar.Actions {
                 config.recentFiles(),
                 this::openRecentFile));
         classTabOpener = new ClassTabOpener(config, editorTheme, statusBar);
-        // L2 缓存跨工作区共享，不清空以提升重复打开性能
+        // L2 缓存跨工作区共享,不清空以提升重复打开性能
         tabManager.showWelcomeTabIfEmpty();
 
         outerTabPane.getSelectionModel().selectedItemProperty().addListener(
@@ -262,7 +264,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    /** 关闭当前选中的工作区标签页（含解编译结果和文件树） */
+    /** 关闭当前选中的工作区标签页(含解编译结果和文件树) */
     @Override
     public void closeCurrentWorkspace() {
         Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
@@ -320,7 +322,7 @@ public class MainWindow implements MainMenuBar.Actions {
                 index -> doExport(view.workspace().getTreeRoot(), index));
     }
 
-    /** 为单个树节点构建临时索引并弹出导出对话框（右键菜单入口） */
+    /** 为单个树节点构建临时索引并弹出导出对话框(右键菜单入口) */
     private void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
         if (rootItem == null || rootItem.getValue() == null) {
             return;
@@ -344,9 +346,9 @@ public class MainWindow implements MainMenuBar.Actions {
         });
     }
 
-    /** 弹出导出配置对话框，提交后台导出任务并显示进度 */
+    /** 弹出导出配置对话框,提交后台导出任务并显示进度 */
     private void doExport(javafx.scene.control.TreeItem<FileTreeNode> rootItem,
-                          com.bingbaihanji.fxdecomplie.model.WorkspaceIndex index) {
+                          WorkspaceIndex index) {
         var configOpt = ExportDialog.show(stage, config, currentEngine);
         if (configOpt.isEmpty()) {
             return;
@@ -536,7 +538,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    /** 用全部引擎反编译当前类并排打开标签页，方便对比输出 */
+    /** 用全部引擎反编译当前类并排打开标签页,方便对比输出 */
     @Override
     public void compareEngines() {
         WorkspaceView view = tabManager.currentWorkspaceView();
@@ -567,7 +569,7 @@ public class MainWindow implements MainMenuBar.Actions {
         openSearch("");
     }
 
-    /** 打开搜索对话框，可预填初始查询关键词 */
+    /** 打开搜索对话框,可预填初始查询关键词 */
     private void openSearch(String initialQuery) {
         var view = tabManager.currentWorkspaceView();
         if (view == null) {
@@ -608,7 +610,7 @@ public class MainWindow implements MainMenuBar.Actions {
                 (fullPath, lineNumber) -> openClassByPath(view, fullPath, lineNumber));
     }
 
-    /** 查找当前工作区内的类/方法/字段使用。 */
+    /** 查找当前工作区内的类/方法/字段使用 */
     @Override
     public void openFindUsages() {
         var view = tabManager.currentWorkspaceView();
@@ -651,7 +653,7 @@ public class MainWindow implements MainMenuBar.Actions {
         loadFile(new java.io.File(path));
     }
 
-    /** 启动参数或外部入口打开文件/目录。 */
+    /** 启动参数或外部入口打开文件/目录 */
     public void openInitialFile(File file) {
         if (file != null && file.exists()) {
             loadFile(file);
@@ -734,7 +736,7 @@ public class MainWindow implements MainMenuBar.Actions {
         );
     }
 
-    /** 将导出对话框中选择的选项写回全局配置，下次打开时记住 */
+    /** 将导出对话框中选择的选项写回全局配置,下次打开时记住 */
     private void persistExportConfig(ExportConfig exportConfig) {
         config.export().defaultEngine(exportConfig.engine().name());
         config.export().defaultFormat(exportConfig.format().name());
@@ -744,7 +746,7 @@ public class MainWindow implements MainMenuBar.Actions {
         config.save();
     }
 
-    /** 根据导出结果弹出成功/部分成功对话框，支持打开输出目录和复制错误详情 */
+    /** 根据导出结果弹出成功/部分成功对话框,支持打开输出目录和复制错误详情 */
     private void showExportResult(ExportConfig exportConfig, ExportResult result) {
         if (!result.hasErrors()) {
             showExportDoneDialog(I18nUtil.getString("dialog.export.success.title"),
@@ -772,7 +774,7 @@ public class MainWindow implements MainMenuBar.Actions {
 
     // ── 内部辅助方法 ──
 
-    /** 在工作区中按完整路径打开类并延迟跳转到指定行（搜索/FindUsages 双击回调） */
+    /** 在工作区中按完整路径打开类并延迟跳转到指定行(搜索/FindUsages 双击回调) */
     private void openClassByPath(WorkspaceView view, String fullPath, int lineNumber) {
         FileTreeNode node = view.workspace().findNodeByPath(fullPath);
         if (node != null) {
@@ -783,9 +785,12 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    /** 延迟轮询工作区标签页，等待解编译完成并将 CodeArea 滚动到目标行（最多 2 秒） */
+    /** 延迟轮询工作区标签页,等待解编译完成并将 CodeArea 滚动到目标行(最多 2 秒) */
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
-        if (retries > 20) return; // max ~2 seconds
+        // max ~2 seconds
+        if (retries > 20) {
+            return;
+        }
         if (!tabManager.isWorkspaceActive(view)) return; // workspace was closed
         javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(
                 javafx.util.Duration.millis(100));
@@ -812,7 +817,7 @@ public class MainWindow implements MainMenuBar.Actions {
         delay.play();
     }
 
-    /** 递归遍历文件树，收集所有 .class 节点的完整路径（用于快速打开对话框） */
+    /** 递归遍历文件树,收集所有 .class 节点的完整路径(用于快速打开对话框) */
     private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {
         FileTreeNode data = item.getValue();
         if (data != null && data.isClassFile()) {
@@ -823,7 +828,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    /** 计算与 ClassTabOpener 一致的 L2 缓存工作区键，确保跨组件缓存复用 */
+    /** 计算与 ClassTabOpener 一致的 L2 缓存工作区键,确保跨组件缓存复用 */
     private static String workspaceKey(Workspace workspace) {
         File source = workspace.getSourceFile();
         long mtime = source.lastModified();
@@ -833,12 +838,12 @@ public class MainWindow implements MainMenuBar.Actions {
     }
 
     /**
-     * 构建完整源码缓存供全文搜索使用，优先复用工作区级缓存和 L2 标签页缓存。
-     * 对未缓存的类逐类解编译（含 30 秒超时和 JD-Core 回退），完成后存入工作区缓存。
-     * 单次调用最多运行 120 秒，中间可被中断取消。
+     * 构建完整源码缓存供全文搜索使用,优先复用工作区级缓存和 L2 标签页缓存
+     * 对未缓存的类逐类解编译(含 30 秒超时和 JD-Core 回退),完成后存入工作区缓存
+     * 单次调用最多运行 120 秒,中间可被中断取消
      */
     private Map<String, String> buildFullSourceCache(WorkspaceView view,
-                                                      Map<String, String> openTabSourceCache) {
+                                                     Map<String, String> openTabSourceCache) {
         Map<String, String> safeOpenTabs = openTabSourceCache == null ? Map.of() : openTabSourceCache;
         Map<String, String> engineOptions = DecompilerOptions.forEngine(config, currentEngine);
         String cacheKey = currentEngine.name() + "|" + DecompilerOptions.hash(engineOptions);
@@ -851,9 +856,8 @@ public class MainWindow implements MainMenuBar.Actions {
 
         Map<String, String> fullSourceCache = new LinkedHashMap<>(safeOpenTabs);
         var index = awaitWorkspaceIndex(view.workspace());
-        boolean indexReady = index != com.bingbaihanji.fxdecomplie.model.WorkspaceIndex.EMPTY;
-        var context = com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext
-                .fromWorkspaceIndex(index, engineOptions);
+        boolean indexReady = index != WorkspaceIndex.EMPTY;
+        var context = DecompilerContext.fromWorkspaceIndex(index, engineOptions);
         var classes = index.classes();
         int total = classes.size();
         int processed = 0;
@@ -879,7 +883,7 @@ public class MainWindow implements MainMenuBar.Actions {
                     completed = false;
                     break;
                 }
-                // 优先查询 L2 内存缓存（复用已打开标签页的解编译结果，避免重复解编）
+                // 优先查询 L2 内存缓存(复用已打开标签页的解编译结果,避免重复解编)
                 String source = classTabOpener.getDecompileCache().get(
                         workspaceKey(view.workspace()), cls.internalName(),
                         currentEngine, DecompilerOptions.hash(engineOptions));
@@ -925,12 +929,12 @@ public class MainWindow implements MainMenuBar.Actions {
                 });
     }
 
-    /** 显示导出成功对话框（无错误详情） */
+    /** 显示导出成功对话框(无错误详情) */
     private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath) {
         showExportDoneDialog(title, message, outputPath, java.util.List.of());
     }
 
-    /** 显示导出完成对话框（含错误详情列表和打开输出目录/复制详情按钮） */
+    /** 显示导出完成对话框(含错误详情列表和打开输出目录/复制详情按钮) */
     private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath,
                                       java.util.List<String> details) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -964,7 +968,7 @@ public class MainWindow implements MainMenuBar.Actions {
         });
     }
 
-    /** 使用操作系统资源管理器打开导出目录（依赖 HostServices） */
+    /** 使用操作系统资源管理器打开导出目录(依赖 HostServices) */
     private void openOutputLocation(java.nio.file.Path outputPath) {
         if (outputPath == null) {
             return;
@@ -977,8 +981,8 @@ public class MainWindow implements MainMenuBar.Actions {
     }
 
     /**
-     * 确保工作区索引可用后执行回调。若索引已就绪则同步回调；否则触发后台构建并异步等待。
-     * 工作区关闭后不再执行回调，避免操作已释放的 UI。
+     * 确保工作区索引可用后执行回调若索引已就绪则同步回调；否则触发后台构建并异步等待
+     * 工作区关闭后不再执行回调,避免操作已释放的 UI
      */
     private void withWorkspaceIndex(Workspace workspace, Consumer<WorkspaceIndex> onReady) {
         if (workspace == null || onReady == null) {
@@ -1007,7 +1011,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }));
     }
 
-    /** 同步等待工作区索引构建完成（阻塞调用线程，仅后台线程使用） */
+    /** 同步等待工作区索引构建完成(阻塞调用线程,仅后台线程使用) */
     private WorkspaceIndex awaitWorkspaceIndex(Workspace workspace) {
         if (workspace == null) {
             return WorkspaceIndex.EMPTY;
@@ -1023,7 +1027,7 @@ public class MainWindow implements MainMenuBar.Actions {
         }
     }
 
-    /** 将项目文件中保存的引擎名字符串还原为枚举值，非法值回退到默认引擎 */
+    /** 将项目文件中保存的引擎名字符串还原为枚举值,非法值回退到默认引擎 */
     private static DecompilerTypeEnum parseEngine(String value, DecompilerTypeEnum fallback) {
         try {
             return DecompilerTypeEnum.valueOf(value);

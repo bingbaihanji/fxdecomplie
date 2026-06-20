@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 
 /**
- * 新实例启动服务。通过 ProcessBuilder 启动第二个 JVM 进程，
- * 实现同一文件的并排对比查看。
+ * 新实例启动服务通过 ProcessBuilder 启动第二个 JVM 进程,
+ * 实现同一文件的并排对比查看
  *
  * @author bingbaihanji
  * @date 2026-06-18

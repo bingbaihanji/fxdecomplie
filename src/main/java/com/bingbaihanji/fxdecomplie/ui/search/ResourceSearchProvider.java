@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 搜索非 class 资源文件内容（XML/JSON/YML/properties/.java 等文本资源）。
+ * 搜索非 class 资源文件内容(XML/JSON/YML/properties/.java 等文本资源)
  *
  * @author bingbaihanji
  * @date 2026-06-18

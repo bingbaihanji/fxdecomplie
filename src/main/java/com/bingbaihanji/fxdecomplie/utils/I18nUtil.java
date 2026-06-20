@@ -46,12 +46,12 @@ public class I18nUtil {
         }
     }
 
-    /** 实例级 bundle，用于独立于全局状态的场景（如测试）。 */
+    /** 实例级 bundle,用于独立于全局状态的场景(如测试) */
     private final ResourceBundle bundle;
 
     /**
-     * 私有构造函数，创建具有指定语言环境的 I18nUtil 实例。
-     * 使用 {@link #createInstance(Locale)} 工厂方法获取实例。
+     * 私有构造函数,创建具有指定语言环境的 I18nUtil 实例
+     * 使用 {@link #createInstance(Locale)} 工厂方法获取实例
      */
     private I18nUtil(Locale locale) {
         try {
@@ -258,8 +258,8 @@ public class I18nUtil {
     }
 
     /**
-     * 创建测试用 ResourceBundle，返回独立实例。
-     * 不影响全局静态状态，适合并发测试。
+     * 创建测试用 ResourceBundle,返回独立实例
+     * 不影响全局静态状态,适合并发测试
      *
      * @param locale 目标语言环境
      * @return 独立的 ResourceBundle 实例
@@ -274,8 +274,8 @@ public class I18nUtil {
     }
 
     /**
-     * 创建具有指定语言环境的独立 I18nUtil 实例，用于测试或需要独立 bundle 的场景。
-     * 不影响全局静态状态。
+     * 创建具有指定语言环境的独立 I18nUtil 实例,用于测试或需要独立 bundle 的场景
+     * 不影响全局静态状态
      *
      * @param locale 目标语言环境
      * @return 独立的 I18nUtil 实例
@@ -285,7 +285,7 @@ public class I18nUtil {
     }
 
     /**
-     * 检查指定语言环境是否有可用的资源文件。
+     * 检查指定语言环境是否有可用的资源文件
      *
      * @param locale 目标语言环境
      * @return true 如果该语言环境有可用的资源文件
@@ -342,7 +342,7 @@ public class I18nUtil {
     }
 
     /**
-     * 获取国际化文本（实例方法）
+     * 获取国际化文本(实例方法)
      *
      * @param key 配置文件中的key
      * @return 对应的值
@@ -356,7 +356,7 @@ public class I18nUtil {
     }
 
     /**
-     * 获取带参数格式化的国际化文本（实例方法）
+     * 获取带参数格式化的国际化文本(实例方法)
      *
      * @param key    配置文件中的key
      * @param params 格式化参数

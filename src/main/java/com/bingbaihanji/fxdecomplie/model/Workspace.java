@@ -3,45 +3,41 @@ package com.bingbaihanji.fxdecomplie.model;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 工作区数据模型。表示一个已打开的JAR/ZIP/目录，包含名称、源文件、树根节点和是否为归档文件。
+ * 工作区数据模型表示一个已打开的JAR/ZIP/目录,包含名称、源文件、树根节点和是否为归档文件
  *
  * @author bingbaihanji
  * @date 2026-06-17
  */
 public class Workspace implements AutoCloseable {
 
-    /** 工作区显示名称（如 demo.jar） */
+    /** 工作区显示名称(如 demo.jar) */
     private final String name;
     /** 源文件或目录 */
     private final File sourceFile;
     /** 文件树根节点 */
     private final TreeItem<FileTreeNode> treeRoot;
-    /** 是否为归档文件（JAR/ZIP） */
+    /** 是否为归档文件(JAR/ZIP) */
     private final boolean isArchive;
-    /** 工作区索引，用于全局搜索、字节码搜索和后续分析 */
-    private volatile WorkspaceIndex index;
-    /** 异步索引构建结果，供 UI 等待，避免在 JavaFX 线程兜底同步构建。 */
-    private volatile CompletableFuture<WorkspaceIndex> indexFuture = new CompletableFuture<>();
-    /** 完整索引是否已经被显式请求构建。 */
+    /** 完整索引是否已经被显式请求构建 */
     private final AtomicBoolean indexBuildStarted = new AtomicBoolean();
-    /** 轻量路径索引，只保存文件树节点引用，不读取 class 字节。 */
-    private volatile Map<String, FileTreeNode> nodesByFullPath;
-    /** 工作区级源码搜索缓存，按引擎和选项分组。 */
+    /** 工作区级源码搜索缓存,按引擎和选项分组 */
     private final ConcurrentMap<String, Map<String, String>> sourceSearchCaches = new ConcurrentHashMap<>();
+    /** 工作区索引,用于全局搜索、字节码搜索和后续分析 */
+    private volatile WorkspaceIndex index;
+    /** 异步索引构建结果,供 UI 等待,避免在 JavaFX 线程兜底同步构建 */
+    private volatile CompletableFuture<WorkspaceIndex> indexFuture = new CompletableFuture<>();
+    /** 轻量路径索引,只保存文件树节点引用,不读取 class 字节 */
+    private volatile Map<String, FileTreeNode> nodesByFullPath;
 
     /**
-     * 构造工作区。
+     * 构造工作区
      *
      * @param name       显示名称
      * @param sourceFile 源文件
@@ -64,8 +60,26 @@ public class Workspace implements AutoCloseable {
         }
     }
 
+    private static Map<String, FileTreeNode> buildPathIndex(TreeItem<FileTreeNode> root) {
+        if (root == null) {
+            return Map.of();
+        }
+        Map<String, FileTreeNode> result = new LinkedHashMap<>();
+        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeNode node = item.getValue();
+            if (node != null && node.getFullPath() != null && !node.getFullPath().isBlank()) {
+                result.putIfAbsent(node.getFullPath().replace('\\', '/'), node);
+            }
+            queue.addAll(item.getChildren());
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
     /**
-     * 获取完整索引；如果异步索引还未完成，则在当前线程上构建一次。
+     * 获取完整索引；如果异步索引还未完成,则在当前线程上构建一次
      *
      * @return 可用于搜索、导出和导航分析的完整工作区索引
      */
@@ -107,6 +121,20 @@ public class Workspace implements AutoCloseable {
         return index;
     }
 
+    /** 更新工作区索引(用于异步构建完成后替换) */
+    public synchronized void setIndex(WorkspaceIndex index) {
+        WorkspaceIndex next = index == null ? WorkspaceIndex.EMPTY : index;
+        this.index = next;
+        if (next != WorkspaceIndex.EMPTY) {
+            if (indexFuture.isDone()) {
+                indexFuture = CompletableFuture.completedFuture(next);
+            } else {
+                indexFuture.complete(next);
+            }
+            indexBuildStarted.set(false);
+        }
+    }
+
     public CompletableFuture<WorkspaceIndex> getIndexFuture() {
         return indexFuture;
     }
@@ -130,8 +158,8 @@ public class Workspace implements AutoCloseable {
     }
 
     /**
-     * 按完整路径定位文件树节点。该索引只遍历树结构，不读取文件内容，
-     * 用于反编译器依赖解析和 UI 导航，避免每次查找都扫描整棵树。
+     * 按完整路径定位文件树节点该索引只遍历树结构,不读取文件内容,
+     * 用于反编译器依赖解析和 UI 导航,避免每次查找都扫描整棵树
      */
     public FileTreeNode findNodeByPath(String fullPath) {
         if (fullPath == null || fullPath.isBlank()) {
@@ -153,39 +181,7 @@ public class Workspace implements AutoCloseable {
         }
     }
 
-    private static Map<String, FileTreeNode> buildPathIndex(TreeItem<FileTreeNode> root) {
-        if (root == null) {
-            return Map.of();
-        }
-        Map<String, FileTreeNode> result = new LinkedHashMap<>();
-        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
-        queue.add(root);
-        while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> item = queue.removeFirst();
-            FileTreeNode node = item.getValue();
-            if (node != null && node.getFullPath() != null && !node.getFullPath().isBlank()) {
-                result.putIfAbsent(node.getFullPath().replace('\\', '/'), node);
-            }
-            queue.addAll(item.getChildren());
-        }
-        return Collections.unmodifiableMap(result);
-    }
-
-    /** 更新工作区索引（用于异步构建完成后替换） */
-    public synchronized void setIndex(WorkspaceIndex index) {
-        WorkspaceIndex next = index == null ? WorkspaceIndex.EMPTY : index;
-        this.index = next;
-        if (next != WorkspaceIndex.EMPTY) {
-            if (indexFuture.isDone()) {
-                indexFuture = CompletableFuture.completedFuture(next);
-            } else {
-                indexFuture.complete(next);
-            }
-            indexBuildStarted.set(false);
-        }
-    }
-
-    /** 标记异步索引构建失败。 */
+    /** 标记异步索引构建失败 */
     public synchronized void failIndex(Throwable error) {
         if (!indexFuture.isDone()) {
             indexFuture.completeExceptionally(error);

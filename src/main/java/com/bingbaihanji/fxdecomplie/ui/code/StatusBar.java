@@ -9,7 +9,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 
 /**
- * 状态栏组件，显示当前文件路径、编码和光标位置。
+ * 状态栏组件,显示当前文件路径、编码和光标位置
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -77,7 +77,7 @@ public class StatusBar extends HBox {
         pathLabel.setTooltip(new Tooltip(filePath));
     }
 
-    /** 更新光标位置（行:列） */
+    /** 更新光标位置(行:列) */
     public void setCursorPosition(int line, int column) {
         positionLabel.setText(line + ":" + column);
     }

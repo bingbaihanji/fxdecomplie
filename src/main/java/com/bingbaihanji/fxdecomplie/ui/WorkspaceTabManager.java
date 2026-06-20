@@ -32,7 +32,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * 管理外层 TabPane 中工作区标签页的创建和销毁。
+ * 管理外层 TabPane 中工作区标签页的创建和销毁
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -41,7 +41,7 @@ public final class WorkspaceTabManager {
 
     /** 编辑区上下分割条的实际鼠标命中高度 */
     private static final double EDITOR_DIVIDER_HIT_HEIGHT = 12.0;
-    /** 编辑区最小保留高度，避免底部工具窗口拖得过高 */
+    /** 编辑区最小保留高度,避免底部工具窗口拖得过高 */
     private static final double MIN_EDITOR_HEIGHT = 160.0;
     /** 底部工具窗口最小保留高度 */
     private static final double MIN_TOOL_WINDOW_HEIGHT = 120.0;
@@ -57,7 +57,7 @@ public final class WorkspaceTabManager {
     private WelcomeActions welcomeActions = WelcomeActions.empty();
     /** 当前引擎显示名 */
     private String currentEngineName = "";
-    /** 拖放配置（用于主窗口安装代码标签拖拽处理器） */
+    /** 拖放配置(用于主窗口安装代码标签拖拽处理器) */
     private AppConfig dragDropConfig;
     private VsCodeThemeLoader.ThemeData dragDropTheme;
 
@@ -66,13 +66,7 @@ public final class WorkspaceTabManager {
         this.statusBar = statusBar;
     }
 
-    /** 设置拖放配置，用于在 workspace 代码标签页面板安装跨窗口拖拽支持。 */
-    public void setDragDropConfig(AppConfig config, VsCodeThemeLoader.ThemeData theme) {
-        this.dragDropConfig = config;
-        this.dragDropTheme = theme;
-    }
-
-    /** 创建底部工具窗口顶部的独立拖拽手柄。 */
+    /** 创建底部工具窗口顶部的独立拖拽手柄 */
     private static Region createBottomToolResizeHandle(SplitPane splitPane) {
         Region handle = new Region();
         handle.getStyleClass().add("bottom-tool-resize-handle");
@@ -85,7 +79,7 @@ public final class WorkspaceTabManager {
         return handle;
     }
 
-    /** 通过拖拽手柄主动调整纵向 SplitPane 的分割比例。 */
+    /** 通过拖拽手柄主动调整纵向 SplitPane 的分割比例 */
     private static void installBottomToolResizeDrag(SplitPane splitPane, Region handle) {
         double[] dragStartY = new double[1];
         double[] dragStartDivider = new double[]{0.72};
@@ -117,7 +111,7 @@ public final class WorkspaceTabManager {
         return Math.max(min, Math.min(max, value));
     }
 
-    /** 格式化类路径显示（/ → &gt;，去 .class 后缀） */
+    /** 格式化类路径显示(/ → &gt;,去 .class 后缀) */
     public static String formatClassPath(String fullPath) {
         String display = fullPath.replace('/', '>').replace('\\', '>');
         return display.endsWith(".class")
@@ -254,25 +248,31 @@ public final class WorkspaceTabManager {
         }
     }
 
+    /** 设置拖放配置,用于在 workspace 代码标签页面板安装跨窗口拖拽支持 */
+    public void setDragDropConfig(AppConfig config, VsCodeThemeLoader.ThemeData theme) {
+        this.dragDropConfig = config;
+        this.dragDropTheme = theme;
+    }
+
     /** 获取所有工作区视图 */
     public Map<Tab, WorkspaceView> getWorkspaceViews() {
         return workspaceViews;
     }
 
-    /** 设置欢迎页动作回调。 */
+    /** 设置欢迎页动作回调 */
     public void setWelcomeActions(WelcomeActions welcomeActions) {
         this.welcomeActions = welcomeActions == null ? WelcomeActions.empty() : welcomeActions;
         refreshWelcomeTab();
     }
 
-    /** 更新当前引擎状态栏显示。 */
+    /** 更新当前引擎状态栏显示 */
     public void setCurrentEngineName(String currentEngineName) {
         this.currentEngineName = currentEngineName == null ? "" : currentEngineName;
         statusBar.setEngine(this.currentEngineName);
     }
 
     /**
-     * 添加工作区标签页。
+     * 添加工作区标签页
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -286,7 +286,7 @@ public final class WorkspaceTabManager {
     }
 
     /**
-     * 添加工作区标签页。
+     * 添加工作区标签页
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -304,7 +304,7 @@ public final class WorkspaceTabManager {
     }
 
     /**
-     * 添加工作区标签页。
+     * 添加工作区标签页
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -487,7 +487,7 @@ public final class WorkspaceTabManager {
             if (codeTab != null) {
                 var area = codeTab.getCodeArea();
                 area.select(jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0),
-                            jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0));
+                        jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0));
                 area.requestFocus();
             }
         });
@@ -536,7 +536,7 @@ public final class WorkspaceTabManager {
         return selected == null ? null : workspaceViews.get(selected);
     }
 
-    /** 检查工作区视图是否仍然活跃（未被用户关闭） */
+    /** 检查工作区视图是否仍然活跃(未被用户关闭) */
     public boolean isWorkspaceActive(WorkspaceView view) {
         return view != null && workspaceViews.containsKey(view.workspaceTab());
     }
@@ -572,7 +572,7 @@ public final class WorkspaceTabManager {
         }
     }
 
-    /** 刷新欢迎页内容。 */
+    /** 刷新欢迎页内容 */
     private void refreshWelcomeTab() {
         for (Tab tab : outerTabPane.getTabs()) {
             if (!workspaceViews.containsKey(tab)) {
@@ -601,7 +601,7 @@ public final class WorkspaceTabManager {
         showToolWindow(ToolTab.INHERITANCE);
     }
 
-    /** 隐藏当前工作区底部工具窗口，但保留其中的标签页状态 */
+    /** 隐藏当前工作区底部工具窗口,但保留其中的标签页状态 */
     public void hideBottomToolWindow() {
         Tab tab = outerTabPane.getSelectionModel().getSelectedItem();
         WorkspaceTools tools = tab == null ? null : workspaceTools.get(tab);
@@ -615,7 +615,7 @@ public final class WorkspaceTabManager {
         WorkspaceView view = workspaceViews.remove(tab);
         WorkspaceTools tools = workspaceTools.remove(tab);
 
-        // 清理内部代码标签页，释放内存，阻止已排队的 Platform.runLater 继续操作
+        // 清理内部代码标签页,释放内存,阻止已排队的 Platform.runLater 继续操作
         if (view != null) {
             view.codeTabPane().getTabs().clear();
             view.codeTabPane().getSelectionModel().clearSelection();
@@ -659,7 +659,7 @@ public final class WorkspaceTabManager {
         }
     }
 
-    /** 如果所有工具标签页都关闭，则隐藏底部工具窗口 */
+    /** 如果所有工具标签页都关闭,则隐藏底部工具窗口 */
     private void hideToolWindowIfEmpty(Tab workspaceTab) {
         WorkspaceTools tools = workspaceTools.get(workspaceTab);
         if (tools != null && tools.toolTabPane.getTabs().isEmpty()) {
@@ -667,7 +667,7 @@ public final class WorkspaceTabManager {
         }
     }
 
-    /** 从纵向 SplitPane 中移除底部工具窗口，并记住当前高度比例 */
+    /** 从纵向 SplitPane 中移除底部工具窗口,并记住当前高度比例 */
     private void hideToolWindow(WorkspaceTools tools) {
         if (!tools.editorSplitPane.getItems().contains(tools.toolContainer)) {
             return;

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 代码元数据 — 记录每行的引用信息，支持 Ctrl+Click 导航。
+ * 代码元数据 — 记录每行的引用信息,支持 Ctrl+Click 导航
  *
  * @author bingbaihanji
  * @date 2026-06-18

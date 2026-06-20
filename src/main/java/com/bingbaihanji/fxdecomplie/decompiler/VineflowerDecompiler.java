@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.jar.Manifest;
 
 /**
- * Vineflower 反编译引擎适配器。
- * 从 code-resurrector 项目移植。
+ * Vineflower 反编译引擎适配器
+ * 从 code-resurrector 项目移植
  *
  * @author bingbaihanji
  * @date 2026-06-17

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 按类名搜索（匹配 sourceCache 的 key 即全路径中的类名部分，以及独立的类名列表）。
+ * 按类名搜索(匹配 sourceCache 的 key 即全路径中的类名部分,以及独立的类名列表)
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -35,7 +35,7 @@ public class ClassSearchProvider implements SearchProvider {
 
         String lowerQuery = query.toLowerCase();
 
-        // 先搜索显式传入的类名列表（可能包含尚未在 sourceCache 中打开的类）
+        // 先搜索显式传入的类名列表(可能包含尚未在 sourceCache 中打开的类)
         for (String name : classNames) {
             if (results.size() >= MAX_RESULTS) break;
             if (name.toLowerCase().contains(lowerQuery)) {

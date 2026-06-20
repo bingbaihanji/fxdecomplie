@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.*;
 
 /**
- * 后台任务工具类，在守护线程上运行任务。
+ * 后台任务工具类,在守护线程上运行任务
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -19,7 +19,7 @@ public final class BackgroundTasks {
             Math.min(8, Runtime.getRuntime().availableProcessors()));
     private static final int MAX_QUEUE_SIZE = 100;
 
-    /** 保底并发避免索引/搜索/导出任务阻塞交互任务；有界队列避免无限堆积。 */
+    /** 保底并发避免索引/搜索/导出任务阻塞交互任务；有界队列避免无限堆积 */
     private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(
             POOL_SIZE, POOL_SIZE,
             60L, TimeUnit.SECONDS,
@@ -43,7 +43,7 @@ public final class BackgroundTasks {
         try {
             return EXECUTOR.submit(() -> {
                 Thread.currentThread().setName(name);
-                // 清除线程池复用残留的中断标志，避免反编译器抛出 InterruptedException
+                // 清除线程池复用残留的中断标志,避免反编译器抛出 InterruptedException
                 Thread.interrupted();
                 task.run();
             });

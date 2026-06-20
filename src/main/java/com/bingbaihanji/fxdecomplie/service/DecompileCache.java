@@ -7,8 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * L2 反编译源码内存缓存。key = workspaceKey + internalName + engine + optionsHash。
- * 引擎切换或反编译选项变更时自动失效。
+ * L2 反编译源码内存缓存key = workspaceKey + internalName + engine + optionsHash
+ * 引擎切换或反编译选项变更时自动失效
  *
  * @author bingbaihanji
  * @date 2026-06-18

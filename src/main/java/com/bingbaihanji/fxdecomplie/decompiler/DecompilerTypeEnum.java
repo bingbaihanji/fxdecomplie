@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
 /**
- * 反编译引擎类型枚举。
+ * 反编译引擎类型枚举
  *
  * @author bingbaihanji
  * @date 2026-06-17

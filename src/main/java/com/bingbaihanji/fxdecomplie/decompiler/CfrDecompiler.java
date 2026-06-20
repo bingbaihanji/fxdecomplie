@@ -10,8 +10,8 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * CFR 反编译引擎适配器。
- * 从 code-resurrector 项目移植。
+ * CFR 反编译引擎适配器
+ * 从 code-resurrector 项目移植
  *
  * @author bingbaihanji
  * @date 2026-06-17

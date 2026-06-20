@@ -4,8 +4,8 @@ import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 
 /**
- * 按需构建工作区完整索引。打开 JAR 时不自动读取/解析全部 class，
- * 只有搜索、用法、导出等功能真正需要时才启动。
+ * 按需构建工作区完整索引打开 JAR 时不自动读取/解析全部 class,
+ * 只有搜索、用法、导出等功能真正需要时才启动
  */
 public final class WorkspaceIndexService {
 

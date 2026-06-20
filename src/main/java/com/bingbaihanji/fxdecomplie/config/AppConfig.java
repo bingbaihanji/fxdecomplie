@@ -22,7 +22,7 @@ import java.util.*;
  */
 public class AppConfig {
 
-    /** 应用根目录（JAR 所在目录，开发期回退到 user.dir） */
+    /** 应用根目录(JAR 所在目录,开发期回退到 user.dir) */
     private static final Path APP_DIR = resolveAppDir();
     /** 配置目录 (<appDir>/config) */
     private static final Path CONFIG_DIR = APP_DIR.resolve("config");
@@ -30,8 +30,8 @@ public class AppConfig {
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
 
     /**
-     * 解析应用根目录：优先取 JAR 包所在目录，开发期回退到 user.dir。
-     * 所有应用数据（配置、缓存、日志）均存放在此目录下。
+     * 解析应用根目录：优先取 JAR 包所在目录,开发期回退到 user.dir
+     * 所有应用数据(配置、缓存、日志)均存放在此目录下
      */
     public static Path appDir() {
         return APP_DIR;
@@ -55,9 +55,9 @@ public class AppConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
     private static final int MAX_RECENT_FILES = 20;
-    /** 配置结构版本，后续用于迁移旧配置 */
+    /** 配置结构版本,后续用于迁移旧配置 */
     private int schemaVersion = 1;
-    /** 界面语言: zh-CN / en，空字符串表示跟随系统 */
+    /** 界面语言: zh-CN / en,空字符串表示跟随系统 */
     private String language = "";
     /** 窗口配置 */
     private Window window = new Window();
@@ -71,13 +71,13 @@ public class AppConfig {
     private Search search = new Search();
     /** 平台原生窗口配置 */
     private Platform platform = new Platform();
-    /** 最近打开的文件列表（路径字符串） */
+    /** 最近打开的文件列表(路径字符串) */
     private List<String> recentFiles = new ArrayList<>();
 
     /**
-     * 加载配置。如果配置文件不存在或读取失败，返回默认配置。
+     * 加载配置如果配置文件不存在或读取失败,返回默认配置
      *
-     * @return 配置对象，永不返回 null
+     * @return 配置对象,永不返回 null
      */
     public static AppConfig load() {
         try {
@@ -169,7 +169,7 @@ public class AppConfig {
         recentFiles = v;
     }
 
-    /** 添加最近文件（去重，最新在前，异步保存） */
+    /** 添加最近文件(去重,最新在前,异步保存) */
     public void addRecentFile(String path) {
         if (path == null || path.isBlank()) return;
         synchronized (this) {
@@ -182,7 +182,7 @@ public class AppConfig {
         saveAsync();
     }
 
-    /** 清空最近文件列表（异步保存） */
+    /** 清空最近文件列表(异步保存) */
     public void clearRecentFiles() {
         synchronized (this) {
             recentFiles.clear();
@@ -190,7 +190,7 @@ public class AppConfig {
         saveAsync();
     }
 
-    /** 保存配置到文件（同步）。失败时记录日志但不抛出异常。 */
+    /** 保存配置到文件(同步)失败时记录日志但不抛出异常 */
     public void save() {
         synchronized (this) {
             try {
@@ -203,7 +203,7 @@ public class AppConfig {
         }
     }
 
-    /** 异步保存，避免阻塞 UI 线程 */
+    /** 异步保存,避免阻塞 UI 线程 */
     private void saveAsync() {
         Thread.ofVirtual().start(this::save);
     }
@@ -312,7 +312,7 @@ public class AppConfig {
     }
 
     public static class Theme {
-        /** 主题文件路径（空字符串表示使用内置默认主题） */
+        /** 主题文件路径(空字符串表示使用内置默认主题) */
         private String path = "";
         /** 编辑器字体 */
         private String fontFamily = "Consolas";
@@ -399,11 +399,11 @@ public class AppConfig {
     }
 
     public static class Export {
-        /** 默认导出引擎，空字符串表示跟随当前菜单引擎 */
+        /** 默认导出引擎,空字符串表示跟随当前菜单引擎 */
         private String defaultEngine = "";
-        /** 默认导出格式，有效值: DIR, ZIP */
+        /** 默认导出格式,有效值: DIR, ZIP */
         private String defaultFormat = "DIR";
-        /** 默认冲突策略，有效值: SKIP, OVERWRITE, RENAME */
+        /** 默认冲突策略,有效值: SKIP, OVERWRITE, RENAME */
         private String conflictPolicy = "OVERWRITE";
         /** 是否默认导出资源文件 */
         private boolean exportResources = true;
@@ -464,7 +464,7 @@ public class AppConfig {
         private boolean fullSourceSearch = false;
         /** 搜索结果显示上限 */
         private int resultLimit = 200;
-        /** 搜索排除路径模式（支持通配符 *） */
+        /** 搜索排除路径模式(支持通配符 *) */
         private List<String> excludePatterns = new ArrayList<>();
 
         public boolean fullSourceSearch() {
@@ -499,7 +499,7 @@ public class AppConfig {
         }
     }
 
-    /** Windows 平台原生窗口外观配置，通过 DWM API 应用。非 Windows 平台此项被忽略。 */
+    /** Windows 平台原生窗口外观配置,通过 DWM API 应用非 Windows 平台此项被忽略 */
     public static class Platform {
         /** 窗口边框颜色 (COLORREF: 0x00BBGGRR) */
         private int windowBorderColor = 0x00888800;

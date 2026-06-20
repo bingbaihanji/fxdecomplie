@@ -33,7 +33,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * 负责 class 文件的反编译和代码标签页的创建/刷新。
+ * 负责 class 文件的反编译和代码标签页的创建/刷新
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -47,18 +47,18 @@ public final class ClassTabOpener {
     private final VsCodeThemeLoader.ThemeData editorTheme;
     /** 状态栏引用 */
     private final StatusBar statusBar;
-    /** L2 反编译源码缓存，避免重复反编译已打开的类 */
+    /** L2 反编译源码缓存,避免重复反编译已打开的类 */
     private final DecompileCache decompileCache = new DecompileCache();
 
     /** 暴露 L2 缓存给全文搜索等批量解编译场景复用已打开的标签页结果 */
     public DecompileCache getDecompileCache() {
         return decompileCache;
     }
-    /** 当前运行的反编译任务，用于在切换时取消 */
+    /** 当前运行的反编译任务,用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
-    /** 当前由主导航创建的占位标签，用于任务取消时清理 */
+    /** 当前由主导航创建的占位标签,用于任务取消时清理 */
     private volatile Tab currentLoadingTab;
-    /** 主导航反编译请求序号，用于丢弃快速切换产生的过期结果。 */
+    /** 主导航反编译请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
 
     public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar) {
@@ -67,13 +67,13 @@ public final class ClassTabOpener {
         this.statusBar = statusBar;
     }
 
-    /** 提取简短类名（去 .class 后缀） */
+    /** 提取简短类名(去 .class 后缀) */
     private static String className(FileTreeNode node) {
         String name = node.getName();
         return name.endsWith(".class") ? name.substring(0, name.length() - 6) : name;
     }
 
-    /** 计算工作区缓存键：使用完整路径 + mtime + size，消除路径碰撞和同路径替换误命中 */
+    /** 计算工作区缓存键：使用完整路径 + mtime + size,消除路径碰撞和同路径替换误命中 */
     private static String computeWorkspaceKey(Workspace workspace) {
         File source = workspace.getSourceFile();
         long mtime = source.lastModified();
@@ -83,8 +83,8 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 判断异常是否由线程中断引起（用户导航取消任务，不应弹窗）。
-     * 递归检查异常链中每一层，最终兜底检查当前线程中断标志。
+     * 判断异常是否由线程中断引起(用户导航取消任务,不应弹窗)
+     * 递归检查异常链中每一层,最终兜底检查当前线程中断标志
      */
     private static boolean isInterruptRelated(Exception ex) {
         Throwable cause = ex;
@@ -96,7 +96,7 @@ public final class ClassTabOpener {
         return Thread.currentThread().isInterrupted();
     }
 
-    /** 检测字节数组的文本编码并解码为字符串（支持 BOM、UTF-8、UTF-16、ISO-8859-1 回退） */
+    /** 检测字节数组的文本编码并解码为字符串(支持 BOM、UTF-8、UTF-16、ISO-8859-1 回退) */
     private static String decodeText(byte[] bytes) {
         if (bytes.length >= 3 && (bytes[0] & 0xFF) == 0xEF
                 && (bytes[1] & 0xFF) == 0xBB && (bytes[2] & 0xFF) == 0xBF) {
@@ -118,7 +118,7 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 打开 class 文件的代码标签页。如果已打开则切换到已有标签页。
+     * 打开 class 文件的代码标签页如果已打开则切换到已有标签页
      *
      * @param node               文件树节点
      * @param workspace          工作区
@@ -230,7 +230,7 @@ public final class ClassTabOpener {
                     bindCaretPosition(codeTab);
                 });
             } catch (Exception ex) {
-                // 用户导航到其他类时任务被取消，中断异常是预期行为，不弹窗
+                // 用户导航到其他类时任务被取消,中断异常是预期行为,不弹窗
                 if (isInterruptRelated(ex)) {
                     Thread.interrupted();
                     Platform.runLater(() -> {
@@ -268,7 +268,7 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 用新引擎重新反编译当前标签页（同位置替换）。
+     * 用新引擎重新反编译当前标签页(同位置替换)
      *
      * @param workspace          工作区
      * @param codeTabPane        代码标签页面板
@@ -348,7 +348,7 @@ public final class ClassTabOpener {
                     statusBar.clearTask();
                 });
             } catch (Exception ex) {
-                // 用户导航到其他类时任务被取消，中断异常是预期行为，不弹窗
+                // 用户导航到其他类时任务被取消,中断异常是预期行为,不弹窗
                 if (isInterruptRelated(ex)) {
                     Thread.interrupted();
                     return;
@@ -367,8 +367,8 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 打开文本文件标签页（XML/JSON/YML/properties/.java 等）。
-     * 读取字节码转为 UTF-8 文本，在只读 CodeArea 中显示。
+     * 打开文本文件标签页(XML/JSON/YML/properties/.java 等)
+     * 读取字节码转为 UTF-8 文本,在只读 CodeArea 中显示
      */
     public void openTextFileTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
         // 去重检查：使用完整路径避免同名不同路径文件冲突
@@ -429,7 +429,7 @@ public final class ClassTabOpener {
         });
     }
 
-    /** 读取文件字节码（文本文件版本，和 readClassBytes 逻辑相同） */
+    /** 读取文件字节码(文本文件版本,和 readClassBytes 逻辑相同) */
     private byte[] readFileBytes(FileTreeNode node, Workspace workspace) throws IOException {
         byte[] bytes = node.resolveBytes();
         if (bytes != null) return bytes;
@@ -516,7 +516,7 @@ public final class ClassTabOpener {
         return !guarded || decompileGeneration.get() == requestId;
     }
 
-    /** 查找已打开的同名 class 标签页，移除不同引擎的重复标签页 */
+    /** 查找已打开的同名 class 标签页,移除不同引擎的重复标签页 */
     private Tab findOrRemoveOpenClassTab(TabPane codeTabPane, FileTreeNode node,
                                          DecompilerTypeEnum engine,
                                          boolean removeDifferentEngine) {
@@ -536,7 +536,7 @@ public final class ClassTabOpener {
         return null;
     }
 
-    /** 读取类字节码（依次尝试节点缓存、工作区索引、全局缓存、磁盘读取） */
+    /** 读取类字节码(依次尝试节点缓存、工作区索引、全局缓存、磁盘读取) */
     private byte[] readClassBytes(FileTreeNode node, Workspace workspace) throws IOException {
         byte[] bytes = node.resolveBytes();
         if (bytes != null) return bytes;
@@ -560,9 +560,9 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 共享的反编译+缓存逻辑：依次查询 L2 内存缓存、L3 磁盘缓存，最后执行反编译。
-     * 命中 L3 时回填 L2，反编译结果同时写入 L2 和 L3。
-     * workspaceKey 使用路径 + mtime + size，避免同路径文件替换后命中旧缓存。
+     * 共享的反编译+缓存逻辑：依次查询 L2 内存缓存、L3 磁盘缓存,最后执行反编译
+     * 命中 L3 时回填 L2,反编译结果同时写入 L2 和 L3
+     * workspaceKey 使用路径 + mtime + size,避免同路径文件替换后命中旧缓存
      */
     private DecompileResult decompileWithCache(String internalName, DecompilerTypeEnum engine,
                                                byte[] bytes, FileTreeNode node, Workspace workspace,
@@ -646,7 +646,7 @@ public final class ClassTabOpener {
         DecompilerRunner.shutdown();
     }
 
-    /** 反编译结果，包含源码和元数据 */
+    /** 反编译结果,包含源码和元数据 */
     private record DecompileResult(String sourceCode, CodeMetadata metadata) {
     }
 

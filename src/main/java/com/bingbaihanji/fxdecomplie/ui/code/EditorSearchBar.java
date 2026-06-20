@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 编辑器内搜索栏。在 CodeArea 中提供 Ctrl+F 查找功能。
+ * 编辑器内搜索栏在 CodeArea 中提供 Ctrl+F 查找功能
  *
  * @author bingbaihanji
  * @date 2026-06-18

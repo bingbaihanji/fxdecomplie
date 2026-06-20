@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * 全文搜索服务。管理多个 SearchProvider 并聚合结果。
+ * 全文搜索服务管理多个 SearchProvider 并聚合结果
  *
  * @author bingbaihanji
  * @date 2026-06-17

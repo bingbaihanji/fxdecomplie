@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 
 /**
- * 搜索字节码/汇编文本视图（如 javap 输出）。
+ * 搜索字节码/汇编文本视图(如 javap 输出)
  *
  * @author bingbaihanji
  * @date 2026-06-18

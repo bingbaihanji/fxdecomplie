@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * 类文件发现器。支持 JAR/ZIP/目录/单个 .class 文件。
+ * 类文件发现器支持 JAR/ZIP/目录/单个 .class 文件
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -38,7 +38,7 @@ public final class ClassDiscoverer {
     }
 
     /**
-     * 发现文件中的所有类条目。自动判断输入类型（JAR/ZIP/目录/单文件）。
+     * 发现文件中的所有类条目自动判断输入类型(JAR/ZIP/目录/单文件)
      *
      * @param file 输入文件或目录
      * @return 发现的条目列表
@@ -149,12 +149,12 @@ public final class ClassDiscoverer {
     }
 
     /**
-     * 发现的文件条目。
+     * 发现的文件条目
      *
-     * @param name     显示名称（如 "Main.class"）
-     * @param fullPath 完整内部路径（如 "com/example/Main.class"）
+     * @param name     显示名称(如 "Main.class")
+     * @param fullPath 完整内部路径(如 "com/example/Main.class")
      * @param nodeType 节点类型
-     * @param bytes    .class 文件的字节码（非 class 文件为 null）
+     * @param bytes    .class 文件的字节码(非 class 文件为 null)
      */
     public record ClassEntry(
             String name,

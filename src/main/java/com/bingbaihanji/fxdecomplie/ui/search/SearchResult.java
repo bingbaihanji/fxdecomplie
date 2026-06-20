@@ -1,11 +1,11 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
 /**
- * 单条搜索结果记录。
+ * 单条搜索结果记录
  *
- * @param fullPath   所属类的完整路径（如 "com/example/Main.class"）
+ * @param fullPath   所属类的完整路径(如 "com/example/Main.class")
  * @param matchLine  匹配行内容
- * @param lineNumber 行号（1-based）
+ * @param lineNumber 行号(1-based)
  * @param matchType  匹配类型
  * @author bingbaihanji
  * @date 2026-06-17

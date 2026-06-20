@@ -11,7 +11,7 @@ import com.sun.jna.win32.W32APIOptions;
 import java.util.List;
 
 /**
- * JNA 接口定义，package-private，仅供 {@link NativeWindowsTools} 使用
+ * JNA 接口定义,package-private,仅供 {@link NativeWindowsTools} 使用
  */
 final class Win32Api {
     private Win32Api() {

@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
- * 工作区加载器。处理文件发现、树构建和工作区创建流水线。
+ * 工作区加载器处理文件发现、树构建和工作区创建流水线
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -24,12 +24,12 @@ public final class WorkspaceLoader {
     }
 
     /**
-     * 加载文件并创建工作区（在后台线程上调用）。
+     * 加载文件并创建工作区(在后台线程上调用)
      *
      * @param file      输入文件/目录
-     * @param config    应用配置，用于记录最近文件
-     * @param onSuccess 工作区创建成功回调（在 JavaFX 线程上调用）
-     * @param onError   加载失败回调（在 JavaFX 线程上调用）
+     * @param config    应用配置,用于记录最近文件
+     * @param onSuccess 工作区创建成功回调(在 JavaFX 线程上调用)
+     * @param onError   加载失败回调(在 JavaFX 线程上调用)
      */
     public static void loadAsync(File file, AppConfig config,
                                  Consumer<Workspace> onSuccess,
@@ -62,7 +62,7 @@ public final class WorkspaceLoader {
         });
     }
 
-    /** 判断文件是否为归档文件（JAR/ZIP） */
+    /** 判断文件是否为归档文件(JAR/ZIP) */
     private static boolean isArchiveFile(File file) {
         String name = file.getName().toLowerCase();
         return name.endsWith(".jar") || name.endsWith(".zip");

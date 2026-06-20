@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 文件树构建器。将扁平的类条目列表转换为带包层级的树结构。
+ * 文件树构建器将扁平的类条目列表转换为带包层级的树结构
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -20,9 +20,9 @@ public final class FileTreeBuilder {
     }
 
     /**
-     * 构建文件树。
+     * 构建文件树
      *
-     * @param rootName 根节点名称（如 "demo.jar"）
+     * @param rootName 根节点名称(如 "demo.jar")
      * @param entries  扁平条目列表
      * @return 树根节点
      */
@@ -56,7 +56,7 @@ public final class FileTreeBuilder {
         return root;
     }
 
-    /** 获取或创建父节点链，返回目标条目的直接父节点 */
+    /** 获取或创建父节点链,返回目标条目的直接父节点 */
     private static TreeItem<FileTreeNode> getOrCreateParent(
             TreeItem<FileTreeNode> root, String fullPath,
             Map<String, TreeItem<FileTreeNode>> pathMap) {
@@ -87,7 +87,7 @@ public final class FileTreeBuilder {
         return current;
     }
 
-    /** 递归排序树节点（包在前，文件在后） */
+    /** 递归排序树节点(包在前,文件在后) */
     private static void sortTree(TreeItem<FileTreeNode> root) {
         java.util.ArrayDeque<TreeItem<FileTreeNode>> queue = new java.util.ArrayDeque<>();
         queue.add(root);

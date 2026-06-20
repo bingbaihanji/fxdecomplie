@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 从反编译 Java 源码中提取字段、方法、内部类的大纲信息。使用正则逐行匹配。
+ * 从反编译 Java 源码中提取字段、方法、内部类的大纲信息使用正则逐行匹配
  *
  * @author bingbaihanji
  * @date 2026-06-17

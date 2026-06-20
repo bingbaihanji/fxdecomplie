@@ -9,7 +9,7 @@ import com.sun.jna.ptr.IntByReference;
 /**
  * Windows 原生窗口操作工具类
  *
- * <p>封装基于 JNA 的 Win32 / DWM API，提供窗口样式、透明度、状态控制等常用操作。</p>
+ * <p>封装基于 JNA 的 Win32 / DWM API,提供窗口样式、透明度、状态控制等常用操作</p>
  *
  * @author bingbaihanji
  */
@@ -27,7 +27,7 @@ public final class NativeWindowsTools {
     // ==================== DWM 窗口效果 ====================
 
     /**
-     * 设置窗口系统背景样式（Acrylic / Mica）
+     * 设置窗口系统背景样式(Acrylic / Mica)
      *
      * @param hwnd     窗口句柄
      * @param backdropType 背景类型
@@ -67,7 +67,7 @@ public final class NativeWindowsTools {
     /**
      * 获取窗口圆角偏好
      *
-     * @return 当前圆角偏好，获取失败返回 null
+     * @return 当前圆角偏好,获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static DwmWindowCornerPreference getWindowCornerPreference(WinDef.HWND hwnd) {
@@ -108,7 +108,7 @@ public final class NativeWindowsTools {
     /**
      * 获取窗口暗色模式状态
      *
-     * @return true=暗色模式，false=亮色模式，获取失败返回 null
+     * @return true=暗色模式,false=亮色模式,获取失败返回 null
      */
     public static Boolean getWindowDarkMode(WinDef.HWND hwnd) {
         if (hwnd == null) {
@@ -131,7 +131,7 @@ public final class NativeWindowsTools {
      * 设置窗口边框颜色
      *
      * @param hwnd     窗口句柄
-     * @param rgbColor 颜色值（COLORREF 格式：0x00BBGGRR）
+     * @param rgbColor 颜色值(COLORREF 格式：0x00BBGGRR)
      * @implNote 需要 Windows 11+
      */
     public static void setWindowBorderColor(WinDef.HWND hwnd, int rgbColor) {
@@ -148,7 +148,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 扩展窗口框架到客户区，使 DWM 渲染窗口阴影和边框
+     * 扩展窗口框架到客户区,使 DWM 渲染窗口阴影和边框
      *
      * @param hwnd   窗口句柄
      * @param left   左侧扩展像素
@@ -169,7 +169,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 扩展窗口框架到整个客户区（-1, -1, -1, -1），启用 DWM 阴影和玻璃效果
+     * 扩展窗口框架到整个客户区(-1, -1, -1, -1),启用 DWM 阴影和玻璃效果
      */
     public static void extendFrameIntoClientArea(WinDef.HWND hwnd) {
         extendFrameIntoClientArea(hwnd, -1, -1, -1, -1);
@@ -179,7 +179,7 @@ public final class NativeWindowsTools {
      * 设置窗口阴影
      *
      * @param hwnd    窗口句柄
-     * @param enabled true=启用阴影，false=禁用阴影
+     * @param enabled true=启用阴影,false=禁用阴影
      */
     public static void enableWindowShadow(WinDef.HWND hwnd, boolean enabled) {
         if (hwnd == null) {
@@ -199,7 +199,7 @@ public final class NativeWindowsTools {
      * 设置窗口透明度
      *
      * @param hwnd  窗口句柄
-     * @param value 透明度值（0.0 = 完全透明，1.0 = 完全不透明）
+     * @param value 透明度值(0.0 = 完全透明,1.0 = 完全不透明)
      */
     public static void setWindowAlpha(WinDef.HWND hwnd, float value) {
         if (hwnd == null) {
@@ -335,7 +335,7 @@ public final class NativeWindowsTools {
         Win32Api.User32Api.INSTANCE.SetWindowText(hwnd, title);
     }
 
-    /** 获取窗口矩形（屏幕坐标） */
+    /** 获取窗口矩形(屏幕坐标) */
     public static WinDef.RECT getWindowRect(WinDef.HWND hwnd) {
         WinDef.RECT rect = new WinDef.RECT();
         if (hwnd != null) {
@@ -363,7 +363,7 @@ public final class NativeWindowsTools {
 
     // ==================== 调试 ====================
 
-    /** 打印当前进程所有窗口信息（仅在 DEBUG 日志级别时输出） */
+    /** 打印当前进程所有窗口信息(仅在 DEBUG 日志级别时输出) */
     public static void printAllWindowsInfo() {
         org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(NativeWindowsTools.class);
         if (!logger.isDebugEnabled()) return;

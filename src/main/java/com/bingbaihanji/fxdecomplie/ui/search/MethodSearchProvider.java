@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 按方法名搜索（匹配已反编译源码中的方法声明）。
+ * 按方法名搜索(匹配已反编译源码中的方法声明)
  *
  * @author bingbaihanji
  * @date 2026-06-18

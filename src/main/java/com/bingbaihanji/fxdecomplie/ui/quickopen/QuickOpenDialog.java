@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 快速打开类对话框。类似 IntelliJ Ctrl+N。输入类名实时过滤 workspace 所有 class，回车打开。
+ * 快速打开类对话框类似 IntelliJ Ctrl+N输入类名实时过滤 workspace 所有 class,回车打开
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -30,7 +30,7 @@ public final class QuickOpenDialog {
     }
 
     /**
-     * 显示快速打开对话框。
+     * 显示快速打开对话框
      * @param owner      父窗口
      * @param classNames workspace 中所有类的全路径列表
      * @param onSelect   选中回调

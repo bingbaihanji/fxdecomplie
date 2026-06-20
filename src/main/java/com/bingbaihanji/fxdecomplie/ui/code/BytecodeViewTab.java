@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 /**
- * 字节码/汇编视图。使用 ASM Textifier 将 class 字节码转为 javap -c 风格的汇编文本。
+ * 字节码/汇编视图使用 ASM Textifier 将 class 字节码转为 javap -c 风格的汇编文本
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -22,8 +22,8 @@ public final class BytecodeViewTab {
     }
 
     /**
-     * 创建字节码视图 CodeArea。
-     * @param classBytes 类文件字节码，为 null 则显示「无字节码」
+     * 创建字节码视图 CodeArea
+     * @param classBytes 类文件字节码,为 null 则显示「无字节码」
      * @return 只读 CodeArea 组件
      */
     public static CodeArea createView(byte[] classBytes) {

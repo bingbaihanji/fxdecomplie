@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 搜索反编译源码中的注释行（以 // , /* , * 开头的行）。
+ * 搜索反编译源码中的注释行(以 // , /* , * 开头的行)
  *
  * @author bingbaihanji
  * @date 2026-06-18

@@ -254,13 +254,13 @@ public final class UsageSearchService {
     }
 
     /**
-     * 检查 ASM 字段/方法描述符是否引用了目标类。
+     * 检查 ASM 字段/方法描述符是否引用了目标类
      *
-     * JVM 描述符中对象类型以 {@code L} 开头、{@code ;} 结尾，例如 {@code Ljava/lang/String;}。
-     * 本方法先将描述符整体转小写，使前缀 {@code L} 变为 {@code 'l'}，再检查类路径或简单名是否匹配。
+     * JVM 描述符中对象类型以 {@code L} 开头、{@code ;} 结尾,例如 {@code Ljava/lang/String;}
+     * 本方法先将描述符整体转小写,使前缀 {@code L} 变为 {@code 'l'},再检查类路径或简单名是否匹配
      *
-     * @param target     用户查询解析结果，{@code classPart} 已统一为小写内部路径（如 {@code java/lang/string}）
-     * @param descriptor ASM 描述符字符串（如 {@code (Ljava/lang/String;)V}）
+     * @param target     用户查询解析结果,{@code classPart} 已统一为小写内部路径(如 {@code java/lang/string})
+     * @param descriptor ASM 描述符字符串(如 {@code (Ljava/lang/String;)V})
      * @return 描述符中任意对象类型引用是否匹配目标类
      */
     private static boolean matchesDescriptor(Target target, String descriptor) {
@@ -268,7 +268,7 @@ public final class UsageSearchService {
             return false;
         }
         // ---- 统一小写以匹配 JVM L-prefix 对象描述符 ----
-        // 'L' 是 JVM 对象类型前缀，小写后 'l' 与查询 classPart 同大小写，直接拼接匹配
+        // 'L' 是 JVM 对象类型前缀,小写后 'l' 与查询 classPart 同大小写,直接拼接匹配
         String lower = descriptor.toLowerCase(Locale.ROOT);
 
         // ---- 全路径匹配：描述符含 "ljava/lang/String;" 则匹配 classPart="java/lang/string" ----
@@ -277,8 +277,8 @@ public final class UsageSearchService {
         }
 
         // ---- 简单名兼容匹配：查询 "String" 也能匹配 method(String) 的参数类型 ----
-        // 从 classPart 提取最后一段作为简单名（如 "java/lang/string" → "string"），
-        // 遍历描述符中每个 "l...;" 对象类型块，将其类的简单名与查询简单名比较。
+        // 从 classPart 提取最后一段作为简单名(如 "java/lang/string" → "string"),
+        // 遍历描述符中每个 "l...;" 对象类型块,将其类的简单名与查询简单名比较
         int lastSlash = target.classPart.lastIndexOf('/');
         String simpleName = lastSlash >= 0 ? target.classPart.substring(lastSlash + 1) : target.classPart;
         if (!simpleName.isEmpty()) {

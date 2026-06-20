@@ -14,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 基于正则表达式的 Java 语法高亮器，实现 SyntaxDecorator 接口。
+ * 基于正则表达式的 Java 语法高亮器,实现 SyntaxDecorator 接口
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -97,12 +97,12 @@ public class RegexHighlighter implements SyntaxDecorator {
         this.styleType = resolveStyle(styles, TOKEN_TO_SCOPES.get("TYPE"));
     }
 
-    /** 检查标识符是否以大写开头（类/接口/枚举名） */
+    /** 检查标识符是否以大写开头(类/接口/枚举名) */
     private static boolean isType(String identifier) {
         return Character.isUpperCase(identifier.charAt(0));
     }
 
-    /** 检查标识符后是否紧跟 (（方法调用/声明） */
+    /** 检查标识符后是否紧跟 ((方法调用/声明) */
     private static boolean isMethod(String line, int endPos) {
         int lineEnd = line.indexOf('\n', endPos);
         if (lineEnd < 0) lineEnd = line.length();
@@ -110,7 +110,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         return rest.startsWith("(");
     }
 
-    /** 检查标识符后是否紧跟 = 或 ;（字段声明） */
+    /** 检查标识符后是否紧跟 = 或 ;(字段声明) */
     private static boolean isField(String line, int endPos) {
         int lineEnd = line.indexOf('\n', endPos);
         if (lineEnd < 0) lineEnd = line.length();
@@ -118,7 +118,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         return rest.startsWith("=") || rest.startsWith(";");
     }
 
-    /** 检查标识符是否在方法参数列表中（同一行内的括号之间） */
+    /** 检查标识符是否在方法参数列表中(同一行内的括号之间) */
     private static boolean isParameter(String line, int startPos, int endPos) {
         int lineStart = line.lastIndexOf('\n', startPos);
         lineStart = lineStart < 0 ? 0 : lineStart + 1;
@@ -132,7 +132,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         return posInLine > openParen && posInLine < closeParen;
     }
 
-    /** 根据 scope 列表解析样式（优先精确匹配 → 前缀匹配 → 回退） */
+    /** 根据 scope 列表解析样式(优先精确匹配 → 前缀匹配 → 回退) */
     private StyleAttributeMap resolveStyle(Map<String, StyleAttributeMap> styles, List<String> scopes) {
         for (String scope : scopes) {
             if (styles.containsKey(scope)) return styles.get(scope);

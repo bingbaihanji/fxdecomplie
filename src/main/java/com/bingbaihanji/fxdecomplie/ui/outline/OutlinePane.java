@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.ui.outline;
 
+import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -16,7 +16,7 @@ import javafx.scene.paint.Color;
 import java.util.List;
 
 /**
- * 大纲面板。显示当前类的字段、方法、内部类列表，支持实时过滤和点击跳转。
+ * 大纲面板显示当前类的字段、方法、内部类列表,支持实时过滤和点击跳转
  *
  * @author bingbaihanji
  * @date 2026-06-17

@@ -3,9 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.inheritance;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 类继承关系分析服务。使用 ASM 读取常量池中的 super_class 和 interfaces。
+ * 类继承关系分析服务使用 ASM 读取常量池中的 super_class 和 interfaces
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -30,25 +28,27 @@ public final class InheritanceService {
     }
 
     /**
-     * 构建继承树。
-     * @param fullPath 目标类全路径（如 "com/example/MyClass.class"）
-     * @return 继承树根节点，失败返回 null
+     * 构建继承树
+     * @param fullPath 目标类全路径(如 "com/example/MyClass.class")
+     * @return 继承树根节点,失败返回 null
      */
     public static TreeItem<InheritanceNode> buildTree(String fullPath) {
         return buildTree(fullPath, null);
     }
 
     /**
-     * 构建继承树。
-     * @param fullPath 目标类全路径（如 "com/example/MyClass.class"）
-     * @param index 当前工作区索引，优先用于读取字节码
-     * @return 继承树根节点，失败返回 null
+     * 构建继承树
+     * @param fullPath 目标类全路径(如 "com/example/MyClass.class")
+     * @param index 当前工作区索引,优先用于读取字节码
+     * @return 继承树根节点,失败返回 null
      */
     public static TreeItem<InheritanceNode> buildTree(String fullPath, WorkspaceIndex index) {
         Set<String> visited = new HashSet<>();
         String internalName = toInternal(fullPath);
         byte[] bytes = getBytes(index, internalName);
-        if (bytes == null){ return null;}
+        if (bytes == null) {
+            return null;
+        }
 
         InheritanceNode rootData = new InheritanceNode(internalName, simpleName(internalName),
                 InheritanceNode.RelationType.SELF, 0);

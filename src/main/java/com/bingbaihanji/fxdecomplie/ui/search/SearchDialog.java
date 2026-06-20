@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 全文搜索对话框。带防抖的实时搜索，TreeView 按类型分组显示结果。
+ * 全文搜索对话框带防抖的实时搜索,TreeView 按类型分组显示结果
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -334,6 +334,15 @@ public final class SearchDialog {
         return count;
     }
 
+    private static void setDialogIcon(Stage stage) {
+        try (var stream = SearchDialog.class.getResourceAsStream("/icon/logo.png")) {
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     @FunctionalInterface
     public interface JumpCallback {
         void jump(String fullPath, int lineNumber);
@@ -342,14 +351,5 @@ public final class SearchDialog {
     @FunctionalInterface
     public interface SourceCacheLoader {
         Map<String, String> load();
-    }
-
-    private static void setDialogIcon(Stage stage) {
-        try (var stream = SearchDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-        }
     }
 }
