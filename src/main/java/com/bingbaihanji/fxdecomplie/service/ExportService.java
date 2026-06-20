@@ -229,13 +229,16 @@ public final class ExportService {
         Set<String> writtenEntries = new HashSet<>();
         try (ZipOutputStream zos = new ZipOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
+            boolean entryOpen = false;
             for (TreeItem<FileTreeNode> item : items) {
                 if (Thread.currentThread().isInterrupted()) {
                     state.errors.add("Export canceled");
-                    try {
-                        zos.closeEntry();
-                    } catch (IOException e) {
-                        logger.debug("Failed to close zip entry during cancellation", e);
+                    if (entryOpen) {
+                        try {
+                            zos.closeEntry();
+                        } catch (IOException e) {
+                            logger.debug("Failed to close zip entry during cancellation", e);
+                        }
                     }
                     return;
                 }
@@ -247,8 +250,10 @@ public final class ExportService {
                     if (entryName != null) {
                         writtenEntries.add(entryName);
                         zos.putNextEntry(new ZipEntry(entryName));
+                        entryOpen = true;
                         zos.write(content.bytes());
                         zos.closeEntry();
+                        entryOpen = false;
                         state.successCount++;
                     }
                 } catch (Exception e) {

@@ -353,8 +353,7 @@ public final class SearchDialog {
     }
 
     private static void setDialogIcon(Stage stage) {
-        try {
-            var stream = SearchDialog.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = SearchDialog.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }

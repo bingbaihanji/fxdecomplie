@@ -250,8 +250,7 @@ public final class SettingsDialog {
     }
 
     private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = SettingsDialog.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = SettingsDialog.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }

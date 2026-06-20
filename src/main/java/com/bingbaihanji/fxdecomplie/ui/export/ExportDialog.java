@@ -247,8 +247,7 @@ public final class ExportDialog {
     }
 
     private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = ExportDialog.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = ExportDialog.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }

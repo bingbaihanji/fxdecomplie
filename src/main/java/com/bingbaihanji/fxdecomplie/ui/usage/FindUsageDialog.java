@@ -165,8 +165,7 @@ public final class FindUsageDialog {
     }
 
     private static void setDialogIcon(Stage stage) {
-        try {
-            var stream = FindUsageDialog.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = FindUsageDialog.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }

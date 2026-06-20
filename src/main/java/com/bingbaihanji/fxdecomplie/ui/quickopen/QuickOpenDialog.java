@@ -128,8 +128,7 @@ public final class QuickOpenDialog {
     }
 
     private static void setDialogIcon(Stage stage) {
-        try {
-            var stream = QuickOpenDialog.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = QuickOpenDialog.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
