@@ -2,7 +2,6 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
@@ -26,16 +25,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -49,30 +42,6 @@ import java.util.function.Consumer;
 public final class ClassTabOpener {
 
     private static final Logger logger = LoggerFactory.getLogger(ClassTabOpener.class);
-    private static final DecompilerTypeEnum[] JD_FALLBACK_ENGINES = {
-            DecompilerTypeEnum.VINEFLOWER,
-            DecompilerTypeEnum.CFR,
-            DecompilerTypeEnum.PROCYON
-    };
-    private static final int MAX_DECOMPILER_THREADS = Math.max(1,
-            Math.min(2, Runtime.getRuntime().availableProcessors() / 2));
-    private static final AtomicInteger DECOMPILER_THREAD_ID = new AtomicInteger();
-    private static final ThreadPoolExecutor DECOMPILER_EXECUTOR = new ThreadPoolExecutor(
-            MAX_DECOMPILER_THREADS,
-            MAX_DECOMPILER_THREADS,
-            60L,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(MAX_DECOMPILER_THREADS * 2),
-            r -> {
-                Thread t = new Thread(r, "decompiler-" + DECOMPILER_THREAD_ID.incrementAndGet());
-                t.setDaemon(true);
-                return t;
-            });
-
-    static {
-        DECOMPILER_EXECUTOR.allowCoreThreadTimeOut(true);
-    }
-
     /** 应用配置 */
     private final AppConfig config;
     /** 编辑器主题数据 */
@@ -149,23 +118,11 @@ public final class ClassTabOpener {
      * 若无自定义选项则返回 "default"。
      */
     private static String computeOptionsHash(AppConfig config, DecompilerTypeEnum engine) {
-        Map<String, String> opts = engineOptions(config, engine);
-        if (opts.isEmpty()) {
-            return "default";
-        }
-        return opts.entrySet().stream()
-                .sorted(java.util.Map.Entry.comparingByKey())
-                .map(e -> e.getKey() + "=" + e.getValue())
-                .collect(java.util.stream.Collectors.joining(","));
+        return DecompilerRunner.optionsHash(engineOptions(config, engine));
     }
 
-    private static Map<String, String> engineOptions(AppConfig config, DecompilerTypeEnum engine) {
-        var engineOpts = config.decompiler().engineOptions();
-        if (engineOpts == null || engine == null || !engineOpts.containsKey(engine.name())) {
-            return Map.of();
-        }
-        var opts = engineOpts.get(engine.name());
-        return opts == null ? Map.of() : Map.copyOf(opts);
+    static Map<String, String> engineOptions(AppConfig config, DecompilerTypeEnum engine) {
+        return ExportService.engineOptions(config, engine);
     }
 
     /**
@@ -638,172 +595,30 @@ public final class ClassTabOpener {
             if (!active.getAsBoolean()) {
                 throw new CancellationException("decompile request superseded");
             }
-            // 线程复用可能残留中断标志，反编译前再次清除
             Thread.interrupted();
-            final byte[] finalBytes = bytes;
-            final String finalPath = node.getFullPath();
-            final DecompilerTypeEnum finalEngine = engine;
-            Future<String> decompileFuture = null;
-            try {
-                decompileFuture = DECOMPILER_EXECUTOR.submit(() ->
-                        decompileWithFallback(finalPath, finalBytes, finalEngine, workspace));
-                sourceCode = decompileFuture.get(30, TimeUnit.SECONDS);
-            } catch (RejectedExecutionException e) {
-                return new DecompileResult(
-                        "// " + I18nUtil.getString("decompile.busy") + "\n"
-                                + "// Class: " + finalPath,
-                        new CodeMetadata(java.util.Map.of()));
-            } catch (java.util.concurrent.TimeoutException e) {
-                if (decompileFuture != null) {
-                    decompileFuture.cancel(true);
-                }
-                return new DecompileResult(
-                        "// " + I18nUtil.getString("decompile.timeout") + " " + finalPath +
-                                "\n// " + I18nUtil.getString("decompile.timeoutHint"),
-                        new CodeMetadata(java.util.Map.of()));
-            } catch (InterruptedException e) {
-                if (decompileFuture != null) {
-                    decompileFuture.cancel(true);
-                }
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Decompilation interrupted: " + finalPath, e);
-            } catch (java.util.concurrent.ExecutionException e) {
-                throw new RuntimeException("Decompilation failed: " + finalPath, e.getCause());
-            }
+            String finalPath = node.getFullPath();
+            DecompilerContext context = DecompilerRunner.contextForWorkspace(
+                    workspace, engineOptions(config, engine));
+            sourceCode = DecompilerRunner.decompileWithTimeout(finalPath, bytes,
+                    engine, context, active);
             if (!active.getAsBoolean()) {
                 throw new CancellationException("decompile request superseded");
             }
-            // ---- Save decompiled result to L2 (immediate) ----
-            decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
+            if (!DecompilerRunner.isTransientFailureOutput(sourceCode)) {
+                // ---- Save decompiled result to L2 (immediate) ----
+                decompileCache.put(wsKey, internalName, engine, optionsHash, sourceCode);
 
-            // ---- Save to L3 disk cache asynchronously (non-blocking) ----
-            final String finalSource = sourceCode;
-            BackgroundTasks.run("DiskCache-" + internalName, () -> {
-                DiskCodeCache.save(wsKey, internalName, engine, optionsHash, finalSource);
-            });
+                // ---- Save to L3 disk cache asynchronously (non-blocking) ----
+                final String finalSource = sourceCode;
+                BackgroundTasks.run("DiskCache-" + internalName, () -> {
+                    DiskCodeCache.save(wsKey, internalName, engine, optionsHash, finalSource);
+                });
+            }
         }
 
         // ---- Extract metadata for Ctrl+Click navigation ----
         CodeMetadata metadata = OutlineParser.extractMetadata(sourceCode);
         return new DecompileResult(sourceCode, metadata);
-    }
-
-    private String decompileWithFallback(String classFilePath, byte[] classBytes,
-                                         DecompilerTypeEnum engine, Workspace workspace) {
-        String source = decompileWithEngine(classFilePath, classBytes, engine, workspace);
-        if (engine != DecompilerTypeEnum.JD || !isJdFailureOutput(source)) {
-            return source;
-        }
-
-        String jdReason = extractJdFailureReason(source);
-        for (DecompilerTypeEnum fallback : JD_FALLBACK_ENGINES) {
-            try {
-                String fallbackSource = decompileWithEngine(classFilePath, classBytes, fallback, workspace);
-                if (fallbackSource != null && !fallbackSource.isBlank()
-                        && !isDecompilerFailureOutput(fallbackSource)) {
-                    logger.warn("JD-Core failed for {}; using {} fallback. Reason: {}",
-                            classFilePath, fallback, jdReason);
-                    return withFallbackNotice(fallbackSource, fallback, jdReason);
-                }
-            } catch (RuntimeException e) {
-                logger.warn("Fallback decompiler {} failed for {}", fallback, classFilePath, e);
-            }
-        }
-        return source;
-    }
-
-    private String decompileWithEngine(String classFilePath, byte[] classBytes,
-                                       DecompilerTypeEnum engine, Workspace workspace) {
-        DecompilerContext ctx = createDecompilerContext(workspace, engineOptions(config, engine));
-        return DecompilerFactory.getDecompiler(engine).decompile(classFilePath, classBytes, ctx);
-    }
-
-    private DecompilerContext createDecompilerContext(Workspace workspace, Map<String, String> options) {
-        return DecompilerContext.of(internalName -> resolveWorkspaceClassBytes(workspace, internalName), options);
-    }
-
-    private byte[] resolveWorkspaceClassBytes(Workspace workspace, String internalName) {
-        if (workspace == null || internalName == null || internalName.isBlank()) {
-            return null;
-        }
-        String normalized = DecompilerContext.normalizeInternalName(internalName);
-        if (workspace.isIndexReady()) {
-            byte[] bytes = workspace.getIndex().getClassBytes(normalized);
-            if (bytes != null) {
-                return bytes;
-            }
-        }
-
-        FileTreeNode node = workspace.findNodeByPath(normalized + ".class");
-        if (node != null) {
-            try {
-                return node.resolveBytes();
-            } catch (IOException e) {
-                logger.debug("Failed to resolve dependency class: {}", normalized, e);
-            }
-        }
-
-        if (!workspace.isArchive()) {
-            try {
-                Path path = new File(workspace.getSourceFile(), normalized + ".class").toPath();
-                return Files.exists(path) ? Files.readAllBytes(path) : null;
-            } catch (IOException e) {
-                logger.debug("Failed to read dependency class from disk: {}", normalized, e);
-            }
-        }
-        return null;
-    }
-
-    private static boolean isJdFailureOutput(String source) {
-        if (source == null) {
-            return false;
-        }
-        return source.contains("JD-Core Error:")
-                || source.contains("JD-Core decompile failed");
-    }
-
-    private static boolean isDecompilerFailureOutput(String source) {
-        if (source == null) {
-            return true;
-        }
-        String trimmed = source.trim();
-        return trimmed.startsWith("// CFR decompile failed")
-                || trimmed.startsWith("// Procyon decompile failed")
-                || trimmed.startsWith("// Vineflower decompile failed")
-                || isJdFailureOutput(source);
-    }
-
-    private static String extractJdFailureReason(String source) {
-        if (source == null || source.isBlank()) {
-            return "unknown JD-Core failure";
-        }
-        String normalized = source.replace("\r\n", "\n");
-        int errorIndex = normalized.indexOf("JD-Core Error:");
-        if (errorIndex < 0) {
-            errorIndex = normalized.indexOf("JD-Core decompile failed");
-        }
-        String reason = errorIndex >= 0 ? normalized.substring(errorIndex) : normalized;
-        int lineEnd = reason.indexOf('\n');
-        if (lineEnd >= 0) {
-            reason = reason.substring(0, lineEnd);
-        }
-        reason = reason.replace("*/", "* /").trim();
-        return reason.length() > 220 ? reason.substring(0, 220) + "..." : reason;
-    }
-
-    private static String withFallbackNotice(String source, DecompilerTypeEnum fallback,
-                                             String reason) {
-        String notice = "// " + I18nUtil.getString("decompile.jdFallback", fallback.name()) + "\n"
-                + "// " + I18nUtil.getString("decompile.jdFallbackReason", reason) + "\n\n";
-        String normalized = source.replace("\r\n", "\n");
-        if (normalized.startsWith("package ")) {
-            int packageEnd = normalized.indexOf(";\n");
-            if (packageEnd > 0) {
-                int insertAt = packageEnd + 2;
-                return normalized.substring(0, insertAt) + "\n" + notice + normalized.substring(insertAt);
-            }
-        }
-        return notice + source;
     }
 
     /** 显示错误弹窗 */
@@ -835,15 +650,7 @@ public final class ClassTabOpener {
 
     /** Shut down the decompiler executor gracefully, waiting up to 2 seconds. */
     public static void shutdown() {
-        DECOMPILER_EXECUTOR.shutdown();
-        try {
-            if (!DECOMPILER_EXECUTOR.awaitTermination(2, TimeUnit.SECONDS)) {
-                DECOMPILER_EXECUTOR.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            DECOMPILER_EXECUTOR.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
+        DecompilerRunner.shutdown();
     }
 
     /** 反编译结果，包含源码和元数据 */

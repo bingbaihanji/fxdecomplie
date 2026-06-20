@@ -142,25 +142,27 @@ public final class SearchDialog {
 
         // Track search generation to discard stale results
         AtomicInteger searchGen = new AtomicInteger(0);
-        // Store last full search results for combo re-filtering
-        AtomicReference<List<SearchResult>> lastAllResults = new AtomicReference<>(new ArrayList<>());
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
 
         // Debounce 200ms
         PauseTransition debounce = new PauseTransition(Duration.millis(200));
-        input.textProperty().addListener((obs, old, text) -> {
+        Runnable scheduleSearch = () -> {
+            String text = input.getText();
             debounce.stop();
             resultTree.setRoot(null);
-            statusLabel.setText(text.isEmpty() ? "" : I18nUtil.getString("search.searching"));
+            statusLabel.setText(text == null || text.isEmpty() ? "" : I18nUtil.getString("search.searching"));
             int gen = searchGen.incrementAndGet();
             BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
             debounce.setOnFinished(e -> {
-                if (text.isEmpty()) {
+                String query = input.getText();
+                if (query == null || query.isEmpty()) {
                     statusLabel.setText("");
                     return;
                 }
-                String selectedType = searchTypeCombo.getValue();
-                boolean includeFullSource = fullSourceSearch.isSelected();
+                SearchScope scope = scopeFromLabel(searchTypeCombo.getValue());
+                boolean includeFullSource = fullSourceLoader != null
+                        && fullSourceSearch.isSelected()
+                        && scope.sourceCacheRelevant();
                 SearchOptions options = new SearchOptions(
                         regexToggle.isSelected(),
                         caseToggle.isSelected(),
@@ -175,16 +177,14 @@ public final class SearchDialog {
                             return;
                         }
                     }
-                    List<SearchResult> all = searchService.searchAll(
-                            text, effectiveSourceCache, options, resultLimit);
+                    List<SearchResult> results = searchService.searchAll(
+                            query, effectiveSourceCache, options, resultLimit, scope);
                     if (Thread.currentThread().isInterrupted()) {
                         return;
                     }
-                    lastAllResults.set(all);
-                    List<SearchResult> filtered = filterByType(all, selectedType);
                     Platform.runLater(() -> {
                         if (gen != searchGen.get()) return; // stale search
-                        TreeItem<SearchResult> rootNode = buildResultTree(filtered, resultLimit);
+                        TreeItem<SearchResult> rootNode = buildResultTree(results, resultLimit);
                         resultTree.setRoot(rootNode);
                         if (rootNode != null) rootNode.setExpanded(true);
                         int shown = rootNode != null
@@ -197,23 +197,23 @@ public final class SearchDialog {
                 currentSearchTask.set(task);
             });
             debounce.playFromStart();
-        });
+        };
 
-        // Re-filter existing results when combo changes (no re-search)
+        Runnable updateFullSourceState = () -> {
+            SearchScope scope = scopeFromLabel(searchTypeCombo.getValue());
+            fullSourceSearch.setDisable(fullSourceLoader == null || !scope.sourceCacheRelevant());
+        };
+
+        input.textProperty().addListener((obs, old, text) -> scheduleSearch.run());
         searchTypeCombo.valueProperty().addListener((obs, old, val) -> {
-            String text = input.getText();
-            if (text == null || text.isBlank()) return;
-            List<SearchResult> all = lastAllResults.get();
-            if (all == null || all.isEmpty()) return;
-            List<SearchResult> filtered = filterByType(all, val);
-            TreeItem<SearchResult> rootNode = buildResultTree(filtered, resultLimit);
-            resultTree.setRoot(rootNode);
-            if (rootNode != null) rootNode.setExpanded(true);
-            int shown = rootNode != null ? countLeaves(rootNode) : 0;
-            statusLabel.setText(shown >= resultLimit
-                    ? I18nUtil.getString("search.tooMany", resultLimit)
-                    : I18nUtil.getString("search.resultCount", shown));
+            updateFullSourceState.run();
+            scheduleSearch.run();
         });
+        fullSourceSearch.selectedProperty().addListener((obs, old, val) -> scheduleSearch.run());
+        regexToggle.selectedProperty().addListener((obs, old, val) -> scheduleSearch.run());
+        caseToggle.selectedProperty().addListener((obs, old, val) -> scheduleSearch.run());
+        wordToggle.selectedProperty().addListener((obs, old, val) -> scheduleSearch.run());
+        updateFullSourceState.run();
 
         // Double-click to jump
         resultTree.setOnMouseClicked(e -> {
@@ -251,37 +251,29 @@ public final class SearchDialog {
         }
     }
 
-    /** Filter results by the selected search type in the combo box */
-    private static List<SearchResult> filterByType(List<SearchResult> results, String filterType) {
-        if (filterType == null || I18nUtil.getString("search.type.all").equals(filterType)) {
-            return results;
+    private static SearchScope scopeFromLabel(String label) {
+        if (label == null || label.equals(I18nUtil.getString("search.type.all"))) {
+            return SearchScope.ALL;
         }
-        List<SearchResult> filtered = new ArrayList<>();
-        for (SearchResult r : results) {
-            if (matchesFilter(r.matchType(), filterType)) {
-                filtered.add(r);
-            }
+        if (label.equals(I18nUtil.getString("search.type.class"))) {
+            return SearchScope.CLASS;
         }
-        return filtered;
-    }
-
-    private static boolean matchesFilter(SearchResult.MatchType type, String filter) {
-        return switch (filter) {
-            case String value when value.equals(I18nUtil.getString("search.type.class")) ->
-                    type == SearchResult.MatchType.CLASS_NAME;
-            case String value when value.equals(I18nUtil.getString("search.type.method")) ->
-                    type == SearchResult.MatchType.METHOD_NAME
-                            || type == SearchResult.MatchType.FIELD_NAME;
-            case String value when value.equals(I18nUtil.getString("search.type.code")) ->
-                    type == SearchResult.MatchType.CODE_TEXT;
-            case String value when value.equals(I18nUtil.getString("search.type.resource")) ->
-                    type == SearchResult.MatchType.RESOURCE_TEXT;
-            case String value when value.equals(I18nUtil.getString("search.type.comment")) ->
-                    type == SearchResult.MatchType.COMMENT_TEXT;
-            case String value when value.equals(I18nUtil.getString("search.type.bytecode")) ->
-                    type == SearchResult.MatchType.BYTECODE_TEXT;
-            default -> true;
-        };
+        if (label.equals(I18nUtil.getString("search.type.method"))) {
+            return SearchScope.METHOD;
+        }
+        if (label.equals(I18nUtil.getString("search.type.code"))) {
+            return SearchScope.CODE;
+        }
+        if (label.equals(I18nUtil.getString("search.type.resource"))) {
+            return SearchScope.RESOURCE;
+        }
+        if (label.equals(I18nUtil.getString("search.type.comment"))) {
+            return SearchScope.COMMENT;
+        }
+        if (label.equals(I18nUtil.getString("search.type.bytecode"))) {
+            return SearchScope.BYTECODE;
+        }
+        return SearchScope.ALL;
     }
 
     /** Build TreeView structure grouped by match type label, limited to maxResults leaves */

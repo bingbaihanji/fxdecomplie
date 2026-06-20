@@ -41,12 +41,21 @@ class UsageSearchServiceTest {
                     }
                 }
                 """, StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("Holder.java"), """
+                package com.example;
+                public class Holder {
+                    private Target target;
+                    public Target getTarget() { return target; }
+                    public void setTarget(Target target) { this.target = target; }
+                }
+                """, StandardCharsets.UTF_8);
 
         int exit = ToolProvider.getSystemJavaCompiler().run(null, null, null,
                 "--release", "17",
                 "-d", tempDir.resolve("classes").toString(),
                 sourceDir.resolve("Target.java").toString(),
-                sourceDir.resolve("Caller.java").toString());
+                sourceDir.resolve("Caller.java").toString(),
+                sourceDir.resolve("Holder.java").toString());
         assertTrue(exit == 0, "test classes should compile");
 
         TreeItem<FileTreeNode> root = new TreeItem<>(
@@ -55,6 +64,8 @@ class UsageSearchServiceTest {
                 tempDir.resolve("classes/com/example/Target.class")));
         root.getChildren().add(classNode("com/example/Caller.class",
                 tempDir.resolve("classes/com/example/Caller.class")));
+        root.getChildren().add(classNode("com/example/Holder.class",
+                tempDir.resolve("classes/com/example/Holder.class")));
         WorkspaceIndex index = WorkspaceIndex.build(root);
 
         List<UsageResult> classResults = UsageSearchService.findUsages(index, "com.example.Target");
@@ -73,6 +84,10 @@ class UsageSearchServiceTest {
         assertTrue(fieldResults.stream().anyMatch(r ->
                 r.sourcePath().equals("com/example/Caller.class")
                         && r.type() == UsageResult.UsageType.FIELD_ACCESS));
+
+        assertTrue(classResults.stream().anyMatch(r ->
+                r.sourcePath().equals("com/example/Holder.class")
+                        && r.displayText().contains("field target Lcom/example/Target;")));
     }
 
     private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {

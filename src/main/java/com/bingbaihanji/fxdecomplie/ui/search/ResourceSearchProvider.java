@@ -49,6 +49,11 @@ public class ResourceSearchProvider implements SearchProvider {
     }
 
     @Override
+    public boolean supports(SearchScope scope) {
+        return scope == SearchScope.ALL || scope == SearchScope.RESOURCE;
+    }
+
+    @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {
         if (SearchOptions.DEFAULT.equals(options)) {

@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -17,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author bingbaihanji
  * @date 2026-06-17
  */
-public class Workspace {
+public class Workspace implements AutoCloseable {
 
     /** 工作区显示名称（如 demo.jar） */
     private final String name;
@@ -30,11 +32,13 @@ public class Workspace {
     /** 工作区索引，用于全局搜索、字节码搜索和后续分析 */
     private volatile WorkspaceIndex index;
     /** 异步索引构建结果，供 UI 等待，避免在 JavaFX 线程兜底同步构建。 */
-    private final CompletableFuture<WorkspaceIndex> indexFuture = new CompletableFuture<>();
+    private volatile CompletableFuture<WorkspaceIndex> indexFuture = new CompletableFuture<>();
     /** 完整索引是否已经被显式请求构建。 */
     private final AtomicBoolean indexBuildStarted = new AtomicBoolean();
     /** 轻量路径索引，只保存文件树节点引用，不读取 class 字节。 */
     private volatile Map<String, FileTreeNode> nodesByFullPath;
+    /** 工作区级源码搜索缓存，按引擎和选项分组。 */
+    private final ConcurrentMap<String, Map<String, String>> sourceSearchCaches = new ConcurrentHashMap<>();
 
     /**
      * 构造工作区。
@@ -115,7 +119,13 @@ public class Workspace {
         return indexBuildStarted.get();
     }
 
-    public boolean markIndexBuildStarted() {
+    public synchronized boolean markIndexBuildStarted() {
+        if (index != WorkspaceIndex.EMPTY || indexBuildStarted.get()) {
+            return false;
+        }
+        if (indexFuture.isDone()) {
+            indexFuture = new CompletableFuture<>();
+        }
         return indexBuildStarted.compareAndSet(false, true);
     }
 
@@ -165,8 +175,13 @@ public class Workspace {
     public synchronized void setIndex(WorkspaceIndex index) {
         WorkspaceIndex next = index == null ? WorkspaceIndex.EMPTY : index;
         this.index = next;
-        if (next != WorkspaceIndex.EMPTY && !indexFuture.isDone()) {
-            indexFuture.complete(next);
+        if (next != WorkspaceIndex.EMPTY) {
+            if (indexFuture.isDone()) {
+                indexFuture = CompletableFuture.completedFuture(next);
+            } else {
+                indexFuture.complete(next);
+            }
+            indexBuildStarted.set(false);
         }
     }
 
@@ -174,6 +189,35 @@ public class Workspace {
     public synchronized void failIndex(Throwable error) {
         if (!indexFuture.isDone()) {
             indexFuture.completeExceptionally(error);
+        }
+        indexBuildStarted.set(false);
+    }
+
+    public Map<String, String> getSourceSearchCache(String key) {
+        return sourceSearchCaches.get(key);
+    }
+
+    public void putSourceSearchCache(String key, Map<String, String> cache) {
+        if (key != null && cache != null) {
+            sourceSearchCaches.put(key, Collections.unmodifiableMap(new LinkedHashMap<>(cache)));
+        }
+    }
+
+    @Override
+    public void close() {
+        if (treeRoot == null) {
+            return;
+        }
+        sourceSearchCaches.clear();
+        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+        queue.add(treeRoot);
+        while (!queue.isEmpty()) {
+            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeNode node = item.getValue();
+            if (node != null) {
+                node.close();
+            }
+            queue.addAll(item.getChildren());
         }
     }
 

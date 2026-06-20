@@ -20,6 +20,10 @@ public class FileTreeNode {
     private volatile byte[] cachedBytes;
     /** 懒加载字节来源，用于 JAR/ZIP/目录条目。 */
     private volatile ByteLoader byteLoader;
+    /** 条目原始大小，未知时为 -1。 */
+    private volatile long size = -1L;
+    /** 可选资源清理回调，例如关闭归档句柄。 */
+    private volatile Runnable cleanup;
 
     /**
      * 构造文件树节点。
@@ -57,11 +61,32 @@ public class FileTreeNode {
     /** @param cachedBytes 缓存的字节码 */
     public synchronized void setCachedBytes(byte[] cachedBytes) {
         this.cachedBytes = cachedBytes;
+        this.size = cachedBytes == null ? -1L : cachedBytes.length;
     }
 
     /** @param byteLoader 懒加载字节来源 */
     public void setByteLoader(ByteLoader byteLoader) {
         this.byteLoader = byteLoader;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
+    }
+
+    public void setCleanup(Runnable cleanup) {
+        this.cleanup = cleanup;
+    }
+
+    public void close() {
+        Runnable action = cleanup;
+        if (action != null) {
+            cleanup = null;
+            action.run();
+        }
     }
 
     /** @return 当前节点是否存在可读取的字节来源 */

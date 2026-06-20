@@ -3,6 +3,8 @@ package com.bingbaihanji.fxdecomplie;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.platform.FxTools;
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -97,6 +99,8 @@ public final class FxDecompilerApp {
 
         /** 应用配置引用 */
         private AppConfig config;
+        /** 主窗口控制器，用于直接关闭窗口时释放工作区资源。 */
+        private MainWindow window;
 
         @Override
         public void start(Stage stage) {
@@ -135,7 +139,7 @@ public final class FxDecompilerApp {
             stage.setHeight(config.window().height());
             stage.setMaximized(config.window().maximized());
 
-            MainWindow window = new MainWindow(config, true, getHostServices());
+            window = new MainWindow(config, true, getHostServices());
             window.show(stage);
             openStartupPath(window);
 
@@ -166,6 +170,11 @@ public final class FxDecompilerApp {
 
         @Override
         public void stop() {
+            BackgroundTasks.shutdown();
+            ClassTabOpener.shutdown();
+            if (window != null) {
+                window.shutdownResources();
+            }
             DecompilerFactory.cleanup();
             if (config != null) {
                 config.save();

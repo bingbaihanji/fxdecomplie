@@ -59,36 +59,43 @@ public final class ClassDiscoverer {
     /** 从 JAR/ZIP 文件发现条目 */
     private static List<ClassEntry> discoverJar(File file) throws IOException {
         List<ClassEntry> entries = new ArrayList<>();
-        try (JarFile jar = new JarFile(file)) {
-            Enumeration<JarEntry> e = jar.entries();
+        SharedJarArchive archive = new SharedJarArchive(file);
+        java.util.concurrent.atomic.AtomicInteger refCount = new java.util.concurrent.atomic.AtomicInteger(0);
+        boolean success = false;
+        try {
+            Enumeration<JarEntry> e = archive.entries();
             while (e.hasMoreElements()) {
                 JarEntry entry = e.nextElement();
                 if (entry.isDirectory()) continue;
                 String path = entry.getName();
                 FileTreeNode.NodeTypeEnum type = guessType(path);
                 FileTreeNode.ByteLoader loader = null;
+                Runnable cleanup = () -> {
+                    if (refCount.decrementAndGet() <= 0) {
+                        archive.close();
+                    }
+                };
                 if (type == FileTreeNode.NodeTypeEnum.CLASS_FILE
                         || type == FileTreeNode.NodeTypeEnum.RESOURCE
                         || type == FileTreeNode.NodeTypeEnum.JAVA_FILE) {
-                    loader = () -> readJarEntry(file, path);
+                    loader = () -> archive.read(path);
+                    refCount.incrementAndGet();
                 }
                 String displayName = path.substring(path.lastIndexOf('/') + 1);
-                entries.add(new ClassEntry(displayName, path, type, null, loader));
+                entries.add(new ClassEntry(displayName, path, type, null, loader,
+                        normalizedSize(entry.getSize()), cleanup));
+            }
+            success = true;
+            return entries;
+        } finally {
+            if (!success || entries.isEmpty()) {
+                archive.close();
             }
         }
-        return entries;
     }
 
-    private static byte[] readJarEntry(File archive, String entryName) throws IOException {
-        try (JarFile jar = new JarFile(archive)) {
-            JarEntry entry = jar.getJarEntry(entryName);
-            if (entry == null || entry.isDirectory()) {
-                throw new IOException("Archive entry not found: " + entryName);
-            }
-            try (var in = jar.getInputStream(entry)) {
-                return in.readAllBytes();
-            }
-        }
+    private static long normalizedSize(long size) {
+        return size < 0 ? -1L : size;
     }
 
     /** 从目录递归发现条目 */
@@ -112,7 +119,14 @@ public final class ClassDiscoverer {
                         || type == FileTreeNode.NodeTypeEnum.JAVA_FILE) {
                     loader = () -> Files.readAllBytes(p);
                 }
-                entries.add(new ClassEntry(displayName, relativePath, type, null, loader));
+                long size = -1L;
+                try {
+                    size = Files.size(p);
+                } catch (IOException ex) {
+                    logger.debug("Failed to read file size: {}", p, ex);
+                }
+                entries.add(new ClassEntry(displayName, relativePath, type, null, loader,
+                        size, null));
             });
         }
         return entries;
@@ -122,7 +136,7 @@ public final class ClassDiscoverer {
     private static List<ClassEntry> discoverClassFile(File file) throws IOException {
         return List.of(new ClassEntry(file.getName(), file.getName(),
                 FileTreeNode.NodeTypeEnum.CLASS_FILE, null,
-                () -> Files.readAllBytes(file.toPath())));
+                () -> Files.readAllBytes(file.toPath()), file.length(), null));
     }
 
     /** 根据文件扩展名判断节点类型 */
@@ -149,11 +163,53 @@ public final class ClassDiscoverer {
             String fullPath,
             FileTreeNode.NodeTypeEnum nodeType,
             byte[] bytes,
-            FileTreeNode.ByteLoader byteLoader
+            FileTreeNode.ByteLoader byteLoader,
+            long size,
+            Runnable cleanup
     ) {
+        public ClassEntry(String name, String fullPath, FileTreeNode.NodeTypeEnum nodeType,
+                          byte[] bytes, FileTreeNode.ByteLoader byteLoader) {
+            this(name, fullPath, nodeType, bytes, byteLoader,
+                    bytes == null ? -1L : bytes.length, null);
+        }
+
         public ClassEntry(String name, String fullPath,
-                          FileTreeNode.NodeTypeEnum nodeType, byte[] bytes) {
-            this(name, fullPath, nodeType, bytes, null);
+                           FileTreeNode.NodeTypeEnum nodeType, byte[] bytes) {
+            this(name, fullPath, nodeType, bytes, null,
+                    bytes == null ? -1L : bytes.length, null);
+        }
+    }
+
+    private static final class SharedJarArchive implements AutoCloseable {
+        private final JarFile jar;
+
+        private SharedJarArchive(File file) throws IOException {
+            this.jar = new JarFile(file);
+        }
+
+        private Enumeration<JarEntry> entries() {
+            return jar.entries();
+        }
+
+        private byte[] read(String entryName) throws IOException {
+            synchronized (jar) {
+                JarEntry entry = jar.getJarEntry(entryName);
+                if (entry == null || entry.isDirectory()) {
+                    throw new IOException("Archive entry not found: " + entryName);
+                }
+                try (var in = jar.getInputStream(entry)) {
+                    return in.readAllBytes();
+                }
+            }
+        }
+
+        @Override
+        public void close() {
+            try {
+                jar.close();
+            } catch (IOException e) {
+                logger.debug("Failed to close archive", e);
+            }
         }
     }
 }

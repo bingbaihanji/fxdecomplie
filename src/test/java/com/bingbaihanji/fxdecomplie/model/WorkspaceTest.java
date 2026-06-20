@@ -7,10 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 class WorkspaceTest {
 
@@ -60,5 +57,25 @@ class WorkspaceTest {
         assertFalse(workspace.isIndexBuildStarted());
         assertNull(clsNode.getCachedBytes());
         assertEquals(0, reads.get());
+    }
+
+    @Test
+    void failedIndexBuildCanBeRetriedWithNewFuture() {
+        TreeItem<FileTreeNode> root = new TreeItem<>(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        Workspace workspace = new Workspace("demo", tempDir.toFile(), root, false);
+
+        assertTrue(workspace.markIndexBuildStarted());
+        var failedFuture = workspace.getIndexFuture();
+        workspace.failIndex(new RuntimeException("boom"));
+
+        assertTrue(failedFuture.isCompletedExceptionally());
+        assertFalse(workspace.isIndexBuildStarted());
+        assertTrue(workspace.markIndexBuildStarted());
+        assertNotSame(failedFuture, workspace.getIndexFuture());
+
+        workspace.setIndex(WorkspaceIndex.build(root));
+        assertTrue(workspace.isIndexReady());
+        assertFalse(workspace.isIndexBuildStarted());
     }
 }

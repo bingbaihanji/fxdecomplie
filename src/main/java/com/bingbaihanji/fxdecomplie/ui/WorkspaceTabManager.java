@@ -619,6 +619,7 @@ public final class WorkspaceTabManager {
         if (view != null) {
             view.codeTabPane().getTabs().clear();
             view.codeTabPane().getSelectionModel().clearSelection();
+            view.workspace().close();
         }
 
         if (workspaceViews.isEmpty()) {

@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import com.bingbaihanji.fxdecomplie.ui.search.SearchProvider;
 import com.bingbaihanji.fxdecomplie.ui.search.SearchResult;
+import com.bingbaihanji.fxdecomplie.ui.search.SearchScope;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,11 +111,20 @@ public class SearchService {
 
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache,
                                         SearchOptions options, int limit) {
+        return searchAll(query, sourceCache, options, limit, SearchScope.ALL);
+    }
+
+    public List<SearchResult> searchAll(String query, Map<String, String> sourceCache,
+                                        SearchOptions options, int limit, SearchScope scope) {
         if (query == null || query.isBlank()) return List.of();
         int resultLimit = Math.max(1, limit);
         List<SearchResult> all = new ArrayList<>();
+        SearchScope effectiveScope = scope == null ? SearchScope.ALL : scope;
         for (SearchProvider provider : providers) {
             if (Thread.currentThread().isInterrupted()) return List.of();
+            if (!provider.supports(effectiveScope)) {
+                continue;
+            }
             List<SearchResult> results = provider.search(query, sourceCache, options);
             all.addAll(results);
         }

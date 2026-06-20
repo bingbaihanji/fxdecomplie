@@ -25,6 +25,7 @@ public final class WorkspaceIndex {
             List.of(), List.of(), Map.of());
 
     private static final Logger logger = LoggerFactory.getLogger(WorkspaceIndex.class);
+    private static final long MAX_INDEXED_RESOURCE_BYTES = 5L * 1024 * 1024;
 
     private final List<ClassIndexEntry> classes;
     private final List<ResourceIndexEntry> resources;
@@ -54,7 +55,8 @@ public final class WorkspaceIndex {
                         classes.add(entry);
                         classEntries.put(entry.internalName(), entry);
                     }
-                } else if (node.isTextFile() && node.hasByteSource()) {
+                } else if (node.isTextFile() && node.hasByteSource()
+                        && shouldIndexResource(node)) {
                     byte[] bytes = readNodeBytes(node);
                     if (bytes != null) {
                         resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
@@ -94,6 +96,16 @@ public final class WorkspaceIndex {
 
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
                 node::resolveBytes, methods, fields);
+    }
+
+    private static boolean shouldIndexResource(FileTreeNode node) {
+        long size = node.getSize();
+        if (size > MAX_INDEXED_RESOURCE_BYTES) {
+            logger.info("Skipping large resource from workspace index: {} ({} bytes)",
+                    node.getFullPath(), size);
+            return false;
+        }
+        return true;
     }
 
     private static byte[] readNodeBytes(FileTreeNode node) {

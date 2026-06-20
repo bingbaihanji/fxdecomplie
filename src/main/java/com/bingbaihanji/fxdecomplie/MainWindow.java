@@ -410,12 +410,25 @@ public class MainWindow implements MainMenuBar.Actions {
     public void exit() {
         BackgroundTasks.shutdown();
         ClassTabOpener.shutdown();
+        shutdownResources();
         DecompilerFactory.cleanup();
         javafx.stage.Window.getWindows().stream()
                 .filter(w -> w instanceof javafx.stage.Stage && w != stage)
                 .forEach(w -> ((javafx.stage.Stage) w).close());
         stage.close();
         javafx.application.Platform.exit();
+    }
+
+    public void shutdownResources() {
+        if (tabManager == null) {
+            return;
+        }
+        tabManager.getWorkspaceViews().values().forEach(view -> {
+            if (view != null && view.workspace() != null) {
+                view.workspace().close();
+            }
+        });
+        tabManager.getWorkspaceViews().clear();
     }
 
     /** 复制选中文本 */
@@ -566,7 +579,8 @@ public class MainWindow implements MainMenuBar.Actions {
         // Build source cache from open tabs
         java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
         for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
-            if (tab instanceof CodeEditorTab codeTab) {
+            if (tab instanceof CodeEditorTab codeTab
+                    && codeTab.getOpenFile().engine() == currentEngine) {
                 sourceCache.put(codeTab.getOpenFile().fullPath(),
                         codeTab.getOpenFile().sourceCode());
             }
@@ -799,21 +813,34 @@ public class MainWindow implements MainMenuBar.Actions {
     }
 
     private Map<String, String> buildFullSourceCache(WorkspaceView view,
-                                                     Map<String, String> openTabSourceCache) {
-        Map<String, String> fullSourceCache = new LinkedHashMap<>(openTabSourceCache);
-        var decompiler = DecompilerFactory.getDecompiler(currentEngine);
+                                                      Map<String, String> openTabSourceCache) {
+        Map<String, String> safeOpenTabs = openTabSourceCache == null ? Map.of() : openTabSourceCache;
+        Map<String, String> engineOptions = ExportService.engineOptions(config, currentEngine);
+        String cacheKey = currentEngine.name() + "|" + DecompilerRunner.optionsHash(engineOptions);
+        Map<String, String> cached = view.workspace().getSourceSearchCache(cacheKey);
+        if (cached != null) {
+            Map<String, String> merged = new LinkedHashMap<>(cached);
+            merged.putAll(safeOpenTabs);
+            return merged;
+        }
+
+        Map<String, String> fullSourceCache = new LinkedHashMap<>(safeOpenTabs);
         var index = awaitWorkspaceIndex(view.workspace());
+        boolean indexReady = index != com.bingbaihanji.fxdecomplie.model.WorkspaceIndex.EMPTY;
         var context = com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext
-                .fromWorkspaceIndex(index, ExportService.engineOptions(config, currentEngine));
+                .fromWorkspaceIndex(index, engineOptions);
         var classes = index.classes();
         int total = classes.size();
         int processed = 0;
         long startTime = System.currentTimeMillis();
+        boolean completed = indexReady;
         for (var cls : classes) {
             if (Thread.currentThread().isInterrupted()) {
+                completed = false;
                 break;
             }
             if (System.currentTimeMillis() - startTime > 120_000) { // 2 min total timeout
+                completed = false;
                 break;
             }
             processed++;
@@ -822,15 +849,23 @@ public class MainWindow implements MainMenuBar.Actions {
                 Platform.runLater(() -> statusBar.setTask(
                         I18nUtil.getString("task.indexing") + " (" + pct + "%)"));
             }
-            fullSourceCache.computeIfAbsent(cls.fullPath(),
-                    path -> {
-                        if (Thread.currentThread().isInterrupted()) {
-                            return "";
-                        }
-                        return decompiler.decompile(cls.fullPath(), cls.bytes(), context);
-                    });
+            if (!fullSourceCache.containsKey(cls.fullPath())) {
+                if (Thread.currentThread().isInterrupted()) {
+                    completed = false;
+                    break;
+                }
+                String source = DecompilerRunner.decompileWithTimeout(
+                        cls.fullPath(), cls.bytes(), currentEngine, context,
+                        () -> !Thread.currentThread().isInterrupted());
+                if (!DecompilerRunner.isTransientFailureOutput(source)) {
+                    fullSourceCache.put(cls.fullPath(), source);
+                }
+            }
         }
         fullSourceCache.values().removeIf(String::isEmpty);
+        if (completed) {
+            view.workspace().putSourceSearchCache(cacheKey, fullSourceCache);
+        }
         return fullSourceCache;
     }
 

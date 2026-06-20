@@ -1,10 +1,14 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.ui.search.SearchResult;
+import com.bingbaihanji.fxdecomplie.ui.search.SearchProvider;
+import com.bingbaihanji.fxdecomplie.ui.search.SearchScope;
+import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -36,5 +40,45 @@ class SearchServiceTest {
 
         assertEquals(1, results.size());
         assertEquals("com/example/App.class", results.getFirst().fullPath());
+    }
+
+    @Test
+    void scopedSearchOnlyRunsMatchingProviders() {
+        SearchService service = new SearchService();
+        AtomicInteger classRuns = new AtomicInteger();
+        AtomicInteger bytecodeRuns = new AtomicInteger();
+        service.addProvider(new SearchProvider() {
+            @Override
+            public List<SearchResult> search(String query, Map<String, String> sourceCache) {
+                classRuns.incrementAndGet();
+                return List.of(new SearchResult("A.class", "A", 1,
+                        SearchResult.MatchType.CLASS_NAME));
+            }
+
+            @Override
+            public boolean supports(SearchScope scope) {
+                return scope == SearchScope.ALL || scope == SearchScope.CLASS;
+            }
+        });
+        service.addProvider(new SearchProvider() {
+            @Override
+            public List<SearchResult> search(String query, Map<String, String> sourceCache) {
+                bytecodeRuns.incrementAndGet();
+                return List.of(new SearchResult("A.class", "bytecode", 1,
+                        SearchResult.MatchType.BYTECODE_TEXT));
+            }
+
+            @Override
+            public boolean supports(SearchScope scope) {
+                return scope == SearchScope.ALL || scope == SearchScope.BYTECODE;
+            }
+        });
+
+        List<SearchResult> results = service.searchAll("A", Map.of(),
+                SearchOptions.DEFAULT, 10, SearchScope.CLASS);
+
+        assertEquals(1, results.size());
+        assertEquals(1, classRuns.get());
+        assertEquals(0, bytecodeRuns.get());
     }
 }

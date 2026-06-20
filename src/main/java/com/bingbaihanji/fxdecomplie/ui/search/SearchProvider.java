@@ -16,6 +16,10 @@ import java.util.regex.PatternSyntaxException;
 public interface SearchProvider {
     List<SearchResult> search(String query, Map<String, String> sourceCache);
 
+    default boolean supports(SearchScope scope) {
+        return scope == null || scope == SearchScope.ALL;
+    }
+
     /** 带搜索选项的搜索（默认忽略选项，向后兼容） */
     default List<SearchResult> search(String query, Map<String, String> sourceCache,
                                       SearchOptions options) {

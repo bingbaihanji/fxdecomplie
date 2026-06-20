@@ -20,7 +20,7 @@ public final class WorkspaceIndexService {
         if (!workspace.markIndexBuildStarted()) {
             return;
         }
-        BackgroundTasks.run("Index-" + workspace.getName(), () -> {
+        java.util.concurrent.Future<?> task = BackgroundTasks.run("Index-" + workspace.getName(), () -> {
             int previousPriority = Thread.currentThread().getPriority();
             try {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
@@ -32,5 +32,12 @@ public final class WorkspaceIndexService {
                 Thread.currentThread().setPriority(previousPriority);
             }
         });
+        if (task.isDone()) {
+            try {
+                task.get();
+            } catch (Exception ex) {
+                workspace.failIndex(ex.getCause() == null ? ex : ex.getCause());
+            }
+        }
     }
 }

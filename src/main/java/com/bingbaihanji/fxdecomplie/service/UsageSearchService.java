@@ -251,10 +251,33 @@ public final class UsageSearchService {
     }
 
     private static boolean matchesDescriptor(Target target, String descriptor) {
-        if (descriptor == null || descriptor.isBlank()) {
+        if (descriptor == null || descriptor.isBlank() || target.classPart == null || target.classPart.isBlank()) {
             return false;
         }
-        return descriptor.toLowerCase(Locale.ROOT).contains('L' + target.classPart + ';');
+        String lower = descriptor.toLowerCase(Locale.ROOT);
+        // Match full internal-name references: e.g. "Ljava/lang/String;"
+        if (lower.contains('l' + target.classPart + ';')) {
+            return true;
+        }
+        // Simple-name match: extract class from each descriptor component
+        int lastSlash = target.classPart.lastIndexOf('/');
+        String simpleName = lastSlash >= 0 ? target.classPart.substring(lastSlash + 1) : target.classPart;
+        if (!simpleName.isEmpty()) {
+            int idx = 0;
+            while ((idx = lower.indexOf('l', idx)) >= 0) {
+                int semi = lower.indexOf(';', idx + 1);
+                if (semi > 0) {
+                    String descClass = lower.substring(idx + 1, semi);
+                    int descSlash = descClass.lastIndexOf('/');
+                    String descSimple = descSlash >= 0 ? descClass.substring(descSlash + 1) : descClass;
+                    if (descSimple.equals(simpleName)) {
+                        return true;
+                    }
+                }
+                idx++;
+            }
+        }
+        return false;
     }
 
     private static void add(List<UsageResult> results, Set<String> seen, String sourcePath,
@@ -300,6 +323,10 @@ public final class UsageSearchService {
             if (hash >= 0) {
                 memberQuery = classQuery.substring(hash + 1);
                 classQuery = classQuery.substring(0, hash);
+                if (classQuery.isBlank() && (memberQuery == null || memberQuery.isBlank())) {
+                    // Query is just "#" — reject to avoid matching everything
+                    classQuery = "\0"; // sentinel that matches nothing
+                }
             }
             return new Target(rawQuery.replace('.', '/'), classQuery, memberQuery);
         }

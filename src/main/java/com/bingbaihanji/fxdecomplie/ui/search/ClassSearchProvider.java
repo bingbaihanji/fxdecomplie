@@ -56,6 +56,11 @@ public class ClassSearchProvider implements SearchProvider {
     }
 
     @Override
+    public boolean supports(SearchScope scope) {
+        return scope == SearchScope.ALL || scope == SearchScope.CLASS;
+    }
+
+    @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {
         if (SearchOptions.DEFAULT.equals(options)) {

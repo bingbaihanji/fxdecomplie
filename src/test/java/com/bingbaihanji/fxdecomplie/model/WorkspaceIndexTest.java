@@ -94,6 +94,26 @@ class WorkspaceIndexTest {
     }
 
     @Test
+    void skipsLargeResourcesWithoutReadingBytes() {
+        TreeItem<FileTreeNode> root = new TreeItem<>(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        FileTreeNode resNode = new FileTreeNode("large.txt", "large.txt",
+                FileTreeNode.NodeTypeEnum.RESOURCE);
+        java.util.concurrent.atomic.AtomicInteger reads = new java.util.concurrent.atomic.AtomicInteger();
+        resNode.setSize(6L * 1024 * 1024);
+        resNode.setByteLoader(() -> {
+            reads.incrementAndGet();
+            return "large".getBytes(StandardCharsets.UTF_8);
+        });
+        root.getChildren().add(new TreeItem<>(resNode));
+
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+
+        assertTrue(index.resources().isEmpty());
+        assertEquals(0, reads.get());
+    }
+
+    @Test
     void getClassBytesReturnsNullForMissing() {
         TreeItem<FileTreeNode> root = new TreeItem<>(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));

@@ -15,14 +15,13 @@ public final class BackgroundTasks {
 
     private static final Logger logger = LoggerFactory.getLogger(BackgroundTasks.class);
 
-    private static final int CORE_POOL_SIZE = Math.max(2,
-            Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
-    private static final int MAX_POOL_SIZE = Math.max(8, CORE_POOL_SIZE);
+    private static final int POOL_SIZE = Math.max(4,
+            Math.min(8, Runtime.getRuntime().availableProcessors()));
     private static final int MAX_QUEUE_SIZE = 100;
 
-    /** 保底并发避免索引任务阻塞反编译；有界队列避免无限堆积。 */
+    /** 保底并发避免索引/搜索/导出任务阻塞交互任务；有界队列避免无限堆积。 */
     private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(
-            CORE_POOL_SIZE, MAX_POOL_SIZE,
+            POOL_SIZE, POOL_SIZE,
             60L, TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(MAX_QUEUE_SIZE),
             r -> {

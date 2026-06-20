@@ -1,9 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.decompiler.Decompiler;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.model.ExportResult;
@@ -73,14 +71,13 @@ public final class ExportService {
         // ---- Step 1: tree walk — collect all exportable class/resource items ----
         List<TreeItem<FileTreeNode>> items = collectExportableItems(root, config.exportResources());
         ExportState state = new ExportState(items.size(), onProgress);
-        Decompiler decompiler = DecompilerFactory.getDecompiler(config.engine());
         DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
 
         // ---- Step 2: decompile & write — dispatch to ZIP or directory path ----
         if (config.format() == ExportConfig.Format.ZIP) {
-            exportAllToZip(items, decompiler, context, config, state);
+            exportAllToZip(items, context, config, state);
         } else {
-            exportAllToDir(items, decompiler, context, config, state);
+            exportAllToDir(items, context, config, state);
         }
 
         return new ExportResult(state.totalFiles, state.successCount, state.errors);
@@ -185,8 +182,7 @@ public final class ExportService {
                 || data.getNodeType() == FileTreeNode.NodeTypeEnum.JAVA_FILE));
     }
 
-    private static void exportAllToDir(List<TreeItem<FileTreeNode>> items, Decompiler decompiler,
-                                       DecompilerContext context,
+    private static void exportAllToDir(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
                                        ExportConfig config, ExportState state)
             throws IOException {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
@@ -199,7 +195,7 @@ public final class ExportService {
             FileTreeNode data = item.getValue();
             try {
                 // ---- Decompile: class -> .java source, resource -> raw bytes ----
-                ExportContent content = buildExportContent(data, decompiler, context);
+                ExportContent content = buildExportContent(data, context, config);
                 // ---- Path validate: ensure output stays inside the target directory ----
                 Path target = resolveSafeOutputPath(outputDir, content.relativePath());
                 // ---- Conflict resolve: OVERWRITE / SKIP / RENAME ----
@@ -218,8 +214,7 @@ public final class ExportService {
         }
     }
 
-    private static void exportAllToZip(List<TreeItem<FileTreeNode>> items, Decompiler decompiler,
-                                       DecompilerContext context,
+    private static void exportAllToZip(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
                                        ExportConfig config, ExportState state)
             throws IOException {
         Path zipPath = config.outputPath().toAbsolutePath().normalize();
@@ -244,7 +239,7 @@ public final class ExportService {
                 }
                 FileTreeNode data = item.getValue();
                 try {
-                    ExportContent content = buildExportContent(data, decompiler, context);
+                    ExportContent content = buildExportContent(data, context, config);
                     String entryName = sanitizeZipEntryName(content.relativePath());
                     entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
                     if (entryName != null) {
@@ -265,15 +260,20 @@ public final class ExportService {
         }
     }
 
-    private static ExportContent buildExportContent(FileTreeNode data, Decompiler decompiler,
-                                                    DecompilerContext context) throws IOException {
+    private static ExportContent buildExportContent(FileTreeNode data, DecompilerContext context,
+                                                    ExportConfig config) throws IOException {
         if (data.isClassFile()) {
             byte[] bytes = resolveClassBytes(data, context);
             if (bytes == null) {
                 throw new IllegalStateException(
                         "class bytes not found for " + data.getFullPath());
             }
-            String source = decompiler.decompile(data.getFullPath(), bytes, context);
+            String source = DecompilerRunner.decompileWithTimeout(
+                    data.getFullPath(), bytes, config.engine(), context,
+                    () -> !Thread.currentThread().isInterrupted());
+            if (DecompilerRunner.isTransientFailureOutput(source)) {
+                throw new IllegalStateException(firstLine(source));
+            }
             return new ExportContent(data.getFullPath().replace(".class", ".java"),
                     source.getBytes(StandardCharsets.UTF_8));
         }
@@ -283,6 +283,14 @@ public final class ExportService {
             throw new IllegalStateException("resource bytes not found");
         }
         return new ExportContent(data.getFullPath(), bytes);
+    }
+
+    private static String firstLine(String text) {
+        if (text == null || text.isBlank()) {
+            return "decompile failed";
+        }
+        int end = text.indexOf('\n');
+        return end >= 0 ? text.substring(0, end).trim() : text.trim();
     }
 
     private static Path resolveSafeOutputPath(Path outputDir, String relativePath) {

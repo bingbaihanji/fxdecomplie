@@ -36,11 +36,15 @@ public final class FileTreeBuilder {
 
         for (ClassDiscoverer.ClassEntry entry : entries) {
             FileTreeNode nodeData = new FileTreeNode(entry.name(), entry.fullPath(), entry.nodeType());
+            nodeData.setSize(entry.size());
             if (entry.bytes() != null) {
                 nodeData.setCachedBytes(entry.bytes());
             }
             if (entry.byteLoader() != null) {
                 nodeData.setByteLoader(entry.byteLoader());
+            }
+            if (entry.cleanup() != null) {
+                nodeData.setCleanup(entry.cleanup());
             }
 
             TreeItem<FileTreeNode> parent = getOrCreateParent(root, entry.fullPath(), pathMap);

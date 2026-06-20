@@ -25,6 +25,8 @@ public class CodeEditorTab extends Tab {
 
     /** Fira Code 字体资源路径 (回退 Light) */
     private static final String FIRA_CODE_LIGHT = "/ttf/FiraCode-Light.ttf";
+    /** 超大源码禁用正则高亮和链接扫描，避免 JavaFX 线程长时间停顿。 */
+    private static final int LARGE_SOURCE_THRESHOLD = 500_000;
 
     /** Java 源码编辑器 */
     private final CodeArea codeArea;
@@ -46,6 +48,8 @@ public class CodeEditorTab extends Tab {
     private final Consumer<CodeMetadata.Reference> onNavigate;
     /** 类文件原始字节码（用于复制标签到独立窗口） */
     private final byte[] classBytes;
+    /** 缓存的总行数，避免 goToLine 时 O(n) 计数 */
+    private volatile int cachedLineCount = -1;
     /** 编辑器内搜索栏 */
     private EditorSearchBar editorSearchBar;
     /** 延迟加载状态：避免打开源码标签时同步生成字节码/类信息视图 */
@@ -287,11 +291,18 @@ public class CodeEditorTab extends Tab {
                 """);
         area.setEditable(false);
         area.setWrapText(wrapText);
-        LineNumberGutter.setEnabled(area, lineNumbersEnabled);
+        String source = openFile.sourceCode();
+        boolean largeSource = source != null && source.length() > LARGE_SOURCE_THRESHOLD;
+        LineNumberGutter.setEnabled(area, lineNumbersEnabled && !largeSource);
         area.setFont(loadCodeFont(fontFamily, fontSize));
-        area.setText(openFile.sourceCode());
-        area.setSyntaxDecorator(new RegexHighlighter(theme));
-        area.setHighlightCurrentParagraph(true);
+        area.setText(source == null ? "" : source);
+        cachedLineCount = source != null ? (int) source.chars().filter(ch -> ch == '\n').count() + 1 : 1;
+        if (!largeSource) {
+            area.setSyntaxDecorator(new RegexHighlighter(theme));
+            area.setHighlightCurrentParagraph(true);
+        } else {
+            area.setHighlightCurrentParagraph(false);
+        }
 
         // Keyboard shortcuts: Ctrl+F for search, Ctrl+G for goto line
         area.setOnKeyPressed(e -> {
@@ -306,7 +317,7 @@ public class CodeEditorTab extends Tab {
             }
         });
 
-        if (onNavigate != null) {
+        if (onNavigate != null && !largeSource) {
             CodeLinkHandler.install(area, this.metadata, onNavigate);
         }
 
@@ -365,8 +376,7 @@ public class CodeEditorTab extends Tab {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("editor.gotoLine.title"));
         dialog.setHeaderText(null);
-        String text = codeArea.getText();
-        int totalLines = text != null ? (int) text.chars().filter(ch -> ch == '\n').count() + 1 : 1;
+        int totalLines = getLineCount();
         dialog.setContentText(I18nUtil.getString("editor.gotoLine.prompt", totalLines));
         dialog.setOnShown(e -> {
             var win = dialog.getDialogPane().getScene().getWindow();
@@ -395,12 +405,22 @@ public class CodeEditorTab extends Tab {
     }
 
     /** 跳转并选中指定行。 */
+    private int getLineCount() {
+        int c = cachedLineCount;
+        if (c < 0) {
+            String text = codeArea.getText();
+            c = text != null ? (int) text.chars().filter(ch -> ch == '\n').count() + 1 : 1;
+            cachedLineCount = c;
+        }
+        return c;
+    }
+
     public void revealLine(int lineNumber) {
         String text = codeArea.getText();
         if (text == null || text.isEmpty()) {
             return;
         }
-        int totalLines = (int) text.chars().filter(ch -> ch == '\n').count() + 1;
+        int totalLines = getLineCount();
         int line = Math.clamp(lineNumber, 1, totalLines);
         int start = lineStartOffset(text, line);
         int end = lineEndOffset(text, start);
