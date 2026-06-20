@@ -8,10 +8,7 @@ target/
 .kotlin
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -37,6 +34,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Project docs and rules (not for repo) ###
+docs/
+rules/
+-1/
+CLAUDE.md
 
 ### Project runtime data ###
 /cache/
