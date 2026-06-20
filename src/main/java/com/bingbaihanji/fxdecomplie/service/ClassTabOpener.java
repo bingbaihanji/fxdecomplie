@@ -650,7 +650,7 @@ public final class ClassTabOpener {
                 sourceCode = decompileFuture.get(30, TimeUnit.SECONDS);
             } catch (RejectedExecutionException e) {
                 return new DecompileResult(
-                        "// " + I18nUtil.getString("decompile.busy") + "\n"  // TODO i18n: needs key decompile.busy
+                        "// " + I18nUtil.getString("decompile.busy") + "\n"
                                 + "// Class: " + finalPath,
                         new CodeMetadata(java.util.Map.of()));
             } catch (java.util.concurrent.TimeoutException e) {
@@ -658,7 +658,7 @@ public final class ClassTabOpener {
                     decompileFuture.cancel(true);
                 }
                 return new DecompileResult(
-                        "// " + I18nUtil.getString("decompile.timeout") + " " + finalPath +  // TODO i18n: needs key decompile.timeout
+                        "// " + I18nUtil.getString("decompile.timeout") + " " + finalPath +
                                 "\n// " + I18nUtil.getString("decompile.timeoutHint"),
                         new CodeMetadata(java.util.Map.of()));
             } catch (InterruptedException e) {
@@ -793,8 +793,8 @@ public final class ClassTabOpener {
 
     private static String withFallbackNotice(String source, DecompilerTypeEnum fallback,
                                              String reason) {
-        String notice = "// " + I18nUtil.getString("decompile.jdFallback", fallback.name()) + "\n"  // TODO i18n: needs key decompile.jdFallback
-                + "// Reason: " + reason + "\n\n";
+        String notice = "// " + I18nUtil.getString("decompile.jdFallback", fallback.name()) + "\n"
+                + "// " + I18nUtil.getString("decompile.jdFallbackReason", reason) + "\n\n";
         String normalized = source.replace("\r\n", "\n");
         if (normalized.startsWith("package ")) {
             int packageEnd = normalized.indexOf(";\n");
