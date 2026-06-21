@@ -133,6 +133,18 @@ public class CodeContentDeck extends VBox {
         return activeIndex.get();
     }
 
+    /**
+     * 用外部配置的 SourceContentPanel 替换 Code 面板
+     *
+     * @param panel 外部创建的 SourceContentPanel（带完整 theme/font 配置）
+     */
+    public void setSourcePanel(SourceContentPanel panel) {
+        panels[TAB_CODE] = panel;
+        if (activeIndex.get() == TAB_CODE) {
+            contentArea.getChildren().setAll(panel);
+        }
+    }
+
     /** @return 源码面板中的 CodeArea（可能为 null） */
     public SourceContentPanel getSourcePanel() {
         return (SourceContentPanel) panels[TAB_CODE];

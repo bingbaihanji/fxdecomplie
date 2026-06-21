@@ -456,3 +456,83 @@
     -fx-fill: rgba(255, 255, 255, 0.04);
     -fx-stroke: transparent;
 }
+
+/* ---- 主工具栏 ---- */
+.main-toolbar {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #3c3c3c;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 2 6 2 6;
+    -fx-spacing: 2;
+}
+
+.toolbar-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 3 6;
+    -fx-min-width: 28;
+    -fx-min-height: 26;
+    -fx-cursor: hand;
+}
+
+.toolbar-button:hover {
+    -fx-background-color: #3c3c3c;
+}
+
+.toolbar-button:disabled {
+    -fx-opacity: 0.4;
+}
+
+/* ---- 底部标签栏 (Code / Smali / Bytecode / Simple) ---- */
+.code-deck-bar {
+    -fx-background-color: #252526;
+    -fx-border-color: #3c3c3c;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 1 4;
+    -fx-alignment: center-left;
+}
+
+.code-deck-toggle {
+    -fx-background-color: transparent;
+    -fx-text-fill: #969696;
+    -fx-font-size: 12px;
+    -fx-padding: 3 10;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
+}
+
+.code-deck-toggle:selected {
+    -fx-background-color: #1e1e1e;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #094771;
+    -fx-border-width: 0 0 2 0;
+}
+
+.code-deck-toggle:hover {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* ---- Split View 开关 ---- */
+.split-toggle {
+    -fx-text-fill: #969696;
+    -fx-font-size: 12px;
+    -fx-padding: 0 8 0 6;
+}
+
+.split-toggle .box {
+    -fx-background-color: #3c3c3c;
+    -fx-border-color: #555;
+}
+
+.split-toggle:selected .box {
+    -fx-background-color: #0e639c;
+}
+
+/* ---- CodeView 面板 ---- */
+.code-view-panel {
+    -fx-background-color: #1e1e1e;
+}
+
+.code-content-area {
+    -fx-background-color: #1e1e1e;
+}

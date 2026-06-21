@@ -3,6 +3,7 @@ module fxdecomplie {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.swing;
+    requires javafx.web;
     requires javafx.graphics;
 
     // 日志模块
