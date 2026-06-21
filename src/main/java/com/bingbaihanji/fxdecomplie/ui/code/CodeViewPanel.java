@@ -4,13 +4,12 @@ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 /**
  * 代码视图顶层容器，管理底部标签切换与 Split View 分屏
  *
- * <p>内部组件：EditorSearchBar（Ctrl+F 激活）→ 内容区 → 底部标签栏 + Split 开关</p>
+ * <p>内部组件：EditorSearchBar（Ctrl+F 激活）→ 内容区（CodeContentDeck / SplitPane）</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -20,7 +19,6 @@ public class CodeViewPanel extends VBox {
     private final CodeContentDeck leftDeck;
     private CodeContentDeck rightDeck;
     private final EditorSearchBar searchBar;
-    private final StackPane viewContainer;
     private final SplitPane splitPane;
     private final CheckBox splitToggle;
     private final byte[] classBytes;
@@ -36,30 +34,29 @@ public class CodeViewPanel extends VBox {
         this.leftDeck = new CodeContentDeck(sourceCode, classBytes, sourcePanel);
         this.searchBar = new EditorSearchBar(leftDeck.getSourcePanel() != null
                 ? leftDeck.getSourcePanel().getCodeArea() : null);
-        this.viewContainer = new StackPane();
         this.splitPane = new SplitPane();
         this.splitToggle = new CheckBox(I18nUtil.getString("split.view"));
 
         splitToggle.getStyleClass().add("split-toggle");
         splitToggle.setOnAction(e -> setSplitMode(splitToggle.isSelected()));
 
-        // 将 Split 开关添加到左侧 deck 底部栏的末尾
         leftDeck.getBottomBar().getChildren().add(splitToggle);
 
         searchBar.setVisible(false);
         searchBar.setManaged(false);
 
-        // 单视图模式：显示 leftDeck（内容区 + 底部栏）
+        getChildren().add(searchBar);
         showSingleView();
-
-        VBox.setVgrow(viewContainer, Priority.ALWAYS);
-        getChildren().setAll(searchBar, viewContainer);
         getStyleClass().add("code-view-panel");
     }
 
-    /** 单视图：leftDeck 完整展示 */
+    /** 单视图：leftDeck 填充全部空间 */
     private void showSingleView() {
-        viewContainer.getChildren().setAll(leftDeck);
+        getChildren().remove(splitPane);
+        if (!getChildren().contains(leftDeck)) {
+            getChildren().add(leftDeck);
+        }
+        VBox.setVgrow(leftDeck, Priority.ALWAYS);
         splitActive = false;
     }
 
@@ -69,18 +66,18 @@ public class CodeViewPanel extends VBox {
             rightDeck = new CodeContentDeck(leftDeck.getSourcePanel() != null
                     ? leftDeck.getSourcePanel().getCodeArea().getText() : "",
                     classBytes);
-            // 右侧默认选 Bytecode
             rightDeck.setSelected(CodeContentDeck.TAB_BYTECODE);
-            // 右侧底部栏也加入 split toggle（关闭用）
             rightDeck.getBottomBar().getChildren().add(createRightSplitToggle());
         }
 
-        // 左右分别展示其 contentArea，但底部栏各自管理
-        splitPane.getItems().clear();
-        splitPane.getItems().addAll(leftDeck, rightDeck);
+        splitPane.getItems().setAll(leftDeck, rightDeck);
         splitPane.setDividerPositions(0.5);
 
-        viewContainer.getChildren().setAll(splitPane);
+        getChildren().remove(leftDeck);
+        if (!getChildren().contains(splitPane)) {
+            getChildren().add(splitPane);
+        }
+        VBox.setVgrow(splitPane, Priority.ALWAYS);
         splitActive = true;
     }
 
@@ -116,9 +113,6 @@ public class CodeViewPanel extends VBox {
 
     /**
      * 在源码 CodeArea 上安装右键上下文菜单
-     *
-     * @param ctx     代码视图上下文
-     * @param handler 操作回调
      */
     public void installContextMenu(CodeViewContext ctx, CodeActionHandler handler) {
         var area = getSourceCodeArea();
@@ -142,18 +136,18 @@ public class CodeViewPanel extends VBox {
         return searchBar;
     }
 
-    /** 用新反编译源码更新视图 */
-    public void refreshWithNewSource(String newSource) {
-        leftDeck.updateSource(newSource);
+    /** 用带完整主题的新源码面板替换 Code 视图 */
+    public void replaceSourcePanel(String newSource, SourceContentPanel sourcePanel) {
+        leftDeck.replaceSourcePanel(newSource, sourcePanel);
         if (rightDeck != null) {
             rightDeck.updateSource(newSource);
         }
         bindSearchBar();
     }
 
-    /** 用带完整主题和导航元数据的新源码面板替换 Code 视图 */
-    public void replaceSourcePanel(String newSource, SourceContentPanel sourcePanel) {
-        leftDeck.replaceSourcePanel(newSource, sourcePanel);
+    /** 用新反编译源码更新视图 */
+    public void refreshWithNewSource(String newSource) {
+        leftDeck.updateSource(newSource);
         if (rightDeck != null) {
             rightDeck.updateSource(newSource);
         }
@@ -194,7 +188,7 @@ public class CodeViewPanel extends VBox {
         if (sp != null) sp.setLineNumbersEnabled(enabled);
     }
 
-        /** @return 左侧 CodeContentDeck */
+    /** @return 左侧 CodeContentDeck */
     public CodeContentDeck getLeftDeck() {
         return leftDeck;
     }
