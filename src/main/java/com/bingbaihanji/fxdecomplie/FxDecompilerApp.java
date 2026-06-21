@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
+import com.bingbaihanji.fxdecomplie.service.CommentManager;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.bingbaihanji.windows.jfx.WindowToolkit;
@@ -127,6 +128,7 @@ public final class FxDecompilerApp {
             config = AppConfig.load();
             DefaultWindowTheme.configure(windowAppearance(config));
             DiskCodeCache.cleanIfNeeded();
+            CommentManager.setRootDir(AppConfig.appDir().resolve("fxdecomplie").resolve("comments"));
             applyConfiguredLocale();
 
             setAppIcon(stage);

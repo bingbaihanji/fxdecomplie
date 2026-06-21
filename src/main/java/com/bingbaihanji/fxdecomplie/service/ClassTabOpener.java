@@ -10,7 +10,9 @@ import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
 import com.bingbaihanji.fxdecomplie.ui.code.LineNumberGutter;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
@@ -54,10 +56,17 @@ public final class ClassTabOpener {
     public DecompileCache getDecompileCache() {
         return decompileCache;
     }
+
+    /** 设置代码操作回调，用于自动安装右键菜单 */
+    public void setCodeActionHandler(CodeActionHandler handler) {
+        this.codeActionHandler = handler;
+    }
     /** 当前运行的反编译任务,用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
     /** 当前由主导航创建的占位标签,用于任务取消时清理 */
     private volatile Tab currentLoadingTab;
+    /** 代码操作回调，用于安装右键菜单 */
+    private volatile CodeActionHandler codeActionHandler;
     /** 主导航反编译请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
 
@@ -228,6 +237,7 @@ public final class ClassTabOpener {
                     statusBar.setEngine(engine.name());
                     statusBar.clearTask();
                     bindCaretPosition(codeTab);
+                    installContextMenu(codeTab, node, workspace, openFile, bytes, metadata);
                 });
             } catch (Exception ex) {
                 // 用户导航到其他类时任务被取消,中断异常是预期行为,不弹窗
@@ -442,6 +452,36 @@ public final class ClassTabOpener {
     }
 
     /** 创建代码编辑器标签页 */
+    /** 在 CodeEditorTab 上安装右键上下文菜单 */
+    private void installContextMenu(CodeEditorTab codeTab, FileTreeNode node, Workspace workspace,
+                                     OpenFile openFile, byte[] classBytes, CodeMetadata metadata) {
+        CodeActionHandler handler = codeActionHandler;
+        if (handler == null) return;
+        WorkspaceIndex index = workspace.getIndex();
+        String workspaceHash = workspaceHash(workspace);
+        String sourceHash = sourceHash(openFile.sourceCode());
+        String optionsHash = ""; // TODO: 从反编译选项计算
+        CodeViewContext ctx = new CodeViewContext(workspace, node, openFile,
+                classBytes, metadata, index, workspaceHash, sourceHash, optionsHash);
+        var panel = codeTab.getCodeViewPanel();
+        if (panel != null) {
+            panel.installContextMenu(ctx, handler);
+        }
+    }
+
+    private static String workspaceHash(Workspace ws) {
+        java.io.File f = ws.getSourceFile();
+        return f.getAbsolutePath().replace('\\', '/') + "@"
+                + f.lastModified() + "@" + f.length();
+    }
+
+    private static String sourceHash(String src) {
+        if (src == null) return "";
+        // 简单 hash：取前200字符 + 总长度
+        return "len=" + src.length() + ":"
+                + Integer.toHexString(src.hashCode());
+    }
+
     private CodeEditorTab createCodeEditorTab(OpenFile openFile, boolean lineNumbersEnabled,
                                               byte[] classBytes, CodeMetadata metadata,
                                               Consumer<CodeMetadata.Reference> onNavigate) {

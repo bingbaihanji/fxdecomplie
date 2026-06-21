@@ -109,6 +109,21 @@ public class CodeViewPanel extends VBox {
         return sp != null ? sp.getCodeArea() : null;
     }
 
+    /**
+     * 在源码 CodeArea 上安装右键上下文菜单
+     *
+     * @param ctx     代码视图上下文
+     * @param handler 操作回调
+     */
+    public void installContextMenu(CodeViewContext ctx, CodeActionHandler handler) {
+        var area = getSourceCodeArea();
+        if (area == null || ctx == null || handler == null) return;
+        CodeAreaContextMenu menu = new CodeAreaContextMenu(area, ctx, handler);
+        area.setOnContextMenuRequested(e -> {
+            menu.show(area, e.getScreenX(), e.getScreenY());
+        });
+    }
+
     /** 更新编辑器搜索栏关联的 CodeArea */
     public void bindSearchBar() {
         var area = getSourceCodeArea();

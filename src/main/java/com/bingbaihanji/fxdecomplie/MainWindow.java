@@ -8,9 +8,15 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.comment.CommentDialog;
+import com.bingbaihanji.fxdecomplie.ui.graph.GraphDialog;
+import com.bingbaihanji.fxdecomplie.ui.graph.GraphService;
+import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceService;
 import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
 import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
 import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
@@ -51,7 +57,7 @@ import java.util.function.Consumer;
  * @author bingbaihanji
  * @date 2026-06-18
  */
-public class MainWindow implements MainMenuBar.Actions {
+public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 应用配置 */
     private final AppConfig config;
@@ -121,6 +127,7 @@ public class MainWindow implements MainMenuBar.Actions {
                 config.recentFiles(),
                 this::openRecentFile));
         classTabOpener = new ClassTabOpener(config, editorTheme, statusBar);
+        classTabOpener.setCodeActionHandler(this);
         // L2 缓存跨工作区共享,不清空以提升重复打开性能
         tabManager.showWelcomeTabIfEmpty();
 
@@ -584,6 +591,99 @@ public class MainWindow implements MainMenuBar.Actions {
         if (!found) {
             statusBar.setFilePath(I18nUtil.getString("toolbar.localizer.failed"));
         }
+    }
+
+    // ─── CodeActionHandler 实现 ─────────────────────────────────
+
+    @Override
+    public void goToDeclaration(CodeMetadata.Reference reference) {
+        if (reference == null || reference.targetClass() == null) return;
+        WorkspaceView view = tabManager.currentWorkspaceView();
+        if (view == null) return;
+        FileTreeNode node = view.workspace().findNodeByPath(reference.targetClass());
+        if (node != null) {
+            classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
+                    currentEngine, lineNumbersEnabled);
+        } else {
+            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", reference.targetClass()));
+        }
+    }
+
+    @Override
+    public void openClass(String fullPath, int line) {
+        WorkspaceView view = tabManager.currentWorkspaceView();
+        if (view == null || fullPath == null) return;
+        FileTreeNode node = view.workspace().findNodeByPath(fullPath);
+        if (node != null) {
+            classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
+                    currentEngine, lineNumbersEnabled);
+        }
+    }
+
+    @Override
+    public void showInheritanceGraph(CodeViewContext context) {
+        if (context == null) return;
+        String fullPath = context.classInternalName();
+        var tree = InheritanceService.buildTree(fullPath, context.workspaceIndex());
+        if (tree == null) {
+            statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
+            return;
+        }
+        String dot = GraphService.toInheritanceDOT(tree);
+        GraphDialog.show(stage, I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath, dot);
+    }
+
+    @Override
+    public void showMethodGraph(CodeViewContext context) {
+        if (context == null) return;
+        var graph = GraphService.parseMethodCalls(context.classBytes());
+        if (graph.methods().isEmpty()) {
+            statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
+            return;
+        }
+        String dot = GraphService.toMethodDOT(graph);
+        GraphDialog.show(stage, I18nUtil.getString("context.methodGraph") + " - "
+                + context.classInternalName(), dot);
+    }
+
+    @Override
+    public void addOrUpdateComment(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caretPosition) {
+        if (context == null) return;
+        String text = context.openFile() != null ? context.openFile().sourceCode() : "";
+        int line = 1;
+        int idx = caretPosition.index();
+        for (int i = 0; i < idx && i < text.length(); i++) {
+            if (text.charAt(i) == '\n') line++;
+        }
+        String memberSig = "";
+        // 从源码中提取当前方法签名
+        String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper.findMethodAtLine(text, line);
+        if (methodName != null) memberSig = methodName;
+
+        // 查找已有注释
+        java.util.List<CommentData> existing = com.bingbaihanji.fxdecomplie.service.CommentManager
+                .load(context.workspaceHash(), context.classInternalName());
+        CommentData existingComment = null;
+        for (CommentData c : existing) {
+            if (c.line() == line && c.memberSignature().equals(memberSig)) {
+                existingComment = c;
+                break;
+            }
+        }
+
+        CommentDialog.show(stage, context.classInternalName(), memberSig, line,
+                context.sourceHash(), context.optionsHash(), existingComment,
+                comment -> {
+                    com.bingbaihanji.fxdecomplie.service.CommentManager
+                            .save(context.workspaceHash(), comment);
+                    statusBar.setFilePath("注释已保存: L" + comment.line());
+                });
+    }
+
+    @Override
+    public void searchInWorkspace(String selectedText) {
+        if (selectedText == null || selectedText.isBlank()) return;
+        openSearch(selectedText);
     }
 
     /** 用全部引擎反编译当前类并排打开标签页,方便对比输出 */
