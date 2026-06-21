@@ -24,7 +24,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private static final String FIRA_CODE_LIGHT = "/ttf/FiraCode-Light.ttf";
 
     private CodeArea codeArea;
-    private final String sourceCode;
+    private String sourceCode;
     private final VsCodeThemeLoader.ThemeData theme;
     private final String fontFamily;
     private final int fontSize;
@@ -97,6 +97,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
 
     /** 更新源码内容并重建 CodeArea */
     public void setSourceCode(String newSource) {
+        this.sourceCode = newSource;
         getChildren().clear();
         buildCodeArea();
     }

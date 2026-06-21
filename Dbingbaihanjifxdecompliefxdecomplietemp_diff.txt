@@ -1,0 +1,3408 @@
+diff --git a/pom.xml b/pom.xml
+index 3cfb9f9..594b5ae 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -45,6 +45,12 @@
+             <version>${javafx.version}</version>
+         </dependency>
+ 
++        <dependency>
++            <groupId>org.openjfx</groupId>
++            <artifactId>javafx-web</artifactId>
++            <version>${javafx.version}</version>
++        </dependency>
++
+         <dependency>
+             <groupId>org.openjfx</groupId>
+             <artifactId>jfx-incubator-input</artifactId>
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java b/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java
+index a271f8d..812b97e 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java
+@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
+ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
+ import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+ import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
++import com.bingbaihanji.fxdecomplie.service.CommentManager;
+ import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+ import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+ import com.bingbaihanji.windows.jfx.WindowToolkit;
+@@ -127,6 +128,7 @@ public final class FxDecompilerApp {
+             config = AppConfig.load();
+             DefaultWindowTheme.configure(windowAppearance(config));
+             DiskCodeCache.cleanIfNeeded();
++            CommentManager.setRootDir(AppConfig.appDir().resolve("fxdecomplie").resolve("comments"));
+             applyConfiguredLocale();
+ 
+             setAppIcon(stage);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java b/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java
+index 631bdb2..1a58fb9 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java
+@@ -8,9 +8,16 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+ import com.bingbaihanji.fxdecomplie.model.*;
+ import com.bingbaihanji.fxdecomplie.service.*;
+ import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
++import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
+ import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+ import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
++import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
+ import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
++import com.bingbaihanji.fxdecomplie.ui.comment.CommentDialog;
++import com.bingbaihanji.fxdecomplie.ui.graph.GraphDialog;
++import com.bingbaihanji.fxdecomplie.ui.graph.GraphService;
++import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceService;
++import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
+ import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
+ import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
+ import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
+@@ -50,7 +57,7 @@ import java.util.function.Consumer;
+  * @author bingbaihanji
+  * @date 2026-06-18
+  */
+-public class MainWindow implements MainMenuBar.Actions {
++public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+ 
+     /** 应用配置 */
+     private final AppConfig config;
+@@ -75,6 +82,8 @@ public class MainWindow implements MainMenuBar.Actions {
+     private DecompilerTypeEnum currentEngine = DecompilerTypeEnum.VINEFLOWER;
+     /** 是否显示行号 */
+     private boolean lineNumbersEnabled;
++    /** 工具栏 */
++    private MainToolBar toolBar;
+ 
+     public MainWindow(AppConfig config) {
+         this(config, false, null);
+@@ -118,21 +127,26 @@ public class MainWindow implements MainMenuBar.Actions {
+                 config.recentFiles(),
+                 this::openRecentFile));
+         classTabOpener = new ClassTabOpener(config, editorTheme, statusBar);
++        classTabOpener.setCodeActionHandler(this);
+         // L2 缓存跨工作区共享,不清空以提升重复打开性能
+         tabManager.showWelcomeTabIfEmpty();
+ 
+         outerTabPane.getSelectionModel().selectedItemProperty().addListener(
+-                (obs, oldTab, newTab) -> tabManager.updateStatusForWorkspace(newTab)
++                (obs, oldTab, newTab) -> {
++                    tabManager.updateStatusForWorkspace(newTab);
++                    refreshToolbarState();
++                }
+         );
+ 
+         MainMenuBar menuBar = new MainMenuBar(this, currentEngine);
++        toolBar = new MainToolBar(this, this);
+         VBox topBars = new VBox();
+-        topBars.setOpacity(0.5);
+         if (useHeaderBar) {
+             topBars.getChildren().add(AppHeaderBar.create(stage, "FxDecompiler", menuBar));
+         } else {
+             topBars.getChildren().add(menuBar);
+         }
++        topBars.getChildren().add(toolBar);
+         BorderPane root = new BorderPane();
+         root.getStyleClass().add("app-root");
+ 
+@@ -167,6 +181,15 @@ public class MainWindow implements MainMenuBar.Actions {
+         stage.show();
+     }
+ 
++    /** 刷新工具栏按钮状态 */
++    private void refreshToolbarState() {
++        if (toolBar != null) {
++            boolean hasWorkspace = tabManager != null && tabManager.currentWorkspaceView() != null;
++            boolean hasCodeTab = tabManager != null && tabManager.currentCodeTab() != null;
++            toolBar.refreshState(hasWorkspace, hasCodeTab);
++        }
++    }
++
+     /** 打开 JAR/ZIP/Class 文件 */
+     @Override
+     public void openFile() {
+@@ -539,6 +562,129 @@ public class MainWindow implements MainMenuBar.Actions {
+         }
+     }
+ 
++    /** 用当前引擎重新反编译当前类 */
++    @Override
++    public void refreshCurrentTab() {
++        WorkspaceView view = tabManager.currentWorkspaceView();
++        CodeEditorTab currentTab = tabManager.currentCodeTab();
++        if (view == null || currentTab == null) {
++            statusBar.setFilePath(I18nUtil.getString("toolbar.reload.disabled"));
++            return;
++        }
++        classTabOpener.cancelCurrentTask();
++        classTabOpener.refreshCurrentClassTab(
++                view.workspace(), view.codeTabPane(), currentTab, currentEngine, lineNumbersEnabled);
++        statusBar.setFilePath(I18nUtil.getString("status.reloading", currentTab.getOpenFile().fullPath()));
++    }
++
++    /** 在文件树中定位当前打开的类文件 */
++    @Override
++    public void locateCurrentFileInTree() {
++        CodeEditorTab currentTab = tabManager.currentCodeTab();
++        if (currentTab == null) {
++            statusBar.setFilePath(I18nUtil.getString("toolbar.reload.disabled"));
++            return;
++        }
++        String fullPath = currentTab.getOpenFile().fullPath();
++        boolean found = tabManager.selectTreeNodeByPath(fullPath);
++        if (!found) {
++            statusBar.setFilePath(I18nUtil.getString("toolbar.localizer.failed"));
++        }
++    }
++
++    // ─── CodeActionHandler 实现 ─────────────────────────────────
++
++    @Override
++    public void goToDeclaration(CodeMetadata.Reference reference) {
++        if (reference == null || reference.targetClass() == null) return;
++        WorkspaceView view = tabManager.currentWorkspaceView();
++        if (view == null) return;
++        FileTreeNode node = view.workspace().findNodeByPath(reference.targetClass());
++        if (node != null) {
++            classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
++                    currentEngine, lineNumbersEnabled);
++        } else {
++            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", reference.targetClass()));
++        }
++    }
++
++    @Override
++    public void openClass(String fullPath, int line) {
++        WorkspaceView view = tabManager.currentWorkspaceView();
++        if (view == null || fullPath == null) return;
++        FileTreeNode node = view.workspace().findNodeByPath(fullPath);
++        if (node != null) {
++            classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
++                    currentEngine, lineNumbersEnabled);
++        }
++    }
++
++    @Override
++    public void showInheritanceGraph(CodeViewContext context) {
++        if (context == null) return;
++        String fullPath = context.classInternalName();
++        var tree = InheritanceService.buildTree(fullPath, context.workspaceIndex());
++        if (tree == null) {
++            statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
++            return;
++        }
++        String dot = GraphService.toInheritanceDOT(tree);
++        GraphDialog.show(stage, I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath, dot);
++    }
++
++    @Override
++    public void showMethodGraph(CodeViewContext context) {
++        if (context == null) return;
++        var graph = GraphService.parseMethodCalls(context.classBytes());
++        if (graph.methods().isEmpty()) {
++            statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
++            return;
++        }
++        String dot = GraphService.toMethodDOT(graph);
++        GraphDialog.show(stage, I18nUtil.getString("context.methodGraph") + " - "
++                + context.classInternalName(), dot);
++    }
++
++    @Override
++    public void addOrUpdateComment(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caretPosition) {
++        if (context == null) return;
++        String text = context.openFile() != null ? context.openFile().sourceCode() : "";
++        int line = 1;
++        int idx = caretPosition.index();
++        for (int i = 0; i < idx && i < text.length(); i++) {
++            if (text.charAt(i) == '\n') line++;
++        }
++        String memberSig = "";
++        // 从源码中提取当前方法签名
++        String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper.findMethodAtLine(text, line);
++        if (methodName != null) memberSig = methodName;
++
++        // 查找已有注释
++        java.util.List<CommentData> existing = com.bingbaihanji.fxdecomplie.service.CommentManager
++                .load(context.workspaceHash(), context.classInternalName());
++        CommentData existingComment = null;
++        for (CommentData c : existing) {
++            if (c.line() == line && c.memberSignature().equals(memberSig)) {
++                existingComment = c;
++                break;
++            }
++        }
++
++        CommentDialog.show(stage, context.classInternalName(), memberSig, line,
++                context.sourceHash(), context.optionsHash(), existingComment,
++                comment -> {
++                    com.bingbaihanji.fxdecomplie.service.CommentManager
++                            .save(context.workspaceHash(), comment);
++                    statusBar.setFilePath("注释已保存: L" + comment.line());
++                });
++    }
++
++    @Override
++    public void searchInWorkspace(String selectedText) {
++        if (selectedText == null || selectedText.isBlank()) return;
++        openSearch(selectedText);
++    }
++
+     /** 用全部引擎反编译当前类并排打开标签页,方便对比输出 */
+     @Override
+     public void compareEngines() {
+@@ -922,6 +1068,7 @@ public class MainWindow implements MainMenuBar.Actions {
+                             this::exportTreeItem,
+                             node -> openFindUsagesForNode(workspace, node),
+                             this::openSearchForPackage);
++                    refreshToolbarState();
+                 },
+                 errorMsg -> {
+                     statusBar.clearTask();
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/model/CommentData.java b/src/main/java/com/bingbaihanji/fxdecomplie/model/CommentData.java
+new file mode 100644
+index 0000000..799bf7d
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/model/CommentData.java
+@@ -0,0 +1,51 @@
++package com.bingbaihanji.fxdecomplie.model;
++
++/**
++ * 注释数据记录
++ *
++ * @param className       类全限定路径（内部形式, 如 "com/example/Foo.class"）
++ * @param memberSignature 成员签名（如 "bar()V"），类级注释为空字符串
++ * @param line            行号（1-based），作为降级定位
++ * @param sourceHash      保存注释时源码文本 hash
++ * @param optionsHash     反编译引擎和选项 hash
++ * @param style           注释样式（LINE/BLOCK）
++ * @param text            注释文本
++ * @param author          作者
++ * @param time            创建/更新时间（ISO-8601）
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public record CommentData(
++        String className,
++        String memberSignature,
++        int line,
++        String sourceHash,
++        String optionsHash,
++        CommentStyle style,
++        String text,
++        String author,
++        String time
++) {
++    public CommentData {
++        if (className == null || className.isBlank()) {
++            throw new IllegalArgumentException("className must not be blank");
++        }
++        if (text == null) {
++            text = "";
++        }
++        if (memberSignature == null) {
++            memberSignature = "";
++        }
++        if (style == null) {
++            style = CommentStyle.LINE;
++        }
++    }
++
++    /** 注释样式 */
++    public enum CommentStyle {
++        /** 行尾注释 // */
++        LINE,
++        /** 块注释 /* */
++        BLOCK
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java
+index 2b232dc..c8589a8 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java
+@@ -10,7 +10,9 @@ import com.bingbaihanji.fxdecomplie.model.Workspace;
+ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+ import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
+ import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
++import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
+ import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
++import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
+ import com.bingbaihanji.fxdecomplie.ui.code.LineNumberGutter;
+ import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+ import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
+@@ -54,10 +56,17 @@ public final class ClassTabOpener {
+     public DecompileCache getDecompileCache() {
+         return decompileCache;
+     }
++
++    /** 设置代码操作回调，用于自动安装右键菜单 */
++    public void setCodeActionHandler(CodeActionHandler handler) {
++        this.codeActionHandler = handler;
++    }
+     /** 当前运行的反编译任务,用于在切换时取消 */
+     private volatile Future<?> currentDecompileTask;
+     /** 当前由主导航创建的占位标签,用于任务取消时清理 */
+     private volatile Tab currentLoadingTab;
++    /** 代码操作回调，用于安装右键菜单 */
++    private volatile CodeActionHandler codeActionHandler;
+     /** 主导航反编译请求序号,用于丢弃快速切换产生的过期结果 */
+     private final AtomicLong decompileGeneration = new AtomicLong();
+ 
+@@ -228,6 +237,7 @@ public final class ClassTabOpener {
+                     statusBar.setEngine(engine.name());
+                     statusBar.clearTask();
+                     bindCaretPosition(codeTab);
++                    installContextMenu(codeTab, node, workspace, openFile, bytes, metadata);
+                 });
+             } catch (Exception ex) {
+                 // 用户导航到其他类时任务被取消,中断异常是预期行为,不弹窗
+@@ -442,6 +452,36 @@ public final class ClassTabOpener {
+     }
+ 
+     /** 创建代码编辑器标签页 */
++    /** 在 CodeEditorTab 上安装右键上下文菜单 */
++    private void installContextMenu(CodeEditorTab codeTab, FileTreeNode node, Workspace workspace,
++                                     OpenFile openFile, byte[] classBytes, CodeMetadata metadata) {
++        CodeActionHandler handler = codeActionHandler;
++        if (handler == null) return;
++        WorkspaceIndex index = workspace.getIndex();
++        String workspaceHash = workspaceHash(workspace);
++        String sourceHash = sourceHash(openFile.sourceCode());
++        String optionsHash = ""; // TODO: 从反编译选项计算
++        CodeViewContext ctx = new CodeViewContext(workspace, node, openFile,
++                classBytes, metadata, index, workspaceHash, sourceHash, optionsHash);
++        var panel = codeTab.getCodeViewPanel();
++        if (panel != null) {
++            panel.installContextMenu(ctx, handler);
++        }
++    }
++
++    private static String workspaceHash(Workspace ws) {
++        java.io.File f = ws.getSourceFile();
++        return f.getAbsolutePath().replace('\\', '/') + "@"
++                + f.lastModified() + "@" + f.length();
++    }
++
++    private static String sourceHash(String src) {
++        if (src == null) return "";
++        // 简单 hash：取前200字符 + 总长度
++        return "len=" + src.length() + ":"
++                + Integer.toHexString(src.hashCode());
++    }
++
+     private CodeEditorTab createCodeEditorTab(OpenFile openFile, boolean lineNumbersEnabled,
+                                               byte[] classBytes, CodeMetadata metadata,
+                                               Consumer<CodeMetadata.Reference> onNavigate) {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentExportDecorator.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentExportDecorator.java
+new file mode 100644
+index 0000000..03b3c91
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentExportDecorator.java
+@@ -0,0 +1,95 @@
++package com.bingbaihanji.fxdecomplie.service;
++
++import com.bingbaihanji.fxdecomplie.model.CommentData;
++
++import java.util.Comparator;
++import java.util.List;
++
++/**
++ * 导出源码时插入持久化注释的装饰器
++ *
++ * <p>匹配策略：sourceHash+optionsHash 精确匹配 → 成员签名定位 → 行号降级</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public final class CommentExportDecorator {
++
++    private CommentExportDecorator() {
++        throw new AssertionError("utility class");
++    }
++
++    /**
++     * 在源码中插入注释
++     *
++     * @param sourceCode       原始反编译源码
++     * @param comments         该类的注释列表
++     * @param currentSourceHash 当前源码 hash
++     * @param currentOptionsHash 当前选项 hash
++     * @return 插入注释后的源码
++     */
++    public static String apply(String sourceCode, List<CommentData> comments,
++                                String currentSourceHash, String currentOptionsHash) {
++        if (sourceCode == null || comments == null || comments.isEmpty()) {
++            return sourceCode;
++        }
++
++        String[] lines = sourceCode.split("\n", -1);
++
++        // 按行号倒序排列，从后往前插入避免行号偏移
++        List<CommentData> sorted = comments.stream()
++                .sorted(Comparator.comparingInt(CommentData::line).reversed())
++                .toList();
++
++        for (CommentData c : sorted) {
++            int targetLine = resolveTargetLine(c, lines, currentSourceHash, currentOptionsHash);
++            if (targetLine >= 1 && targetLine <= lines.length) {
++                lines[targetLine - 1] = insert(lines[targetLine - 1], c);
++            }
++        }
++
++        return String.join("\n", lines);
++    }
++
++    /**
++     * 确定注释插入的目标行号
++     */
++    public static int resolveTargetLine(CommentData c, String[] lines,
++                                         String currentSourceHash, String currentOptionsHash) {
++        // 策略1: hash 匹配，直接使用保存时的行号
++        if (c.sourceHash() != null && c.sourceHash().equals(currentSourceHash)
++                && c.optionsHash() != null && c.optionsHash().equals(currentOptionsHash)) {
++            return c.line();
++        }
++
++        // 策略2: 成员签名匹配
++        if (c.memberSignature() != null && !c.memberSignature().isBlank()) {
++            int nameIdx = c.memberSignature().indexOf('(');
++            String methodName = nameIdx > 0 ? c.memberSignature().substring(0, nameIdx) : c.memberSignature();
++            for (int i = 0; i < lines.length; i++) {
++                if (lines[i].contains(methodName)) {
++                    return i + 1 + Math.max(0, c.line() - 1 - i);
++                }
++            }
++        }
++
++        // 策略3: 按原始行号降级（可能不准）
++        return c.line();
++    }
++
++    /** 在源码行中插入注释文本 */
++    public static String insert(String sourceLine, CommentData c) {
++        if (c == null || c.text().isEmpty()) {
++            return sourceLine;
++        }
++        String safeText = c.text()
++                .replace("*/", "*\\/")
++                .replace("\n", " ")
++                .replace("\r", "");
++
++        return switch (c.style()) {
++            case LINE -> sourceLine + " // FXD: " + safeText;
++            case BLOCK -> "/* FXD: " + safeText + " */\n" + sourceLine;
++        };
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentManager.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentManager.java
+new file mode 100644
+index 0000000..871f459
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentManager.java
+@@ -0,0 +1,145 @@
++package com.bingbaihanji.fxdecomplie.service;
++
++import com.bingbaihanji.fxdecomplie.model.CommentData;
++import com.google.gson.Gson;
++import com.google.gson.GsonBuilder;
++import com.google.gson.reflect.TypeToken;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import java.io.IOException;
++import java.lang.reflect.Type;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.Paths;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
++
++/**
++ * 注释持久化管理工具类
++ *
++ * <p>存储路径：&lt;appDir&gt;/fxdecomplie/comments/&lt;workspaceHash&gt;/&lt;classInternalName&gt;.json</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public final class CommentManager {
++
++    private static final Logger logger = LoggerFactory.getLogger(CommentManager.class);
++    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
++    private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {}.getType();
++
++    private static volatile Path commentRootDir;
++
++    private CommentManager() {
++        throw new AssertionError("utility class");
++    }
++
++    /** 设置注释存储根目录 */
++    public static void setRootDir(Path rootDir) {
++        commentRootDir = rootDir;
++    }
++
++    /** @return 注释存储根目录 */
++    public static Path getCommentDir() {
++        if (commentRootDir != null) {
++            return commentRootDir;
++        }
++        return Paths.get("fxdecomplie", "comments");
++    }
++
++    /**
++     * 保存注释
++     *
++     * @param workspaceHash 工作区 hash
++     * @param comment       注释数据
++     */
++    public static void save(String workspaceHash, CommentData comment) {
++        if (comment == null) return;
++        try {
++            List<CommentData> existing = loadAll(workspaceHash, comment.className());
++            // 更新同位置已有注释，否则追加
++            boolean replaced = false;
++            for (int i = 0; i < existing.size(); i++) {
++                CommentData c = existing.get(i);
++                if (c.line() == comment.line()
++                        && c.memberSignature().equals(comment.memberSignature())) {
++                    existing.set(i, comment);
++                    replaced = true;
++                    break;
++                }
++            }
++            if (!replaced) {
++                existing.add(comment);
++            }
++            writeFile(workspaceHash, comment.className(), existing);
++            logger.debug("注释已保存: {}#L{}", comment.className(), comment.line());
++        } catch (Exception e) {
++            logger.error("保存注释失败", e);
++        }
++    }
++
++    /**
++     * 加载某个类的全部注释
++     *
++     * @param workspaceHash 工作区 hash
++     * @param className     类全限定路径
++     * @return 注释列表
++     */
++    public static List<CommentData> load(String workspaceHash, String className) {
++        return loadAll(workspaceHash, className);
++    }
++
++    /**
++     * 删除注释
++     */
++    public static boolean delete(String workspaceHash, String className,
++                                  String memberSignature, int line, String time) {
++        try {
++            List<CommentData> existing = loadAll(workspaceHash, className);
++            boolean removed = existing.removeIf(c ->
++                    c.line() == line
++                            && c.memberSignature().equals(memberSignature == null ? "" : memberSignature)
++                            && c.time().equals(time));
++            if (removed) {
++                writeFile(workspaceHash, className, existing);
++            }
++            return removed;
++        } catch (Exception e) {
++            logger.error("删除注释失败", e);
++            return false;
++        }
++    }
++
++    private static List<CommentData> loadAll(String workspaceHash, String className) {
++        Path file = resolveFile(workspaceHash, className);
++        if (!Files.isRegularFile(file)) {
++            return new ArrayList<>();
++        }
++        try {
++            String json = Files.readString(file, StandardCharsets.UTF_8);
++            List<CommentData> list = GSON.fromJson(json, COMMENT_LIST_TYPE);
++            return list != null ? new ArrayList<>(list) : new ArrayList<>();
++        } catch (IOException e) {
++            logger.debug("读取注释文件失败: {}", file, e);
++            return new ArrayList<>();
++        }
++    }
++
++    private static void writeFile(String workspaceHash, String className,
++                                   List<CommentData> comments) throws IOException {
++        Path file = resolveFile(workspaceHash, className);
++        Files.createDirectories(file.getParent());
++        String json = GSON.toJson(comments);
++        Files.writeString(file, json, StandardCharsets.UTF_8);
++    }
++
++    private static Path resolveFile(String workspaceHash, String className) {
++        // 安全编码：将路径分隔符替换为安全字符
++        String safeName = className.replace('/', '_').replace('\\', '_')
++                .replace("..", "__");
++        return getCommentDir().resolve(workspaceHash).resolve(safeName + ".json");
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java
+index 4dd2048..e562037 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java
+@@ -779,6 +779,67 @@ public final class WorkspaceTabManager {
+         item.getChildren().forEach(this::collapse);
+     }
+ 
++    /**
++     * 在文件树中递归查找并选中有指定完整路径的节点
++     *
++     * @param fullPath 目标文件完整内部路径
++     * @return 找到并选中返回 true，否则 false
++     */
++    public boolean selectTreeNodeByPath(String fullPath) {
++        if (fullPath == null || fullPath.isBlank()) {
++            return false;
++        }
++        String normalized = fullPath.replace('\\', '/');
++        Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
++        if (selected == null) {
++            return false;
++        }
++        WorkspaceView view = workspaceViews.get(selected);
++        if (view == null || view.treeView() == null) {
++            return false;
++        }
++        FileTreeView treeView = view.treeView();
++        TreeItem<FileTreeNode> root = treeView.getRoot();
++        if (root == null) {
++            return false;
++        }
++        TreeItem<FileTreeNode> found = findTreeItemByPath(root, normalized);
++        if (found != null) {
++            // 展开所有父节点
++            TreeItem<FileTreeNode> parent = found.getParent();
++            while (parent != null) {
++                parent.setExpanded(true);
++                parent = parent.getParent();
++            }
++            treeView.getSelectionModel().select(found);
++            int row = treeView.getRow(found);
++            if (row >= 0) {
++                treeView.scrollTo(row);
++            }
++            return true;
++        }
++        return false;
++    }
++
++    /** 深度优先递归查找具有指定完整路径的树节点 */
++    private static TreeItem<FileTreeNode> findTreeItemByPath(
++            TreeItem<FileTreeNode> parent, String fullPath) {
++        if (parent == null || fullPath == null) {
++            return null;
++        }
++        FileTreeNode node = parent.getValue();
++        if (node != null && fullPath.equals(node.getFullPath())) {
++            return parent;
++        }
++        for (TreeItem<FileTreeNode> child : parent.getChildren()) {
++            TreeItem<FileTreeNode> found = findTreeItemByPath(child, fullPath);
++            if (found != null) {
++                return found;
++            }
++        }
++        return null;
++    }
++
+     private enum ToolTab {
+         OUTLINE,
+         INHERITANCE
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/AbstractCodeContentPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/AbstractCodeContentPanel.java
+new file mode 100644
+index 0000000..2b38a0d
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/AbstractCodeContentPanel.java
+@@ -0,0 +1,117 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import javafx.application.Platform;
++import javafx.scene.Node;
++import javafx.scene.control.Label;
++import javafx.scene.control.ProgressIndicator;
++import javafx.scene.layout.StackPane;
++
++import java.util.concurrent.atomic.AtomicInteger;
++
++/**
++ * 代码内容面板抽象基类，统一四种视图（源码/Smali/字节码/简化）的生命周期
++ *
++ * <p>子类只需实现 {@link #buildContentAsync()} 生成内容并返回 Node，
++ * 加载状态和错误处理由基类统一管理</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public abstract class AbstractCodeContentPanel extends StackPane {
++
++    /** 未加载标记 */
++    private static final int STATE_UNLOADED = 0;
++    /** 加载中 */
++    private static final int STATE_LOADING = 1;
++    /** 已加载 */
++    private static final int STATE_LOADED = 2;
++    /** 加载失败 */
++    private static final int STATE_ERROR = 3;
++
++    private final AtomicInteger state = new AtomicInteger(STATE_UNLOADED);
++    private volatile Object cancelToken;
++
++    /** 显示加载指示器 */
++    protected AbstractCodeContentPanel() {
++        showLoading();
++    }
++
++    /** @return 当前面板的内容类型标识 */
++    public abstract String getContentType();
++
++    /**
++     * 在后台线程中构建内容
++     *
++     * @param cancelToken 取消令牌，构建过程中应周期性检查
++     * @return 渲染后的内容节点
++     * @throws Exception 构建失败时抛出
++     */
++    protected abstract Node buildContentAsync(Object cancelToken) throws Exception;
++
++    /** @return 是否已完成加载 */
++    public boolean isLoaded() {
++        return state.get() == STATE_LOADED;
++    }
++
++    /** @return 是否加载失败 */
++    public boolean isError() {
++        return state.get() == STATE_ERROR;
++    }
++
++    /**
++     * 触发异步加载（首次调用生效，后续调用忽略）
++     *
++     * @param token 取消令牌，用于快速切换时丢弃过期结果
++     */
++    public final void loadAsync(Object token) {
++        if (!state.compareAndSet(STATE_UNLOADED, STATE_LOADING)) {
++            return;
++        }
++        this.cancelToken = token;
++        Thread.startVirtualThread(() -> {
++            try {
++                if (isCancelled(token)) return;
++                Node content = buildContentAsync(token);
++                if (isCancelled(token)) return;
++                Platform.runLater(() -> {
++                    if (!isCancelled(token) && state.get() == STATE_LOADING) {
++                        getChildren().clear();
++                        if (content != null) {
++                            getChildren().add(content);
++                        }
++                        state.set(STATE_LOADED);
++                    }
++                });
++            } catch (Exception e) {
++                if (isCancelled(token)) return;
++                Platform.runLater(() -> {
++                    if (!isCancelled(token) && state.get() == STATE_LOADING) {
++                        showError("加载失败: " + e.getMessage());
++                        state.set(STATE_ERROR);
++                    }
++                });
++            }
++        });
++    }
++
++    /** 释放资源，子类可重写以清理 CodeArea 监听器等 */
++    public void dispose() {
++        cancelToken = new Object();
++    }
++
++    /** 加载中占位 */
++    protected void showLoading() {
++        ProgressIndicator indicator = new ProgressIndicator();
++        indicator.setMaxSize(32, 32);
++        getChildren().setAll(indicator);
++    }
++
++    /** 错误提示 */
++    protected void showError(String msg) {
++        getChildren().setAll(new Label(msg));
++    }
++
++    private boolean isCancelled(Object token) {
++        return cancelToken != token;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeContentPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeContentPanel.java
+new file mode 100644
+index 0000000..95b553a
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeContentPanel.java
+@@ -0,0 +1,72 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import javafx.scene.Node;
++import jfx.incubator.scene.control.richtext.CodeArea;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.util.Textifier;
++import org.objectweb.asm.util.TraceClassVisitor;
++
++import java.io.PrintWriter;
++import java.io.StringWriter;
++
++/**
++ * 字节码内容面板，复用 ASM Textifier 生成完整字节码文本
++ *
++ * <p>使用 {@code ClassReader.SKIP_DEBUG | SKIP_FRAMES} 展开常量池等元数据输出，
++ * 不使用 SKIP_CODE 以确保方法指令被包含</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class BytecodeContentPanel extends AbstractCodeContentPanel {
++
++    private final byte[] classBytes;
++    private CodeArea codeArea;
++
++    public BytecodeContentPanel(byte[] classBytes) {
++        this.classBytes = classBytes == null ? null : classBytes.clone();
++    }
++
++    @Override
++    public String getContentType() {
++        return "bytecode";
++    }
++
++    @Override
++    protected Node buildContentAsync(Object cancelToken) throws Exception {
++        if (classBytes == null || classBytes.length == 0) {
++            CodeArea empty = new CodeArea();
++            empty.setText("// 无字节码数据");
++            empty.setEditable(false);
++            this.codeArea = empty;
++            return empty;
++        }
++
++        StringWriter sw = new StringWriter();
++        PrintWriter pw = new PrintWriter(sw);
++        Textifier textifier = new Textifier();
++        TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
++        ClassReader reader = new ClassReader(classBytes);
++        reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
++        pw.flush();
++
++        CodeArea area = new CodeArea();
++        area.getStyleClass().add("code-editor");
++        area.setEditable(false);
++        area.setText(sw.toString());
++        area.setSyntaxDecorator(TextFileDecorator.instance());
++        this.codeArea = area;
++        return area;
++    }
++
++    /** @return 字节码编辑器 */
++    public CodeArea getCodeArea() {
++        return codeArea;
++    }
++
++    @Override
++    public void dispose() {
++        super.dispose();
++        codeArea = null;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeActionHandler.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeActionHandler.java
+new file mode 100644
+index 0000000..46ac6ae
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeActionHandler.java
+@@ -0,0 +1,33 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
++import jfx.incubator.scene.control.richtext.TextPos;
++
++/**
++ * 代码视图操作回调接口，定义 CodeViewPanel 需要调用的外部操作
++ *
++ * <p>实现方（如 MainWindow）负责具体逻辑：导航、图形展示、注释管理等</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public interface CodeActionHandler {
++
++    /** 跳转到声明（Ctrl+Click / 右键菜单） */
++    void goToDeclaration(CodeMetadata.Reference reference);
++
++    /** 打开指定类的指定行 */
++    void openClass(String fullPath, int line);
++
++    /** 展示当前类的继承图 */
++    void showInheritanceGraph(CodeViewContext context);
++
++    /** 展示当前类的方法调用图 */
++    void showMethodGraph(CodeViewContext context);
++
++    /** 添加或更新当前光标位置的注释 */
++    void addOrUpdateComment(CodeViewContext context, TextPos caretPosition);
++
++    /** 在 workspace 内搜索选中文本 */
++    void searchInWorkspace(String selectedText);
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeAreaContextMenu.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeAreaContextMenu.java
+new file mode 100644
+index 0000000..c72257a
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeAreaContextMenu.java
+@@ -0,0 +1,106 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
++import javafx.scene.control.ContextMenu;
++import javafx.scene.control.MenuItem;
++import javafx.scene.control.SeparatorMenuItem;
++import jfx.incubator.scene.control.richtext.CodeArea;
++import jfx.incubator.scene.control.richtext.TextPos;
++
++/**
++ * 代码区右键上下文菜单，提供跳转声明、查看继承图、查看方法图、添加注释四个功能
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class CodeAreaContextMenu extends ContextMenu {
++
++    private final CodeArea codeArea;
++    private final CodeViewContext context;
++    private final CodeActionHandler actionHandler;
++
++    private final MenuItem gotoDeclarationItem;
++    private final MenuItem inheritanceGraphItem;
++    private final MenuItem methodGraphItem;
++    private final MenuItem addCommentItem;
++
++    public CodeAreaContextMenu(CodeArea codeArea, CodeViewContext context, CodeActionHandler actionHandler) {
++        this.codeArea = codeArea;
++        this.context = context;
++        this.actionHandler = actionHandler;
++
++        gotoDeclarationItem = new MenuItem(I18nUtil.getString("context.gotoDeclaration"));
++        gotoDeclarationItem.setOnAction(e -> onGotoDeclaration());
++
++        inheritanceGraphItem = new MenuItem(I18nUtil.getString("context.inheritanceGraph"));
++        inheritanceGraphItem.setOnAction(e -> onShowInheritanceGraph());
++
++        methodGraphItem = new MenuItem(I18nUtil.getString("context.methodGraph"));
++        methodGraphItem.setOnAction(e -> onShowMethodGraph());
++
++        addCommentItem = new MenuItem(I18nUtil.getString("context.addComment"));
++        addCommentItem.setOnAction(e -> onAddComment());
++
++        getItems().addAll(
++                gotoDeclarationItem,
++                inheritanceGraphItem,
++                methodGraphItem,
++                new SeparatorMenuItem(),
++                addCommentItem
++        );
++
++        setOnShowing(e -> refreshState());
++    }
++
++    /** 每次显示前更新菜单项状态 */
++    private void refreshState() {
++        boolean hasMeta = context != null && context.metadata() != null
++                && !context.metadata().isEmpty();
++        boolean hasBytes = context != null && context.classBytes() != null
++                && context.classBytes().length > 0;
++        boolean hasIndex = context != null && context.workspace() != null
++                && context.workspace().isIndexReady();
++
++        gotoDeclarationItem.setDisable(!hasMeta && !hasIndex);
++        inheritanceGraphItem.setDisable(!hasBytes || !hasIndex);
++        methodGraphItem.setDisable(!hasBytes);
++        addCommentItem.setDisable(codeArea == null);
++    }
++
++    private void onGotoDeclaration() {
++        if (actionHandler == null || context == null) return;
++        int line = getCaretLine();
++        var refs = context.metadata().getRefsAtLine(line);
++        if (!refs.isEmpty()) {
++            actionHandler.goToDeclaration(refs.get(0));
++        }
++    }
++
++    private void onShowInheritanceGraph() {
++        if (actionHandler == null || context == null) return;
++        actionHandler.showInheritanceGraph(context);
++    }
++
++    private void onShowMethodGraph() {
++        if (actionHandler == null || context == null) return;
++        actionHandler.showMethodGraph(context);
++    }
++
++    private void onAddComment() {
++        if (actionHandler == null || context == null) return;
++        TextPos caret = codeArea.getCaretPosition();
++        actionHandler.addOrUpdateComment(context, caret);
++    }
++
++    /** 从 CodeArea 文本中计算当前光标所在行号（1-based） */
++    private int getCaretLine() {
++        String text = codeArea.getText();
++        if (text == null || text.isEmpty()) return 1;
++        int idx = codeArea.getCaretPosition().index();
++        int line = 1;
++        for (int i = 0; i < idx && i < text.length(); i++) {
++            if (text.charAt(i) == '\n') line++;
++        }
++        return line;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeContentDeck.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeContentDeck.java
+new file mode 100644
+index 0000000..3024049
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeContentDeck.java
+@@ -0,0 +1,207 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
++import javafx.application.Platform;
++import javafx.scene.Node;
++import javafx.scene.control.ToggleButton;
++import javafx.scene.control.ToggleGroup;
++import javafx.scene.layout.HBox;
++import javafx.scene.layout.Priority;
++import javafx.scene.layout.StackPane;
++import javafx.scene.layout.VBox;
++
++import java.util.concurrent.atomic.AtomicInteger;
++
++/**
++ * 管理四种代码内容视图（Code/Smali/Bytecode/Simple）的懒加载、切换和销毁
++ *
++ * <p>底部使用 HBox + ToggleButton ToggleGroup 而非嵌套 TabPane，
++ * 避免与主代码标签、Split view、拖拽之间互相干扰</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class CodeContentDeck extends VBox {
++
++    /** Code 标签索引 */
++    public static final int TAB_CODE = 0;
++    /** Smali/JVM指令视图索引 */
++    public static final int TAB_SMALI = 1;
++    /** 字节码索引 */
++    public static final int TAB_BYTECODE = 2;
++    /** 简化代码索引 */
++    public static final int TAB_SIMPLE = 3;
++
++    private final AbstractCodeContentPanel[] panels;
++    private final ToggleButton[] buttons;
++    private final StackPane contentArea;
++    private final HBox bottomBar;
++    private final ToggleGroup toggleGroup;
++    private final AtomicInteger cancelGen = new AtomicInteger();
++    private final AtomicInteger activeIndex = new AtomicInteger(TAB_CODE);
++
++    /** 源码内容提供回调，Simple 面板按需读取 */
++    private volatile String sourceCode;
++    /** 类文件字节码，Smali/Bytecode 按需读取 */
++    private final byte[] classBytes;
++
++    public CodeContentDeck(String sourceCode, byte[] classBytes) {
++        this.sourceCode = sourceCode;
++        this.classBytes = classBytes == null ? null : classBytes.clone();
++        this.panels = new AbstractCodeContentPanel[4];
++        this.buttons = new ToggleButton[4];
++        this.toggleGroup = new ToggleGroup();
++        this.contentArea = new StackPane();
++        this.bottomBar = buildBottomBar();
++        contentArea.getStyleClass().add("code-content-area");
++        VBox.setVgrow(contentArea, Priority.ALWAYS);
++        getChildren().setAll(contentArea, bottomBar);
++
++        // 默认显示 Code 面板
++        selectTab(TAB_CODE);
++    }
++
++    /** 构建底部标签栏 */
++    private HBox buildBottomBar() {
++        HBox bar = new HBox(2);
++        bar.getStyleClass().add("code-deck-bar");
++        bar.setMinHeight(30);
++
++        addToggle(0, "tab.code");
++        addToggle(1, "tab.smali");
++        addToggle(2, "tab.bytecode");
++        addToggle(3, "tab.simple");
++
++        // 右侧弹簧
++        Node spacer = new javafx.scene.layout.Region();
++        HBox.setHgrow(spacer, Priority.ALWAYS);
++        bar.getChildren().add(spacer);
++
++        return bar;
++    }
++
++    private void addToggle(int index, String i18nKey) {
++        ToggleButton btn = new ToggleButton(I18nUtil.getString(i18nKey));
++        btn.getStyleClass().add("code-deck-toggle");
++        btn.setToggleGroup(toggleGroup);
++        btn.setMinWidth(60);
++        btn.setMaxHeight(28);
++        btn.setOnAction(e -> {
++            if (btn.isSelected()) {
++                selectTab(index);
++            }
++        });
++        buttons[index] = btn;
++        bottomBar.getChildren().add(btn);
++    }
++
++    /**
++     * 切换到指定索引的标签页，首次切换时触发懒加载
++     */
++    private void selectTab(int index) {
++        if (index < 0 || index >= 4) return;
++        cancelGen.incrementAndGet(); // 取消旧任务
++        activeIndex.set(index);
++
++        if (panels[index] == null) {
++            panels[index] = createPanel(index);
++        }
++        AbstractCodeContentPanel panel = panels[index];
++        contentArea.getChildren().setAll(panel);
++
++        if (!panel.isLoaded() && !panel.isError()) {
++            Object token = new Object();
++            panel.loadAsync(token);
++        }
++
++        buttons[index].setSelected(true);
++    }
++
++    /** 按索引创建对应面板 */
++    private AbstractCodeContentPanel createPanel(int index) {
++        return switch (index) {
++            case TAB_CODE -> new SourceContentPanel(null); // 由外部 setSource 填充
++            case TAB_SMALI -> new SmaliContentPanel(classBytes);
++            case TAB_BYTECODE -> new BytecodeContentPanel(classBytes);
++            case TAB_SIMPLE -> new SimpleContentPanel(sourceCode);
++            default -> throw new IllegalArgumentException("未知面板索引: " + index);
++        };
++    }
++
++    /** @return 当前激活的面板索引 */
++    public int getActiveIndex() {
++        return activeIndex.get();
++    }
++
++    /**
++     * 用外部配置的 SourceContentPanel 替换 Code 面板
++     *
++     * @param panel 外部创建的 SourceContentPanel（带完整 theme/font 配置）
++     */
++    public void setSourcePanel(SourceContentPanel panel) {
++        panels[TAB_CODE] = panel;
++        if (activeIndex.get() == TAB_CODE) {
++            contentArea.getChildren().setAll(panel);
++        }
++    }
++
++    /** @return 源码面板中的 CodeArea（可能为 null） */
++    public SourceContentPanel getSourcePanel() {
++        return (SourceContentPanel) panels[TAB_CODE];
++    }
++
++    /** @return 当前活动面板 */
++    public AbstractCodeContentPanel getActivePanel() {
++        int idx = activeIndex.get();
++        return panels[idx];
++    }
++
++    /**
++     * 更新源码内容并刷新已加载的 Code/Simple 面板
++     *
++     * @param newSource 新的反编译源码
++     */
++    public void updateSource(String newSource) {
++        this.sourceCode = newSource;
++        if (panels[TAB_CODE] instanceof SourceContentPanel sp) {
++            sp.setSourceCode(newSource);
++        }
++        if (panels[TAB_SIMPLE] != null) {
++            panels[TAB_SIMPLE] = null; // 下次切换时用新源码重建
++        }
++    }
++
++    /** @return 当前取消分代号，用于外部判断任务是否过期 */
++    public int cancelGeneration() {
++        return cancelGen.get();
++    }
++
++    /** @return 内容区域 StackPane（供外部重组布局） */
++    public StackPane getContentArea() {
++        return contentArea;
++    }
++
++    /** @return 底部标签栏 HBox（供外部重组布局） */
++    public HBox getBottomBar() {
++        return bottomBar;
++    }
++
++    public ToggleButton getButton(int index) {
++        return buttons[index];
++    }
++
++    /** 程序化选中指定标签 */
++    public void setSelected(int index) {
++        if (buttons[index] != null) {
++            buttons[index].setSelected(true);
++        }
++    }
++
++    /** 释放所有面板资源 */
++    public void dispose() {
++        cancelGen.incrementAndGet();
++        for (AbstractCodeContentPanel panel : panels) {
++            if (panel != null) panel.dispose();
++        }
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java
+index 8642779..88867d6 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java
+@@ -2,14 +2,11 @@ package com.bingbaihanji.fxdecomplie.ui.code;
+ 
+ import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+ import com.bingbaihanji.fxdecomplie.model.OpenFile;
+-import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
+ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+-import com.bingbaihanji.fxdecomplie.utils.CodeLinkHandler;
+ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+ import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+ import javafx.scene.control.Label;
+ import javafx.scene.control.Tab;
+-import javafx.scene.control.TabPane;
+ import javafx.scene.text.Font;
+ import jfx.incubator.scene.control.richtext.CodeArea;
+ import jfx.incubator.scene.control.richtext.TextPos;
+@@ -17,20 +14,20 @@ import jfx.incubator.scene.control.richtext.TextPos;
+ import java.util.function.Consumer;
+ 
+ /**
+- * 单个代码标签页包含三个子标签：Java源码、字节码、类信息
++ * 单个代码标签页，内部委托给 CodeViewPanel 管理底部标签切换和 Split View
+  *
+  * @author bingbaihanji
+  * @date 2026-06-17
+  */
+ public class CodeEditorTab extends Tab {
+ 
+-    /** Fira Code 字体资源路径 (回退 Light) */
+-    private static final String FIRA_CODE_LIGHT = "/ttf/FiraCode-Light.ttf";
+-    /** 超大源码禁用正则高亮和链接扫描,避免 JavaFX 线程长时间停顿 */
++    /** 超大源码禁用正则高亮和链接扫描 */
+     private static final int LARGE_SOURCE_THRESHOLD = 500_000;
+ 
+-    /** Java 源码编辑器 */
++    /** Java 源码编辑器（兼容引用） */
+     private final CodeArea codeArea;
++    /** 代码视图面板 */
++    private final CodeViewPanel codeViewPanel;
+     /** 打开的文件 */
+     private final OpenFile openFile;
+     /** 标签页显示标题 */
+@@ -43,19 +40,10 @@ public class CodeEditorTab extends Tab {
+     private final CodeMetadata metadata;
+     /** Ctrl+Click 导航回调(null 时禁用) */
+     private final Consumer<CodeMetadata.Reference> onNavigate;
+-    /** 类文件原始字节码(用于复制标签到独立窗口) */
++    /** 类文件原始字节码 */
+     private final byte[] classBytes;
+-    /** 字节码文本视图 */
+-    private CodeArea bytecodeArea;
+-    /** 类信息视图 */
+-    private javafx.scene.layout.VBox classInfoView;
+-    /** 缓存的总行数,避免 goToLine 时 O(n) 计数 */
+-    private volatile int cachedLineCount = -1;
+     /** 编辑器内搜索栏 */
+-    private EditorSearchBar editorSearchBar;
+-    /** 延迟加载状态：避免打开源码标签时同步生成字节码/类信息视图 */
+-    private boolean bytecodeLoaded;
+-    private boolean classInfoLoaded;
++    private final EditorSearchBar editorSearchBar;
+ 
+     /** 简化构造器(使用默认主题和字体配置) */
+     public CodeEditorTab(OpenFile openFile) {
+@@ -63,7 +51,7 @@ public class CodeEditorTab extends Tab {
+     }
+ 
+     /**
+-     * 完整构造器,按顺序装配三大区域
++     * 完整构造器
+      *
+      * @param openFile            打开的文件元数据
+      * @param theme               编辑器语法高亮主题
+@@ -71,7 +59,9 @@ public class CodeEditorTab extends Tab {
+      * @param fontSize            默认字号
+      * @param wrapText            是否自动换行
+      * @param lineNumbersEnabled  是否显示行号
+-     * @param classBytes  类文件原始字节码(用于字节码视图和类信息视图,可为 null)
++     * @param classBytes          类文件原始字节码
++     * @param metadata            反编译元数据
++     * @param onNavigate          Ctrl+Click 导航回调
+      */
+     public CodeEditorTab(OpenFile openFile, VsCodeThemeLoader.ThemeData theme, String fontFamily,
+                          int fontSize, boolean wrapText, boolean lineNumbersEnabled, byte[] classBytes,
+@@ -83,51 +73,23 @@ public class CodeEditorTab extends Tab {
+         this.onNavigate = onNavigate;
+         this.classBytes = classBytes == null ? null : classBytes.clone();
+ 
+-        // 1. 创建 Java 源码编辑区
+-        codeArea = buildSourceArea(theme, fontFamily, fontSize, wrapText, lineNumbersEnabled);
+-        Tab sourceTab = new Tab(I18nUtil.getString("tab.source"), codeArea);
+-        sourceTab.setClosable(false);
+-
+-        // 2. 字节码和类信息按需构建,避免快速切换 class 时阻塞 JavaFX 线程
+-        Tab bytecodeTab = new Tab(I18nUtil.getString("tab.bytecode"), lazyPlaceholder());
+-        bytecodeTab.setClosable(false);
+-        bytecodeTab.selectedProperty().addListener((obs, wasSelected, selected) -> {
+-            if (selected) {
+-                ensureBytecodeLoaded(bytecodeTab);
+-            }
+-        });
+-
+-        // 3. 创建类元信息视图占位
+-        Tab infoTab = new Tab(I18nUtil.getString("tab.classinfo"), lazyPlaceholder());
+-        infoTab.setClosable(false);
+-        infoTab.selectedProperty().addListener((obs, wasSelected, selected) -> {
+-            if (selected) {
+-                ensureClassInfoLoaded(infoTab);
+-            }
+-        });
++        String source = openFile.sourceCode();
++        CodeViewPanel viewPanel = new CodeViewPanel(source, this.classBytes);
++        viewPanel.setDefaultFontSize(fontSize);
++        this.codeViewPanel = viewPanel;
+ 
+-        // 4. 将三个子标签页组装到 TabPane
+-        TabPane subTabPane = buildSubTabPane(sourceTab, bytecodeTab, infoTab);
++        SourceContentPanel srcPanel = new SourceContentPanel(source, theme,
++                fontFamily, fontSize, wrapText, lineNumbersEnabled, this.metadata, onNavigate);
++        viewPanel.getLeftDeck().setSourcePanel(srcPanel);
++        viewPanel.bindSearchBar();
+ 
+-        // 5. 创建搜索栏(默认隐藏,Ctrl+F 唤醒)
+-        editorSearchBar = new EditorSearchBar(codeArea);
+-        editorSearchBar.setVisible(false);
+-        editorSearchBar.setManaged(false);
++        this.codeArea = srcPanel.getCodeArea();
++        this.editorSearchBar = viewPanel.getSearchBar();
+ 
+-        // 6. 将搜索栏和子标签页包装到 VBox 中
+-        javafx.scene.layout.VBox wrapper = new javafx.scene.layout.VBox(editorSearchBar, subTabPane);
+-        javafx.scene.layout.VBox.setVgrow(subTabPane, javafx.scene.layout.Priority.ALWAYS);
+         titleLabel = createTitleLabel(displayTitle);
+         setText("");
+         setGraphic(titleLabel);
+-        setContent(wrapper);
+-    }
+-
+-    private static javafx.scene.Node lazyPlaceholder() {
+-        javafx.scene.layout.StackPane pane = new javafx.scene.layout.StackPane();
+-        pane.setMinHeight(120);
+-        pane.getStyleClass().add("code-editor");
+-        return pane;
++        setContent(viewPanel);
+     }
+ 
+     private static Label createTitleLabel(String title) {
+@@ -139,207 +101,16 @@ public class CodeEditorTab extends Tab {
+         return label;
+     }
+ 
+-    /** 将源码/字节码/类信息组装为不可关闭的子标签页面板 */
+-    private static TabPane buildSubTabPane(Tab sourceTab, Tab bytecodeTab, Tab infoTab) {
+-        TabPane pane = new TabPane();
+-        pane.getStyleClass().add("code-sub-tab-pane");
+-        pane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+-        pane.getTabs().addAll(sourceTab, bytecodeTab, infoTab);
+-        pane.getSelectionModel().select(sourceTab);
+-        return pane;
+-    }
+-
+-    /** 判断字符是否为括号类型 */
+-    private static boolean isBracket(char c) {
+-        return c == '(' || c == ')' || c == '{' || c == '}' || c == '[' || c == ']';
+-    }
+-
+-    /** 在文本中查找与 pos 处括号配对的括号位置,找不到返回 -1 */
+-    private static int findMatchingBracket(String text, int pos) {
+-        if (pos < 0 || pos >= text.length()) return -1;
+-        char c = text.charAt(pos);
+-        if (!isBracket(c)) return -1;
+-
+-        boolean forward = (c == '(' || c == '{' || c == '[');
+-        char open, close;
+-        switch (c) {
+-            case '(':
+-                open = '(';
+-                close = ')';
+-                break;
+-            case ')':
+-                open = '(';
+-                close = ')';
+-                break;
+-            case '{':
+-                open = '{';
+-                close = '}';
+-                break;
+-            case '}':
+-                open = '{';
+-                close = '}';
+-                break;
+-            case '[':
+-                open = '[';
+-                close = ']';
+-                break;
+-            case ']':
+-                open = '[';
+-                close = ']';
+-                break;
+-            default:
+-                return -1;
+-        }
+-
+-        int depth = 0;
+-        if (forward) {
+-            for (int i = pos; i < text.length(); i++) {
+-                char ch = text.charAt(i);
+-                if (ch == open) depth++;
+-                else if (ch == close) {
+-                    depth--;
+-                    if (depth == 0) return i;
+-                }
+-            }
+-        } else {
+-            for (int i = pos; i >= 0; i--) {
+-                char ch = text.charAt(i);
+-                if (ch == close) depth++;
+-                else if (ch == open) {
+-                    depth--;
+-                    if (depth == 0) return i;
+-                }
+-            }
+-        }
+-        return -1;
+-    }
+-
+-    /** 将 (行, 列) 坐标转换为文本中平坦字符索引 */
+-    private static int toFlatIndex(String text, int line, int col) {
+-        int idx = 0;
+-        for (int l = 0; l < line && idx < text.length(); idx++) {
+-            if (text.charAt(idx) == '\n') l++;
+-        }
+-        return idx + col;
+-    }
+-
+-    /** 将平坦字符索引转换为 TextPos */
+-    private static TextPos toTextPos(String text, int idx) {
+-        if (idx <= 0) return TextPos.ZERO;
+-        int clamped = Math.min(idx, text.length());
+-        int line = 0;
+-        int lineStart = 0;
+-        for (int i = 0; i < clamped; i++) {
+-            if (text.charAt(i) == '\n') {
+-                line++;
+-                lineStart = i + 1;
+-            }
+-        }
+-        return TextPos.ofLeading(line, clamped - lineStart);
+-    }
+-
+-    private static int lineStartOffset(String text, int lineNumber) {
+-        if (lineNumber <= 1) {
+-            return 0;
+-        }
+-        int currentLine = 1;
+-        for (int i = 0; i < text.length(); i++) {
+-            if (text.charAt(i) == '\n') {
+-                currentLine++;
+-                if (currentLine == lineNumber) {
+-                    return i + 1;
+-                }
+-            }
+-        }
+-        return text.length();
+-    }
+-
+-    private static int lineEndOffset(String text, int start) {
+-        for (int i = start; i < text.length(); i++) {
+-            if (text.charAt(i) == '\n' || text.charAt(i) == '\r') {
+-                return i;
+-            }
+-        }
+-        return text.length();
+-    }
+-
+-    private static void setDialogIcon(javafx.stage.Stage stage) {
+-        try {
+-            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
+-            if (stream != null) {
+-                stage.getIcons().add(new javafx.scene.image.Image(stream));
+-            }
+-        } catch (Exception ignored) {
+-        }
+-    }
+-
+-    private void ensureBytecodeLoaded(Tab bytecodeTab) {
+-        if (bytecodeLoaded) {
+-            return;
+-        }
+-        bytecodeLoaded = true;
+-        bytecodeArea = BytecodeViewTab.createView(this.classBytes);
+-        bytecodeArea.setFont(Font.font(bytecodeArea.getFont().getFamily(), codeArea.getFont().getSize()));
+-        bytecodeTab.setContent(bytecodeArea);
+-    }
+-
+-    private void ensureClassInfoLoaded(Tab infoTab) {
+-        if (classInfoLoaded) {
+-            return;
+-        }
+-        classInfoLoaded = true;
+-        classInfoView = ClassInfoView.createView(this.classBytes);
+-        infoTab.setContent(classInfoView);
+-    }
+-
+-    /** 构建源码编辑区 CodeArea,配置样式、字体、高亮器 */
+-    private CodeArea buildSourceArea(VsCodeThemeLoader.ThemeData theme, String fontFamily,
+-                                     int fontSize, boolean wrapText, boolean lineNumbersEnabled) {
+-        CodeArea area = new CodeArea();
+-        area.getStyleClass().add("code-editor");
+-        area.setStyle("""
+-                -fx-font-feature-settings: "calt" 1, "liga" 1;
+-                """);
+-        area.setEditable(false);
+-        area.setWrapText(wrapText);
+-        String source = openFile.sourceCode();
+-        boolean largeSource = source != null && source.length() > LARGE_SOURCE_THRESHOLD;
+-        LineNumberGutter.setEnabled(area, lineNumbersEnabled && !largeSource);
+-        area.setFont(loadCodeFont(fontFamily, fontSize));
+-        area.setText(source == null ? "" : source);
+-        cachedLineCount = source != null ? (int) source.chars().filter(ch -> ch == '\n').count() + 1 : 1;
+-        if (!largeSource) {
+-            area.setSyntaxDecorator(new RegexHighlighter(theme));
+-            area.setHighlightCurrentParagraph(true);
+-        } else {
+-            area.setHighlightCurrentParagraph(false);
+-        }
+-
+-        // 键盘快捷键：Ctrl+F 搜索，Ctrl+G 跳转到行
+-        area.setOnKeyPressed(e -> {
+-            if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.F) {
+-                if (editorSearchBar != null) {
+-                    editorSearchBar.show();
+-                }
+-                e.consume();
+-            } else if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.G) {
+-                CodeEditorTab.this.goToLine();
+-                e.consume();
+-            }
+-        });
+-
+-        if (onNavigate != null && !largeSource) {
+-            CodeLinkHandler.install(area, this.metadata, onNavigate);
+-        }
+-
+-        return area;
+-    }
+-
+     /** @return Java 源码编辑器 */
+     public CodeArea getCodeArea() {
+         return codeArea;
+     }
+ 
++    /** @return 代码视图面板 */
++    public CodeViewPanel getCodeViewPanel() {
++        return codeViewPanel;
++    }
++
+     /** @return 打开的文件元数据 */
+     public OpenFile getOpenFile() {
+         return openFile;
+@@ -367,17 +138,17 @@ public class CodeEditorTab extends Tab {
+ 
+     /** 放大字号 */
+     public void zoomIn() {
+-        setFontSize(codeArea.getFont().getSize() + 1);
++        codeViewPanel.zoomIn();
+     }
+ 
+     /** 缩小字号 */
+     public void zoomOut() {
+-        setFontSize(Math.max(8, codeArea.getFont().getSize() - 1));
++        codeViewPanel.zoomOut();
+     }
+ 
+     /** 重置字号为默认值 */
+     public void resetZoom() {
+-        setFontSize(defaultFontSize);
++        codeViewPanel.resetZoom();
+     }
+ 
+     /** 跳转到指定行(Ctrl+G) */
+@@ -387,7 +158,7 @@ public class CodeEditorTab extends Tab {
+         dialog.initOwner(owner);
+         dialog.setTitle(I18nUtil.getString("editor.gotoLine.title"));
+         dialog.setHeaderText(null);
+-        int totalLines = getLineCount();
++        int totalLines = codeViewPanel.getLineCount();
+         dialog.setContentText(I18nUtil.getString("editor.gotoLine.prompt", totalLines));
+         dialog.setOnShown(e -> {
+             var win = dialog.getDialogPane().getScene().getWindow();
+@@ -415,65 +186,30 @@ public class CodeEditorTab extends Tab {
+         });
+     }
+ 
+-    /** 跳转并选中指定行 */
+-    private int getLineCount() {
+-        int c = cachedLineCount;
+-        if (c < 0) {
+-            String text = codeArea.getText();
+-            c = text != null ? (int) text.chars().filter(ch -> ch == '\n').count() + 1 : 1;
+-            cachedLineCount = c;
+-        }
+-        return c;
+-    }
+-
+     public void revealLine(int lineNumber) {
+         String text = codeArea.getText();
+         if (text == null || text.isEmpty()) {
+             return;
+         }
+-        int totalLines = getLineCount();
++        int totalLines = codeViewPanel.getLineCount();
+         int line = Math.clamp(lineNumber, 1, totalLines);
+-        int start = lineStartOffset(text, line);
+-        int end = lineEndOffset(text, start);
+-        TextPos startPos = toTextPos(text, start);
+-        TextPos endPos = toTextPos(text, end);
+-        codeArea.select(startPos, endPos);
++        TextPos pos = TextPos.ofLeading(line - 1, 0);
++        codeArea.select(pos, pos);
+         codeArea.requestFocus();
+     }
+ 
+     /** 设置行号开关 */
+     public void setLineNumbersEnabled(boolean enabled) {
+-        LineNumberGutter.setEnabled(codeArea, enabled);
++        codeViewPanel.setLineNumbersEnabled(enabled);
+     }
+ 
+-    /** 更新 CodeArea 和字节码视图的字号 */
+-    private void setFontSize(double size) {
+-        Font current = codeArea.getFont();
+-        codeArea.setFont(Font.font(current.getFamily(), size));
+-        if (bytecodeArea != null) {
+-            bytecodeArea.setFont(Font.font(bytecodeArea.getFont().getFamily(), size));
+-        }
+-    }
+-
+-    /** 加载代码字体：优先资源内嵌 Fira Code → 配置字体 → 系统 Consolas */
+-    private Font loadCodeFont(String configuredFamily, int fontSize) {
+-        Font resourceFont = loadResourceFont(fontSize);
+-        if (resourceFont != null) return resourceFont;
+-        if (configuredFamily != null && !configuredFamily.isBlank()) {
+-            return Font.font(configuredFamily, fontSize);
+-        }
+-        return Font.font("Consolas", fontSize);
+-    }
+-
+-    /** 从 classpath 加载 Fira Code 字体(优先 Regular 字重,回退 Light) */
+-    private Font loadResourceFont(int fontSize) {
++    private static void setDialogIcon(javafx.stage.Stage stage) {
+         try {
+-            java.net.URL fontUrl = CodeEditorTab.class.getResource(FIRA_CODE_LIGHT);
+-
+-            if (fontUrl == null) return null;
+-            return Font.loadFont(fontUrl.toExternalForm(), fontSize);
++            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
++            if (stream != null) {
++                stage.getIcons().add(new javafx.scene.image.Image(stream));
++            }
+         } catch (Exception ignored) {
+-            return null;
+         }
+     }
+ }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeSyncHelper.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeSyncHelper.java
+new file mode 100644
+index 0000000..b438854
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeSyncHelper.java
+@@ -0,0 +1,126 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassVisitor;
++import org.objectweb.asm.Label;
++import org.objectweb.asm.MethodVisitor;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import java.util.LinkedHashMap;
++import java.util.Map;
++import java.util.regex.Matcher;
++import java.util.regex.Pattern;
++
++/**
++ * Split View 同步工具，在源码和字节码文本之间做方法级光标同步
++ *
++ * <p>同步策略分层降级：
++ * 1. ASM LineNumberTable → 精确行映射
++ * 2. 方法签名文本搜索 → 模糊匹配
++ * 3. 失败时静默忽略（记录 debug 日志，不弹窗）</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public final class CodeSyncHelper {
++
++    private static final Logger logger = LoggerFactory.getLogger(CodeSyncHelper.class);
++
++    /** 匹配方法声明行的模式：可见性 [static] 返回类型 方法名( */
++    private static final Pattern METHOD_DECL_PATTERN =
++            Pattern.compile("^\\s*(?:public|protected|private|static|final|abstract|synchronized|native|strictfp|\\s)+"
++                    + "(?:<[\\w\\s.,?]+>\\s*)?"  // 泛型返回值
++                    + "(\\w+(?:\\.\\w+)*)\\s+"    // 返回类型
++                    + "(\\w+)\\s*\\(");            // 方法名(
++
++    private CodeSyncHelper() {
++        throw new AssertionError("utility class");
++    }
++
++    /**
++     * 从 classBytes 构建 方法描述符 → 起始行号 映射
++     *
++     * @param classBytes 类文件字节码
++     * @return 方法描述符到起始行号的映射，失败时返回空 Map
++     */
++    public static Map<String, Integer> buildMethodLineMap(byte[] classBytes) {
++        Map<String, Integer> map = new LinkedHashMap<>();
++        if (classBytes == null || classBytes.length == 0) {
++            return map;
++        }
++        try {
++            ClassReader reader = new ClassReader(classBytes);
++            reader.accept(new ClassVisitor(org.objectweb.asm.Opcodes.ASM9) {
++                @Override
++                public MethodVisitor visitMethod(int access, String name, String desc,
++                                                  String signature, String[] exceptions) {
++                    String key = name + desc;
++                    return new MethodVisitor(org.objectweb.asm.Opcodes.ASM9) {
++                        @Override
++                        public void visitLineNumber(int line, Label start) {
++                            if (!map.containsKey(key)) {
++                                map.put(key, line);
++                            }
++                        }
++                    };
++                }
++            }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
++        } catch (Exception e) {
++            logger.debug("构建方法行号映射失败", e);
++        }
++        return map;
++    }
++
++    /**
++     * 从字节码文本中查找目标方法的起始行号
++     *
++     * @param bytecodeText     ASM Textifier 输出的字节码文本
++     * @param methodDescriptor 方法描述符（name + descriptor）
++     * @return 找到的行号（1-based），未找到返回 -1
++     */
++    public static int findMethodLineInBytecode(String bytecodeText, String methodDescriptor) {
++        if (bytecodeText == null || methodDescriptor == null) {
++            return -1;
++        }
++        String[] lines = bytecodeText.split("\n", -1);
++        // 从方法描述符提取方法名（name部分）
++        int parenIdx = methodDescriptor.indexOf('(');
++        String methodName = parenIdx > 0 ? methodDescriptor.substring(0, parenIdx) : methodDescriptor;
++
++        for (int i = 0; i < lines.length; i++) {
++            String line = lines[i];
++            if (line.contains(methodName)) {
++                return i + 1;
++            }
++        }
++        return -1;
++    }
++
++    /**
++     * 从源码文本中定位光标所在行所属的方法签名
++     *
++     * @param sourceCode 反编译源码
++     * @param lineNumber 光标所在行号（1-based）
++     * @return 方法声明摘要，未找到返回 null
++     */
++    public static String findMethodAtLine(String sourceCode, int lineNumber) {
++        if (sourceCode == null || lineNumber <= 0) {
++            return null;
++        }
++        String[] lines = sourceCode.split("\n", -1);
++        if (lineNumber > lines.length) {
++            return null;
++        }
++
++        // 向上搜索最近的方法声明
++        for (int i = lineNumber - 1; i >= 0; i--) {
++            String line = lines[i].trim();
++            Matcher m = METHOD_DECL_PATTERN.matcher(line);
++            if (m.find()) {
++                return m.group(2); // 方法名
++            }
++        }
++        return null;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewContext.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewContext.java
+new file mode 100644
+index 0000000..cd106f6
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewContext.java
+@@ -0,0 +1,52 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
++import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
++import com.bingbaihanji.fxdecomplie.model.OpenFile;
++import com.bingbaihanji.fxdecomplie.model.Workspace;
++import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
++
++/**
++ * 代码视图上下文，聚合 CodeViewPanel 所需的所有数据，不依赖 MainWindow
++ *
++ * <p>通过 record 和 CodeActionHandler 解耦，主窗口、独立代码窗口、未来多窗口共享同一套代码视图</p>
++ *
++ * @param workspace      当前工作区
++ * @param node           文件树节点
++ * @param openFile       打开的文件元数据
++ * @param classBytes     类文件原始字节码（构造时已 clone）
++ * @param metadata       反编译元数据（行号→引用映射）
++ * @param workspaceIndex 工作区全局索引（可能尚未构建完成）
++ * @param workspaceHash  基于输入文件路径/mtime/size 的稳定标识，用于注释隔离
++ * @param sourceHash     当前反编译源码文本 hash
++ * @param optionsHash    反编译引擎+选项组合 hash，与缓存键口径一致
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public record CodeViewContext(
++        Workspace workspace,
++        FileTreeNode node,
++        OpenFile openFile,
++        byte[] classBytes,
++        CodeMetadata metadata,
++        WorkspaceIndex workspaceIndex,
++        String workspaceHash,
++        String sourceHash,
++        String optionsHash
++) {
++    public CodeViewContext {
++        if (classBytes != null) {
++            classBytes = classBytes.clone();
++        }
++    }
++
++    /** @return 类字节码副本，可能为 null */
++    public byte[] classBytes() {
++        return classBytes == null ? null : classBytes.clone();
++    }
++
++    /** @return 当前类的内部全路径名 */
++    public String classInternalName() {
++        return openFile != null ? openFile.fullPath() : null;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewPanel.java
+new file mode 100644
+index 0000000..104bcb0
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewPanel.java
+@@ -0,0 +1,190 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
++import javafx.scene.Node;
++import javafx.scene.control.CheckBox;
++import javafx.scene.control.SplitPane;
++import javafx.scene.layout.Priority;
++import javafx.scene.layout.StackPane;
++import javafx.scene.layout.VBox;
++
++/**
++ * 代码视图顶层容器，管理底部标签切换与 Split View 分屏
++ *
++ * <p>内部组件：EditorSearchBar（Ctrl+F 激活）→ 内容区 → 底部标签栏 + Split 开关</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class CodeViewPanel extends VBox {
++
++    private final CodeContentDeck leftDeck;
++    private CodeContentDeck rightDeck;
++    private final EditorSearchBar searchBar;
++    private final StackPane viewContainer;
++    private final SplitPane splitPane;
++    private final CheckBox splitToggle;
++    private boolean splitActive;
++    private int defaultFontSize = 14;
++
++    public CodeViewPanel(String sourceCode, byte[] classBytes) {
++        this.leftDeck = new CodeContentDeck(sourceCode, classBytes);
++        this.searchBar = new EditorSearchBar(leftDeck.getSourcePanel() != null
++                ? leftDeck.getSourcePanel().getCodeArea() : null);
++        this.viewContainer = new StackPane();
++        this.splitPane = new SplitPane();
++        this.splitToggle = new CheckBox(I18nUtil.getString("split.view"));
++
++        splitToggle.getStyleClass().add("split-toggle");
++        splitToggle.setOnAction(e -> setSplitMode(splitToggle.isSelected()));
++
++        // 将 Split 开关添加到左侧 deck 底部栏的末尾
++        leftDeck.getBottomBar().getChildren().add(splitToggle);
++
++        searchBar.setVisible(false);
++        searchBar.setManaged(false);
++
++        // 单视图模式：显示 leftDeck（内容区 + 底部栏）
++        showSingleView();
++
++        VBox.setVgrow(viewContainer, Priority.ALWAYS);
++        getChildren().setAll(searchBar, viewContainer);
++        getStyleClass().add("code-view-panel");
++    }
++
++    /** 单视图：leftDeck 完整展示 */
++    private void showSingleView() {
++        viewContainer.getChildren().setAll(leftDeck);
++        splitActive = false;
++    }
++
++    /** Split 视图：左右独立 deck，右侧默认 Bytecode */
++    private void showSplitView() {
++        if (rightDeck == null) {
++            rightDeck = new CodeContentDeck(leftDeck.getSourcePanel() != null
++                    ? leftDeck.getSourcePanel().getCodeArea().getText() : "",
++                    null); // TODO: 传入 classBytes
++            // 右侧默认选 Bytecode
++            rightDeck.setSelected(CodeContentDeck.TAB_BYTECODE);
++            // 右侧底部栏也加入 split toggle（关闭用）
++            rightDeck.getBottomBar().getChildren().add(createRightSplitToggle());
++        }
++
++        // 左右分别展示其 contentArea，但底部栏各自管理
++        splitPane.getItems().clear();
++        splitPane.getItems().addAll(leftDeck, rightDeck);
++        splitPane.setDividerPositions(0.5);
++
++        viewContainer.getChildren().setAll(splitPane);
++        splitActive = true;
++    }
++
++    private CheckBox createRightSplitToggle() {
++        CheckBox cb = new CheckBox(I18nUtil.getString("split.view"));
++        cb.getStyleClass().add("split-toggle");
++        cb.setSelected(true);
++        cb.setOnAction(e -> setSplitMode(cb.isSelected()));
++        return cb;
++    }
++
++    /** 切换分屏模式 */
++    public void setSplitMode(boolean enabled) {
++        if (enabled == splitActive) return;
++        if (enabled) {
++            showSplitView();
++        } else {
++            showSingleView();
++        }
++        splitToggle.setSelected(enabled);
++    }
++
++    /** @return 是否处于分屏模式 */
++    public boolean isSplitActive() {
++        return splitActive;
++    }
++
++    /** @return 左侧源码 CodeArea */
++    public jfx.incubator.scene.control.richtext.CodeArea getSourceCodeArea() {
++        SourceContentPanel sp = leftDeck.getSourcePanel();
++        return sp != null ? sp.getCodeArea() : null;
++    }
++
++    /**
++     * 在源码 CodeArea 上安装右键上下文菜单
++     *
++     * @param ctx     代码视图上下文
++     * @param handler 操作回调
++     */
++    public void installContextMenu(CodeViewContext ctx, CodeActionHandler handler) {
++        var area = getSourceCodeArea();
++        if (area == null || ctx == null || handler == null) return;
++        CodeAreaContextMenu menu = new CodeAreaContextMenu(area, ctx, handler);
++        area.setOnContextMenuRequested(e -> {
++            menu.show(area, e.getScreenX(), e.getScreenY());
++        });
++    }
++
++    /** 更新编辑器搜索栏关联的 CodeArea */
++    public void bindSearchBar() {
++        var area = getSourceCodeArea();
++        if (area != null && searchBar != null) {
++            searchBar.rebind(area);
++        }
++    }
++
++    /** @return 编辑器搜索栏 */
++    public EditorSearchBar getSearchBar() {
++        return searchBar;
++    }
++
++    /** 用新反编译源码更新视图 */
++    public void refreshWithNewSource(String newSource) {
++        leftDeck.updateSource(newSource);
++        bindSearchBar();
++    }
++
++    /** @return 源码总行数 */
++    public int getLineCount() {
++        SourceContentPanel sp = leftDeck.getSourcePanel();
++        return sp != null ? sp.getLineCount() : 0;
++    }
++
++    /** 放大字号 */
++    public void zoomIn() {
++        SourceContentPanel sp = leftDeck.getSourcePanel();
++        if (sp != null) sp.zoomIn();
++    }
++
++    /** 缩小字号 */
++    public void zoomOut() {
++        SourceContentPanel sp = leftDeck.getSourcePanel();
++        if (sp != null) sp.zoomOut();
++    }
++
++    /** 重置字号 */
++    public void resetZoom() {
++        SourceContentPanel sp = leftDeck.getSourcePanel();
++        if (sp != null) sp.resetZoom(defaultFontSize);
++    }
++
++    public void setDefaultFontSize(int size) {
++        this.defaultFontSize = size;
++    }
++
++    /** 行号开关 */
++    public void setLineNumbersEnabled(boolean enabled) {
++        SourceContentPanel sp = leftDeck.getSourcePanel();
++        if (sp != null) sp.setLineNumbersEnabled(enabled);
++    }
++
++        /** @return 左侧 CodeContentDeck */
++    public CodeContentDeck getLeftDeck() {
++        return leftDeck;
++    }
++
++    /** 释放资源 */
++    public void dispose() {
++        leftDeck.dispose();
++        if (rightDeck != null) rightDeck.dispose();
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java
+index c1a3d4f..d391e8f 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java
+@@ -26,7 +26,7 @@ public final class EditorSearchBar extends HBox {
+     private final Button prevBtn;
+     private final Button nextBtn;
+     private final Button closeBtn;
+-    private final CodeArea codeArea;
++    private CodeArea codeArea;
+     private final List<Integer> matchPositions = new ArrayList<>();
+     private int currentMatch = -1;
+ 
+@@ -73,6 +73,14 @@ public final class EditorSearchBar extends HBox {
+         }
+     }
+ 
++    /** 重新绑定到新的 CodeArea（源码刷新时调用） */
++    public void rebind(CodeArea newArea) {
++        if (newArea != null) {
++            this.codeArea = newArea;
++            hide();
++        }
++    }
++
+     public void hide() {
+         setVisible(false);
+         setManaged(false);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SimpleContentPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SimpleContentPanel.java
+new file mode 100644
+index 0000000..d240367
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SimpleContentPanel.java
+@@ -0,0 +1,140 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import javafx.scene.Node;
++import jfx.incubator.scene.control.richtext.CodeArea;
++
++/**
++ * 简化代码面板，对反编译源码做轻量词法状态机去注释和压缩空行
++ *
++ * <p>不会误删字符串/字符字面量中的 // 或 /*，首版不做破坏性泛型简化</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class SimpleContentPanel extends AbstractCodeContentPanel {
++
++    private final String sourceCode;
++    private CodeArea codeArea;
++
++    public SimpleContentPanel(String sourceCode) {
++        this.sourceCode = sourceCode;
++    }
++
++    @Override
++    public String getContentType() {
++        return "simple";
++    }
++
++    @Override
++    protected Node buildContentAsync(Object cancelToken) {
++        String simplified = simplify(sourceCode == null ? "" : sourceCode);
++        CodeArea area = new CodeArea();
++        area.getStyleClass().add("code-editor");
++        area.setEditable(false);
++        area.setText(simplified);
++        this.codeArea = area;
++        return area;
++    }
++
++    /**
++     * 轻量词法状态机：移除行注释(//)和块注释(/* ... *​/)，压缩连续空行
++     */
++    static String simplify(String source) {
++        StringBuilder sb = new StringBuilder(source.length());
++        int i = 0;
++        int len = source.length();
++        int consecutiveNewlines = 0;
++
++        while (i < len) {
++            char c = source.charAt(i);
++
++            // 字符串字面量 — 原样保留
++            if (c == '"') {
++                sb.append(c);
++                i++;
++                while (i < len) {
++                    char ch = source.charAt(i);
++                    sb.append(ch);
++                    if (ch == '\\' && i + 1 < len) {
++                        i++;
++                        sb.append(source.charAt(i));
++                    } else if (ch == '"') {
++                        i++;
++                        break;
++                    }
++                    i++;
++                }
++                consecutiveNewlines = 0;
++                continue;
++            }
++
++            // 字符字面量 — 原样保留
++            if (c == '\'') {
++                sb.append(c);
++                i++;
++                while (i < len) {
++                    char ch = source.charAt(i);
++                    sb.append(ch);
++                    if (ch == '\\' && i + 1 < len) {
++                        i++;
++                        sb.append(source.charAt(i));
++                    } else if (ch == '\'') {
++                        i++;
++                        break;
++                    }
++                    i++;
++                }
++                consecutiveNewlines = 0;
++                continue;
++            }
++
++            // 行注释 //
++            if (c == '/' && i + 1 < len && source.charAt(i + 1) == '/') {
++                while (i < len && source.charAt(i) != '\n') i++;
++                continue;
++            }
++
++            // 块注释 /* ... */
++            if (c == '/' && i + 1 < len && source.charAt(i + 1) == '*') {
++                i += 2;
++                while (i < len) {
++                    if (source.charAt(i) == '*' && i + 1 < len && source.charAt(i + 1) == '/') {
++                        i += 2;
++                        break;
++                    }
++                    i++;
++                }
++                // 块注释可能后跟换行，保留该换行
++                continue;
++            }
++
++            // 压缩连续空行（最多保留1个空行）
++            if (c == '\n') {
++                consecutiveNewlines++;
++                if (consecutiveNewlines <= 1) {
++                    // 检查前一字符，避免行注释去除了注释内容但留下了最后一个 \n 导致双空行
++                    sb.append(c);
++                }
++                i++;
++                continue;
++            }
++
++            consecutiveNewlines = 0;
++            sb.append(c);
++            i++;
++        }
++
++        return sb.toString().trim();
++    }
++
++    /** @return 简化代码编辑器 */
++    public CodeArea getCodeArea() {
++        return codeArea;
++    }
++
++    @Override
++    public void dispose() {
++        super.dispose();
++        codeArea = null;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliContentPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliContentPanel.java
+new file mode 100644
+index 0000000..3b3fa13
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliContentPanel.java
+@@ -0,0 +1,71 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import javafx.scene.Node;
++import jfx.incubator.scene.control.richtext.CodeArea;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.util.Textifier;
++import org.objectweb.asm.util.TraceClassVisitor;
++
++import java.io.PrintWriter;
++import java.io.StringWriter;
++
++/**
++ * JVM 指令视图面板，使用 ASM Textifier + TraceClassVisitor 生成 javap -c 风格输出
++ *
++ * <p>UI 标签标注为 "Smali" 以贴近 jadx 交互习惯，但实际生成的是 JVM class 指令文本，
++ * 不是 Android smali 格式。未来若支持 DEX 输入，再引入独立的 DexSmaliContentPanel</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class SmaliContentPanel extends AbstractCodeContentPanel {
++
++    private final byte[] classBytes;
++    private CodeArea codeArea;
++
++    public SmaliContentPanel(byte[] classBytes) {
++        this.classBytes = classBytes == null ? null : classBytes.clone();
++    }
++
++    @Override
++    public String getContentType() {
++        return "smali";
++    }
++
++    @Override
++    protected Node buildContentAsync(Object cancelToken) throws Exception {
++        if (classBytes == null || classBytes.length == 0) {
++            CodeArea empty = new CodeArea();
++            empty.setText("// 无字节码数据");
++            empty.setEditable(false);
++            this.codeArea = empty;
++            return empty;
++        }
++
++        StringWriter sw = new StringWriter();
++        PrintWriter pw = new PrintWriter(sw);
++        Textifier textifier = new Textifier();
++        TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
++        ClassReader reader = new ClassReader(classBytes);
++        reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
++        pw.flush();
++
++        CodeArea area = new CodeArea();
++        area.getStyleClass().add("code-editor");
++        area.setEditable(false);
++        area.setText(sw.toString());
++        this.codeArea = area;
++        return area;
++    }
++
++    /** @return JVM 指令视图编辑器 */
++    public CodeArea getCodeArea() {
++        return codeArea;
++    }
++
++    @Override
++    public void dispose() {
++        super.dispose();
++        codeArea = null;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SourceContentPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SourceContentPanel.java
+new file mode 100644
+index 0000000..46b5bbf
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SourceContentPanel.java
+@@ -0,0 +1,157 @@
++package com.bingbaihanji.fxdecomplie.ui.code;
++
++import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
++import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
++import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
++import com.bingbaihanji.fxdecomplie.utils.CodeLinkHandler;
++import javafx.scene.Node;
++import javafx.scene.text.Font;
++import jfx.incubator.scene.control.richtext.CodeArea;
++
++import java.util.function.Consumer;
++
++/**
++ * 源码内容面板，封装 CodeArea 的创建、样式、高亮和导航
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class SourceContentPanel extends AbstractCodeContentPanel {
++
++    /** 超大源码禁用正则高亮和链接扫描 */
++    private static final int LARGE_SOURCE_THRESHOLD = 500_000;
++    /** Fira Code 字体资源路径 */
++    private static final String FIRA_CODE_LIGHT = "/ttf/FiraCode-Light.ttf";
++
++    private CodeArea codeArea;
++    private final String sourceCode;
++    private final VsCodeThemeLoader.ThemeData theme;
++    private final String fontFamily;
++    private final int fontSize;
++    private final boolean wrapText;
++    private final boolean lineNumbersEnabled;
++    private final CodeMetadata metadata;
++    private final Consumer<CodeMetadata.Reference> onNavigate;
++    private int cachedLineCount = -1;
++
++    public SourceContentPanel(String sourceCode) {
++        this(sourceCode, VsCodeThemeLoader.defaultDark(), "Consolas", 14, true, true, null, null);
++    }
++
++    public SourceContentPanel(String sourceCode, VsCodeThemeLoader.ThemeData theme,
++                              String fontFamily, int fontSize, boolean wrapText,
++                              boolean lineNumbersEnabled, CodeMetadata metadata,
++                              Consumer<CodeMetadata.Reference> onNavigate) {
++        this.sourceCode = sourceCode;
++        this.theme = theme;
++        this.fontFamily = fontFamily;
++        this.fontSize = fontSize;
++        this.wrapText = wrapText;
++        this.lineNumbersEnabled = lineNumbersEnabled;
++        this.metadata = metadata != null ? metadata : new CodeMetadata(java.util.Map.of());
++        this.onNavigate = onNavigate;
++
++        if (sourceCode != null) {
++            buildCodeArea();
++        }
++    }
++
++    private void buildCodeArea() {
++        codeArea = new CodeArea();
++        codeArea.getStyleClass().add("code-editor");
++        codeArea.setStyle("""
++                -fx-font-feature-settings: "calt" 1, "liga" 1;
++                """);
++        codeArea.setEditable(false);
++        codeArea.setWrapText(wrapText);
++
++        String src = sourceCode;
++        boolean large = src != null && src.length() > LARGE_SOURCE_THRESHOLD;
++        LineNumberGutter.setEnabled(codeArea, lineNumbersEnabled && !large);
++        codeArea.setFont(loadFont());
++        codeArea.setText(src == null ? "" : src);
++        cachedLineCount = src != null ? (int) src.chars().filter(ch -> ch == '\n').count() + 1 : 1;
++
++        if (!large) {
++            codeArea.setSyntaxDecorator(new RegexHighlighter(theme));
++            codeArea.setHighlightCurrentParagraph(true);
++        }
++        if (onNavigate != null && !large) {
++            CodeLinkHandler.install(codeArea, metadata, onNavigate);
++        }
++
++        getChildren().setAll(codeArea);
++    }
++
++    private Font loadFont() {
++        try {
++            java.net.URL fontUrl = getClass().getResource(FIRA_CODE_LIGHT);
++            if (fontUrl != null) return Font.loadFont(fontUrl.toExternalForm(), fontSize);
++        } catch (Exception ignored) {
++        }
++        if (fontFamily != null && !fontFamily.isBlank()) {
++            return Font.font(fontFamily, fontSize);
++        }
++        return Font.font("Consolas", fontSize);
++    }
++
++    /** 更新源码内容并重建 CodeArea */
++    public void setSourceCode(String newSource) {
++        getChildren().clear();
++        buildCodeArea();
++    }
++
++    /** @return 源码编辑器 */
++    public CodeArea getCodeArea() {
++        return codeArea;
++    }
++
++    /** @return 总行数 */
++    public int getLineCount() {
++        if (cachedLineCount < 0 && codeArea != null) {
++            String text = codeArea.getText();
++            cachedLineCount = text != null ? (int) text.chars().filter(ch -> ch == '\n').count() + 1 : 1;
++        }
++        return cachedLineCount;
++    }
++
++    /** 放大字号 */
++    public void zoomIn() {
++        if (codeArea != null) codeArea.setFont(Font.font(codeArea.getFont().getFamily(), codeArea.getFont().getSize() + 1));
++    }
++
++    /** 缩小字号 */
++    public void zoomOut() {
++        if (codeArea != null) codeArea.setFont(Font.font(codeArea.getFont().getFamily(), Math.max(8, codeArea.getFont().getSize() - 1)));
++    }
++
++    /** 重置字号 */
++    public void resetZoom(int defaultFontSize) {
++        if (codeArea != null) codeArea.setFont(Font.font(codeArea.getFont().getFamily(), defaultFontSize));
++    }
++
++    public void setLineNumbersEnabled(boolean enabled) {
++        if (codeArea != null) LineNumberGutter.setEnabled(codeArea, enabled);
++    }
++
++    @Override
++    public String getContentType() {
++        return "source";
++    }
++
++    @Override
++    protected Node buildContentAsync(Object cancelToken) {
++        return codeArea;
++    }
++
++    @Override
++    public boolean isLoaded() {
++        return codeArea != null;
++    }
++
++    @Override
++    public void dispose() {
++        super.dispose();
++        codeArea = null;
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/comment/CommentDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/comment/CommentDialog.java
+new file mode 100644
+index 0000000..2ad43b9
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/comment/CommentDialog.java
+@@ -0,0 +1,117 @@
++package com.bingbaihanji.fxdecomplie.ui.comment;
++
++import com.bingbaihanji.fxdecomplie.model.CommentData;
++import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
++import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
++import javafx.geometry.Insets;
++import javafx.scene.control.*;
++import javafx.scene.layout.GridPane;
++import javafx.scene.layout.Priority;
++import javafx.stage.Window;
++
++import java.time.Instant;
++import java.util.function.Consumer;
++
++/**
++ * 注释输入弹窗
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public final class CommentDialog {
++
++    private CommentDialog() {
++        throw new AssertionError("utility class");
++    }
++
++    /**
++     * 显示注释输入弹窗
++     *
++     * @param owner          父窗口
++     * @param className      类全限定路径
++     * @param memberSignature 成员签名
++     * @param line            行号
++     * @param sourceHash      源码 hash
++     * @param optionsHash     选项 hash
++     * @param existing        已有注释（更新模式），null 为新增模式
++     * @param onSave          保存回调
++     */
++    public static void show(Window owner, String className, String memberSignature,
++                             int line, String sourceHash, String optionsHash,
++                             CommentData existing, Consumer<CommentData> onSave) {
++        Dialog<CommentData> dialog = new Dialog<>();
++        dialog.initOwner(owner);
++        dialog.setTitle(existing != null
++                ? I18nUtil.getString("comment.updateTitle")
++                : I18nUtil.getString("comment.title"));
++        dialog.setResizable(true);
++
++        GridPane grid = new GridPane();
++        grid.setHgap(10);
++        grid.setVgap(8);
++        grid.setPadding(new Insets(16));
++
++        // 行号/成员标签
++        Label infoLabel = new Label(I18nUtil.getString("comment.line") + ": " + line
++                + (memberSignature != null && !memberSignature.isBlank()
++                ? "  " + I18nUtil.getString("comment.member") + ": " + memberSignature : ""));
++        grid.add(infoLabel, 0, 0, 2, 1);
++
++        // 样式选择
++        ComboBox<CommentData.CommentStyle> styleCombo = new ComboBox<>();
++        styleCombo.getItems().addAll(CommentData.CommentStyle.values());
++        styleCombo.setValue(existing != null ? existing.style() : CommentData.CommentStyle.LINE);
++        grid.add(new Label(I18nUtil.getString("comment.style") + ":"), 0, 1);
++        grid.add(styleCombo, 1, 1);
++
++        // 文本输入
++        TextArea textArea = new TextArea();
++        textArea.setPromptText(I18nUtil.getString("comment.text"));
++        textArea.setPrefRowCount(6);
++        textArea.setPrefColumnCount(40);
++        if (existing != null) {
++            textArea.setText(existing.text());
++        }
++        GridPane.setHgrow(textArea, Priority.ALWAYS);
++        GridPane.setVgrow(textArea, Priority.ALWAYS);
++        grid.add(textArea, 0, 2, 2, 1);
++
++        DialogPane dialogPane = dialog.getDialogPane();
++        dialogPane.setContent(grid);
++        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
++
++        dialog.setOnShown(e -> {
++            var win = dialogPane.getScene().getWindow();
++            DefaultWindowTheme.applyWindowDarkMode(win);
++            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
++        });
++
++        dialog.setResultConverter(button -> {
++            if (button != ButtonType.OK) return null;
++            String text = textArea.getText();
++            if (text == null || text.isBlank()) {
++                return existing != null ? new CommentData(className, memberSignature, line,
++                        sourceHash, optionsHash, styleCombo.getValue(),
++                        "", "bingbaihanji", Instant.now().toString()) : null;
++            }
++            return new CommentData(className, memberSignature, line,
++                    sourceHash, optionsHash, styleCombo.getValue(),
++                    text, "bingbaihanji", Instant.now().toString());
++        });
++
++        dialog.showAndWait().ifPresent(comment -> {
++            if (comment.text().isEmpty() && existing == null) return; // 新增空注释不保存
++            onSave.accept(comment);
++        });
++    }
++
++    private static void setDialogIcon(javafx.stage.Stage stage) {
++        try {
++            var stream = CommentDialog.class.getResourceAsStream("/icon/logo.png");
++            if (stream != null) {
++                stage.getIcons().add(new javafx.scene.image.Image(stream));
++            }
++        } catch (Exception ignored) {
++        }
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphDialog.java
+new file mode 100644
+index 0000000..076f88b
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphDialog.java
+@@ -0,0 +1,113 @@
++package com.bingbaihanji.fxdecomplie.ui.graph;
++
++import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
++import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
++import javafx.scene.control.ButtonType;
++import javafx.scene.control.Dialog;
++import javafx.scene.control.DialogPane;
++import javafx.scene.web.WebView;
++import javafx.stage.Modality;
++import javafx.stage.Window;
++import jfx.incubator.scene.control.richtext.CodeArea;
++
++import java.io.InputStream;
++import java.nio.charset.StandardCharsets;
++import java.util.Objects;
++
++/**
++ * 图形可视化弹窗，使用 WebView + Viz.js 渲染 DOT → SVG 图形
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class GraphDialog extends Dialog<Void> {
++
++    private static final int DEFAULT_WIDTH = 820;
++    private static final int DEFAULT_HEIGHT = 640;
++    private static final String TEMPLATE_PATH = "/web/graph-template.html";
++    private static final String VIZ_PATH = "/web/viz-standalone.js";
++
++    public GraphDialog(Window owner, String title, String dot) {
++        initOwner(owner);
++        setTitle(title);
++        initModality(Modality.NONE);
++        setResizable(true);
++
++        DialogPane dialogPane = getDialogPane();
++        dialogPane.getButtonTypes().add(ButtonType.CLOSE);
++        dialogPane.setPrefSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
++
++        if (tryWebView(dialogPane, dot)) {
++            return;
++        }
++        // 回退：CodeArea 文本显示
++        CodeArea codeArea = new CodeArea();
++        codeArea.setEditable(false);
++        codeArea.getStyleClass().add("code-editor");
++        codeArea.setText(dot == null ? "" : dot);
++        dialogPane.setContent(codeArea);
++
++        setOnShown(e -> {
++            var win = dialogPane.getScene().getWindow();
++            DefaultWindowTheme.applyWindowDarkMode(win);
++            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
++        });
++    }
++
++    /** 尝试 WebView + viz.js 渲染，失败返回 false */
++    private boolean tryWebView(DialogPane pane, String dot) {
++        try {
++            String template = loadResource(TEMPLATE_PATH);
++            String vizJs = loadResource(VIZ_PATH);
++            if (template == null || vizJs == null) return false;
++
++            String escaped = dot.replace("\\", "\\\\")
++                    .replace("`", "\\`")
++                    .replace("$", "\\$");
++            String html = template.replace("__DOT_CONTENT__", escaped);
++            // 将 viz.js 内联到 HTML 中
++            html = html.replace("<script>",
++                    "<script>\n" + vizJs + "\n");
++
++            WebView webView = new WebView();
++            webView.setPrefSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
++            webView.getEngine().loadContent(html);
++            pane.setContent(webView);
++
++            setOnShown(e -> {
++                var win = pane.getScene().getWindow();
++                DefaultWindowTheme.applyWindowDarkMode(win);
++                if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
++            });
++            setOnCloseRequest(e -> webView.getEngine().loadContent(""));
++            return true;
++        } catch (Exception e) {
++            return false;
++        }
++    }
++
++    private static String loadResource(String path) {
++        try (InputStream is = GraphDialog.class.getResourceAsStream(path)) {
++            if (is == null) return null;
++            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
++        } catch (Exception e) {
++            return null;
++        }
++    }
++
++    /** 显示图形弹窗 */
++    public static void show(Window owner, String title, String dot) {
++        Objects.requireNonNull(dot, "dot");
++        new GraphDialog(owner, title, dot).show();
++    }
++
++    private static void setDialogIcon(javafx.stage.Stage stage) {
++        try {
++            var stream = GraphDialog.class.getResourceAsStream("/icon/logo.png");
++            if (stream != null) {
++                stage.getIcons().add(new javafx.scene.image.Image(stream));
++            }
++        } catch (Exception ignored) {
++        }
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphService.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphService.java
+new file mode 100644
+index 0000000..b9911d0
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphService.java
+@@ -0,0 +1,256 @@
++package com.bingbaihanji.fxdecomplie.ui.graph;
++
++import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceNode;
++import javafx.scene.control.TreeItem;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassVisitor;
++import org.objectweb.asm.MethodVisitor;
++import org.objectweb.asm.Opcodes;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import java.util.*;
++
++/**
++ * 图形服务工具类，负责 DOT 字符串生成和类内方法调用解析
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public final class GraphService {
++
++    private static final Logger logger = LoggerFactory.getLogger(GraphService.class);
++
++    /** 方法图节点数上限 */
++    private static final int MAX_METHOD_NODES = 300;
++
++    private GraphService() {
++        throw new AssertionError("utility class");
++    }
++
++    /**
++     * 从继承树生成 DOT 格式字符串
++     *
++     * @param root 继承树根节点
++     * @return DOT 格式字符串
++     */
++    public static String toInheritanceDOT(TreeItem<InheritanceNode> root) {
++        StringBuilder sb = new StringBuilder();
++        sb.append("digraph InheritanceGraph {\n");
++        sb.append("    rankdir=BT;\n");
++        sb.append("    node [shape=box, style=filled, fontname=\"Consolas\"];\n");
++        sb.append("    edge [arrowhead=onormal];\n");
++
++        Set<String> seen = new LinkedHashSet<>();
++        appendInheritanceNodes(sb, root, seen, 0);
++        appendInheritanceEdges(sb, root, seen);
++
++        sb.append("}\n");
++        return sb.toString();
++    }
++
++    private static void appendInheritanceNodes(StringBuilder sb, TreeItem<InheritanceNode> item,
++                                                Set<String> seen, int depth) {
++        if (item == null || depth > 20) return;
++        InheritanceNode node = item.getValue();
++        if (node == null || seen.contains(node.className())) return;
++        seen.add(node.className());
++
++        String color = switch (node.relation()) {
++            case SELF -> "#dcdcaa";
++            case SUPER_CLASS -> "#569cd6";
++            case SUBCLASS -> "#6a9955";
++            case INTERFACE -> "#c586c0";
++        };
++        String label = shortName(node.displayName());
++        sb.append("    \"").append(escapeDot(node.className()))
++                .append("\" [label=\"").append(escapeDot(label))
++                .append("\", fillcolor=\"").append(color).append("\"];\n");
++
++        for (TreeItem<InheritanceNode> child : item.getChildren()) {
++            appendInheritanceNodes(sb, child, seen, depth + 1);
++        }
++    }
++
++    private static void appendInheritanceEdges(StringBuilder sb, TreeItem<InheritanceNode> item,
++                                                Set<String> seen) {
++        if (item == null) return;
++        InheritanceNode parent = item.getValue();
++        if (parent == null) return;
++
++        for (TreeItem<InheritanceNode> child : item.getChildren()) {
++            InheritanceNode childNode = child.getValue();
++            if (childNode != null && seen.contains(parent.className())
++                    && seen.contains(childNode.className())) {
++                sb.append("    \"").append(escapeDot(childNode.className()))
++                        .append("\" -> \"")
++                        .append(escapeDot(parent.className())).append("\";\n");
++            }
++            appendInheritanceEdges(sb, child, seen);
++        }
++    }
++
++    /**
++     * 从方法调用图生成 DOT 格式字符串
++     *
++     * @param graph 方法调用图
++     * @return DOT 格式字符串
++     */
++    public static String toMethodDOT(MethodGraph graph) {
++        if (graph == null || graph.methods().isEmpty()) {
++            return "digraph G { label=\"无方法调用数据\" }";
++        }
++
++        StringBuilder sb = new StringBuilder();
++        sb.append("digraph MethodGraph {\n");
++        sb.append("    rankdir=LR;\n");
++        sb.append("    node [shape=box, style=filled, fontname=\"Consolas\", fillcolor=\"#3c3c3c\", "
++                + "fontcolor=\"#d4d4d4\", color=\"#569cd6\"];\n");
++        sb.append("    edge [color=\"#808080\"];\n");
++
++        Set<String> seen = new LinkedHashSet<>();
++        int count = 0;
++        for (MethodNode node : graph.methods()) {
++            if (count >= MAX_METHOD_NODES) break;
++            String id = "N" + count;
++            String label = node.displayName();
++            sb.append("    ").append(id).append(" [label=\"")
++                    .append(escapeDot(label)).append("\"];\n");
++            seen.add(nodeKey(node));
++            count++;
++        }
++
++        for (MethodEdge edge : graph.edges()) {
++            String fromKey = nodeKey(edge.from());
++            String toKey = nodeKey(edge.to());
++            if (seen.contains(fromKey) && seen.contains(toKey)) {
++                sb.append("    ").append(nodeId(edge.from()))
++                        .append(" -> ").append(nodeId(edge.to())).append(";\n");
++            }
++        }
++
++        if (graph.methods().size() > MAX_METHOD_NODES) {
++            sb.append("    label=\"方法过多，已截断（显示前 ")
++                    .append(MAX_METHOD_NODES).append(" 个）\";\n");
++        }
++        sb.append("}\n");
++        return sb.toString();
++    }
++
++    /**
++     * 从 classBytes 解析类内方法调用关系
++     *
++     * @param classBytes 类文件字节码
++     * @return 方法调用图，失败返回空图
++     */
++    public static MethodGraph parseMethodCalls(byte[] classBytes) {
++        if (classBytes == null || classBytes.length == 0) {
++            return new MethodGraph("", List.of(), Set.of());
++        }
++        try {
++            ClassReader reader = new ClassReader(classBytes);
++            MethodCallCollector collector = new MethodCallCollector();
++            reader.accept(collector, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
++            return collector.build();
++        } catch (Exception e) {
++            logger.debug("解析方法调用失败", e);
++            return new MethodGraph("", List.of(), Set.of());
++        }
++    }
++
++    /** 转义 DOT 字符串中的特殊字符 */
++    public static String escapeDot(String s) {
++        if (s == null) return "";
++        return s.replace("\\", "\\\\")
++                .replace("\"", "\\\"")
++                .replace("\n", "\\n")
++                .replace("<", "\\<")
++                .replace(">", "\\>")
++                .replace("{", "\\{")
++                .replace("}", "\\}");
++    }
++
++    private static String shortName(String fullName) {
++        if (fullName == null) return "";
++        int dot = fullName.lastIndexOf('.');
++        return dot >= 0 ? fullName.substring(dot + 1) : fullName;
++    }
++
++    private static String nodeKey(MethodNode n) {
++        return n.name() + n.descriptor();
++    }
++
++    private static int nodeId(MethodNode n) {
++        return Math.abs(Objects.hash(n.name(), n.descriptor())) % MAX_METHOD_NODES;
++    }
++
++    /**
++     * 方法调用图数据结构
++     */
++    public record MethodGraph(
++            String ownerInternalName,
++            List<MethodNode> methods,
++            Set<MethodEdge> edges
++    ) {
++    }
++
++    /**
++     * 方法节点
++     */
++    public record MethodNode(String name, String descriptor, String displayName) {
++    }
++
++    /**
++     * 方法调用边
++     */
++    public record MethodEdge(MethodNode from, MethodNode to) {
++    }
++
++    /** ASM ClassVisitor，扫描方法体中的类内部方法调用 */
++    private static final class MethodCallCollector extends ClassVisitor {
++        private String owner;
++        private final Map<String, MethodNode> nodeMap = new LinkedHashMap<>();
++        private final Set<MethodEdge> edges = new LinkedHashSet<>();
++
++        MethodCallCollector() {
++            super(Opcodes.ASM9);
++        }
++
++        @Override
++        public void visit(int version, int access, String name, String sig,
++                          String superName, String[] interfaces) {
++            this.owner = name;
++            super.visit(version, access, name, sig, superName, interfaces);
++        }
++
++        @Override
++        public MethodVisitor visitMethod(int access, String name, String desc,
++                                          String sig, String[] exceptions) {
++            String displayName = name + descToDisplay(desc);
++            MethodNode currentNode = new MethodNode(name, desc, displayName);
++            nodeMap.putIfAbsent(nodeKey(currentNode), currentNode);
++
++            return new MethodVisitor(Opcodes.ASM9) {
++                @Override
++                public void visitMethodInsn(int opcode, String ownerName, String mName,
++                                            String mDesc, boolean itf) {
++                    if (!owner.equals(ownerName)) return; // 仅类内部调用
++                    if (nodeMap.size() >= MAX_METHOD_NODES) return;
++
++                    String display = mName + descToDisplay(mDesc);
++                    MethodNode target = new MethodNode(mName, mDesc, display);
++                    nodeMap.putIfAbsent(nodeKey(target), target);
++                    edges.add(new MethodEdge(currentNode, target));
++                }
++            };
++        }
++
++        MethodGraph build() {
++            return new MethodGraph(owner, List.copyOf(nodeMap.values()), Set.copyOf(edges));
++        }
++
++        private static String descToDisplay(String desc) {
++            return "(" + desc.substring(1, desc.indexOf(')')) + ")";
++        }
++    }
++}
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/FileActions.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/FileActions.java
+index b8384fc..c6cf7db 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/FileActions.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/FileActions.java
+@@ -45,6 +45,12 @@ public interface FileActions {
+     /** 新窗口打开当前文件 */
+     void openNewWindow();
+ 
++    /** 用当前引擎重新反编译当前类（工具栏 reload） */
++    void refreshCurrentTab();
++
++    /** 在文件树中定位当前类文件（工具栏 localizer） */
++    void locateCurrentFileInTree();
++
+     /** 退出应用 */
+     void exit();
+ }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/toolbar/MainToolBar.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/toolbar/MainToolBar.java
+new file mode 100644
+index 0000000..dddc4a7
+--- /dev/null
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/toolbar/MainToolBar.java
+@@ -0,0 +1,101 @@
++package com.bingbaihanji.fxdecomplie.ui.toolbar;
++
++import com.bingbaihanji.fxdecomplie.ui.menu.FileActions;
++import com.bingbaihanji.fxdecomplie.ui.menu.EditActions;
++import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
++import javafx.scene.control.Button;
++import javafx.scene.control.ToolBar;
++import javafx.scene.control.Tooltip;
++import javafx.scene.image.Image;
++import javafx.scene.image.ImageView;
++
++import java.io.InputStream;
++import java.util.Objects;
++
++/**
++ * 主工具栏组件，位于菜单栏下方，提供常用操作快捷按钮
++ *
++ * <p>按钮：打开文件 / 重新加载 / 导出当前文件 / 定位文件 / 搜索</p>
++ *
++ * @author bingbaihanji
++ * @date 2026-06-21
++ */
++public class MainToolBar extends ToolBar {
++
++    /** 图标基础路径 */
++    private static final String ICON_BASE = "/icon/tool/";
++    /** 按钮图标尺寸 */
++    private static final int ICON_SIZE = 16;
++
++    private final FileActions fileActions;
++    private final EditActions editActions;
++
++    private final Button openBtn;
++    private final Button reloadBtn;
++    private final Button saveBtn;
++    private final Button localizerBtn;
++    private final Button searchBtn;
++
++    /** 当前是否有代码标签打开 */
++    private boolean hasCodeTab;
++
++    public MainToolBar(FileActions fileActions, EditActions editActions) {
++        this.fileActions = Objects.requireNonNull(fileActions, "fileActions");
++        this.editActions = Objects.requireNonNull(editActions, "editActions");
++
++        openBtn = createButton("open.png", "toolbar.open", fileActions::openFile);
++        reloadBtn = createButton("ref.png", "toolbar.reload", fileActions::refreshCurrentTab);
++        saveBtn = createButton("save.png", "toolbar.save", fileActions::saveCurrentFile);
++        localizerBtn = createButton("localizer.png", "toolbar.localizer", fileActions::locateCurrentFileInTree);
++        searchBtn = createButton("search.png", "toolbar.search", editActions::openSearch);
++
++        getStyleClass().add("main-toolbar");
++        getItems().addAll(openBtn, reloadBtn, saveBtn, localizerBtn, searchBtn);
++        refreshState(false, false);
++    }
++
++    /**
++     * 根据当前 workspace 和 codeTab 状态更新按钮可用性
++     *
++     * @param hasWorkspace 是否有打开的工作区
++     * @param hasCodeTab   是否有当前代码编辑器标签
++     */
++    public void refreshState(boolean hasWorkspace, boolean hasCodeTab) {
++        this.hasCodeTab = hasCodeTab;
++        openBtn.setDisable(false);
++        reloadBtn.setDisable(!hasCodeTab);
++        saveBtn.setDisable(!hasCodeTab);
++        localizerBtn.setDisable(!hasCodeTab);
++        searchBtn.setDisable(!hasWorkspace);
++    }
++
++    /** 创建带图标的工具栏按钮 */
++    private Button createButton(String iconName, String tooltipKey, Runnable action) {
++        Button btn = new Button();
++        btn.getStyleClass().add("toolbar-button");
++        btn.setTooltip(new Tooltip(I18nUtil.getString(tooltipKey)));
++        loadIcon(btn, iconName);
++        btn.setOnAction(e -> {
++            btn.setDisable(true);
++            try {
++                action.run();
++            } finally {
++                // 恢复状态以反映实际可用性
++                refreshState(searchBtn != null && !searchBtn.isDisabled(), hasCodeTab);
++            }
++        });
++        return btn;
++    }
++
++    /** 从 classpath 加载按钮图标 */
++    private void loadIcon(Button btn, String iconName) {
++        try {
++            InputStream is = getClass().getResourceAsStream(ICON_BASE + iconName);
++            if (is != null) {
++                Image img = new Image(is, ICON_SIZE, ICON_SIZE, true, true);
++                btn.setGraphic(new ImageView(img));
++            }
++        } catch (Exception ignored) {
++        }
++    }
++}
+diff --git a/src/main/java/module-info.java b/src/main/java/module-info.java
+index 03b8717..daaa90d 100644
+--- a/src/main/java/module-info.java
++++ b/src/main/java/module-info.java
+@@ -3,6 +3,7 @@ module fxdecomplie {
+     requires javafx.controls;
+     requires javafx.fxml;
+     requires javafx.swing;
++    requires javafx.web;
+     requires javafx.graphics;
+ 
+     // 日志模块
+diff --git a/src/main/resources/com/bingbaihanji/fxdecomplie/themes/dark.css b/src/main/resources/com/bingbaihanji/fxdecomplie/themes/dark.css
+index 97ed08e..5cdb890 100644
+--- a/src/main/resources/com/bingbaihanji/fxdecomplie/themes/dark.css
++++ b/src/main/resources/com/bingbaihanji/fxdecomplie/themes/dark.css
+@@ -456,3 +456,83 @@
+     -fx-fill: rgba(255, 255, 255, 0.04);
+     -fx-stroke: transparent;
+ }
++
++/* ---- 主工具栏 ---- */
++.main-toolbar {
++    -fx-background-color: #2d2d2d;
++    -fx-border-color: #3c3c3c;
++    -fx-border-width: 0 0 1 0;
++    -fx-padding: 2 6 2 6;
++    -fx-spacing: 2;
++}
++
++.toolbar-button {
++    -fx-background-color: transparent;
++    -fx-border-color: transparent;
++    -fx-padding: 3 6;
++    -fx-min-width: 28;
++    -fx-min-height: 26;
++    -fx-cursor: hand;
++}
++
++.toolbar-button:hover {
++    -fx-background-color: #3c3c3c;
++}
++
++.toolbar-button:disabled {
++    -fx-opacity: 0.4;
++}
++
++/* ---- 底部标签栏 (Code / Smali / Bytecode / Simple) ---- */
++.code-deck-bar {
++    -fx-background-color: #252526;
++    -fx-border-color: #3c3c3c;
++    -fx-border-width: 1 0 0 0;
++    -fx-padding: 1 4;
++    -fx-alignment: center-left;
++}
++
++.code-deck-toggle {
++    -fx-background-color: transparent;
++    -fx-text-fill: #969696;
++    -fx-font-size: 12px;
++    -fx-padding: 3 10;
++    -fx-border-color: transparent;
++    -fx-cursor: hand;
++}
++
++.code-deck-toggle:selected {
++    -fx-background-color: #1e1e1e;
++    -fx-text-fill: #e0e0e0;
++    -fx-border-color: #094771;
++    -fx-border-width: 0 0 2 0;
++}
++
++.code-deck-toggle:hover {
++    -fx-text-fill: #e0e0e0;
++}
++
++/* ---- Split View 开关 ---- */
++.split-toggle {
++    -fx-text-fill: #969696;
++    -fx-font-size: 12px;
++    -fx-padding: 0 8 0 6;
++}
++
++.split-toggle .box {
++    -fx-background-color: #3c3c3c;
++    -fx-border-color: #555;
++}
++
++.split-toggle:selected .box {
++    -fx-background-color: #0e639c;
++}
++
++/* ---- CodeView 面板 ---- */
++.code-view-panel {
++    -fx-background-color: #1e1e1e;
++}
++
++.code-content-area {
++    -fx-background-color: #1e1e1e;
++}
+diff --git a/src/main/resources/language/language_en.properties b/src/main/resources/language/language_en.properties
+index c4035e4..eca14a1 100644
+--- a/src/main/resources/language/language_en.properties
++++ b/src/main/resources/language/language_en.properties
+@@ -228,3 +228,32 @@ about.engines=Supports Procyon / CFR / Vineflower / JD-Core.
+ about.developer=Developer: bingbaihanji
+ about.date=Development date: 2026-06-18
+ about.website=Website:
++tab.code=Code
++tab.smali=Smali
++tab.bytecode=Bytecode
++tab.simple=Simple
++split.view=Split View
++toolbar.open=Open File
++toolbar.reload=Reload
++toolbar.save=Export Current File
++toolbar.localizer=Locate in Tree
++toolbar.search=Search
++toolbar.reload.disabled=No code tab to reload
++toolbar.localizer.failed=Failed to locate current file in tree
++context.gotoDeclaration=Go to Declaration
++context.inheritanceGraph=View Inheritance Graph
++context.methodGraph=View Method Graph
++context.addComment=Add Comment
++context.updateComment=Update Comment
++comment.title=Add Comment
++comment.updateTitle=Update Comment
++comment.line=Line
++comment.member=Member
++comment.style=Style
++comment.save=Save
++comment.delete=Delete
++comment.text=Comment Text
++graph.title=Graph View
++graph.renderFailed=Failed to render graph
++graph.tooLarge=Graph is too large; display range was limited
++status.reloading=Reloading: {0}
+diff --git a/src/main/resources/language/language_zh_CN.properties b/src/main/resources/language/language_zh_CN.properties
+index 23f31d4..90c12ae 100644
+--- a/src/main/resources/language/language_zh_CN.properties
++++ b/src/main/resources/language/language_zh_CN.properties
+@@ -228,3 +228,32 @@ about.engines=支持 Procyon / CFR / Vineflower / JD-Core 四种引擎
+ about.developer=开发者: 冰白寒祭
+ about.date=开发日期: 2026-06-18
+ about.website=网站:
++tab.code=代码
++tab.smali=Smali
++tab.bytecode=字节码
++tab.simple=简化
++split.view=分屏视图
++toolbar.open=打开文件
++toolbar.reload=重新加载
++toolbar.save=导出当前文件
++toolbar.localizer=定位文件
++toolbar.search=搜索
++toolbar.reload.disabled=没有可重新加载的代码标签
++toolbar.localizer.failed=无法在文件树中定位当前文件
++context.gotoDeclaration=跳转声明
++context.inheritanceGraph=查看继承图
++context.methodGraph=查看方法图
++context.addComment=添加注释
++context.updateComment=更新注释
++comment.title=添加注释
++comment.updateTitle=更新注释
++comment.line=行号
++comment.member=成员
++comment.style=样式
++comment.save=保存
++comment.delete=删除
++comment.text=注释内容
++graph.title=图形视图
++graph.renderFailed=图形渲染失败
++graph.tooLarge=图过大，已限制显示范围
++status.reloading=正在重新加载: {0}
+diff --git a/src/main/resources/web/graph-template.html b/src/main/resources/web/graph-template.html
+new file mode 100644
+index 0000000..532ff14
+--- /dev/null
++++ b/src/main/resources/web/graph-template.html
+@@ -0,0 +1,50 @@
++<!DOCTYPE html>
++<html lang="zh-CN">
++<head><meta charset="UTF-8"></head>
++<style>
++*{margin:0;padding:0;box-sizing:border-box}
++body{background:#1e1e1e;overflow:hidden;font-family:Consolas,monospace}
++#container{width:100vw;height:100vh;cursor:grab}
++#container:active{cursor:grabbing}
++#graph{display:block}
++#error{color:#f44747;padding:20px;display:none;white-space:pre-wrap}
++#loading{color:#969696;padding:20px}
++</style>
++<body>
++<div id="container">
++<div id="loading">渲染中...</div>
++<div id="graph"></div>
++<div id="error"></div>
++</div>
++<script>
++let scale=1,panX=0,panY=0,dragging=0,dx=0,dy=0;
++var dot=String.raw`__DOT_CONTENT__`.trim();
++if(!dot||dot==='__DOT_CONTENT__')document.getElementById('loading').textContent='无图形数据';
++else try{
++var viz=new Viz();
++viz.renderSVGElement(dot).then(function(el){
++document.getElementById('loading').style.display='none';
++el.id='graph-svg';
++el.style.width='100%';
++el.style.height='100%';
++document.getElementById('graph').appendChild(el);
++apply();
++}).catch(function(e){
++document.getElementById('loading').style.display='none';
++var err=document.getElementById('error');
++err.style.display='block';
++err.textContent='渲染失败: '+e+'\n\nDOT:\n'+dot;
++});
++}catch(e){
++document.getElementById('loading').style.display='none';
++var err=document.getElementById('error');
++err.style.display='block';
++err.textContent='viz.js不可用，请检查viz-standalone.js';
++}
++function apply(){var s=document.getElementById('graph-svg');if(s){s.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';s.style.transformOrigin='0 0'}}
++document.getElementById('container').addEventListener('wheel',function(e){e.preventDefault();if(e.ctrlKey||e.metaKey){scale=Math.max(0.1,Math.min(5,scale+(e.deltaY>0?-0.1:0.1)))}else{panX-=e.deltaX;panY-=e.deltaY}apply()},{passive:false});
++document.getElementById('container').addEventListener('mousedown',function(e){dragging=1;dx=e.clientX-panX;dy=e.clientY-panY});
++document.addEventListener('mousemove',function(e){if(!dragging)return;panX=e.clientX-dx;panY=e.clientY-dy;apply()});
++document.addEventListener('mouseup',function(){dragging=0});
++</script>
++</body></html>

@@ -68,7 +68,7 @@ public final class CommentExportDecorator {
             String methodName = nameIdx > 0 ? c.memberSignature().substring(0, nameIdx) : c.memberSignature();
             for (int i = 0; i < lines.length; i++) {
                 if (lines[i].contains(methodName)) {
-                    return i + 1 + Math.max(0, c.line() - 1 - i);
+                    return Math.max(1, i + 1 + (c.line() - 1 - i));
                 }
             }
         }

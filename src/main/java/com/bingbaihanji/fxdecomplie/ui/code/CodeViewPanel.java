@@ -24,10 +24,12 @@ public class CodeViewPanel extends VBox {
     private final StackPane viewContainer;
     private final SplitPane splitPane;
     private final CheckBox splitToggle;
+    private final byte[] classBytes;
     private boolean splitActive;
     private int defaultFontSize = 14;
 
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
+        this.classBytes = classBytes == null ? null : classBytes.clone();
         this.leftDeck = new CodeContentDeck(sourceCode, classBytes);
         this.searchBar = new EditorSearchBar(leftDeck.getSourcePanel() != null
                 ? leftDeck.getSourcePanel().getCodeArea() : null);
@@ -63,7 +65,7 @@ public class CodeViewPanel extends VBox {
         if (rightDeck == null) {
             rightDeck = new CodeContentDeck(leftDeck.getSourcePanel() != null
                     ? leftDeck.getSourcePanel().getCodeArea().getText() : "",
-                    null); // TODO: 传入 classBytes
+                    classBytes);
             // 右侧默认选 Bytecode
             rightDeck.setSelected(CodeContentDeck.TAB_BYTECODE);
             // 右侧底部栏也加入 split toggle（关闭用）

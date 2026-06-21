@@ -104,7 +104,11 @@ public final class CommentManager {
                             && c.memberSignature().equals(memberSignature == null ? "" : memberSignature)
                             && c.time().equals(time));
             if (removed) {
-                writeFile(workspaceHash, className, existing);
+                if (existing.isEmpty()) {
+                    Files.deleteIfExists(resolveFile(workspaceHash, className));
+                } else {
+                    writeFile(workspaceHash, className, existing);
+                }
             }
             return removed;
         } catch (Exception e) {

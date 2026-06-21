@@ -65,7 +65,7 @@ public final class CodeSyncHelper {
                         }
                     };
                 }
-            }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            }, ClassReader.SKIP_FRAMES);
         } catch (Exception e) {
             logger.debug("构建方法行号映射失败", e);
         }

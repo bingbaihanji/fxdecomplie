@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
-import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
@@ -109,7 +108,8 @@ public class CodeContentDeck extends VBox {
         AbstractCodeContentPanel panel = panels[index];
         contentArea.getChildren().setAll(panel);
 
-        if (!panel.isLoaded() && !panel.isError()) {
+        // Code 面板由外部 setSourcePanel 填充，不在此触发异步加载
+        if (index != TAB_CODE && !panel.isLoaded() && !panel.isError()) {
             Object token = new Object();
             panel.loadAsync(token);
         }

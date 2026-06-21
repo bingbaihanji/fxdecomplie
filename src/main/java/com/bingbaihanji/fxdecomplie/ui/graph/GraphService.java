@@ -108,24 +108,25 @@ public final class GraphService {
                 + "fontcolor=\"#d4d4d4\", color=\"#569cd6\"];\n");
         sb.append("    edge [color=\"#808080\"];\n");
 
-        Set<String> seen = new LinkedHashSet<>();
+        java.util.Map<String, Integer> nodeIndex = new LinkedHashMap<>();
         int count = 0;
         for (MethodNode node : graph.methods()) {
             if (count >= MAX_METHOD_NODES) break;
+            String key = nodeKey(node);
+            nodeIndex.put(key, count);
             String id = "N" + count;
             String label = node.displayName();
             sb.append("    ").append(id).append(" [label=\"")
                     .append(escapeDot(label)).append("\"];\n");
-            seen.add(nodeKey(node));
             count++;
         }
 
         for (MethodEdge edge : graph.edges()) {
-            String fromKey = nodeKey(edge.from());
-            String toKey = nodeKey(edge.to());
-            if (seen.contains(fromKey) && seen.contains(toKey)) {
-                sb.append("    ").append(nodeId(edge.from()))
-                        .append(" -> ").append(nodeId(edge.to())).append(";\n");
+            Integer fromIdx = nodeIndex.get(nodeKey(edge.from()));
+            Integer toIdx = nodeIndex.get(nodeKey(edge.to()));
+            if (fromIdx != null && toIdx != null) {
+                sb.append("    N").append(fromIdx)
+                        .append(" -> N").append(toIdx).append(";\n");
             }
         }
 
@@ -178,10 +179,6 @@ public final class GraphService {
 
     private static String nodeKey(MethodNode n) {
         return n.name() + n.descriptor();
-    }
-
-    private static int nodeId(MethodNode n) {
-        return Math.abs(Objects.hash(n.name(), n.descriptor())) % MAX_METHOD_NODES;
     }
 
     /**

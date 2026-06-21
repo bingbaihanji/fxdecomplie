@@ -7,7 +7,6 @@ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
-import javafx.scene.text.Font;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
 
@@ -20,9 +19,6 @@ import java.util.function.Consumer;
  * @date 2026-06-17
  */
 public class CodeEditorTab extends Tab {
-
-    /** 超大源码禁用正则高亮和链接扫描 */
-    private static final int LARGE_SOURCE_THRESHOLD = 500_000;
 
     /** Java 源码编辑器（兼容引用） */
     private final CodeArea codeArea;

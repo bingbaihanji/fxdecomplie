@@ -62,8 +62,7 @@ public class GraphDialog extends Dialog<Void> {
             if (template == null || vizJs == null) return false;
 
             String escaped = dot.replace("\\", "\\\\")
-                    .replace("`", "\\`")
-                    .replace("$", "\\$");
+                    .replace("`", "\\`");
             String html = template.replace("__DOT_CONTENT__", escaped);
             // 将 viz.js 内联到 HTML 中
             html = html.replace("<script>",

@@ -675,7 +675,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 comment -> {
                     com.bingbaihanji.fxdecomplie.service.CommentManager
                             .save(context.workspaceHash(), comment);
-                    statusBar.setFilePath("注释已保存: L" + comment.line());
+                    statusBar.setFilePath(I18nUtil.getString("comment.saved") + " L" + comment.line());
                 });
     }
 

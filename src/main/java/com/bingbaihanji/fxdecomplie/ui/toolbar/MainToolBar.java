@@ -80,8 +80,9 @@ public class MainToolBar extends ToolBar {
             try {
                 action.run();
             } finally {
-                // 恢复状态以反映实际可用性
-                refreshState(searchBtn != null && !searchBtn.isDisabled(), hasCodeTab);
+                boolean hadWorkspace = !searchBtn.isDisabled();
+                boolean hadCodeTab = MainToolBar.this.hasCodeTab;
+                refreshState(hadWorkspace, hadCodeTab);
             }
         });
         return btn;
