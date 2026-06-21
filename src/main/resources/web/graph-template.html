@@ -1,108 +1,50 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #1e1e1e;
-            overflow: hidden;
-            font-family: 'Consolas', 'Fira Code', monospace;
-        }
-        #container {
-            width: 100vw;
-            height: 100vh;
-            cursor: grab;
-        }
-        #container:active { cursor: grabbing; }
-        #graph { display: block; }
-        #error { color: #f44747; padding: 20px; display: none; white-space: pre-wrap; }
-        #fallback { color: #d4d4d4; padding: 20px; white-space: pre-wrap; font-size: 12px; }
-    </style>
-</head>
+<head><meta charset="UTF-8"></head>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1e1e1e;overflow:hidden;font-family:Consolas,monospace}
+#container{width:100vw;height:100vh;cursor:grab}
+#container:active{cursor:grabbing}
+#graph{display:block}
+#error{color:#f44747;padding:20px;display:none;white-space:pre-wrap}
+#loading{color:#969696;padding:20px}
+</style>
 <body>
 <div id="container">
-    <div id="fallback">加载中...</div>
-    <div id="graph"></div>
-    <div id="error"></div>
+<div id="loading">渲染中...</div>
+<div id="graph"></div>
+<div id="error"></div>
 </div>
 <script>
-// zoom/pan state
-let scale = 1.0;
-let panX = 0, panY = 0;
-let dragging = false, dragStartX = 0, dragStartY = 0;
-
-function renderDot(dotSource) {
-    try {
-        if (typeof Viz === 'undefined') {
-            document.getElementById('fallback').innerHTML =
-                '<p style="color:#ff0;">viz.js 未加载，请将 viz.js 放入 src/main/resources/web/viz.js</p>' +
-                '<pre style="color:#ccc;margin-top:10px;">' + dotSource + '</pre>';
-            return;
-        }
-        var viz = new Viz();
-        viz.renderSVGElement(dotSource).then(function(svgEl) {
-            document.getElementById('fallback').style.display = 'none';
-            svgEl.id = 'graph-svg';
-            svgEl.style.width = '100%';
-            svgEl.style.height = '100%';
-            document.getElementById('graph').appendChild(svgEl);
-            applyTransform();
-        }).catch(function(err) {
-            document.getElementById('fallback').style.display = 'none';
-            var errDiv = document.getElementById('error');
-            errDiv.style.display = 'block';
-            errDiv.textContent = '渲染失败: ' + err.toString() + '\n\nDOT:\n' + dotSource;
-        });
-    } catch(e) {
-        document.getElementById('fallback').style.display = 'none';
-        var errDiv = document.getElementById('error');
-        errDiv.style.display = 'block';
-        errDiv.textContent = '脚本错误: ' + e.toString() + '\n\nDOT:\n' + dotSource;
-    }
-}
-
-function applyTransform() {
-    var svg = document.getElementById('graph-svg');
-    if (svg) {
-        svg.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')';
-        svg.style.transformOrigin = '0 0';
-    }
-}
-
-// Mouse wheel zoom
-document.getElementById('container').addEventListener('wheel', function(e) {
-    e.preventDefault();
-    if (e.ctrlKey || e.metaKey) {
-        let delta = e.deltaY > 0 ? -0.1 : 0.1;
-        scale = Math.max(0.1, Math.min(5.0, scale + delta));
-    } else {
-        panX -= e.deltaX;
-        panY -= e.deltaY;
-    }
-    applyTransform();
-}, { passive: false });
-
-// Mouse drag pan
-document.getElementById('container').addEventListener('mousedown', function(e) {
-    dragging = true;
-    dragStartX = e.clientX - panX;
-    dragStartY = e.clientY - panY;
+let scale=1,panX=0,panY=0,dragging=0,dx=0,dy=0;
+var dot=String.raw`__DOT_CONTENT__`.trim();
+if(!dot||dot==='__DOT_CONTENT__')document.getElementById('loading').textContent='无图形数据';
+else try{
+var viz=new Viz();
+viz.renderSVGElement(dot).then(function(el){
+document.getElementById('loading').style.display='none';
+el.id='graph-svg';
+el.style.width='100%';
+el.style.height='100%';
+document.getElementById('graph').appendChild(el);
+apply();
+}).catch(function(e){
+document.getElementById('loading').style.display='none';
+var err=document.getElementById('error');
+err.style.display='block';
+err.textContent='渲染失败: '+e+'\n\nDOT:\n'+dot;
 });
-
-document.addEventListener('mousemove', function(e) {
-    if (!dragging) return;
-    panX = e.clientX - dragStartX;
-    panY = e.clientY - dragStartY;
-    applyTransform();
-});
-
-document.addEventListener('mouseup', function() { dragging = false; });
-
-// Load
-var dot = `__DOT_CONTENT__`;
-if (dot) renderDot(dot);
-else document.getElementById('fallback').innerHTML = '无图形数据';
+}catch(e){
+document.getElementById('loading').style.display='none';
+var err=document.getElementById('error');
+err.style.display='block';
+err.textContent='viz.js不可用，请检查viz-standalone.js';
+}
+function apply(){var s=document.getElementById('graph-svg');if(s){s.style.transform='translate('+panX+'px,'+panY+'px) scale('+scale+')';s.style.transformOrigin='0 0'}}
+document.getElementById('container').addEventListener('wheel',function(e){e.preventDefault();if(e.ctrlKey||e.metaKey){scale=Math.max(0.1,Math.min(5,scale+(e.deltaY>0?-0.1:0.1)))}else{panX-=e.deltaX;panY-=e.deltaY}apply()},{passive:false});
+document.getElementById('container').addEventListener('mousedown',function(e){dragging=1;dx=e.clientX-panX;dy=e.clientY-panY});
+document.addEventListener('mousemove',function(e){if(!dragging)return;panX=e.clientX-dx;panY=e.clientY-dy;apply()});
+document.addEventListener('mouseup',function(){dragging=0});
 </script>
-</body>
-</html>
+</body></html>
