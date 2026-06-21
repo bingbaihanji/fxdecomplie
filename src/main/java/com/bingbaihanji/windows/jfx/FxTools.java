@@ -12,6 +12,7 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -44,8 +45,7 @@ public final class FxTools {
     /**
      * 获取指定 Stage 的 Win32 原生窗口句柄(HWND)
      *
-     * <p>通过 {@link WindowToolkit} 获取原生句柄，再由
-     * {@link NativeWindowsTools#getHWndByEnumeration(long)} 转换为 JNA HWND 对象
+     * <p>通过 {@link WindowToolkit} 获取原生句柄， 转换为 JNA HWND 对象
      * 非 Windows 平台或获取失败返回 null</p>
      *
      * @param stage JavaFX Stage
@@ -57,6 +57,8 @@ public final class FxTools {
                 .map(handle -> NativeWindowsTools.getHWndByEnumeration(handle.value()))
                 .orElse(null);
     }
+
+
 
     // ==================== 窗口居中 ====================
 

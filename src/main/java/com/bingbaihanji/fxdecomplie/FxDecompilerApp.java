@@ -2,17 +2,16 @@ package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
-import com.bingbaihanji.windows.platform.WindowAppearance;
-import com.bingbaihanji.windows.platform.WindowCornerPreference;
-import com.bingbaihanji.windows.jfx.WindowToolkit;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import com.bingbaihanji.windows.jfx.WindowToolkit;
+import com.bingbaihanji.windows.platform.WindowAppearance;
+import com.bingbaihanji.windows.platform.WindowCornerPreference;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

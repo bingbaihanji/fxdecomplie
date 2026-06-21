@@ -63,6 +63,12 @@ public final class WindowsWindowPlatformProvider implements WindowPlatformProvid
             if (appearance.borderColor() != null) {
                 results.add(NativeWindowsTools.setWindowBorderColor(hwnd, appearance.borderColor()));
             }
+            if (appearance.captionColor() != null) {
+                results.add(NativeWindowsTools.setWindowCaptionColor(hwnd, appearance.captionColor()));
+            }
+            if (appearance.textColor() != null) {
+                results.add(NativeWindowsTools.setWindowTextColor(hwnd, appearance.textColor()));
+            }
             if (appearance.frameMargins() != null) {
                 WindowAppearance.FrameMargins margins = appearance.frameMargins();
                 results.add(NativeWindowsTools.extendFrameIntoClientArea(

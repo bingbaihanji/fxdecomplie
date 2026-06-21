@@ -12,8 +12,15 @@ public record WindowAppearance(
         WindowBackdropType backdropType,
         WindowCornerPreference cornerPreference,
         Integer borderColor,
+        Integer captionColor,
+        Integer textColor,
         FrameMargins frameMargins
 ) {
+
+    /** 默认标题栏颜色（深墨绿 0x00514933，COLORREF 格式） */
+    public static final int DEFAULT_CAPTION_COLOR = 0x00514933;
+    /** 默认标题栏文字颜色（ #915CB9 ） */
+    public static final int DEFAULT_TEXT_COLOR = 0x00B95C91;
 
     /**
      * 创建 Builder 实例
@@ -25,7 +32,7 @@ public record WindowAppearance(
     /**
      * 创建适用于深色对话框的原生外观配置
      *
-     * @param borderColor      边框颜色(COLORREF 格式)
+     * @param borderColor      边框颜色（COLORREF 格式）
      * @param cornerPreference 圆角偏好
      * @return 预设的深色对话框外观
      */
@@ -36,6 +43,8 @@ public record WindowAppearance(
                 .backdropType(WindowBackdropType.TRANSIENT_WINDOW)
                 .cornerPreference(cornerPreference)
                 .borderColor(borderColor)
+                .captionColor(DEFAULT_CAPTION_COLOR)
+                .textColor(DEFAULT_TEXT_COLOR)
                 .extendFrameIntoClientArea()
                 .build();
     }
@@ -51,6 +60,8 @@ public record WindowAppearance(
                 || backdropType != null
                 || cornerPreference != null
                 || borderColor != null
+                || captionColor != null
+                || textColor != null
                 || frameMargins != null;
     }
 
@@ -59,7 +70,7 @@ public record WindowAppearance(
      */
     public record FrameMargins(int left, int right, int top, int bottom) {
         /**
-         * 创建全客户区扩展的边距(四边均为 -1)
+         * 创建全客户区扩展的边距（四边均为 -1）
          */
         public static FrameMargins fullClientArea() {
             return new FrameMargins(-1, -1, -1, -1);
@@ -75,6 +86,8 @@ public record WindowAppearance(
         private WindowBackdropType backdropType;
         private WindowCornerPreference cornerPreference;
         private Integer borderColor;
+        private Integer captionColor;
+        private Integer textColor;
         private FrameMargins frameMargins;
 
         private Builder() {
@@ -105,6 +118,18 @@ public record WindowAppearance(
             return this;
         }
 
+        /** 设置标题栏背景颜色（COLORREF 格式，需 Windows 11+） */
+        public Builder captionColor(int captionColor) {
+            this.captionColor = captionColor;
+            return this;
+        }
+
+        /** 设置标题栏文字颜色（COLORREF 格式，需 Windows 11+） */
+        public Builder textColor(int textColor) {
+            this.textColor = textColor;
+            return this;
+        }
+
         public Builder frameMargins(FrameMargins frameMargins) {
             this.frameMargins = frameMargins;
             return this;
@@ -125,6 +150,8 @@ public record WindowAppearance(
                     backdropType,
                     cornerPreference,
                     borderColor,
+                    captionColor,
+                    textColor,
                     frameMargins);
         }
     }

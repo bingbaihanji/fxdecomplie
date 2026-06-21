@@ -109,7 +109,7 @@ final class Win32WindowHandles {
             return null;
         }
         try {
-            long waitMillis = Math.max(50L, Math.min(500L, timeout.toMillis()));
+            long waitMillis = Math.clamp(timeout.toMillis(), 50L, 500L);
             return future.get(waitMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -123,11 +123,11 @@ final class Win32WindowHandles {
      * 通过反射从 JavaFX Stage 内部获取原生句柄
      * 不同 JavaFX 版本内部实现可能不同，标题枚举为备用方案
      */
-    private static WinDef.HWND findByReflection(Stage stage) {
+    public static WinDef.HWND findByReflection(Window window) {
         try {
             Class<?> stageHelperClass = Class.forName("com.sun.javafx.stage.StageHelper");
-            Method getPeerMethod = stageHelperClass.getMethod("getPeer", Window.class);
-            Object peer = getPeerMethod.invoke(null, stage);
+            Method getPeer = stageHelperClass.getMethod("getPeer", Window.class);
+            Object peer = getPeer.invoke(null, window);
             if (peer == null) {
                 return null;
             }
@@ -145,13 +145,15 @@ final class Win32WindowHandles {
         return null;
     }
 
+
+
     /**
-     * 通过枚举当前进程所有窗口标题来查找匹配的窗口句柄
+     * 通过枚举当前进程所有窗口标题来查找匹配的窗口句柄。
+     *
+     * <p>当标题为空时返回当前进程的第一个可见顶级窗口，适用于未设置标题的 Stage。</p>
      */
     private static WinDef.HWND findByCurrentProcessTitle(String title) {
-        if (title == null || title.isBlank()) {
-            return null;
-        }
+        boolean matchAny = title == null || title.isBlank();
         int currentPid = Win32Api.Kernel32Api.INSTANCE.GetCurrentProcessId();
         AtomicReference<WinDef.HWND> match = new AtomicReference<>();
         User32.INSTANCE.EnumWindows((hwnd, data) -> {
@@ -163,11 +165,16 @@ final class Win32WindowHandles {
             if (windowPid.getValue() != currentPid) {
                 return true;
             }
+            if (matchAny) {
+                // 标题为空时返回第一个可见的当前进程窗口
+                match.set(hwnd);
+                return false;
+            }
             char[] buffer = new char[512];
             User32.INSTANCE.GetWindowText(hwnd, buffer, buffer.length);
             if (title.equals(trimNullTerminated(buffer))) {
                 match.set(hwnd);
-                return false; // 停止枚举
+                return false;
             }
             return true;
         }, null);

@@ -72,6 +72,7 @@ public final class WindowToolkit {
         return nativeHandle(stage, DEFAULT_HANDLE_TIMEOUT);
     }
 
+
     /**
      * 获取指定 Stage 的原生窗口句柄，支持自定义超时时间
      *
