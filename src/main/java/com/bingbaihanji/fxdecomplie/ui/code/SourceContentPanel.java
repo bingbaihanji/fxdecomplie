@@ -70,7 +70,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         LineNumberGutter.setEnabled(codeArea, lineNumbersEnabled && !large);
         codeArea.setFont(loadFont());
         codeArea.setText(src == null ? "" : src);
-        cachedLineCount = src != null ? (int) src.chars().filter(ch -> ch == '\n').count() + 1 : 1;
+        cachedLineCount = -1;
 
         if (!large) {
             codeArea.setSyntaxDecorator(new RegexHighlighter(theme));
@@ -141,7 +141,12 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     }
 
     @Override
-    protected Node buildContentAsync(Object cancelToken) {
+    protected Object buildContentAsync(Object cancelToken) {
+        return codeArea;
+    }
+
+    @Override
+    protected Node createContent(Object contentData) {
         return codeArea;
     }
 

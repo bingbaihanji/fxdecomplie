@@ -58,17 +58,15 @@ public class CodeAreaContextMenu extends ContextMenu {
                 && !context.metadata().isEmpty();
         boolean hasBytes = context != null && context.classBytes() != null
                 && context.classBytes().length > 0;
-        boolean hasIndex = context != null && context.workspace() != null
-                && context.workspace().isIndexReady();
 
-        gotoDeclarationItem.setDisable(!hasMeta && !hasIndex);
-        inheritanceGraphItem.setDisable(!hasBytes || !hasIndex);
+        gotoDeclarationItem.setDisable(!hasMeta);
+        inheritanceGraphItem.setDisable(!hasBytes);
         methodGraphItem.setDisable(!hasBytes);
         addCommentItem.setDisable(codeArea == null);
     }
 
     private void onGotoDeclaration() {
-        if (actionHandler == null || context == null) return;
+        if (actionHandler == null || context == null || context.metadata() == null) return;
         int line = getCaretLine();
         var refs = context.metadata().getRefsAtLine(line);
         if (!refs.isEmpty()) {

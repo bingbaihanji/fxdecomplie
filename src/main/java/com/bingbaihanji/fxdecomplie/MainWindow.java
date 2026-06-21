@@ -315,6 +315,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             showWarning(I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.nofile"));
             return;
         }
+        if (!codeTab.isSourceReady()) {
+            showWarning(I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.pending"));
+            return;
+        }
 
         FileChooser chooser = new FileChooser();
         chooser.setTitle(I18nUtil.getString("dialog.saveFile.title"));
@@ -599,12 +603,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (reference == null || reference.targetClass() == null) return;
         WorkspaceView view = tabManager.currentWorkspaceView();
         if (view == null) return;
-        FileTreeNode node = view.workspace().findNodeByPath(reference.targetClass());
+        String targetPath = reference.targetClass().replace('.', '/') + ".class";
+        FileTreeNode node = view.workspace().findNodeByPath(targetPath);
         if (node != null) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
                     currentEngine, lineNumbersEnabled);
         } else {
-            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", reference.targetClass()));
+            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", targetPath));
         }
     }
 
@@ -623,26 +628,55 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     public void showInheritanceGraph(CodeViewContext context) {
         if (context == null) return;
         String fullPath = context.classInternalName();
-        var tree = InheritanceService.buildTree(fullPath, context.workspaceIndex());
-        if (tree == null) {
-            statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
-            return;
-        }
-        String dot = GraphService.toInheritanceDOT(tree);
-        GraphDialog.show(stage, I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath, dot);
+        withWorkspaceIndex(context.workspace(), index -> {
+            statusBar.setTask(I18nUtil.getString("task.loading"));
+            BackgroundTasks.run("InheritanceGraph-" + fullPath, () -> {
+                try {
+                    var tree = InheritanceService.buildTree(fullPath, index);
+                    if (tree == null) {
+                        Platform.runLater(this::showGraphFailed);
+                        return;
+                    }
+                    String dot = GraphService.toInheritanceDOT(tree);
+                    Platform.runLater(() -> {
+                        statusBar.clearTask();
+                        GraphDialog.show(stage, I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath, dot);
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(this::showGraphFailed);
+                }
+            });
+        });
     }
 
     @Override
     public void showMethodGraph(CodeViewContext context) {
         if (context == null) return;
-        var graph = GraphService.parseMethodCalls(context.classBytes());
-        if (graph.methods().isEmpty()) {
-            statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
-            return;
-        }
-        String dot = GraphService.toMethodDOT(graph);
-        GraphDialog.show(stage, I18nUtil.getString("context.methodGraph") + " - "
-                + context.classInternalName(), dot);
+        String fullPath = context.classInternalName();
+        byte[] classBytes = context.classBytes() == null ? null : context.classBytes().clone();
+        statusBar.setTask(I18nUtil.getString("task.loading"));
+        BackgroundTasks.run("MethodGraph-" + fullPath, () -> {
+            try {
+                var graph = GraphService.parseMethodCalls(classBytes);
+                if (graph.methods().isEmpty()) {
+                    Platform.runLater(this::showGraphFailed);
+                    return;
+                }
+                String dot = GraphService.toMethodDOT(graph);
+                Platform.runLater(() -> {
+                    statusBar.clearTask();
+                    GraphDialog.show(stage, I18nUtil.getString("context.methodGraph") + " - "
+                            + fullPath, dot);
+                });
+            } catch (Exception e) {
+                Platform.runLater(this::showGraphFailed);
+            }
+        });
+    }
+
+    private void showGraphFailed() {
+        statusBar.clearTask();
+        statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
     }
 
     @Override
@@ -733,7 +767,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
         for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
             if (tab instanceof CodeEditorTab codeTab
-                    && codeTab.getOpenFile().engine() == currentEngine) {
+                    && codeTab.getOpenFile().engine() == currentEngine
+                    && codeTab.isSourceReady()) {
                 sourceCache.put(codeTab.getOpenFile().fullPath(),
                         codeTab.getOpenFile().sourceCode());
             }
@@ -825,6 +860,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (currentTab == null) {
             showWarning(I18nUtil.getString("dialog.warning.title"),
                     I18nUtil.getString("dialog.needOpenFile"));
+            return;
+        }
+        if (!currentTab.isSourceReady()) {
+            showWarning(I18nUtil.getString("dialog.warning.title"),
+                    I18nUtil.getString("dialog.save.pending"));
             return;
         }
         CodeOnlyWindow.openFrom(currentTab, config, stage);

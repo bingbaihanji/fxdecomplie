@@ -207,6 +207,22 @@ public final class WorkspaceTabManager {
         return menu;
     }
 
+    private static void openTreeItem(TreeItem<FileTreeNode> item, Workspace workspace,
+                                     TabPane codeTabPane, NavigationService navigationService,
+                                     BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                     BiConsumer<FileTreeNode, TabPane> onTextFileClick) {
+        if (item == null) return;
+        FileTreeNode node = item.getValue();
+        if (node == null) return;
+        if (node.isClassFile()) {
+            navigationService.openPath(navigationService.classPath(workspace, node),
+                    workspace, codeTabPane, onClassClick, onTextFileClick);
+        } else if (node.isTextFile()) {
+            navigationService.openPath(navigationService.resourcePath(workspace, node),
+                    workspace, codeTabPane, onClassClick, onTextFileClick);
+        }
+    }
+
     private static void copyToClipboard(String value) {
         ClipboardContent content = new ClipboardContent();
         content.putString(value == null ? "" : value);
@@ -391,17 +407,17 @@ public final class WorkspaceTabManager {
         });
 
         treeView.setOnMouseClicked(e -> {
+            if (e.getClickCount() != 2) {
+                return;
+            }
             TreeItem<FileTreeNode> item = treeView.getSelectionModel().getSelectedItem();
-            if (item == null) return;
-            FileTreeNode node = item.getValue();
-            if (node != null) {
-                if (node.isClassFile()) {
-                    navigationService.openPath(navigationService.classPath(workspace, node),
-                            workspace, codeTabPane, onClassClick, onTextFileClick);
-                } else if (node.isTextFile()) {
-                    navigationService.openPath(navigationService.resourcePath(workspace, node),
-                            workspace, codeTabPane, onClassClick, onTextFileClick);
-                }
+            openTreeItem(item, workspace, codeTabPane, navigationService, onClassClick, onTextFileClick);
+        });
+        treeView.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                TreeItem<FileTreeNode> item = treeView.getSelectionModel().getSelectedItem();
+                openTreeItem(item, workspace, codeTabPane, navigationService, onClassClick, onTextFileClick);
+                e.consume();
             }
         });
         installTreeContextMenu(treeView, workspace, codeTabPane, navigationService,
@@ -445,39 +461,17 @@ public final class WorkspaceTabManager {
             if (newTab instanceof CodeEditorTab codeTab) {
                 outlinePane.update(codeTab.getOpenFile().sourceCode());
                 String selectedPath = codeTab.getOpenFile().fullPath();
-                if (workspace.isIndexReady()) {
-                    inheritancePane.load(selectedPath, workspace.getIndex());
-                } else if (workspace.isIndexBuildStarted()) {
-                    inheritancePane.showIndexing();
-                    workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
-                        if (error != null) {
-                            inheritancePane.showUnavailable();
-                            return;
-                        }
-                        Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
-                        if (selected instanceof CodeEditorTab selectedCodeTab
-                                && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
-                            inheritancePane.load(selectedPath, index);
-                        }
-                    }));
-                } else {
-                    WorkspaceIndexService.ensureIndexingStarted(workspace);
-                    inheritancePane.showIndexing();
-                    workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
-                        if (error != null) {
-                            inheritancePane.showUnavailable();
-                            return;
-                        }
-                        Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
-                        if (selected instanceof CodeEditorTab selectedCodeTab
-                                && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
-                            inheritancePane.load(selectedPath, index);
-                        }
-                    }));
-                }
+                boolean inheritanceSelected = sideTabPane.getSelectionModel().getSelectedItem() == inheritTab;
+                refreshInheritancePane(workspace, codeTabPane, inheritancePane, selectedPath, inheritanceSelected);
             } else {
                 outlinePane.clear();
                 inheritancePane.clear();
+            }
+        });
+
+        sideTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+            if (newTab == inheritTab) {
+                refreshInheritanceForCurrentSelection(workspace, codeTabPane, inheritancePane, true);
             }
         });
 
@@ -514,6 +508,51 @@ public final class WorkspaceTabManager {
         outerTabPane.getSelectionModel().select(tab);
         statusBar.setFilePath(workspace.getSourceFile().getAbsolutePath());
         statusBar.setEngine(currentEngineName);
+    }
+
+    private static void refreshInheritanceForCurrentSelection(Workspace workspace, TabPane codeTabPane,
+                                                              InheritancePane inheritancePane,
+                                                              boolean startIndexIfNeeded) {
+        Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
+        if (selected instanceof CodeEditorTab codeTab) {
+            refreshInheritancePane(workspace, codeTabPane, inheritancePane,
+                    codeTab.getOpenFile().fullPath(), startIndexIfNeeded);
+        } else {
+            inheritancePane.clear();
+        }
+    }
+
+    private static void refreshInheritancePane(Workspace workspace, TabPane codeTabPane,
+                                               InheritancePane inheritancePane,
+                                               String selectedPath,
+                                               boolean startIndexIfNeeded) {
+        if (workspace == null || inheritancePane == null || selectedPath == null || selectedPath.isBlank()) {
+            return;
+        }
+        if (workspace.isIndexReady()) {
+            inheritancePane.load(selectedPath, workspace.getIndex());
+            return;
+        }
+        if (!startIndexIfNeeded) {
+            inheritancePane.showIndexPending();
+            return;
+        }
+
+        inheritancePane.showIndexing();
+        if (!workspace.isIndexBuildStarted()) {
+            WorkspaceIndexService.ensureIndexingStarted(workspace);
+        }
+        workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
+            if (error != null) {
+                inheritancePane.showUnavailable();
+                return;
+            }
+            Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
+            if (selected instanceof CodeEditorTab selectedCodeTab
+                    && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
+                inheritancePane.load(selectedPath, index);
+            }
+        }));
     }
 
     /** 关闭指定标签页 */

@@ -10,6 +10,7 @@ import javafx.scene.control.Tab;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -21,25 +22,31 @@ import java.util.function.Consumer;
 public class CodeEditorTab extends Tab {
 
     /** Java 源码编辑器（兼容引用） */
-    private final CodeArea codeArea;
+    private CodeArea codeArea;
     /** 代码视图面板 */
     private final CodeViewPanel codeViewPanel;
     /** 打开的文件 */
-    private final OpenFile openFile;
+    private OpenFile openFile;
     /** 标签页显示标题 */
     private final String displayTitle;
     /** 可拖拽的标签标题节点 */
     private final Label titleLabel;
     /** 默认字号 */
     private final int defaultFontSize;
+    private final VsCodeThemeLoader.ThemeData theme;
+    private final String fontFamily;
+    private final boolean wrapText;
+    private final boolean lineNumbersEnabled;
     /** Ctrl+Click 导航元数据 */
-    private final CodeMetadata metadata;
+    private CodeMetadata metadata;
     /** Ctrl+Click 导航回调(null 时禁用) */
-    private final Consumer<CodeMetadata.Reference> onNavigate;
+    private Consumer<CodeMetadata.Reference> onNavigate;
     /** 类文件原始字节码 */
     private final byte[] classBytes;
     /** 编辑器内搜索栏 */
     private final EditorSearchBar editorSearchBar;
+    /** 反编译源码是否已就绪 */
+    private boolean sourceReady = true;
 
     /** 简化构造器(使用默认主题和字体配置) */
     public CodeEditorTab(OpenFile openFile) {
@@ -62,22 +69,25 @@ public class CodeEditorTab extends Tab {
     public CodeEditorTab(OpenFile openFile, VsCodeThemeLoader.ThemeData theme, String fontFamily,
                          int fontSize, boolean wrapText, boolean lineNumbersEnabled, byte[] classBytes,
                          CodeMetadata metadata, Consumer<CodeMetadata.Reference> onNavigate) {
-        this.openFile = openFile;
+        this.openFile = Objects.requireNonNull(openFile, "openFile");
         this.displayTitle = openFile.className() + " [" + openFile.engine().name() + "]";
         this.defaultFontSize = fontSize;
+        this.theme = theme;
+        this.fontFamily = fontFamily;
+        this.wrapText = wrapText;
+        this.lineNumbersEnabled = lineNumbersEnabled;
         this.metadata = metadata != null ? metadata : new CodeMetadata(java.util.Map.of());
         this.onNavigate = onNavigate;
         this.classBytes = classBytes == null ? null : classBytes.clone();
 
         String source = openFile.sourceCode();
-        CodeViewPanel viewPanel = new CodeViewPanel(source, this.classBytes);
-        viewPanel.setDefaultFontSize(fontSize);
-        this.codeViewPanel = viewPanel;
-
         SourceContentPanel srcPanel = new SourceContentPanel(source, theme,
                 fontFamily, fontSize, wrapText, lineNumbersEnabled, this.metadata, onNavigate);
-        viewPanel.getLeftDeck().setSourcePanel(srcPanel);
+
+        CodeViewPanel viewPanel = new CodeViewPanel(source, this.classBytes, srcPanel);
+        viewPanel.setDefaultFontSize(fontSize);
         viewPanel.bindSearchBar();
+        this.codeViewPanel = viewPanel;
 
         this.codeArea = srcPanel.getCodeArea();
         this.editorSearchBar = viewPanel.getSearchBar();
@@ -110,6 +120,30 @@ public class CodeEditorTab extends Tab {
     /** @return 打开的文件元数据 */
     public OpenFile getOpenFile() {
         return openFile;
+    }
+
+    /** @return 反编译源码是否已可作为真实源码导出/传递 */
+    public boolean isSourceReady() {
+        return sourceReady;
+    }
+
+    /** 标记当前源码仍在后台反编译中 */
+    public void setSourceReady(boolean sourceReady) {
+        this.sourceReady = sourceReady;
+    }
+
+    /** 原地更新为真实反编译源码，保留当前代码标签和底部视图容器 */
+    public void updateDecompiledContent(OpenFile updatedOpenFile, CodeMetadata updatedMetadata,
+                                        Consumer<CodeMetadata.Reference> updatedOnNavigate) {
+        this.openFile = Objects.requireNonNull(updatedOpenFile, "updatedOpenFile");
+        this.metadata = updatedMetadata != null ? updatedMetadata : new CodeMetadata(java.util.Map.of());
+        this.onNavigate = updatedOnNavigate;
+        String source = updatedOpenFile.sourceCode();
+        SourceContentPanel srcPanel = new SourceContentPanel(source, theme,
+                fontFamily, defaultFontSize, wrapText, lineNumbersEnabled, this.metadata, this.onNavigate);
+        codeViewPanel.replaceSourcePanel(source, srcPanel);
+        codeArea = srcPanel.getCodeArea();
+        sourceReady = true;
     }
 
     /** @return 标签页显示标题 */

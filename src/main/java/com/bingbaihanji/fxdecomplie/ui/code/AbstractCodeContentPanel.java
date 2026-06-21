@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
 import javafx.application.Platform;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.StackPane;
@@ -11,8 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 代码内容面板抽象基类，统一四种视图（源码/Smali/字节码/简化）的生命周期
  *
- * <p>子类只需实现 {@link #buildContentAsync()} 生成内容并返回 Node，
- * 加载状态和错误处理由基类统一管理</p>
+ * <p>子类在后台线程中生成文本/数据，在 JavaFX 线程中创建实际节点，
+ * 避免在后台线程构造 JavaFX 控件导致随机卡顿或崩溃。</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -40,13 +39,21 @@ public abstract class AbstractCodeContentPanel extends StackPane {
     public abstract String getContentType();
 
     /**
-     * 在后台线程中构建内容
+     * 在后台线程中构建内容数据，不允许创建 JavaFX Node。
      *
      * @param cancelToken 取消令牌，构建过程中应周期性检查
-     * @return 渲染后的内容节点
+     * @return 内容数据
      * @throws Exception 构建失败时抛出
      */
-    protected abstract Node buildContentAsync(Object cancelToken) throws Exception;
+    protected abstract Object buildContentAsync(Object cancelToken) throws Exception;
+
+    /**
+     * 在 JavaFX 线程中将后台数据渲染为节点。
+     *
+     * @param contentData {@link #buildContentAsync(Object)} 的返回值
+     * @return 渲染节点
+     */
+    protected abstract javafx.scene.Node createContent(Object contentData);
 
     /** @return 是否已完成加载 */
     public boolean isLoaded() {
@@ -71,11 +78,12 @@ public abstract class AbstractCodeContentPanel extends StackPane {
         Thread.startVirtualThread(() -> {
             try {
                 if (isCancelled(token)) return;
-                Node content = buildContentAsync(token);
+                Object contentData = buildContentAsync(token);
                 if (isCancelled(token)) return;
                 Platform.runLater(() -> {
                     if (!isCancelled(token) && state.get() == STATE_LOADING) {
                         getChildren().clear();
+                        javafx.scene.Node content = createContent(contentData);
                         if (content != null) {
                             getChildren().add(content);
                         }

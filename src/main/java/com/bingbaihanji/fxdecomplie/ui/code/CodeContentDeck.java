@@ -38,6 +38,8 @@ public class CodeContentDeck extends VBox {
     private final ToggleGroup toggleGroup;
     private final AtomicInteger cancelGen = new AtomicInteger();
     private final AtomicInteger activeIndex = new AtomicInteger(TAB_CODE);
+    /** 防止 setSelected→action→selectTab 死循环 */
+    private boolean suppressAction;
 
     /** 源码内容提供回调，Simple 面板按需读取 */
     private volatile String sourceCode;
@@ -45,9 +47,14 @@ public class CodeContentDeck extends VBox {
     private final byte[] classBytes;
 
     public CodeContentDeck(String sourceCode, byte[] classBytes) {
+        this(sourceCode, classBytes, null);
+    }
+
+    public CodeContentDeck(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel) {
         this.sourceCode = sourceCode;
         this.classBytes = classBytes == null ? null : classBytes.clone();
         this.panels = new AbstractCodeContentPanel[4];
+        this.panels[TAB_CODE] = sourcePanel;
         this.buttons = new ToggleButton[4];
         this.toggleGroup = new ToggleGroup();
         this.contentArea = new StackPane();
@@ -86,6 +93,7 @@ public class CodeContentDeck extends VBox {
         btn.setMinWidth(60);
         btn.setMaxHeight(28);
         btn.setOnAction(e -> {
+            if (suppressAction) return;
             if (btn.isSelected()) {
                 selectTab(index);
             }
@@ -114,13 +122,15 @@ public class CodeContentDeck extends VBox {
             panel.loadAsync(token);
         }
 
+        suppressAction = true;
         buttons[index].setSelected(true);
+        suppressAction = false;
     }
 
     /** 按索引创建对应面板 */
     private AbstractCodeContentPanel createPanel(int index) {
         return switch (index) {
-            case TAB_CODE -> new SourceContentPanel(null); // 由外部 setSource 填充
+            case TAB_CODE -> new SourceContentPanel(sourceCode);
             case TAB_SMALI -> new SmaliContentPanel(classBytes);
             case TAB_BYTECODE -> new BytecodeContentPanel(classBytes);
             case TAB_SIMPLE -> new SimpleContentPanel(sourceCode);
@@ -145,6 +155,26 @@ public class CodeContentDeck extends VBox {
         }
     }
 
+    /**
+     * 替换源码面板并同步源码缓存。
+     *
+     * @param newSource 新源码
+     * @param panel     已按当前主题和导航元数据创建好的源码面板
+     */
+    public void replaceSourcePanel(String newSource, SourceContentPanel panel) {
+        if (panel == null) return;
+        AbstractCodeContentPanel oldSource = panels[TAB_CODE];
+        if (oldSource != null && oldSource != panel) {
+            oldSource.dispose();
+        }
+        this.sourceCode = newSource;
+        panels[TAB_CODE] = panel;
+        if (activeIndex.get() == TAB_CODE) {
+            contentArea.getChildren().setAll(panel);
+        }
+        resetSimplePanel();
+    }
+
     /** @return 源码面板中的 CodeArea（可能为 null） */
     public SourceContentPanel getSourcePanel() {
         return (SourceContentPanel) panels[TAB_CODE];
@@ -166,8 +196,17 @@ public class CodeContentDeck extends VBox {
         if (panels[TAB_CODE] instanceof SourceContentPanel sp) {
             sp.setSourceCode(newSource);
         }
+        resetSimplePanel();
+    }
+
+    private void resetSimplePanel() {
+        boolean simpleActive = activeIndex.get() == TAB_SIMPLE;
         if (panels[TAB_SIMPLE] != null) {
+            panels[TAB_SIMPLE].dispose();
             panels[TAB_SIMPLE] = null; // 下次切换时用新源码重建
+        }
+        if (simpleActive) {
+            selectTab(TAB_SIMPLE);
         }
     }
 
@@ -192,9 +231,7 @@ public class CodeContentDeck extends VBox {
 
     /** 程序化选中指定标签 */
     public void setSelected(int index) {
-        if (buttons[index] != null) {
-            buttons[index].setSelected(true);
-        }
+        selectTab(index);
     }
 
     /** 释放所有面板资源 */

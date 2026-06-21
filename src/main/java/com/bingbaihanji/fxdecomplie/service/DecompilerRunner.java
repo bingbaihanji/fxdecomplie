@@ -9,10 +9,7 @@ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
@@ -175,19 +172,16 @@ public final class DecompilerRunner {
         FileTreeNode node = workspace.findNodeByPath(normalized + ".class");
         if (node != null) {
             try {
-                return node.resolveBytes();
+                return WorkspaceByteReader.readNodeBytes(workspace, node, false);
             } catch (IOException e) {
                 logger.debug("解析依赖类失败: {}", normalized, e);
             }
         }
 
-        if (!workspace.isArchive()) {
-            try {
-                Path path = new File(workspace.getSourceFile(), normalized + ".class").toPath();
-                return Files.exists(path) ? Files.readAllBytes(path) : null;
-            } catch (IOException e) {
-                logger.debug("从磁盘读取依赖类失败: {}", normalized, e);
-            }
+        try {
+            return WorkspaceByteReader.readClassBytes(workspace, normalized, false);
+        } catch (IOException e) {
+            logger.debug("从工作区读取依赖类失败: {}", normalized, e);
         }
         return null;
     }

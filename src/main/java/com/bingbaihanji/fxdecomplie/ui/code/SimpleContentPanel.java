@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import javafx.scene.Node;
 import jfx.incubator.scene.control.richtext.CodeArea;
 
 /**
@@ -26,12 +25,16 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
     }
 
     @Override
-    protected Node buildContentAsync(Object cancelToken) {
-        String simplified = simplify(sourceCode == null ? "" : sourceCode);
+    protected Object buildContentAsync(Object cancelToken) {
+        return simplify(sourceCode == null ? "" : sourceCode);
+    }
+
+    @Override
+    protected javafx.scene.Node createContent(Object contentData) {
         CodeArea area = new CodeArea();
         area.getStyleClass().add("code-editor");
         area.setEditable(false);
-        area.setText(simplified);
+        area.setText(contentData == null ? "" : contentData.toString());
         this.codeArea = area;
         return area;
     }

@@ -36,6 +36,8 @@ public class MainToolBar extends ToolBar {
     private final Button localizerBtn;
     private final Button searchBtn;
 
+    /** 当前是否有打开的工作区 */
+    private boolean hasWorkspace;
     /** 当前是否有代码标签打开 */
     private boolean hasCodeTab;
 
@@ -61,6 +63,7 @@ public class MainToolBar extends ToolBar {
      * @param hasCodeTab   是否有当前代码编辑器标签
      */
     public void refreshState(boolean hasWorkspace, boolean hasCodeTab) {
+        this.hasWorkspace = hasWorkspace;
         this.hasCodeTab = hasCodeTab;
         openBtn.setDisable(false);
         reloadBtn.setDisable(!hasCodeTab);
@@ -80,9 +83,7 @@ public class MainToolBar extends ToolBar {
             try {
                 action.run();
             } finally {
-                boolean hadWorkspace = !searchBtn.isDisabled();
-                boolean hadCodeTab = MainToolBar.this.hasCodeTab;
-                refreshState(hadWorkspace, hadCodeTab);
+                refreshState(MainToolBar.this.hasWorkspace, MainToolBar.this.hasCodeTab);
             }
         });
         return btn;

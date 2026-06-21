@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
-import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.Priority;
@@ -29,8 +28,12 @@ public class CodeViewPanel extends VBox {
     private int defaultFontSize = 14;
 
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
+        this(sourceCode, classBytes, null);
+    }
+
+    public CodeViewPanel(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel) {
         this.classBytes = classBytes == null ? null : classBytes.clone();
-        this.leftDeck = new CodeContentDeck(sourceCode, classBytes);
+        this.leftDeck = new CodeContentDeck(sourceCode, classBytes, sourcePanel);
         this.searchBar = new EditorSearchBar(leftDeck.getSourcePanel() != null
                 ? leftDeck.getSourcePanel().getCodeArea() : null);
         this.viewContainer = new StackPane();
@@ -142,6 +145,18 @@ public class CodeViewPanel extends VBox {
     /** 用新反编译源码更新视图 */
     public void refreshWithNewSource(String newSource) {
         leftDeck.updateSource(newSource);
+        if (rightDeck != null) {
+            rightDeck.updateSource(newSource);
+        }
+        bindSearchBar();
+    }
+
+    /** 用带完整主题和导航元数据的新源码面板替换 Code 视图 */
+    public void replaceSourcePanel(String newSource, SourceContentPanel sourcePanel) {
+        leftDeck.replaceSourcePanel(newSource, sourcePanel);
+        if (rightDeck != null) {
+            rightDeck.updateSource(newSource);
+        }
         bindSearchBar();
     }
 

@@ -1,6 +1,8 @@
 package com.bingbaihanji.fxdecomplie.ui.outline;
 
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -14,6 +16,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 大纲面板显示当前类的字段、方法、内部类列表,支持实时过滤和点击跳转
@@ -27,6 +30,7 @@ public final class OutlinePane extends VBox {
     private final ListView<OutlineMember> listView;
     private final ObservableList<OutlineMember> sourceList;
     private final FilteredList<OutlineMember> filteredList;
+    private final AtomicLong updateGeneration = new AtomicLong();
     private JumpHandler jumpHandler;
 
     public OutlinePane() {
@@ -90,13 +94,22 @@ public final class OutlinePane extends VBox {
 
     /** 更新大纲内容 */
     public void update(String sourceCode) {
-        List<OutlineMember> members = OutlineParser.parse(sourceCode);
-        sourceList.setAll(members);
+        long generation = updateGeneration.incrementAndGet();
+        sourceList.clear();
         filterField.clear();
+        BackgroundTasks.run("OutlineParse", () -> {
+            List<OutlineMember> members = OutlineParser.parse(sourceCode);
+            Platform.runLater(() -> {
+                if (updateGeneration.get() == generation) {
+                    sourceList.setAll(members);
+                }
+            });
+        });
     }
 
     /** 清空 */
     public void clear() {
+        updateGeneration.incrementAndGet();
         sourceList.clear();
         filterField.clear();
     }

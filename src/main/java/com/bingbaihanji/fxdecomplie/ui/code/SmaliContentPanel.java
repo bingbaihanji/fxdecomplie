@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import javafx.scene.Node;
+import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.Textifier;
@@ -33,27 +33,33 @@ public class SmaliContentPanel extends AbstractCodeContentPanel {
     }
 
     @Override
-    protected Node buildContentAsync(Object cancelToken) throws Exception {
+    protected Object buildContentAsync(Object cancelToken) throws Exception {
         if (classBytes == null || classBytes.length == 0) {
-            CodeArea empty = new CodeArea();
-            empty.setText("// 无字节码数据");
-            empty.setEditable(false);
-            this.codeArea = empty;
-            return empty;
+            return "// 无字节码数据";
         }
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        Textifier textifier = new Textifier();
-        TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
-        ClassReader reader = new ClassReader(classBytes);
-        reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-        pw.flush();
+        try {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            Textifier textifier = new Textifier();
+            TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
+            ClassReader reader = new ClassReader(classBytes);
+            reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            pw.flush();
+            return sw.toString();
+        } catch (Exception e) {
+            return "// JVM 指令视图解析失败: " + e.getMessage()
+                    + System.lineSeparator() + System.lineSeparator()
+                    + ClassFileParser.summary(classBytes);
+        }
+    }
 
+    @Override
+    protected javafx.scene.Node createContent(Object contentData) {
         CodeArea area = new CodeArea();
         area.getStyleClass().add("code-editor");
         area.setEditable(false);
-        area.setText(sw.toString());
+        area.setText(contentData == null ? "" : contentData.toString());
         this.codeArea = area;
         return area;
     }

@@ -88,6 +88,9 @@ public final class CodeOnlyWindow {
     }
 
     private static void startCodeTabDrag(Node source, CodeEditorTab tab) {
+        if (!tab.isSourceReady()) {
+            return;
+        }
         var dragboard = source.startDragAndDrop(TransferMode.MOVE);
         String token = UUID.randomUUID().toString();
         DRAG_PAYLOADS.put(token, toPayload(tab));
