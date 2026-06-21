@@ -1,6 +1,9 @@
 autoDeleteData: false
 autoDetectedPackages:
 - com.bingbaihanji.fxdecomplie
+- com.bingbaihanji.javafx
+- com.bingbaihanji.windows.jfx
+- com.bingbaihanji.windows.platform
 autoKeepDataNum: 10
 enableAutoDetect: true
 entryDisplayConfig:

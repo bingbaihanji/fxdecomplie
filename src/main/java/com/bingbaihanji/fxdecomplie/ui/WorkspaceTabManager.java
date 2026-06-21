@@ -779,6 +779,67 @@ public final class WorkspaceTabManager {
         item.getChildren().forEach(this::collapse);
     }
 
+    /**
+     * 在文件树中递归查找并选中有指定完整路径的节点
+     *
+     * @param fullPath 目标文件完整内部路径
+     * @return 找到并选中返回 true，否则 false
+     */
+    public boolean selectTreeNodeByPath(String fullPath) {
+        if (fullPath == null || fullPath.isBlank()) {
+            return false;
+        }
+        String normalized = fullPath.replace('\\', '/');
+        Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            return false;
+        }
+        WorkspaceView view = workspaceViews.get(selected);
+        if (view == null || view.treeView() == null) {
+            return false;
+        }
+        FileTreeView treeView = view.treeView();
+        TreeItem<FileTreeNode> root = treeView.getRoot();
+        if (root == null) {
+            return false;
+        }
+        TreeItem<FileTreeNode> found = findTreeItemByPath(root, normalized);
+        if (found != null) {
+            // 展开所有父节点
+            TreeItem<FileTreeNode> parent = found.getParent();
+            while (parent != null) {
+                parent.setExpanded(true);
+                parent = parent.getParent();
+            }
+            treeView.getSelectionModel().select(found);
+            int row = treeView.getRow(found);
+            if (row >= 0) {
+                treeView.scrollTo(row);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /** 深度优先递归查找具有指定完整路径的树节点 */
+    private static TreeItem<FileTreeNode> findTreeItemByPath(
+            TreeItem<FileTreeNode> parent, String fullPath) {
+        if (parent == null || fullPath == null) {
+            return null;
+        }
+        FileTreeNode node = parent.getValue();
+        if (node != null && fullPath.equals(node.getFullPath())) {
+            return parent;
+        }
+        for (TreeItem<FileTreeNode> child : parent.getChildren()) {
+            TreeItem<FileTreeNode> found = findTreeItemByPath(child, fullPath);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
     private enum ToolTab {
         OUTLINE,
         INHERITANCE

@@ -26,7 +26,7 @@ public final class EditorSearchBar extends HBox {
     private final Button prevBtn;
     private final Button nextBtn;
     private final Button closeBtn;
-    private final CodeArea codeArea;
+    private CodeArea codeArea;
     private final List<Integer> matchPositions = new ArrayList<>();
     private int currentMatch = -1;
 
@@ -70,6 +70,14 @@ public final class EditorSearchBar extends HBox {
         if (!input.getText().isEmpty()) {
             input.selectAll();
             performSearch();
+        }
+    }
+
+    /** 重新绑定到新的 CodeArea（源码刷新时调用） */
+    public void rebind(CodeArea newArea) {
+        if (newArea != null) {
+            this.codeArea = newArea;
+            hide();
         }
     }
 

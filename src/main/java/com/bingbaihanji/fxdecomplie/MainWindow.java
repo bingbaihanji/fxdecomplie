@@ -11,6 +11,7 @@ import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
 import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
 import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
 import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
@@ -75,6 +76,8 @@ public class MainWindow implements MainMenuBar.Actions {
     private DecompilerTypeEnum currentEngine = DecompilerTypeEnum.VINEFLOWER;
     /** 是否显示行号 */
     private boolean lineNumbersEnabled;
+    /** 工具栏 */
+    private MainToolBar toolBar;
 
     public MainWindow(AppConfig config) {
         this(config, false, null);
@@ -122,10 +125,14 @@ public class MainWindow implements MainMenuBar.Actions {
         tabManager.showWelcomeTabIfEmpty();
 
         outerTabPane.getSelectionModel().selectedItemProperty().addListener(
-                (obs, oldTab, newTab) -> tabManager.updateStatusForWorkspace(newTab)
+                (obs, oldTab, newTab) -> {
+                    tabManager.updateStatusForWorkspace(newTab);
+                    refreshToolbarState();
+                }
         );
 
         MainMenuBar menuBar = new MainMenuBar(this, currentEngine);
+        toolBar = new MainToolBar(this, this);
         VBox topBars = new VBox();
         topBars.setOpacity(0.5);
         if (useHeaderBar) {
@@ -133,6 +140,7 @@ public class MainWindow implements MainMenuBar.Actions {
         } else {
             topBars.getChildren().add(menuBar);
         }
+        topBars.getChildren().add(toolBar);
         BorderPane root = new BorderPane();
         root.getStyleClass().add("app-root");
 
@@ -165,6 +173,15 @@ public class MainWindow implements MainMenuBar.Actions {
         stage.setTitle("FxDecompiler");
         stage.setScene(scene);
         stage.show();
+    }
+
+    /** 刷新工具栏按钮状态 */
+    private void refreshToolbarState() {
+        if (toolBar != null) {
+            boolean hasWorkspace = tabManager != null && tabManager.currentWorkspaceView() != null;
+            boolean hasCodeTab = tabManager != null && tabManager.currentCodeTab() != null;
+            toolBar.refreshState(hasWorkspace, hasCodeTab);
+        }
     }
 
     /** 打开 JAR/ZIP/Class 文件 */
@@ -536,6 +553,36 @@ public class MainWindow implements MainMenuBar.Actions {
             classTabOpener.cancelCurrentTask();
             classTabOpener.refreshCurrentClassTab(
                     view.workspace(), view.codeTabPane(), currentTab, engine, lineNumbersEnabled);
+        }
+    }
+
+    /** 用当前引擎重新反编译当前类 */
+    @Override
+    public void refreshCurrentTab() {
+        WorkspaceView view = tabManager.currentWorkspaceView();
+        CodeEditorTab currentTab = tabManager.currentCodeTab();
+        if (view == null || currentTab == null) {
+            statusBar.setFilePath(I18nUtil.getString("toolbar.reload.disabled"));
+            return;
+        }
+        classTabOpener.cancelCurrentTask();
+        classTabOpener.refreshCurrentClassTab(
+                view.workspace(), view.codeTabPane(), currentTab, currentEngine, lineNumbersEnabled);
+        statusBar.setFilePath(I18nUtil.getString("status.reloading", currentTab.getOpenFile().fullPath()));
+    }
+
+    /** 在文件树中定位当前打开的类文件 */
+    @Override
+    public void locateCurrentFileInTree() {
+        CodeEditorTab currentTab = tabManager.currentCodeTab();
+        if (currentTab == null) {
+            statusBar.setFilePath(I18nUtil.getString("toolbar.reload.disabled"));
+            return;
+        }
+        String fullPath = currentTab.getOpenFile().fullPath();
+        boolean found = tabManager.selectTreeNodeByPath(fullPath);
+        if (!found) {
+            statusBar.setFilePath(I18nUtil.getString("toolbar.localizer.failed"));
         }
     }
 
@@ -922,6 +969,7 @@ public class MainWindow implements MainMenuBar.Actions {
                             this::exportTreeItem,
                             node -> openFindUsagesForNode(workspace, node),
                             this::openSearchForPackage);
+                    refreshToolbarState();
                 },
                 errorMsg -> {
                     statusBar.clearTask();
