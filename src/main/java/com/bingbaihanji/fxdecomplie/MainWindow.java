@@ -141,7 +141,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         MainMenuBar menuBar = new MainMenuBar(this, currentEngine);
         toolBar = new MainToolBar(this, this);
         VBox topBars = new VBox();
-        topBars.setOpacity(0.5);
         if (useHeaderBar) {
             topBars.getChildren().add(AppHeaderBar.create(stage, "FxDecompiler", menuBar));
         } else {
