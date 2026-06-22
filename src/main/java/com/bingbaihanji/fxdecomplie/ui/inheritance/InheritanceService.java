@@ -7,45 +7,66 @@ import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 /**
- * 类继承关系分析服务使用 ASM 读取常量池中的 super_class 和 interfaces
- *
- * @author bingbaihanji
- * @date 2026-06-17
+ * 类继承关系分析服务，使用轻量 class 文件解析读取 super_class 和 interfaces。
  */
 public final class InheritanceService {
 
     private static final Logger logger = LoggerFactory.getLogger(InheritanceService.class);
 
     private static final int MAX_DEPTH = 20;
+    private static final int MAX_SUBCLASSES = 200;
+    private static final long SUBCLASS_TIMEOUT_MS = 3000;
 
     private InheritanceService() {
         throw new AssertionError("utility class");
     }
 
     /**
-     * 构建继承树
-     * @param fullPath 目标类全路径(如 "com/example/MyClass.class")
-     * @return 继承树根节点,失败返回 null
+     * 构建继承树。
+     *
+     * @param fullPath 目标类全路径，如 "com/example/MyClass.class"
+     * @return 继承树根节点，失败返回 null
      */
     public static TreeItem<InheritanceNode> buildTree(String fullPath) {
         return buildTree(fullPath, null);
     }
 
     /**
-     * 构建继承树
-     * @param fullPath 目标类全路径(如 "com/example/MyClass.class")
-     * @param index 当前工作区索引,优先用于读取字节码
-     * @return 继承树根节点,失败返回 null
+     * 构建继承树。
+     *
+     * @param fullPath 目标类全路径，如 "com/example/MyClass.class"
+     * @param index 当前工作区索引，优先用于读取字节码
+     * @return 继承树根节点，失败返回 null
      */
     public static TreeItem<InheritanceNode> buildTree(String fullPath, WorkspaceIndex index) {
+        return buildTree(fullPath, index, null);
+    }
+
+    /**
+     * 构建继承树。rootBytes 用于当前打开 class 的即时构图，避免为了一个弹窗等待完整工作区索引。
+     *
+     * @param fullPath 目标类全路径，如 "com/example/MyClass.class"
+     * @param index 当前工作区索引，可为空；有索引时补充父类链和完整子类树
+     * @param rootBytes 当前目标类字节码，优先于 index 读取
+     * @return 继承树根节点，失败返回 null
+     */
+    public static TreeItem<InheritanceNode> buildTree(String fullPath, WorkspaceIndex index,
+                                                      byte[] rootBytes) {
         Set<String> visited = new HashSet<>();
         String internalName = toInternal(fullPath);
-        byte[] bytes = getBytes(index, internalName);
+        WorkspaceIndex usableIndex = index == WorkspaceIndex.EMPTY ? null : index;
+        byte[] bytes = rootBytes == null || rootBytes.length == 0
+                ? getBytes(usableIndex, internalName)
+                : rootBytes.clone();
         if (bytes == null) {
             return null;
         }
@@ -60,8 +81,8 @@ public final class InheritanceService {
         if (metadata.isPresent()) {
             ClassFileMetadata meta = metadata.get();
             String superName = meta.superName();
-            if (superName != null && !"java/lang/Object".equals(superName)) {
-                buildSuperChain(superName, root, 1, visited, index);
+            if (superName != null) {
+                buildSuperChain(superName, root, 1, visited, usableIndex);
             }
             for (String itf : meta.interfaces()) {
                 TreeItem<InheritanceNode> ifNode = new TreeItem<>(
@@ -70,21 +91,18 @@ public final class InheritanceService {
                 root.getChildren().add(ifNode);
             }
         } else {
-            logger.warn("解析类元数据用于继承树失败：{}", fullPath);
+            logger.warn("解析类元数据用于继承树失败: {}", fullPath);
         }
 
-        findSubClasses(internalName, root, visited, index);
+        appendSubClassTree(internalName, root, visited, usableIndex);
         return root;
     }
 
     private static void buildSuperChain(String internalName, TreeItem<InheritanceNode> parent,
-                                        int depth, Set<String> visited) {
-        buildSuperChain(internalName, parent, depth, visited, null);
-    }
-
-    private static void buildSuperChain(String internalName, TreeItem<InheritanceNode> parent,
                                         int depth, Set<String> visited, WorkspaceIndex index) {
-        if (depth > MAX_DEPTH || visited.contains(internalName)) return;
+        if (depth > MAX_DEPTH || visited.contains(internalName)) {
+            return;
+        }
         visited.add(internalName);
 
         InheritanceNode data = new InheritanceNode(internalName, simpleName(internalName),
@@ -92,66 +110,67 @@ public final class InheritanceService {
         TreeItem<InheritanceNode> node = new TreeItem<>(data);
         parent.getChildren().add(0, node);
 
+        if ("java/lang/Object".equals(internalName)) {
+            return;
+        }
+
         byte[] bytes = getBytes(index, internalName);
-        if (bytes != null) {
-            Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
-            if (metadata.isPresent()) {
-                ClassFileMetadata meta = metadata.get();
-                String superName = meta.superName();
-                if (superName != null && !"java/lang/Object".equals(superName)) {
-                    buildSuperChain(superName, node, depth + 1, visited, index);
-                }
-                for (String itf : meta.interfaces()) {
-                    TreeItem<InheritanceNode> ifNode = new TreeItem<>(
-                            new InheritanceNode(itf, simpleName(itf),
-                                    InheritanceNode.RelationType.INTERFACE, depth + 1));
-                    node.getChildren().add(ifNode);
-                }
-            } else {
-                logger.warn("解析类元数据用于继承树失败：{}", internalName);
-            }
+        if (bytes == null) {
+            return;
         }
-    }
 
-    private static void findSubClasses(String targetName, TreeItem<InheritanceNode> root,
-                                       Set<String> visited) {
-        findSubClasses(targetName, root, visited, null);
-    }
-
-    private static void findSubClasses(String targetName, TreeItem<InheritanceNode> root,
-                                       Set<String> visited, WorkspaceIndex index) {
-        if (index != null) {
-            index.classes().forEach(cls -> {
-                byte[] bytes = cls.bytes();
-                if (bytes != null) {
-                    addSubClassIfMatches(targetName, root, visited, cls.internalName(), bytes);
-                }
-            });
-        }
-    }
-
-    private static void addSubClassIfMatches(String targetName, TreeItem<InheritanceNode> root,
-                                             Set<String> visited, String name, byte[] bytes) {
-        if (visited.contains(name) || name.equals(targetName)) return;
         Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
         if (metadata.isEmpty()) {
-            logger.warn("解析类元数据用于继承树失败：{}", name);
+            logger.warn("解析类元数据用于继承树失败: {}", internalName);
             return;
         }
+
         ClassFileMetadata meta = metadata.get();
-        if (targetName.equals(meta.superName())) {
-            InheritanceNode data = new InheritanceNode(name, simpleName(name),
-                    InheritanceNode.RelationType.SUBCLASS, 1);
-            root.getChildren().add(new TreeItem<>(data));
-            return;
+        String superName = meta.superName();
+        if (superName != null) {
+            buildSuperChain(superName, node, depth + 1, visited, index);
         }
         for (String itf : meta.interfaces()) {
-            if (targetName.equals(itf)) {
-                InheritanceNode data = new InheritanceNode(name, simpleName(name),
-                        InheritanceNode.RelationType.SUBCLASS, 1);
-                root.getChildren().add(new TreeItem<>(data));
+            TreeItem<InheritanceNode> ifNode = new TreeItem<>(
+                    new InheritanceNode(itf, simpleName(itf),
+                            InheritanceNode.RelationType.INTERFACE, depth + 1));
+            node.getChildren().add(ifNode);
+        }
+    }
+
+    private static void appendSubClassTree(String targetName, TreeItem<InheritanceNode> root,
+                                           Set<String> visited, WorkspaceIndex index) {
+        if (index == null) {
+            return;
+        }
+        long deadline = System.currentTimeMillis() + SUBCLASS_TIMEOUT_MS;
+        SubclassIndex subclassIndex = SubclassIndex.build(index, deadline);
+        Counter counter = new Counter();
+        appendSubClasses(targetName, root, visited, subclassIndex, 1, counter, deadline);
+    }
+
+    private static void appendSubClasses(String targetName, TreeItem<InheritanceNode> parent,
+                                         Set<String> visited, SubclassIndex index,
+                                         int depth, Counter counter, long deadline) {
+        if (depth > MAX_DEPTH || counter.value >= MAX_SUBCLASSES
+                || System.currentTimeMillis() > deadline) {
+            return;
+        }
+        for (String name : index.childrenOf(targetName)) {
+            if (counter.value >= MAX_SUBCLASSES || System.currentTimeMillis() > deadline) {
                 return;
             }
+            if (visited.contains(name) || name.equals(targetName)) {
+                continue;
+            }
+            visited.add(name);
+            TreeItem<InheritanceNode> node = new TreeItem<>(
+                    new InheritanceNode(name, simpleName(name),
+                            InheritanceNode.RelationType.SUBCLASS, depth));
+            node.setExpanded(true);
+            parent.getChildren().add(node);
+            counter.value++;
+            appendSubClasses(name, node, visited, index, depth + 1, counter, deadline);
         }
     }
 
@@ -166,5 +185,65 @@ public final class InheritanceService {
     private static String simpleName(String internalName) {
         int idx = internalName.lastIndexOf('/');
         return idx >= 0 ? internalName.substring(idx + 1) : internalName;
+    }
+
+    private static final class SubclassIndex {
+        private final Map<String, List<String>> childrenByParent;
+
+        private SubclassIndex(Map<String, List<String>> childrenByParent) {
+            this.childrenByParent = childrenByParent;
+        }
+
+        static SubclassIndex build(WorkspaceIndex index, long deadline) {
+            Map<String, List<String>> childrenByParent = new LinkedHashMap<>();
+            if (index == null) {
+                return new SubclassIndex(childrenByParent);
+            }
+
+            int scanned = 0;
+            for (var cls : index.classes()) {
+                if (System.currentTimeMillis() > deadline) {
+                    logger.debug("构建子类索引超时，已扫描 {} 个类", scanned);
+                    break;
+                }
+                scanned++;
+                byte[] bytes = cls.bytes();
+                if (bytes == null) {
+                    continue;
+                }
+                Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
+                if (metadata.isEmpty()) {
+                    continue;
+                }
+                ClassFileMetadata meta = metadata.get();
+                addChild(childrenByParent, meta.superName(), cls.internalName());
+                for (String itf : meta.interfaces()) {
+                    addChild(childrenByParent, itf, cls.internalName());
+                }
+            }
+            return new SubclassIndex(childrenByParent);
+        }
+
+        List<String> childrenOf(String parentName) {
+            return childrenByParent.getOrDefault(parentName, List.of());
+        }
+
+        private static void addChild(Map<String, List<String>> childrenByParent,
+                                     String parentName, String childName) {
+            if (parentName == null || parentName.isBlank()
+                    || childName == null || childName.isBlank()
+                    || parentName.equals(childName)) {
+                return;
+            }
+            List<String> children = childrenByParent.computeIfAbsent(parentName,
+                    key -> new ArrayList<>());
+            if (!children.contains(childName)) {
+                children.add(childName);
+            }
+        }
+    }
+
+    private static final class Counter {
+        private int value;
     }
 }

@@ -29,10 +29,49 @@ public abstract class AbstractCodeContentPanel extends StackPane {
 
     private final AtomicInteger state = new AtomicInteger(STATE_UNLOADED);
     private volatile Object cancelToken;
+    /** 内容创建完成回调（面板创建 CodeArea 后触发，用于应用字体/行号） */
+    private volatile Runnable onContentCreated;
+
+    /** 字体族（由 CodeContentDeck 在创建面板后设置） */
+    protected volatile String fontFamily = "Consolas";
+    /** 字号（由 CodeContentDeck 在创建面板后设置） */
+    protected volatile int fontSize = 14;
+    /** 行号开关（由 CodeContentDeck 在创建面板后设置） */
+    protected volatile boolean lineNumbersEnabled = true;
 
     /** 显示加载指示器 */
     protected AbstractCodeContentPanel() {
         showLoading();
+    }
+
+    /** 设置字体参数（CodeContentDeck 在 createPanel 后调用） */
+    public void setFontSettings(String fontFamily, int fontSize, boolean lineNumbersEnabled) {
+        this.fontFamily = fontFamily != null && !fontFamily.isBlank() ? fontFamily : "Consolas";
+        this.fontSize = Math.clamp(fontSize, 8, 48);
+        this.lineNumbersEnabled = lineNumbersEnabled;
+    }
+
+    /** 子类在 createContent() 中创建 CodeArea 后调用此方法应用字体和行号 */
+    protected final void applyFontAndLineNumbers(jfx.incubator.scene.control.richtext.CodeArea area) {
+        if (area == null) return;
+        try {
+            java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
+            if (url != null) {
+                area.setFont(javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize));
+            } else if (fontFamily != null && !fontFamily.isBlank()) {
+                area.setFont(javafx.scene.text.Font.font(fontFamily, fontSize));
+            } else {
+                area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
+            }
+        } catch (Exception ignored) {
+            area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
+        }
+        LineNumberGutter.setEnabled(area, lineNumbersEnabled);
+    }
+
+    /** 设置内容创建完成的回调 */
+    public void setOnContentCreated(Runnable callback) {
+        this.onContentCreated = callback;
     }
 
     /** @return 当前面板的内容类型标识 */
@@ -88,6 +127,9 @@ public abstract class AbstractCodeContentPanel extends StackPane {
                             getChildren().add(content);
                         }
                         state.set(STATE_LOADED);
+                        if (onContentCreated != null) {
+                            onContentCreated.run();
+                        }
                     }
                 });
             } catch (Exception e) {

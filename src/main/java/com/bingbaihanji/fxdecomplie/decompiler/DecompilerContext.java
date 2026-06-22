@@ -11,7 +11,7 @@ import java.util.Objects;
  * @author bingbaihanji
  * @date 2026-06-18
  */
-public final class DecompilerContext {
+public final class DecompilerContext implements AutoCloseable {
 
     public static final DecompilerContext EMPTY = new DecompilerContext(
             internalName -> null, Map.of(), false);
@@ -21,13 +21,22 @@ public final class DecompilerContext {
     private final ClassBytecodeProvider bytecodeProvider;
     private final Map<String, String> options;
     private final boolean globalFallbackEnabled;
+    private final AutoCloseable closeable;
 
     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
                               Map<String, String> options,
                               boolean globalFallbackEnabled) {
+        this(bytecodeProvider, options, globalFallbackEnabled, null);
+    }
+
+    private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
+                              Map<String, String> options,
+                              boolean globalFallbackEnabled,
+                              AutoCloseable closeable) {
         this.bytecodeProvider = Objects.requireNonNull(bytecodeProvider, "bytecodeProvider");
         this.options = options == null ? Map.of() : Map.copyOf(options);
         this.globalFallbackEnabled = globalFallbackEnabled;
+        this.closeable = closeable;
     }
 
     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider) {
@@ -36,9 +45,15 @@ public final class DecompilerContext {
 
     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
                                        Map<String, String> options) {
+        return of(bytecodeProvider, options, null);
+    }
+
+    public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
+                                       Map<String, String> options,
+                                       AutoCloseable closeable) {
         return bytecodeProvider == null
                 ? withOptions(options)
-                : new DecompilerContext(bytecodeProvider, options, false);
+                : new DecompilerContext(bytecodeProvider, options, false, closeable);
     }
 
     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index) {
@@ -100,5 +115,12 @@ public final class DecompilerContext {
 
     public boolean hasOptions() {
         return !options.isEmpty();
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (closeable != null) {
+            closeable.close();
+        }
     }
 }

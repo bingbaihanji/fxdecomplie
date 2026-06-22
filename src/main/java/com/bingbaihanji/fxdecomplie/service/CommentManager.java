@@ -141,9 +141,25 @@ public final class CommentManager {
     }
 
     private static Path resolveFile(String workspaceHash, String className) {
-        // 安全编码：将路径分隔符替换为安全字符
+        String safeWorkspace = safePathSegment(workspaceHash);
         String safeName = className.replace('/', '_').replace('\\', '_')
                 .replace("..", "__");
-        return getCommentDir().resolve(workspaceHash).resolve(safeName + ".json");
+        return getCommentDir().resolve(safeWorkspace).resolve(safeName + ".json");
+    }
+
+    private static String safePathSegment(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "_";
+        }
+        return raw.replace('\\', '_')
+                .replace('/', '_')
+                .replace(':', '_')
+                .replace('*', '_')
+                .replace('?', '_')
+                .replace('"', '_')
+                .replace('<', '_')
+                .replace('>', '_')
+                .replace('|', '_')
+                .replace("..", "__");
     }
 }

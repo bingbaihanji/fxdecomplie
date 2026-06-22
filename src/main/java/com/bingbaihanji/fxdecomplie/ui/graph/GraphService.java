@@ -82,12 +82,21 @@ public final class GraphService {
             InheritanceNode childNode = child.getValue();
             if (childNode != null && seen.contains(parent.className())
                     && seen.contains(childNode.className())) {
-                sb.append("    \"").append(escapeDot(childNode.className()))
-                        .append("\" -> \"")
-                        .append(escapeDot(parent.className())).append("\";\n");
+                if (childNode.relation() == InheritanceNode.RelationType.SUPER_CLASS
+                        || childNode.relation() == InheritanceNode.RelationType.INTERFACE) {
+                    appendInheritanceEdge(sb, parent.className(), childNode.className());
+                } else if (childNode.relation() == InheritanceNode.RelationType.SUBCLASS) {
+                    appendInheritanceEdge(sb, childNode.className(), parent.className());
+                }
             }
             appendInheritanceEdges(sb, child, seen);
         }
+    }
+
+    private static void appendInheritanceEdge(StringBuilder sb, String from, String to) {
+        sb.append("    \"").append(escapeDot(from))
+                .append("\" -> \"")
+                .append(escapeDot(to)).append("\";\n");
     }
 
     /**

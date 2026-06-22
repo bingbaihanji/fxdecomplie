@@ -45,14 +45,28 @@ public class CodeContentDeck extends VBox {
     private volatile String sourceCode;
     /** 类文件字节码，Smali/Bytecode 按需读取 */
     private final byte[] classBytes;
+    /** 字体族 */
+    private volatile String fontFamily = "Consolas";
+    /** 字号 */
+    private volatile int fontSize = 14;
+    /** 是否显示行号 */
+    private volatile boolean lineNumbersEnabled = true;
 
     public CodeContentDeck(String sourceCode, byte[] classBytes) {
         this(sourceCode, classBytes, null);
     }
 
     public CodeContentDeck(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel) {
+        this(sourceCode, classBytes, sourcePanel, "Consolas", 14, true);
+    }
+
+    public CodeContentDeck(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel,
+                           String fontFamily, int fontSize, boolean lineNumbersEnabled) {
         this.sourceCode = sourceCode;
         this.classBytes = classBytes == null ? null : classBytes.clone();
+        this.fontFamily = fontFamily;
+        this.fontSize = fontSize;
+        this.lineNumbersEnabled = lineNumbersEnabled;
         this.panels = new AbstractCodeContentPanel[4];
         this.panels[TAB_CODE] = sourcePanel;
         this.buttons = new ToggleButton[4];
@@ -73,10 +87,10 @@ public class CodeContentDeck extends VBox {
         bar.getStyleClass().add("code-deck-bar");
         bar.setMinHeight(30);
 
-        addToggle(0, "tab.code");
-        addToggle(1, "tab.smali");
-        addToggle(2, "tab.bytecode");
-        addToggle(3, "tab.simple");
+        addToggle(bar, 0, "tab.code");
+        addToggle(bar, 1, "tab.smali");
+        addToggle(bar, 2, "tab.bytecode");
+        addToggle(bar, 3, "tab.simple");
 
         // 右侧弹簧
         Node spacer = new javafx.scene.layout.Region();
@@ -86,7 +100,7 @@ public class CodeContentDeck extends VBox {
         return bar;
     }
 
-    private void addToggle(int index, String i18nKey) {
+    private void addToggle(HBox bar, int index, String i18nKey) {
         ToggleButton btn = new ToggleButton(I18nUtil.getString(i18nKey));
         btn.getStyleClass().add("code-deck-toggle");
         btn.setToggleGroup(toggleGroup);
@@ -99,7 +113,7 @@ public class CodeContentDeck extends VBox {
             }
         });
         buttons[index] = btn;
-        bottomBar.getChildren().add(btn);
+        bar.getChildren().add(btn);
     }
 
     /**
@@ -127,15 +141,67 @@ public class CodeContentDeck extends VBox {
         suppressAction = false;
     }
 
-    /** 按索引创建对应面板 */
+    /** 按索引创建对应面板，注入字体参数供 createContent() 使用 */
     private AbstractCodeContentPanel createPanel(int index) {
-        return switch (index) {
+        AbstractCodeContentPanel panel = switch (index) {
             case TAB_CODE -> new SourceContentPanel(sourceCode);
             case TAB_SMALI -> new SmaliContentPanel(classBytes);
             case TAB_BYTECODE -> new BytecodeContentPanel(classBytes);
             case TAB_SIMPLE -> new SimpleContentPanel(sourceCode);
             default -> throw new IllegalArgumentException("未知面板索引: " + index);
         };
+        panel.setFontSettings(fontFamily, fontSize, lineNumbersEnabled);
+        return panel;
+    }
+
+    /** 获取任意面板的 CodeArea */
+    private static jfx.incubator.scene.control.richtext.CodeArea getCodeArea(AbstractCodeContentPanel panel) {
+        return switch (panel) {
+            case SourceContentPanel p -> p.getCodeArea();
+            case SmaliContentPanel p -> p.getCodeArea();
+            case BytecodeContentPanel p -> p.getCodeArea();
+            case SimpleContentPanel p -> p.getCodeArea();
+            default -> null;
+        };
+    }
+
+    /** 更新所有面板的字体设置 */
+    public void applyFontSettings(int newFontSize, String newFontFamily) {
+        this.fontSize = newFontSize;
+        this.fontFamily = newFontFamily != null && !newFontFamily.isBlank() ? newFontFamily : "Consolas";
+        javafx.scene.text.Font font = loadFont();
+        for (AbstractCodeContentPanel panel : panels) {
+            if (panel != null) {
+                panel.fontSize = this.fontSize;
+                panel.fontFamily = this.fontFamily;
+                var area = getCodeArea(panel);
+                if (area != null) area.setFont(font);
+            }
+        }
+    }
+
+    /** 更新所有面板的行号开关 */
+    public void setLineNumbersEnabled(boolean enabled) {
+        this.lineNumbersEnabled = enabled;
+        for (AbstractCodeContentPanel panel : panels) {
+            if (panel != null) {
+                panel.lineNumbersEnabled = enabled;
+                var area = getCodeArea(panel);
+                if (area != null) LineNumberGutter.setEnabled(area, enabled);
+            }
+        }
+    }
+
+    private javafx.scene.text.Font loadFont() {
+        try {
+            java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
+            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+        } catch (Exception ignored) {
+        }
+        if (fontFamily != null && !fontFamily.isBlank()) {
+            return javafx.scene.text.Font.font(fontFamily, fontSize);
+        }
+        return javafx.scene.text.Font.font("Consolas", fontSize);
     }
 
     /** @return 当前激活的面板索引 */
@@ -197,6 +263,13 @@ public class CodeContentDeck extends VBox {
             sp.setSourceCode(newSource);
         }
         resetSimplePanel();
+    }
+
+    /** 只更新 Code 面板显示文本，不改变 Simple 面板基于的原始源码缓存 */
+    public void updateDisplayedSource(String displaySource) {
+        if (panels[TAB_CODE] instanceof SourceContentPanel sp) {
+            sp.setDisplayedSourceCode(displaySource);
+        }
     }
 
     private void resetSimplePanel() {

@@ -8,6 +8,7 @@ import javafx.scene.Node;
 import javafx.scene.text.Font;
 import jfx.incubator.scene.control.richtext.CodeArea;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -32,6 +33,8 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private final boolean lineNumbersEnabled;
     private final CodeMetadata metadata;
     private final Consumer<CodeMetadata.Reference> onNavigate;
+    private BiConsumer<Integer, String> onTokenNavigate;
+    private boolean linkNavigationEnabled;
     private int cachedLineCount = -1;
 
     public SourceContentPanel(String sourceCode) {
@@ -67,20 +70,30 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
 
         String src = sourceCode;
         boolean large = src != null && src.length() > LARGE_SOURCE_THRESHOLD;
+        linkNavigationEnabled = !large;
         LineNumberGutter.setEnabled(codeArea, lineNumbersEnabled && !large);
         codeArea.setFont(loadFont());
-        codeArea.setText(src == null ? "" : src);
-        cachedLineCount = -1;
 
         if (!large) {
             codeArea.setSyntaxDecorator(new RegexHighlighter(theme));
             codeArea.setHighlightCurrentParagraph(true);
         }
-        if (onNavigate != null && !large) {
-            CodeLinkHandler.install(codeArea, metadata, onNavigate);
-        }
+        codeArea.setText(src == null ? "" : src);
+        cachedLineCount = -1;
+        installLinkNavigation();
 
         getChildren().setAll(codeArea);
+    }
+
+    private void installLinkNavigation() {
+        if (codeArea == null) {
+            return;
+        }
+        if (!linkNavigationEnabled || (onNavigate == null && onTokenNavigate == null)) {
+            CodeLinkHandler.uninstall(codeArea);
+            return;
+        }
+        CodeLinkHandler.install(codeArea, metadata, onTokenNavigate, onNavigate);
     }
 
     private Font loadFont() {
@@ -102,9 +115,26 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         buildCodeArea();
     }
 
+    /** 仅替换当前 CodeArea 文本，保留右键菜单、光标监听和搜索栏绑定 */
+    public void setDisplayedSourceCode(String newSource) {
+        this.sourceCode = newSource;
+        cachedLineCount = -1;
+        if (codeArea == null) {
+            buildCodeArea();
+            return;
+        }
+        codeArea.setText(newSource == null ? "" : newSource);
+    }
+
     /** @return 源码编辑器 */
     public CodeArea getCodeArea() {
         return codeArea;
+    }
+
+    /** 安装基于点击处 token 的项目内跳转处理器 */
+    public void setTokenNavigateHandler(BiConsumer<Integer, String> onTokenNavigate) {
+        this.onTokenNavigate = onTokenNavigate;
+        installLinkNavigation();
     }
 
     /** @return 总行数 */

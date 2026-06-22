@@ -3,17 +3,9 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceClassVisitor;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
- * 字节码内容面板，复用 ASM Textifier 生成完整字节码文本
- *
- * <p>使用 {@code ClassReader.SKIP_DEBUG | SKIP_FRAMES} 展开常量池等元数据输出，
- * 不使用 SKIP_CODE 以确保方法指令被包含</p>
+ * 字节码内容面板，使用自定义 BytecodeTextBuilder 生成含常量池、hex 偏移、完整结构信息的字节码文本
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -39,14 +31,10 @@ public class BytecodeContentPanel extends AbstractCodeContentPanel {
         }
 
         try {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            Textifier textifier = new Textifier();
-            TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
+            BytecodeTextBuilder builder = new BytecodeTextBuilder(classBytes);
             ClassReader reader = new ClassReader(classBytes);
-            reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            pw.flush();
-            return sw.toString();
+            reader.accept(builder, 0);
+            return builder.build();
         } catch (Exception e) {
             return "// ASM 字节码视图解析失败: " + e.getMessage()
                     + System.lineSeparator() + System.lineSeparator()
@@ -59,8 +47,9 @@ public class BytecodeContentPanel extends AbstractCodeContentPanel {
         CodeArea area = new CodeArea();
         area.getStyleClass().add("code-editor");
         area.setEditable(false);
+        area.setSyntaxDecorator(new BytecodeHighlighter());
         area.setText(contentData == null ? "" : contentData.toString());
-        area.setSyntaxDecorator(TextFileDecorator.instance());
+        applyFontAndLineNumbers(area);
         this.codeArea = area;
         return area;
     }

@@ -82,7 +82,33 @@ public final class SettingsDialog {
         lineNumCheck.setSelected(config.decompiler().lineNumbersEnabled());
         CheckBox wrapCheck = new CheckBox(I18nUtil.getString("settings.wordWrap"));
         wrapCheck.setSelected(config.decompiler().wrapText());
-        uiTab.setContent(new VBox(10, lineNumCheck, wrapCheck));
+
+        Spinner<Integer> fontSizeSpinner = new Spinner<>(8, 48,
+                Math.clamp(config.theme().fontSize(), 8, 48), 1);
+        fontSizeSpinner.setEditable(true);
+        fontSizeSpinner.getEditor().setTextFormatter(
+                new javafx.scene.control.TextFormatter<>(change -> {
+                    String newText = change.getControlNewText();
+                    if (newText.matches("\\d{1,2}")) return change;
+                    return null;
+                }));
+        fontSizeSpinner.setPrefWidth(80);
+
+        ComboBox<String> fontFamilyCombo = new ComboBox<>();
+        fontFamilyCombo.getItems().addAll(
+                "Consolas", "Fira Code", "JetBrains Mono", "Cascadia Code",
+                "Source Code Pro", "Courier New", "Monaco", "Menlo",
+                "DejaVu Sans Mono", "Microsoft YaHei Mono"
+        );
+        fontFamilyCombo.setValue(config.theme().fontFamily() != null
+                && !config.theme().fontFamily().isBlank()
+                ? config.theme().fontFamily() : "Consolas");
+        fontFamilyCombo.setEditable(true);
+
+        uiTab.setContent(new VBox(10,
+                new Label(I18nUtil.getString("settings.fontSize")), fontSizeSpinner,
+                new Label(I18nUtil.getString("settings.fontFamily")), fontFamilyCombo,
+                lineNumCheck, wrapCheck));
 
         // 搜索标签页
         Tab searchTab = new Tab(I18nUtil.getString("settings.search"));
@@ -168,6 +194,8 @@ public final class SettingsDialog {
             engineCombo.setValue("VINEFLOWER");
             lineNumCheck.setSelected(true);
             wrapCheck.setSelected(true);
+            fontSizeSpinner.getValueFactory().setValue(14);
+            fontFamilyCombo.setValue("Consolas");
             fullSourceSearchCheck.setSelected(false);
             resultLimitSpinner.getValueFactory().setValue(200);
             exportEngineCombo.setValue("FOLLOW_CURRENT");
@@ -188,6 +216,8 @@ public final class SettingsDialog {
             config.decompiler().defaultEngine(DecompilerTypeEnum.valueOf(engineCombo.getValue()));
             config.decompiler().lineNumbersEnabled(lineNumCheck.isSelected());
             config.decompiler().wrapText(wrapCheck.isSelected());
+            config.theme().fontSize(fontSizeSpinner.getValue());
+            config.theme().fontFamily(fontFamilyCombo.getValue());
             config.search().fullSourceSearch(fullSourceSearchCheck.isSelected());
             config.search().resultLimit(resultLimitSpinner.getValue());
             config.export().defaultEngine("FOLLOW_CURRENT".equals(exportEngineCombo.getValue())

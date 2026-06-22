@@ -60,10 +60,17 @@ public final class WorkspaceTabManager {
     /** 拖放配置(用于主窗口安装代码标签拖拽处理器) */
     private AppConfig dragDropConfig;
     private VsCodeThemeLoader.ThemeData dragDropTheme;
+    /** 内层代码标签切换回调(工具栏刷新等) */
+    private Runnable onActiveTabChange;
 
     public WorkspaceTabManager(TabPane outerTabPane, StatusBar statusBar) {
         this.outerTabPane = outerTabPane;
         this.statusBar = statusBar;
+    }
+
+    /** 设置内层代码标签页切换回调 */
+    public void setOnActiveTabChange(Runnable callback) {
+        this.onActiveTabChange = callback;
     }
 
     /** 创建底部工具窗口顶部的独立拖拽手柄 */
@@ -344,7 +351,12 @@ public final class WorkspaceTabManager {
         TabPane codeTabPane = new TabPane();
         codeTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         codeTabPane.getSelectionModel().selectedItemProperty().addListener(
-                (obs, oldTab, newTab) -> updateStatusForCodeTab(newTab)
+                (obs, oldTab, newTab) -> {
+                    updateStatusForCodeTab(newTab);
+                    if (onActiveTabChange != null) {
+                        onActiveTabChange.run();
+                    }
+                }
         );
 
         // 安装跨窗口标签拖放支持
@@ -407,7 +419,7 @@ public final class WorkspaceTabManager {
         });
 
         treeView.setOnMouseClicked(e -> {
-            if (e.getClickCount() != 2) {
+            if (e.getButton() != javafx.scene.input.MouseButton.PRIMARY || e.getClickCount() != 1) {
                 return;
             }
             TreeItem<FileTreeNode> item = treeView.getSelectionModel().getSelectedItem();
@@ -601,7 +613,7 @@ public final class WorkspaceTabManager {
             statusBar.setEncoding("UTF-8");
             statusBar.setEngine(codeTab.getOpenFile().engine().name());
             var caret = codeTab.getCodeArea().getCaretPosition();
-            statusBar.setCursorPosition(caret.index() + 1, caret.charIndex() + 1);
+            statusBar.setCursorPosition(caret.index() + 1, caret.offset() + 1);
         }
     }
 
@@ -724,7 +736,7 @@ public final class WorkspaceTabManager {
             statusBar.setEncoding("UTF-8");
             statusBar.setEngine(codeTab.getOpenFile().engine().name());
             var caret = codeTab.getCodeArea().getCaretPosition();
-            statusBar.setCursorPosition(caret.index() + 1, caret.charIndex() + 1);
+            statusBar.setCursorPosition(caret.index() + 1, caret.offset() + 1);
         }
     }
 

@@ -24,14 +24,27 @@ public class CodeViewPanel extends VBox {
     private final byte[] classBytes;
     private boolean splitActive;
     private int defaultFontSize = 14;
+    private String fontFamily = "Consolas";
+    private boolean lineNumbersEnabled = true;
+    private CodeViewContext contextMenuContext;
+    private CodeActionHandler contextMenuHandler;
 
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
-        this(sourceCode, classBytes, null);
+        this(sourceCode, classBytes, null, "Consolas", 14, true);
     }
 
     public CodeViewPanel(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel) {
+        this(sourceCode, classBytes, sourcePanel, "Consolas", 14, true);
+    }
+
+    public CodeViewPanel(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel,
+                         String fontFamily, int fontSize, boolean lineNumbersEnabled) {
         this.classBytes = classBytes == null ? null : classBytes.clone();
-        this.leftDeck = new CodeContentDeck(sourceCode, classBytes, sourcePanel);
+        this.defaultFontSize = fontSize;
+        this.fontFamily = fontFamily;
+        this.lineNumbersEnabled = lineNumbersEnabled;
+        this.leftDeck = new CodeContentDeck(sourceCode, classBytes, sourcePanel,
+                fontFamily, fontSize, lineNumbersEnabled);
         this.searchBar = new EditorSearchBar(leftDeck.getSourcePanel() != null
                 ? leftDeck.getSourcePanel().getCodeArea() : null);
         this.splitPane = new SplitPane();
@@ -65,7 +78,7 @@ public class CodeViewPanel extends VBox {
         if (rightDeck == null) {
             rightDeck = new CodeContentDeck(leftDeck.getSourcePanel() != null
                     ? leftDeck.getSourcePanel().getCodeArea().getText() : "",
-                    classBytes);
+                    classBytes, null, fontFamily, defaultFontSize, lineNumbersEnabled);
             rightDeck.setSelected(CodeContentDeck.TAB_BYTECODE);
             rightDeck.getBottomBar().getChildren().add(createRightSplitToggle());
         }
@@ -115,11 +128,28 @@ public class CodeViewPanel extends VBox {
      * 在源码 CodeArea 上安装右键上下文菜单
      */
     public void installContextMenu(CodeViewContext ctx, CodeActionHandler handler) {
-        var area = getSourceCodeArea();
-        if (area == null || ctx == null || handler == null) return;
-        CodeAreaContextMenu menu = new CodeAreaContextMenu(area, ctx, handler);
+        contextMenuContext = ctx;
+        contextMenuHandler = handler;
+        installContextMenuOnCurrentSource();
+    }
+
+    private void installContextMenuOnCurrentSource() {
+        SourceContentPanel sourcePanel = leftDeck.getSourcePanel();
+        var area = sourcePanel == null ? null : sourcePanel.getCodeArea();
+        if (area == null) return;
+        if (contextMenuContext == null || contextMenuHandler == null) {
+            sourcePanel.setTokenNavigateHandler(null);
+            return;
+        }
+
+        sourcePanel.setTokenNavigateHandler((line, token) ->
+                contextMenuHandler.goToDeclaration(contextMenuContext, line, token));
+        CodeAreaContextMenu menu = new CodeAreaContextMenu(area, contextMenuContext, contextMenuHandler);
+        area.setContextMenu(menu);
         area.setOnContextMenuRequested(e -> {
+            menu.prepare(e);
             menu.show(area, e.getScreenX(), e.getScreenY());
+            e.consume();
         });
     }
 
@@ -143,6 +173,7 @@ public class CodeViewPanel extends VBox {
             rightDeck.updateSource(newSource);
         }
         bindSearchBar();
+        installContextMenuOnCurrentSource();
     }
 
     /** 用新反编译源码更新视图 */
@@ -152,6 +183,17 @@ public class CodeViewPanel extends VBox {
             rightDeck.updateSource(newSource);
         }
         bindSearchBar();
+        installContextMenuOnCurrentSource();
+    }
+
+    /** 只刷新 Code 视图显示文本，保留底层真实源码和其它派生视图 */
+    public void refreshDisplayedSource(String displaySource) {
+        leftDeck.updateDisplayedSource(displaySource);
+        if (rightDeck != null) {
+            rightDeck.updateDisplayedSource(displaySource);
+        }
+        bindSearchBar();
+        installContextMenuOnCurrentSource();
     }
 
     /** @return 源码总行数 */
@@ -160,32 +202,45 @@ public class CodeViewPanel extends VBox {
         return sp != null ? sp.getLineCount() : 0;
     }
 
-    /** 放大字号 */
+    /** 放大字号（所有面板统一） */
     public void zoomIn() {
-        SourceContentPanel sp = leftDeck.getSourcePanel();
-        if (sp != null) sp.zoomIn();
+        defaultFontSize = Math.min(48, defaultFontSize + 1);
+        applyZoomToAllDecks();
     }
 
-    /** 缩小字号 */
+    /** 缩小字号（所有面板统一） */
     public void zoomOut() {
-        SourceContentPanel sp = leftDeck.getSourcePanel();
-        if (sp != null) sp.zoomOut();
+        defaultFontSize = Math.max(8, defaultFontSize - 1);
+        applyZoomToAllDecks();
     }
 
-    /** 重置字号 */
+    /** 重置字号（所有面板统一） */
     public void resetZoom() {
-        SourceContentPanel sp = leftDeck.getSourcePanel();
-        if (sp != null) sp.resetZoom(defaultFontSize);
+        applyZoomToAllDecks();
+    }
+
+    private void applyZoomToAllDecks() {
+        leftDeck.applyFontSettings(defaultFontSize, fontFamily);
+        if (rightDeck != null) rightDeck.applyFontSettings(defaultFontSize, fontFamily);
     }
 
     public void setDefaultFontSize(int size) {
         this.defaultFontSize = size;
     }
 
-    /** 行号开关 */
+    /** 行号开关（所有面板统一） */
     public void setLineNumbersEnabled(boolean enabled) {
-        SourceContentPanel sp = leftDeck.getSourcePanel();
-        if (sp != null) sp.setLineNumbersEnabled(enabled);
+        this.lineNumbersEnabled = enabled;
+        leftDeck.setLineNumbersEnabled(enabled);
+        if (rightDeck != null) rightDeck.setLineNumbersEnabled(enabled);
+    }
+
+    /** 统一应用字体设置到所有面板 */
+    public void applyFontSettings(int fontSize, String fontFamily) {
+        this.defaultFontSize = fontSize;
+        this.fontFamily = fontFamily;
+        leftDeck.applyFontSettings(fontSize, fontFamily);
+        if (rightDeck != null) rightDeck.applyFontSettings(fontSize, fontFamily);
     }
 
     /** @return 左侧 CodeContentDeck */

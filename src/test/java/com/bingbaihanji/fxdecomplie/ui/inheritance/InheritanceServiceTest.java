@@ -54,6 +54,53 @@ class InheritanceServiceTest {
                 .anyMatch(item -> "com/example/Parent".equals(item.getValue().className())));
     }
 
+    @Test
+    void expandsSubClassesRecursively() throws Exception {
+        Path sourceDir = tempDir.resolve("recursive-src/com/example");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("Parent.java"), """
+                package com.example;
+                public class Parent {}
+                """, StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("Child.java"), """
+                package com.example;
+                public class Child extends Parent {}
+                """, StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("GrandChild.java"), """
+                package com.example;
+                public class GrandChild extends Child {}
+                """, StandardCharsets.UTF_8);
+
+        Path classesDir = tempDir.resolve("recursive-classes");
+        int exit = ToolProvider.getSystemJavaCompiler().run(null, null, null,
+                "--release", "17",
+                "-d", classesDir.toString(),
+                sourceDir.resolve("Parent.java").toString(),
+                sourceDir.resolve("Child.java").toString(),
+                sourceDir.resolve("GrandChild.java").toString());
+        assertTrue(exit == 0, "test classes should compile");
+
+        TreeItem<FileTreeNode> root = new TreeItem<>(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().add(classNode("com/example/Parent.class",
+                classesDir.resolve("com/example/Parent.class")));
+        root.getChildren().add(classNode("com/example/Child.class",
+                classesDir.resolve("com/example/Child.class")));
+        root.getChildren().add(classNode("com/example/GrandChild.class",
+                classesDir.resolve("com/example/GrandChild.class")));
+
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+        TreeItem<InheritanceNode> tree = InheritanceService.buildTree("com/example/Parent.class", index);
+
+        assertNotNull(tree);
+        TreeItem<InheritanceNode> child = tree.getChildren().stream()
+                .filter(item -> "com/example/Child".equals(item.getValue().className()))
+                .findFirst()
+                .orElseThrow();
+        assertTrue(child.getChildren().stream()
+                .anyMatch(item -> "com/example/GrandChild".equals(item.getValue().className())));
+    }
+
     private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {
         String name = path.substring(path.lastIndexOf('/') + 1);
         FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.CLASS_FILE);

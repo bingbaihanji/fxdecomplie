@@ -3,17 +3,12 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceClassVisitor;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 /**
- * JVM 指令视图面板，使用 ASM Textifier + TraceClassVisitor 生成 javap -c 风格输出
+ * JVM 指令视图面板，使用自定义 SmaliTextBuilder 生成 smali 风格输出
  *
- * <p>UI 标签标注为 "Smali" 以贴近 jadx 交互习惯，但实际生成的是 JVM class 指令文本，
- * 不是 Android smali 格式。未来若支持 DEX 输入，再引入独立的 DexSmaliContentPanel</p>
+ * <p>输出格式类似 jadx smali 视图：以 .class/.method/.field/.line/.end method 等
+ * 指令组织，操作码使用小写助记符，保留行号和局部变量调试信息</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -39,14 +34,10 @@ public class SmaliContentPanel extends AbstractCodeContentPanel {
         }
 
         try {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            Textifier textifier = new Textifier();
-            TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
+            SmaliTextBuilder builder = new SmaliTextBuilder();
             ClassReader reader = new ClassReader(classBytes);
-            reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            pw.flush();
-            return sw.toString();
+            reader.accept(builder, ClassReader.SKIP_FRAMES);
+            return builder.build();
         } catch (Exception e) {
             return "// JVM 指令视图解析失败: " + e.getMessage()
                     + System.lineSeparator() + System.lineSeparator()
@@ -59,7 +50,9 @@ public class SmaliContentPanel extends AbstractCodeContentPanel {
         CodeArea area = new CodeArea();
         area.getStyleClass().add("code-editor");
         area.setEditable(false);
+        area.setSyntaxDecorator(new SmaliHighlighter());
         area.setText(contentData == null ? "" : contentData.toString());
+        applyFontAndLineNumbers(area);
         this.codeArea = area;
         return area;
     }

@@ -1,112 +1,197 @@
 package com.bingbaihanji.fxdecomplie.ui.graph;
 
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import javafx.application.Platform;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogPane;
-import javafx.scene.web.WebView;
-import javafx.stage.Modality;
-import javafx.stage.Window;
-import jfx.incubator.scene.control.richtext.CodeArea;
+import javafx.scene.control.Label;
+import javafx.scene.Node;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
- * 图形可视化弹窗，使用 WebView + Viz.js 渲染 DOT → SVG 图形
+ * 图形可视化弹窗。
  *
- * @author bingbaihanji
- * @date 2026-06-21
+ * <p>默认使用 JavaFX 原生控件渲染应用生成的 DOT 子集，避免 WebView/Viz.js
+ * 在部分运行环境中卡在 WASM 初始化阶段。DOT 源码仍可切换查看，便于排查。</p>
  */
 public class GraphDialog extends Dialog<Void> {
 
-    private static final int DEFAULT_WIDTH = 820;
-    private static final int DEFAULT_HEIGHT = 640;
-    private static final String TEMPLATE_PATH = "/web/graph-template.html";
-    private static final String VIZ_PATH = "/web/viz-standalone.js";
+    private static final Logger logger = LoggerFactory.getLogger(GraphDialog.class);
 
-    public GraphDialog(Window owner, String title, String dot) {
-        initOwner(owner);
+    private static final int W = 820;
+    private static final int H = 640;
+    private static final String DOT_STYLE =
+            "-fx-control-inner-background:#1e1e1e;-fx-text-fill:#d4d4d4;"
+            + "-fx-font-family:'Consolas',monospace;-fx-font-size:13px;"
+            + "-fx-highlight-fill:#264f78;-fx-highlight-text-fill:#fff;";
+
+    private StackPane contentStack;
+    private TextArea dotArea;
+    private Node currentGraphView;
+    private ToggleButton viewToggle;
+    private Label statusLabel;
+
+    public GraphDialog(javafx.stage.Window owner, String title, String dot) {
+        init(owner, title);
+        if (dot == null || dot.isBlank()) {
+            showMsg(I18nUtil.getString("graph.noData"));
+        } else {
+            showDot(dot);
+        }
+    }
+
+    public GraphDialog(javafx.stage.Window owner, String title) {
+        init(owner, title);
+        showLoading(I18nUtil.getString("graph.loading"));
+    }
+
+    private void init(javafx.stage.Window owner, String title) {
+        if (owner != null) initOwner(owner);
         setTitle(title);
-        initModality(Modality.NONE);
+        initModality(javafx.stage.Modality.NONE);
         setResizable(true);
 
-        DialogPane dialogPane = getDialogPane();
-        dialogPane.getButtonTypes().add(ButtonType.CLOSE);
-        dialogPane.setPrefSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+        DialogPane pane = getDialogPane();
+        pane.getButtonTypes().add(ButtonType.CLOSE);
+        pane.setPrefSize(W, H);
+        try { pane.getStylesheets().add(AppTheme.darkStylesheet()); } catch (RuntimeException ignored) {}
 
-        if (tryWebView(dialogPane, dot)) {
-            return;
-        }
-        // 回退：CodeArea 文本显示
-        CodeArea codeArea = new CodeArea();
-        codeArea.setEditable(false);
-        codeArea.getStyleClass().add("code-editor");
-        codeArea.setText(dot == null ? "" : dot);
-        dialogPane.setContent(codeArea);
+        contentStack = new StackPane();
+        contentStack.setStyle("-fx-background-color:#1e1e1e;");
+        VBox.setVgrow(contentStack, Priority.ALWAYS);
+
+        viewToggle = new ToggleButton("DOT");
+        viewToggle.getStyleClass().add("code-deck-toggle");
+        viewToggle.setMinWidth(50); viewToggle.setMaxHeight(24);
+        viewToggle.setVisible(false);
+        viewToggle.setOnAction(e -> toggleView());
+
+        statusLabel = new Label();
+        statusLabel.setStyle("-fx-text-fill:#808080;-fx-font-size:11px;");
+
+        var spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox bar = new HBox(6, viewToggle, spacer, statusLabel);
+        bar.setStyle("-fx-padding:4px 8px;-fx-background-color:#252526;");
+        bar.setMinHeight(28);
+
+        VBox root = new VBox(contentStack, bar);
+        VBox.setVgrow(contentStack, Priority.ALWAYS);
+        pane.setContent(root);
 
         setOnShown(e -> {
-            var win = dialogPane.getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
+            var w = pane.getScene().getWindow();
+            if (w != null) DefaultWindowTheme.applyWindowDarkMode(w);
+            if (w instanceof javafx.stage.Stage s) setIcon(s);
         });
     }
 
-    /** 尝试 WebView + viz.js 渲染，失败返回 false */
-    private boolean tryWebView(DialogPane pane, String dot) {
-        try {
-            String template = loadResource(TEMPLATE_PATH);
-            String vizJs = loadResource(VIZ_PATH);
-            if (template == null || vizJs == null) return false;
-
-            String escaped = dot.replace("\\", "\\\\")
-                    .replace("`", "\\`");
-            String html = template.replace("__DOT_CONTENT__", escaped);
-            // 将 viz.js 内联到 HTML 中
-            html = html.replace("<script>",
-                    "<script>\n" + vizJs + "\n");
-
-            WebView webView = new WebView();
-            webView.setPrefSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-            webView.getEngine().loadContent(html);
-            pane.setContent(webView);
-
-            setOnShown(e -> {
-                var win = pane.getScene().getWindow();
-                DefaultWindowTheme.applyWindowDarkMode(win);
-                if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
-            });
-            setOnCloseRequest(e -> webView.getEngine().loadContent(""));
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+    private void showLoading(String msg) {
+        var ind = new javafx.scene.control.ProgressIndicator(36);
+        Label l = new Label(msg);
+        l.setStyle("-fx-text-fill:#969696;-fx-font-size:13px;");
+        VBox b = new VBox(12, ind, l);
+        b.setAlignment(javafx.geometry.Pos.CENTER);
+        b.setStyle("-fx-background-color:#1e1e1e;");
+        contentStack.getChildren().setAll(b);
+        viewToggle.setVisible(false);
+        statusLabel.setText("");
     }
 
-    private static String loadResource(String path) {
-        try (InputStream is = GraphDialog.class.getResourceAsStream(path)) {
-            if (is == null) return null;
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    // ---- public API ----
 
-    /** 显示图形弹窗 */
-    public static void show(Window owner, String title, String dot) {
-        Objects.requireNonNull(dot, "dot");
-        new GraphDialog(owner, title, dot).show();
-    }
+    public void showDot(String dot) {
+        runOnFx(() -> {
+            String d = dot == null ? "" : dot;
+            if (d.isBlank()) { showMsg(I18nUtil.getString("graph.noData")); return; }
 
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = GraphDialog.class.getResourceAsStream("/icon/logo.png");
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            showDotSource(d);
+            try {
+                currentGraphView = DotGraphRenderer.create(DotGraphParser.parse(d));
+                contentStack.getChildren().setAll(currentGraphView);
+                viewToggle.setVisible(true);
+                viewToggle.setSelected(true);
+                viewToggle.setText("DOT");
+                statusLabel.setText("JavaFX 图形");
+            } catch (RuntimeException e) {
+                logger.warn("GraphDialog: 原生图形渲染失败，保留 DOT 源码", e);
+                currentGraphView = null;
+                statusLabel.setText("DOT 源码（图形解析失败）");
             }
-        } catch (Exception ignored) {
+        });
+    }
+
+    public void showMessage(String msg) {
+        runOnFx(() -> showMsg(msg));
+    }
+
+    // ---- 内部 ----
+
+    private void showDotSource(String dot) {
+        if (dotArea == null) { dotArea = new TextArea(); dotArea.setEditable(false); dotArea.setWrapText(false); }
+        dotArea.setStyle(DOT_STYLE);
+        dotArea.setText(dot);
+        contentStack.getChildren().setAll(dotArea);
+        viewToggle.setVisible(false);
+        currentGraphView = null;
+    }
+
+    private void showMsg(String msg) {
+        if (dotArea == null) { dotArea = new TextArea(); dotArea.setEditable(false); dotArea.setWrapText(true); }
+        dotArea.setStyle(DOT_STYLE);
+        dotArea.setText(msg == null ? "" : msg);
+        contentStack.getChildren().setAll(dotArea);
+        viewToggle.setVisible(false);
+        currentGraphView = null;
+    }
+
+    private void toggleView() {
+        if (currentGraphView != null && contentStack.getChildren().contains(currentGraphView)) {
+            contentStack.getChildren().setAll(dotArea);
+            viewToggle.setText("Graph");
+            statusLabel.setText("DOT 源码");
+        } else if (dotArea != null && currentGraphView != null) {
+            contentStack.getChildren().setAll(currentGraphView);
+            viewToggle.setText("DOT");
+            statusLabel.setText("JavaFX 图形");
         }
+    }
+
+    // ---- 静态工具 ----
+
+    public static void show(javafx.stage.Window owner, String title, String dot) {
+        Objects.requireNonNull(dot);
+        var d = new GraphDialog(owner, title, dot);
+        d.show();
+        bringToFront(d);
+    }
+
+    private static void runOnFx(Runnable a) {
+        if (Platform.isFxApplicationThread()) a.run(); else Platform.runLater(a);
+    }
+
+    private static void bringToFront(Dialog<?> d) {
+        Platform.runLater(() -> {
+            var w = d.getDialogPane().getScene() != null ? d.getDialogPane().getScene().getWindow() : null;
+            if (w instanceof javafx.stage.Stage s) { s.toFront(); s.requestFocus(); }
+        });
+    }
+
+    private static void setIcon(javafx.stage.Stage s) {
+        try (var is = GraphDialog.class.getResourceAsStream("/icon/logo.png")) {
+            if (is != null) s.getIcons().add(new javafx.scene.image.Image(is));
+        } catch (Exception ignored) {}
     }
 }

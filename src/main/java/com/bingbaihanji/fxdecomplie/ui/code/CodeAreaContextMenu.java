@@ -4,8 +4,11 @@ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.input.ContextMenuEvent;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 代码区右键上下文菜单，提供跳转声明、查看继承图、查看方法图、添加注释四个功能
@@ -15,6 +18,8 @@ import jfx.incubator.scene.control.richtext.TextPos;
  */
 public class CodeAreaContextMenu extends ContextMenu {
 
+    private static final Logger logger = LoggerFactory.getLogger(CodeAreaContextMenu.class);
+
     private final CodeArea codeArea;
     private final CodeViewContext context;
     private final CodeActionHandler actionHandler;
@@ -23,6 +28,7 @@ public class CodeAreaContextMenu extends ContextMenu {
     private final MenuItem inheritanceGraphItem;
     private final MenuItem methodGraphItem;
     private final MenuItem addCommentItem;
+    private TextPos actionPosition;
 
     public CodeAreaContextMenu(CodeArea codeArea, CodeViewContext context, CodeActionHandler actionHandler) {
         this.codeArea = codeArea;
@@ -52,53 +58,94 @@ public class CodeAreaContextMenu extends ContextMenu {
         setOnShowing(e -> refreshState());
     }
 
+    public void prepare(ContextMenuEvent event) {
+        actionPosition = null;
+        if (codeArea == null || event == null) {
+            return;
+        }
+        TextPos pos = codeArea.getTextPosition(event.getScreenX(), event.getScreenY());
+        if (pos != null) {
+            actionPosition = pos;
+            codeArea.select(pos, pos);
+        }
+    }
+
     /** 每次显示前更新菜单项状态 */
     private void refreshState() {
-        boolean hasMeta = context != null && context.metadata() != null
-                && !context.metadata().isEmpty();
-        boolean hasBytes = context != null && context.classBytes() != null
-                && context.classBytes().length > 0;
+        boolean hasClassContext = context != null && context.classInternalName() != null
+                && !context.classInternalName().isBlank();
 
-        gotoDeclarationItem.setDisable(!hasMeta);
-        inheritanceGraphItem.setDisable(!hasBytes);
-        methodGraphItem.setDisable(!hasBytes);
+        gotoDeclarationItem.setDisable(context == null || codeArea == null);
+        inheritanceGraphItem.setDisable(!hasClassContext);
+        methodGraphItem.setDisable(!hasClassContext);
         addCommentItem.setDisable(codeArea == null);
     }
 
     private void onGotoDeclaration() {
-        if (actionHandler == null || context == null || context.metadata() == null) return;
-        int line = getCaretLine();
-        var refs = context.metadata().getRefsAtLine(line);
-        if (!refs.isEmpty()) {
-            actionHandler.goToDeclaration(refs.get(0));
-        }
+        if (actionHandler == null || context == null || codeArea == null) return;
+        int line = currentLine();
+        actionHandler.goToDeclaration(context, line, tokenAtActionPosition());
     }
 
     private void onShowInheritanceGraph() {
         if (actionHandler == null || context == null) return;
+        logger.info("代码区右键菜单触发查看继承图: {}", context.classInternalName());
         actionHandler.showInheritanceGraph(context);
     }
 
     private void onShowMethodGraph() {
         if (actionHandler == null || context == null) return;
+        logger.info("代码区右键菜单触发查看方法图: {}", context.classInternalName());
         actionHandler.showMethodGraph(context);
     }
 
     private void onAddComment() {
         if (actionHandler == null || context == null) return;
-        TextPos caret = codeArea.getCaretPosition();
+        TextPos caret = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         actionHandler.addOrUpdateComment(context, caret);
     }
 
-    /** 从 CodeArea 文本中计算当前光标所在行号（1-based） */
-    private int getCaretLine() {
+    private int currentLine() {
+        TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
+        return pos == null ? 1 : Math.max(1, pos.index() + 1);
+    }
+
+    private String tokenAtActionPosition() {
         String text = codeArea.getText();
-        if (text == null || text.isEmpty()) return 1;
-        int idx = codeArea.getCaretPosition().index();
-        int line = 1;
-        for (int i = 0; i < idx && i < text.length(); i++) {
-            if (text.charAt(i) == '\n') line++;
+        TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
+        if (text == null || text.isEmpty() || pos == null) {
+            return "";
         }
-        return line;
+        int offset = flatOffset(text, pos);
+        if (offset < 0 || offset > text.length()) {
+            return "";
+        }
+        int start = offset;
+        while (start > 0 && isJavaNameChar(text.charAt(start - 1))) {
+            start--;
+        }
+        int end = offset;
+        while (end < text.length() && isJavaNameChar(text.charAt(end))) {
+            end++;
+        }
+        return start < end ? text.substring(start, end) : "";
+    }
+
+    private static int flatOffset(String text, TextPos pos) {
+        int line = Math.max(0, pos.index());
+        int offset = Math.max(0, pos.offset());
+        int currentLine = 0;
+        int lineStart = 0;
+        for (int i = 0; i < text.length() && currentLine < line; i++) {
+            if (text.charAt(i) == '\n') {
+                currentLine++;
+                lineStart = i + 1;
+            }
+        }
+        return Math.min(text.length(), lineStart + offset);
+    }
+
+    private static boolean isJavaNameChar(char ch) {
+        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$';
     }
 }

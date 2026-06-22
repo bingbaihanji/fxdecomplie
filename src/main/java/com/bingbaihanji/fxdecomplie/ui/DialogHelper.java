@@ -1,9 +1,11 @@
 package com.bingbaihanji.fxdecomplie.ui;
 
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 
 /**
  * 通用对话框工具方法
@@ -29,11 +31,25 @@ public final class DialogHelper {
         showAlert(owner, Alert.AlertType.ERROR, title, message);
     }
 
+    public static void showError(Window owner, String title, String message) {
+        showAlert(owner, Alert.AlertType.ERROR, title, message);
+    }
+
     public static void showAlert(Stage owner, Alert.AlertType type, String title, String message) {
+        showAlert((Window) owner, type, title, message);
+    }
+
+    public static void showAlert(Window owner, Alert.AlertType type, String title, String message) {
         Alert alert = new Alert(type, message);
         alert.setTitle(title);
         alert.setHeaderText(null);
-        alert.initOwner(owner);
+        if (owner != null) {
+            alert.initOwner(owner);
+        }
+        try {
+            alert.getDialogPane().getStylesheets().add(AppTheme.darkStylesheet());
+        } catch (RuntimeException ignored) {
+        }
         alert.setOnShown(e -> {
             var window = alert.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(window);

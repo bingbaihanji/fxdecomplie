@@ -1,5 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
+import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import jfx.incubator.scene.control.richtext.CodeArea;
 
 /**
@@ -34,7 +36,9 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
         CodeArea area = new CodeArea();
         area.getStyleClass().add("code-editor");
         area.setEditable(false);
+        area.setSyntaxDecorator(new RegexHighlighter(VsCodeThemeLoader.defaultDark()));
         area.setText(contentData == null ? "" : contentData.toString());
+        applyFontAndLineNumbers(area);
         this.codeArea = area;
         return area;
     }

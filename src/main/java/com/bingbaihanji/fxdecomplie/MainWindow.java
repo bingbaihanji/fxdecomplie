@@ -43,11 +43,18 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FxDecompiler 应用窗口的中央控制器
@@ -58,6 +65,10 @@ import java.util.function.Consumer;
  * @date 2026-06-18
  */
 public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(MainWindow.class);
+    private static final Pattern IMPORT_PATTERN = Pattern.compile(
+            "^\\s*import\\s+(static\\s+)?([\\w.$]+|[\\w.]+\\.\\*)\\s*;\\s*$");
 
     /** 应用配置 */
     private final AppConfig config;
@@ -119,6 +130,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
         tabManager = new WorkspaceTabManager(outerTabPane, statusBar);
         tabManager.setCurrentEngineName(currentEngine.name());
+        tabManager.setOnActiveTabChange(this::refreshToolbarState);
         tabManager.setDragDropConfig(config, editorTheme);
         tabManager.setWelcomeActions(new WorkspaceTabManager.WelcomeActions(
                 this::openFile,
@@ -128,6 +140,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 this::openRecentFile));
         classTabOpener = new ClassTabOpener(config, editorTheme, statusBar);
         classTabOpener.setCodeActionHandler(this);
+        classTabOpener.setOnTabReady(this::refreshToolbarState);
         // L2 缓存跨工作区共享,不清空以提升重复打开性能
         tabManager.showWelcomeTabIfEmpty();
 
@@ -330,7 +343,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
 
         try {
-            ExportService.exportCurrentCode(codeTab.getOpenFile().sourceCode(), file.toPath());
+            ExportService.exportCurrentCode(decoratedCurrentSource(codeTab), file.toPath());
             statusBar.setFilePath(I18nUtil.getString("status.saved", file.getAbsolutePath()));
         } catch (IOException ex) {
             showError(I18nUtil.getString("dialog.error.title"),
@@ -347,7 +360,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return;
         }
         withWorkspaceIndex(view.workspace(),
-                index -> doExport(view.workspace().getTreeRoot(), index));
+                index -> doExport(view.workspace().getTreeRoot(), index, view.workspace()));
     }
 
     /** 为单个树节点构建临时索引并弹出导出对话框(右键菜单入口) */
@@ -362,7 +375,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 WorkspaceIndex index = WorkspaceIndex.build(rootItem);
                 Platform.runLater(() -> {
                     statusBar.clearTask();
-                    doExport(rootItem, index);
+                    WorkspaceView view = tabManager.currentWorkspaceView();
+                    doExport(rootItem, index, view == null ? null : view.workspace());
                 });
             } catch (Exception ex) {
                 Platform.runLater(() -> {
@@ -376,7 +390,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 弹出导出配置对话框,提交后台导出任务并显示进度 */
     private void doExport(javafx.scene.control.TreeItem<FileTreeNode> rootItem,
-                          WorkspaceIndex index) {
+                          WorkspaceIndex index, Workspace workspace) {
         var configOpt = ExportDialog.show(stage, config, currentEngine);
         if (configOpt.isEmpty()) {
             return;
@@ -395,7 +409,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         exportTask[0] = BackgroundTasks.run("Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(
-                        rootItem, exportConfig, index,
+                        rootItem, exportConfig, index, commentScope(workspace, exportConfig),
                         (path, pct) -> Platform.runLater(() -> {
                             statusBar.setFilePath(I18nUtil.getString(
                                     "status.exporting.detail", pct, path));
@@ -603,14 +617,52 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (reference == null || reference.targetClass() == null) return;
         WorkspaceView view = tabManager.currentWorkspaceView();
         if (view == null) return;
-        String targetPath = reference.targetClass().replace('.', '/') + ".class";
-        FileTreeNode node = view.workspace().findNodeByPath(targetPath);
+        FileTreeNode node = findNodeForReference(view.workspace(), reference);
         if (node != null) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
                     currentEngine, lineNumbersEnabled);
         } else {
-            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", targetPath));
+            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", reference.targetClass()));
         }
+    }
+
+    @Override
+    public void goToDeclaration(CodeViewContext context, int lineNumber, String token) {
+        if (context == null || context.workspace() == null) {
+            return;
+        }
+        String targetToken = sanitizeDeclarationToken(token);
+        if (context.metadata() != null) {
+            var refs = context.metadata().getRefsAtLine(lineNumber);
+            if (!refs.isEmpty()) {
+                CodeMetadata.Reference selected = selectReference(refs, token);
+                if (openReferenceInWorkspace(context.workspace(), selected)) {
+                    return;
+                }
+            }
+        }
+
+        if (targetToken.isBlank()) {
+            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", ""));
+            return;
+        }
+
+        statusBar.setFilePath(I18nUtil.getString("status.locating", targetToken));
+        if (revealDeclarationInCurrentTab(context, lineNumber, targetToken)) {
+            return;
+        }
+
+        Workspace workspace = context.workspace();
+        WorkspaceIndex index = workspace.isIndexReady() ? workspace.getIndex() : context.workspaceIndex();
+        String sourceCode = context.openFile() == null ? "" : context.openFile().sourceCode();
+        FileTreeNode node = findNodeForToken(workspace, index, targetToken,
+                context.classInternalName(), sourceCode);
+        if (node != null) {
+            openNodeInWorkspace(workspace, node);
+            return;
+        }
+
+        statusBar.setFilePath(I18nUtil.getString("status.locateFailed", targetToken));
     }
 
     @Override
@@ -628,24 +680,47 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     public void showInheritanceGraph(CodeViewContext context) {
         if (context == null) return;
         String fullPath = context.classInternalName();
-        withWorkspaceIndex(context.workspace(), index -> {
-            statusBar.setTask(I18nUtil.getString("task.loading"));
-            BackgroundTasks.run("InheritanceGraph-" + fullPath, () -> {
-                try {
-                    var tree = InheritanceService.buildTree(fullPath, index);
-                    if (tree == null) {
-                        Platform.runLater(this::showGraphFailed);
-                        return;
-                    }
-                    String dot = GraphService.toInheritanceDOT(tree);
-                    Platform.runLater(() -> {
-                        statusBar.clearTask();
-                        GraphDialog.show(stage, I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath, dot);
-                    });
-                } catch (Exception e) {
-                    Platform.runLater(this::showGraphFailed);
+        if (fullPath == null || fullPath.isBlank()) {
+            showGraphFailed(fullPath, null);
+            return;
+        }
+        Workspace workspace = context.workspace();
+        WorkspaceIndex index = workspace != null && workspace.isIndexReady()
+                ? workspace.getIndex()
+                : context.workspaceIndex();
+        statusBar.setTask(I18nUtil.getString("task.loading"));
+        statusBar.setFilePath(I18nUtil.getString("graph.building", fullPath));
+        logger.info("请求查看继承图: {}", fullPath);
+        GraphDialog dialog = new GraphDialog(stage,
+                I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath);
+        dialog.show();
+        BackgroundTasks.run("InheritanceGraph-" + fullPath, () -> {
+            try {
+                byte[] classBytes = classBytesForContext(context);
+                if (classBytes == null || classBytes.length == 0) {
+                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
+                    return;
                 }
-            });
+                WorkspaceIndex graphIndex = workspace != null
+                        ? awaitWorkspaceIndex(workspace)
+                        : index;
+                if (graphIndex == WorkspaceIndex.EMPTY && index != null) {
+                    graphIndex = index;
+                }
+                var tree = InheritanceService.buildTree(fullPath, graphIndex, classBytes);
+                if (tree == null) {
+                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
+                    return;
+                }
+                String dot = GraphService.toInheritanceDOT(tree);
+                Platform.runLater(() -> {
+                    statusBar.clearTask();
+                    dialog.showDot(dot);
+                });
+            } catch (Exception e) {
+                logger.error("查看继承图失败: {}", fullPath, e);
+                Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
+            }
         });
     }
 
@@ -653,41 +728,69 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     public void showMethodGraph(CodeViewContext context) {
         if (context == null) return;
         String fullPath = context.classInternalName();
-        byte[] classBytes = context.classBytes() == null ? null : context.classBytes().clone();
+        if (fullPath == null || fullPath.isBlank()) {
+            showGraphFailed(fullPath, null);
+            return;
+        }
         statusBar.setTask(I18nUtil.getString("task.loading"));
+        statusBar.setFilePath(I18nUtil.getString("graph.building", fullPath));
+        logger.info("请求查看方法图: {}", fullPath);
+        GraphDialog dialog = new GraphDialog(stage,
+                I18nUtil.getString("context.methodGraph") + " - " + fullPath);
+        dialog.show();
         BackgroundTasks.run("MethodGraph-" + fullPath, () -> {
             try {
+                byte[] classBytes = classBytesForContext(context);
+                if (classBytes == null || classBytes.length == 0) {
+                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
+                    return;
+                }
                 var graph = GraphService.parseMethodCalls(classBytes);
                 if (graph.methods().isEmpty()) {
-                    Platform.runLater(this::showGraphFailed);
+                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
                     return;
                 }
                 String dot = GraphService.toMethodDOT(graph);
                 Platform.runLater(() -> {
                     statusBar.clearTask();
-                    GraphDialog.show(stage, I18nUtil.getString("context.methodGraph") + " - "
-                            + fullPath, dot);
+                    dialog.showDot(dot);
                 });
             } catch (Exception e) {
-                Platform.runLater(this::showGraphFailed);
+                logger.error("查看方法图失败: {}", fullPath, e);
+                Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
             }
         });
     }
 
-    private void showGraphFailed() {
+    private void showGraphFailed(String fullPath, Throwable error) {
+        showGraphFailed(null, fullPath, error);
+    }
+
+    private void showGraphFailed(GraphDialog dialog, String fullPath, Throwable error) {
         statusBar.clearTask();
         statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
+        String message = I18nUtil.getString("graph.renderFailed")
+                + (fullPath == null || fullPath.isBlank() ? "" : ": " + fullPath);
+        if (error != null) {
+            message += System.lineSeparator() + error.getMessage();
+        }
+        if (dialog != null) {
+            dialog.showMessage(message);
+            return;
+        }
+        if (error == null) {
+            showWarning(I18nUtil.getString("dialog.warning.title"), message);
+        } else {
+            showError(I18nUtil.getString("dialog.error.title"),
+                    message);
+        }
     }
 
     @Override
     public void addOrUpdateComment(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caretPosition) {
         if (context == null) return;
         String text = context.openFile() != null ? context.openFile().sourceCode() : "";
-        int line = 1;
-        int idx = caretPosition.index();
-        for (int i = 0; i < idx && i < text.length(); i++) {
-            if (text.charAt(i) == '\n') line++;
-        }
+        int line = caretPosition == null ? 1 : Math.max(1, caretPosition.index() + 1);
         String memberSig = "";
         // 从源码中提取当前方法签名
         String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper.findMethodAtLine(text, line);
@@ -709,6 +812,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 comment -> {
                     com.bingbaihanji.fxdecomplie.service.CommentManager
                             .save(context.workspaceHash(), comment);
+                    refreshVisibleComments(context);
                     statusBar.setFilePath(I18nUtil.getString("comment.saved") + " L" + comment.line());
                 });
     }
@@ -717,6 +821,510 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     public void searchInWorkspace(String selectedText) {
         if (selectedText == null || selectedText.isBlank()) return;
         openSearch(selectedText);
+    }
+
+    private boolean openReferenceInWorkspace(Workspace workspace, CodeMetadata.Reference reference) {
+        FileTreeNode node = findNodeForReference(workspace, reference);
+        if (node != null) {
+            openNodeInWorkspace(workspace, node);
+            return true;
+        }
+        return false;
+    }
+
+    private FileTreeNode findNodeForReference(Workspace workspace, CodeMetadata.Reference reference) {
+        if (workspace == null || reference == null || reference.targetClass() == null) {
+            return null;
+        }
+        return findClassPath(workspace, reference.targetClass());
+    }
+
+    private CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs, String token) {
+        if (refs == null || refs.isEmpty()) {
+            return null;
+        }
+        String targetToken = sanitizeDeclarationToken(token);
+        if (!targetToken.isBlank()) {
+            String simpleToken = tokenSimpleName(targetToken);
+            for (CodeMetadata.Reference ref : refs) {
+                if (ref.targetClass() == null) {
+                    continue;
+                }
+                String normalized = ref.targetClass().replace('.', '/');
+                if (ref.targetClass().equals(targetToken)
+                        || normalized.equals(targetToken.replace('.', '/'))
+                        || tokenSimpleName(normalized).equals(simpleToken)) {
+                    return ref;
+                }
+            }
+            return null;
+        }
+        return refs.getFirst();
+    }
+
+    private void openNodeInWorkspace(Workspace workspace, FileTreeNode node) {
+        WorkspaceView view = workspaceViewFor(workspace);
+        if (view == null || node == null) {
+            return;
+        }
+        classTabOpener.openClassTab(node, workspace, view.codeTabPane(),
+                currentEngine, lineNumbersEnabled);
+    }
+
+    private WorkspaceView workspaceViewFor(Workspace workspace) {
+        if (workspace == null || tabManager == null) {
+            return null;
+        }
+        return tabManager.getWorkspaceViews().values().stream()
+                .filter(view -> view != null && workspace.equals(view.workspace()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private WorkspaceView workspaceViewForCodeTab(CodeEditorTab codeTab) {
+        if (codeTab == null || tabManager == null) {
+            return null;
+        }
+        return tabManager.getWorkspaceViews().values().stream()
+                .filter(view -> view != null && view.codeTabPane().getTabs().contains(codeTab))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private byte[] classBytesForContext(CodeViewContext context) throws IOException {
+        if (context == null) {
+            return null;
+        }
+        byte[] classBytes = context.classBytes();
+        if (classBytes != null && classBytes.length > 0) {
+            return classBytes;
+        }
+        FileTreeNode node = context.node();
+        if (node != null) {
+            byte[] cached = node.getCachedBytes();
+            if (cached != null && cached.length > 0) {
+                return cached.clone();
+            }
+            return node.resolveBytes();
+        }
+        Workspace workspace = context.workspace();
+        String fullPath = context.classInternalName();
+        if (workspace != null && fullPath != null) {
+            FileTreeNode target = workspace.findNodeByPath(fullPath);
+            return target == null ? null : target.resolveBytes();
+        }
+        return null;
+    }
+
+    private boolean revealDeclarationInCurrentTab(CodeViewContext context, int clickedLine,
+                                                  String token) {
+        if (context == null || token == null || token.isBlank()
+                || context.openFile() == null) {
+            return false;
+        }
+        String source = context.openFile().sourceCode();
+        int declarationLine = findDeclarationLine(source, token, clickedLine);
+        if (declarationLine <= 0) {
+            return false;
+        }
+        WorkspaceView view = workspaceViewFor(context.workspace());
+        if (view == null) {
+            return false;
+        }
+        String fullPath = context.openFile().fullPath();
+        for (Tab tab : view.codeTabPane().getTabs()) {
+            if (tab instanceof CodeEditorTab codeTab
+                    && fullPath.equals(codeTab.getOpenFile().fullPath())
+                    && context.openFile().engine() == codeTab.getOpenFile().engine()) {
+                view.codeTabPane().getSelectionModel().select(codeTab);
+                codeTab.revealLine(declarationLine);
+                statusBar.setFilePath(I18nUtil.getString(
+                        "status.navigatedTo", fullPath, declarationLine));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private FileTreeNode findNodeForToken(Workspace workspace, WorkspaceIndex index,
+                                          String token, String currentClassName,
+                                          String sourceCode) {
+        if (workspace == null || token == null || token.isBlank()) {
+            return null;
+        }
+
+        String normalized = token.replace('.', '/');
+        String currentInternal = normalizeInternalClassName(currentClassName);
+        FileTreeNode direct = findClassPath(workspace, normalized);
+        if (direct != null && !direct.getFullPath().equals(currentClassName)) {
+            return direct;
+        }
+
+        String currentPackage = packageName(currentInternal);
+        if (isRelativeClassToken(token) && !currentPackage.isBlank()) {
+            FileTreeNode samePackageRelative = findClassPath(workspace,
+                    currentPackage + "/" + normalized);
+            if (samePackageRelative != null
+                    && !samePackageRelative.getFullPath().equals(currentClassName)) {
+                return samePackageRelative;
+            }
+        }
+
+        FileTreeNode sourceResolved = findNodeFromSourceImports(workspace, token,
+                currentClassName, sourceCode);
+        if (sourceResolved != null) {
+            return sourceResolved;
+        }
+
+        FileTreeNode treeResolved = findNodeBySimpleNameInTree(workspace, token, currentClassName);
+        if (treeResolved != null) {
+            return treeResolved;
+        }
+
+        if (index == null || index == WorkspaceIndex.EMPTY) {
+            return null;
+        }
+        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        FileTreeNode firstMatch = null;
+        for (var cls : index.classes()) {
+            if (cls.internalName().equals(currentInternal)) {
+                continue;
+            }
+            String indexedSimple = cls.simpleName().replace(".class", "");
+            if (cls.internalName().equals(normalized)
+                    || cls.fullPath().equals(normalized)
+                    || indexedSimple.equals(simpleToken)
+                    || indexedSimple.endsWith("$" + simpleToken)) {
+                FileTreeNode node = workspace.findNodeByPath(cls.fullPath());
+                if (node == null) {
+                    continue;
+                }
+                if (firstMatch == null) {
+                    firstMatch = node;
+                }
+                if (samePackage(currentInternal, cls.internalName())) {
+                    return node;
+                }
+            }
+        }
+        return firstMatch;
+    }
+
+    private FileTreeNode findNodeFromSourceImports(Workspace workspace, String token,
+                                                   String currentClassName, String sourceCode) {
+        if (workspace == null || token == null || token.isBlank()) {
+            return null;
+        }
+        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        if (simpleToken.isBlank()) {
+            return null;
+        }
+        String currentInternal = normalizeInternalClassName(currentClassName);
+        String currentPackage = packageName(currentInternal);
+        FileTreeNode samePackage = findClassPath(workspace,
+                currentPackage.isBlank() ? simpleToken : currentPackage + "/" + simpleToken);
+        if (samePackage != null && !samePackage.getFullPath().equals(currentClassName)) {
+            return samePackage;
+        }
+
+        if (sourceCode == null || sourceCode.isBlank()) {
+            return null;
+        }
+        for (String line : sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n")) {
+            Matcher matcher = IMPORT_PATTERN.matcher(line);
+            if (!matcher.matches()) {
+                continue;
+            }
+            String imported = matcher.group(2);
+            if (imported == null || imported.isBlank()) {
+                continue;
+            }
+            if (imported.endsWith(".*")) {
+                String packagePath = imported.substring(0, imported.length() - 2).replace('.', '/');
+                FileTreeNode wildcard = findClassPath(workspace, packagePath + "/" + simpleToken);
+                if (wildcard != null) {
+                    return wildcard;
+                }
+                continue;
+            }
+
+            String importedSimple = tokenSimpleName(imported).replace(".class", "");
+            if (importedSimple.equals(simpleToken) || imported.endsWith("." + token)) {
+                FileTreeNode importedNode = findClassPath(workspace, imported.replace('.', '/'));
+                if (importedNode != null) {
+                    return importedNode;
+                }
+                FileTreeNode innerNode = findClassPath(workspace, toInnerClassPath(imported));
+                if (innerNode != null) {
+                    return innerNode;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String toInnerClassPath(String className) {
+        if (className == null || className.isBlank()) {
+            return "";
+        }
+        String[] parts = className.split("\\.");
+        StringBuilder sb = new StringBuilder();
+        boolean classSegmentSeen = false;
+        for (String part : parts) {
+            if (part.isEmpty()) {
+                continue;
+            }
+            boolean classLike = Character.isUpperCase(part.charAt(0)) || classSegmentSeen;
+            if (sb.length() > 0) {
+                sb.append(classLike ? '$' : '/');
+            }
+            sb.append(part);
+            if (classLike) {
+                classSegmentSeen = true;
+            }
+        }
+        return sb.toString();
+    }
+
+    private FileTreeNode findNodeBySimpleNameInTree(Workspace workspace, String token,
+                                                    String currentClassName) {
+        if (workspace == null || token == null || token.isBlank()) {
+            return null;
+        }
+        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        if (simpleToken.isBlank()) {
+            return null;
+        }
+        String expectedClassFile = simpleToken + ".class";
+        String currentInternal = normalizeInternalClassName(currentClassName);
+        String currentPackage = packageName(currentInternal);
+        List<FileTreeNode> matches = new ArrayList<>();
+        TreeItem<FileTreeNode> root = workspace.getTreeRoot();
+        if (root == null) {
+            return null;
+        }
+        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeNode node = item.getValue();
+            if (node != null && node.isClassFile() && matchesSimpleClassName(node, simpleToken, expectedClassFile)
+                    && !node.getFullPath().equals(currentClassName)) {
+                matches.add(node);
+            }
+            queue.addAll(item.getChildren());
+        }
+        return matches.stream()
+                .min(Comparator.comparingInt(node ->
+                        samePackage(currentInternal, normalizeInternalClassName(node.getFullPath())) ? 0
+                                : packageName(normalizeInternalClassName(node.getFullPath()))
+                                .equals(currentPackage) ? 1 : 2))
+                .orElse(null);
+    }
+
+    private static boolean matchesSimpleClassName(FileTreeNode node, String simpleToken,
+                                                  String expectedClassFile) {
+        if (node == null || simpleToken == null || simpleToken.isBlank()) {
+            return false;
+        }
+        String name = node.getName();
+        if (expectedClassFile.equals(name)) {
+            return true;
+        }
+        String path = normalizeInternalClassName(node.getFullPath());
+        int slash = path.lastIndexOf('/');
+        String simpleName = slash >= 0 ? path.substring(slash + 1) : path;
+        return simpleName.equals(simpleToken) || simpleName.endsWith("$" + simpleToken);
+    }
+
+    private FileTreeNode findClassPath(Workspace workspace, String internalName) {
+        if (workspace == null || internalName == null || internalName.isBlank()) {
+            return null;
+        }
+        String normalized = internalName.replace('.', '/').replace('\\', '/');
+        if (normalized.endsWith(".class")) {
+            FileTreeNode exact = workspace.findNodeByPath(normalized);
+            if (exact != null) {
+                return exact;
+            }
+            normalized = normalized.substring(0, normalized.length() - ".class".length());
+        }
+        FileTreeNode direct = workspace.findNodeByPath(normalized + ".class");
+        if (direct != null) {
+            return direct;
+        }
+        int slash = normalized.lastIndexOf('/');
+        while (slash > 0) {
+            normalized = normalized.substring(0, slash) + "$" + normalized.substring(slash + 1);
+            FileTreeNode inner = workspace.findNodeByPath(normalized + ".class");
+            if (inner != null) {
+                return inner;
+            }
+            slash = normalized.lastIndexOf('/');
+        }
+        return null;
+    }
+
+    private static int findDeclarationLine(String sourceCode, String token, int clickedLine) {
+        if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()) {
+            return -1;
+        }
+        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        if (simpleToken.isBlank()) {
+            return -1;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        int bestLine = -1;
+        int bestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < lines.length; i++) {
+            String line = stripLineComment(lines[i]);
+            if (line.isBlank() || !line.contains(simpleToken)) {
+                continue;
+            }
+            if (looksLikeDeclarationLine(line, simpleToken)) {
+                int lineNumber = i + 1;
+                int distance = clickedLine > 0 ? Math.abs(lineNumber - clickedLine) : lineNumber;
+                if (lineNumber == clickedLine) {
+                    return lineNumber;
+                }
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestLine = lineNumber;
+                }
+            }
+        }
+        return bestLine;
+    }
+
+    private static boolean looksLikeDeclarationLine(String line, String simpleToken) {
+        String trimmed = line == null ? "" : line.strip();
+        if (trimmed.isEmpty() || trimmed.startsWith("@")) {
+            return false;
+        }
+        String quoted = Pattern.quote(simpleToken);
+        if (Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + quoted + "\\b")
+                .matcher(trimmed).find()) {
+            return true;
+        }
+        if (Pattern.compile(
+                "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
+                        + "\\s*\\([^;]*\\)\\s*(?:throws\\s+[\\w.$,\\s]+)?\\s*(?:\\{|;)?\\s*$")
+                .matcher(trimmed).find()) {
+            return true;
+        }
+        return Pattern.compile(
+                "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
+                        + "\\s*(?:=|;|,).*$")
+                .matcher(trimmed).find();
+    }
+
+    private static String stripLineComment(String line) {
+        if (line == null) {
+            return "";
+        }
+        int comment = line.indexOf("//");
+        return comment >= 0 ? line.substring(0, comment) : line;
+    }
+
+    private static String sanitizeDeclarationToken(String token) {
+        if (token == null) {
+            return "";
+        }
+        String result = token.strip();
+        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(0))) {
+            result = result.substring(1);
+        }
+        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(result.length() - 1))) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
+    }
+
+    private static boolean isDeclarationTokenChar(char ch) {
+        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$' || ch == '/';
+    }
+
+    private static String tokenSimpleName(String token) {
+        String normalized = token.replace('.', '/');
+        int slash = normalized.lastIndexOf('/');
+        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+    }
+
+    private static boolean isRelativeClassToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        String trimmed = token.strip();
+        while (!trimmed.isEmpty() && !isDeclarationTokenChar(trimmed.charAt(0))) {
+            trimmed = trimmed.substring(1);
+        }
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        char first = trimmed.charAt(0);
+        return Character.isUpperCase(first) || first == '_' || first == '$';
+    }
+
+    private static boolean samePackage(String leftInternalName, String rightInternalName) {
+        return packageName(leftInternalName).equals(packageName(rightInternalName));
+    }
+
+    private static String normalizeInternalClassName(String className) {
+        if (className == null) {
+            return "";
+        }
+        String normalized = className.replace('\\', '/');
+        if (normalized.endsWith(".class")) {
+            normalized = normalized.substring(0, normalized.length() - ".class".length());
+        }
+        return normalized;
+    }
+
+    private static String packageName(String internalName) {
+        if (internalName == null) {
+            return "";
+        }
+        int slash = internalName.lastIndexOf('/');
+        return slash >= 0 ? internalName.substring(0, slash) : "";
+    }
+
+    private CommentScope commentScope(Workspace workspace, DecompilerTypeEnum engine) {
+        return CommentScope.of(workspace,
+                DecompilerOptions.hash(DecompilerOptions.forEngine(config, engine)));
+    }
+
+    private CommentScope commentScope(Workspace workspace, ExportConfig exportConfig) {
+        return CommentScope.of(workspace, DecompilerOptions.hash(
+                exportConfig == null ? Map.of() : exportConfig.engineOptions()));
+    }
+
+    private String decoratedCurrentSource(CodeEditorTab codeTab) {
+        if (codeTab == null || codeTab.getOpenFile() == null) {
+            return "";
+        }
+        OpenFile openFile = codeTab.getOpenFile();
+        WorkspaceView view = workspaceViewForCodeTab(codeTab);
+        return CommentExportDecorator.applyForClass(openFile.sourceCode(), openFile.fullPath(),
+                commentScope(view == null ? null : view.workspace(), openFile.engine()));
+    }
+
+    private void refreshVisibleComments(CodeViewContext context) {
+        WorkspaceView view = workspaceViewFor(context.workspace());
+        if (view == null || context.openFile() == null) {
+            return;
+        }
+        for (Tab tab : view.codeTabPane().getTabs()) {
+            if (tab instanceof CodeEditorTab codeTab
+                    && context.openFile().fullPath().equals(codeTab.getOpenFile().fullPath())
+                    && context.openFile().engine() == codeTab.getOpenFile().engine()) {
+                String decorated = CommentExportDecorator.applyForClass(
+                        codeTab.getOpenFile().sourceCode(),
+                        codeTab.getOpenFile().fullPath(),
+                        new CommentScope(context.workspaceHash(), context.optionsHash()));
+                codeTab.updateVisibleSource(decorated);
+                return;
+            }
+        }
     }
 
     /** 用全部引擎反编译当前类并排打开标签页,方便对比输出 */
@@ -908,18 +1516,23 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         SettingsDialog.show(stage, config, this::applySettings);
     }
 
-    /** 应用设置对话框确认后的配置变更：切换引擎、更新行号 */
+    /** 应用设置对话框确认后的配置变更：切换引擎、更新行号、更新字体 */
     private void applySettings(AppConfig updated) {
         DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
         if (configuredEngine != currentEngine) {
             selectEngine(configuredEngine);
         }
         lineNumbersEnabled = updated.decompiler().lineNumbersEnabled();
+        int newFontSize = updated.theme().fontSize();
+        String newFontFamily = updated.theme().fontFamily();
         tabManager.getWorkspaceViews().values().forEach(view ->
                 view.codeTabPane().getTabs().stream()
                         .filter(CodeEditorTab.class::isInstance)
                         .map(CodeEditorTab.class::cast)
-                        .forEach(tab -> tab.setLineNumbersEnabled(lineNumbersEnabled))
+                        .forEach(tab -> {
+                            tab.setLineNumbersEnabled(lineNumbersEnabled);
+                            tab.applyFontSettings(newFontSize, newFontFamily);
+                        })
         );
     }
 

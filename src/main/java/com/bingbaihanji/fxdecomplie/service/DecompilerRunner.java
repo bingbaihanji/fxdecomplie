@@ -10,7 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -20,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+import java.util.zip.ZipFile;
 
 /**
  * 共享的带保护的反编译运行器,用于标签页、全文搜索和导出
@@ -65,28 +70,46 @@ public final class DecompilerRunner {
                                               DecompilerTypeEnum engine,
                                               DecompilerContext context,
                                               BooleanSupplier active) {
+        return decompileWithTimeout(classFilePath, classBytes, engine, context,
+                active, TIMEOUT_SECONDS);
+    }
+
+    public static String decompileWithTimeout(String classFilePath, byte[] classBytes,
+                                              DecompilerTypeEnum engine,
+                                              DecompilerContext context,
+                                              BooleanSupplier active,
+                                              int timeoutSeconds) {
         if (classBytes == null) {
+            closeContext(context);
             return failureOutput(classFilePath, "类字节码未找到");
         }
         BooleanSupplier requestActive = active == null ? () -> true : active;
         if (!requestActive.getAsBoolean()) {
+            closeContext(context);
             throw new CancellationException("反编译请求已被替换");
         }
 
         Future<String> future = null;
+        int timeout = Math.max(1, timeoutSeconds);
         try {
-            future = EXECUTOR.submit(() -> decompileWithFallback(
-                    classFilePath, classBytes, engine, context));
-            String source = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            future = EXECUTOR.submit(() -> {
+                try {
+                    return decompileWithFallback(classFilePath, classBytes, engine, context);
+                } finally {
+                    closeContext(context);
+                }
+            });
+            String source = future.get(timeout, TimeUnit.SECONDS);
             if (!requestActive.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
             return source;
         } catch (RejectedExecutionException e) {
+            closeContext(context);
             return I18nUtil.getString("decompile.busy", classFilePath);
         } catch (TimeoutException e) {
             future.cancel(true);
-            return I18nUtil.getString("decompile.timeout", classFilePath)
+            return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
                     + "\n" + I18nUtil.getString("decompile.timeoutHint");
         } catch (InterruptedException e) {
             future.cancel(true);
@@ -101,8 +124,11 @@ public final class DecompilerRunner {
 
     public static DecompilerContext contextForWorkspace(Workspace workspace,
                                                         Map<String, String> options) {
-        return DecompilerContext.of(
-                internalName -> resolveWorkspaceClassBytes(workspace, internalName), options);
+        if (workspace == null) {
+            return DecompilerContext.withOptions(options);
+        }
+        WorkspaceClassPath classPath = new WorkspaceClassPath(workspace);
+        return DecompilerContext.of(classPath::getClassBytes, options, classPath);
     }
 
     public static boolean isTransientFailureOutput(String source) {
@@ -184,6 +210,112 @@ public final class DecompilerRunner {
             logger.debug("从工作区读取依赖类失败: {}", normalized, e);
         }
         return null;
+    }
+
+    private static void closeContext(DecompilerContext context) {
+        if (context == null || context == DecompilerContext.EMPTY
+                || context == DecompilerContext.LEGACY_GLOBAL) {
+            return;
+        }
+        try {
+            context.close();
+        } catch (Exception e) {
+            logger.debug("关闭反编译上下文失败", e);
+        }
+    }
+
+    /**
+     * 单次反编译使用的工作区 classpath。归档输入复用同一个 ZipFile，避免大 JAR
+     * 依赖解析时为每个引用类重复打开归档导致交互打开变慢。
+     */
+    private static final class WorkspaceClassPath implements AutoCloseable {
+        private static final int MAX_HIT_CACHE = 256;
+
+        private final Workspace workspace;
+        private final Map<String, byte[]> hitCache = Collections.synchronizedMap(
+                new LinkedHashMap<>(64, 0.75f, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<String, byte[]> eldest) {
+                        return size() > MAX_HIT_CACHE;
+                    }
+                });
+        private final Set<String> missCache = Collections.synchronizedSet(new HashSet<>());
+        private ZipFile zipFile;
+
+        private WorkspaceClassPath(Workspace workspace) {
+            this.workspace = workspace;
+        }
+
+        private byte[] getClassBytes(String internalName) {
+            String normalized = DecompilerContext.normalizeInternalName(internalName);
+            byte[] cached = hitCache.get(normalized);
+            if (cached != null) {
+                return cached;
+            }
+            if (missCache.contains(normalized)) {
+                return null;
+            }
+
+            byte[] bytes = readClassBytes(normalized);
+            if (bytes != null) {
+                hitCache.put(normalized, bytes);
+            } else {
+                missCache.add(normalized);
+            }
+            return bytes;
+        }
+
+        private byte[] readClassBytes(String normalized) {
+            if (workspace.isIndexReady()) {
+                byte[] bytes = workspace.getIndex().getClassBytes(normalized);
+                if (bytes != null) {
+                    return bytes;
+                }
+            }
+
+            String path = normalized + ".class";
+            FileTreeNode node = workspace.findNodeByPath(path);
+            byte[] cached = node == null ? null : node.getCachedBytes();
+            if (cached != null) {
+                return cached;
+            }
+
+            try {
+                if (workspace.isArchive()) {
+                    return readArchiveEntry(path);
+                }
+                if (node != null) {
+                    return WorkspaceByteReader.readNodeBytes(workspace, node, false);
+                }
+                return WorkspaceByteReader.readClassBytes(workspace, normalized, false);
+            } catch (IOException e) {
+                logger.debug("读取依赖类失败: {}", normalized, e);
+                return null;
+            }
+        }
+
+        private synchronized byte[] readArchiveEntry(String path) throws IOException {
+            if (zipFile == null) {
+                zipFile = new ZipFile(workspace.getSourceFile());
+            }
+            var entry = zipFile.getEntry(path);
+            if (entry == null || entry.isDirectory()) {
+                return null;
+            }
+            try (var in = zipFile.getInputStream(entry)) {
+                return in.readAllBytes();
+            }
+        }
+
+        @Override
+        public synchronized void close() throws IOException {
+            if (zipFile != null) {
+                zipFile.close();
+                zipFile = null;
+            }
+            hitCache.clear();
+            missCache.clear();
+        }
     }
 
     private static String failureOutput(String classFilePath, String reason) {

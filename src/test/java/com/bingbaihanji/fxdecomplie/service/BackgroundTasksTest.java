@@ -14,6 +14,7 @@ class BackgroundTasksTest {
         CountDownLatch latch = new CountDownLatch(1);
         Future<?> future = BackgroundTasks.run("test", latch::countDown);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
+        future.get(1, TimeUnit.SECONDS);
         assertTrue(future.isDone());
     }
 

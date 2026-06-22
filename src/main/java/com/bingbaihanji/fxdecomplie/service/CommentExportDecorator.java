@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
 
 import java.util.Comparator;
 import java.util.List;
@@ -17,6 +18,23 @@ public final class CommentExportDecorator {
 
     private CommentExportDecorator() {
         throw new AssertionError("utility class");
+    }
+
+    public static String sourceHash(String sourceCode) {
+        if (sourceCode == null) {
+            return "";
+        }
+        return "len=" + sourceCode.length() + ":"
+                + Integer.toHexString(sourceCode.hashCode());
+    }
+
+    public static String applyForClass(String sourceCode, String className,
+                                       CommentScope scope) {
+        if (scope == null || !scope.enabled() || className == null || className.isBlank()) {
+            return sourceCode;
+        }
+        List<CommentData> comments = CommentManager.load(scope.workspaceHash(), className);
+        return apply(sourceCode, comments, sourceHash(sourceCode), scope.optionsHash());
     }
 
     /**

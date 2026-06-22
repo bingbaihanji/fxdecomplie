@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.model.ExportResult;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
@@ -63,6 +64,13 @@ public final class ExportService {
                                          WorkspaceIndex index,
                                          BiConsumer<String, Integer> onProgress)
             throws IOException {
+        return exportAll(root, config, index, null, onProgress);
+    }
+
+    public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
+                                         WorkspaceIndex index, CommentScope commentScope,
+                                         BiConsumer<String, Integer> onProgress)
+            throws IOException {
         Objects.requireNonNull(root, "root");
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(index, "index");
@@ -74,9 +82,9 @@ public final class ExportService {
 
         // ---- 步骤 2: 反编译并写入 — 分发到 ZIP 或目录路径 ----
         if (config.format() == ExportConfig.Format.ZIP) {
-            exportAllToZip(items, context, config, state);
+            exportAllToZip(items, context, config, commentScope, state);
         } else {
-            exportAllToDir(items, context, config, state);
+            exportAllToDir(items, context, config, commentScope, state);
         }
 
         return new ExportResult(state.totalFiles, state.successCount, state.errors);
@@ -173,7 +181,7 @@ public final class ExportService {
     }
 
     private static void exportAllToDir(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
-                                       ExportConfig config, ExportState state)
+                                       ExportConfig config, CommentScope commentScope, ExportState state)
             throws IOException {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
         Files.createDirectories(outputDir);
@@ -185,7 +193,7 @@ public final class ExportService {
             FileTreeNode data = item.getValue();
             try {
                 // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
-                ExportContent content = buildExportContent(data, context, config);
+                ExportContent content = buildExportContent(data, context, config, commentScope);
                 // ---- 路径验证: 确保输出保持在目标目录内 ----
                 Path target = resolveSafeOutputPath(outputDir, content.relativePath());
                 // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
@@ -205,7 +213,7 @@ public final class ExportService {
     }
 
     private static void exportAllToZip(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
-                                       ExportConfig config, ExportState state)
+                                       ExportConfig config, CommentScope commentScope, ExportState state)
             throws IOException {
         Path zipPath = config.outputPath().toAbsolutePath().normalize();
         if (zipPath.getParent() != null) {
@@ -229,7 +237,7 @@ public final class ExportService {
                 }
                 FileTreeNode data = item.getValue();
                 try {
-                    ExportContent content = buildExportContent(data, context, config);
+                    ExportContent content = buildExportContent(data, context, config, commentScope);
                     String entryName = sanitizeZipEntryName(content.relativePath());
                     entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
                     if (entryName != null) {
@@ -251,7 +259,8 @@ public final class ExportService {
     }
 
     private static ExportContent buildExportContent(FileTreeNode data, DecompilerContext context,
-                                                    ExportConfig config) throws IOException {
+                                                    ExportConfig config, CommentScope commentScope)
+            throws IOException {
         if (data.isClassFile()) {
             byte[] bytes = resolveClassBytes(data, context);
             if (bytes == null) {
@@ -264,6 +273,7 @@ public final class ExportService {
             if (DecompilerRunner.isTransientFailureOutput(source)) {
                 throw new IllegalStateException(firstLine(source));
             }
+            source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
             return new ExportContent(data.getFullPath().replace(".class", ".java"),
                     source.getBytes(StandardCharsets.UTF_8));
         }

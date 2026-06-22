@@ -29,13 +29,13 @@ FxDecompiler 当前是 JavaFX + JVM class 反编译软件，已有 `CodeEditorTa
 3. **Split view 要按双 deck 设计**：jadx 是左右两套视图，右侧默认 Smali。FxDecompiler 首版可默认左 Code、右 Bytecode，但数据结构不要写死右侧只能 Bytecode，避免后续返工。
 4. **同步能力分层降级**：优先用 `CodeMetadata` / ASM `LineNumberTable` / 方法签名；失败后回退到文本签名搜索；再失败只保持当前滚动，不弹异常。Java class 通常只能做到方法级或行级近似同步，不能承诺 jadx 的 DEX 指令级同步。
 5. **注释不能只按行号保存**：反编译结果会随引擎、版本和配置变化。注释锚点至少包含 `classInternalName + memberSignature + lineNumber + sourceHash/optionsHash`，导出时先按成员和源码 hash 匹配，失败再按原行号降级。
-6. **图形查看器先走 JavaFX 原生边界**：jadx 使用 Swing + graphviz-java + SVG 渲染。FxDecompiler 如果采用 `WebView + Viz.js`，必须同时补 `javafx-web` Maven 依赖和 `requires javafx.web`，并离线打包 JS 及许可证；不要加载远程脚本。
+6. **图形查看器先走 JavaFX 原生边界**：jadx 使用 Swing + graphviz-java + SVG 渲染。FxDecompiler 当前使用 JavaFX 原生控件渲染应用生成的 DOT 子集，避免 `WebView + Viz.js` 的 WASM 初始化兼容性、包体和许可证问题。
 7. **工具栏定位当前文件需要新增树定位 API**：当前 `FileTreeView` 只是薄封装，没有 `selectPath`。需要在 `WorkspaceTabManager` 或 `FileTreeView` 增加 `selectTreeNodeByPath(String fullPath)`，用于 toolbar localizer。
 8. **高版本 class 和大文件必须后台生成**：Smali/Bytecode/Graph 都要走 `BackgroundTasks`、取消令牌、过期结果丢弃和输出大小保护；不能在 FX 线程运行 ASM 大扫描。
 
 ## 架构总览
 
-### 新建文件清单（~16 个 Java 文件 + 2 个 Web 资源）
+### 新建文件清单（~18 个 Java 文件）
 
 | # | 文件 | 包 | 职责 |
 |---|------|-----|------|
@@ -48,20 +48,15 @@ FxDecompiler 当前是 JavaFX + JVM class 反编译软件，已有 `CodeEditorTa
 | 7 | `CodeSyncHelper.java` | `ui.code` | Split View 同步工具（LineNumberTable 方法级映射） |
 | 8 | `CodeAreaContextMenu.java` | `ui.code` | 右键上下文菜单（4 项） |
 | 9 | `MainToolBar.java` | `ui.toolbar` | 工具栏组件 |
-| 10 | `GraphDialog.java` | `ui.graph` | 图形弹窗（WebView + Viz.js 渲染 DOT → SVG） |
+| 10 | `GraphDialog.java` | `ui.graph` | 图形弹窗（JavaFX 原生渲染项目生成的 DOT 子集） |
 | 11 | `GraphService.java` | `ui.graph` | DOT 字符串生成工具类 |
+| 11-1 | `DotGraphParser.java` | `ui.graph` | 解析项目生成的 DOT 子集 |
+| 11-2 | `DotGraphRenderer.java` | `ui.graph` | JavaFX 原生节点/边布局渲染 |
 | 12 | `CommentDialog.java` | `ui.comment` | 注释输入弹窗 |
 | 13 | `CommentManager.java` | `service` | 注释 JSON 文件读写 |
 | 14 | `CommentData.java` | `model` | 注释数据模型 record |
 | 15 | `CodeContentDeck.java` | `ui.code` | 管理四种内容视图的懒加载、激活状态和销毁 |
 | 16 | `CommentExportDecorator.java` | `service` | 导出源码时插入/合并持久化注释 |
-
-### 资源文件
-
-| # | 文件 | 说明 |
-|---|------|------|
-| 17 | `src/main/resources/web/viz.js` | Graphviz JS 移植（约 2MB，用于图形渲染，需保留许可证） |
-| 18 | `src/main/resources/web/graph-template.html` | WebView 加载的 HTML 模板，只引用本地 viz.js |
 
 ### 修改文件清单（~8 个）
 
@@ -71,8 +66,8 @@ FxDecompiler 当前是 JavaFX + JVM class 反编译软件，已有 `CodeEditorTa
 | 20 | `MainWindow.java` | `topBars` 中添加 `MainToolBar`；实现刷新/定位等工具栏回调 |
 | 21 | `WorkspaceTabManager.java` | 暴露当前工作区树定位 API；当前代码标签仍由 `CodeEditorTab` 承载 |
 | 22 | `ClassTabOpener.java` | 创建 `CodeEditorTab` 时传入完整 `CodeViewContext` |
-| 23 | `module-info.java` | 若采用 WebView，添加 `javafx.web` 模块 |
-| 24 | `pom.xml` | 若采用 WebView，添加 `javafx-web` 依赖 |
+| 23 | `module-info.java` | 无需 `javafx.web`，图形弹窗使用 JavaFX 原生控件 |
+| 24 | `pom.xml` | 无需 `javafx-web`，避免 WebView/WASM 运行时依赖 |
 | 25 | `theme/dark.css` | 底部标签栏、工具栏、Split View 样式 |
 | 26 | `language_zh_CN.properties` | 新增 i18n key |
 | 27 | `language_en.properties` | 新增 i18n key |
@@ -567,9 +562,9 @@ return String.join("\n", lines);
 
 ### 依赖
 
-- `viz.js`（Graphviz JS 移植，约 2MB）→ 放在 `src/main/resources/web/viz.js`
-- JavaFX `WebView` 渲染 → 需要同时在 `pom.xml` 添加 `javafx-web`，在 `module-info.java` 添加 `requires javafx.web;`
-- 所有 JS/CSS 必须本地资源加载，不允许远程 URL；`viz.js` 的许可证文件一并放入资源或 third-party notices
+- 图形弹窗使用 JavaFX 原生控件渲染应用生成的 DOT 子集，不依赖 `javafx.web`、WebView 或 Viz.js。
+- 该方案避免 JavaFX WebView 在部分环境中卡在 WASM 初始化阶段，同时减少打包体积和运行时依赖。
+- 若未来需要完整 Graphviz 布局能力，应优先引入服务端/本地 Graphviz 渲染适配层，并保留当前原生渲染作为失败回退。
 
 ### 类设计
 
@@ -577,11 +572,9 @@ return String.join("\n", lines);
 
 ```java
 /**
- * 图形可视化弹窗，使用 WebView + Viz.js 渲染 DOT 格式的图形。
+ * 图形可视化弹窗，使用 JavaFX 原生控件渲染 DOT 子集。
  */
 public class GraphDialog extends Dialog<Void> {
-    private final WebView webView;
-
     /** @param title 弹窗标题 */
     /** @param dot   DOT 格式图形描述字符串 */
     public GraphDialog(Window owner, String title, String dot);
@@ -591,11 +584,11 @@ public class GraphDialog extends Dialog<Void> {
 }
 ```
 
-- 内部加载 `graph-template.html`
-- HTML 中内联 `<script>` 加载 `viz.js` 并渲染 DOT → SVG
-- WebView 支持：鼠标滚轮缩放（`Ctrl+Wheel`），拖拽平移
+- 内部调用 `DotGraphParser` 解析节点、边、`rankdir`、`label`、`fillcolor`
+- `DotGraphRenderer` 使用 JavaFX `ScrollPane`、`Pane`、`Label`、`Line`、`Polygon` 渲染节点和箭头
+- 支持 `Ctrl+Wheel` 缩放、滚动查看、DOT 源码/图形视图切换
 - 弹窗尺寸：800×600，可调整大小
-- 窗口关闭时释放 WebView 资源
+- 解析失败时保留 DOT 源码，便于复制到外部工具排查
 
 **`GraphService`** — 工具类
 
@@ -660,7 +653,7 @@ digraph G {
 - 仅显示类内部方法调用（owner 等于当前类），首版忽略外部类节点
 - 覆盖 `INVOKESPECIAL` / `INVOKEVIRTUAL` / `INVOKESTATIC` / `INVOKEINTERFACE`，包含构造器和静态初始化块，但 UI 可提供隐藏 `<init>` / `<clinit>` 的开关
 - DOT node id 使用稳定生成的 `Node_0`、`Node_1`，label 里显示方法名；所有 label 必须做 DOT 转义
-- 大类方法数超过阈值（建议 300）时先显示确认提示或只显示当前成员相关子图，避免 WebView 渲染过慢
+- 大类方法数超过阈值（建议 300）时先显示确认提示或只显示当前成员相关子图，避免图形布局和渲染过慢
 
 ---
 
@@ -705,25 +698,7 @@ digraph G {
 
 ## 依赖与 module-info.java 变更
 
-如果图形查看器采用 `WebView + Viz.js`，需要同时改 Maven 依赖和模块声明：
-
-`pom.xml`:
-
-```xml
-<dependency>
-    <groupId>org.openjfx</groupId>
-    <artifactId>javafx-web</artifactId>
-    <version>${javafx.version}</version>
-</dependency>
-```
-
-`module-info.java`:
-
-```diff
-requires javafx.swing;
-requires javafx.graphics;
-+requires javafx.web;
-```
+图形查看器不依赖 `javafx.web`。当前实现只使用已有的 JavaFX controls/graphics 模块，因此 `pom.xml` 不需要 `javafx-web`，`module-info.java` 不需要 `requires javafx.web;`。
 
 ---
 
@@ -841,7 +816,7 @@ requires javafx.graphics;
 | 大 class 生成视图过慢 | UI 卡顿或内存上涨 | 后台任务、输出大小阈值、取消令牌、懒加载 |
 | 注释行号漂移 | 导出注释贴错位置 | `sourceHash + optionsHash + memberSignature + line` 多级定位 |
 | Split view 节点复用 | JavaFX parent 冲突 | 左右独立 `CodeContentDeck`，共享只读数据不共享 Node |
-| WebView/Viz.js 体积和许可 | 包体增大、发布风险 | 离线资源、许可证记录、保留 JavaFX 原生/文本 DOT fallback |
+| 图形布局不是完整 Graphviz | 复杂 DOT 语法无法完全复刻外部 Graphviz 输出 | 只承诺渲染应用生成的 DOT 子集，保留 DOT 源码切换和外部工具复制路径 |
 | 右键菜单 token 命中不准 | 跳转/注释目标错误 | 优先 metadata，失败禁用或提示，不做猜测式强跳转 |
 
 ---
@@ -852,6 +827,6 @@ requires javafx.graphics;
 2. **Smali 标签保留但语义降级**: FxDecompiler 当前不支持 Android DEX，首版 Smali 标签显示 JVM/ASM 指令视图；真实 smali 等未来 DEX 输入支持后再实现。
 3. **Simple 为只读源码简化视图**: 不依赖反编译引擎的 SIMPLE 模式（各引擎支持不一），首版用轻量词法状态机去注释和压缩空行，不做破坏性泛型正则化。
 4. **Split View 不做指令级同步**: Java class 文件的 LineNumberTable 粒度不如 Android debug info，放弃指令级同步，做方法级同步。
-5. **图形渲染用 WebView + Viz.js**: 避免引入 AWT/Swing 依赖（与 JavaFX 渲染冲突），Viz.js 在浏览器环境中成熟稳定。
+5. **图形渲染用 JavaFX 原生 DOT 子集渲染器**: 避免引入 AWT/Swing、WebView、WASM 和大体积 JS 资源；当前只承诺渲染应用自身生成的继承图/方法图 DOT。
 6. **注释存储独立 JSON**: 不嵌入反编译缓存（会被过期清理），不做完整项目文件（太重），独立 JSON 文件便于跨会话保留和手动编辑。
 7. **不新增独立 Toolbar Actions 接口**: 工具栏回调复用现有 `MainMenuBar.Actions`，只补 `refreshCurrentTab()` 和 `locateCurrentFileInTree()`。

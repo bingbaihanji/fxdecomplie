@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
@@ -27,10 +28,14 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
@@ -50,6 +55,8 @@ public final class ClassTabOpener {
             Thread.ofVirtual().name("class-open-", 0).factory());
     /** 超过该大小时跳过源码 metadata 提取，避免打开大类时延迟首屏显示 */
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
+    /** 交互打开 class 的反编译超时，避免坏类/混淆类长时间占住首屏 */
+    private static final int INTERACTIVE_TIMEOUT_SECONDS = 15;
     /** 应用配置 */
     private final AppConfig config;
     /** 编辑器主题数据 */
@@ -68,12 +75,21 @@ public final class ClassTabOpener {
     public void setCodeActionHandler(CodeActionHandler handler) {
         this.codeActionHandler = handler;
     }
+
+    /** 设置标签页就绪回调（工具栏刷新等） */
+    public void setOnTabReady(Runnable callback) {
+        this.onTabReady = callback;
+    }
     /** 当前运行的反编译任务,用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
     /** 当前由主导航创建的占位标签,用于任务取消时清理 */
     private volatile Tab currentLoadingTab;
+    /** 当前已显示但源码仍在反编译中的代码标签,用于快速切换时清理 */
+    private volatile CodeEditorTab currentPendingTab;
     /** 代码操作回调，用于安装右键菜单 */
     private volatile CodeActionHandler codeActionHandler;
+    /** 标签页就绪回调（工具栏刷新等） */
+    private volatile Runnable onTabReady;
     /** 主导航反编译请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
 
@@ -153,6 +169,7 @@ public final class ClassTabOpener {
         Tab existingTab = findOrRemoveOpenClassTab(codeTabPane, node, engine, replaceDifferentEngine);
         if (existingTab != null) {
             codeTabPane.getSelectionModel().select(existingTab);
+            if (onTabReady != null) onTabReady.run();
             return;
         }
 
@@ -162,13 +179,16 @@ public final class ClassTabOpener {
         if (cancelPrevious) {
             BackgroundTasks.cancel(currentDecompileTask);
             removeLoadingTab(codeTabPane, currentLoadingTab);
+            removePendingTab(codeTabPane, currentPendingTab);
         }
         long requestId = cancelPrevious ? decompileGeneration.incrementAndGet() : -1L;
 
         Tab loadingTab = createLoadingTab(node, engine);
         AtomicReference<Future<?>> taskRef = new AtomicReference<>();
-        AtomicReference<Tab> activeLoadingRef = new AtomicReference<>(loadingTab);
-        loadingTab.setOnClosed(e -> BackgroundTasks.cancel(taskRef.get()));
+        loadingTab.setOnClosed(e -> {
+            BackgroundTasks.cancel(taskRef.get());
+            clearCurrentLoadingTab(loadingTab);
+        });
         codeTabPane.getTabs().add(loadingTab);
         codeTabPane.getSelectionModel().select(loadingTab);
         if (cancelPrevious) {
@@ -176,6 +196,7 @@ public final class ClassTabOpener {
         }
 
         Future<?> task = runOpenTask("Decompile-" + node.getName(), () -> {
+            AtomicReference<CodeEditorTab> pendingTabRef = new AtomicReference<>();
             try {
                 if (!isRequestCurrent(requestId, cancelPrevious)) {
                     return;
@@ -206,7 +227,26 @@ public final class ClassTabOpener {
                 }
 
                 String internalName = node.getFullPath().replace(".class", "");
-                DecompileResult result = decompileWithCache(internalName, engine, bytes, node, workspace,
+                DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
+                CodeMetadata emptyMetadata = emptyMetadata();
+                Consumer<CodeMetadata.Reference> pendingNavigate = createNavigationHandler(
+                        workspace, codeTabPane, effectiveEngine, lineNumbersEnabled);
+                OpenFile pendingOpenFile = new OpenFile(className(node), node.getFullPath(),
+                        pendingSource(node, effectiveEngine), effectiveEngine);
+
+                CodeEditorTab pendingTab = createPendingCodeTab(codeTabPane, loadingTab,
+                        node, workspace, pendingOpenFile, lineNumbersEnabled,
+                        bytes, emptyMetadata, pendingNavigate, taskRef,
+                        requestId, cancelPrevious);
+                pendingTabRef.set(pendingTab);
+                if (pendingTab == null || !isRequestCurrent(requestId, cancelPrevious)) {
+                    return;
+                }
+                if (cancelPrevious) {
+                    currentPendingTab = pendingTab;
+                }
+
+                DecompileResult result = decompileWithCache(internalName, effectiveEngine, bytes, node, workspace,
                         () -> isRequestCurrent(requestId, cancelPrevious));
                 if (!isRequestCurrent(requestId, cancelPrevious)) {
                     return;
@@ -220,51 +260,69 @@ public final class ClassTabOpener {
 
                 Platform.runLater(() -> {
                     if (!isRequestCurrent(requestId, cancelPrevious)) {
-                        removeLoadingTab(codeTabPane, activeLoadingRef.get());
+                        removePendingTab(codeTabPane, pendingTab);
                         return;
                     }
-                    CodeEditorTab codeTab = createCodeEditorTab(openFile, lineNumbersEnabled, bytes,
-                            metadata, completedNavigate);
-                    if (!replaceLoadingTab(codeTabPane, activeLoadingRef.get(), codeTab)) {
+                    if (!isTabOpen(codeTabPane, pendingTab)) {
+                        clearTaskIfCurrent(pendingTab);
                         return;
                     }
-                    codeTabPane.getSelectionModel().select(codeTab);
+                    pendingTab.setOnClosed(null);
+                    pendingTab.updateDecompiledContent(openFile, metadata, completedNavigate);
+                    pendingTab.setSourceReady(true);
+                    codeTabPane.getSelectionModel().select(pendingTab);
+                    if (onTabReady != null) onTabReady.run();
                     statusBar.setFilePath(
                             WorkspaceTabManager.formatClassPath(node.getFullPath()));
                     statusBar.setEncoding("UTF-8");
                     statusBar.setEngine(usedEngine.name());
                     statusBar.clearTask();
-                    bindCaretPosition(codeTab);
-                    installContextMenu(codeTab, node, workspace, openFile, bytes, metadata);
+                    bindCaretPosition(pendingTab);
+                    installContextMenu(pendingTab, node, workspace, openFile, bytes, metadata);
+                    clearCurrentPendingTab(pendingTab);
                 });
             } catch (Exception ex) {
                 // 用户导航到其他类时任务被取消,中断异常是预期行为,不弹窗
                 if (isInterruptRelated(ex)) {
                     Thread.interrupted();
                     Platform.runLater(() -> {
-                        Tab currentLoading = activeLoadingRef.get();
-                        boolean clearTask = shouldClearTaskFor(currentLoading);
-                        removeLoadingTab(codeTabPane, currentLoading);
-                        if (clearTask) {
+                        removePendingTab(codeTabPane, pendingTabRef.get());
+                        removeLoadingTab(codeTabPane, loadingTab);
+                        if (shouldClearTaskFor(loadingTab)) {
                             statusBar.clearTask();
                         }
                     });
                     return;
                 }
+                logger.error("打开 class 失败: {}", node.getFullPath(), ex);
                 Platform.runLater(() -> {
                     if (!isRequestCurrent(requestId, cancelPrevious)) {
-                        removeLoadingTab(codeTabPane, activeLoadingRef.get());
+                        removePendingTab(codeTabPane, pendingTabRef.get());
+                        removeLoadingTab(codeTabPane, loadingTab);
                         return;
                     }
-                    Tab currentLoading = activeLoadingRef.get();
-                    if (!isTabOpen(codeTabPane, currentLoading)) {
-                        clearTaskIfCurrent(currentLoading);
+                    CodeEditorTab pendingTab = pendingTabRef.get();
+                    if (pendingTab != null && isTabOpen(codeTabPane, pendingTab)) {
+                        OpenFile failedFile = new OpenFile(className(node), node.getFullPath(),
+                                failedSource(node, ex), engine == null ? DecompilerTypeEnum.VINEFLOWER : engine);
+                        pendingTab.setOnClosed(null);
+                        pendingTab.updateDecompiledContent(failedFile, emptyMetadata(), null);
+                        pendingTab.setSourceReady(true);
+                        bindCaretPosition(pendingTab);
+                        installContextMenu(pendingTab, node, workspace, failedFile,
+                                pendingTab.getClassBytes(), emptyMetadata());
+                        clearCurrentPendingTab(pendingTab);
+                        statusBar.clearTask();
                         return;
                     }
-                    boolean clearTask = shouldClearTaskFor(currentLoading);
-                    removeLoadingTab(codeTabPane, currentLoading);
+                    if (!isTabOpen(codeTabPane, loadingTab)) {
+                        clearTaskIfCurrent(loadingTab);
+                        return;
+                    }
+                    boolean clearTask = shouldClearTaskFor(loadingTab);
+                    removeLoadingTab(codeTabPane, loadingTab);
                     showAlert(I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.decompile.failed"));
+                            I18nUtil.getString("dialog.decompile.failed", errorReason(ex)));
                     if (clearTask) {
                         statusBar.clearTask();
                     }
@@ -365,8 +423,9 @@ public final class ClassTabOpener {
                     Thread.interrupted();
                     return;
                 }
+                logger.error("重新反编译 class 失败: {}", fullPath, ex);
                 Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
-                        I18nUtil.getString("dialog.decompile.failed")));
+                        I18nUtil.getString("dialog.decompile.failed", errorReason(ex))));
                 Platform.runLater(statusBar::clearTask);
             }
         });
@@ -434,8 +493,9 @@ public final class ClassTabOpener {
                     Thread.interrupted();
                     return;
                 }
+                logger.error("读取文本资源失败: {}", node.getFullPath(), ex);
                 Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
-                        I18nUtil.getString("dialog.read.failed")));
+                        I18nUtil.getString("dialog.read.failed", errorReason(ex))));
                 Platform.runLater(statusBar::clearTask);
             }
         });
@@ -460,8 +520,8 @@ public final class ClassTabOpener {
         CodeActionHandler handler = codeActionHandler;
         if (handler == null) return;
         WorkspaceIndex index = workspace.getIndex();
-        String workspaceHash = workspaceHash(workspace);
-        String sourceHash = sourceHash(openFile.sourceCode());
+        String workspaceHash = com.bingbaihanji.fxdecomplie.model.CommentScope.workspaceHash(workspace);
+        String sourceHash = CommentExportDecorator.sourceHash(openFile.sourceCode());
         String optionsHash = DecompilerOptions.hash(DecompilerOptions.forEngine(config, openFile.engine()));
         CodeViewContext ctx = new CodeViewContext(workspace, node, openFile,
                 classBytes, metadata, index, workspaceHash, sourceHash, optionsHash);
@@ -469,19 +529,6 @@ public final class ClassTabOpener {
         if (panel != null) {
             panel.installContextMenu(ctx, handler);
         }
-    }
-
-    private static String workspaceHash(Workspace ws) {
-        java.io.File f = ws.getSourceFile();
-        return f.getAbsolutePath().replace('\\', '/') + "@"
-                + f.lastModified() + "@" + f.length();
-    }
-
-    private static String sourceHash(String src) {
-        if (src == null) return "";
-        // 简单 hash：取前200字符 + 总长度
-        return "len=" + src.length() + ":"
-                + Integer.toHexString(src.hashCode());
     }
 
     private CodeEditorTab createCodeEditorTab(OpenFile openFile, boolean lineNumbersEnabled,
@@ -495,6 +542,65 @@ public final class ClassTabOpener {
         );
         CodeOnlyWindow.enableTabDrag(tab);
         return tab;
+    }
+
+    private CodeEditorTab createPendingCodeTab(TabPane codeTabPane, Tab loadingTab,
+                                               FileTreeNode node, Workspace workspace,
+                                               OpenFile pendingOpenFile, boolean lineNumbersEnabled,
+                                               byte[] bytes, CodeMetadata metadata,
+                                               Consumer<CodeMetadata.Reference> onNavigate,
+                                               AtomicReference<Future<?>> taskRef,
+                                               long requestId, boolean guarded) throws Exception {
+        CompletableFuture<CodeEditorTab> created = new CompletableFuture<>();
+        Platform.runLater(() -> {
+            try {
+                if (!isRequestCurrent(requestId, guarded)) {
+                    removeLoadingTab(codeTabPane, loadingTab);
+                    created.complete(null);
+                    return;
+                }
+                if (!isTabOpen(codeTabPane, loadingTab)) {
+                    clearTaskIfCurrent(loadingTab);
+                    created.complete(null);
+                    return;
+                }
+                CodeEditorTab pendingTab = createCodeEditorTab(pendingOpenFile, lineNumbersEnabled,
+                        bytes, metadata, onNavigate);
+                pendingTab.setSourceReady(false);
+                pendingTab.setOnClosed(e -> {
+                    BackgroundTasks.cancel(taskRef.get());
+                    clearCurrentPendingTab(pendingTab);
+                });
+                if (!replaceLoadingTab(codeTabPane, loadingTab, pendingTab)) {
+                    created.complete(null);
+                    return;
+                }
+                codeTabPane.getSelectionModel().select(pendingTab);
+                if (onTabReady != null) onTabReady.run();
+                statusBar.setFilePath(WorkspaceTabManager.formatClassPath(node.getFullPath()));
+                statusBar.setEncoding("UTF-8");
+                statusBar.setEngine(pendingOpenFile.engine().name());
+                bindCaretPosition(pendingTab);
+                installContextMenu(pendingTab, node, workspace, pendingOpenFile, bytes, metadata);
+                created.complete(pendingTab);
+            } catch (Throwable t) {
+                created.completeExceptionally(t);
+            }
+        });
+        try {
+            return created.get(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof Exception exception) {
+                throw exception;
+            }
+            throw new RuntimeException(cause);
+        } catch (TimeoutException e) {
+            throw new RuntimeException("创建代码标签页超时", e);
+        }
     }
 
     private Consumer<CodeMetadata.Reference> createNavigationHandler(Workspace workspace, TabPane codeTabPane,
@@ -553,9 +659,26 @@ public final class ClassTabOpener {
         clearCurrentLoadingTab(loadingTab);
     }
 
+    private void removePendingTab(TabPane codeTabPane, CodeEditorTab pendingTab) {
+        if (codeTabPane == null || pendingTab == null) {
+            return;
+        }
+        pendingTab.setOnClosed(null);
+        if (!pendingTab.isSourceReady()) {
+            codeTabPane.getTabs().remove(pendingTab);
+        }
+        clearCurrentPendingTab(pendingTab);
+    }
+
     private void clearCurrentLoadingTab(Tab loadingTab) {
         if (currentLoadingTab == loadingTab) {
             currentLoadingTab = null;
+        }
+    }
+
+    private void clearCurrentPendingTab(CodeEditorTab pendingTab) {
+        if (currentPendingTab == pendingTab) {
+            currentPendingTab = null;
         }
     }
 
@@ -564,7 +687,9 @@ public final class ClassTabOpener {
     }
 
     private boolean shouldClearTaskFor(Tab loadingTab) {
-        return currentLoadingTab == null || currentLoadingTab == loadingTab;
+        boolean loadingCurrent = currentLoadingTab == null || currentLoadingTab == loadingTab;
+        boolean pendingCurrent = currentPendingTab == null || currentPendingTab == loadingTab;
+        return loadingCurrent && pendingCurrent;
     }
 
     private void clearTaskIfCurrent(Tab loadingTab) {
@@ -623,7 +748,7 @@ public final class ClassTabOpener {
     private void bindCaretPosition(CodeEditorTab codeTab) {
         codeTab.getCodeArea().caretPositionProperty().addListener((obs, oldPos, newPos) -> {
             if (newPos != null) {
-                statusBar.setCursorPosition(newPos.index() + 1, newPos.charIndex() + 1);
+                statusBar.setCursorPosition(newPos.index() + 1, newPos.offset() + 1);
             }
         });
     }
@@ -663,7 +788,7 @@ public final class ClassTabOpener {
             DecompilerContext context = DecompilerRunner.contextForWorkspace(
                     workspace, engineOptions);
             sourceCode = DecompilerRunner.decompileWithTimeout(finalPath, bytes,
-                    effectiveEngine, context, active);
+                    effectiveEngine, context, active, INTERACTIVE_TIMEOUT_SECONDS);
             if (!active.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
@@ -705,21 +830,43 @@ public final class ClassTabOpener {
         return ((bytes[6] & 0xff) << 8) | (bytes[7] & 0xff);
     }
 
+    private static CodeMetadata emptyMetadata() {
+        return new CodeMetadata(java.util.Map.of());
+    }
+
+    private static String pendingSource(FileTreeNode node, DecompilerTypeEnum engine) {
+        return I18nUtil.getString("tab.decompiling.source",
+                node.getFullPath(), engine == null ? "" : engine.name());
+    }
+
+    private static String failedSource(FileTreeNode node, Exception ex) {
+        return I18nUtil.getString("tab.decompile.failed.source", node.getFullPath(), errorReason(ex));
+    }
+
+    private static String errorReason(Throwable ex) {
+        if (ex == null) {
+            return "未知错误";
+        }
+        String message = ex.getMessage();
+        if (message != null && !message.isBlank()) {
+            return message;
+        }
+        return ex.getClass().getSimpleName();
+    }
+
     /** 显示错误弹窗 */
     private void showAlert(String title, String message) {
-        Platform.runLater(() -> {
-            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
-                    javafx.scene.control.Alert.AlertType.ERROR, message);
-            alert.setTitle(title);
-            alert.setHeaderText(null);
+        Runnable action = () -> {
             javafx.stage.Window owner = javafx.stage.Window.getWindows().stream()
                     .filter(javafx.stage.Window::isShowing)
                     .findFirst().orElse(null);
-            if (owner != null) {
-                alert.initOwner(owner);
-            }
-            alert.showAndWait();
-        });
+            DialogHelper.showError(owner, title, message);
+        };
+        if (Platform.isFxApplicationThread()) {
+            action.run();
+        } else {
+            Platform.runLater(action);
+        }
     }
 
     private WorkspaceIndex workspaceIndexForBackground(Workspace workspace) {

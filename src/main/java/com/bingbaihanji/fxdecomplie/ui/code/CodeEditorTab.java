@@ -84,7 +84,8 @@ public class CodeEditorTab extends Tab {
         SourceContentPanel srcPanel = new SourceContentPanel(source, theme,
                 fontFamily, fontSize, wrapText, lineNumbersEnabled, this.metadata, onNavigate);
 
-        CodeViewPanel viewPanel = new CodeViewPanel(source, this.classBytes, srcPanel);
+        CodeViewPanel viewPanel = new CodeViewPanel(source, this.classBytes, srcPanel,
+                fontFamily, fontSize, lineNumbersEnabled);
         viewPanel.setDefaultFontSize(fontSize);
         viewPanel.bindSearchBar();
         this.codeViewPanel = viewPanel;
@@ -144,6 +145,15 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.replaceSourcePanel(source, srcPanel);
         codeArea = srcPanel.getCodeArea();
         sourceReady = true;
+    }
+
+    /**
+     * 只更新当前编辑器可见源码，不改变 OpenFile 中保存的原始反编译源码。
+     * 用于显示用户注释等装饰内容，导出仍可基于原始源码重新计算。
+     */
+    public void updateVisibleSource(String displaySource) {
+        codeViewPanel.refreshDisplayedSource(displaySource == null ? "" : displaySource);
+        codeArea = codeViewPanel.getSourceCodeArea();
     }
 
     /** @return 标签页显示标题 */
@@ -231,6 +241,23 @@ public class CodeEditorTab extends Tab {
     /** 设置行号开关 */
     public void setLineNumbersEnabled(boolean enabled) {
         codeViewPanel.setLineNumbersEnabled(enabled);
+    }
+
+    /** 应用字体设置到所有已有面板（Code/Smali/Bytecode/Simple） */
+    public void applyFontSettings(int fontSize, String fontFamily) {
+        codeViewPanel.applyFontSettings(fontSize, fontFamily);
+    }
+
+    private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
+        try {
+            java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
+            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+        } catch (Exception ignored) {
+        }
+        if (fontFamily != null && !fontFamily.isBlank()) {
+            return javafx.scene.text.Font.font(fontFamily, fontSize);
+        }
+        return javafx.scene.text.Font.font("Consolas", fontSize);
     }
 
     private static void setDialogIcon(javafx.stage.Stage stage) {
