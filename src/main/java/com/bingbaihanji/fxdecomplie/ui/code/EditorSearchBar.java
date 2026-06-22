@@ -26,8 +26,8 @@ public final class EditorSearchBar extends HBox {
     private final Button prevBtn;
     private final Button nextBtn;
     private final Button closeBtn;
-    private CodeArea codeArea;
     private final List<Integer> matchPositions = new ArrayList<>();
+    private CodeArea codeArea;
     private int currentMatch = -1;
 
     public EditorSearchBar(CodeArea codeArea) {

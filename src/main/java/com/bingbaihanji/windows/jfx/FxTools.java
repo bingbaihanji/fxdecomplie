@@ -2,8 +2,8 @@ package com.bingbaihanji.windows.jfx;
 
 import com.bingbaihanji.windows.platform.win32.NativeWindowsTools;
 import com.sun.jna.platform.win32.WinDef;
-import javafx.event.EventHandler;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 import javafx.stage.Screen;
@@ -12,7 +12,6 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -57,7 +56,6 @@ public final class FxTools {
                 .map(handle -> NativeWindowsTools.getHWndByEnumeration(handle.value()))
                 .orElse(null);
     }
-
 
 
     // ==================== 窗口居中 ====================
@@ -263,7 +261,9 @@ public final class FxTools {
                 T result = background.call();
                 Platform.runLater(() -> onSuccess.accept(result));
             } catch (Exception e) {
-                Platform.runLater(() -> { throw new RuntimeException(e); });
+                Platform.runLater(() -> {
+                    throw new RuntimeException(e);
+                });
             }
         }, "fx-async");
         t.setDaemon(true);

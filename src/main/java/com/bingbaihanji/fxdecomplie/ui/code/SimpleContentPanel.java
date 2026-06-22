@@ -21,28 +21,6 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
         this.sourceCode = sourceCode;
     }
 
-    @Override
-    public String getContentType() {
-        return "simple";
-    }
-
-    @Override
-    protected Object buildContentAsync(Object cancelToken) {
-        return simplify(sourceCode == null ? "" : sourceCode);
-    }
-
-    @Override
-    protected javafx.scene.Node createContent(Object contentData) {
-        CodeArea area = new CodeArea();
-        area.getStyleClass().add("code-editor");
-        area.setEditable(false);
-        area.setSyntaxDecorator(new RegexHighlighter(VsCodeThemeLoader.defaultDark()));
-        area.setText(contentData == null ? "" : contentData.toString());
-        applyFontAndLineNumbers(area);
-        this.codeArea = area;
-        return area;
-    }
-
     /**
      * 轻量词法状态机：移除行注释(//)和块注释(/* ... *​/)，压缩连续空行
      */
@@ -132,6 +110,28 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
         }
 
         return sb.toString().trim();
+    }
+
+    @Override
+    public String getContentType() {
+        return "simple";
+    }
+
+    @Override
+    protected Object buildContentAsync(Object cancelToken) {
+        return simplify(sourceCode == null ? "" : sourceCode);
+    }
+
+    @Override
+    protected javafx.scene.Node createContent(Object contentData) {
+        CodeArea area = new CodeArea();
+        area.getStyleClass().add("code-editor");
+        area.setEditable(false);
+        area.setSyntaxDecorator(new RegexHighlighter(VsCodeThemeLoader.defaultDark()));
+        area.setText(contentData == null ? "" : contentData.toString());
+        applyFontAndLineNumbers(area);
+        this.codeArea = area;
+        return area;
     }
 
     /** @return 简化代码编辑器 */

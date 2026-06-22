@@ -172,7 +172,7 @@ public final class ClassDiscoverer {
         }
 
         public ClassEntry(String name, String fullPath,
-                           FileTreeNode.NodeTypeEnum nodeType, byte[] bytes) {
+                          FileTreeNode.NodeTypeEnum nodeType, byte[] bytes) {
             this(name, fullPath, nodeType, bytes, null,
                     bytes == null ? -1L : bytes.length, null);
         }

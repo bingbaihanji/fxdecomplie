@@ -70,7 +70,9 @@ public final class CodeLinkHandler {
 
     /** 移除之前在 CodeArea 上安装的导航处理器 */
     public static void uninstall(CodeArea codeArea) {
-        codeArea.setOnMouseClicked(null);
+        if (codeArea != null) {
+            codeArea.setOnMouseClicked(null);
+        }
     }
 
     private static CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs,

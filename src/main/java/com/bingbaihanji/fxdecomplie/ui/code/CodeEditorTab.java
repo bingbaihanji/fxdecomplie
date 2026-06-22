@@ -21,12 +21,8 @@ import java.util.function.Consumer;
  */
 public class CodeEditorTab extends Tab {
 
-    /** Java 源码编辑器（兼容引用） */
-    private CodeArea codeArea;
     /** 代码视图面板 */
     private final CodeViewPanel codeViewPanel;
-    /** 打开的文件 */
-    private OpenFile openFile;
     /** 标签页显示标题 */
     private final String displayTitle;
     /** 可拖拽的标签标题节点 */
@@ -37,14 +33,18 @@ public class CodeEditorTab extends Tab {
     private final String fontFamily;
     private final boolean wrapText;
     private final boolean lineNumbersEnabled;
-    /** Ctrl+Click 导航元数据 */
-    private CodeMetadata metadata;
-    /** Ctrl+Click 导航回调(null 时禁用) */
-    private Consumer<CodeMetadata.Reference> onNavigate;
     /** 类文件原始字节码 */
     private final byte[] classBytes;
     /** 编辑器内搜索栏 */
     private final EditorSearchBar editorSearchBar;
+    /** Java 源码编辑器（兼容引用） */
+    private CodeArea codeArea;
+    /** 打开的文件 */
+    private OpenFile openFile;
+    /** Ctrl+Click 导航元数据 */
+    private CodeMetadata metadata;
+    /** Ctrl+Click 导航回调(null 时禁用) */
+    private Consumer<CodeMetadata.Reference> onNavigate;
     /** 反编译源码是否已就绪 */
     private boolean sourceReady = true;
 
@@ -106,6 +106,28 @@ public class CodeEditorTab extends Tab {
         label.setMinWidth(0);
         label.setTextOverrun(javafx.scene.control.OverrunStyle.CENTER_ELLIPSIS);
         return label;
+    }
+
+    private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
+        try {
+            java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
+            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+        } catch (Exception ignored) {
+        }
+        if (fontFamily != null && !fontFamily.isBlank()) {
+            return javafx.scene.text.Font.font(fontFamily, fontSize);
+        }
+        return javafx.scene.text.Font.font("Consolas", fontSize);
+    }
+
+    private static void setDialogIcon(javafx.stage.Stage stage) {
+        try {
+            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     /** @return Java 源码编辑器 */
@@ -246,27 +268,5 @@ public class CodeEditorTab extends Tab {
     /** 应用字体设置到所有已有面板（Code/Smali/Bytecode/Simple） */
     public void applyFontSettings(int fontSize, String fontFamily) {
         codeViewPanel.applyFontSettings(fontSize, fontFamily);
-    }
-
-    private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
-        try {
-            java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
-            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
-        } catch (Exception ignored) {
-        }
-        if (fontFamily != null && !fontFamily.isBlank()) {
-            return javafx.scene.text.Font.font(fontFamily, fontSize);
-        }
-        return javafx.scene.text.Font.font("Consolas", fontSize);
-    }
-
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-        }
     }
 }

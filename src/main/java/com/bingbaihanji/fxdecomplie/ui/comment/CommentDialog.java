@@ -37,8 +37,8 @@ public final class CommentDialog {
      * @param onSave          保存回调
      */
     public static void show(Window owner, String className, String memberSignature,
-                             int line, String sourceHash, String optionsHash,
-                             CommentData existing, Consumer<CommentData> onSave) {
+                            int line, String sourceHash, String optionsHash,
+                            CommentData existing, Consumer<CommentData> onSave) {
         Dialog<CommentData> dialog = new Dialog<>();
         dialog.initOwner(owner);
         dialog.setTitle(existing != null

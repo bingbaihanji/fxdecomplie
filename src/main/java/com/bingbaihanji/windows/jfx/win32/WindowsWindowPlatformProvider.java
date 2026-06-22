@@ -44,8 +44,8 @@ public final class WindowsWindowPlatformProvider implements WindowPlatformProvid
 
     @Override
     public WindowOperationResult applyAppearance(Stage stage,
-                                                  WindowAppearance appearance,
-                                                  Duration timeout) {
+                                                 WindowAppearance appearance,
+                                                 Duration timeout) {
         return withHandle("applyAppearance", stage, timeout, hwnd -> {
             ArrayList<WindowOperationResult> results = new ArrayList<>();
             if (appearance.darkMode() != null) {

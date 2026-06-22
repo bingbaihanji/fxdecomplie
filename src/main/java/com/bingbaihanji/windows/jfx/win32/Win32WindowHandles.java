@@ -146,7 +146,6 @@ final class Win32WindowHandles {
     }
 
 
-
     /**
      * 通过枚举当前进程所有窗口标题来查找匹配的窗口句柄。
      *

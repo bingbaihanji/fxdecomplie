@@ -68,11 +68,6 @@ public final class WorkspaceTabManager {
         this.statusBar = statusBar;
     }
 
-    /** 设置内层代码标签页切换回调 */
-    public void setOnActiveTabChange(Runnable callback) {
-        this.onActiveTabChange = callback;
-    }
-
     /** 创建底部工具窗口顶部的独立拖拽手柄 */
     private static Region createBottomToolResizeHandle(SplitPane splitPane) {
         Region handle = new Region();
@@ -269,6 +264,75 @@ public final class WorkspaceTabManager {
         } else if (!pinned && text.startsWith("● ")) {
             tab.setText(text.substring(2));
         }
+    }
+
+    private static void refreshInheritanceForCurrentSelection(Workspace workspace, TabPane codeTabPane,
+                                                              InheritancePane inheritancePane,
+                                                              boolean startIndexIfNeeded) {
+        Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
+        if (selected instanceof CodeEditorTab codeTab) {
+            refreshInheritancePane(workspace, codeTabPane, inheritancePane,
+                    codeTab.getOpenFile().fullPath(), startIndexIfNeeded);
+        } else {
+            inheritancePane.clear();
+        }
+    }
+
+    private static void refreshInheritancePane(Workspace workspace, TabPane codeTabPane,
+                                               InheritancePane inheritancePane,
+                                               String selectedPath,
+                                               boolean startIndexIfNeeded) {
+        if (workspace == null || inheritancePane == null || selectedPath == null || selectedPath.isBlank()) {
+            return;
+        }
+        if (workspace.isIndexReady()) {
+            inheritancePane.load(selectedPath, workspace.getIndex());
+            return;
+        }
+        if (!startIndexIfNeeded) {
+            inheritancePane.showIndexPending();
+            return;
+        }
+
+        inheritancePane.showIndexing();
+        if (!workspace.isIndexBuildStarted()) {
+            WorkspaceIndexService.ensureIndexingStarted(workspace);
+        }
+        workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
+            if (error != null) {
+                inheritancePane.showUnavailable();
+                return;
+            }
+            Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
+            if (selected instanceof CodeEditorTab selectedCodeTab
+                    && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
+                inheritancePane.load(selectedPath, index);
+            }
+        }));
+    }
+
+    /** 深度优先递归查找具有指定完整路径的树节点 */
+    private static TreeItem<FileTreeNode> findTreeItemByPath(
+            TreeItem<FileTreeNode> parent, String fullPath) {
+        if (parent == null || fullPath == null) {
+            return null;
+        }
+        FileTreeNode node = parent.getValue();
+        if (node != null && fullPath.equals(node.getFullPath())) {
+            return parent;
+        }
+        for (TreeItem<FileTreeNode> child : parent.getChildren()) {
+            TreeItem<FileTreeNode> found = findTreeItemByPath(child, fullPath);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    /** 设置内层代码标签页切换回调 */
+    public void setOnActiveTabChange(Runnable callback) {
+        this.onActiveTabChange = callback;
     }
 
     /** 设置拖放配置,用于在 workspace 代码标签页面板安装跨窗口拖拽支持 */
@@ -520,51 +584,6 @@ public final class WorkspaceTabManager {
         outerTabPane.getSelectionModel().select(tab);
         statusBar.setFilePath(workspace.getSourceFile().getAbsolutePath());
         statusBar.setEngine(currentEngineName);
-    }
-
-    private static void refreshInheritanceForCurrentSelection(Workspace workspace, TabPane codeTabPane,
-                                                              InheritancePane inheritancePane,
-                                                              boolean startIndexIfNeeded) {
-        Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
-        if (selected instanceof CodeEditorTab codeTab) {
-            refreshInheritancePane(workspace, codeTabPane, inheritancePane,
-                    codeTab.getOpenFile().fullPath(), startIndexIfNeeded);
-        } else {
-            inheritancePane.clear();
-        }
-    }
-
-    private static void refreshInheritancePane(Workspace workspace, TabPane codeTabPane,
-                                               InheritancePane inheritancePane,
-                                               String selectedPath,
-                                               boolean startIndexIfNeeded) {
-        if (workspace == null || inheritancePane == null || selectedPath == null || selectedPath.isBlank()) {
-            return;
-        }
-        if (workspace.isIndexReady()) {
-            inheritancePane.load(selectedPath, workspace.getIndex());
-            return;
-        }
-        if (!startIndexIfNeeded) {
-            inheritancePane.showIndexPending();
-            return;
-        }
-
-        inheritancePane.showIndexing();
-        if (!workspace.isIndexBuildStarted()) {
-            WorkspaceIndexService.ensureIndexingStarted(workspace);
-        }
-        workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
-            if (error != null) {
-                inheritancePane.showUnavailable();
-                return;
-            }
-            Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
-            if (selected instanceof CodeEditorTab selectedCodeTab
-                    && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
-                inheritancePane.load(selectedPath, index);
-            }
-        }));
     }
 
     /** 关闭指定标签页 */
@@ -870,25 +889,6 @@ public final class WorkspaceTabManager {
             return true;
         }
         return false;
-    }
-
-    /** 深度优先递归查找具有指定完整路径的树节点 */
-    private static TreeItem<FileTreeNode> findTreeItemByPath(
-            TreeItem<FileTreeNode> parent, String fullPath) {
-        if (parent == null || fullPath == null) {
-            return null;
-        }
-        FileTreeNode node = parent.getValue();
-        if (node != null && fullPath.equals(node.getFullPath())) {
-            return parent;
-        }
-        for (TreeItem<FileTreeNode> child : parent.getChildren()) {
-            TreeItem<FileTreeNode> found = findTreeItemByPath(child, fullPath);
-            if (found != null) {
-                return found;
-            }
-        }
-        return null;
     }
 
     private enum ToolTab {

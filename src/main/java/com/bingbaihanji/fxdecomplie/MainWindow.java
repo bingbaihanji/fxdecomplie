@@ -8,23 +8,19 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
-import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentDialog;
+import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
 import com.bingbaihanji.fxdecomplie.ui.graph.GraphDialog;
 import com.bingbaihanji.fxdecomplie.ui.graph.GraphService;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceService;
-import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
-import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
 import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
 import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
 import com.bingbaihanji.fxdecomplie.ui.search.*;
 import com.bingbaihanji.fxdecomplie.ui.settings.SettingsDialog;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
 import com.bingbaihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbaihanji.fxdecomplie.ui.window.AppHeaderBar;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
@@ -39,22 +35,16 @@ import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.ArrayDeque;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * FxDecompiler 应用窗口的中央控制器
@@ -116,6 +106,196 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
         content.putString(value == null ? "" : value);
         javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
+    }
+
+    private static String toInnerClassPath(String className) {
+        if (className == null || className.isBlank()) {
+            return "";
+        }
+        String[] parts = className.split("\\.");
+        StringBuilder sb = new StringBuilder();
+        boolean classSegmentSeen = false;
+        for (String part : parts) {
+            if (part.isEmpty()) {
+                continue;
+            }
+            boolean classLike = Character.isUpperCase(part.charAt(0)) || classSegmentSeen;
+            if (sb.length() > 0) {
+                sb.append(classLike ? '$' : '/');
+            }
+            sb.append(part);
+            if (classLike) {
+                classSegmentSeen = true;
+            }
+        }
+        return sb.toString();
+    }
+
+    private static boolean matchesSimpleClassName(FileTreeNode node, String simpleToken,
+                                                  String expectedClassFile) {
+        if (node == null || simpleToken == null || simpleToken.isBlank()) {
+            return false;
+        }
+        String name = node.getName();
+        if (expectedClassFile.equals(name)) {
+            return true;
+        }
+        String path = normalizeInternalClassName(node.getFullPath());
+        int slash = path.lastIndexOf('/');
+        String simpleName = slash >= 0 ? path.substring(slash + 1) : path;
+        return simpleName.equals(simpleToken) || simpleName.endsWith("$" + simpleToken);
+    }
+
+    private static int findDeclarationLine(String sourceCode, String token, int clickedLine) {
+        if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()) {
+            return -1;
+        }
+        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        if (simpleToken.isBlank()) {
+            return -1;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        int bestLine = -1;
+        int bestDistance = Integer.MAX_VALUE;
+        for (int i = 0; i < lines.length; i++) {
+            String line = stripLineComment(lines[i]);
+            if (line.isBlank() || !line.contains(simpleToken)) {
+                continue;
+            }
+            if (looksLikeDeclarationLine(line, simpleToken)) {
+                int lineNumber = i + 1;
+                int distance = clickedLine > 0 ? Math.abs(lineNumber - clickedLine) : lineNumber;
+                if (lineNumber == clickedLine) {
+                    return lineNumber;
+                }
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestLine = lineNumber;
+                }
+            }
+        }
+        return bestLine;
+    }
+
+    private static boolean looksLikeDeclarationLine(String line, String simpleToken) {
+        String trimmed = line == null ? "" : line.strip();
+        if (trimmed.isEmpty() || trimmed.startsWith("@")) {
+            return false;
+        }
+        String quoted = Pattern.quote(simpleToken);
+        if (Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + quoted + "\\b")
+                .matcher(trimmed).find()) {
+            return true;
+        }
+        if (Pattern.compile(
+                        "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
+                                + "\\s*\\([^;]*\\)\\s*(?:throws\\s+[\\w.$,\\s]+)?\\s*(?:\\{|;)?\\s*$")
+                .matcher(trimmed).find()) {
+            return true;
+        }
+        return Pattern.compile(
+                        "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
+                                + "\\s*(?:=|;|,).*$")
+                .matcher(trimmed).find();
+    }
+
+    private static String stripLineComment(String line) {
+        if (line == null) {
+            return "";
+        }
+        int comment = line.indexOf("//");
+        return comment >= 0 ? line.substring(0, comment) : line;
+    }
+
+    private static String sanitizeDeclarationToken(String token) {
+        if (token == null) {
+            return "";
+        }
+        String result = token.strip();
+        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(0))) {
+            result = result.substring(1);
+        }
+        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(result.length() - 1))) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
+    }
+
+    private static boolean isDeclarationTokenChar(char ch) {
+        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$' || ch == '/';
+    }
+
+    private static String tokenSimpleName(String token) {
+        String normalized = token.replace('.', '/');
+        int slash = normalized.lastIndexOf('/');
+        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+    }
+
+    private static boolean isRelativeClassToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        String trimmed = token.strip();
+        while (!trimmed.isEmpty() && !isDeclarationTokenChar(trimmed.charAt(0))) {
+            trimmed = trimmed.substring(1);
+        }
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        char first = trimmed.charAt(0);
+        return Character.isUpperCase(first) || first == '_' || first == '$';
+    }
+
+    private static boolean samePackage(String leftInternalName, String rightInternalName) {
+        return packageName(leftInternalName).equals(packageName(rightInternalName));
+    }
+
+    private static String normalizeInternalClassName(String className) {
+        if (className == null) {
+            return "";
+        }
+        String normalized = className.replace('\\', '/');
+        if (normalized.endsWith(".class")) {
+            normalized = normalized.substring(0, normalized.length() - ".class".length());
+        }
+        return normalized;
+    }
+
+    private static String packageName(String internalName) {
+        if (internalName == null) {
+            return "";
+        }
+        int slash = internalName.lastIndexOf('/');
+        return slash >= 0 ? internalName.substring(0, slash) : "";
+    }
+
+    /** 计算与 ClassTabOpener 一致的 L2 缓存工作区键,确保跨组件缓存复用 */
+    private static String workspaceKey(Workspace workspace) {
+        File source = workspace.getSourceFile();
+        long mtime = source.lastModified();
+        long size = source.isFile() ? source.length() : 0L;
+        return (source.getAbsolutePath() + "_" + mtime + "_" + size)
+                .replace(':', '_').replace('\\', '_').replace('/', '_');
+    }
+
+    /** 将项目文件中保存的引擎名字符串还原为枚举值,非法值回退到默认引擎 */
+    private static DecompilerTypeEnum parseEngine(String value, DecompilerTypeEnum fallback) {
+        try {
+            return DecompilerTypeEnum.valueOf(value);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return fallback == null ? DecompilerTypeEnum.VINEFLOWER : fallback;
+        }
+    }
+
+    /** 为对话框/Stage 设置应用 Logo 图标 */
+    private static void setAlertIcon(javafx.stage.Stage s) {
+        try {
+            var stream = MainWindow.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                s.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     /** 显示主窗口 */
@@ -451,6 +631,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
     }
 
+    // ─── CodeActionHandler 实现 ─────────────────────────────────
+
     /** 退出应用 */
     @Override
     public void exit() {
@@ -609,8 +791,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             statusBar.setFilePath(I18nUtil.getString("toolbar.localizer.failed"));
         }
     }
-
-    // ─── CodeActionHandler 实现 ─────────────────────────────────
 
     @Override
     public void goToDeclaration(CodeMetadata.Reference reference) {
@@ -1063,29 +1243,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return null;
     }
 
-    private static String toInnerClassPath(String className) {
-        if (className == null || className.isBlank()) {
-            return "";
-        }
-        String[] parts = className.split("\\.");
-        StringBuilder sb = new StringBuilder();
-        boolean classSegmentSeen = false;
-        for (String part : parts) {
-            if (part.isEmpty()) {
-                continue;
-            }
-            boolean classLike = Character.isUpperCase(part.charAt(0)) || classSegmentSeen;
-            if (sb.length() > 0) {
-                sb.append(classLike ? '$' : '/');
-            }
-            sb.append(part);
-            if (classLike) {
-                classSegmentSeen = true;
-            }
-        }
-        return sb.toString();
-    }
-
     private FileTreeNode findNodeBySimpleNameInTree(Workspace workspace, String token,
                                                     String currentClassName) {
         if (workspace == null || token == null || token.isBlank()) {
@@ -1122,21 +1279,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 .orElse(null);
     }
 
-    private static boolean matchesSimpleClassName(FileTreeNode node, String simpleToken,
-                                                  String expectedClassFile) {
-        if (node == null || simpleToken == null || simpleToken.isBlank()) {
-            return false;
-        }
-        String name = node.getName();
-        if (expectedClassFile.equals(name)) {
-            return true;
-        }
-        String path = normalizeInternalClassName(node.getFullPath());
-        int slash = path.lastIndexOf('/');
-        String simpleName = slash >= 0 ? path.substring(slash + 1) : path;
-        return simpleName.equals(simpleToken) || simpleName.endsWith("$" + simpleToken);
-    }
-
     private FileTreeNode findClassPath(Workspace workspace, String internalName) {
         if (workspace == null || internalName == null || internalName.isBlank()) {
             return null;
@@ -1163,129 +1305,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             slash = normalized.lastIndexOf('/');
         }
         return null;
-    }
-
-    private static int findDeclarationLine(String sourceCode, String token, int clickedLine) {
-        if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()) {
-            return -1;
-        }
-        String simpleToken = tokenSimpleName(token).replace(".class", "");
-        if (simpleToken.isBlank()) {
-            return -1;
-        }
-        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
-        int bestLine = -1;
-        int bestDistance = Integer.MAX_VALUE;
-        for (int i = 0; i < lines.length; i++) {
-            String line = stripLineComment(lines[i]);
-            if (line.isBlank() || !line.contains(simpleToken)) {
-                continue;
-            }
-            if (looksLikeDeclarationLine(line, simpleToken)) {
-                int lineNumber = i + 1;
-                int distance = clickedLine > 0 ? Math.abs(lineNumber - clickedLine) : lineNumber;
-                if (lineNumber == clickedLine) {
-                    return lineNumber;
-                }
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    bestLine = lineNumber;
-                }
-            }
-        }
-        return bestLine;
-    }
-
-    private static boolean looksLikeDeclarationLine(String line, String simpleToken) {
-        String trimmed = line == null ? "" : line.strip();
-        if (trimmed.isEmpty() || trimmed.startsWith("@")) {
-            return false;
-        }
-        String quoted = Pattern.quote(simpleToken);
-        if (Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + quoted + "\\b")
-                .matcher(trimmed).find()) {
-            return true;
-        }
-        if (Pattern.compile(
-                "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
-                        + "\\s*\\([^;]*\\)\\s*(?:throws\\s+[\\w.$,\\s]+)?\\s*(?:\\{|;)?\\s*$")
-                .matcher(trimmed).find()) {
-            return true;
-        }
-        return Pattern.compile(
-                "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
-                        + "\\s*(?:=|;|,).*$")
-                .matcher(trimmed).find();
-    }
-
-    private static String stripLineComment(String line) {
-        if (line == null) {
-            return "";
-        }
-        int comment = line.indexOf("//");
-        return comment >= 0 ? line.substring(0, comment) : line;
-    }
-
-    private static String sanitizeDeclarationToken(String token) {
-        if (token == null) {
-            return "";
-        }
-        String result = token.strip();
-        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(0))) {
-            result = result.substring(1);
-        }
-        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(result.length() - 1))) {
-            result = result.substring(0, result.length() - 1);
-        }
-        return result;
-    }
-
-    private static boolean isDeclarationTokenChar(char ch) {
-        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$' || ch == '/';
-    }
-
-    private static String tokenSimpleName(String token) {
-        String normalized = token.replace('.', '/');
-        int slash = normalized.lastIndexOf('/');
-        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
-    }
-
-    private static boolean isRelativeClassToken(String token) {
-        if (token == null || token.isBlank()) {
-            return false;
-        }
-        String trimmed = token.strip();
-        while (!trimmed.isEmpty() && !isDeclarationTokenChar(trimmed.charAt(0))) {
-            trimmed = trimmed.substring(1);
-        }
-        if (trimmed.isEmpty()) {
-            return false;
-        }
-        char first = trimmed.charAt(0);
-        return Character.isUpperCase(first) || first == '_' || first == '$';
-    }
-
-    private static boolean samePackage(String leftInternalName, String rightInternalName) {
-        return packageName(leftInternalName).equals(packageName(rightInternalName));
-    }
-
-    private static String normalizeInternalClassName(String className) {
-        if (className == null) {
-            return "";
-        }
-        String normalized = className.replace('\\', '/');
-        if (normalized.endsWith(".class")) {
-            normalized = normalized.substring(0, normalized.length() - ".class".length());
-        }
-        return normalized;
-    }
-
-    private static String packageName(String internalName) {
-        if (internalName == null) {
-            return "";
-        }
-        int slash = internalName.lastIndexOf('/');
-        return slash >= 0 ? internalName.substring(0, slash) : "";
     }
 
     private CommentScope commentScope(Workspace workspace, DecompilerTypeEnum engine) {
@@ -1516,6 +1535,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         SettingsDialog.show(stage, config, this::applySettings);
     }
 
+    // ── 内部辅助方法 ──
+
     /** 应用设置对话框确认后的配置变更：切换引擎、更新行号、更新字体 */
     private void applySettings(AppConfig updated) {
         DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
@@ -1572,8 +1593,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 message.toString(), exportConfig.outputPath(), result.errors());
     }
 
-    // ── 内部辅助方法 ──
-
     /** 在工作区中按完整路径打开类并延迟跳转到指定行(搜索/FindUsages 双击回调) */
     private void openClassByPath(WorkspaceView view, String fullPath, int lineNumber) {
         FileTreeNode node = view.workspace().findNodeByPath(fullPath);
@@ -1626,15 +1645,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         for (TreeItem<FileTreeNode> child : item.getChildren()) {
             collectClassNames(child, result);
         }
-    }
-
-    /** 计算与 ClassTabOpener 一致的 L2 缓存工作区键,确保跨组件缓存复用 */
-    private static String workspaceKey(Workspace workspace) {
-        File source = workspace.getSourceFile();
-        long mtime = source.lastModified();
-        long size = source.isFile() ? source.length() : 0L;
-        return (source.getAbsolutePath() + "_" + mtime + "_" + size)
-                .replace(':', '_').replace('\\', '_').replace('/', '_');
     }
 
     /**
@@ -1828,15 +1838,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
-    /** 将项目文件中保存的引擎名字符串还原为枚举值,非法值回退到默认引擎 */
-    private static DecompilerTypeEnum parseEngine(String value, DecompilerTypeEnum fallback) {
-        try {
-            return DecompilerTypeEnum.valueOf(value);
-        } catch (IllegalArgumentException | NullPointerException e) {
-            return fallback == null ? DecompilerTypeEnum.VINEFLOWER : fallback;
-        }
-    }
-
     private void showInfo(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(stage, title, message);
     }
@@ -1880,17 +1881,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 弹出错误对话框 */
     private void showError(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showError(stage, title, message);
-    }
-
-    /** 为对话框/Stage 设置应用 Logo 图标 */
-    private static void setAlertIcon(javafx.stage.Stage s) {
-        try {
-            var stream = MainWindow.class.getResourceAsStream("/icon/logo.png");
-            if (stream != null) {
-                s.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-        }
     }
 
 }

@@ -28,29 +28,6 @@ public class AppConfig {
     private static final Path CONFIG_DIR = APP_DIR.resolve("config");
     /** 配置文件路径 */
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
-
-    /**
-     * 解析应用根目录：优先取 JAR 包所在目录,开发期回退到 user.dir
-     * 所有应用数据(配置、缓存、日志)均存放在此目录下
-     */
-    public static Path appDir() {
-        return APP_DIR;
-    }
-
-    private static Path resolveAppDir() {
-        try {
-            var codeSource = AppConfig.class.getProtectionDomain().getCodeSource();
-            if (codeSource != null && codeSource.getLocation() != null) {
-                Path jarPath = Path.of(codeSource.getLocation().toURI());
-                if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
-                    Path parent = jarPath.getParent();
-                    if (parent != null) return parent;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return Path.of(System.getProperty("user.dir"));
-    }
     /** JSON 序列化/反序列化器 */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
@@ -74,6 +51,29 @@ public class AppConfig {
     private Platform platform = new Platform();
     /** 最近打开的文件列表(路径字符串) */
     private List<String> recentFiles = new ArrayList<>();
+
+    /**
+     * 解析应用根目录：优先取 JAR 包所在目录,开发期回退到 user.dir
+     * 所有应用数据(配置、缓存、日志)均存放在此目录下
+     */
+    public static Path appDir() {
+        return APP_DIR;
+    }
+
+    private static Path resolveAppDir() {
+        try {
+            var codeSource = AppConfig.class.getProtectionDomain().getCodeSource();
+            if (codeSource != null && codeSource.getLocation() != null) {
+                Path jarPath = Path.of(codeSource.getLocation().toURI());
+                if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
+                    Path parent = jarPath.getParent();
+                    if (parent != null) return parent;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return Path.of(System.getProperty("user.dir"));
+    }
 
     /**
      * 加载配置如果配置文件不存在或读取失败,返回默认配置

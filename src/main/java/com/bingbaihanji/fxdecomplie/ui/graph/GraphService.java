@@ -50,7 +50,7 @@ public final class GraphService {
     }
 
     private static void appendInheritanceNodes(StringBuilder sb, TreeItem<InheritanceNode> item,
-                                                Set<String> seen, int depth) {
+                                               Set<String> seen, int depth) {
         if (item == null || depth > 20) return;
         InheritanceNode node = item.getValue();
         if (node == null || seen.contains(node.className())) return;
@@ -72,8 +72,15 @@ public final class GraphService {
         }
     }
 
+    /**
+     * 递归为继承树生成边。
+     *
+     * <p>边的方向总是指向父节点（配合 rankdir=BT 实现"自底向上"的继承层次）：
+     * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口，边 parent→child（指向更上层）；
+     * SUBCLASS → child 是 parent 的子类，边 child→parent（指向被分析的类）。</p>
+     */
     private static void appendInheritanceEdges(StringBuilder sb, TreeItem<InheritanceNode> item,
-                                                Set<String> seen) {
+                                               Set<String> seen) {
         if (item == null) return;
         InheritanceNode parent = item.getValue();
         if (parent == null) return;
@@ -84,8 +91,10 @@ public final class GraphService {
                     && seen.contains(childNode.className())) {
                 if (childNode.relation() == InheritanceNode.RelationType.SUPER_CLASS
                         || childNode.relation() == InheritanceNode.RelationType.INTERFACE) {
+                    // 父类/接口：箭头指向更上层
                     appendInheritanceEdge(sb, parent.className(), childNode.className());
                 } else if (childNode.relation() == InheritanceNode.RelationType.SUBCLASS) {
+                    // 子类：箭头指向被分析的类（parent）
                     appendInheritanceEdge(sb, childNode.className(), parent.className());
                 }
             }
@@ -117,7 +126,7 @@ public final class GraphService {
                 + "fontcolor=\"#d4d4d4\", color=\"#569cd6\"];\n");
         sb.append("    edge [color=\"#808080\"];\n");
 
-        java.util.Map<String, Integer> nodeIndex = new LinkedHashMap<>();
+        Map<String, Integer> nodeIndex = new LinkedHashMap<>();
         int count = 0;
         for (MethodNode node : graph.methods()) {
             if (count >= MAX_METHOD_NODES) break;
@@ -214,12 +223,30 @@ public final class GraphService {
 
     /** ASM ClassVisitor，扫描方法体中的类内部方法调用 */
     private static final class MethodCallCollector extends ClassVisitor {
-        private String owner;
         private final Map<String, MethodNode> nodeMap = new LinkedHashMap<>();
         private final Set<MethodEdge> edges = new LinkedHashSet<>();
+        private String owner;
 
         MethodCallCollector() {
             super(Opcodes.ASM9);
+        }
+
+        /**
+         * 将 JVM 方法描述符转为可读形式。
+         * 例: "(IJ)Ljava/lang/String;" → "(IJ)"
+         *
+         * @param desc JVM 方法描述符，不可为 null
+         * @return 参数部分的可读表示，异常输入返回 "(?)"
+         */
+        private static String descToDisplay(String desc) {
+            if (desc == null || desc.length() < 3) {
+                return "(?)";
+            }
+            int close = desc.indexOf(')');
+            if (close <= 1) {
+                return "(?)";
+            }
+            return "(" + desc.substring(1, close) + ")";
         }
 
         @Override
@@ -231,7 +258,7 @@ public final class GraphService {
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String desc,
-                                          String sig, String[] exceptions) {
+                                         String sig, String[] exceptions) {
             String displayName = name + descToDisplay(desc);
             MethodNode currentNode = new MethodNode(name, desc, displayName);
             nodeMap.putIfAbsent(nodeKey(currentNode), currentNode);
@@ -253,10 +280,6 @@ public final class GraphService {
 
         MethodGraph build() {
             return new MethodGraph(owner, List.copyOf(nodeMap.values()), Set.copyOf(edges));
-        }
-
-        private static String descToDisplay(String desc) {
-            return "(" + desc.substring(1, desc.indexOf(')')) + ")";
         }
     }
 }

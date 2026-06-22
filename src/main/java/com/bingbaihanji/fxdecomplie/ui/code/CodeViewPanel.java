@@ -17,11 +17,11 @@ import javafx.scene.layout.VBox;
 public class CodeViewPanel extends VBox {
 
     private final CodeContentDeck leftDeck;
-    private CodeContentDeck rightDeck;
     private final EditorSearchBar searchBar;
     private final SplitPane splitPane;
     private final CheckBox splitToggle;
     private final byte[] classBytes;
+    private CodeContentDeck rightDeck;
     private boolean splitActive;
     private int defaultFontSize = 14;
     private String fontFamily = "Consolas";

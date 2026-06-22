@@ -22,52 +22,6 @@ public final class NativeWindowsTools {
         throw new AssertionError("utility class");
     }
 
-    /** 窗口坐标点，对应 Win32 POINT 结构体 */
-    public record WindowPoint(int x, int y) {
-        private WinDef.POINT toNativePoint() {
-            WinDef.POINT point = new WinDef.POINT();
-            point.x = x;
-            point.y = y;
-            return point;
-        }
-    }
-
-    /** 窗口矩形信息，对应 Win32 RECT 结构体 */
-    public record WindowRect(int left, int top, int right, int bottom) {
-        public int width() {
-            return right - left;
-        }
-
-        public int height() {
-            return bottom - top;
-        }
-
-        public boolean isEmpty() {
-            return width() <= 0 || height() <= 0;
-        }
-
-        private WinDef.RECT toNativeRect() {
-            WinDef.RECT rect = new WinDef.RECT();
-            rect.left = left;
-            rect.top = top;
-            rect.right = right;
-            rect.bottom = bottom;
-            return rect;
-        }
-    }
-
-    /** 窗口位置信息，对应 Win32 WINDOWPLACEMENT 结构体，包含正常/最大化/最小化状态下的位置和矩形 */
-    public record WindowPlacement(
-            int flags,
-            int showCommand,
-            WindowPoint minPosition,
-            WindowPoint maxPosition,
-            WindowRect normalPosition
-    ) {
-    }
-
-    // ==================== 句柄工具 ====================
-
     /**
      * 根据长整型句柄值重建 Win32 HWND
      *
@@ -99,6 +53,8 @@ public final class NativeWindowsTools {
         return hwnd == null ? 0L : Pointer.nativeValue(hwnd.getPointer());
     }
 
+    // ==================== 句柄工具 ====================
+
     /**
      * 获取 HWND 的十六进制字符串表示，用于调试和日志输出
      *
@@ -129,8 +85,6 @@ public final class NativeWindowsTools {
     public static boolean isValidWindowHandle(WinDef.HWND hwnd) {
         return nativeHandleValue(hwnd) != 0L && isWindow(hwnd);
     }
-
-    // ==================== DWM 窗口效果 ====================
 
     /**
      * 设置窗口系统背景样式(Acrylic / Mica)
@@ -196,6 +150,8 @@ public final class NativeWindowsTools {
         );
         return hresult("setWindowCornerPreference", result);
     }
+
+    // ==================== DWM 窗口效果 ====================
 
     /**
      * 获取窗口圆角偏好
@@ -546,8 +502,6 @@ public final class NativeWindowsTools {
         return hresult("enableWindowShadow", result);
     }
 
-    // ==================== 窗口透明度 ====================
-
     /**
      * 设置窗口透明度
      *
@@ -612,6 +566,8 @@ public final class NativeWindowsTools {
         return setExtendedWindowStyle(hwnd, newStyle, "setClickThrough");
     }
 
+    // ==================== 窗口透明度 ====================
+
     /**
      * 判断窗口是否处于鼠标穿透模式
      *
@@ -622,8 +578,6 @@ public final class NativeWindowsTools {
         long style = getExtendedWindowStyle(hwnd);
         return (style & Win32Constants.WindowStyleEx.WS_EX_TRANSPARENT) != 0;
     }
-
-    // ==================== 窗口状态 ====================
 
     /**
      * 设置窗口置顶 / 取消置顶
@@ -658,6 +612,8 @@ public final class NativeWindowsTools {
         }
         return showWindow(hwnd, Win32Constants.ShowWindowCmd.SW_MAXIMIZE, "maximizeWindow");
     }
+
+    // ==================== 窗口状态 ====================
 
     /** 还原窗口 */
     public static WindowOperationResult restoreWindow(WinDef.HWND hwnd) {
@@ -769,8 +725,6 @@ public final class NativeWindowsTools {
         return Win32Api.User32Api.INSTANCE.GetForegroundWindow();
     }
 
-    // ==================== 前台/焦点 ====================
-
     /**
      * 将窗口强制带到前台(即使当前进程不在前台也可将窗口弹到最前)
      *
@@ -801,8 +755,6 @@ public final class NativeWindowsTools {
                 "SetForegroundWindow、BringWindowToTop 和 SetWindowPos 均失败");
     }
 
-    // ==================== 窗口可见性 ====================
-
     /** 判断窗口是否可见 */
     public static boolean isWindowVisible(WinDef.HWND hwnd) {
         return hwnd != null && Win32Api.User32Api.INSTANCE.IsWindowVisible(hwnd);
@@ -820,7 +772,7 @@ public final class NativeWindowsTools {
                 || (style & Win32Constants.WindowStyleEx.WS_EX_TOOLWINDOW) == 0;
     }
 
-    // ==================== 窗口闪烁 ====================
+    // ==================== 前台/焦点 ====================
 
     /**
      * 闪烁窗口任务栏图标以引起用户注意
@@ -843,6 +795,8 @@ public final class NativeWindowsTools {
         return boolResult("flashWindow", Win32Api.User32Api.INSTANCE.FlashWindowEx(fw));
     }
 
+    // ==================== 窗口可见性 ====================
+
     /**
      * 闪烁窗口任务栏图标，持续闪烁直到用户点击窗口
      */
@@ -863,7 +817,7 @@ public final class NativeWindowsTools {
         return boolResult("stopFlashWindow", Win32Api.User32Api.INSTANCE.FlashWindowEx(fw));
     }
 
-    // ==================== 窗口启用/禁用 ====================
+    // ==================== 窗口闪烁 ====================
 
     /**
      * 判断窗口是否可接收鼠标/键盘输入
@@ -882,8 +836,6 @@ public final class NativeWindowsTools {
         return WindowOperationResult.success("enableWindow");
     }
 
-    // ==================== 窗口样式 ====================
-
     /**
      * 获取窗口基本样式标志位
      *
@@ -898,6 +850,8 @@ public final class NativeWindowsTools {
                 .GetWindowLongPtr(hwnd, Win32Constants.WindowLongIndex.GWL_STYLE)
                 .longValue();
     }
+
+    // ==================== 窗口启用/禁用 ====================
 
     /**
      * 获取窗口扩展样式标志位
@@ -924,6 +878,8 @@ public final class NativeWindowsTools {
     public static boolean hasWindowStyle(WinDef.HWND hwnd, long styleMask) {
         return (getWindowStyle(hwnd) & styleMask) == styleMask;
     }
+
+    // ==================== 窗口样式 ====================
 
     /**
      * 判断窗口是否具有指定的扩展样式标志位(全部命中才算具有)
@@ -1080,13 +1036,11 @@ public final class NativeWindowsTools {
         long style = getExtendedWindowStyle(hwnd);
         long newStyle = show
                 ? (style | Win32Constants.WindowStyleEx.WS_EX_APPWINDOW)
-                & ~Win32Constants.WindowStyleEx.WS_EX_TOOLWINDOW
+                  & ~Win32Constants.WindowStyleEx.WS_EX_TOOLWINDOW
                 : (style | Win32Constants.WindowStyleEx.WS_EX_TOOLWINDOW)
-                & ~Win32Constants.WindowStyleEx.WS_EX_APPWINDOW;
+                  & ~Win32Constants.WindowStyleEx.WS_EX_APPWINDOW;
         return setExtendedWindowStyle(hwnd, newStyle, "showInTaskbar");
     }
-
-    // ==================== 窗口位置持久化 ====================
 
     /**
      * 获取窗口完整位置信息(含正常/最大化/最小化状态和各状态下的矩形)
@@ -1142,6 +1096,8 @@ public final class NativeWindowsTools {
                 Win32Api.User32Api.INSTANCE.SetWindowPlacement(hwnd, nativePlacement));
     }
 
+    // ==================== 窗口位置持久化 ====================
+
     /**
      * 将窗口恢复到正常(非最大化/最小化)状态下的位置和大小
      * 即使当前最大化，也仅恢复位置矩形而不改变最大化状态
@@ -1168,8 +1124,6 @@ public final class NativeWindowsTools {
         return boolResult("setWindowNormalRect",
                 Win32Api.User32Api.INSTANCE.SetWindowPlacement(hwnd, wp));
     }
-
-    // ==================== DPI ====================
 
     /**
      * 获取窗口所在显示器的 DPI
@@ -1202,6 +1156,8 @@ public final class NativeWindowsTools {
     public static int getSystemMetric(int metric) {
         return Win32Api.User32Api.INSTANCE.GetSystemMetrics(metric);
     }
+
+    // ==================== DPI ====================
 
     /**
      * 获取虚拟屏幕(所有显示器拼合区域)的边界矩形
@@ -1243,8 +1199,6 @@ public final class NativeWindowsTools {
         return getSystemMetric(Win32Constants.SystemMetric.SM_MAXIMUMTOUCHES) > 0;
     }
 
-    // ==================== 窗口信息 ====================
-
     /** 获取窗口标题 */
     public static String getWindowTitle(WinDef.HWND hwnd) {
         if (hwnd == null) return "";
@@ -1274,6 +1228,8 @@ public final class NativeWindowsTools {
         }
         return rect;
     }
+
+    // ==================== 窗口信息 ====================
 
     /**
      * 获取窗口在屏幕坐标下的边界矩形
@@ -1438,8 +1394,6 @@ public final class NativeWindowsTools {
         return null;
     }
 
-    // ==================== 调试 ====================
-
     /** 打印当前进程所有窗口信息(仅在 DEBUG 日志级别时输出) */
     public static void printAllWindowsInfo() {
         org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(NativeWindowsTools.class);
@@ -1471,8 +1425,6 @@ public final class NativeWindowsTools {
         }
     }
 
-    // ==================== 内部工具 ====================
-
     private static WindowOperationResult showWindow(WinDef.HWND hwnd, int showCommand, String operation) {
         if (hwnd == null) {
             return skippedNullHandle(operation);
@@ -1492,6 +1444,8 @@ public final class NativeWindowsTools {
         return refreshWindowFrame(hwnd, operation);
     }
 
+    // ==================== 调试 ====================
+
     private static WindowOperationResult setExtendedWindowStyle(WinDef.HWND hwnd, long style, String operation) {
         if (hwnd == null) {
             return skippedNullHandle(operation);
@@ -1502,6 +1456,8 @@ public final class NativeWindowsTools {
                 new BaseTSD.LONG_PTR(style).toPointer());
         return refreshWindowFrame(hwnd, operation);
     }
+
+    // ==================== 内部工具 ====================
 
     private static WindowPlacement toWindowPlacement(Win32Api.User32Api.WINDOWPLACEMENT placement) {
         return new WindowPlacement(
@@ -1571,8 +1527,6 @@ public final class NativeWindowsTools {
                 : WindowOperationResult.failed(operation, 0, "原生调用返回 false");
     }
 
-    // ==================== 枚举转换(平台无关枚举 <-> DWM 整型常量) ====================
-
     /**
      * 将平台无关的 {@link WindowBackdropType} 转换为 DWM 系统背景类型整型常量
      */
@@ -1613,6 +1567,8 @@ public final class NativeWindowsTools {
         };
     }
 
+    // ==================== 枚举转换(平台无关枚举 <-> DWM 整型常量) ====================
+
     /**
      * 将 DWM 圆角偏好整型常量转换为平台无关的 {@link WindowCornerPreference}
      * 无法识别的值返回 null
@@ -1625,5 +1581,49 @@ public final class NativeWindowsTools {
             case Win32Constants.DwmCornerPreference.ROUND_SMALL -> WindowCornerPreference.ROUND_SMALL;
             default -> null;
         };
+    }
+
+    /** 窗口坐标点，对应 Win32 POINT 结构体 */
+    public record WindowPoint(int x, int y) {
+        private WinDef.POINT toNativePoint() {
+            WinDef.POINT point = new WinDef.POINT();
+            point.x = x;
+            point.y = y;
+            return point;
+        }
+    }
+
+    /** 窗口矩形信息，对应 Win32 RECT 结构体 */
+    public record WindowRect(int left, int top, int right, int bottom) {
+        public int width() {
+            return right - left;
+        }
+
+        public int height() {
+            return bottom - top;
+        }
+
+        public boolean isEmpty() {
+            return width() <= 0 || height() <= 0;
+        }
+
+        private WinDef.RECT toNativeRect() {
+            WinDef.RECT rect = new WinDef.RECT();
+            rect.left = left;
+            rect.top = top;
+            rect.right = right;
+            rect.bottom = bottom;
+            return rect;
+        }
+    }
+
+    /** 窗口位置信息，对应 Win32 WINDOWPLACEMENT 结构体，包含正常/最大化/最小化状态下的位置和矩形 */
+    public record WindowPlacement(
+            int flags,
+            int showCommand,
+            WindowPoint minPosition,
+            WindowPoint maxPosition,
+            WindowRect normalPosition
+    ) {
     }
 }

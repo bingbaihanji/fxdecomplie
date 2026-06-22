@@ -58,6 +58,24 @@ public class CodeAreaContextMenu extends ContextMenu {
         setOnShowing(e -> refreshState());
     }
 
+    private static int flatOffset(String text, TextPos pos) {
+        int line = Math.max(0, pos.index());
+        int offset = Math.max(0, pos.offset());
+        int currentLine = 0;
+        int lineStart = 0;
+        for (int i = 0; i < text.length() && currentLine < line; i++) {
+            if (text.charAt(i) == '\n') {
+                currentLine++;
+                lineStart = i + 1;
+            }
+        }
+        return Math.min(text.length(), lineStart + offset);
+    }
+
+    private static boolean isJavaNameChar(char ch) {
+        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$';
+    }
+
     public void prepare(ContextMenuEvent event) {
         actionPosition = null;
         if (codeArea == null || event == null) {
@@ -129,23 +147,5 @@ public class CodeAreaContextMenu extends ContextMenu {
             end++;
         }
         return start < end ? text.substring(start, end) : "";
-    }
-
-    private static int flatOffset(String text, TextPos pos) {
-        int line = Math.max(0, pos.index());
-        int offset = Math.max(0, pos.offset());
-        int currentLine = 0;
-        int lineStart = 0;
-        for (int i = 0; i < text.length() && currentLine < line; i++) {
-            if (text.charAt(i) == '\n') {
-                currentLine++;
-                lineStart = i + 1;
-            }
-        }
-        return Math.min(text.length(), lineStart + offset);
-    }
-
-    private static boolean isJavaNameChar(char ch) {
-        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$';
     }
 }

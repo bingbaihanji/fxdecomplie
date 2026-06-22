@@ -38,13 +38,12 @@ public class CodeContentDeck extends VBox {
     private final ToggleGroup toggleGroup;
     private final AtomicInteger cancelGen = new AtomicInteger();
     private final AtomicInteger activeIndex = new AtomicInteger(TAB_CODE);
-    /** 防止 setSelected→action→selectTab 死循环 */
-    private boolean suppressAction;
-
-    /** 源码内容提供回调，Simple 面板按需读取 */
-    private volatile String sourceCode;
     /** 类文件字节码，Smali/Bytecode 按需读取 */
     private final byte[] classBytes;
+    /** 防止 setSelected→action→selectTab 死循环 */
+    private boolean suppressAction;
+    /** 源码内容提供回调，Simple 面板按需读取 */
+    private volatile String sourceCode;
     /** 字体族 */
     private volatile String fontFamily = "Consolas";
     /** 字号 */
@@ -79,6 +78,17 @@ public class CodeContentDeck extends VBox {
 
         // 默认显示 Code 面板
         selectTab(TAB_CODE);
+    }
+
+    /** 获取任意面板的 CodeArea */
+    private static jfx.incubator.scene.control.richtext.CodeArea getCodeArea(AbstractCodeContentPanel panel) {
+        return switch (panel) {
+            case SourceContentPanel p -> p.getCodeArea();
+            case SmaliContentPanel p -> p.getCodeArea();
+            case BytecodeContentPanel p -> p.getCodeArea();
+            case SimpleContentPanel p -> p.getCodeArea();
+            default -> null;
+        };
     }
 
     /** 构建底部标签栏 */
@@ -154,17 +164,6 @@ public class CodeContentDeck extends VBox {
         return panel;
     }
 
-    /** 获取任意面板的 CodeArea */
-    private static jfx.incubator.scene.control.richtext.CodeArea getCodeArea(AbstractCodeContentPanel panel) {
-        return switch (panel) {
-            case SourceContentPanel p -> p.getCodeArea();
-            case SmaliContentPanel p -> p.getCodeArea();
-            case BytecodeContentPanel p -> p.getCodeArea();
-            case SimpleContentPanel p -> p.getCodeArea();
-            default -> null;
-        };
-    }
-
     /** 更新所有面板的字体设置 */
     public void applyFontSettings(int newFontSize, String newFontFamily) {
         this.fontSize = newFontSize;
@@ -210,18 +209,6 @@ public class CodeContentDeck extends VBox {
     }
 
     /**
-     * 用外部配置的 SourceContentPanel 替换 Code 面板
-     *
-     * @param panel 外部创建的 SourceContentPanel（带完整 theme/font 配置）
-     */
-    public void setSourcePanel(SourceContentPanel panel) {
-        panels[TAB_CODE] = panel;
-        if (activeIndex.get() == TAB_CODE) {
-            contentArea.getChildren().setAll(panel);
-        }
-    }
-
-    /**
      * 替换源码面板并同步源码缓存。
      *
      * @param newSource 新源码
@@ -244,6 +231,18 @@ public class CodeContentDeck extends VBox {
     /** @return 源码面板中的 CodeArea（可能为 null） */
     public SourceContentPanel getSourcePanel() {
         return (SourceContentPanel) panels[TAB_CODE];
+    }
+
+    /**
+     * 用外部配置的 SourceContentPanel 替换 Code 面板
+     *
+     * @param panel 外部创建的 SourceContentPanel（带完整 theme/font 配置）
+     */
+    public void setSourcePanel(SourceContentPanel panel) {
+        panels[TAB_CODE] = panel;
+        if (activeIndex.get() == TAB_CODE) {
+            contentArea.getChildren().setAll(panel);
+        }
     }
 
     /** @return 当前活动面板 */

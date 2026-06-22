@@ -7,16 +7,21 @@ import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
- * 类继承关系分析服务，使用轻量 class 文件解析读取 super_class 和 interfaces。
+ * 类继承关系分析服务。
+ *
+ * <p>使用 {@link ClassFileParser} 快速读取常量池中的 super_class 和 interfaces，
+ * 无需完整解析 class 文件。向上追溯父类链，向下查找子类树，构建可展示的
+ * {@link TreeItem} 继承层次。</p>
+ *
+ * <p>子类查找通过 {@link SubclassIndex} 预建索引实现 O(1) 查询，索引构建
+ * 有超时和上限保护（{@link #SUBCLASS_TIMEOUT_MS} / {@link #MAX_SUBCLASSES}），
+ * 避免大 workspace 下长时间阻塞。</p>
+ *
+ * @author bingbaihanji
+ * @date 2026-06-17
  */
 public final class InheritanceService {
 
@@ -187,7 +192,15 @@ public final class InheritanceService {
         return idx >= 0 ? internalName.substring(idx + 1) : internalName;
     }
 
+    /**
+     * 子类反向索引：parent → children 的映射，O(1) 查询子类。
+     *
+     * <p>构建时遍历 workspace 中所有 class，提取每个 class 的父类和接口，
+     * 建立反向引用。注意：同一 child 可能多次出现（实现多接口的类），
+     * 但每个 parent→child 对只记录一次。</p>
+     */
     private static final class SubclassIndex {
+        /** 父类/接口名 → 子类/实现类名列表 */
         private final Map<String, List<String>> childrenByParent;
 
         private SubclassIndex(Map<String, List<String>> childrenByParent) {
@@ -224,10 +237,6 @@ public final class InheritanceService {
             return new SubclassIndex(childrenByParent);
         }
 
-        List<String> childrenOf(String parentName) {
-            return childrenByParent.getOrDefault(parentName, List.of());
-        }
-
         private static void addChild(Map<String, List<String>> childrenByParent,
                                      String parentName, String childName) {
             if (parentName == null || parentName.isBlank()
@@ -241,9 +250,14 @@ public final class InheritanceService {
                 children.add(childName);
             }
         }
+
+        List<String> childrenOf(String parentName) {
+            return childrenByParent.getOrDefault(parentName, List.of());
+        }
     }
 
+    /** 可变计数器，用于在递归过程中跨调用栈共享计数（避免装箱开销） */
     private static final class Counter {
-        private int value;
+        int value;
     }
 }

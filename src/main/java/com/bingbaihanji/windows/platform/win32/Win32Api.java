@@ -133,6 +133,22 @@ public final class Win32Api {
         /** 闪烁窗口任务栏按钮以引起用户注意 */
         boolean FlashWindowEx(FLASHWINFO pfwi);
 
+        /** 获取窗口位置信息(含正常/最大化/最小化状态和矩形) */
+        boolean GetWindowPlacement(HWND hwnd, WINDOWPLACEMENT lpwndpl);
+
+        // -- 窗口位置持久化 --
+
+        /** 设置窗口位置信息 */
+        boolean SetWindowPlacement(HWND hwnd, WINDOWPLACEMENT lpwndpl);
+
+        /** 获取窗口 DPI(Windows 10 1607+) */
+        int GetDpiForWindow(HWND hwnd);
+
+        /** 获取系统指标(屏幕尺寸等) */
+        int GetSystemMetrics(int nIndex);
+
+        // -- DPI --
+
         /** FLASHWINFO 结构体 */
         class FLASHWINFO extends com.sun.jna.Structure {
             public int cbSize;
@@ -149,13 +165,7 @@ public final class Win32Api {
             }
         }
 
-        // -- 窗口位置持久化 --
-
-        /** 获取窗口位置信息(含正常/最大化/最小化状态和矩形) */
-        boolean GetWindowPlacement(HWND hwnd, WINDOWPLACEMENT lpwndpl);
-
-        /** 设置窗口位置信息 */
-        boolean SetWindowPlacement(HWND hwnd, WINDOWPLACEMENT lpwndpl);
+        // -- 系统信息 --
 
         /** WINDOWPLACEMENT 结构体 */
         class WINDOWPLACEMENT extends com.sun.jna.Structure {
@@ -177,16 +187,6 @@ public final class Win32Api {
                         "ptMinPosition", "ptMaxPosition", "rcNormalPosition");
             }
         }
-
-        // -- DPI --
-
-        /** 获取窗口 DPI(Windows 10 1607+) */
-        int GetDpiForWindow(HWND hwnd);
-
-        // -- 系统信息 --
-
-        /** 获取系统指标(屏幕尺寸等) */
-        int GetSystemMetrics(int nIndex);
     }
 
     /** Kernel32 API(kernel32.dll)— 进程信息 */

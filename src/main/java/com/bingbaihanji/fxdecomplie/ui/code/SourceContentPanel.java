@@ -23,9 +23,6 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private static final int LARGE_SOURCE_THRESHOLD = 500_000;
     /** Fira Code 字体资源路径 */
     private static final String FIRA_CODE_LIGHT = "/ttf/FiraCode-Light.ttf";
-
-    private CodeArea codeArea;
-    private String sourceCode;
     private final VsCodeThemeLoader.ThemeData theme;
     private final String fontFamily;
     private final int fontSize;
@@ -33,6 +30,8 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private final boolean lineNumbersEnabled;
     private final CodeMetadata metadata;
     private final Consumer<CodeMetadata.Reference> onNavigate;
+    private CodeArea codeArea;
+    private String sourceCode;
     private BiConsumer<Integer, String> onTokenNavigate;
     private boolean linkNavigationEnabled;
     private int cachedLineCount = -1;
@@ -148,12 +147,14 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
 
     /** 放大字号 */
     public void zoomIn() {
-        if (codeArea != null) codeArea.setFont(Font.font(codeArea.getFont().getFamily(), codeArea.getFont().getSize() + 1));
+        if (codeArea != null)
+            codeArea.setFont(Font.font(codeArea.getFont().getFamily(), codeArea.getFont().getSize() + 1));
     }
 
     /** 缩小字号 */
     public void zoomOut() {
-        if (codeArea != null) codeArea.setFont(Font.font(codeArea.getFont().getFamily(), Math.max(8, codeArea.getFont().getSize() - 1)));
+        if (codeArea != null)
+            codeArea.setFont(Font.font(codeArea.getFont().getFamily(), Math.max(8, codeArea.getFont().getSize() - 1)));
     }
 
     /** 重置字号 */

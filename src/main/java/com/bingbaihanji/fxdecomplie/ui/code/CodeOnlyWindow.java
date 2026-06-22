@@ -2,10 +2,10 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;

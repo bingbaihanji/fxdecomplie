@@ -10,18 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.zip.ZipFile;
@@ -224,6 +214,76 @@ public final class DecompilerRunner {
         }
     }
 
+    private static String failureOutput(String classFilePath, String reason) {
+        return "// 反编译失败: " + classFilePath
+                + "\n// " + (reason == null || reason.isBlank() ? "未知错误" : reason);
+    }
+
+    private static boolean isJdFailureOutput(String source) {
+        if (source == null) {
+            return false;
+        }
+        return source.contains("JD-Core Error:")
+                || source.contains("JD-Core decompile failed");
+    }
+
+    private static boolean isDecompilerFailureOutput(String source) {
+        if (source == null) {
+            return true;
+        }
+        String trimmed = source.trim();
+        return trimmed.startsWith("// CFR decompile failed")
+                || trimmed.startsWith("// Procyon decompile failed")
+                || trimmed.startsWith("// Vineflower decompile failed")
+                || trimmed.startsWith("// Decompile failed")
+                || isJdFailureOutput(source);
+    }
+
+    private static String extractJdFailureReason(String source) {
+        if (source == null || source.isBlank()) {
+            return "未知的 JD-Core 错误";
+        }
+        String normalized = source.replace("\r\n", "\n");
+        int errorIndex = normalized.indexOf("JD-Core Error:");
+        if (errorIndex < 0) {
+            errorIndex = normalized.indexOf("JD-Core decompile failed");
+        }
+        String reason = errorIndex >= 0 ? normalized.substring(errorIndex) : normalized;
+        int lineEnd = reason.indexOf('\n');
+        if (lineEnd >= 0) {
+            reason = reason.substring(0, lineEnd);
+        }
+        reason = reason.replace("*/", "* /").trim();
+        return reason.length() > 220 ? reason.substring(0, 220) + "..." : reason;
+    }
+
+    private static String withFallbackNotice(String source, DecompilerTypeEnum fallback,
+                                             String reason) {
+        String notice = I18nUtil.getString("decompile.jdFallback", fallback.name()) + "\n"
+                + I18nUtil.getString("decompile.jdFallbackReason", reason) + "\n\n";
+        String normalized = source.replace("\r\n", "\n");
+        if (normalized.startsWith("package ")) {
+            int packageEnd = normalized.indexOf(";\n");
+            if (packageEnd > 0) {
+                int insertAt = packageEnd + 2;
+                return normalized.substring(0, insertAt) + "\n" + notice + normalized.substring(insertAt);
+            }
+        }
+        return notice + source;
+    }
+
+    public static void shutdown() {
+        EXECUTOR.shutdown();
+        try {
+            if (!EXECUTOR.awaitTermination(2, TimeUnit.SECONDS)) {
+                EXECUTOR.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            EXECUTOR.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
+
     /**
      * 单次反编译使用的工作区 classpath。归档输入复用同一个 ZipFile，避免大 JAR
      * 依赖解析时为每个引用类重复打开归档导致交互打开变慢。
@@ -315,76 +375,6 @@ public final class DecompilerRunner {
             }
             hitCache.clear();
             missCache.clear();
-        }
-    }
-
-    private static String failureOutput(String classFilePath, String reason) {
-        return "// 反编译失败: " + classFilePath
-                + "\n// " + (reason == null || reason.isBlank() ? "未知错误" : reason);
-    }
-
-    private static boolean isJdFailureOutput(String source) {
-        if (source == null) {
-            return false;
-        }
-        return source.contains("JD-Core Error:")
-                || source.contains("JD-Core decompile failed");
-    }
-
-    private static boolean isDecompilerFailureOutput(String source) {
-        if (source == null) {
-            return true;
-        }
-        String trimmed = source.trim();
-        return trimmed.startsWith("// CFR decompile failed")
-                || trimmed.startsWith("// Procyon decompile failed")
-                || trimmed.startsWith("// Vineflower decompile failed")
-                || trimmed.startsWith("// Decompile failed")
-                || isJdFailureOutput(source);
-    }
-
-    private static String extractJdFailureReason(String source) {
-        if (source == null || source.isBlank()) {
-            return "未知的 JD-Core 错误";
-        }
-        String normalized = source.replace("\r\n", "\n");
-        int errorIndex = normalized.indexOf("JD-Core Error:");
-        if (errorIndex < 0) {
-            errorIndex = normalized.indexOf("JD-Core decompile failed");
-        }
-        String reason = errorIndex >= 0 ? normalized.substring(errorIndex) : normalized;
-        int lineEnd = reason.indexOf('\n');
-        if (lineEnd >= 0) {
-            reason = reason.substring(0, lineEnd);
-        }
-        reason = reason.replace("*/", "* /").trim();
-        return reason.length() > 220 ? reason.substring(0, 220) + "..." : reason;
-    }
-
-    private static String withFallbackNotice(String source, DecompilerTypeEnum fallback,
-                                             String reason) {
-        String notice = I18nUtil.getString("decompile.jdFallback", fallback.name()) + "\n"
-                + I18nUtil.getString("decompile.jdFallbackReason", reason) + "\n\n";
-        String normalized = source.replace("\r\n", "\n");
-        if (normalized.startsWith("package ")) {
-            int packageEnd = normalized.indexOf(";\n");
-            if (packageEnd > 0) {
-                int insertAt = packageEnd + 2;
-                return normalized.substring(0, insertAt) + "\n" + notice + normalized.substring(insertAt);
-            }
-        }
-        return notice + source;
-    }
-
-    public static void shutdown() {
-        EXECUTOR.shutdown();
-        try {
-            if (!EXECUTOR.awaitTermination(2, TimeUnit.SECONDS)) {
-                EXECUTOR.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            EXECUTOR.shutdownNow();
-            Thread.currentThread().interrupt();
         }
     }
 }

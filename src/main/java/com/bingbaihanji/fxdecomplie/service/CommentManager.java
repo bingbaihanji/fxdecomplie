@@ -14,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -29,7 +28,8 @@ public final class CommentManager {
 
     private static final Logger logger = LoggerFactory.getLogger(CommentManager.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {}.getType();
+    private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {
+    }.getType();
 
     private static volatile Path commentRootDir;
 
@@ -96,7 +96,7 @@ public final class CommentManager {
      * 删除注释
      */
     public static boolean delete(String workspaceHash, String className,
-                                  String memberSignature, int line, String time) {
+                                 String memberSignature, int line, String time) {
         try {
             List<CommentData> existing = loadAll(workspaceHash, className);
             boolean removed = existing.removeIf(c ->
@@ -133,7 +133,7 @@ public final class CommentManager {
     }
 
     private static void writeFile(String workspaceHash, String className,
-                                   List<CommentData> comments) throws IOException {
+                                  List<CommentData> comments) throws IOException {
         Path file = resolveFile(workspaceHash, className);
         Files.createDirectories(file.getParent());
         String json = GSON.toJson(comments);

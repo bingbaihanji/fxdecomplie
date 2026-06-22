@@ -54,7 +54,7 @@ public final class CodeSyncHelper {
             reader.accept(new ClassVisitor(org.objectweb.asm.Opcodes.ASM9) {
                 @Override
                 public MethodVisitor visitMethod(int access, String name, String desc,
-                                                  String signature, String[] exceptions) {
+                                                 String signature, String[] exceptions) {
                     String key = name + desc;
                     return new MethodVisitor(org.objectweb.asm.Opcodes.ASM9) {
                         @Override

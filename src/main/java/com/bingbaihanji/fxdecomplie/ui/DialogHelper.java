@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui;
 
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
+import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;

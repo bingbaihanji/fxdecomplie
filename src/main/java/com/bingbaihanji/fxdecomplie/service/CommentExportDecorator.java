@@ -47,7 +47,7 @@ public final class CommentExportDecorator {
      * @return 插入注释后的源码
      */
     public static String apply(String sourceCode, List<CommentData> comments,
-                                String currentSourceHash, String currentOptionsHash) {
+                               String currentSourceHash, String currentOptionsHash) {
         if (sourceCode == null || comments == null || comments.isEmpty()) {
             return sourceCode;
         }
@@ -73,7 +73,7 @@ public final class CommentExportDecorator {
      * 确定注释插入的目标行号
      */
     public static int resolveTargetLine(CommentData c, String[] lines,
-                                         String currentSourceHash, String currentOptionsHash) {
+                                        String currentSourceHash, String currentOptionsHash) {
         // 策略1: hash 匹配，直接使用保存时的行号
         if (c.sourceHash() != null && c.sourceHash().equals(currentSourceHash)
                 && c.optionsHash() != null && c.optionsHash().equals(currentOptionsHash)) {

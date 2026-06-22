@@ -56,27 +56,6 @@ public record WindowOperationResult(
     }
 
     /**
-     * 检查操作是否成功
-     */
-    public boolean isSuccess() {
-        return status == WindowOperationStatus.SUCCESS;
-    }
-
-    /**
-     * 检查操作是否被跳过
-     */
-    public boolean isSkipped() {
-        return status == WindowOperationStatus.SKIPPED;
-    }
-
-    /**
-     * 检查操作是否失败
-     */
-    public boolean isFailure() {
-        return status == WindowOperationStatus.FAILED;
-    }
-
-    /**
      * 合并多个操作结果为一个汇总结果
      *
      * <p>合并规则：如任一结果失败则整体为失败；否则如有任一成功则整体为成功；
@@ -105,5 +84,26 @@ public record WindowOperationResult(
         return anySuccess
                 ? success(operation, message)
                 : skipped(operation, message);
+    }
+
+    /**
+     * 检查操作是否成功
+     */
+    public boolean isSuccess() {
+        return status == WindowOperationStatus.SUCCESS;
+    }
+
+    /**
+     * 检查操作是否被跳过
+     */
+    public boolean isSkipped() {
+        return status == WindowOperationStatus.SKIPPED;
+    }
+
+    /**
+     * 检查操作是否失败
+     */
+    public boolean isFailure() {
+        return status == WindowOperationStatus.FAILED;
     }
 }

@@ -30,12 +30,7 @@ import java.util.Locale;
  */
 public final class FxDecompilerApp {
 
-    static {
-        System.setProperty("fxdecomplie.appDir", resolveAppDirForLogging().toString());
-    }
-
     private static final Logger logger = LoggerFactory.getLogger(FxDecompilerApp.class);
-
     /** JavaFX 预览属性名 */
     private static final String JAVAFX_PREVIEW_PROPERTY = "javafx.enablePreview";
     /** 抑制预览警告属性名 */
@@ -43,6 +38,10 @@ public final class FxDecompilerApp {
     /** 启动错误日志文件路径(位于应用根目录 logs 子目录下) */
     private static final Path STARTUP_ERROR_LOG =
             AppConfig.appDir().resolve("logs").resolve("startup-error.log");
+
+    static {
+        System.setProperty("fxdecomplie.appDir", resolveAppDirForLogging().toString());
+    }
 
     private FxDecompilerApp() {
     }
@@ -95,17 +94,45 @@ public final class FxDecompilerApp {
 
     public static final class FxApplication extends Application {
 
-        /** 为主窗口应用平台原生窗口外观(DWM 暗色主题、阴影、圆角等) */
-        public void initWindows(Stage primaryStage) {
-            DefaultWindowTheme.applyWindowDarkMode(primaryStage);
-        }
-
         /** 应用配置引用 */
         private AppConfig config;
         /** 主窗口控制器,用于直接关闭窗口时释放工作区资源 */
         private MainWindow window;
         /** 主 Stage,用于在所有退出路径上持久化窗口状态 */
         private Stage primaryStage;
+
+        private static WindowAppearance windowAppearance(AppConfig config) {
+            AppConfig.Platform platform = config == null ? null : config.platform();
+            int borderColor = platform == null ? 0x00888800 : platform.windowBorderColor();
+            WindowCornerPreference cornerPreference = parseCornerPreference(
+                    platform == null ? null : platform.cornerPreference());
+            return WindowAppearance.darkDialog(borderColor, cornerPreference);
+        }
+
+        private static WindowCornerPreference parseCornerPreference(String value) {
+            if (value == null || value.isBlank()) {
+                return WindowCornerPreference.DO_NOT_ROUND;
+            }
+            try {
+                return WindowCornerPreference.valueOf(value);
+            } catch (IllegalArgumentException ignored) {
+                return WindowCornerPreference.DO_NOT_ROUND;
+            }
+        }
+
+        private static void setAppIcon(Stage stage) {
+            try (var stream = FxApplication.class.getResourceAsStream("/icon/logo.png")) {
+                if (stream != null) {
+                    stage.getIcons().add(new javafx.scene.image.Image(stream));
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        /** 为主窗口应用平台原生窗口外观(DWM 暗色主题、阴影、圆角等) */
+        public void initWindows(Stage primaryStage) {
+            DefaultWindowTheme.applyWindowDarkMode(primaryStage);
+        }
 
         @Override
         public void start(Stage stage) {
@@ -175,25 +202,6 @@ public final class FxDecompilerApp {
             }
         }
 
-        private static WindowAppearance windowAppearance(AppConfig config) {
-            AppConfig.Platform platform = config == null ? null : config.platform();
-            int borderColor = platform == null ? 0x00888800 : platform.windowBorderColor();
-            WindowCornerPreference cornerPreference = parseCornerPreference(
-                    platform == null ? null : platform.cornerPreference());
-            return WindowAppearance.darkDialog(borderColor, cornerPreference);
-        }
-
-        private static WindowCornerPreference parseCornerPreference(String value) {
-            if (value == null || value.isBlank()) {
-                return WindowCornerPreference.DO_NOT_ROUND;
-            }
-            try {
-                return WindowCornerPreference.valueOf(value);
-            } catch (IllegalArgumentException ignored) {
-                return WindowCornerPreference.DO_NOT_ROUND;
-            }
-        }
-
         @Override
         public void stop() {
             BackgroundTasks.shutdown();
@@ -208,15 +216,6 @@ public final class FxDecompilerApp {
                     saveWindowState(primaryStage);
                 }
                 config.save();
-            }
-        }
-
-        private static void setAppIcon(Stage stage) {
-            try (var stream = FxApplication.class.getResourceAsStream("/icon/logo.png")) {
-                if (stream != null) {
-                    stage.getIcons().add(new javafx.scene.image.Image(stream));
-                }
-            } catch (Exception ignored) {
             }
         }
 

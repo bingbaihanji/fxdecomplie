@@ -3,19 +3,10 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbaihanji.fxdecomplie.model.OpenFile;
-import com.bingbaihanji.fxdecomplie.model.Workspace;
-import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
-import com.bingbaihanji.fxdecomplie.ui.code.LineNumberGutter;
-import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
@@ -28,16 +19,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -65,21 +49,8 @@ public final class ClassTabOpener {
     private final StatusBar statusBar;
     /** L2 反编译源码缓存,避免重复反编译已打开的类 */
     private final DecompileCache decompileCache = new DecompileCache();
-
-    /** 暴露 L2 缓存给全文搜索等批量解编译场景复用已打开的标签页结果 */
-    public DecompileCache getDecompileCache() {
-        return decompileCache;
-    }
-
-    /** 设置代码操作回调，用于自动安装右键菜单 */
-    public void setCodeActionHandler(CodeActionHandler handler) {
-        this.codeActionHandler = handler;
-    }
-
-    /** 设置标签页就绪回调（工具栏刷新等） */
-    public void setOnTabReady(Runnable callback) {
-        this.onTabReady = callback;
-    }
+    /** 主导航反编译请求序号,用于丢弃快速切换产生的过期结果 */
+    private final AtomicLong decompileGeneration = new AtomicLong();
     /** 当前运行的反编译任务,用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
     /** 当前由主导航创建的占位标签,用于任务取消时清理 */
@@ -90,9 +61,6 @@ public final class ClassTabOpener {
     private volatile CodeActionHandler codeActionHandler;
     /** 标签页就绪回调（工具栏刷新等） */
     private volatile Runnable onTabReady;
-    /** 主导航反编译请求序号,用于丢弃快速切换产生的过期结果 */
-    private final AtomicLong decompileGeneration = new AtomicLong();
-
     public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar) {
         this.config = config;
         this.editorTheme = editorTheme;
@@ -147,6 +115,72 @@ public final class ClassTabOpener {
         } catch (Exception e) {
             return new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1);
         }
+    }
+
+    private static boolean isTabOpen(TabPane codeTabPane, Tab tab) {
+        return codeTabPane != null && tab != null && codeTabPane.getTabs().contains(tab);
+    }
+
+    private static Future<?> runOpenTask(String name, Runnable task) {
+        return OPEN_EXECUTOR.submit(() -> {
+            Thread.currentThread().setName(name);
+            Thread.interrupted();
+            task.run();
+        });
+    }
+
+    private static int classMajorVersion(byte[] bytes) {
+        if (bytes == null || bytes.length < 8) {
+            return 0;
+        }
+        return ((bytes[6] & 0xff) << 8) | (bytes[7] & 0xff);
+    }
+
+    private static CodeMetadata emptyMetadata() {
+        return new CodeMetadata(java.util.Map.of());
+    }
+
+    private static String pendingSource(FileTreeNode node, DecompilerTypeEnum engine) {
+        return I18nUtil.getString("tab.decompiling.source",
+                node.getFullPath(), engine == null ? "" : engine.name());
+    }
+
+    private static String failedSource(FileTreeNode node, Exception ex) {
+        return I18nUtil.getString("tab.decompile.failed.source", node.getFullPath(), errorReason(ex));
+    }
+
+    private static String errorReason(Throwable ex) {
+        if (ex == null) {
+            return "未知错误";
+        }
+        String message = ex.getMessage();
+        if (message != null && !message.isBlank()) {
+            return message;
+        }
+        return ex.getClass().getSimpleName();
+    }
+
+    /** 优雅关闭反编译器执行器,最多等待 2 秒 */
+    public static void shutdown() {
+        OPEN_EXECUTOR.shutdownNow();
+        DecompilerRunner.shutdown();
+    }
+
+    /** 暴露 L2 缓存给全文搜索等批量解编译场景复用已打开的标签页结果 */
+    public DecompileCache getDecompileCache() {
+        return decompileCache;
+    }
+
+    /** 创建代码编辑器标签页 */
+
+    /** 设置代码操作回调，用于自动安装右键菜单 */
+    public void setCodeActionHandler(CodeActionHandler handler) {
+        this.codeActionHandler = handler;
+    }
+
+    /** 设置标签页就绪回调（工具栏刷新等） */
+    public void setOnTabReady(Runnable callback) {
+        this.onTabReady = callback;
     }
 
     /**
@@ -513,10 +547,9 @@ public final class ClassTabOpener {
         return null;
     }
 
-    /** 创建代码编辑器标签页 */
     /** 在 CodeEditorTab 上安装右键上下文菜单 */
     private void installContextMenu(CodeEditorTab codeTab, FileTreeNode node, Workspace workspace,
-                                     OpenFile openFile, byte[] classBytes, CodeMetadata metadata) {
+                                    OpenFile openFile, byte[] classBytes, CodeMetadata metadata) {
         CodeActionHandler handler = codeActionHandler;
         if (handler == null) return;
         WorkspaceIndex index = workspace.getIndex();
@@ -682,10 +715,6 @@ public final class ClassTabOpener {
         }
     }
 
-    private static boolean isTabOpen(TabPane codeTabPane, Tab tab) {
-        return codeTabPane != null && tab != null && codeTabPane.getTabs().contains(tab);
-    }
-
     private boolean shouldClearTaskFor(Tab loadingTab) {
         boolean loadingCurrent = currentLoadingTab == null || currentLoadingTab == loadingTab;
         boolean pendingCurrent = currentPendingTab == null || currentPendingTab == loadingTab;
@@ -700,14 +729,6 @@ public final class ClassTabOpener {
 
     private boolean isRequestCurrent(long requestId, boolean guarded) {
         return !guarded || decompileGeneration.get() == requestId;
-    }
-
-    private static Future<?> runOpenTask(String name, Runnable task) {
-        return OPEN_EXECUTOR.submit(() -> {
-            Thread.currentThread().setName(name);
-            Thread.interrupted();
-            task.run();
-        });
     }
 
     /** 查找已打开的同名 class 标签页,移除不同引擎的重复标签页 */
@@ -823,37 +844,6 @@ public final class ClassTabOpener {
         return major >= 65 ? DecompilerTypeEnum.VINEFLOWER : requestedEngine;
     }
 
-    private static int classMajorVersion(byte[] bytes) {
-        if (bytes == null || bytes.length < 8) {
-            return 0;
-        }
-        return ((bytes[6] & 0xff) << 8) | (bytes[7] & 0xff);
-    }
-
-    private static CodeMetadata emptyMetadata() {
-        return new CodeMetadata(java.util.Map.of());
-    }
-
-    private static String pendingSource(FileTreeNode node, DecompilerTypeEnum engine) {
-        return I18nUtil.getString("tab.decompiling.source",
-                node.getFullPath(), engine == null ? "" : engine.name());
-    }
-
-    private static String failedSource(FileTreeNode node, Exception ex) {
-        return I18nUtil.getString("tab.decompile.failed.source", node.getFullPath(), errorReason(ex));
-    }
-
-    private static String errorReason(Throwable ex) {
-        if (ex == null) {
-            return "未知错误";
-        }
-        String message = ex.getMessage();
-        if (message != null && !message.isBlank()) {
-            return message;
-        }
-        return ex.getClass().getSimpleName();
-    }
-
     /** 显示错误弹窗 */
     private void showAlert(String title, String message) {
         Runnable action = () -> {
@@ -877,12 +867,6 @@ public final class ClassTabOpener {
             return workspace.getIndex();
         }
         return WorkspaceIndex.EMPTY;
-    }
-
-    /** 优雅关闭反编译器执行器,最多等待 2 秒 */
-    public static void shutdown() {
-        OPEN_EXECUTOR.shutdownNow();
-        DecompilerRunner.shutdown();
     }
 
     /** 反编译结果,包含源码和元数据 */

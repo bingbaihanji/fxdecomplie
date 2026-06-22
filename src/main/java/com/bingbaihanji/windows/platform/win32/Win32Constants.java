@@ -37,6 +37,7 @@ public final class Win32Constants {
         public static final long WS_POPUPWINDOW = WS_POPUP | WS_BORDER | WS_SYSMENU;
         public static final long WS_SIZEBOX = WS_THICKFRAME;
         public static final long WS_TILED = WS_OVERLAPPED;
+
         private WindowStyle() {
         }
     }
@@ -69,6 +70,7 @@ public final class Win32Constants {
         public static final int WS_EX_NOACTIVATE = 0x08000000;
         public static final int WS_EX_OVERLAPPEDWINDOW = WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE;
         public static final int WS_EX_PALETTEWINDOW = WS_EX_WINDOWEDGE | WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
+
         private WindowStyleEx() {
         }
     }
@@ -81,6 +83,7 @@ public final class Win32Constants {
         public static final int GWL_EXSTYLE = -20;
         public static final int GWL_USERDATA = -21;
         public static final int GWL_ID = -12;
+
         private WindowLongIndex() {
         }
     }
@@ -101,6 +104,7 @@ public final class Win32Constants {
         public static final int SWP_NOREPOSITION = SWP_NOOWNERZORDER;
         public static final int SWP_DEFERERASE = 0x2000;
         public static final int SWP_ASYNCWINDOWPOS = 0x4000;
+
         private SetWindowPosFlags() {
         }
     }
@@ -110,6 +114,7 @@ public final class Win32Constants {
         public static final WinDef.HWND HWND_BOTTOM = new WinDef.HWND(new Pointer(1));
         public static final WinDef.HWND HWND_TOPMOST = new WinDef.HWND(new Pointer(-1));
         public static final WinDef.HWND HWND_NOTOPMOST = new WinDef.HWND(new Pointer(-2));
+
         private HWndInsertAfter() {
         }
     }
@@ -129,6 +134,7 @@ public final class Win32Constants {
         public static final int SW_RESTORE = 9;
         public static final int SW_SHOWDEFAULT = 10;
         public static final int SW_FORCEMINIMIZE = 11;
+
         private ShowWindowCmd() {
         }
     }
@@ -208,6 +214,7 @@ public final class Win32Constants {
         public static final int SC_CLOSE = 0xF060;
         /** 系统命令：还原窗口 */
         public static final int SC_RESTORE = 0xF120;
+
         private WindowMessage() {
         }
     }
@@ -242,6 +249,7 @@ public final class Win32Constants {
         public static final int HTOBJECT = 19;
         public static final int HTCLOSE = 20;
         public static final int HTHELP = 21;
+
         private HitTestCode() {
         }
     }
@@ -249,6 +257,7 @@ public final class Win32Constants {
     public static final class LayeredWindowAttribute {
         public static final int LWA_COLORKEY = 0x00000001;
         public static final int LWA_ALPHA = 0x00000002;
+
         private LayeredWindowAttribute() {
         }
     }
@@ -267,6 +276,7 @@ public final class Win32Constants {
         public static final int FLASHW_TIMER = 0x0004;
         /** 持续闪烁直到窗口获得焦点(前台不打断) */
         public static final int FLASHW_TIMERNOFG = 0x000C;
+
         private FlashWindowFlags() {
         }
     }
@@ -275,6 +285,7 @@ public final class Win32Constants {
         public static final int WPF_SETMINPOSITION = 0x0001;
         public static final int WPF_RESTORETOMAXIMIZED = 0x0002;
         public static final int WPF_ASYNCWINDOWPLACEMENT = 0x0004;
+
         private WindowPlacementFlag() {
         }
     }
@@ -377,6 +388,7 @@ public final class Win32Constants {
         public static final int SM_REMOTECONTROL = 0x2001;
         public static final int SM_CONVERTIBLESLATEMODE = 0x2003;
         public static final int SM_SYSTEMDOCKED = 0x2004;
+
         private SystemMetric() {
         }
     }
@@ -445,6 +457,7 @@ public final class Win32Constants {
          * 取值见 {@link DwmBackdropType}
          */
         public static final int DWMWA_SYSTEMBACKDROP_TYPE = 38;
+
         private DwmAttribute() {
         }
     }
@@ -455,6 +468,7 @@ public final class Win32Constants {
         public static final int DEFAULT = 0xFFFFFFFF;
         /** 禁用对应颜色渲染 */
         public static final int NONE = 0xFFFFFFFE;
+
         private DwmColor() {
         }
     }
@@ -473,6 +487,7 @@ public final class Win32Constants {
         public static final int ROUND = 2;
         /** 使用小圆角 */
         public static final int ROUND_SMALL = 3;
+
         private DwmCornerPreference() {
         }
     }
@@ -493,6 +508,7 @@ public final class Win32Constants {
         public static final int TRANSIENTWINDOW = 3;
         /** Mica 标签页变体(适用于标签页式 MDI 窗口背景，Windows 11 Build 22621+) */
         public static final int TABBEDWINDOW = 4;
+
         private DwmBackdropType() {
         }
     }

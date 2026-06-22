@@ -42,8 +42,8 @@ public final class NavigationService {
      * @param resourceOpener 打开资源文件的回调
      */
     public synchronized void openPath(PathNode<?> path, Workspace workspace, TabPane codeTabPane,
-                         BiConsumer<FileTreeNode, TabPane> classOpener,
-                         BiConsumer<FileTreeNode, TabPane> resourceOpener) {
+                                      BiConsumer<FileTreeNode, TabPane> classOpener,
+                                      BiConsumer<FileTreeNode, TabPane> resourceOpener) {
         openPath(path, workspace, codeTabPane, classOpener, resourceOpener, true);
     }
 
@@ -51,8 +51,8 @@ public final class NavigationService {
      * 在历史中向后导航
      */
     public synchronized void goBack(Workspace workspace, TabPane codeTabPane,
-                       BiConsumer<FileTreeNode, TabPane> classOpener,
-                       BiConsumer<FileTreeNode, TabPane> resourceOpener) {
+                                    BiConsumer<FileTreeNode, TabPane> classOpener,
+                                    BiConsumer<FileTreeNode, TabPane> resourceOpener) {
         if (backStack.isEmpty() || currentPath == null) {
             return;
         }
@@ -65,8 +65,8 @@ public final class NavigationService {
      * 在历史中向前导航
      */
     public synchronized void goForward(Workspace workspace, TabPane codeTabPane,
-                          BiConsumer<FileTreeNode, TabPane> classOpener,
-                          BiConsumer<FileTreeNode, TabPane> resourceOpener) {
+                                       BiConsumer<FileTreeNode, TabPane> classOpener,
+                                       BiConsumer<FileTreeNode, TabPane> resourceOpener) {
         if (forwardStack.isEmpty() || currentPath == null) {
             return;
         }

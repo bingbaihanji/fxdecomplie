@@ -331,10 +331,6 @@ public final class UsageSearchService {
     }
 
     private record Target(String raw, String classPart, String memberPart) {
-        private boolean isValid() {
-            return classPart != null && !classPart.isBlank() && !"\0".equals(classPart);
-        }
-
         private static Target parse(String query) {
             String rawQuery = query.trim()
                     .replace(".class", "")
@@ -352,6 +348,10 @@ public final class UsageSearchService {
                 }
             }
             return new Target(rawQuery.replace('.', '/'), classQuery, memberQuery);
+        }
+
+        private boolean isValid() {
+            return classPart != null && !classPart.isBlank() && !"\0".equals(classPart);
         }
     }
 }

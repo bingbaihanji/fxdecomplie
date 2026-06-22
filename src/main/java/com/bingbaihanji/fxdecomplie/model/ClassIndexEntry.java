@@ -47,6 +47,21 @@ public final class ClassIndexEntry {
         this.fields = List.copyOf(fields == null ? List.of() : fields);
     }
 
+    private static String toBytecodeText(byte[] bytes) {
+        try {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            ClassReader reader = new ClassReader(bytes);
+            Textifier textifier = new Textifier();
+            TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
+            reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+            pw.flush();
+            return sw.toString();
+        } catch (RuntimeException e) {
+            return ClassFileParser.summary(bytes);
+        }
+    }
+
     public String fullPath() {
         return fullPath;
     }
@@ -90,21 +105,6 @@ public final class ClassIndexEntry {
                 bytecodeText = bytes == null ? "" : toBytecodeText(bytes);
             }
             return bytecodeText;
-        }
-    }
-
-    private static String toBytecodeText(byte[] bytes) {
-        try {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            ClassReader reader = new ClassReader(bytes);
-            Textifier textifier = new Textifier();
-            TraceClassVisitor visitor = new TraceClassVisitor(null, textifier, pw);
-            reader.accept(visitor, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-            pw.flush();
-            return sw.toString();
-        } catch (RuntimeException e) {
-            return ClassFileParser.summary(bytes);
         }
     }
 }
