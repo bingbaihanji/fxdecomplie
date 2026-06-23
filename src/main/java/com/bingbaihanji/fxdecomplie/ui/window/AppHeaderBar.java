@@ -11,6 +11,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 
@@ -21,6 +23,8 @@ import java.net.URL;
  * @date 2026-06-17
  */
 public final class AppHeaderBar {
+
+    private static final Logger logger = LoggerFactory.getLogger(AppHeaderBar.class);
 
     /** 标题栏高度 */
     private static final double TITLE_BAR_HEIGHT = 38.0;
@@ -186,6 +190,7 @@ public final class AppHeaderBar {
                 iv.setImage(new Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("加载Logo图标失败", ignored);
         }
         iv.getStyleClass().add("app-icon");
         return iv;

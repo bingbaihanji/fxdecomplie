@@ -8,6 +8,8 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.Objects;
@@ -21,6 +23,8 @@ import java.util.Objects;
  * @date 2026-06-21
  */
 public class MainToolBar extends ToolBar {
+
+    private static final Logger logger = LoggerFactory.getLogger(MainToolBar.class);
 
     /** 图标基础路径 */
     private static final String ICON_BASE = "/icon/tool/";
@@ -98,6 +102,7 @@ public class MainToolBar extends ToolBar {
                 btn.setGraphic(new ImageView(img));
             }
         } catch (Exception ignored) {
+            logger.debug("加载工具栏按钮图标失败: {}", iconName, ignored);
         }
     }
 }

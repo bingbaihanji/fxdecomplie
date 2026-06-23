@@ -4,6 +4,8 @@ import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import javafx.scene.control.TreeCell;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 文件树单元格渲染器,根据节点类型显示对应的图标和样式
@@ -12,6 +14,8 @@ import javafx.scene.image.ImageView;
  * @date 2026-06-17
  */
 public class FileTreeCell extends TreeCell<FileTreeNode> {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileTreeCell.class);
 
     /** 树节点图标统一尺寸 */
     private static final double ICON_SIZE = 16.0;
@@ -28,6 +32,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
                 return new Image(stream);
             }
         } catch (Exception ignored) {
+            logger.debug("加载文件树图标失败: {}", path, ignored);
         }
         return null;
     }

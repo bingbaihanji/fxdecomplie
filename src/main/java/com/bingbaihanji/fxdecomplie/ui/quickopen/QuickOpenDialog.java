@@ -14,6 +14,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -25,6 +27,8 @@ import java.util.function.Consumer;
  * @date 2026-06-17
  */
 public final class QuickOpenDialog {
+
+    private static final Logger logger = LoggerFactory.getLogger(QuickOpenDialog.class);
 
     private QuickOpenDialog() {
         throw new AssertionError("utility class");
@@ -134,6 +138,7 @@ public final class QuickOpenDialog {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置快速打开对话框图标失败", ignored);
         }
     }
 }

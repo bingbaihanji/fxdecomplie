@@ -197,6 +197,20 @@ public final class ClassTabOpener {
         openClassTab(node, workspace, codeTabPane, engine, lineNumbersEnabled, true, true);
     }
 
+    /**
+     * 在指定 TabPane 中打开类标签，不替换不同引擎的现有标签（用于分屏场景）。
+     *
+     * @param node              类文件节点
+     * @param workspace         工作区
+     * @param targetPane        目标 TabPane（分屏中的某个 cell）
+     * @param engine            反编译引擎
+     * @param lineNumbersEnabled 是否显示行号
+     */
+    public void openClassTabIn(TabPane targetPane, FileTreeNode node, Workspace workspace,
+                               DecompilerTypeEnum engine, boolean lineNumbersEnabled) {
+        openClassTab(node, workspace, targetPane, engine, lineNumbersEnabled, true, false);
+    }
+
     public void openClassTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane,
                              DecompilerTypeEnum engine, boolean lineNumbersEnabled,
                              boolean cancelPrevious, boolean replaceDifferentEngine) {
@@ -436,6 +450,7 @@ public final class ClassTabOpener {
                     };
                     CodeEditorTab replacement = createCodeEditorTab(openFile, lineNumbersEnabled, bytes,
                             metadata, onNavigate);
+                    replacement.setWorkspaceContext(workspace, node);
                     if (tabIndex < 0 || tabIndex >= codeTabPane.getTabs().size()
                             || codeTabPane.getTabs().get(tabIndex) != currentTab) {
                         statusBar.clearTask();
@@ -574,8 +589,41 @@ public final class ClassTabOpener {
                 classBytes, metadata, onNavigate
         );
         CodeOnlyWindow.enableTabDrag(tab);
+        // 设置分屏请求回调：在右侧新 cell 中打开同 class 的不同引擎
+        tab.setOnSplitRequested(sourceTab -> {
+            SplitEditorPane sep = sourceTab.getSplitEditorPane();
+            if (sep == null || sep.activeCellCount() >= 3) return;
+            Workspace ws = (Workspace) sourceTab.getProperties().get("workspace");
+            FileTreeNode node = (FileTreeNode) sourceTab.getProperties().get("fileTreeNode");
+            if (ws == null || node == null) return;
+            // 使用与源 tab 相同的引擎
+            DecompilerTypeEnum sameEngine = sourceTab.getOpenFile().engine();
+            // 创建分屏 cell
+            sep.splitRight(sourceTab);
+            // 找到新创建的 cell（非主 cell 且非源 cell）
+            TabPane targetPane = null;
+            for (TabPane pane : sep.allTabPanes()) {
+                if (pane != sep.primaryTabPane() && pane != sep.tabPaneFor(sourceTab)) {
+                    targetPane = pane;
+                    break;
+                }
+            }
+            if (targetPane == null) targetPane = sep.allTabPanes().get(sep.activeCellCount() - 1);
+            openClassTab(node, ws, targetPane, sameEngine, lineNumbersEnabled, true, false);
+        });
+        // 设置切换引擎回调：原地用新引擎重反编译
+        tab.setOnSwitchEngine(newEngine -> {
+            Workspace ws = (Workspace) tab.getProperties().get("workspace");
+            FileTreeNode node = (FileTreeNode) tab.getProperties().get("fileTreeNode");
+            if (ws == null || node == null) return;
+            TabPane pane = tab.getSplitEditorPane() != null
+                    ? tab.getSplitEditorPane().tabPaneFor(tab) : null;
+            if (pane == null) return;
+            refreshCurrentClassTab(ws, pane, tab, newEngine, lineNumbersEnabled);
+        });
         return tab;
     }
+
 
     private CodeEditorTab createPendingCodeTab(TabPane codeTabPane, Tab loadingTab,
                                                FileTreeNode node, Workspace workspace,
@@ -599,6 +647,7 @@ public final class ClassTabOpener {
                 }
                 CodeEditorTab pendingTab = createCodeEditorTab(pendingOpenFile, lineNumbersEnabled,
                         bytes, metadata, onNavigate);
+                pendingTab.setWorkspaceContext(workspace, node);
                 pendingTab.setSourceReady(false);
                 pendingTab.setOnClosed(e -> {
                     BackgroundTasks.cancel(taskRef.get());

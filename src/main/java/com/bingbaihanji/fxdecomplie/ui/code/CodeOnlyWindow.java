@@ -16,6 +16,8 @@ import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +40,7 @@ public final class CodeOnlyWindow {
             new ConcurrentHashMap<>();
     private static final Map<String, CodeEditorTab> DRAG_SOURCE_TABS =
             new ConcurrentHashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(CodeOnlyWindow.class);
 
     private final AppConfig config;
     private final VsCodeThemeLoader.ThemeData editorTheme;
@@ -298,6 +301,7 @@ public final class CodeOnlyWindow {
                 stage.getIcons().add(new Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置独立窗口图标失败", ignored);
         }
     }
 

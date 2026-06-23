@@ -1,6 +1,8 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.Objects;
  */
 public class ResourceSearchProvider implements SearchProvider {
 
+    private static final Logger logger = LoggerFactory.getLogger(ResourceSearchProvider.class);
     private static final int MAX_RESULTS = 500;
 
     private final Map<String, byte[]> resourceCache; // 路径 → 原始字节
@@ -42,7 +45,7 @@ public class ResourceSearchProvider implements SearchProvider {
                     }
                 }
             } catch (Exception ignored) {
-                // skip binary or unreadable resources
+                logger.debug("跳过不可读资源(基本搜索)", ignored);
             }
         }
         return results;
@@ -74,7 +77,7 @@ public class ResourceSearchProvider implements SearchProvider {
                     }
                 }
             } catch (Exception ignored) {
-                // skip binary or unreadable resources
+                logger.debug("跳过不可读资源(高级搜索)", ignored);
             }
         }
         return results;

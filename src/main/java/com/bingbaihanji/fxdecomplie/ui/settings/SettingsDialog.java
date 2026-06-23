@@ -13,6 +13,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,8 @@ import java.util.function.Consumer;
  * @date 2026-06-18
  */
 public final class SettingsDialog {
+
+    private static final Logger logger = LoggerFactory.getLogger(SettingsDialog.class);
 
     private SettingsDialog() {
         throw new AssertionError("utility class");
@@ -68,6 +72,7 @@ public final class SettingsDialog {
                     .toJson(config.decompiler().engineOptions());
             engineOptionsArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ignored) {
+            logger.debug("序列化引擎选项JSON失败", ignored);
             engineOptionsArea.setText("");
         }
 
@@ -244,6 +249,7 @@ public final class SettingsDialog {
                     config.decompiler().engineOptions().clear();
                 }
             } catch (Exception ignored) {
+                logger.debug("解析引擎选项JSON失败，保留现有选项", ignored);
                 // JSON 无效 — 保留现有选项
             }
 
@@ -286,6 +292,7 @@ public final class SettingsDialog {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置对话框图标失败", ignored);
         }
     }
 }

@@ -6,6 +6,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 通用对话框工具方法
@@ -14,6 +16,8 @@ import javafx.stage.Window;
  * @date 2026-06-18
  */
 public final class DialogHelper {
+
+    private static final Logger logger = LoggerFactory.getLogger(DialogHelper.class);
 
     private DialogHelper() {
         throw new AssertionError("utility class");
@@ -65,6 +69,7 @@ public final class DialogHelper {
                 stage.getIcons().add(new Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置对话框图标失败", ignored);
         }
     }
 }

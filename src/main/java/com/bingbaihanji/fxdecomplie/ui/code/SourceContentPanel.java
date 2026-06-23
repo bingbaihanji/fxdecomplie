@@ -7,6 +7,8 @@ import com.bingbaihanji.fxdecomplie.utils.CodeLinkHandler;
 import javafx.scene.Node;
 import javafx.scene.text.Font;
 import jfx.incubator.scene.control.richtext.CodeArea;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -18,6 +20,8 @@ import java.util.function.Consumer;
  * @date 2026-06-21
  */
 public class SourceContentPanel extends AbstractCodeContentPanel {
+
+    private static final Logger logger = LoggerFactory.getLogger(SourceContentPanel.class);
 
     /** 超大源码禁用正则高亮和链接扫描 */
     private static final int LARGE_SOURCE_THRESHOLD = 500_000;
@@ -100,6 +104,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
             java.net.URL fontUrl = getClass().getResource(FIRA_CODE_LIGHT);
             if (fontUrl != null) return Font.loadFont(fontUrl.toExternalForm(), fontSize);
         } catch (Exception ignored) {
+            logger.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
         if (fontFamily != null && !fontFamily.isBlank()) {
             return Font.font(fontFamily, fontSize);

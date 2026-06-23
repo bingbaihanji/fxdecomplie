@@ -16,6 +16,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -29,6 +31,8 @@ import java.util.Optional;
  * @date 2026-06-18
  */
 public final class ExportDialog {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExportDialog.class);
 
     private ExportDialog() {
         throw new AssertionError("utility class");
@@ -198,6 +202,7 @@ public final class ExportDialog {
                 return parent.toFile();
             }
         } catch (Exception ignored) {
+            logger.debug("获取上次导出目录失败", ignored);
             return null;
         }
         return null;
@@ -253,6 +258,7 @@ public final class ExportDialog {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置导出对话框图标失败", ignored);
         }
     }
 

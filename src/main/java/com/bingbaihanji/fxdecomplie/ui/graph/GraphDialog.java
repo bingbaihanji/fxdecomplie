@@ -138,7 +138,7 @@ public class GraphDialog extends Dialog<Void> {
                 stage.getIcons().add(new javafx.scene.image.Image(is));
             }
         } catch (Exception ignored) {
-            // 图标加载失败不阻塞弹窗显示
+            logger.debug("图标加载失败，不阻塞弹窗", ignored);
         }
     }
 

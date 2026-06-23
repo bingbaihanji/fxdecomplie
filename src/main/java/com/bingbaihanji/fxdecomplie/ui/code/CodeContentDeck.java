@@ -8,6 +8,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2026-06-21
  */
 public class CodeContentDeck extends VBox {
+
+    private static final Logger logger = LoggerFactory.getLogger(CodeContentDeck.class);
 
     /** Code 标签索引 */
     public static final int TAB_CODE = 0;
@@ -196,6 +200,7 @@ public class CodeContentDeck extends VBox {
             java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
             if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
         } catch (Exception ignored) {
+            logger.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
         if (fontFamily != null && !fontFamily.isBlank()) {
             return javafx.scene.text.Font.font(fontFamily, fontSize);

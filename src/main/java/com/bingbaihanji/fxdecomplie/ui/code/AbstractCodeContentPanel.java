@@ -4,6 +4,8 @@ import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.layout.StackPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -17,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2026-06-21
  */
 public abstract class AbstractCodeContentPanel extends StackPane {
+
+    private static final Logger logger = LoggerFactory.getLogger(AbstractCodeContentPanel.class);
 
     /** 未加载标记 */
     private static final int STATE_UNLOADED = 0;
@@ -63,6 +67,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
                 area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
             }
         } catch (Exception ignored) {
+            logger.debug("加载自定义字体失败，使用 Consolas 回退", ignored);
             area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
         }
         LineNumberGutter.setEnabled(area, lineNumbersEnabled);

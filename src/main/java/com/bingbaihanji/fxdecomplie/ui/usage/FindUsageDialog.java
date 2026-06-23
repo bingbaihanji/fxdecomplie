@@ -17,6 +17,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -32,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @date 2026-06-18
  */
 public final class FindUsageDialog {
+
+    private static final Logger logger = LoggerFactory.getLogger(FindUsageDialog.class);
 
     private FindUsageDialog() {
         throw new AssertionError("utility class");
@@ -166,6 +170,7 @@ public final class FindUsageDialog {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置查找用法对话框图标失败", ignored);
         }
     }
 

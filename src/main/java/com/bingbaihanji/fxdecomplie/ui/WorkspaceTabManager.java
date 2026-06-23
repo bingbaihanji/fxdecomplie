@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
+import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
@@ -412,7 +413,9 @@ public final class WorkspaceTabManager {
         treeView.setPrefWidth(280);
         NavigationService navigationService = new NavigationService();
 
-        TabPane codeTabPane = new TabPane();
+        // 分屏编辑器（1-3 个并排 TabPane）
+        SplitEditorPane splitEditorPane = new SplitEditorPane(dragDropConfig, dragDropTheme);
+        TabPane codeTabPane = splitEditorPane.primaryTabPane();
         codeTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         codeTabPane.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldTab, newTab) -> {
@@ -422,65 +425,6 @@ public final class WorkspaceTabManager {
                     }
                 }
         );
-
-        // 安装跨窗口标签拖放支持
-        if (dragDropConfig != null && dragDropTheme != null) {
-            CodeOnlyWindow.installDragDropHandlers(codeTabPane, dragDropConfig, dragDropTheme);
-        }
-
-        // 右键菜单：关闭其他 / 关闭全部
-        codeTabPane.setOnContextMenuRequested(event -> {
-            ContextMenu menu = new ContextMenu();
-            Tab current = codeTabPane.getSelectionModel().getSelectedItem();
-
-            CheckMenuItem pin = new CheckMenuItem(I18nUtil.getString("context.pinTab"));
-            pin.setDisable(current == null);
-            pin.setSelected(current != null && Boolean.TRUE.equals(current.getProperties().get("pinned")));
-            pin.setOnAction(e -> {
-                if (current != null) {
-                    current.getProperties().put("pinned", pin.isSelected());
-                    updatePinnedTabText(current);
-                }
-            });
-
-            MenuItem closeOthers = new MenuItem(I18nUtil.getString("context.closeOthers"));
-            closeOthers.setOnAction(e -> {
-                if (current != null) {
-                    codeTabPane.getTabs().removeIf(t -> t != current);
-                }
-            });
-            MenuItem closeRight = new MenuItem(I18nUtil.getString("context.closeRight"));
-            closeRight.setDisable(current == null);
-            closeRight.setOnAction(e -> {
-                if (current == null) {
-                    return;
-                }
-                int index = codeTabPane.getTabs().indexOf(current);
-                var toClose = codeTabPane.getTabs().stream()
-                        .skip(index + 1L)
-                        .filter(t -> !Boolean.TRUE.equals(t.getProperties().get("pinned")))
-                        .toList();
-                codeTabPane.getTabs().removeAll(toClose);
-            });
-            MenuItem closeUnpinned = new MenuItem(I18nUtil.getString("context.closeUnpinned"));
-            closeUnpinned.setOnAction(e -> codeTabPane.getTabs().removeIf(t ->
-                    !Boolean.TRUE.equals(t.getProperties().get("pinned"))));
-            MenuItem openInNewWindow = new MenuItem(I18nUtil.getString("context.openInNewWindow"));
-            openInNewWindow.setDisable(!(current instanceof CodeEditorTab));
-            openInNewWindow.setOnAction(e -> {
-                if (current instanceof CodeEditorTab codeTab) {
-                    javafx.stage.Window window = codeTabPane.getScene().getWindow();
-                    javafx.stage.Stage owner = window instanceof javafx.stage.Stage s ? s : null;
-                    CodeOnlyWindow.openFrom(codeTab, dragDropConfig, owner);
-                }
-            });
-            MenuItem closeAll = new MenuItem(I18nUtil.getString("context.closeAll"));
-            closeAll.setOnAction(e -> codeTabPane.getTabs().clear());
-            menu.getItems().addAll(pin, new SeparatorMenuItem(), openInNewWindow,
-                    new SeparatorMenuItem(), closeOthers, closeRight, closeUnpinned, closeAll);
-            menu.show(codeTabPane, event.getScreenX(), event.getScreenY());
-            event.consume();
-        });
 
         treeView.setOnMouseClicked(e -> {
             if (e.getButton() != javafx.scene.input.MouseButton.PRIMARY || e.getClickCount() != 1) {
@@ -526,7 +470,7 @@ public final class WorkspaceTabManager {
         bottomToolContainer.setPrefHeight(240);
         bottomToolContainer.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(sideTabPane, Priority.ALWAYS);
-        editorSplitPane.getItems().addAll(codeTabPane, bottomToolContainer);
+        editorSplitPane.getItems().addAll(splitEditorPane, bottomToolContainer);
         editorSplitPane.setDividerPositions(0.72);
 
         SplitPane splitPane = new SplitPane(treeView, editorSplitPane);
@@ -575,9 +519,14 @@ public final class WorkspaceTabManager {
                 editorSplitPane, bottomToolContainer, sideTabPane, outlineTab, inheritTab);
         outlineTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
         inheritTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
-        WorkspaceView view = new WorkspaceView(workspace, treeView, codeTabPane, tab);
+        WorkspaceView view = new WorkspaceView(workspace, treeView, splitEditorPane, tab);
         workspaceViews.put(tab, view);
         workspaceTools.put(tab, tools);
+        tab.setOnCloseRequest(event -> {
+            if (!confirmWorkspaceClose()) {
+                event.consume();
+            }
+        });
         tab.setOnClosed(event -> cleanupClosedWorkspace(tab));
 
         outerTabPane.getTabs().add(tab);
@@ -615,8 +564,7 @@ public final class WorkspaceTabManager {
     public CodeEditorTab currentCodeTab() {
         WorkspaceView view = currentWorkspaceView();
         if (view == null) return null;
-        Tab selected = view.codeTabPane().getSelectionModel().getSelectedItem();
-        return selected instanceof CodeEditorTab codeTab ? codeTab : null;
+        return view.splitEditorPane().currentCodeTab();
     }
 
     /** 更新状态栏以反映当前工作区 */
@@ -626,8 +574,9 @@ public final class WorkspaceTabManager {
             statusBar.clear();
             return;
         }
-        var codeSelected = view.codeTabPane().getSelectionModel().getSelectedItem();
-        if (codeSelected instanceof CodeEditorTab codeTab) {
+        var codeSelected = view.splitEditorPane().currentCodeTab();
+        if (codeSelected != null) {
+            CodeEditorTab codeTab = codeSelected;
             statusBar.setFilePath(formatClassPath(codeTab.getOpenFile().fullPath()));
             statusBar.setEncoding("UTF-8");
             statusBar.setEngine(codeTab.getOpenFile().engine().name());
@@ -680,6 +629,22 @@ public final class WorkspaceTabManager {
         }
     }
 
+    /** 关闭工作区前弹出确认对话框 */
+    private boolean confirmWorkspaceClose() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(I18nUtil.getString("workspace.close.title"));
+        alert.setHeaderText(null);
+        alert.setContentText(I18nUtil.getString("workspace.close.message"));
+        alert.initOwner(outerTabPane.getScene().getWindow());
+        try {
+            alert.getDialogPane().getStylesheets().add(
+                    com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
+        } catch (RuntimeException ignored) {
+        }
+        var result = alert.showAndWait();
+        return result.isPresent() && result.get() == ButtonType.OK;
+    }
+
     /** 清理已关闭的工作区 */
     private void cleanupClosedWorkspace(Tab tab) {
         WorkspaceView view = workspaceViews.remove(tab);
@@ -687,8 +652,10 @@ public final class WorkspaceTabManager {
 
         // 清理内部代码标签页,释放内存,阻止已排队的 Platform.runLater 继续操作
         if (view != null) {
-            view.codeTabPane().getTabs().clear();
-            view.codeTabPane().getSelectionModel().clearSelection();
+            for (TabPane pane : view.splitEditorPane().allTabPanes()) {
+                pane.getTabs().clear();
+                pane.getSelectionModel().clearSelection();
+            }
             view.workspace().close();
         }
 

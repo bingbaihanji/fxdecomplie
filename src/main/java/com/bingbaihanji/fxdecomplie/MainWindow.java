@@ -295,6 +295,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 s.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置对话框图标失败", ignored);
         }
     }
 
@@ -710,10 +711,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         lineNumbersEnabled = !lineNumbersEnabled;
         config.decompiler().lineNumbersEnabled(lineNumbersEnabled);
         tabManager.getWorkspaceViews().values().forEach(view ->
-                view.codeTabPane().getTabs().stream()
-                        .filter(CodeEditorTab.class::isInstance)
-                        .map(CodeEditorTab.class::cast)
-                        .forEach(tab -> tab.setLineNumbersEnabled(lineNumbersEnabled))
+                view.splitEditorPane().forEachTab(
+                        tab -> tab.setLineNumbersEnabled(lineNumbersEnabled))
         );
     }
 
@@ -1066,7 +1065,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return null;
         }
         return tabManager.getWorkspaceViews().values().stream()
-                .filter(view -> view != null && view.codeTabPane().getTabs().contains(codeTab))
+                .filter(view -> view != null && view.splitEditorPane().allTabPanes().stream()
+                        .anyMatch(pane -> pane.getTabs().contains(codeTab)))
                 .findFirst()
                 .orElse(null);
     }
@@ -1112,15 +1112,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return false;
         }
         String fullPath = context.openFile().fullPath();
-        for (Tab tab : view.codeTabPane().getTabs()) {
-            if (tab instanceof CodeEditorTab codeTab
-                    && fullPath.equals(codeTab.getOpenFile().fullPath())
-                    && context.openFile().engine() == codeTab.getOpenFile().engine()) {
-                view.codeTabPane().getSelectionModel().select(codeTab);
-                codeTab.revealLine(declarationLine);
-                statusBar.setFilePath(I18nUtil.getString(
-                        "status.navigatedTo", fullPath, declarationLine));
-                return true;
+        for (TabPane pane : view.splitEditorPane().allTabPanes()) {
+            for (Tab tab : pane.getTabs()) {
+                if (tab instanceof CodeEditorTab codeTab
+                        && fullPath.equals(codeTab.getOpenFile().fullPath())
+                        && context.openFile().engine() == codeTab.getOpenFile().engine()) {
+                    pane.getSelectionModel().select(codeTab);
+                    codeTab.revealLine(declarationLine);
+                    statusBar.setFilePath(I18nUtil.getString(
+                            "status.navigatedTo", fullPath, declarationLine));
+                    return true;
+                }
             }
         }
         return false;
@@ -1332,16 +1334,18 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (view == null || context.openFile() == null) {
             return;
         }
-        for (Tab tab : view.codeTabPane().getTabs()) {
-            if (tab instanceof CodeEditorTab codeTab
-                    && context.openFile().fullPath().equals(codeTab.getOpenFile().fullPath())
-                    && context.openFile().engine() == codeTab.getOpenFile().engine()) {
-                String decorated = CommentExportDecorator.applyForClass(
-                        codeTab.getOpenFile().sourceCode(),
-                        codeTab.getOpenFile().fullPath(),
-                        new CommentScope(context.workspaceHash(), context.optionsHash()));
-                codeTab.updateVisibleSource(decorated);
-                return;
+        for (TabPane pane : view.splitEditorPane().allTabPanes()) {
+            for (Tab tab : pane.getTabs()) {
+                if (tab instanceof CodeEditorTab codeTab
+                        && context.openFile().fullPath().equals(codeTab.getOpenFile().fullPath())
+                        && context.openFile().engine() == codeTab.getOpenFile().engine()) {
+                    String decorated = CommentExportDecorator.applyForClass(
+                            codeTab.getOpenFile().sourceCode(),
+                            codeTab.getOpenFile().fullPath(),
+                            new CommentScope(context.workspaceHash(), context.optionsHash()));
+                    codeTab.updateVisibleSource(decorated);
+                    return;
+                }
             }
         }
     }
@@ -1365,9 +1369,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
 
         statusBar.setFilePath(I18nUtil.getString("status.compareAllEngines", node.getFullPath()));
-        for (DecompilerTypeEnum engine : DecompilerTypeEnum.values()) {
-            classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
-                    engine, lineNumbersEnabled, engine == DecompilerTypeEnum.values()[0] ? true : false, true);
+        DecompilerTypeEnum[] engines = DecompilerTypeEnum.values();
+        // 第一个引擎在主 panel 打开；其余引擎通过 splitRight 分布到不同分屏
+        for (int i = 0; i < engines.length; i++) {
+            TabPane targetPane = view.splitEditorPane().primaryTabPane();
+            if (i > 0) {
+                view.splitEditorPane().splitRight(null);
+                targetPane = view.splitEditorPane().allTabPanes().get(
+                        Math.min(i, view.splitEditorPane().activeCellCount() - 1));
+            }
+            classTabOpener.openClassTab(node, view.workspace(), targetPane,
+                    engines[i], lineNumbersEnabled, i == 0, i == 0);
         }
     }
 
@@ -1392,12 +1404,14 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private void openSearchWithIndex(WorkspaceView view, WorkspaceIndex index, String initialQuery) {
         // 从已打开标签页构建源码缓存
         java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
-        for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
-            if (tab instanceof CodeEditorTab codeTab
-                    && codeTab.getOpenFile().engine() == currentEngine
-                    && codeTab.isSourceReady()) {
-                sourceCache.put(codeTab.getOpenFile().fullPath(),
-                        codeTab.getOpenFile().sourceCode());
+        for (TabPane pane : view.splitEditorPane().allTabPanes()) {
+            for (javafx.scene.control.Tab tab : pane.getTabs()) {
+                if (tab instanceof CodeEditorTab codeTab
+                        && codeTab.getOpenFile().engine() == currentEngine
+                        && codeTab.isSourceReady()) {
+                    sourceCache.put(codeTab.getOpenFile().fullPath(),
+                            codeTab.getOpenFile().sourceCode());
+                }
             }
         }
 
@@ -1547,13 +1561,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         int newFontSize = updated.theme().fontSize();
         String newFontFamily = updated.theme().fontFamily();
         tabManager.getWorkspaceViews().values().forEach(view ->
-                view.codeTabPane().getTabs().stream()
-                        .filter(CodeEditorTab.class::isInstance)
-                        .map(CodeEditorTab.class::cast)
-                        .forEach(tab -> {
-                            tab.setLineNumbersEnabled(lineNumbersEnabled);
-                            tab.applyFontSettings(newFontSize, newFontFamily);
-                        })
+                view.splitEditorPane().forEachTab(tab -> {
+                    tab.setLineNumbersEnabled(lineNumbersEnabled);
+                    tab.applyFontSettings(newFontSize, newFontFamily);
+                })
         );
     }
 
@@ -1615,21 +1626,24 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 javafx.util.Duration.millis(100));
         delay.setOnFinished(e -> {
             if (!tabManager.isWorkspaceActive(view)) return;
-            for (javafx.scene.control.Tab tab : view.codeTabPane().getTabs()) {
-                if (tab instanceof CodeEditorTab codeTab
-                        && codeTab.getOpenFile().fullPath().equals(fullPath)) {
-                    var area = codeTab.getCodeArea();
-                    if (area.getText() != null && !area.getText().isEmpty()) {
-                        try {
-                            codeTab.revealLine(lineNumber);
-                            statusBar.setFilePath(I18nUtil.getString(
-                                    "status.navigatedTo", fullPath, lineNumber));
-                        } catch (Exception ignored) {
+            for (TabPane pane : view.splitEditorPane().allTabPanes()) {
+                for (javafx.scene.control.Tab tab : pane.getTabs()) {
+                    if (tab instanceof CodeEditorTab codeTab
+                            && codeTab.getOpenFile().fullPath().equals(fullPath)) {
+                        var area = codeTab.getCodeArea();
+                        if (area.getText() != null && !area.getText().isEmpty()) {
+                            try {
+                                codeTab.revealLine(lineNumber);
+                                statusBar.setFilePath(I18nUtil.getString(
+                                        "status.navigatedTo", fullPath, lineNumber));
+                            } catch (Exception ignored) {
+                                logger.debug("导航跳转行失败", ignored);
+                            }
+                            return;
                         }
+                        navigateToLine(view, fullPath, lineNumber, retries + 1);
                         return;
                     }
-                    navigateToLine(view, fullPath, lineNumber, retries + 1);
-                    return;
                 }
             }
         });

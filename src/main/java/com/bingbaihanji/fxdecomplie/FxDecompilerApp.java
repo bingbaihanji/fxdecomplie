@@ -55,6 +55,7 @@ public final class FxDecompilerApp {
                 if (parent != null) return parent;
             }
         } catch (Exception ignored) {
+            logger.debug("解析应用目录失败，回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
     }
@@ -126,6 +127,7 @@ public final class FxDecompilerApp {
                     stage.getIcons().add(new javafx.scene.image.Image(stream));
                 }
             } catch (Exception ignored) {
+                logger.debug("设置应用图标失败", ignored);
             }
         }
 

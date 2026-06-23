@@ -71,6 +71,7 @@ public class AppConfig {
                 }
             }
         } catch (Exception ignored) {
+            logger.debug("解析应用目录失败，回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
     }

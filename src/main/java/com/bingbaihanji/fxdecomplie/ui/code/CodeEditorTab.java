@@ -1,14 +1,18 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -20,6 +24,8 @@ import java.util.function.Consumer;
  * @date 2026-06-17
  */
 public class CodeEditorTab extends Tab {
+
+    private static final Logger logger = LoggerFactory.getLogger(CodeEditorTab.class);
 
     /** 代码视图面板 */
     private final CodeViewPanel codeViewPanel;
@@ -47,6 +53,10 @@ public class CodeEditorTab extends Tab {
     private Consumer<CodeMetadata.Reference> onNavigate;
     /** 反编译源码是否已就绪 */
     private boolean sourceReady = true;
+    /** 分屏请求回调（由外部设置，传入本 tab 以便在右侧分屏打开同 class 不同引擎） */
+    private Consumer<CodeEditorTab> onSplitRequested;
+    /** 切换引擎回调（由外部设置，传入目标引擎进行原地重反编译） */
+    private Consumer<DecompilerTypeEnum> onSwitchEngine;
 
     /** 简化构造器(使用默认主题和字体配置) */
     public CodeEditorTab(OpenFile openFile) {
@@ -88,12 +98,39 @@ public class CodeEditorTab extends Tab {
                 fontFamily, fontSize, lineNumbersEnabled);
         viewPanel.setDefaultFontSize(fontSize);
         viewPanel.bindSearchBar();
+        // 分屏勾选框 → 触发 SplitEditorPane 分屏
+        viewPanel.setOnSplitToggled(enabled -> {
+            SplitEditorPane sep = getSplitEditorPane();
+            if (sep == null) return;
+            if (enabled) {
+                requestSplit();
+            } else {
+                sep.closeAllSplits();
+            }
+        });
         this.codeViewPanel = viewPanel;
 
         this.codeArea = srcPanel.getCodeArea();
         this.editorSearchBar = viewPanel.getSearchBar();
 
         titleLabel = createTitleLabel(displayTitle);
+        titleLabel.setOnContextMenuRequested(event -> {
+            SplitEditorPane sep = getSplitEditorPane();
+            if (sep == null) return;
+            ContextMenu menu = new ContextMenu();
+            MenuItem splitRight = new MenuItem(I18nUtil.getString("context.splitRight"));
+            splitRight.setDisable(sep.activeCellCount() >= 3);
+            splitRight.setOnAction(e -> requestSplit());
+            MenuItem closeSplit = new MenuItem(I18nUtil.getString("context.closeSplit"));
+            TabPane myPane = sep.tabPaneFor(CodeEditorTab.this);
+            closeSplit.setDisable(myPane == sep.primaryTabPane());
+            closeSplit.setOnAction(e -> sep.closeSplit(myPane));
+            // 切换引擎子菜单
+            Menu engineMenu = buildEngineSwitchMenu(CodeEditorTab.this);
+            menu.getItems().addAll(splitRight, closeSplit, new SeparatorMenuItem(), engineMenu);
+            menu.show(titleLabel, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
         setText("");
         setGraphic(titleLabel);
         setContent(viewPanel);
@@ -108,11 +145,79 @@ public class CodeEditorTab extends Tab {
         return label;
     }
 
+    /** 设置所属的分屏编辑器（由 SplitEditorPane 在 tab 选中时调用） */
+    public void setSplitEditorPane(SplitEditorPane pane) {
+        getProperties().put("splitEditorPane", pane);
+        // 同步分屏状态到勾选框
+        pane.setOnSplitStateChanged(() -> {
+            boolean hasSplit = pane.activeCellCount() > 1;
+            codeViewPanel.setSplitToggleSelected(hasSplit);
+        });
+    }
+
+    /** 获取所属的分屏编辑器 */
+    public SplitEditorPane getSplitEditorPane() {
+        return (SplitEditorPane) getProperties().get("splitEditorPane");
+    }
+
+    /** 设置分屏请求回调 */
+    public void setOnSplitRequested(Consumer<CodeEditorTab> callback) {
+        this.onSplitRequested = callback;
+    }
+
+    /** 设置切换引擎回调 */
+    public void setOnSwitchEngine(Consumer<DecompilerTypeEnum> callback) {
+        this.onSwitchEngine = callback;
+    }
+
+    /** 触发切换引擎（由外部菜单调用） */
+    public void switchEngine(DecompilerTypeEnum engine) {
+        if (onSwitchEngine != null) {
+            onSwitchEngine.accept(engine);
+        }
+    }
+
+    /** 存储工作区和节点引用（用于分屏时查找同 class） */
+    public void setWorkspaceContext(com.bingbaihanji.fxdecomplie.model.Workspace workspace,
+                                    com.bingbaihanji.fxdecomplie.model.FileTreeNode node) {
+        getProperties().put("workspace", workspace);
+        getProperties().put("fileTreeNode", node);
+    }
+
+    /** 触发分屏（由 CodeViewPanel 勾选框或右键菜单触发） */
+    void requestSplit() {
+        if (onSplitRequested != null) {
+            onSplitRequested.accept(this);
+        }
+    }
+
+    /** 构建切换引擎子菜单 */
+    static Menu buildEngineSwitchMenu(CodeEditorTab tab) {
+        Menu engineMenu = new Menu(I18nUtil.getString("context.switchEngine"));
+        ToggleGroup group = new ToggleGroup();
+        DecompilerTypeEnum currentEngine = tab.getOpenFile().engine();
+        for (DecompilerTypeEnum engine : DecompilerTypeEnum.values()) {
+            RadioMenuItem item = new RadioMenuItem(engine.name());
+            item.setToggleGroup(group);
+            item.setSelected(engine == currentEngine);
+            item.setOnAction(e -> tab.switchEngine(engine));
+            engineMenu.getItems().add(item);
+        }
+        return engineMenu;
+    }
+
+    /** 更新固定状态的标题文本 */
+    public void updatePinnedDisplay(boolean pinned) {
+        String title = pinned ? "📌 " + displayTitle : displayTitle;
+        titleLabel.setText(title);
+    }
+
     private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
         try {
             java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
             if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
         } catch (Exception ignored) {
+            logger.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
         if (fontFamily != null && !fontFamily.isBlank()) {
             return javafx.scene.text.Font.font(fontFamily, fontSize);
@@ -127,6 +232,7 @@ public class CodeEditorTab extends Tab {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置弹窗图标失败", ignored);
         }
     }
 

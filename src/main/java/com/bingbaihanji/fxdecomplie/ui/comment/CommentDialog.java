@@ -3,6 +3,8 @@ package com.bingbaihanji.fxdecomplie.ui.comment;
 import com.bingbaihanji.fxdecomplie.model.CommentData;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
@@ -19,6 +21,8 @@ import java.util.function.Consumer;
  * @date 2026-06-21
  */
 public final class CommentDialog {
+
+    private static final Logger logger = LoggerFactory.getLogger(CommentDialog.class);
 
     private CommentDialog() {
         throw new AssertionError("utility class");
@@ -112,6 +116,7 @@ public final class CommentDialog {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置注释对话框图标失败", ignored);
         }
     }
 }

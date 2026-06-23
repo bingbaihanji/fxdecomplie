@@ -16,6 +16,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -32,6 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @date 2026-06-17
  */
 public final class SearchDialog {
+
+    private static final Logger logger = LoggerFactory.getLogger(SearchDialog.class);
 
     private static final int DEFAULT_MAX_RESULTS = 200;
 
@@ -341,6 +345,7 @@ public final class SearchDialog {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }
         } catch (Exception ignored) {
+            logger.debug("设置搜索对话框图标失败", ignored);
         }
     }
 

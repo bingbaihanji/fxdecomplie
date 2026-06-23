@@ -10,6 +10,8 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.List;
@@ -34,6 +36,8 @@ import java.util.function.Consumer;
  * @see WindowToolkit
  */
 public final class FxTools {
+
+    private static final Logger logger = LoggerFactory.getLogger(FxTools.class);
 
     private FxTools() {
         throw new AssertionError("工具类，不可实例化");
@@ -207,6 +211,7 @@ public final class FxTools {
                 stage.getIcons().add(new Image(is));
             }
         } catch (Exception ignored) {
+            logger.debug("设置Stage图标失败: {}", classpath, ignored);
             // 图标加载失败不影响功能
         }
     }
@@ -219,6 +224,7 @@ public final class FxTools {
                 icon = new Image(is);
             }
         } catch (Exception ignored) {
+            logger.debug("批量设置Stage图标失败: {}", classpath, ignored);
             return;
         }
         if (icon == null) {
