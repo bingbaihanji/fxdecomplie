@@ -120,11 +120,14 @@ public class SearchService {
         int resultLimit = Math.max(1, limit);
         List<SearchResult> all = new ArrayList<>();
         SearchScope effectiveScope = scope == null ? SearchScope.ALL : scope;
+        // 提前停止：结果数达到 2 倍限制后跳过剩余 provider（避免全量搜索后截断浪费）
+        int softLimit = resultLimit * 2;
         for (SearchProvider provider : providers) {
             if (Thread.currentThread().isInterrupted()) return List.of();
             if (!provider.supports(effectiveScope)) {
                 continue;
             }
+            if (all.size() >= softLimit) break;
             List<SearchResult> results = provider.search(query, sourceCache, options);
             all.addAll(results);
         }

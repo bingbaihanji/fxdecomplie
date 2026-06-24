@@ -273,7 +273,13 @@ public final class CodeOnlyWindow {
 
     public static CodeEditorTab copyTab(CodeEditorTab sourceTab, AppConfig config,
                                         VsCodeThemeLoader.ThemeData editorTheme) {
-        return createTab(toPayload(sourceTab), config, editorTheme);
+        CodeEditorTab copy = createTab(toPayload(sourceTab), config, editorTheme);
+        // 保留工作区上下文，使副窗口也能使用右键跳转/注释等功能
+        Object ws = sourceTab.getProperties().get("workspace");
+        Object node = sourceTab.getProperties().get("fileTreeNode");
+        if (ws != null) copy.getProperties().put("workspace", ws);
+        if (node != null) copy.getProperties().put("fileTreeNode", node);
+        return copy;
     }
 
     private static CodeEditorTab createTab(CodeTabPayload payload, AppConfig config,

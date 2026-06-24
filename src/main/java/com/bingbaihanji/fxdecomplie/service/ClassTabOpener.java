@@ -835,7 +835,7 @@ public final class ClassTabOpener {
         DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
         String optionsHash = DecompilerOptions.hash(engineOptions);
-        String wsKey = computeWorkspaceKey(workspace);
+        String wsKey = computeWorkspaceKey(workspace) + "_" + bytes.length;
 
         // ---- L2: 内存反编译缓存(最快路径) ----
         String sourceCode = decompileCache.get(wsKey, internalName, effectiveEngine, optionsHash);

@@ -83,6 +83,7 @@ public final class FindUsageDialog {
         status.setStyle("-fx-text-fill: #858585;");
 
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
+        java.util.concurrent.atomic.AtomicLong searchGeneration = new java.util.concurrent.atomic.AtomicLong();
 
         Runnable runSearch = () -> {
             String query = input.getText();
@@ -93,9 +94,11 @@ public final class FindUsageDialog {
             }
             status.setText(I18nUtil.getString("usage.searching"));
             BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+            long gen = searchGeneration.incrementAndGet();
             Future<?> task = BackgroundTasks.run("FindUsages", () -> {
                 List<UsageResult> results = UsageSearchService.findUsages(index, query);
                 Platform.runLater(() -> {
+                    if (searchGeneration.get() != gen) return; // 已过期，丢弃
                     resultTree.setRoot(buildTree(results));
                     status.setText(I18nUtil.getString("usage.resultCount", results.size()));
                 });

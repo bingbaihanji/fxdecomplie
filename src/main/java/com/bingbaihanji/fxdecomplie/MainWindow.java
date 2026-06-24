@@ -1847,8 +1847,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         WorkspaceIndexService.ensureIndexingStarted(workspace);
         try {
-            return workspace.getIndexFuture().get();
+            return workspace.getIndexFuture().get(60, java.util.concurrent.TimeUnit.SECONDS);
         } catch (Exception e) {
+            logger.debug("等待工作区索引超时或失败", e);
             return WorkspaceIndex.EMPTY;
         }
     }
