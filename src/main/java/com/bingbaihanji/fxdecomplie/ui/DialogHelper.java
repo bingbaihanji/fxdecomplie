@@ -44,6 +44,14 @@ public final class DialogHelper {
     }
 
     public static void showAlert(Window owner, Alert.AlertType type, String title, String message) {
+        // 同步记录到控制台/日志文件，确保报错时有轨迹可查
+        String logMsg = title + " - " + message;
+        switch (type) {
+            case ERROR -> logger.error(logMsg);
+            case WARNING -> logger.warn(logMsg);
+            case INFORMATION -> logger.info(logMsg);
+            default -> logger.debug(logMsg);
+        }
         Alert alert = new Alert(type, message);
         alert.setTitle(title);
         alert.setHeaderText(null);
@@ -65,8 +73,7 @@ public final class DialogHelper {
     }
 
     private static void setDialogIcon(Stage stage) {
-        try {
-            var stream = DialogHelper.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = DialogHelper.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 stage.getIcons().add(new Image(stream));
             }

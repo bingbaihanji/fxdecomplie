@@ -164,6 +164,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
 
     /** 错误提示 */
     protected void showError(String msg) {
+        logger.error("内容面板加载失败: {}", msg);
         getChildren().setAll(new Label(msg));
     }
 

@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.utils;
 
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
 
@@ -40,13 +41,17 @@ public final class CodeLinkHandler {
      * <p>优先把点击处的 token 交给上层解析，上层可以结合 import、当前包和 workspace
      * 文件树完成项目内 class 跳转；没有 token 导航器时退回到行级 metadata。</p>
      */
+    private static final String LINK_HANDLER_KEY = "CODE_LINK_HANDLER";
+
     public static void install(CodeArea codeArea, CodeMetadata metadata,
                                BiConsumer<Integer, String> onTokenNavigate,
                                Consumer<CodeMetadata.Reference> onNavigate) {
         if (codeArea == null) {
             return;
         }
-        codeArea.setOnMouseClicked(event -> {
+        // 先移除旧处理器
+        uninstall(codeArea);
+        javafx.event.EventHandler<javafx.scene.input.MouseEvent> handler = event -> {
             if (event.getButton() == MouseButton.PRIMARY && event.isControlDown()) {
                 var pos = codeArea.getTextPosition(event.getScreenX(), event.getScreenY());
                 int line = pos == null ? codeArea.getCaretPosition().index() + 1 : pos.index() + 1;
@@ -65,13 +70,21 @@ public final class CodeLinkHandler {
                     event.consume();
                 }
             }
-        });
+        };
+        codeArea.getProperties().put(LINK_HANDLER_KEY, handler);
+        codeArea.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
     }
 
     /** 移除之前在 CodeArea 上安装的导航处理器 */
+    @SuppressWarnings("unchecked")
     public static void uninstall(CodeArea codeArea) {
-        if (codeArea != null) {
-            codeArea.setOnMouseClicked(null);
+        if (codeArea == null) {
+            return;
+        }
+        var handler = (javafx.event.EventHandler<javafx.scene.input.MouseEvent>)
+                codeArea.getProperties().remove(LINK_HANDLER_KEY);
+        if (handler != null) {
+            codeArea.removeEventHandler(MouseEvent.MOUSE_CLICKED, handler);
         }
     }
 
@@ -96,7 +109,7 @@ public final class CodeLinkHandler {
             }
             return null;
         }
-        return refs.getFirst();
+        return null;
     }
 
     private static String tokenAt(String text, TextPos pos) {
@@ -124,7 +137,11 @@ public final class CodeLinkHandler {
         int currentLine = 0;
         int lineStart = 0;
         for (int i = 0; i < text.length() && currentLine < line; i++) {
-            if (text.charAt(i) == '\n') {
+            char c = text.charAt(i);
+            if (c == '\r') {
+                continue;
+            }
+            if (c == '\n') {
                 currentLine++;
                 lineStart = i + 1;
             }

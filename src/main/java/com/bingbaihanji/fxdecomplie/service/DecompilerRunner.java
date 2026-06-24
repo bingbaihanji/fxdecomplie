@@ -99,10 +99,14 @@ public final class DecompilerRunner {
             return I18nUtil.getString("decompile.busy", classFilePath);
         } catch (TimeoutException e) {
             future.cancel(true);
+            closeContext(context);
             return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
                     + "\n" + I18nUtil.getString("decompile.timeoutHint");
         } catch (InterruptedException e) {
-            future.cancel(true);
+            if (future != null) {
+                future.cancel(true);
+            }
+            closeContext(context);
             Thread.currentThread().interrupt();
             throw new RuntimeException("反编译被中断: " + classFilePath, e);
         } catch (java.util.concurrent.ExecutionException e) {
@@ -132,7 +136,8 @@ public final class DecompilerRunner {
                 || normalized.contains("反编译超时")
                 || normalized.contains("jd-core error")
                 || normalized.contains("jd-core decompile failed")
-                || normalized.startsWith("// decompile failed");
+                || normalized.startsWith("// decompile failed")
+                || normalized.startsWith("// 反编译失败");
     }
 
     private static String decompileWithFallback(String classFilePath, byte[] classBytes,
@@ -171,35 +176,6 @@ public final class DecompilerRunner {
                                               DecompilerContext context) {
         return DecompilerFactory.getDecompiler(engine)
                 .decompile(classFilePath, classBytes, context);
-    }
-
-    private static byte[] resolveWorkspaceClassBytes(Workspace workspace, String internalName) {
-        if (workspace == null || internalName == null || internalName.isBlank()) {
-            return null;
-        }
-        String normalized = DecompilerContext.normalizeInternalName(internalName);
-        if (workspace.isIndexReady()) {
-            byte[] bytes = workspace.getIndex().getClassBytes(normalized);
-            if (bytes != null) {
-                return bytes;
-            }
-        }
-
-        FileTreeNode node = workspace.findNodeByPath(normalized + ".class");
-        if (node != null) {
-            try {
-                return WorkspaceByteReader.readNodeBytes(workspace, node, false);
-            } catch (IOException e) {
-                logger.debug("解析依赖类失败: {}", normalized, e);
-            }
-        }
-
-        try {
-            return WorkspaceByteReader.readClassBytes(workspace, normalized, false);
-        } catch (IOException e) {
-            logger.debug("从工作区读取依赖类失败: {}", normalized, e);
-        }
-        return null;
     }
 
     private static void closeContext(DecompilerContext context) {

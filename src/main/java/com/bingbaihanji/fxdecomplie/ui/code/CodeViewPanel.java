@@ -90,6 +90,16 @@ public class CodeViewPanel extends VBox {
         installContextMenuOnCurrentSource();
     }
 
+    /** @return 当前源码右键菜单上下文，供标签复制/迁移时复用 */
+    public CodeViewContext getContextMenuContext() {
+        return contextMenuContext;
+    }
+
+    /** @return 当前源码右键菜单处理器，供标签复制/迁移时复用 */
+    public CodeActionHandler getContextMenuHandler() {
+        return contextMenuHandler;
+    }
+
     private void installContextMenuOnCurrentSource() {
         SourceContentPanel sourcePanel = deck.getSourcePanel();
         var area = sourcePanel == null ? null : sourcePanel.getCodeArea();

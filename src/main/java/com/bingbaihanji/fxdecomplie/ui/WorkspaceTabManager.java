@@ -585,7 +585,11 @@ public final class WorkspaceTabManager {
             statusBar.setFilePath(formatClassPath(codeTab.getOpenFile().fullPath()));
             statusBar.setEncoding("UTF-8");
             statusBar.setEngine(codeTab.getOpenFile().engine().name());
-            var caret = codeTab.getCodeArea().getCaretPosition();
+            var codeArea = codeTab.getCodeArea();
+            if (codeArea == null) {
+                return;
+            }
+            var caret = codeArea.getCaretPosition();
             statusBar.setCursorPosition(caret.index() + 1, caret.offset() + 1);
         }
     }
@@ -640,7 +644,8 @@ public final class WorkspaceTabManager {
         alert.setTitle(I18nUtil.getString("workspace.close.title"));
         alert.setHeaderText(null);
         alert.setContentText(I18nUtil.getString("workspace.close.message"));
-        alert.initOwner(outerTabPane.getScene().getWindow());
+        var scene = outerTabPane.getScene();
+        alert.initOwner(scene != null ? scene.getWindow() : null);
         try {
             alert.getDialogPane().getStylesheets().add(
                     com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
@@ -652,6 +657,9 @@ public final class WorkspaceTabManager {
 
     /** 清理已关闭的工作区 */
     private void cleanupClosedWorkspace(Tab tab) {
+        if (!workspaceViews.containsKey(tab)) {
+            return;
+        }
         WorkspaceView view = workspaceViews.remove(tab);
         WorkspaceTools tools = workspaceTools.remove(tab);
 
@@ -726,7 +734,11 @@ public final class WorkspaceTabManager {
             statusBar.setFilePath(formatClassPath(codeTab.getOpenFile().fullPath()));
             statusBar.setEncoding("UTF-8");
             statusBar.setEngine(codeTab.getOpenFile().engine().name());
-            var caret = codeTab.getCodeArea().getCaretPosition();
+            var codeArea = codeTab.getCodeArea();
+            if (codeArea == null) {
+                return;
+            }
+            var caret = codeArea.getCaretPosition();
             statusBar.setCursorPosition(caret.index() + 1, caret.offset() + 1);
         }
     }

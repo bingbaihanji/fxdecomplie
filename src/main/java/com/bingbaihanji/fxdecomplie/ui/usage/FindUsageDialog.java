@@ -84,7 +84,10 @@ public final class FindUsageDialog {
 
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
         java.util.concurrent.atomic.AtomicLong searchGeneration = new java.util.concurrent.atomic.AtomicLong();
-        dialog.setOnHidden(e -> searchGeneration.incrementAndGet()); // 关闭时废弃所有旧任务
+        dialog.setOnHidden(e -> {
+            searchGeneration.incrementAndGet();
+            BackgroundTasks.cancel(currentSearchTask.get());
+        });
 
         Runnable runSearch = () -> {
             BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
@@ -133,7 +136,6 @@ public final class FindUsageDialog {
         scene.getStylesheets().add(
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
-        dialog.setOnHidden(event -> BackgroundTasks.cancel(currentSearchTask.get()));
         dialog.show();
         DefaultWindowTheme.applyWindowDarkMode(dialog);
         input.requestFocus();

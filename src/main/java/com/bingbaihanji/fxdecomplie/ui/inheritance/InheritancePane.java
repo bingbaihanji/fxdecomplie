@@ -1,7 +1,9 @@
 package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.TreeCell;
@@ -72,13 +74,18 @@ public final class InheritancePane extends VBox {
     }
 
     public void load(String fullPath, WorkspaceIndex index) {
-        TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
-        if (root != null) {
-            treeView.setRoot(root);
-            root.setExpanded(true);
-        } else {
-            showUnavailable();
-        }
+        showIndexing();
+        BackgroundTasks.run("InheritanceBuild", () -> {
+            TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
+            Platform.runLater(() -> {
+                if (root != null) {
+                    treeView.setRoot(root);
+                    root.setExpanded(true);
+                } else {
+                    showUnavailable();
+                }
+            });
+        });
     }
 
     public void showIndexing() {

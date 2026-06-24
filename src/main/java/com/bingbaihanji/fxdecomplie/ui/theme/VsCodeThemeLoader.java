@@ -110,7 +110,15 @@ public final class VsCodeThemeLoader {
                 boolean italic = fontStyle.contains("italic");
 
                 String key = scope.contains(",") ? scope.split(",")[0].trim() : scope;
-                if (key.startsWith(".")) key = key.substring(1);
+                if (key.startsWith(".")) {
+                    String strippedKey = key.substring(1);
+                    // 双向查找:去点优先,没命中再用原点
+                    if (!tokenStyles.containsKey(strippedKey)) {
+                        tokenStyles.putIfAbsent(strippedKey, style(fgHex, bold, italic));
+                    }
+                    tokenStyles.putIfAbsent(key, style(fgHex, bold, italic));
+                    continue;
+                }
                 tokenStyles.putIfAbsent(key, style(fgHex, bold, italic));
             }
         }

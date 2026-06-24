@@ -39,6 +39,18 @@ public record CommentData(
         if (style == null) {
             style = CommentStyle.LINE;
         }
+        if (time == null) {
+            time = "";
+        }
+        if (author == null) {
+            author = "";
+        }
+        if (sourceHash == null) {
+            sourceHash = "";
+        }
+        if (optionsHash == null) {
+            optionsHash = "";
+        }
     }
 
     /** 注释样式 */

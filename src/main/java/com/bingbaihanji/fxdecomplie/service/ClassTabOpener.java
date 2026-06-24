@@ -242,18 +242,15 @@ public final class ClassTabOpener {
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
         if (cancelPrevious) {
+            decompileGeneration.incrementAndGet();
             BackgroundTasks.cancel(currentDecompileTask);
             removeLoadingTab(codeTabPane, currentLoadingTab);
             removePendingTab(codeTabPane, currentPendingTab);
         }
-        long requestId = cancelPrevious ? decompileGeneration.incrementAndGet() : -1L;
+        long requestId = cancelPrevious ? decompileGeneration.get() : -1L;
 
         Tab loadingTab = createLoadingTab(node, engine);
         AtomicReference<Future<?>> taskRef = new AtomicReference<>();
-        loadingTab.setOnClosed(e -> {
-            BackgroundTasks.cancel(taskRef.get());
-            clearCurrentLoadingTab(loadingTab);
-        });
         codeTabPane.getTabs().add(loadingTab);
         codeTabPane.getSelectionModel().select(loadingTab);
         if (cancelPrevious) {
@@ -397,6 +394,13 @@ public final class ClassTabOpener {
             }
         });
         taskRef.set(task);
+        loadingTab.setOnClosed(e -> {
+            Future<?> f = taskRef.get();
+            if (f != null) {
+                BackgroundTasks.cancel(f);
+            }
+            clearCurrentLoadingTab(loadingTab);
+        });
         if (cancelPrevious) {
             currentDecompileTask = task;
         }
@@ -425,8 +429,9 @@ public final class ClassTabOpener {
                 "status.redecompiling", engine.name(), fullPath));
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
+        decompileGeneration.incrementAndGet();
         BackgroundTasks.cancel(currentDecompileTask);
-        long requestId = decompileGeneration.incrementAndGet();
+        long requestId = decompileGeneration.get();
         currentDecompileTask = runOpenTask("Redecompile-" + node.getName(), () -> {
             try {
                 if (!isRequestCurrent(requestId, true)) {
@@ -698,8 +703,11 @@ public final class ClassTabOpener {
                 bindCaretPosition(pendingTab);
                 installContextMenu(pendingTab, node, workspace, pendingOpenFile, bytes, metadata);
                 created.complete(pendingTab);
-            } catch (Throwable t) {
-                created.completeExceptionally(t);
+            } catch (Exception e) {
+                created.completeExceptionally(e);
+            } catch (Error e) {
+                created.completeExceptionally(e);
+                throw e;
             }
         });
         try {

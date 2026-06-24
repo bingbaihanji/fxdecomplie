@@ -19,7 +19,7 @@ public final class OutlineParser {
 
     private static final Pattern METHOD_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|final|synchronized|abstract|native|\\s)*)"
-                    + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
+                    + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*(?:\\([^)]*\\)[^)]*)*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
 
     private static final Pattern FIELD_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|final|volatile|transient|\\s)*)"

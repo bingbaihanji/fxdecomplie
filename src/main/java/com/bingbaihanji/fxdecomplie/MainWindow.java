@@ -285,8 +285,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 为对话框/Stage 设置应用 Logo 图标 */
     private static void setAlertIcon(javafx.stage.Stage s) {
-        try {
-            var stream = MainWindow.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = MainWindow.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 s.getIcons().add(new javafx.scene.image.Image(stream));
             }
@@ -547,9 +546,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         statusBar.setTask(I18nUtil.getString("task.indexing"));
         statusBar.setFilePath(I18nUtil.getString("status.indexing", rootItem.getValue().getName()));
+        // 在 FX 线程预提取 FileTreeNode 数据快照,避免后台线程访问 TreeItem
+        java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
+        collectTreeNodes(rootItem, nodesSnapshot);
         BackgroundTasks.run("Index-ExportNode", () -> {
             try {
-                WorkspaceIndex index = WorkspaceIndex.build(rootItem);
+                WorkspaceIndex index = WorkspaceIndex.build(nodesSnapshot);
                 Platform.runLater(() -> {
                     statusBar.clearTask();
                     WorkspaceView view = tabManager.currentWorkspaceView();
@@ -579,10 +581,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         final Future<?>[] exportTask = new Future<?>[1];
         java.util.concurrent.atomic.AtomicBoolean exportCanceled = new java.util.concurrent.atomic.AtomicBoolean(false);
         statusBar.setTask(I18nUtil.getString("task.exporting"));
-        progressHandle.setOnCancel(() -> {
-            exportCanceled.set(true);
-            BackgroundTasks.cancel(exportTask[0]);
-        });
         exportTask[0] = BackgroundTasks.run("Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(
@@ -593,7 +591,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                             progressHandle.update(path, pct);
                         }),
                         (java.util.function.BooleanSupplier) () -> exportCanceled.get());
-                Platform.runLater(() -> {
+            Platform.runLater(() -> {
                     progressHandle.close();
                     statusBar.clearTask();
                     if (exportCanceled.get()) {
@@ -610,6 +608,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 Platform.runLater(() -> {
                     progressHandle.close();
                     statusBar.clearTask();
+                    if (exportCanceled.get()) {
+                        statusBar.setFilePath(I18nUtil.getString("dialog.export.canceled"));
+                        showWarning(I18nUtil.getString("dialog.export.title"),
+                                I18nUtil.getString("dialog.export.canceled"));
+                        return;
+                    }
                     showError(I18nUtil.getString("dialog.error.title"),
                             I18nUtil.getString("dialog.export.failed", ex.getMessage()));
                 });
@@ -626,6 +630,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     }
                 });
             }
+        });
+        progressHandle.setOnCancel(() -> {
+            exportCanceled.set(true);
+            BackgroundTasks.cancel(exportTask[0]);
         });
     }
 
@@ -790,7 +798,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     @Override
     public void goToDeclaration(CodeMetadata.Reference reference) {
-        if (reference == null || reference.targetClass() == null) return;
+        if (reference == null || reference.targetClass() == null) {
+            return;
+        }
         WorkspaceView view = tabManager.currentWorkspaceView();
         if (view == null) {
             return;
@@ -1007,7 +1017,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     @Override
     public void searchInWorkspace(String selectedText) {
-        if (selectedText == null || selectedText.isBlank()) return;
+        if (selectedText == null || selectedText.isBlank()) {
+            return;
+        }
         openSearch(selectedText);
     }
 
@@ -1464,9 +1476,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     I18nUtil.getString("dialog.needOpenFile"));
             return;
         }
+        java.util.List<String> classNames = new java.util.ArrayList<>();
+        collectClassNames(view.workspace().getTreeRoot(), classNames);
         BackgroundTasks.run("QuickOpen-" + view.workspace().getName(), () -> {
-            java.util.List<String> classNames = new java.util.ArrayList<>();
-            collectClassNames(view.workspace().getTreeRoot(), classNames);
             Platform.runLater(() -> QuickOpenDialog.show(stage, classNames, fullPath -> {
                 FileTreeNode node = view.workspace().findNodeByPath(fullPath);
                 if (node != null) {
@@ -1551,6 +1563,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 new javafx.scene.control.Label(I18nUtil.getString("about.website")),
                 link);
         alert.getDialogPane().setContent(content);
+        logger.info("显示关于对话框");
         alert.showAndWait();
     }
 
@@ -1662,6 +1675,18 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     /** 递归遍历文件树,收集所有 .class 节点的完整路径(用于快速打开对话框) */
+    /** 递归收集树节点数据(在 FX 线程调用,避免后台线程访问 TreeItem) */
+    private void collectTreeNodes(TreeItem<FileTreeNode> item,
+                                  java.util.List<FileTreeNode> result) {
+        FileTreeNode data = item.getValue();
+        if (data != null) {
+            result.add(data);
+        }
+        for (TreeItem<FileTreeNode> child : item.getChildren()) {
+            collectTreeNodes(child, result);
+        }
+    }
+
     private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {
         FileTreeNode data = item.getValue();
         if (data != null && data.isClassFile()) {
@@ -1719,14 +1744,15 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     break;
                 }
                 // 优先查询 L2 内存缓存(复用已打开标签页的解编译结果,避免重复解编)
-                String fp = ClassTabOpener.computeClassFingerprint(cls.bytes());
+                byte[] classBytes = cls.bytes();
+                String fp = ClassTabOpener.computeClassFingerprint(classBytes);
                 String source = classTabOpener.getDecompileCache().get(
                         workspaceKey(view.workspace()) + "_" + fp, cls.internalName(),
                         currentEngine, DecompilerOptions.hash(engineOptions));
                 if (source == null) {
                     // L2 miss: 带超时和 JD 回退的全量解编译
                     source = DecompilerRunner.decompileWithTimeout(
-                            cls.fullPath(), cls.bytes(), currentEngine, context,
+                            cls.fullPath(), classBytes, currentEngine, context,
                             () -> !Thread.currentThread().isInterrupted());
                 }
                 if (!DecompilerRunner.isTransientFailureOutput(source)) {
@@ -1788,6 +1814,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
         ButtonType openOutput = new ButtonType(I18nUtil.getString("dialog.export.openOutput"));
         alert.getButtonTypes().add(openOutput);
+        logger.info("显示导出完成对话框: {}", message);
         if (details != null && !details.isEmpty()) {
             ButtonType copyDetails = new ButtonType(I18nUtil.getString("dialog.copyDetails"));
             alert.getButtonTypes().add(copyDetails);

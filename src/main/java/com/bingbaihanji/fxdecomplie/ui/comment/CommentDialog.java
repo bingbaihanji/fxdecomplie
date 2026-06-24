@@ -114,8 +114,7 @@ public final class CommentDialog {
     }
 
     private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = CommentDialog.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = CommentDialog.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 stage.getIcons().add(new javafx.scene.image.Image(stream));
             }

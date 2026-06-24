@@ -169,7 +169,7 @@ public class AppConfig {
         }
     }
 
-    public void recentFiles(List<String> v) {
+    public synchronized void recentFiles(List<String> v) {
         recentFiles = v;
     }
 
@@ -253,8 +253,12 @@ public class AppConfig {
         if (export.defaultEngine == null) {
             export.defaultEngine = "";
         }
-        if (export.defaultFormat == null || export.defaultFormat.isBlank()) export.defaultFormat = "DIR";
-        if (export.conflictPolicy == null || export.conflictPolicy.isBlank()) {
+        if (export.defaultFormat == null || export.defaultFormat.isBlank()
+                || !java.util.Set.of("DIR", "ZIP").contains(export.defaultFormat)) {
+            export.defaultFormat = "DIR";
+        }
+        if (export.conflictPolicy == null || export.conflictPolicy.isBlank()
+                || !java.util.Set.of("SKIP", "OVERWRITE", "RENAME").contains(export.conflictPolicy)) {
             export.conflictPolicy = "OVERWRITE";
         }
         if (export.lastPath == null) {

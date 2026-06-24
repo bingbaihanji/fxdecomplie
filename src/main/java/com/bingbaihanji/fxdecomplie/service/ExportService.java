@@ -209,7 +209,16 @@ public final class ExportService {
                 if (target != null) {
                     // ---- 写入: 创建父目录并写入内容 ----
                     Files.createDirectories(target.getParent());
-                    Files.write(target, content.bytes());
+                    try {
+                        Files.write(target, content.bytes());
+                    } catch (Exception e) {
+                        try {
+                            Files.deleteIfExists(target);
+                        } catch (IOException ignored) {
+                            logger.debug("清理失败写入残留文件失败: {}", target, ignored);
+                        }
+                        throw e;
+                    }
                     state.successCount++;
                 }
             } catch (Exception e) {
@@ -253,9 +262,12 @@ public final class ExportService {
                         writtenEntries.add(entryName);
                         zos.putNextEntry(new ZipEntry(entryName));
                         entryOpen = true;
-                        zos.write(content.bytes());
-                        zos.closeEntry();
-                        entryOpen = false;
+                        try {
+                            zos.write(content.bytes());
+                        } finally {
+                            zos.closeEntry();
+                            entryOpen = false;
+                        }
                         state.successCount++;
                     }
                 } catch (Exception e) {
@@ -282,7 +294,9 @@ public final class ExportService {
             if (DecompilerRunner.isTransientFailureOutput(source)) {
                 throw new IllegalStateException(firstLine(source));
             }
-            source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
+            if (commentScope != null && commentScope.enabled()) {
+                source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
+            }
             return new ExportContent(data.getFullPath().replace(".class", ".java"),
                     source.getBytes(StandardCharsets.UTF_8));
         }

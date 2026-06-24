@@ -58,6 +58,9 @@ public final class QuickOpenDialog {
         FilteredList<String> filtered = new FilteredList<>(
                 FXCollections.observableArrayList(classNames), p -> true);
         listView.setItems(filtered);
+        if (!listView.getItems().isEmpty()) {
+            listView.getSelectionModel().select(0);
+        }
 
         listView.setCellFactory(lv -> new ListCell<>() {
             @Override

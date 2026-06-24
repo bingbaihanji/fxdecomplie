@@ -24,6 +24,8 @@ public final class WorkspaceIndex {
     private final List<ClassIndexEntry> classes;
     private final List<ResourceIndexEntry> resources;
     private final Map<String, ClassIndexEntry> classesByInternalName;
+    private volatile Map<String, byte[]> classBytesByInternalNameCache;
+    private volatile Map<String, byte[]> resourceBytesByPathCache;
 
     private WorkspaceIndex(List<ClassIndexEntry> classes, List<ResourceIndexEntry> resources,
                            Map<String, ClassIndexEntry> classesByInternalName) {
@@ -33,31 +35,45 @@ public final class WorkspaceIndex {
     }
 
     public static WorkspaceIndex build(TreeItem<FileTreeNode> root) {
-        List<ClassIndexEntry> classes = new ArrayList<>();
-        List<ResourceIndexEntry> resources = new ArrayList<>();
-        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
-
+        List<FileTreeNode> nodes = new ArrayList<>();
         ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
         queue.add(root);
         while (!queue.isEmpty()) {
             TreeItem<FileTreeNode> item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null) {
-                if (node.isClassFile() && node.hasByteSource()) {
-                    ClassIndexEntry entry = indexClass(node);
-                    if (entry != null) {
-                        classes.add(entry);
-                        classEntries.put(entry.internalName(), entry);
-                    }
-                } else if (node.isTextFile() && node.hasByteSource()
-                        && shouldIndexResource(node)) {
-                    byte[] bytes = readNodeBytes(node);
-                    if (bytes != null) {
-                        resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
-                    }
-                }
+                nodes.add(node);
             }
             queue.addAll(item.getChildren());
+        }
+        return build(nodes);
+    }
+
+    /**
+     * 从已提取的 FileTreeNode 列表构建索引（线程安全,可在后台线程调用）
+     *
+     * @param nodes class 和资源 FileTreeNode 列表
+     * @return 工作区索引
+     */
+    public static WorkspaceIndex build(List<FileTreeNode> nodes) {
+        List<ClassIndexEntry> classes = new ArrayList<>();
+        List<ResourceIndexEntry> resources = new ArrayList<>();
+        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
+
+        for (FileTreeNode node : nodes) {
+            if (node.isClassFile() && node.hasByteSource()) {
+                ClassIndexEntry entry = indexClass(node);
+                if (entry != null) {
+                    classes.add(entry);
+                    classEntries.put(entry.internalName(), entry);
+                }
+            } else if (node.isTextFile() && node.hasByteSource()
+                    && shouldIndexResource(node)) {
+                byte[] bytes = readNodeBytes(node);
+                if (bytes != null) {
+                    resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
+                }
+            }
         }
         return new WorkspaceIndex(classes, resources, classEntries);
     }
@@ -94,6 +110,10 @@ public final class WorkspaceIndex {
 
     private static boolean shouldIndexResource(FileTreeNode node) {
         long size = node.getSize();
+        if (size <= 0) {
+            logger.debug("跳过大小未知的资源文件: {}", node.getFullPath());
+            return false;
+        }
         if (size > MAX_INDEXED_RESOURCE_BYTES) {
             logger.info("跳过过大资源文件，不加入工作区索引: {} ({} 字节)",
                     node.getFullPath(), size);
@@ -125,14 +145,23 @@ public final class WorkspaceIndex {
     }
 
     public Map<String, byte[]> classBytesByInternalName() {
-        Map<String, byte[]> map = new LinkedHashMap<>();
-        for (ClassIndexEntry cls : classes) {
-            byte[] bytes = cls.bytes();
-            if (bytes != null) {
-                map.put(cls.internalName(), bytes);
-            }
+        Map<String, byte[]> cached = classBytesByInternalNameCache;
+        if (cached != null) {
+            return cached;
         }
-        return Collections.unmodifiableMap(map);
+        synchronized (this) {
+            if (classBytesByInternalNameCache == null) {
+                Map<String, byte[]> map = new LinkedHashMap<>();
+                for (ClassIndexEntry cls : classes) {
+                    byte[] bytes = cls.bytes();
+                    if (bytes != null) {
+                        map.put(cls.internalName(), bytes);
+                    }
+                }
+                classBytesByInternalNameCache = Collections.unmodifiableMap(map);
+            }
+            return classBytesByInternalNameCache;
+        }
     }
 
     public byte[] getClassBytes(String internalName) {
@@ -145,11 +174,20 @@ public final class WorkspaceIndex {
     }
 
     public Map<String, byte[]> resourceBytesByPath() {
-        Map<String, byte[]> map = new LinkedHashMap<>();
-        for (ResourceIndexEntry resource : resources) {
-            map.put(resource.fullPath(), resource.bytes());
+        Map<String, byte[]> cached = resourceBytesByPathCache;
+        if (cached != null) {
+            return cached;
         }
-        return map;
+        synchronized (this) {
+            if (resourceBytesByPathCache == null) {
+                Map<String, byte[]> map = new LinkedHashMap<>();
+                for (ResourceIndexEntry resource : resources) {
+                    map.put(resource.fullPath(), resource.bytes());
+                }
+                resourceBytesByPathCache = Collections.unmodifiableMap(map);
+            }
+            return resourceBytesByPathCache;
+        }
     }
 
     public Map<String, String> bytecodeTextByPath() {

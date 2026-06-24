@@ -34,7 +34,7 @@ public class ResourceSearchProvider implements SearchProvider {
 
         String lowerQuery = query.toLowerCase();
         for (var entry : resourceCache.entrySet()) {
-            if (results.size() >= MAX_RESULTS) break;
+            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) break;
             try {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
                 String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");

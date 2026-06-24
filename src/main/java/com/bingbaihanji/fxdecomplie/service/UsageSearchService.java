@@ -333,7 +333,7 @@ public final class UsageSearchService {
     private record Target(String raw, String classPart, String memberPart) {
         private static Target parse(String query) {
             String rawQuery = query.trim()
-                    .replace(".class", "")
+                    .replaceAll("\\.class$", "")
                     .replace('\\', '/')
                     .toLowerCase(Locale.ROOT);
             String classQuery = rawQuery.replace('.', '/');

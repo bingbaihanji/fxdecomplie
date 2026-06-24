@@ -30,6 +30,8 @@ public final class CommentManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {
     }.getType();
+    private static final java.util.concurrent.ConcurrentMap<String, java.util.concurrent.locks.ReentrantLock>
+            FILE_LOCKS = new java.util.concurrent.ConcurrentHashMap<>();
 
     private static volatile Path commentRootDir;
 
@@ -60,6 +62,10 @@ public final class CommentManager {
         if (comment == null) {
             return;
         }
+        String lockKey = workspaceHash + ":" + comment.className();
+        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
+                k -> new java.util.concurrent.locks.ReentrantLock());
+        lock.lock();
         try {
             List<CommentData> existing = loadAll(workspaceHash, comment.className());
             // 更新同位置已有注释，否则追加
@@ -80,6 +86,8 @@ public final class CommentManager {
             logger.debug("注释已保存: {}#L{}", comment.className(), comment.line());
         } catch (Exception e) {
             logger.error("保存注释失败", e);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -99,6 +107,10 @@ public final class CommentManager {
      */
     public static boolean delete(String workspaceHash, String className,
                                  String memberSignature, int line, String time) {
+        String lockKey = workspaceHash + ":" + className;
+        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
+                k -> new java.util.concurrent.locks.ReentrantLock());
+        lock.lock();
         try {
             List<CommentData> existing = loadAll(workspaceHash, className);
             boolean removed = existing.removeIf(c ->
@@ -116,6 +128,8 @@ public final class CommentManager {
         } catch (Exception e) {
             logger.error("删除注释失败", e);
             return false;
+        } finally {
+            lock.unlock();
         }
     }
 

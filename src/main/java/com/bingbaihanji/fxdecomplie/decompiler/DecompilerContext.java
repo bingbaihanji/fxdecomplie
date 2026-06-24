@@ -51,9 +51,18 @@ public final class DecompilerContext implements AutoCloseable {
     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
                                        Map<String, String> options,
                                        AutoCloseable closeable) {
-        return bytecodeProvider == null
-                ? withOptions(options)
-                : new DecompilerContext(bytecodeProvider, options, false, closeable);
+        if (bytecodeProvider == null) {
+            if (closeable != null) {
+                try {
+                    closeable.close();
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(
+                            "bytecodeProvider 为 null 时无法持有 closeable", e);
+                }
+            }
+            return withOptions(options);
+        }
+        return new DecompilerContext(bytecodeProvider, options, false, closeable);
     }
 
     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index) {

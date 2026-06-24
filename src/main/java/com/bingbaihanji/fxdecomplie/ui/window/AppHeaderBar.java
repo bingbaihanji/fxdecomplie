@@ -184,8 +184,7 @@ public final class AppHeaderBar {
         iv.setFitWidth(20);
         iv.setFitHeight(20);
         iv.setPreserveRatio(true);
-        try {
-            var stream = AppHeaderBar.class.getResourceAsStream("/icon/logo.png");
+        try (var stream = AppHeaderBar.class.getResourceAsStream("/icon/logo.png")) {
             if (stream != null) {
                 iv.setImage(new Image(stream));
             }

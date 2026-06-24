@@ -19,6 +19,7 @@ public class FileTreeView extends TreeView<FileTreeNode> {
         super(root);
         setShowRoot(true);
         getStyleClass().add("file-tree-view");
-        // Cell factory 由 WorkspaceTabManager.installTreeContextMenu 设置(含右键菜单绑定)
+        setCellFactory(tv -> new FileTreeCell());
+        // Cell factory 可在外部由 WorkspaceTabManager.installTreeContextMenu 覆盖(含右键菜单绑定)
     }
 }

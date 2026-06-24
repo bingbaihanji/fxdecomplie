@@ -184,7 +184,10 @@ public final class InheritanceService {
     }
 
     private static String toInternal(String path) {
-        return path.replace(".class", "").replace("\\", "/");
+        if (path.endsWith(".class")) {
+            return path.substring(0, path.length() - 6).replace("\\", "/");
+        }
+        return path.replace("\\", "/");
     }
 
     private static String simpleName(String internalName) {

@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.google.gson.Gson;
@@ -74,7 +75,7 @@ public final class SettingsDialog {
                     .toJson(config.decompiler().engineOptions());
             engineOptionsArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ignored) {
-            logger.debug("序列化引擎选项JSON失败", ignored);
+            logger.warn("序列化引擎选项JSON失败", ignored);
             engineOptionsArea.setText("");
         }
 
@@ -170,14 +171,10 @@ public final class SettingsDialog {
         Button cleanCacheButton = new Button(I18nUtil.getString("settings.cache.clean"));
         cleanCacheButton.setOnAction(event -> {
             DiskCodeCache.cleanAll();
-            Alert alert = new Alert(Alert.AlertType.INFORMATION,
+            com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(
+                    owner,
+                    I18nUtil.getString("settings.cache"),
                     I18nUtil.getString("settings.cache.cleaned"));
-            alert.initOwner(owner);
-            alert.setHeaderText(null);
-            alert.setTitle(I18nUtil.getString("settings.cache"));
-            alert.setOnShown(ev -> DefaultWindowTheme
-                    .applyWindowDarkMode(alert.getDialogPane().getScene().getWindow()));
-            alert.showAndWait();
         });
         cacheTab.setContent(new VBox(10,
                 new Label(I18nUtil.getString("settings.cache.path")),
@@ -251,8 +248,7 @@ public final class SettingsDialog {
                     config.decompiler().engineOptions().clear();
                 }
             } catch (Exception ignored) {
-                logger.debug("解析引擎选项JSON失败，保留现有选项", ignored);
-                // JSON 无效 — 保留现有选项
+                logger.warn("解析引擎选项JSON无效，保留现有选项", ignored);
             }
 
             // 应用语言变更

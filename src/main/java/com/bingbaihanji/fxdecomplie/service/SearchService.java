@@ -28,19 +28,6 @@ public class SearchService {
     /** 预编译的排除模式,用于性能优化 */
     private volatile List<Pattern> compiledExcludePatterns = List.of();
 
-    private static boolean matchesExcludePattern(String path, List<String> patterns) {
-        if (path == null) {
-            return false;
-        }
-        for (String pattern : patterns) {
-            if (pattern == null || pattern.isBlank()) {
-                continue;
-            }
-            if (globContainsPattern(pattern).matcher(path).find()) return true;
-        }
-        return false;
-    }
-
     private static Pattern globContainsPattern(String glob) {
         StringBuilder regex = new StringBuilder();
         for (int i = 0; i < glob.length(); i++) {
@@ -65,10 +52,37 @@ public class SearchService {
     }
 
     public void setExcludePatterns(List<String> patterns) {
-        this.excludePatterns = patterns != null ? List.copyOf(patterns) : List.of();
+        this.excludePatterns = patterns == null
+                ? List.of()
+                : patterns.stream()
+                .filter(pattern -> pattern != null && !pattern.isBlank())
+                .toList();
         this.compiledExcludePatterns = this.excludePatterns.stream()
                 .map(SearchService::globContainsPattern)
                 .collect(Collectors.toList());
+    }
+
+    private boolean isExcluded(SearchResult result) {
+        if (result == null || compiledExcludePatterns.isEmpty()) {
+            return false;
+        }
+        String path = result.fullPath();
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        for (Pattern pattern : compiledExcludePatterns) {
+            if (pattern.matcher(path).find()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private final java.util.Set<String> addedKeys = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+
+    /** 清理去重键(每次新搜索前调用) */
+    private void clearAddedKeys() {
+        addedKeys.clear();
     }
 
     /**
@@ -85,27 +99,29 @@ public class SearchService {
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache, int limit) {
         if (query == null || query.isBlank()) return List.of();
         int resultLimit = Math.max(1, limit);
-        int softLimit = resultLimit * 2;
+        int globalSoftLimit = resultLimit * 2;
+        int providerCount = Math.max(1, providers.size());
+        int perProviderQuota = Math.max(1, globalSoftLimit / providerCount);
         List<SearchResult> all = new ArrayList<>();
+        clearAddedKeys();
         for (SearchProvider provider : providers) {
             if (Thread.currentThread().isInterrupted()) return List.of();
-            if (all.size() >= softLimit) break;
+            if (all.size() >= globalSoftLimit) break;
+            int beforeSize = all.size();
             List<SearchResult> results = provider.search(query, sourceCache);
-            // 单 provider 结果也裁剪到 softLimit
-            if (results.size() > softLimit - all.size()) {
-                results = results.subList(0, Math.max(0, softLimit - all.size()));
-            }
-            all.addAll(results);
-        }
-        // 根据排除模式过滤结果
-        if (!compiledExcludePatterns.isEmpty()) {
-            all.removeIf(result -> {
-                String path = result.fullPath();
-                for (Pattern pattern : compiledExcludePatterns) {
-                    if (pattern.matcher(path).find()) return true;
+            int providerAdded = 0;
+            for (SearchResult result : results) {
+                if (all.size() >= globalSoftLimit || providerAdded >= perProviderQuota) {
+                    break;
                 }
-                return false;
-            });
+                if (!isExcluded(result)) {
+                    String key = result.fullPath() + ":" + result.lineNumber();
+                    if (addedKeys.add(key)) {
+                        all.add(result);
+                        providerAdded++;
+                    }
+                }
+            }
         }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
@@ -128,26 +144,38 @@ public class SearchService {
         int resultLimit = Math.max(1, limit);
         List<SearchResult> all = new ArrayList<>();
         SearchScope effectiveScope = scope == null ? SearchScope.ALL : scope;
-        // 提前停止：结果数达到 2 倍限制后跳过剩余 provider（避免全量搜索后截断浪费）
-        int softLimit = resultLimit * 2;
+        int activeProviderCount = 0;
+        for (SearchProvider provider : providers) {
+            if (provider.supports(effectiveScope)) {
+                activeProviderCount++;
+            }
+        }
+        int globalSoftLimit = resultLimit * 2;
+        int perProviderQuota = Math.max(1, globalSoftLimit / Math.max(1, activeProviderCount));
+        clearAddedKeys();
         for (SearchProvider provider : providers) {
             if (Thread.currentThread().isInterrupted()) return List.of();
             if (!provider.supports(effectiveScope)) {
                 continue;
             }
-            if (all.size() >= softLimit) break;
+            if (all.size() >= globalSoftLimit) {
+                break;
+            }
+            int beforeSize = all.size();
             List<SearchResult> results = provider.search(query, sourceCache, options);
-            all.addAll(results);
-        }
-        // 根据排除模式过滤结果
-        if (!compiledExcludePatterns.isEmpty()) {
-            all.removeIf(result -> {
-                String path = result.fullPath();
-                for (Pattern pattern : compiledExcludePatterns) {
-                    if (pattern.matcher(path).find()) return true;
+            int providerAdded = 0;
+            for (SearchResult result : results) {
+                if (all.size() >= globalSoftLimit || providerAdded >= perProviderQuota) {
+                    break;
                 }
-                return false;
-            });
+                if (!isExcluded(result)) {
+                    String key = result.fullPath() + ":" + result.lineNumber();
+                    if (addedKeys.add(key)) {
+                        all.add(result);
+                        providerAdded++;
+                    }
+                }
+            }
         }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());

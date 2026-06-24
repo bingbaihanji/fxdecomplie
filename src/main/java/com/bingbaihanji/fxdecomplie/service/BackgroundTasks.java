@@ -43,6 +43,7 @@ public final class BackgroundTasks {
             return EXECUTOR.submit(() -> {
                 Thread.currentThread().setName(name);
                 // 清除线程池复用残留的中断标志,避免反编译器抛出 InterruptedException
+                // 任务内需要通过 isInterrupted() 自行检查取消信号
                 Thread.interrupted();
                 task.run();
             });

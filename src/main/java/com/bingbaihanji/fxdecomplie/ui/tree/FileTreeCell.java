@@ -26,8 +26,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
     private static final Image CLASS_FILE_ICON = loadIcon("/icon/javabytecode.png");
 
     private static Image loadIcon(String path) {
-        try {
-            var stream = FileTreeCell.class.getResourceAsStream(path);
+        try (var stream = FileTreeCell.class.getResourceAsStream(path)) {
             if (stream != null) {
                 return new Image(stream);
             }

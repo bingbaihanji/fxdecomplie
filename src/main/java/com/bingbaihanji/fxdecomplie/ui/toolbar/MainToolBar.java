@@ -95,8 +95,7 @@ public class MainToolBar extends ToolBar {
 
     /** 从 classpath 加载按钮图标 */
     private void loadIcon(Button btn, String iconName) {
-        try {
-            InputStream is = getClass().getResourceAsStream(ICON_BASE + iconName);
+        try (InputStream is = getClass().getResourceAsStream(ICON_BASE + iconName)) {
             if (is != null) {
                 Image img = new Image(is, ICON_SIZE, ICON_SIZE, true, true);
                 btn.setGraphic(new ImageView(img));

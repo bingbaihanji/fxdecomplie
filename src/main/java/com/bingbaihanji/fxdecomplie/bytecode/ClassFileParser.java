@@ -55,6 +55,9 @@ public final class ClassFileParser {
             List<ClassFileMetadata.MemberInfo> fields = readMembers(in, constantPool);
             List<ClassFileMetadata.MemberInfo> methods = readMembers(in, constantPool);
 
+            // 跳过类级属性
+            skipAttributes(in);
+
             return new ClassFileMetadata(minor, major, accessFlags, internalName, superName,
                     interfaces, constantPoolCount, fields, methods);
         }

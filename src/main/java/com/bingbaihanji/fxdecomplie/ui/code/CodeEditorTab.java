@@ -28,7 +28,7 @@ public class CodeEditorTab extends Tab {
     /** 代码视图面板 */
     private final CodeViewPanel codeViewPanel;
     /** 标签页显示标题 */
-    private final String displayTitle;
+    private String displayTitle;
     /** 可拖拽的标签标题节点 */
     private final Label titleLabel;
     /** 默认字号 */
@@ -78,7 +78,7 @@ public class CodeEditorTab extends Tab {
                          int fontSize, boolean wrapText, boolean lineNumbersEnabled, byte[] classBytes,
                          CodeMetadata metadata, Consumer<CodeMetadata.Reference> onNavigate) {
         this.openFile = Objects.requireNonNull(openFile, "openFile");
-        this.displayTitle = openFile.className() + " [" + openFile.engine().name() + "]";
+        this.displayTitle = displayTitleFor(openFile);
         this.defaultFontSize = fontSize;
         this.theme = theme;
         this.fontFamily = fontFamily;
@@ -126,6 +126,10 @@ public class CodeEditorTab extends Tab {
         label.setMinWidth(0);
         label.setTextOverrun(javafx.scene.control.OverrunStyle.CENTER_ELLIPSIS);
         return label;
+    }
+
+    private static String displayTitleFor(OpenFile openFile) {
+        return openFile.className() + " [" + openFile.engine().name() + "]";
     }
 
     /** 构建切换引擎子菜单 */
@@ -176,6 +180,10 @@ public class CodeEditorTab extends Tab {
 
     /** 设置所属的分屏编辑器（由 SplitEditorPane 在 tab 选中时调用） */
     public void setSplitEditorPane(SplitEditorPane pane) {
+        if (pane == null) {
+            clearSplitEditorPane();
+            return;
+        }
         getProperties().put("splitEditorPane", pane);
         // 同步分屏状态到勾选框
         pane.setOnSplitStateChanged(() -> {
@@ -184,14 +192,28 @@ public class CodeEditorTab extends Tab {
         });
     }
 
+    /** 清除所属分屏编辑器引用，用于移动到纯代码窗口等非分屏容器 */
+    public void clearSplitEditorPane() {
+        getProperties().remove("splitEditorPane");
+        codeViewPanel.setSplitToggleSelected(false);
+    }
+
     /** 设置分屏请求回调 */
     public void setOnSplitRequested(Consumer<CodeEditorTab> callback) {
         this.onSplitRequested = callback;
     }
 
+    Consumer<CodeEditorTab> getOnSplitRequested() {
+        return onSplitRequested;
+    }
+
     /** 设置切换引擎回调 */
     public void setOnSwitchEngine(Consumer<DecompilerTypeEnum> callback) {
         this.onSwitchEngine = callback;
+    }
+
+    Consumer<DecompilerTypeEnum> getOnSwitchEngine() {
+        return onSwitchEngine;
     }
 
     /** 触发切换引擎（由外部菜单调用） */
@@ -250,6 +272,7 @@ public class CodeEditorTab extends Tab {
     public void updateDecompiledContent(OpenFile updatedOpenFile, CodeMetadata updatedMetadata,
                                         Consumer<CodeMetadata.Reference> updatedOnNavigate) {
         this.openFile = Objects.requireNonNull(updatedOpenFile, "updatedOpenFile");
+        this.displayTitle = displayTitleFor(updatedOpenFile);
         this.metadata = updatedMetadata != null ? updatedMetadata : new CodeMetadata(java.util.Map.of());
         this.onNavigate = updatedOnNavigate;
         String source = updatedOpenFile.sourceCode();
@@ -258,6 +281,7 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.replaceSourcePanel(source, srcPanel);
         codeArea = srcPanel.getCodeArea();
         sourceReady = true;
+        updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
     }
 
     /**

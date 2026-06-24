@@ -95,13 +95,15 @@ public final class OutlinePane extends VBox {
     /** 更新大纲内容 */
     public void update(String sourceCode) {
         long generation = updateGeneration.incrementAndGet();
-        sourceList.clear();
-        filterField.clear();
         BackgroundTasks.run("OutlineParse", () -> {
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
             List<OutlineMember> members = OutlineParser.parse(sourceCode);
             Platform.runLater(() -> {
                 if (updateGeneration.get() == generation) {
                     sourceList.setAll(members);
+                    filterField.clear();
                 }
             });
         });

@@ -562,9 +562,29 @@ final class BytecodeTextBuilder extends ClassVisitor {
             case Opcodes.INVOKEINTERFACE, Opcodes.INVOKEDYNAMIC -> 5;
             case Opcodes.NEW, Opcodes.ANEWARRAY, Opcodes.CHECKCAST, Opcodes.INSTANCEOF -> 3;
             case Opcodes.MULTIANEWARRAY -> 4;
-            case 196 -> 0; // WIDE — 具体由后续指令决定
+            case 196 -> 1; // WIDE — 前缀本身占1字节,实际大小由 actualSize 计算
             default -> 1;
         };
+    }
+
+    /**
+     * 获取指令在字节码中的实际大小(含 WIDE 前缀)
+     *
+     * @param raw  原始字节码
+     * @param offset 当前指令在 raw 中的偏移
+     * @return 指令实际占用字节数
+     */
+    static int actualSize(byte[] raw, int offset) {
+        int b = raw[offset] & 0xFF;
+        if (b != 0xC4) {
+            return sizeOf(b);
+        }
+        // WIDE 前缀: WIDE(1) + 实际opcode(1) + 宽操作数
+        int next = raw[offset + 1] & 0xFF;
+        if (next == Opcodes.IINC) {
+            return 6; // WIDE(1) + IINC(1) + index(2) + const(2)
+        }
+        return 4; // WIDE(1) + opcode(1) + wideIndex(2)
     }
 
     /** 转义特殊字符 */
@@ -825,7 +845,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
         @Override
         public void visitIntInsn(int opcode, int operand) {
-            int size = sizeOf(opcode);
+            int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(opcode, size);
             sb.append(' ').append(opcodeName(opcode)).append(' ').append(operand).append('\n');
             pc += size;
@@ -833,7 +853,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
         @Override
         public void visitVarInsn(int opcode, int var) {
-            int size = sizeOf(opcode);
+            int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(opcode, size);
             sb.append(' ').append(opcodeName(opcode)).append(' ').append(var).append('\n');
             pc += size;
@@ -841,7 +861,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
         @Override
         public void visitTypeInsn(int opcode, String type) {
-            int size = sizeOf(opcode);
+            int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(opcode, size);
             sb.append(' ').append(opcodeName(opcode)).append(' ').append(type.replace('/', '.'));
             sb.append("    // L").append(type.replace('.', '/')).append(';').append('\n');
@@ -850,7 +870,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
-            int size = sizeOf(opcode);
+            int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(opcode, size);
             int idx = readU2(raw, codeOffset + pc + 1); // 操作数中的字段引用索引
             String typeStr = SmaliTextBuilder.formatTypeReadable(Type.getType(descriptor));
@@ -863,7 +883,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         @Override
         public void visitMethodInsn(int opcode, String owner, String name,
                                     String descriptor, boolean isInterface) {
-            int size = sizeOf(opcode);
+            int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(opcode, size);
             int idx = readU2(raw, codeOffset + pc + 1);
             sb.append(' ').append(opcodeName(opcode)).append(" #").append(idx)
@@ -885,7 +905,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
         @Override
         public void visitJumpInsn(int opcode, Label label) {
-            int size = sizeOf(opcode);
+            int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(opcode, size);
             int offset = readS2(raw, codeOffset + pc + 1);
             int target = pc + offset;
