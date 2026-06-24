@@ -7,7 +7,6 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;

@@ -1,28 +1,24 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
-import org.jetbrains.java.decompiler.main.extern.IBytecodeProvider;
+import org.jetbrains.java.decompiler.main.extern.IContextSource;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.InputStream;
+import java.util.*;
 import java.util.jar.Manifest;
 
 /**
- * Vineflower 反编译引擎适配器
- * 从 code-resurrector 项目移植
+ * Vineflower 反编译引擎适配器（使用 IContextSource API，无废弃 API）。
  *
  * @author bingbaihanji
- * @date 2026-06-17
+ * @date 2026-06-24
  */
 public class VineflowerDecompiler implements Decompiler {
 
@@ -31,7 +27,6 @@ public class VineflowerDecompiler implements Decompiler {
     /** Vineflower 默认反编译选项 */
     private static final Map<String, Object> DEFAULT_OPTIONS = createDefaultOptions();
 
-    /** @return Vineflower 默认选项配置 */
     private static Map<String, Object> createDefaultOptions() {
         Map<String, Object> opts = new HashMap<>();
         opts.put("den", "1");           // 反编译内部/匿名类
@@ -64,23 +59,6 @@ public class VineflowerDecompiler implements Decompiler {
         return Collections.unmodifiableMap(opts);
     }
 
-    private static void deleteRecursively(java.nio.file.Path dir) {
-        if (dir == null || !java.nio.file.Files.exists(dir)) return;
-        try (var files = java.nio.file.Files.walk(dir).sorted(Comparator.reverseOrder())) {
-            files.forEach(p -> {
-                try {
-                    java.nio.file.Files.deleteIfExists(p);
-                } catch (java.io.IOException e) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("删除临时文件失败: {}", p, e);
-                    }
-                }
-            });
-        } catch (java.io.IOException e) {
-            logger.warn("清理临时目录失败: {}", dir, e);
-        }
-    }
-
     private static Map<String, Object> mergedOptions(DecompilerContext context) {
         if (context == null || !context.hasOptions()) {
             return DEFAULT_OPTIONS;
@@ -90,67 +68,41 @@ public class VineflowerDecompiler implements Decompiler {
         return Collections.unmodifiableMap(merged);
     }
 
-    /** {@inheritDoc} */
+    // ==================== Decompiler 接口 ====================
+
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
-        String internalName = DecompilerContext.normalizeInternalName(classFilePath);
-        return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
+        return decompileType(DecompilerContext.normalizeInternalName(classFilePath),
+                classBytes, DecompilerContext.EMPTY);
     }
 
-    /** {@inheritDoc} */
     @Override
     public String decompileType(String typeName, byte[] classBytes) {
         return decompileType(typeName, classBytes, DecompilerContext.EMPTY);
     }
 
     @Override
-    public String decompile(String classFilePath, byte[] classBytes,
-                            DecompilerContext context) {
-        String internalName = DecompilerContext.normalizeInternalName(classFilePath);
-        return decompileType(internalName, classBytes, context);
+    public String decompile(String classFilePath, byte[] classBytes, DecompilerContext context) {
+        return decompileType(DecompilerContext.normalizeInternalName(classFilePath),
+                classBytes, context);
     }
 
     @Override
-    public String decompileType(String typeName, byte[] classBytes,
-                                DecompilerContext context) {
+    public String decompileType(String typeName, byte[] classBytes, DecompilerContext context) {
         final StringBuilder result = new StringBuilder();
-        DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
-
-        File tempDir = null;
-        File tempClassFile = null;
+        final DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
+        final byte[] bytes = classBytes.clone();
 
         try {
-            tempDir = Files.createTempDirectory("vineflower_").toFile();
-            String classFileName = typeName.replace('/', '_').replace('\\', '_') + ".class";
-            tempClassFile = new File(tempDir, classFileName);
-            Files.write(tempClassFile.toPath(), classBytes);
-
-            final File finalTempClassFile = tempClassFile;
-
-            IBytecodeProvider bytecodeProvider = (externalPath, internalPath) -> {
-                if (externalPath != null && externalPath.equals(finalTempClassFile.getAbsolutePath())) {
-                    return classBytes;
-                }
-                String key = internalPath != null ? internalPath : externalPath;
-                if (key != null) {
-                    key = (key.endsWith(".class") ? key.substring(0, key.length() - 6) : key)
-                            .replace("\\", "/");
-                    if (key.endsWith("/" + DecompilerContext.simpleName(typeName)) || key.equals(typeName)) {
-                        return classBytes;
-                    }
-                    return effectiveContext.resolveClassBytes(key);
-                }
-                return null;
-            };
+            // 单 class 的 IContextSource，无需临时文件
+            IContextSource source = new SingleClassContextSource(typeName, bytes, effectiveContext);
 
             IResultSaver resultSaver = new IResultSaver() {
                 @Override
-                public void saveFolder(String path) {
-                }
+                public void saveFolder(String path) {}
 
                 @Override
-                public void copyFile(String source, String path, String entryName) {
-                }
+                public void copyFile(String source, String path, String entryName) {}
 
                 @Override
                 public void saveClassFile(String path, String qualifiedName, String entryName,
@@ -161,16 +113,13 @@ public class VineflowerDecompiler implements Decompiler {
                 }
 
                 @Override
-                public void createArchive(String path, String archiveName, Manifest manifest) {
-                }
+                public void createArchive(String path, String archiveName, Manifest manifest) {}
 
                 @Override
-                public void saveDirEntry(String path, String archiveName, String entryName) {
-                }
+                public void saveDirEntry(String path, String archiveName, String entryName) {}
 
                 @Override
-                public void copyEntry(String source, String path, String archiveName, String entry) {
-                }
+                public void copyEntry(String source, String path, String archiveName, String entry) {}
 
                 @Override
                 public void saveClassEntry(String path, String archiveName, String qualifiedName,
@@ -181,8 +130,7 @@ public class VineflowerDecompiler implements Decompiler {
                 }
 
                 @Override
-                public void closeArchive(String path, String archiveName) {
-                }
+                public void closeArchive(String path, String archiveName) {}
             };
 
             IFernflowerLogger fernflowerLogger = new IFernflowerLogger() {
@@ -207,24 +155,14 @@ public class VineflowerDecompiler implements Decompiler {
                 }
             };
 
-            BaseDecompiler decompiler = new BaseDecompiler(bytecodeProvider, resultSaver,
+            // 使用非废弃构造器：不需要 IBytecodeProvider
+            BaseDecompiler decompiler = new BaseDecompiler(resultSaver,
                     mergedOptions(effectiveContext), fernflowerLogger);
-            decompiler.addSource(tempClassFile);
+            decompiler.addSource(source);
             decompiler.decompileContext();
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             return "// Vineflower Error: " + e.getMessage();
-        } finally {
-            if (tempClassFile != null) {
-                try {
-                    Files.deleteIfExists(tempClassFile.toPath());
-                } catch (IOException e) {
-                    logger.warn("删除临时类文件失败: {}", tempClassFile, e);
-                }
-            }
-            if (tempDir != null) {
-                deleteRecursively(tempDir.toPath());
-            }
         }
 
         String decompiled = result.toString();
@@ -234,16 +172,91 @@ public class VineflowerDecompiler implements Decompiler {
         return decompiled;
     }
 
-    /** @return 引擎类型 VINEFLOWER */
     @Override
     public DecompilerTypeEnum getType() {
         return DecompilerTypeEnum.VINEFLOWER;
     }
 
     @Override
-    public java.util.Map<String, String> getDefaultOptions() {
-        java.util.Map<String, String> stringOpts = new java.util.LinkedHashMap<>();
+    public  Map<String, String> getDefaultOptions() {
+        Map<String, String> stringOpts = new LinkedHashMap<>();
         DEFAULT_OPTIONS.forEach((k, v) -> stringOpts.put(k, String.valueOf(v)));
         return stringOpts;
+    }
+
+    // ==================== IContextSource 实现（单 class 服务） ====================
+
+    /**
+     * 为单个 class 提供字节码的 IContextSource。
+     * 无需写临时文件，直接从内存中的 bytes 创建 InputStream。
+     */
+    private static final class SingleClassContextSource implements IContextSource {
+        private final String typeName;
+        private final byte[] bytes;
+        private final DecompilerContext context;
+        private final String entryPath;
+
+        SingleClassContextSource(String typeName, byte[] bytes, DecompilerContext context) {
+            this.typeName = typeName;
+            this.bytes = bytes.clone();
+            this.context = context;
+            this.entryPath = typeName + IContextSource.CLASS_SUFFIX;
+        }
+
+        @Override
+        public String getName() {
+            return typeName;
+        }
+
+        @Override
+        public Entries getEntries() {
+            return new Entries(
+                    List.of(new Entry(entryPath, Entry.BASE_VERSION)),
+                    List.of(),
+                    List.of()
+            );
+        }
+
+        @Override
+        public InputStream getInputStream(String resource) throws IOException {
+            // 主 class
+            if (entryPath.equals(resource)) {
+                return new ByteArrayInputStream(bytes);
+            }
+            // 依赖 class（从 DecompilerContext 解析）
+            if (resource.endsWith(IContextSource.CLASS_SUFFIX)) {
+                String internalName = resource.substring(0,
+                        resource.length() - IContextSource.CLASS_SUFFIX.length());
+                byte[] dep = context.resolveClassBytes(internalName);
+                if (dep != null) {
+                    return new ByteArrayInputStream(dep);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public IOutputSink createOutputSink(IResultSaver saver) {
+            // 将 Vineflower 输出委托给全局 IResultSaver
+            return new IOutputSink() {
+                @Override
+                public void begin() {}
+
+                @Override
+                public void acceptClass(String qualifiedName, String fileName,
+                                        String content, int[] mapping) {
+                    saver.saveClassFile("", qualifiedName, fileName, content, mapping);
+                }
+
+                @Override
+                public void acceptDirectory(String directory) {}
+
+                @Override
+                public void acceptOther(String path) {}
+
+                @Override
+                public void close() {}
+            };
+        }
     }
 }

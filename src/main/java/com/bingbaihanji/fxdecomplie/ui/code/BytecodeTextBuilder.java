@@ -441,7 +441,10 @@ final class BytecodeTextBuilder extends ClassVisitor {
     /** 常量池条目数据部分大小（不含 tag） */
     private static int cpEntryDataSize(int tag, byte[] raw, int off) {
         return switch (tag) {
-            case 1 -> { int len = readU2(raw, off); yield 2 + len; }
+            case 1 -> {
+                int len = readU2(raw, off);
+                yield 2 + len;
+            }
             case 3, 4 -> 4;
             case 5, 6 -> 8;
             case 7, 8 -> 2;
@@ -736,6 +739,11 @@ final class BytecodeTextBuilder extends ClassVisitor {
             this.codeOffset = codeOffset;
         }
 
+        private static int readS2(byte[] b, int off) {
+            short val = (short) (((b[off] & 0xFF) << 8) | (b[off + 1] & 0xFF));
+            return val;
+        }
+
         @Override
         public void visitCode() {
             this.pc = 0;
@@ -761,12 +769,12 @@ final class BytecodeTextBuilder extends ClassVisitor {
             // 已在 formatCodeHeader 中输出
         }
 
+        // ==================== 指令访问 ====================
+
         @Override
         public void visitEnd() {
             sb.append(INDENT).append(".end method\n\n");
         }
-
-        // ==================== 指令访问 ====================
 
         @Override
         public void visitInsn(int opcode) {
@@ -917,12 +925,12 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
+        // ==================== hex 输出辅助 ====================
+
         @Override
         public void visitFrame(int type, int numLocal, Object[] local, int numStack, Object[] stack) {
             // 跳过帧信息，保持输出整洁
         }
-
-        // ==================== hex 输出辅助 ====================
 
         /** 输出 hex 偏移 + 原始字节 + | + PC偏移 + : */
         private void appendInsnHex(int opcode, int size) {
@@ -942,11 +950,6 @@ final class BytecodeTextBuilder extends ClassVisitor {
             }
             // PC偏移
             sb.append(String.format(" |%04x:", pc));
-        }
-
-        private static int readS2(byte[] b, int off) {
-            short val = (short) (((b[off] & 0xFF) << 8) | (b[off + 1] & 0xFF));
-            return val;
         }
     }
 }

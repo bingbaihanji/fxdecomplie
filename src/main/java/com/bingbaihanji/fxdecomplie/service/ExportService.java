@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -59,12 +60,23 @@ public final class ExportService {
                                          WorkspaceIndex index,
                                          BiConsumer<String, Integer> onProgress)
             throws IOException {
-        return exportAll(root, config, index, null, onProgress);
+        return exportAll(root, config, index, null, onProgress, null);
     }
 
     public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
                                          WorkspaceIndex index, CommentScope commentScope,
                                          BiConsumer<String, Integer> onProgress)
+            throws IOException {
+        return exportAll(root, config, index, commentScope, onProgress, null);
+    }
+
+    /**
+     * @param canceled 用户取消标志 supplier，非 null 时每轮迭代检查
+     */
+    public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
+                                         WorkspaceIndex index, CommentScope commentScope,
+                                         BiConsumer<String, Integer> onProgress,
+                                         BooleanSupplier canceled)
             throws IOException {
         Objects.requireNonNull(root, "root");
         Objects.requireNonNull(config, "config");
@@ -77,9 +89,9 @@ public final class ExportService {
 
         // ---- 步骤 2: 反编译并写入 — 分发到 ZIP 或目录路径 ----
         if (config.format() == ExportConfig.Format.ZIP) {
-            exportAllToZip(items, context, config, commentScope, state);
+            exportAllToZip(items, context, config, commentScope, state, canceled);
         } else {
-            exportAllToDir(items, context, config, commentScope, state);
+            exportAllToDir(items, context, config, commentScope, state, canceled);
         }
 
         return new ExportResult(state.totalFiles, state.successCount, state.errors);
@@ -176,12 +188,13 @@ public final class ExportService {
     }
 
     private static void exportAllToDir(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
-                                       ExportConfig config, CommentScope commentScope, ExportState state)
+                                       ExportConfig config, CommentScope commentScope, ExportState state,
+                                       BooleanSupplier canceled)
             throws IOException {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
         Files.createDirectories(outputDir);
         for (TreeItem<FileTreeNode> item : items) {
-            if (Thread.currentThread().isInterrupted()) {
+            if (canceled != null && canceled.getAsBoolean()) {
                 state.errors.add("导出已取消");
                 return;
             }
@@ -208,7 +221,8 @@ public final class ExportService {
     }
 
     private static void exportAllToZip(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
-                                       ExportConfig config, CommentScope commentScope, ExportState state)
+                                       ExportConfig config, CommentScope commentScope, ExportState state,
+                                       BooleanSupplier canceled)
             throws IOException {
         Path zipPath = config.outputPath().toAbsolutePath().normalize();
         if (zipPath.getParent() != null) {
@@ -219,7 +233,7 @@ public final class ExportService {
                 new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
             boolean entryOpen = false;
             for (TreeItem<FileTreeNode> item : items) {
-                if (Thread.currentThread().isInterrupted()) {
+                if (canceled != null && canceled.getAsBoolean()) {
                     state.errors.add("导出已取消");
                     if (entryOpen) {
                         try {

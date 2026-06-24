@@ -595,7 +595,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                             statusBar.setFilePath(I18nUtil.getString(
                                     "status.exporting.detail", pct, path));
                             progressHandle.update(path, pct);
-                        }));
+                        }),
+                        (java.util.function.BooleanSupplier) () -> exportCanceled.get());
                 Platform.runLater(() -> {
                     progressHandle.close();
                     statusBar.clearTask();

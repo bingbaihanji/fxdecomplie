@@ -15,8 +15,7 @@ public final class BackgroundTasks {
 
     private static final Logger logger = LoggerFactory.getLogger(BackgroundTasks.class);
 
-    private static final int POOL_SIZE = Math.max(4,
-            Math.min(8, Runtime.getRuntime().availableProcessors()));
+    private static final int POOL_SIZE = Math.clamp(Runtime.getRuntime().availableProcessors(), 4, 8);
     private static final int MAX_QUEUE_SIZE = 100;
 
     /** 保底并发避免索引/搜索/导出任务阻塞交互任务；有界队列避免无限堆积 */

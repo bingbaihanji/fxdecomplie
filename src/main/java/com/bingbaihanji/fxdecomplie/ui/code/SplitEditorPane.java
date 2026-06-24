@@ -3,8 +3,6 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
-import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.ToggleGroup;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -34,14 +32,14 @@ public final class SplitEditorPane extends StackPane {
     private final SplitPane splitPane;
     /** 所有 cell（cells[0] 始终存在，其余按需创建；关闭中间 cell 后自动压缩数组） */
     private final TabPane[] cells = new TabPane[MAX_CELLS];
-    /** 最近获得焦点的 cell（基于引用而非索引，避免压缩后索引错位） */
-    private TabPane focusedCell;
-    /** 当前活跃 cell 数 (= splitPane.getItems().size()) */
-    private int activeCount = 1;
     /** 外部拖放配置（来自 WorkspaceTabManager） */
     private final AppConfig dragDropConfig;
     /** 编辑器主题（用于外部拖放） */
     private final com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader.ThemeData dragDropTheme;
+    /** 最近获得焦点的 cell（基于引用而非索引，避免压缩后索引错位） */
+    private TabPane focusedCell;
+    /** 当前活跃 cell 数 (= splitPane.getItems().size()) */
+    private int activeCount = 1;
     /** 分屏状态变化回调（用于同步主 panel 的勾选框） */
     private Runnable onSplitStateChanged;
 
@@ -65,6 +63,14 @@ public final class SplitEditorPane extends StackPane {
         splitPane.setDividerPositions(1.0);
     }
 
+    /** 选择一个与 exclude 不同的引擎 */
+    public static DecompilerTypeEnum chooseDifferentEngine(DecompilerTypeEnum exclude) {
+        for (DecompilerTypeEnum e : DecompilerTypeEnum.values()) {
+            if (e != exclude) return e;
+        }
+        return DecompilerTypeEnum.VINEFLOWER;
+    }
+
     /** 创建新 cell 并插入到 SplitPane 指定位置 */
     private TabPane createCellAt(int posInSplitPane) {
         TabPane newCell = createCell();
@@ -73,6 +79,8 @@ public final class SplitEditorPane extends StackPane {
         syncCellsArray();
         return newCell;
     }
+
+    // ==================== 公开 API ====================
 
     /** 创建一个 TabPane cell */
     private TabPane createCell() {
@@ -108,8 +116,6 @@ public final class SplitEditorPane extends StackPane {
 
         return pane;
     }
-
-    // ==================== 公开 API ====================
 
     /** @return 主 TabPane（始终存在，cell 0） */
     public TabPane primaryTabPane() {
@@ -195,6 +201,8 @@ public final class SplitEditorPane extends StackPane {
         }
     }
 
+    // ==================== 内部方法 ====================
+
     /** 关闭指定 cell（折叠），将其 tab 移到主 cell */
     public void closeSplit(TabPane cell) {
         if (cell == primaryTabPane() || cell == null) return;
@@ -213,8 +221,6 @@ public final class SplitEditorPane extends StackPane {
         activeCount = splitPane.getItems().size();
         rebalanceDividers(); // 内部调用 syncCellsArray 自动压缩
     }
-
-    // ==================== 内部方法 ====================
 
     private int findCellIndex(TabPane cell) {
         for (int i = 0; i < MAX_CELLS; i++) {
@@ -282,13 +288,15 @@ public final class SplitEditorPane extends StackPane {
         notifySplitStateChanged();
     }
 
+    // ==================== 右键菜单 ====================
+
     private void notifySplitStateChanged() {
         if (onSplitStateChanged != null) {
             Platform.runLater(onSplitStateChanged);
         }
     }
 
-    // ==================== 右键菜单 ====================
+    // ==================== 辅助方法 ====================
 
     private void installContextMenu(TabPane pane) {
         pane.setOnContextMenuRequested(event -> {
@@ -385,15 +393,5 @@ public final class SplitEditorPane extends StackPane {
             menu.show(pane, event.getScreenX(), event.getScreenY());
             event.consume();
         });
-    }
-
-    // ==================== 辅助方法 ====================
-
-    /** 选择一个与 exclude 不同的引擎 */
-    public static DecompilerTypeEnum chooseDifferentEngine(DecompilerTypeEnum exclude) {
-        for (DecompilerTypeEnum e : DecompilerTypeEnum.values()) {
-            if (e != exclude) return e;
-        }
-        return DecompilerTypeEnum.VINEFLOWER;
     }
 }

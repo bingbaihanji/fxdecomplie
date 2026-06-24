@@ -61,6 +61,7 @@ public final class ClassTabOpener {
     private volatile CodeActionHandler codeActionHandler;
     /** 标签页就绪回调（工具栏刷新等） */
     private volatile Runnable onTabReady;
+
     public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar) {
         this.config = config;
         this.editorTheme = editorTheme;

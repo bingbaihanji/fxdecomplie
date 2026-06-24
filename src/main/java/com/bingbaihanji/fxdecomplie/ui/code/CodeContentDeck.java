@@ -24,8 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class CodeContentDeck extends VBox {
 
-    private static final Logger logger = LoggerFactory.getLogger(CodeContentDeck.class);
-
     /** Code 标签索引 */
     public static final int TAB_CODE = 0;
     /** Smali/JVM指令视图索引 */
@@ -34,7 +32,7 @@ public class CodeContentDeck extends VBox {
     public static final int TAB_BYTECODE = 2;
     /** 简化代码索引 */
     public static final int TAB_SIMPLE = 3;
-
+    private static final Logger logger = LoggerFactory.getLogger(CodeContentDeck.class);
     private final AbstractCodeContentPanel[] panels;
     private final ToggleButton[] buttons;
     private final StackPane contentArea;

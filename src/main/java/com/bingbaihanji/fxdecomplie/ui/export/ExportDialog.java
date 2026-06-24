@@ -59,10 +59,15 @@ public final class ExportDialog {
         engineCombo.setValue(parseEngine(appConfig.export().defaultEngine(), currentEngine));
         engineCombo.setMaxWidth(Double.MAX_VALUE);
 
+        TextField outputField = new TextField(appConfig.export().lastPath());
+
         ComboBox<ExportConfig.Format> formatCombo = new ComboBox<>();
         formatCombo.getItems().addAll(ExportConfig.Format.values());
         formatCombo.setValue(parseFormat(appConfig.export().defaultFormat()));
         formatCombo.setMaxWidth(Double.MAX_VALUE);
+        // 格式切换时自动调整输出路径（ZIP↔DIR 互转）
+        formatCombo.setOnAction(e -> outputField.setText(
+                switchPathFormat(outputField.getText(), formatCombo.getValue())));
 
         ComboBox<ExportConfig.ConflictPolicy> conflictCombo = new ComboBox<>();
         conflictCombo.getItems().addAll(ExportConfig.ConflictPolicy.values());
@@ -71,8 +76,6 @@ public final class ExportDialog {
 
         CheckBox resourcesCheck = new CheckBox(I18nUtil.getString("dialog.export.resources"));
         resourcesCheck.setSelected(appConfig.export().exportResources());
-
-        TextField outputField = new TextField(appConfig.export().lastPath());
         outputField.setPromptText(I18nUtil.getString("dialog.export.path.prompt"));
         HBox.setHgrow(outputField, Priority.ALWAYS);
 
@@ -155,6 +158,7 @@ public final class ExportDialog {
             handle.cancel();
         });
         dialog.setOnCloseRequest(event -> {
+            if (handle.closing) return; // 正常完成关闭，直接放行
             event.consume();
             cancelButton.setDisable(true);
             currentFileLabel.setText(I18nUtil.getString("dialog.export.progress.canceling"));
@@ -206,6 +210,17 @@ public final class ExportDialog {
             return null;
         }
         return null;
+    }
+
+    /** 格式切换时自动调整路径：ZIP→DIR 去掉 .zip 后缀，DIR→ZIP 加上 .zip */
+    private static String switchPathFormat(String currentPath, ExportConfig.Format newFormat) {
+        if (currentPath == null || currentPath.isBlank()) return currentPath;
+        if (newFormat == ExportConfig.Format.ZIP) {
+            return currentPath.endsWith(".zip") ? currentPath : currentPath + ".zip";
+        } else {
+            return currentPath.endsWith(".zip")
+                    ? currentPath.substring(0, currentPath.length() - 4) : currentPath;
+        }
     }
 
     private static Path normalizeOutputPath(Path path, ExportConfig.Format format) {
@@ -266,8 +281,9 @@ public final class ExportDialog {
         private final Dialog<Void> dialog;
         private final ProgressBar progressBar;
         private final Label currentFileLabel;
-        private Runnable onCancel = () -> {
-        };
+        private Runnable onCancel = () -> {};
+        /** 正常完成关闭标记，防止 setOnCloseRequest 误触发取消 UI */
+        private boolean closing;
 
         private ProgressHandle(Dialog<Void> dialog, ProgressBar progressBar,
                                Label currentFileLabel) {
@@ -277,8 +293,7 @@ public final class ExportDialog {
         }
 
         public void setOnCancel(Runnable onCancel) {
-            this.onCancel = onCancel != null ? onCancel : () -> {
-            };
+            this.onCancel = onCancel != null ? onCancel : () -> {};
         }
 
         public void update(String currentPath, int percent) {
@@ -288,10 +303,13 @@ public final class ExportDialog {
         }
 
         public void close() {
+            closing = true;
+            onCancel = () -> {}; // 正常完成时阻止取消回调
             dialog.close();
         }
 
         private void cancel() {
+            if (closing) return; // 正常关闭时跳过
             onCancel.run();
         }
     }

@@ -22,15 +22,15 @@ import java.util.*;
  */
 public class AppConfig {
 
+    /** JSON 序列化/反序列化器 */
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
     /** 应用根目录(JAR 所在目录,开发期回退到 user.dir) */
     private static final Path APP_DIR = resolveAppDir();
     /** 配置目录 (<appDir>/config) */
     private static final Path CONFIG_DIR = APP_DIR.resolve("config");
     /** 配置文件路径 */
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
-    /** JSON 序列化/反序列化器 */
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
     /** 最近文件最大数量 */
     private static final int MAX_RECENT_FILES = 20;
     /** 配置结构版本,用于后续迁移旧配置 */

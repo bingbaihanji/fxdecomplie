@@ -7,8 +7,6 @@ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.*;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
 import org.slf4j.Logger;
@@ -114,23 +112,6 @@ public class CodeEditorTab extends Tab {
         this.editorSearchBar = viewPanel.getSearchBar();
 
         titleLabel = createTitleLabel(displayTitle);
-        titleLabel.setOnContextMenuRequested(event -> {
-            SplitEditorPane sep = getSplitEditorPane();
-            if (sep == null) return;
-            ContextMenu menu = new ContextMenu();
-            MenuItem splitRight = new MenuItem(I18nUtil.getString("context.splitRight"));
-            splitRight.setDisable(sep.activeCellCount() >= 3);
-            splitRight.setOnAction(e -> requestSplit());
-            MenuItem closeSplit = new MenuItem(I18nUtil.getString("context.closeSplit"));
-            TabPane myPane = sep.tabPaneFor(CodeEditorTab.this);
-            closeSplit.setDisable(myPane == sep.primaryTabPane());
-            closeSplit.setOnAction(e -> sep.closeSplit(myPane));
-            // 切换引擎子菜单
-            Menu engineMenu = buildEngineSwitchMenu(CodeEditorTab.this);
-            menu.getItems().addAll(splitRight, closeSplit, new SeparatorMenuItem(), engineMenu);
-            menu.show(titleLabel, event.getScreenX(), event.getScreenY());
-            event.consume();
-        });
         setText("");
         setGraphic(titleLabel);
         setContent(viewPanel);
@@ -145,6 +126,50 @@ public class CodeEditorTab extends Tab {
         return label;
     }
 
+    /** 构建切换引擎子菜单 */
+    static Menu buildEngineSwitchMenu(CodeEditorTab tab) {
+        Menu engineMenu = new Menu(I18nUtil.getString("context.switchEngine"));
+        ToggleGroup group = new ToggleGroup();
+        DecompilerTypeEnum currentEngine = tab.getOpenFile().engine();
+        for (DecompilerTypeEnum engine : DecompilerTypeEnum.values()) {
+            RadioMenuItem item = new RadioMenuItem(engine.name());
+            item.setToggleGroup(group);
+            item.setSelected(engine == currentEngine);
+            item.setOnAction(e -> tab.switchEngine(engine));
+            engineMenu.getItems().add(item);
+        }
+        return engineMenu;
+    }
+
+    private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
+        try {
+            java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
+            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+        } catch (Exception ignored) {
+            logger.debug("加载自定义字体失败，回退到系统字体", ignored);
+        }
+        if (fontFamily != null && !fontFamily.isBlank()) {
+            return javafx.scene.text.Font.font(fontFamily, fontSize);
+        }
+        return javafx.scene.text.Font.font("Consolas", fontSize);
+    }
+
+    private static void setDialogIcon(javafx.stage.Stage stage) {
+        try {
+            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
+            if (stream != null) {
+                stage.getIcons().add(new javafx.scene.image.Image(stream));
+            }
+        } catch (Exception ignored) {
+            logger.debug("设置弹窗图标失败", ignored);
+        }
+    }
+
+    /** 获取所属的分屏编辑器 */
+    public SplitEditorPane getSplitEditorPane() {
+        return (SplitEditorPane) getProperties().get("splitEditorPane");
+    }
+
     /** 设置所属的分屏编辑器（由 SplitEditorPane 在 tab 选中时调用） */
     public void setSplitEditorPane(SplitEditorPane pane) {
         getProperties().put("splitEditorPane", pane);
@@ -153,11 +178,6 @@ public class CodeEditorTab extends Tab {
             boolean hasSplit = pane.activeCellCount() > 1;
             codeViewPanel.setSplitToggleSelected(hasSplit);
         });
-    }
-
-    /** 获取所属的分屏编辑器 */
-    public SplitEditorPane getSplitEditorPane() {
-        return (SplitEditorPane) getProperties().get("splitEditorPane");
     }
 
     /** 设置分屏请求回调 */
@@ -191,49 +211,10 @@ public class CodeEditorTab extends Tab {
         }
     }
 
-    /** 构建切换引擎子菜单 */
-    static Menu buildEngineSwitchMenu(CodeEditorTab tab) {
-        Menu engineMenu = new Menu(I18nUtil.getString("context.switchEngine"));
-        ToggleGroup group = new ToggleGroup();
-        DecompilerTypeEnum currentEngine = tab.getOpenFile().engine();
-        for (DecompilerTypeEnum engine : DecompilerTypeEnum.values()) {
-            RadioMenuItem item = new RadioMenuItem(engine.name());
-            item.setToggleGroup(group);
-            item.setSelected(engine == currentEngine);
-            item.setOnAction(e -> tab.switchEngine(engine));
-            engineMenu.getItems().add(item);
-        }
-        return engineMenu;
-    }
-
     /** 更新固定状态的标题文本 */
     public void updatePinnedDisplay(boolean pinned) {
         String title = pinned ? "📌 " + displayTitle : displayTitle;
         titleLabel.setText(title);
-    }
-
-    private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
-        try {
-            java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
-            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
-        } catch (Exception ignored) {
-            logger.debug("加载自定义字体失败，回退到系统字体", ignored);
-        }
-        if (fontFamily != null && !fontFamily.isBlank()) {
-            return javafx.scene.text.Font.font(fontFamily, fontSize);
-        }
-        return javafx.scene.text.Font.font("Consolas", fontSize);
-    }
-
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置弹窗图标失败", ignored);
-        }
     }
 
     /** @return Java 源码编辑器 */

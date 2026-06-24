@@ -3,13 +3,13 @@ package com.bingbaihanji.fxdecomplie.ui.comment;
 import com.bingbaihanji.fxdecomplie.model.CommentData;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.stage.Window;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.function.Consumer;
