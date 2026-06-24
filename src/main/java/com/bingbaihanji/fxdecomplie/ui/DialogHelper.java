@@ -57,7 +57,9 @@ public final class DialogHelper {
         alert.setOnShown(e -> {
             var window = alert.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(window);
-            if (window instanceof Stage s) setDialogIcon(s);
+            if (window instanceof Stage s) {
+                setDialogIcon(s);
+            }
         });
         alert.showAndWait();
     }

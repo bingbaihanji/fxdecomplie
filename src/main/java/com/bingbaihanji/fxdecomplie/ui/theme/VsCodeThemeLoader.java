@@ -56,8 +56,12 @@ public final class VsCodeThemeLoader {
     /** 创建样式属性 */
     private static StyleAttributeMap style(String colorHex, boolean bold, boolean italic) {
         var b = StyleAttributeMap.builder().setTextColor(Color.web(colorHex));
-        if (bold) b.setBold(true);
-        if (italic) b.setItalic(true);
+        if (bold) {
+            b.setBold(true);
+        }
+        if (italic) {
+            b.setItalic(true);
+        }
         return b.build();
     }
 
@@ -70,7 +74,9 @@ public final class VsCodeThemeLoader {
     /** 从 classpath 资源加载主题 */
     public static ThemeData loadResource(String resourcePath) throws IOException {
         try (InputStream in = VsCodeThemeLoader.class.getResourceAsStream(resourcePath)) {
-            if (in == null) throw new IOException("Resource not found: " + resourcePath);
+            if (in == null) {
+                throw new IOException("Resource not found: " + resourcePath);
+            }
             String json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
             return parse(json);
         }
@@ -93,7 +99,9 @@ public final class VsCodeThemeLoader {
             for (JsonElement e : tokenColors) {
                 JsonObject tc = e.getAsJsonObject();
                 String scope = extractScope(tc.get("scope"));
-                if (scope == null) continue;
+                if (scope == null) {
+                    continue;
+                }
 
                 JsonObject settings = tc.getAsJsonObject("settings");
                 String fgHex = getString(settings, "foreground", "#d4d4d4");
@@ -112,7 +120,9 @@ public final class VsCodeThemeLoader {
 
     /** 从 scope 字段提取第一个 scope 名称 */
     private static String extractScope(JsonElement scopeElem) {
-        if (scopeElem == null) return null;
+        if (scopeElem == null) {
+            return null;
+        }
         if (scopeElem.isJsonPrimitive()) return scopeElem.getAsString();
         if (scopeElem.isJsonArray()) {
             JsonArray arr = scopeElem.getAsJsonArray();
@@ -123,7 +133,9 @@ public final class VsCodeThemeLoader {
 
     /** 从 colors 节点解析颜色 */
     private static Color parseColor(JsonObject colors, String key, String defaultHex) {
-        if (colors == null) return Color.web(defaultHex);
+        if (colors == null) {
+            return Color.web(defaultHex);
+        }
         JsonElement e = colors.get(key);
         if (e == null || e.isJsonNull()) return Color.web(defaultHex);
         return Color.web(e.getAsString());

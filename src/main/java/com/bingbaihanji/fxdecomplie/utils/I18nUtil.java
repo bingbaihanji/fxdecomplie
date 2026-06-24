@@ -366,7 +366,9 @@ public class I18nUtil {
     public String get(String key, Object... params) {
         try {
             String pattern = bundle.getString(key);
-            if (params == null || params.length == 0) return pattern;
+            if (params == null || params.length == 0) {
+                return pattern;
+            }
             return java.text.MessageFormat.format(pattern, params);
         } catch (Exception e) {
             return key;

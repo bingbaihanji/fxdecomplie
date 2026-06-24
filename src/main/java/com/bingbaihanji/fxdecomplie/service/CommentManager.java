@@ -57,7 +57,9 @@ public final class CommentManager {
      * @param comment       注释数据
      */
     public static void save(String workspaceHash, CommentData comment) {
-        if (comment == null) return;
+        if (comment == null) {
+            return;
+        }
         try {
             List<CommentData> existing = loadAll(workspaceHash, comment.className());
             // 更新同位置已有注释，否则追加

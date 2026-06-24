@@ -87,11 +87,15 @@ public final class CommentDialog {
         dialog.setOnShown(e -> {
             var win = dialogPane.getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
+            if (win instanceof javafx.stage.Stage s) {
+                setDialogIcon(s);
+            }
         });
 
         dialog.setResultConverter(button -> {
-            if (button != ButtonType.OK) return null;
+            if (button != ButtonType.OK) {
+                return null;
+            }
             String text = textArea.getText();
             if (text == null || text.isBlank()) {
                 return existing != null ? new CommentData(className, memberSignature, line,

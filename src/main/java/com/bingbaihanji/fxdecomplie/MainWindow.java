@@ -792,7 +792,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     public void goToDeclaration(CodeMetadata.Reference reference) {
         if (reference == null || reference.targetClass() == null) return;
         WorkspaceView view = tabManager.currentWorkspaceView();
-        if (view == null) return;
+        if (view == null) {
+            return;
+        }
         FileTreeNode node = findNodeForReference(view.workspace(), reference);
         if (node != null) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
@@ -844,7 +846,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     @Override
     public void openClass(String fullPath, int line) {
         WorkspaceView view = tabManager.currentWorkspaceView();
-        if (view == null || fullPath == null) return;
+        if (view == null || fullPath == null) {
+            return;
+        }
         FileTreeNode node = view.workspace().findNodeByPath(fullPath);
         if (node != null) {
             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
@@ -854,7 +858,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     @Override
     public void showInheritanceGraph(CodeViewContext context) {
-        if (context == null) return;
+        if (context == null) {
+            return;
+        }
         String fullPath = context.classInternalName();
         if (fullPath == null || fullPath.isBlank()) {
             showGraphFailed(fullPath, null);
@@ -902,7 +908,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     @Override
     public void showMethodGraph(CodeViewContext context) {
-        if (context == null) return;
+        if (context == null) {
+            return;
+        }
         String fullPath = context.classInternalName();
         if (fullPath == null || fullPath.isBlank()) {
             showGraphFailed(fullPath, null);
@@ -964,13 +972,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     @Override
     public void addOrUpdateComment(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caretPosition) {
-        if (context == null) return;
+        if (context == null) {
+            return;
+        }
         String text = context.openFile() != null ? context.openFile().sourceCode() : "";
         int line = caretPosition == null ? 1 : Math.max(1, caretPosition.index() + 1);
         String memberSig = "";
         // 从源码中提取当前方法签名
         String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper.findMethodAtLine(text, line);
-        if (methodName != null) memberSig = methodName;
+        if (methodName != null) {
+            memberSig = methodName;
+        }
 
         // 查找已有注释
         java.util.List<CommentData> existing = com.bingbaihanji.fxdecomplie.service.CommentManager
@@ -1518,7 +1530,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         alert.setOnShown(e -> {
             var win = alert.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
+            if (win instanceof javafx.stage.Stage s) {
+                setAlertIcon(s);
+            }
         });
 
         javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink("www.bingbaihanji.com");
@@ -1768,7 +1782,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         alert.setOnShown(e -> {
             var win = alert.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
+            if (win instanceof javafx.stage.Stage s) {
+                setAlertIcon(s);
+            }
         });
         ButtonType openOutput = new ButtonType(I18nUtil.getString("dialog.export.openOutput"));
         alert.getButtonTypes().add(openOutput);

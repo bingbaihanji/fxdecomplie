@@ -58,8 +58,11 @@ public final class EditorSearchBar extends HBox {
 
         input.textProperty().addListener((obs, old, text) -> performSearch());
         input.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) hide();
-            else if (e.getCode() == KeyCode.ENTER) navigateMatch(1);
+            if (e.getCode() == KeyCode.ESCAPE) {
+                hide();
+            } else if (e.getCode() == KeyCode.ENTER) {
+                navigateMatch(1);
+            }
         });
     }
 

@@ -45,7 +45,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
     /** 从 raw bytes 解析并格式化常量池，每行一个条目带注释 */
     static String formatConstantPool(byte[] raw) {
-        if (raw == null || raw.length < 10) return "";
+        if (raw == null || raw.length < 10) {
+            return "";
+        }
         try {
             int count = readU2(raw, 8);
             // 防御：count 不能超过文件大小（每个条目最少1字节tag）
@@ -182,7 +184,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
     /** 格式化类头信息（magic、版本号、访问标志、this_class、super_class） */
     static String formatClassHeader(byte[] raw, String className, String superName,
                                     String[] interfaces) {
-        if (raw == null || raw.length < 10) return "";
+        if (raw == null || raw.length < 10) {
+            return "";
+        }
         StringBuilder h = new StringBuilder(512);
 
         // Class 路径标记
@@ -220,7 +224,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
             h.append(" [");
             int ifOff = bodyOff + 8;
             for (int i = 0; i < ifCount; i++) {
-                if (i > 0) h.append(", ");
+                if (i > 0) {
+                    h.append(", ");
+                }
                 int ifIdx = readU2(raw, ifOff + i * 2);
                 h.append('#').append(ifIdx).append(" // ").append(cpUtf8(raw, ifIdx));
             }
@@ -232,7 +238,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
     /** 解析类文件属性名（SourceFile、Signature 等） */
     static String parseClassAttributes(byte[] raw) {
-        if (raw == null || raw.length < 10) return "";
+        if (raw == null || raw.length < 10) {
+            return "";
+        }
         StringBuilder attrs = new StringBuilder();
         try {
             int off = skipToClassBody(raw) + 6; // skip access, this, super
@@ -287,7 +295,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
     /** 扫描所有方法的 Code 属性文件偏移，返回 methodKey → code[] 的文件偏移 */
     static Map<String, Integer> scanCodeOffsets(byte[] raw) {
         Map<String, Integer> map = new LinkedHashMap<>();
-        if (raw == null || raw.length < 10) return map;
+        if (raw == null || raw.length < 10) {
+            return map;
+        }
         try {
             int off = skipToClassBody(raw) + 6; // skip access, this, super
             int ifCount = readU2(raw, off);
@@ -334,7 +344,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
     static String formatCodeHeader(byte[] raw, String methodKey) {
         Map<String, Integer> offsets = scanCodeOffsets(raw);
         Integer codeOff = offsets.get(methodKey);
-        if (codeOff == null) return "";
+        if (codeOff == null) {
+            return "";
+        }
         // codeOff = file offset of code[] start
         // codeOff - 14 = Code attribute start
         // codeOff - 14 + 6 = attribute header end
@@ -355,7 +367,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
         // methodKey = name + desc
         // 从 methodKey 中提取描述符部分
         int paren = methodKey.indexOf('(');
-        if (paren < 0) return 1;
+        if (paren < 0) {
+            return 1;
+        }
         String desc = methodKey.substring(paren);
         int size = 0;
         boolean inArray = false;
@@ -402,18 +416,24 @@ final class BytecodeTextBuilder extends ClassVisitor {
     // -- 字节操作工具 --
 
     static int readU2(byte[] b, int off) {
-        if (off < 0 || off + 1 >= b.length) return 0;
+        if (off < 0 || off + 1 >= b.length) {
+            return 0;
+        }
         return ((b[off] & 0xFF) << 8) | (b[off + 1] & 0xFF);
     }
 
     private static int readS4(byte[] b, int off) {
-        if (off < 0 || off + 3 >= b.length) return 0;
+        if (off < 0 || off + 3 >= b.length) {
+            return 0;
+        }
         return ((b[off] & 0xFF) << 24) | ((b[off + 1] & 0xFF) << 16)
                 | ((b[off + 2] & 0xFF) << 8) | (b[off + 3] & 0xFF);
     }
 
     private static long readS8(byte[] b, int off) {
-        if (off < 0 || off + 7 >= b.length) return 0;
+        if (off < 0 || off + 7 >= b.length) {
+            return 0;
+        }
         return ((long) (b[off] & 0xFF) << 56) | ((long) (b[off + 1] & 0xFF) << 48)
                 | ((long) (b[off + 2] & 0xFF) << 40) | ((long) (b[off + 3] & 0xFF) << 32)
                 | ((long) (b[off + 4] & 0xFF) << 24) | ((long) (b[off + 5] & 0xFF) << 16)
@@ -423,12 +443,16 @@ final class BytecodeTextBuilder extends ClassVisitor {
     /** 常量池字节数（不含 tag 字节，用于跳过常量池） */
     private static int cpByteSize(byte[] raw) {
         int count = readU2(raw, 8);
-        if (count < 1 || count > raw.length) return 0;
+        if (count < 1 || count > raw.length) {
+            return 0;
+        }
         int off = 10;
         for (int i = 1; i < count && off < raw.length; i++) {
             int tag = raw[off++] & 0xFF;
             off += cpEntryDataSize(tag, raw, off);
-            if (tag == 5 || tag == 6) i++;
+            if (tag == 5 || tag == 6) {
+                i++;
+            }
         }
         return off - 10;
     }
@@ -469,22 +493,32 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
     /** 获取 index 处的 UTF8 常量池内容 */
     static String cpUtf8(byte[] raw, int index) {
-        if (index < 1 || raw == null || raw.length < 10) return "?";
+        if (index < 1 || raw == null || raw.length < 10) {
+            return "?";
+        }
         // 防御：index 不应超过可用的常量池条目数
-        if (index > raw.length) return "?";
+        if (index > raw.length) {
+            return "?";
+        }
         try {
             int off = 10;
             int cpCount = readU2(raw, 8);
             for (int i = 1; i < index && i < cpCount && off < raw.length; i++) {
                 int tag = raw[off++] & 0xFF;
                 off += cpEntryDataSize(tag, raw, off);
-                if (tag == 5 || tag == 6) i++;
+                if (tag == 5 || tag == 6) {
+                    i++;
+                }
             }
-            if (off >= raw.length) return "?";
+            if (off >= raw.length) {
+                return "?";
+            }
             int tag = raw[off++] & 0xFF;
             if (tag == 1) {
                 int len = readU2(raw, off);
-                if (off + 2 + len > raw.length) return "?"; // 防御：UTF8内容不超出数组
+                if (off + 2 + len > raw.length) {
+                    return "?";
+                } // 防御：UTF8内容不超出数组
                 return new String(raw, off + 2, len, java.nio.charset.StandardCharsets.UTF_8);
             }
             return "?";
@@ -535,7 +569,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
     /** 转义特殊字符 */
     static String escape(String s) {
-        if (s == null) return "";
+        if (s == null) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder(s.length());
         for (char c : s.toCharArray()) {
             switch (c) {
@@ -680,7 +716,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
         sb.append(' ').append(name).append('(');
         Type[] argTypes = Type.getArgumentTypes(descriptor);
         for (int i = 0; i < argTypes.length; i++) {
-            if (i > 0) sb.append(", ");
+            if (i > 0) {
+                sb.append(", ");
+            }
             sb.append(SmaliTextBuilder.formatTypeReadable(argTypes[i]));
         }
         sb.append(')').append(SmaliTextBuilder.formatTypeReadable(Type.getReturnType(descriptor)));
@@ -758,7 +796,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
         @Override
         public void visitLocalVariable(String name, String descriptor, String signature,
                                        Label start, Label end, int index) {
-            if (name == null) return;
+            if (name == null) {
+                return;
+            }
             String typeStr = SmaliTextBuilder.formatTypeReadable(Type.getType(descriptor));
             sb.append(INSN_INDENT)
                     .append(String.format("    ; .local p%d, \"%s\":L%s;\n", index, name, typeStr));
@@ -877,9 +917,11 @@ final class BytecodeTextBuilder extends ClassVisitor {
             sb.append(' ').append(opcodeName(opcode)).append(" #").append(idx);
             // 注释解析后的值
             sb.append("  // ");
-            if (cst instanceof String s) sb.append('"').append(escape(s)).append('"');
-            else if (cst instanceof Type t) sb.append("class ").append(t.getInternalName());
-            else sb.append(cst);
+            if (cst instanceof String s) {
+                sb.append('"').append(escape(s)).append('"');
+            } else if (cst instanceof Type t) {
+                sb.append("class ").append(t.getInternalName());
+            } else sb.append(cst);
             sb.append('\n');
             pc += size;
         }

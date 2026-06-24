@@ -64,7 +64,9 @@ public class MainMenuBar extends MenuBar {
                 for (String path : recents) {
                     String display = path;
                     int sep = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-                    if (sep > 0) display = path.substring(sep + 1) + "  —  " + path;
+                    if (sep > 0) {
+                        display = path.substring(sep + 1) + "  —  " + path;
+                    }
                     MenuItem item = new MenuItem(display);
                     item.setOnAction(ev -> actions.openRecentFile(path));
                     recentMenu.getItems().add(item);

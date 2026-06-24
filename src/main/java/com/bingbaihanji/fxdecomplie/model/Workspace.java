@@ -219,7 +219,9 @@ public class Workspace implements AutoCloseable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
         if (!(o instanceof Workspace other)) return false;
         return Objects.equals(sourceFile, other.sourceFile);
     }

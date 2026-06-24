@@ -100,25 +100,33 @@ public class CodeAreaContextMenu extends ContextMenu {
     }
 
     private void onGotoDeclaration() {
-        if (actionHandler == null || context == null || codeArea == null) return;
+        if (actionHandler == null || context == null || codeArea == null) {
+            return;
+        }
         int line = currentLine();
         actionHandler.goToDeclaration(context, line, tokenAtActionPosition());
     }
 
     private void onShowInheritanceGraph() {
-        if (actionHandler == null || context == null) return;
+        if (actionHandler == null || context == null) {
+            return;
+        }
         logger.info("代码区右键菜单触发查看继承图: {}", context.classInternalName());
         actionHandler.showInheritanceGraph(context);
     }
 
     private void onShowMethodGraph() {
-        if (actionHandler == null || context == null) return;
+        if (actionHandler == null || context == null) {
+            return;
+        }
         logger.info("代码区右键菜单触发查看方法图: {}", context.classInternalName());
         actionHandler.showMethodGraph(context);
     }
 
     private void onAddComment() {
-        if (actionHandler == null || context == null) return;
+        if (actionHandler == null || context == null) {
+            return;
+        }
         TextPos caret = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         actionHandler.addOrUpdateComment(context, caret);
     }

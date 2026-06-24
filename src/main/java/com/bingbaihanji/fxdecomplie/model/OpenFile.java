@@ -37,7 +37,9 @@ public record OpenFile(String className, String fullPath, String sourceCode, Dec
      */
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
         if (!(o instanceof OpenFile other)) return false;
         return Objects.equals(fullPath, other.fullPath) && engine == other.engine;
     }

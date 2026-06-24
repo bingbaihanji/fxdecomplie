@@ -29,7 +29,9 @@ public class SearchService {
     private volatile List<Pattern> compiledExcludePatterns = List.of();
 
     private static boolean matchesExcludePattern(String path, List<String> patterns) {
-        if (path == null) return false;
+        if (path == null) {
+            return false;
+        }
         for (String pattern : patterns) {
             if (pattern == null || pattern.isBlank()) {
                 continue;
@@ -107,7 +109,9 @@ public class SearchService {
         }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
-            if (typeCmp != 0) return typeCmp;
+            if (typeCmp != 0) {
+                return typeCmp;
+            }
             return Integer.compare(a.lineNumber(), b.lineNumber());
         });
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
@@ -147,7 +151,9 @@ public class SearchService {
         }
         all.sort((a, b) -> {
             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
-            if (typeCmp != 0) return typeCmp;
+            if (typeCmp != 0) {
+                return typeCmp;
+            }
             return Integer.compare(a.lineNumber(), b.lineNumber());
         });
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;

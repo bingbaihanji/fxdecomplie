@@ -116,7 +116,9 @@ public final class OutlineParser {
     }
 
     private static String extractModifiers(String raw) {
-        if (raw == null) return "";
+        if (raw == null) {
+            return "";
+        }
         return raw.trim().replaceAll("\\s+", " ");
     }
 }

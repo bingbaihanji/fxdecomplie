@@ -99,7 +99,9 @@ public class CodeEditorTab extends Tab {
         // 分屏勾选框 → 触发 SplitEditorPane 分屏
         viewPanel.setOnSplitToggled(enabled -> {
             SplitEditorPane sep = getSplitEditorPane();
-            if (sep == null) return;
+            if (sep == null) {
+                return;
+            }
             if (enabled) {
                 requestSplit();
             } else {
@@ -144,7 +146,9 @@ public class CodeEditorTab extends Tab {
     private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
         try {
             java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
-            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+            if (url != null) {
+                return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+            }
         } catch (Exception ignored) {
             logger.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
@@ -312,7 +316,9 @@ public class CodeEditorTab extends Tab {
         dialog.setOnShown(e -> {
             var win = dialog.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
+            if (win instanceof javafx.stage.Stage s) {
+                setDialogIcon(s);
+            }
         });
 
         dialog.showAndWait().ifPresent(input -> {

@@ -85,7 +85,9 @@ public final class ClassTabOpener {
 
     /** 计算 class 字节指纹(CRC32)，用于缓存键防内容变更误命中 */
     public static String computeClassFingerprint(byte[] bytes) {
-        if (bytes == null || bytes.length == 0) return "0";
+        if (bytes == null || bytes.length == 0) {
+            return "0";
+        }
         java.util.zip.CRC32 crc = new java.util.zip.CRC32();
         crc.update(bytes);
         return Long.toHexString(crc.getValue());
@@ -98,8 +100,12 @@ public final class ClassTabOpener {
     private static boolean isInterruptRelated(Exception ex) {
         Throwable cause = ex;
         while (cause != null) {
-            if (cause instanceof InterruptedException) return true;
-            if (cause instanceof CancellationException) return true;
+            if (cause instanceof InterruptedException) {
+                return true;
+            }
+            if (cause instanceof CancellationException) {
+                return true;
+            }
             cause = cause.getCause();
         }
         return Thread.currentThread().isInterrupted();
@@ -226,7 +232,9 @@ public final class ClassTabOpener {
         Tab existingTab = findOrRemoveOpenClassTab(codeTabPane, node, engine, replaceDifferentEngine);
         if (existingTab != null) {
             codeTabPane.getSelectionModel().select(existingTab);
-            if (onTabReady != null) onTabReady.run();
+            if (onTabReady != null) {
+                onTabReady.run();
+            }
             return;
         }
 
@@ -328,7 +336,9 @@ public final class ClassTabOpener {
                     pendingTab.updateDecompiledContent(openFile, metadata, completedNavigate);
                     pendingTab.setSourceReady(true);
                     codeTabPane.getSelectionModel().select(pendingTab);
-                    if (onTabReady != null) onTabReady.run();
+                    if (onTabReady != null) {
+                        onTabReady.run();
+                    }
                     statusBar.setFilePath(
                             WorkspaceTabManager.formatClassPath(node.getFullPath()));
                     statusBar.setEncoding("UTF-8");
@@ -562,7 +572,9 @@ public final class ClassTabOpener {
     /** 读取文件字节码(文本文件版本,和 readClassBytes 逻辑相同) */
     private byte[] readFileBytes(FileTreeNode node, Workspace workspace) throws IOException {
         byte[] bytes = node.resolveBytes();
-        if (bytes != null) return bytes;
+        if (bytes != null) {
+            return bytes;
+        }
         if (!workspace.isArchive()) {
             File source = workspace.getSourceFile();
             return Files.readAllBytes(new File(source, node.getFullPath()).toPath());
@@ -575,7 +587,9 @@ public final class ClassTabOpener {
     private void installContextMenu(CodeEditorTab codeTab, FileTreeNode node, Workspace workspace,
                                     OpenFile openFile, byte[] classBytes, CodeMetadata metadata) {
         CodeActionHandler handler = codeActionHandler;
-        if (handler == null) return;
+        if (handler == null) {
+            return;
+        }
         WorkspaceIndex index = workspace.getIndex();
         String workspaceHash = com.bingbaihanji.fxdecomplie.model.CommentScope.workspaceHash(workspace);
         String sourceHash = CommentExportDecorator.sourceHash(openFile.sourceCode());
@@ -604,7 +618,9 @@ public final class ClassTabOpener {
             if (sep == null || sep.activeCellCount() >= 3) return;
             Workspace ws = (Workspace) sourceTab.getProperties().get("workspace");
             FileTreeNode node = (FileTreeNode) sourceTab.getProperties().get("fileTreeNode");
-            if (ws == null || node == null) return;
+            if (ws == null || node == null) {
+                return;
+            }
             // 使用与源 tab 相同的引擎
             DecompilerTypeEnum sameEngine = sourceTab.getOpenFile().engine();
             // 创建分屏 cell
@@ -617,17 +633,23 @@ public final class ClassTabOpener {
                     break;
                 }
             }
-            if (targetPane == null) targetPane = sep.allTabPanes().get(sep.activeCellCount() - 1);
+            if (targetPane == null) {
+                targetPane = sep.allTabPanes().get(sep.activeCellCount() - 1);
+            }
             openClassTab(node, ws, targetPane, sameEngine, lineNumbersEnabled, true, false);
         });
         // 设置切换引擎回调：原地用新引擎重反编译
         tab.setOnSwitchEngine(newEngine -> {
             Workspace ws = (Workspace) tab.getProperties().get("workspace");
             FileTreeNode node = (FileTreeNode) tab.getProperties().get("fileTreeNode");
-            if (ws == null || node == null) return;
+            if (ws == null || node == null) {
+                return;
+            }
             TabPane pane = tab.getSplitEditorPane() != null
                     ? tab.getSplitEditorPane().tabPaneFor(tab) : null;
-            if (pane == null) return;
+            if (pane == null) {
+                return;
+            }
             refreshCurrentClassTab(ws, pane, tab, newEngine, lineNumbersEnabled);
         });
         return tab;
@@ -667,7 +689,9 @@ public final class ClassTabOpener {
                     return;
                 }
                 codeTabPane.getSelectionModel().select(pendingTab);
-                if (onTabReady != null) onTabReady.run();
+                if (onTabReady != null) {
+                    onTabReady.run();
+                }
                 statusBar.setFilePath(WorkspaceTabManager.formatClassPath(node.getFullPath()));
                 statusBar.setEncoding("UTF-8");
                 statusBar.setEngine(pendingOpenFile.engine().name());
@@ -812,10 +836,14 @@ public final class ClassTabOpener {
     /** 读取类字节码(依次尝试节点缓存、工作区索引、全局缓存、磁盘读取) */
     private byte[] readClassBytes(FileTreeNode node, Workspace workspace) throws IOException {
         byte[] bytes = WorkspaceByteReader.readNodeBytes(workspace, node, true);
-        if (bytes != null) return bytes;
+        if (bytes != null) {
+            return bytes;
+        }
         String internalName = node.getFullPath().replace(".class", "");
         bytes = workspaceIndexForBackground(workspace).getClassBytes(internalName);
-        if (bytes != null) return bytes;
+        if (bytes != null) {
+            return bytes;
+        }
         if (!workspace.isArchive()) {
             File source = workspace.getSourceFile();
             return Files.readAllBytes(new File(source, node.getFullPath()).toPath());

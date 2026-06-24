@@ -44,7 +44,9 @@ public final class SettingsDialog {
         dialog.setOnShown(e -> {
             var window = dialog.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(window);
-            if (window instanceof Stage s) setDialogIcon(s);
+            if (window instanceof Stage s) {
+                setDialogIcon(s);
+            }
         });
 
         TabPane tabPane = new TabPane();

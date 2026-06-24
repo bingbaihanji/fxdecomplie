@@ -93,7 +93,9 @@ public class CodeViewPanel extends VBox {
     private void installContextMenuOnCurrentSource() {
         SourceContentPanel sourcePanel = deck.getSourcePanel();
         var area = sourcePanel == null ? null : sourcePanel.getCodeArea();
-        if (area == null) return;
+        if (area == null) {
+            return;
+        }
         if (contextMenuContext == null || contextMenuHandler == null) {
             sourcePanel.setTokenNavigateHandler(null);
             return;

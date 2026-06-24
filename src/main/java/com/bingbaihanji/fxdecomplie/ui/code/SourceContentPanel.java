@@ -102,7 +102,9 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private Font loadFont() {
         try {
             java.net.URL fontUrl = getClass().getResource(FIRA_CODE_LIGHT);
-            if (fontUrl != null) return Font.loadFont(fontUrl.toExternalForm(), fontSize);
+            if (fontUrl != null) {
+                return Font.loadFont(fontUrl.toExternalForm(), fontSize);
+            }
         } catch (Exception ignored) {
             logger.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
@@ -164,11 +166,15 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
 
     /** 重置字号 */
     public void resetZoom(int defaultFontSize) {
-        if (codeArea != null) codeArea.setFont(Font.font(codeArea.getFont().getFamily(), defaultFontSize));
+        if (codeArea != null) {
+            codeArea.setFont(Font.font(codeArea.getFont().getFamily(), defaultFontSize));
+        }
     }
 
     public void setLineNumbersEnabled(boolean enabled) {
-        if (codeArea != null) LineNumberGutter.setEnabled(codeArea, enabled);
+        if (codeArea != null) {
+            LineNumberGutter.setEnabled(codeArea, enabled);
+        }
     }
 
     @Override

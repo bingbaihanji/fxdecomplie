@@ -67,7 +67,9 @@ public class AppConfig {
                 Path jarPath = Path.of(codeSource.getLocation().toURI());
                 if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
                     Path parent = jarPath.getParent();
-                    if (parent != null) return parent;
+                    if (parent != null) {
+                        return parent;
+                    }
                 }
             }
         } catch (Exception ignored) {
@@ -211,31 +213,53 @@ public class AppConfig {
     }
 
     private void normalize() {
-        if (window == null) window = new Window();
-        if (theme == null) theme = new Theme();
-        if (decompiler == null) decompiler = new Decompiler();
-        if (export == null) export = new Export();
-        if (search == null) search = new Search();
-        if (platform == null) platform = new Platform();
-        if (recentFiles == null) recentFiles = new ArrayList<>();
-        if (language == null) language = "";
+        if (window == null) {
+            window = new Window();
+        }
+        if (theme == null) {
+            theme = new Theme();
+        }
+        if (decompiler == null) {
+            decompiler = new Decompiler();
+        }
+        if (export == null) {
+            export = new Export();
+        }
+        if (search == null) {
+            search = new Search();
+        }
+        if (platform == null) {
+            platform = new Platform();
+        }
+        if (recentFiles == null) {
+            recentFiles = new ArrayList<>();
+        }
+        if (language == null) {
+            language = "";
+        }
         if (decompiler.defaultEngine == null) {
             decompiler.defaultEngine = DecompilerTypeEnum.VINEFLOWER;
         }
         if (decompiler.engineOptions == null) {
             decompiler.engineOptions = new LinkedHashMap<>();
         }
-        if (theme.path == null) theme.path = "";
+        if (theme.path == null) {
+            theme.path = "";
+        }
         if (theme.fontFamily == null || theme.fontFamily.isBlank()) theme.fontFamily = "Consolas";
         theme.fontSize = Math.clamp(theme.fontSize, 8, 48);
         window.width = Math.max(640, window.width);
         window.height = Math.max(480, window.height);
-        if (export.defaultEngine == null) export.defaultEngine = "";
+        if (export.defaultEngine == null) {
+            export.defaultEngine = "";
+        }
         if (export.defaultFormat == null || export.defaultFormat.isBlank()) export.defaultFormat = "DIR";
         if (export.conflictPolicy == null || export.conflictPolicy.isBlank()) {
             export.conflictPolicy = "OVERWRITE";
         }
-        if (export.lastPath == null) export.lastPath = "";
+        if (export.lastPath == null) {
+            export.lastPath = "";
+        }
         search.resultLimit = Math.clamp(search.resultLimit, 50, 2000);
         if (platform.cornerPreference == null || platform.cornerPreference.isBlank()) {
             platform.cornerPreference = "DO_NOT_ROUND";

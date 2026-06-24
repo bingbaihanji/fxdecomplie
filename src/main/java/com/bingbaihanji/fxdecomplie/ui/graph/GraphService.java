@@ -51,7 +51,9 @@ public final class GraphService {
 
     private static void appendInheritanceNodes(StringBuilder sb, TreeItem<InheritanceNode> item,
                                                Set<String> seen, int depth) {
-        if (item == null || depth > 20) return;
+        if (item == null || depth > 20) {
+            return;
+        }
         InheritanceNode node = item.getValue();
         if (node == null || seen.contains(node.className())) return;
         seen.add(node.className());
@@ -81,9 +83,13 @@ public final class GraphService {
      */
     private static void appendInheritanceEdges(StringBuilder sb, TreeItem<InheritanceNode> item,
                                                Set<String> seen) {
-        if (item == null) return;
+        if (item == null) {
+            return;
+        }
         InheritanceNode parent = item.getValue();
-        if (parent == null) return;
+        if (parent == null) {
+            return;
+        }
 
         for (TreeItem<InheritanceNode> child : item.getChildren()) {
             InheritanceNode childNode = child.getValue();
@@ -129,7 +135,9 @@ public final class GraphService {
         Map<String, Integer> nodeIndex = new LinkedHashMap<>();
         int count = 0;
         for (MethodNode node : graph.methods()) {
-            if (count >= MAX_METHOD_NODES) break;
+            if (count >= MAX_METHOD_NODES) {
+                break;
+            }
             String key = nodeKey(node);
             nodeIndex.put(key, count);
             String id = "N" + count;
@@ -179,7 +187,9 @@ public final class GraphService {
 
     /** 转义 DOT 字符串中的特殊字符 */
     public static String escapeDot(String s) {
-        if (s == null) return "";
+        if (s == null) {
+            return "";
+        }
         return s.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
@@ -190,7 +200,9 @@ public final class GraphService {
     }
 
     private static String shortName(String fullName) {
-        if (fullName == null) return "";
+        if (fullName == null) {
+            return "";
+        }
         int dot = fullName.lastIndexOf('.');
         return dot >= 0 ? fullName.substring(dot + 1) : fullName;
     }

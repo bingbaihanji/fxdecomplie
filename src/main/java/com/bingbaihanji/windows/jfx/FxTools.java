@@ -242,7 +242,9 @@ public final class FxTools {
      * 当前已在 FX 线程则直接关闭，否则通过 {@code Platform.runLater} 调度
      */
     public static void closeStage(Stage stage) {
-        if (stage == null) return;
+        if (stage == null) {
+            return;
+        }
         if (Platform.isFxApplicationThread()) {
             stage.close();
         } else {
@@ -299,7 +301,9 @@ public final class FxTools {
      * @param show  true=显示(如已最小化则还原)，false=隐藏
      */
     public static void toggleStage(Stage stage, boolean show) {
-        if (stage == null) return;
+        if (stage == null) {
+            return;
+        }
         if (show) {
             if (stage.isIconified()) {
                 stage.setIconified(false);
@@ -315,7 +319,9 @@ public final class FxTools {
      * 将 Stage 移到最前并请求焦点
      */
     public static void toFront(Stage stage) {
-        if (stage == null) return;
+        if (stage == null) {
+            return;
+        }
         if (!stage.isShowing()) {
             stage.show();
         }

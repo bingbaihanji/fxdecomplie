@@ -65,8 +65,12 @@ final class SmaliTextBuilder extends ClassVisitor {
     }
 
     static String formatValue(Object value) {
-        if (value instanceof String s) return "\"" + s + "\"";
-        if (value instanceof Type t) return formatType(t);
+        if (value instanceof String s) {
+            return "\"" + s + "\"";
+        }
+        if (value instanceof Type t) {
+            return formatType(t);
+        }
         return String.valueOf(value);
     }
 
@@ -246,13 +250,17 @@ final class SmaliTextBuilder extends ClassVisitor {
             return "unknown-" + opcode;
         }
         String upper = org.objectweb.asm.util.Printer.OPCODES[opcode];
-        if (upper == null) return "unknown-" + opcode;
+        if (upper == null) {
+            return "unknown-" + opcode;
+        }
         return upper.toLowerCase().replace('_', '-');
     }
 
     /** 格式化类型字符串 */
     static String formatType(Type type) {
-        if (type == null) return "?";
+        if (type == null) {
+            return "?";
+        }
         return switch (type.getSort()) {
             case Type.VOID -> "V";
             case Type.BOOLEAN -> "Z";
@@ -271,7 +279,9 @@ final class SmaliTextBuilder extends ClassVisitor {
 
     /** 格式化类型为可读形式（用于 .field 和 .local） */
     static String formatTypeReadable(Type type) {
-        if (type == null) return "?";
+        if (type == null) {
+            return "?";
+        }
         return switch (type.getSort()) {
             case Type.VOID -> "void";
             case Type.BOOLEAN -> "boolean";
@@ -377,7 +387,9 @@ final class SmaliTextBuilder extends ClassVisitor {
         int major = version & 0xFFFF;
         out.append("# version ").append(major);
         String javaVer = javaVersionName(major);
-        if (javaVer != null) out.append(" (").append(javaVer).append(")");
+        if (javaVer != null) {
+            out.append(" (").append(javaVer).append(")");
+        }
         out.append('\n');
 
         // .class
@@ -573,7 +585,9 @@ final class SmaliTextBuilder extends ClassVisitor {
             // 解析参数类型
             Type[] argTypes = Type.getArgumentTypes(descriptor);
             for (int i = 0; i < argTypes.length; i++) {
-                if (i > 0) mb.append(", ");
+                if (i > 0) {
+                    mb.append(", ");
+                }
                 mb.append(formatTypeReadable(argTypes[i]));
             }
             mb.append(')').append(formatTypeReadable(Type.getReturnType(descriptor)));
@@ -643,7 +657,9 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append(METHOD_INDENT).append(METHOD_INDENT)
                     .append("filled-new-array v0, [");
             for (int i = 0; i < numDimensions; i++) {
-                if (i > 0) mb.append(", ");
+                if (i > 0) {
+                    mb.append(", ");
+                }
                 mb.append("v0");
             }
             mb.append("], ").append(descriptor);
@@ -677,7 +693,9 @@ final class SmaliTextBuilder extends ClassVisitor {
 
             // .registers
             int registers = maxLocals + maxStack;
-            if (registers < 1) registers = 1;
+            if (registers < 1) {
+                registers = 1;
+            }
             header.append(METHOD_INDENT).append(".registers ").append(registers).append('\n');
 
             header.append(mb);

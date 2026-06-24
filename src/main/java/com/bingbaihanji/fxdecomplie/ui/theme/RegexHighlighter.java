@@ -105,7 +105,9 @@ public class RegexHighlighter implements SyntaxDecorator {
     /** 检查标识符后是否紧跟 ((方法调用/声明) */
     private static boolean isMethod(String line, int endPos) {
         int lineEnd = line.indexOf('\n', endPos);
-        if (lineEnd < 0) lineEnd = line.length();
+        if (lineEnd < 0) {
+            lineEnd = line.length();
+        }
         String rest = line.substring(endPos, Math.min(lineEnd, endPos + 30)).trim();
         return rest.startsWith("(");
     }
@@ -113,7 +115,9 @@ public class RegexHighlighter implements SyntaxDecorator {
     /** 检查标识符后是否紧跟 = 或 ;(字段声明) */
     private static boolean isField(String line, int endPos) {
         int lineEnd = line.indexOf('\n', endPos);
-        if (lineEnd < 0) lineEnd = line.length();
+        if (lineEnd < 0) {
+            lineEnd = line.length();
+        }
         String rest = line.substring(endPos, Math.min(lineEnd, endPos + 30)).trim();
         return rest.startsWith("=") || rest.startsWith(";");
     }
@@ -123,11 +127,15 @@ public class RegexHighlighter implements SyntaxDecorator {
         int lineStart = line.lastIndexOf('\n', startPos);
         lineStart = lineStart < 0 ? 0 : lineStart + 1;
         int lineEnd = line.indexOf('\n', endPos);
-        if (lineEnd < 0) lineEnd = line.length();
+        if (lineEnd < 0) {
+            lineEnd = line.length();
+        }
         String currentLine = line.substring(lineStart, lineEnd);
         int openParen = currentLine.indexOf('(');
         int closeParen = currentLine.indexOf(')');
-        if (openParen < 0 || closeParen < 0 || openParen >= closeParen) return false;
+        if (openParen < 0 || closeParen < 0 || openParen >= closeParen) {
+            return false;
+        }
         int posInLine = startPos - lineStart;
         return posInLine > openParen && posInLine < closeParen;
     }

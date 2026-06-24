@@ -52,7 +52,9 @@ public final class FxDecompilerApp {
             if (codeSource != null && codeSource.getLocation() != null) {
                 Path jarPath = Path.of(codeSource.getLocation().toURI());
                 Path parent = jarPath.getParent();
-                if (parent != null) return parent;
+                if (parent != null) {
+                    return parent;
+                }
             }
         } catch (Exception ignored) {
             logger.debug("解析应用目录失败，回退到 user.dir", ignored);

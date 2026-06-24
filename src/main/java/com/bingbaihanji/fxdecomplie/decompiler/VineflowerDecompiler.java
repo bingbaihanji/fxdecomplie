@@ -99,10 +99,12 @@ public class VineflowerDecompiler implements Decompiler {
 
             IResultSaver resultSaver = new IResultSaver() {
                 @Override
-                public void saveFolder(String path) {}
+                public void saveFolder(String path) {
+                }
 
                 @Override
-                public void copyFile(String source, String path, String entryName) {}
+                public void copyFile(String source, String path, String entryName) {
+                }
 
                 @Override
                 public void saveClassFile(String path, String qualifiedName, String entryName,
@@ -113,13 +115,16 @@ public class VineflowerDecompiler implements Decompiler {
                 }
 
                 @Override
-                public void createArchive(String path, String archiveName, Manifest manifest) {}
+                public void createArchive(String path, String archiveName, Manifest manifest) {
+                }
 
                 @Override
-                public void saveDirEntry(String path, String archiveName, String entryName) {}
+                public void saveDirEntry(String path, String archiveName, String entryName) {
+                }
 
                 @Override
-                public void copyEntry(String source, String path, String archiveName, String entry) {}
+                public void copyEntry(String source, String path, String archiveName, String entry) {
+                }
 
                 @Override
                 public void saveClassEntry(String path, String archiveName, String qualifiedName,
@@ -130,7 +135,8 @@ public class VineflowerDecompiler implements Decompiler {
                 }
 
                 @Override
-                public void closeArchive(String path, String archiveName) {}
+                public void closeArchive(String path, String archiveName) {
+                }
             };
 
             IFernflowerLogger fernflowerLogger = new IFernflowerLogger() {
@@ -178,7 +184,7 @@ public class VineflowerDecompiler implements Decompiler {
     }
 
     @Override
-    public  Map<String, String> getDefaultOptions() {
+    public Map<String, String> getDefaultOptions() {
         Map<String, String> stringOpts = new LinkedHashMap<>();
         DEFAULT_OPTIONS.forEach((k, v) -> stringOpts.put(k, String.valueOf(v)));
         return stringOpts;
@@ -240,7 +246,8 @@ public class VineflowerDecompiler implements Decompiler {
             // 将 Vineflower 输出委托给全局 IResultSaver
             return new IOutputSink() {
                 @Override
-                public void begin() {}
+                public void begin() {
+                }
 
                 @Override
                 public void acceptClass(String qualifiedName, String fileName,
@@ -249,13 +256,16 @@ public class VineflowerDecompiler implements Decompiler {
                 }
 
                 @Override
-                public void acceptDirectory(String directory) {}
+                public void acceptDirectory(String directory) {
+                }
 
                 @Override
-                public void acceptOther(String path) {}
+                public void acceptOther(String path) {
+                }
 
                 @Override
-                public void close() {}
+                public void close() {
+                }
             };
         }
     }

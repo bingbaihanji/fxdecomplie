@@ -31,7 +31,9 @@ public interface SearchProvider {
      * 供子类在逐行遍历源码时调用
      */
     default boolean lineMatches(String line, String query, SearchOptions options) {
-        if (line == null || query == null) return false;
+        if (line == null || query == null) {
+            return false;
+        }
 
         if (options.regex()) {
             try {

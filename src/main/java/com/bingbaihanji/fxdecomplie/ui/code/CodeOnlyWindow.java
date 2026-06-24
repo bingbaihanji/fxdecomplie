@@ -186,7 +186,9 @@ public final class CodeOnlyWindow {
     }
 
     private static CodeTabPayload resolvePayload(String token, boolean remove) {
-        if (token == null) return null;
+        if (token == null) {
+            return null;
+        }
         return remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
     }
 
@@ -220,18 +222,24 @@ public final class CodeOnlyWindow {
     }
 
     private static TabPane resolveSourcePane(String token, boolean remove) {
-        if (token == null) return null;
+        if (token == null) {
+            return null;
+        }
         return remove ? DRAG_SOURCES.remove(token) : DRAG_SOURCES.get(token);
     }
 
     private static CodeEditorTab resolveSourceTab(String token, boolean remove) {
-        if (token == null) return null;
+        if (token == null) {
+            return null;
+        }
         return remove ? DRAG_SOURCE_TABS.remove(token) : DRAG_SOURCE_TABS.get(token);
     }
 
     private static void removeSourceTab(TabPane pane, CodeEditorTab sourceTab,
                                         CodeTabPayload payload) {
-        if (pane == null || payload == null) return;
+        if (pane == null || payload == null) {
+            return;
+        }
         Platform.runLater(() -> {
             if (sourceTab != null && pane.getTabs().remove(sourceTab)) {
                 return;
@@ -241,7 +249,9 @@ public final class CodeOnlyWindow {
     }
 
     private static void removeMatchingTabNow(TabPane pane, CodeTabPayload payload) {
-        if (pane == null || payload == null) return;
+        if (pane == null || payload == null) {
+            return;
+        }
         List<Tab> toRemove = new ArrayList<>();
         for (Tab tab : pane.getTabs()) {
             if (tab instanceof CodeEditorTab codeTab
@@ -265,7 +275,9 @@ public final class CodeOnlyWindow {
     }
 
     private static void cleanupDragToken(String token) {
-        if (token == null) return;
+        if (token == null) {
+            return;
+        }
         DRAG_PAYLOADS.remove(token);
         DRAG_SOURCES.remove(token);
         DRAG_SOURCE_TABS.remove(token);
@@ -277,8 +289,12 @@ public final class CodeOnlyWindow {
         // 保留工作区上下文，使副窗口也能使用右键跳转/注释等功能
         Object ws = sourceTab.getProperties().get("workspace");
         Object node = sourceTab.getProperties().get("fileTreeNode");
-        if (ws != null) copy.getProperties().put("workspace", ws);
-        if (node != null) copy.getProperties().put("fileTreeNode", node);
+        if (ws != null) {
+            copy.getProperties().put("workspace", ws);
+        }
+        if (node != null) {
+            copy.getProperties().put("fileTreeNode", node);
+        }
         return copy;
     }
 

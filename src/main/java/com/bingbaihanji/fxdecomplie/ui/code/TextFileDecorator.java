@@ -34,7 +34,9 @@ public final class TextFileDecorator implements SyntaxDecorator {
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
         String text = model.getPlainText(paragraphIndex);
-        if (text == null || text.isEmpty()) return RichParagraph.builder().build();
+        if (text == null || text.isEmpty()) {
+            return RichParagraph.builder().build();
+        }
         return RichParagraph.builder().addSegment(text, DEFAULT_STYLE).build();
     }
 

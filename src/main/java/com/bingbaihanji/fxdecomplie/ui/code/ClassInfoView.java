@@ -171,7 +171,9 @@ public final class ClassInfoView {
     private static String extractParams(String descriptor) {
         int paren = descriptor.indexOf('(');
         int endParen = descriptor.lastIndexOf(')');
-        if (paren < 0 || endParen <= paren) return "";
+        if (paren < 0 || endParen <= paren) {
+            return "";
+        }
         String params = descriptor.substring(paren + 1, endParen);
         if (params.isEmpty()) return "";
         // Simplify: just show the raw descriptor for params

@@ -103,7 +103,9 @@ public final class DiskCodeCache {
                             }
                         }).sum();
             }
-            if (totalSize <= MAX_CACHE_SIZE_BYTES) return;
+            if (totalSize <= MAX_CACHE_SIZE_BYTES) {
+                return;
+            }
             // 第二遍扫描:收集、按时间排序,删除最旧的直至低于目标大小
             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
             List<Path> files;
@@ -119,7 +121,9 @@ public final class DiskCodeCache {
                         .collect(Collectors.toList());
             }
             for (Path f : files) {
-                if (totalSize <= targetSize) break;
+                if (totalSize <= targetSize) {
+                    break;
+                }
                 try {
                     long sz = Files.size(f);
                     Files.deleteIfExists(f);

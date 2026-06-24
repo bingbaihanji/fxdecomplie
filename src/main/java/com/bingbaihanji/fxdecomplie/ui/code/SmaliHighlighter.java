@@ -184,7 +184,9 @@ final class SmaliHighlighter implements SyntaxDecorator {
                     if (line.charAt(end) == '\\') end++;
                     end++;
                 }
-                if (end < len) end++;
+                if (end < len) {
+                    end++;
+                }
                 tokens.add(new Token(Kind.STRING, line.substring(pos, end)));
                 pos = end;
                 continue;

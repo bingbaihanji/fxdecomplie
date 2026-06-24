@@ -61,7 +61,9 @@ public final class FileTreeBuilder {
             TreeItem<FileTreeNode> root, String fullPath,
             Map<String, TreeItem<FileTreeNode>> pathMap) {
         int lastSlash = fullPath.lastIndexOf('/');
-        if (lastSlash < 0) return root;
+        if (lastSlash < 0) {
+            return root;
+        }
 
         String parentPath = fullPath.substring(0, lastSlash);
         String[] parts = parentPath.split("/");
@@ -98,7 +100,9 @@ public final class FileTreeBuilder {
                 FileTreeNode bData = b.getValue();
                 boolean aDir = aData.getNodeType() == FileTreeNode.NodeTypeEnum.PACKAGE;
                 boolean bDir = bData.getNodeType() == FileTreeNode.NodeTypeEnum.PACKAGE;
-                if (aDir != bDir) return aDir ? -1 : 1;
+                if (aDir != bDir) {
+                    return aDir ? -1 : 1;
+                }
                 return aData.getName().compareToIgnoreCase(bData.getName());
             });
             queue.addAll(node.getChildren());

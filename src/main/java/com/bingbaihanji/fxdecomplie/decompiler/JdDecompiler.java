@@ -139,7 +139,9 @@ public class JdDecompiler implements Decompiler {
 
         @Override
         public void unindent() {
-            if (indent > 0) indent--;
+            if (indent > 0) {
+                indent--;
+            }
         }
 
         @Override

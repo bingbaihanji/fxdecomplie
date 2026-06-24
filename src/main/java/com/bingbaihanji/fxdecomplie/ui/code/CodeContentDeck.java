@@ -119,7 +119,9 @@ public class CodeContentDeck extends VBox {
         btn.setMinWidth(60);
         btn.setMaxHeight(28);
         btn.setOnAction(e -> {
-            if (suppressAction) return;
+            if (suppressAction) {
+                return;
+            }
             if (btn.isSelected()) {
                 selectTab(index);
             }
@@ -132,7 +134,9 @@ public class CodeContentDeck extends VBox {
      * 切换到指定索引的标签页，首次切换时触发懒加载
      */
     private void selectTab(int index) {
-        if (index < 0 || index >= 4) return;
+        if (index < 0 || index >= 4) {
+            return;
+        }
         cancelGen.incrementAndGet(); // 取消旧任务
         activeIndex.set(index);
 
@@ -176,7 +180,9 @@ public class CodeContentDeck extends VBox {
                 panel.fontSize = this.fontSize;
                 panel.fontFamily = this.fontFamily;
                 var area = getCodeArea(panel);
-                if (area != null) area.setFont(font);
+                if (area != null) {
+                    area.setFont(font);
+                }
             }
         }
     }
@@ -188,7 +194,9 @@ public class CodeContentDeck extends VBox {
             if (panel != null) {
                 panel.lineNumbersEnabled = enabled;
                 var area = getCodeArea(panel);
-                if (area != null) LineNumberGutter.setEnabled(area, enabled);
+                if (area != null) {
+                    LineNumberGutter.setEnabled(area, enabled);
+                }
             }
         }
     }
@@ -196,7 +204,9 @@ public class CodeContentDeck extends VBox {
     private javafx.scene.text.Font loadFont() {
         try {
             java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
-            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+            if (url != null) {
+                return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
+            }
         } catch (Exception ignored) {
             logger.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
@@ -218,7 +228,9 @@ public class CodeContentDeck extends VBox {
      * @param panel     已按当前主题和导航元数据创建好的源码面板
      */
     public void replaceSourcePanel(String newSource, SourceContentPanel panel) {
-        if (panel == null) return;
+        if (panel == null) {
+            return;
+        }
         AbstractCodeContentPanel oldSource = panels[TAB_CODE];
         if (oldSource != null && oldSource != panel) {
             oldSource.dispose();
@@ -313,7 +325,9 @@ public class CodeContentDeck extends VBox {
     public void dispose() {
         cancelGen.incrementAndGet();
         for (AbstractCodeContentPanel panel : panels) {
-            if (panel != null) panel.dispose();
+            if (panel != null) {
+                panel.dispose();
+            }
         }
     }
 }

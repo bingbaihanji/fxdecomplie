@@ -191,7 +191,9 @@ public final class SearchDialog {
                         if (gen != searchGen.get()) return; // 过时搜索,丢弃
                         TreeItem<SearchResult> rootNode = buildResultTree(results, resultLimit);
                         resultTree.setRoot(rootNode);
-                        if (rootNode != null) rootNode.setExpanded(true);
+                        if (rootNode != null) {
+                            rootNode.setExpanded(true);
+                        }
                         int shown = rootNode != null
                                 ? countLeaves(rootNode) : 0;
                         statusLabel.setText(shown >= resultLimit
@@ -296,12 +298,16 @@ public final class SearchDialog {
 
         int leafCount = 0;
         for (var entry : groups.entrySet()) {
-            if (leafCount >= maxResults) break;
+            if (leafCount >= maxResults) {
+                break;
+            }
             // 分组标题使用特殊的 SearchResult: 空路径,以分组标签作为 matchLine
             TreeItem<SearchResult> groupItem = new TreeItem<>(
                     new SearchResult("", entry.getKey(), 0, SearchResult.MatchType.CODE_TEXT));
             for (SearchResult r : entry.getValue()) {
-                if (leafCount >= maxResults) break;
+                if (leafCount >= maxResults) {
+                    break;
+                }
                 groupItem.getChildren().add(new TreeItem<>(r));
                 leafCount++;
             }

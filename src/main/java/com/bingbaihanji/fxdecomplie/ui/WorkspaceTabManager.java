@@ -213,9 +213,13 @@ public final class WorkspaceTabManager {
                                      TabPane codeTabPane, NavigationService navigationService,
                                      BiConsumer<FileTreeNode, TabPane> onClassClick,
                                      BiConsumer<FileTreeNode, TabPane> onTextFileClick) {
-        if (item == null) return;
+        if (item == null) {
+            return;
+        }
         FileTreeNode node = item.getValue();
-        if (node == null) return;
+        if (node == null) {
+            return;
+        }
         if (node.isClassFile()) {
             navigationService.openPath(navigationService.classPath(workspace, node),
                     workspace, codeTabPane, onClassClick, onTextFileClick);
@@ -562,7 +566,9 @@ public final class WorkspaceTabManager {
     /** 获取当前选中的代码标签页 */
     public CodeEditorTab currentCodeTab() {
         WorkspaceView view = currentWorkspaceView();
-        if (view == null) return null;
+        if (view == null) {
+            return null;
+        }
         return view.splitEditorPane().currentCodeTab();
     }
 
@@ -741,7 +747,9 @@ public final class WorkspaceTabManager {
         }
         for (TreeItem<FileTreeNode> child : item.getChildren()) {
             FileTreeNode found = findClassNode(child, className);
-            if (found != null) return found;
+            if (found != null) {
+                return found;
+            }
         }
         return null;
     }

@@ -66,7 +66,9 @@ public final class SplitEditorPane extends StackPane {
     /** 选择一个与 exclude 不同的引擎 */
     public static DecompilerTypeEnum chooseDifferentEngine(DecompilerTypeEnum exclude) {
         for (DecompilerTypeEnum e : DecompilerTypeEnum.values()) {
-            if (e != exclude) return e;
+            if (e != exclude) {
+                return e;
+            }
         }
         return DecompilerTypeEnum.VINEFLOWER;
     }
@@ -126,7 +128,9 @@ public final class SplitEditorPane extends StackPane {
     public List<TabPane> allTabPanes() {
         List<TabPane> result = new ArrayList<>(MAX_CELLS);
         for (Node node : splitPane.getItems()) {
-            if (node instanceof TabPane tp) result.add(tp);
+            if (node instanceof TabPane tp) {
+                result.add(tp);
+            }
         }
         return result;
     }
@@ -157,7 +161,9 @@ public final class SplitEditorPane extends StackPane {
     /** 对所有 cell 中的 CodeEditorTab 执行操作 */
     public void forEachTab(Consumer<CodeEditorTab> action) {
         for (TabPane cell : cells) {
-            if (cell == null) continue;
+            if (cell == null) {
+                continue;
+            }
             for (Tab tab : cell.getTabs()) {
                 if (tab instanceof CodeEditorTab ct) {
                     action.accept(ct);
@@ -170,14 +176,18 @@ public final class SplitEditorPane extends StackPane {
      * 在 sourceTab 右侧创建新分屏。已达上限 3 则无操作。
      */
     public void splitRight(CodeEditorTab sourceTab) {
-        if (activeCount >= MAX_CELLS) return;
+        if (activeCount >= MAX_CELLS) {
+            return;
+        }
 
         // 以 splitPane 中的实际位置为准（cells 数组可能因压缩而产生空洞）
         int srcPos = 0;
         if (sourceTab != null) {
             TabPane srcPane = tabPaneFor(sourceTab);
             srcPos = splitPane.getItems().indexOf(srcPane);
-            if (srcPos < 0) srcPos = 0;
+            if (srcPos < 0) {
+                srcPos = 0;
+            }
         }
         int targetPos = srcPos + 1;
         if (targetPos > splitPane.getItems().size()) targetPos = splitPane.getItems().size();
@@ -217,14 +227,18 @@ public final class SplitEditorPane extends StackPane {
 
         splitPane.getItems().remove(cell);
         // 清除聚焦引用（如果指向已关闭的 cell）
-        if (focusedCell == cell) focusedCell = null;
+        if (focusedCell == cell) {
+            focusedCell = null;
+        }
         activeCount = splitPane.getItems().size();
         rebalanceDividers(); // 内部调用 syncCellsArray 自动压缩
     }
 
     private int findCellIndex(TabPane cell) {
         for (int i = 0; i < MAX_CELLS; i++) {
-            if (cells[i] == cell) return i;
+            if (cells[i] == cell) {
+                return i;
+            }
         }
         return -1;
     }
@@ -251,7 +265,9 @@ public final class SplitEditorPane extends StackPane {
                 break;
             }
         }
-        if (donor == null) return; // 右侧也没有内容，保持 cell0 空着
+        if (donor == null) {
+            return;
+        } // 右侧也没有内容，保持 cell0 空着
 
         // 将 donor 的 tab 移到 cell0
         List<Tab> tabs = new ArrayList<>(donor.getTabs());
@@ -367,7 +383,9 @@ public final class SplitEditorPane extends StackPane {
             MenuItem closeRight = new MenuItem(I18nUtil.getString("context.closeRight"));
             closeRight.setDisable(current == null);
             closeRight.setOnAction(e -> {
-                if (current == null) return;
+                if (current == null) {
+                    return;
+                }
                 int index = pane.getTabs().indexOf(current);
                 var toClose = pane.getTabs().stream()
                         .skip(index + 1L)

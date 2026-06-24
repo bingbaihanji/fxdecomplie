@@ -29,7 +29,9 @@ public final class NativeWindowsTools {
      * @return 重建的 HWND，值为 0 时返回 null
      */
     public static WinDef.HWND getHWndByEnumeration(Long headId) {
-        if (headId == null || headId == 0L) return null;
+        if (headId == null || headId == 0L) {
+            return null;
+        }
         return new WinDef.HWND(Pointer.createConstant(headId));
     }
 
@@ -732,7 +734,9 @@ public final class NativeWindowsTools {
      * 此时使用 Alt+Tab 模拟 + SetWindowPos 作为补充手段</p>
      */
     public static WindowOperationResult bringToFront(WinDef.HWND hwnd) {
-        if (hwnd == null) return skippedNullHandle("bringToFront");
+        if (hwnd == null) {
+            return skippedNullHandle("bringToFront");
+        }
         Win32Api.User32Api api = Win32Api.User32Api.INSTANCE;
         // 先尝试恢复最小化的窗口
         if (api.IsIconic(hwnd)) {
@@ -782,7 +786,9 @@ public final class NativeWindowsTools {
      * @param timeoutMs 闪烁间隔毫秒数(0 = 使用系统默认)
      */
     public static WindowOperationResult flashWindow(WinDef.HWND hwnd, int count, int timeoutMs) {
-        if (hwnd == null) return skippedNullHandle("flashWindow");
+        if (hwnd == null) {
+            return skippedNullHandle("flashWindow");
+        }
         Win32Api.User32Api.FLASHWINFO fw = new Win32Api.User32Api.FLASHWINFO();
         fw.cbSize = fw.size();
         fw.hwnd = hwnd;
@@ -806,7 +812,9 @@ public final class NativeWindowsTools {
 
     /** 停止窗口闪烁 */
     public static WindowOperationResult stopFlashWindow(WinDef.HWND hwnd) {
-        if (hwnd == null) return skippedNullHandle("stopFlashWindow");
+        if (hwnd == null) {
+            return skippedNullHandle("stopFlashWindow");
+        }
         Win32Api.User32Api.FLASHWINFO fw = new Win32Api.User32Api.FLASHWINFO();
         fw.cbSize = fw.size();
         fw.hwnd = hwnd;
@@ -831,7 +839,9 @@ public final class NativeWindowsTools {
      * 禁用后窗口无法接收点击和按键，适合在长时间任务期间防止用户误操作
      */
     public static WindowOperationResult enableWindow(WinDef.HWND hwnd, boolean enabled) {
-        if (hwnd == null) return skippedNullHandle("enableWindow");
+        if (hwnd == null) {
+            return skippedNullHandle("enableWindow");
+        }
         Win32Api.User32Api.INSTANCE.EnableWindow(hwnd, enabled);
         return WindowOperationResult.success("enableWindow");
     }
@@ -1014,7 +1024,9 @@ public final class NativeWindowsTools {
      * @param hide true=隐藏，false=恢复显示
      */
     public static WindowOperationResult hideFromAltTab(WinDef.HWND hwnd, boolean hide) {
-        if (hwnd == null) return skippedNullHandle("hideFromAltTab");
+        if (hwnd == null) {
+            return skippedNullHandle("hideFromAltTab");
+        }
         BaseTSD.LONG_PTR exStyle = Win32Api.User32Api.INSTANCE.GetWindowLongPtr(
                 hwnd, Win32Constants.WindowLongIndex.GWL_EXSTYLE);
         long style = exStyle.longValue();
@@ -1032,7 +1044,9 @@ public final class NativeWindowsTools {
      * @return 操作结果
      */
     public static WindowOperationResult showInTaskbar(WinDef.HWND hwnd, boolean show) {
-        if (hwnd == null) return skippedNullHandle("showInTaskbar");
+        if (hwnd == null) {
+            return skippedNullHandle("showInTaskbar");
+        }
         long style = getExtendedWindowStyle(hwnd);
         long newStyle = show
                 ? (style | Win32Constants.WindowStyleEx.WS_EX_APPWINDOW)
@@ -1051,7 +1065,9 @@ public final class NativeWindowsTools {
      * @return 窗口位置信息，获取失败返回 null
      */
     private static Win32Api.User32Api.WINDOWPLACEMENT getNativeWindowPlacement(WinDef.HWND hwnd) {
-        if (hwnd == null) return null;
+        if (hwnd == null) {
+            return null;
+        }
         Win32Api.User32Api.WINDOWPLACEMENT wp = new Win32Api.User32Api.WINDOWPLACEMENT();
         wp.length = wp.size();
         wp.write();
@@ -1085,7 +1101,9 @@ public final class NativeWindowsTools {
      */
     public static WindowOperationResult setWindowPlacement(WinDef.HWND hwnd,
                                                            WindowPlacement placement) {
-        if (hwnd == null) return skippedNullHandle("setWindowPlacement");
+        if (hwnd == null) {
+            return skippedNullHandle("setWindowPlacement");
+        }
         if (placement == null) {
             return WindowOperationResult.skipped("setWindowPlacement", "窗口位置信息为空");
         }
@@ -1109,7 +1127,9 @@ public final class NativeWindowsTools {
      * @param h    正常状态高度
      */
     public static WindowOperationResult setWindowNormalRect(WinDef.HWND hwnd, int x, int y, int w, int h) {
-        if (hwnd == null) return skippedNullHandle("setWindowNormalRect");
+        if (hwnd == null) {
+            return skippedNullHandle("setWindowNormalRect");
+        }
         Win32Api.User32Api.WINDOWPLACEMENT wp = getNativeWindowPlacement(hwnd);
         if (wp == null) {
             return WindowOperationResult.failed("setWindowNormalRect", Native.getLastError(),
@@ -1201,7 +1221,9 @@ public final class NativeWindowsTools {
 
     /** 获取窗口标题 */
     public static String getWindowTitle(WinDef.HWND hwnd) {
-        if (hwnd == null) return "";
+        if (hwnd == null) {
+            return "";
+        }
         int length = Win32Api.User32Api.INSTANCE.GetWindowTextLength(hwnd);
         if (length <= 0) {
             return "";
@@ -1324,7 +1346,9 @@ public final class NativeWindowsTools {
      * @return 操作结果
      */
     public static WindowOperationResult moveWindowTo(WinDef.HWND hwnd, int x, int y) {
-        if (hwnd == null) return skippedNullHandle("moveWindowTo");
+        if (hwnd == null) {
+            return skippedNullHandle("moveWindowTo");
+        }
         return setWindowPos(hwnd, null, x, y, 0, 0,
                 Win32Constants.SetWindowPosFlags.SWP_NOSIZE
                         | Win32Constants.SetWindowPosFlags.SWP_NOZORDER);
@@ -1339,7 +1363,9 @@ public final class NativeWindowsTools {
      * @return 操作结果
      */
     public static WindowOperationResult resizeWindow(WinDef.HWND hwnd, int width, int height) {
-        if (hwnd == null) return skippedNullHandle("resizeWindow");
+        if (hwnd == null) {
+            return skippedNullHandle("resizeWindow");
+        }
         return setWindowPos(hwnd, null, 0, 0, width, height,
                 Win32Constants.SetWindowPosFlags.SWP_NOMOVE
                         | Win32Constants.SetWindowPosFlags.SWP_NOZORDER);
@@ -1352,7 +1378,9 @@ public final class NativeWindowsTools {
      * @return 操作结果
      */
     public static WindowOperationResult centerWindowOnVirtualScreen(WinDef.HWND hwnd) {
-        if (hwnd == null) return skippedNullHandle("centerWindowOnVirtualScreen");
+        if (hwnd == null) {
+            return skippedNullHandle("centerWindowOnVirtualScreen");
+        }
         WindowRect screen = getVirtualScreenBounds();
         WindowRect window = getWindowBounds(hwnd);
         int x = screen.left() + (screen.width() - window.width()) / 2;
@@ -1369,7 +1397,9 @@ public final class NativeWindowsTools {
      * @return 屏幕坐标点，转换失败返回 null
      */
     public static WindowPoint clientToScreen(WinDef.HWND hwnd, int x, int y) {
-        if (hwnd == null) return null;
+        if (hwnd == null) {
+            return null;
+        }
         WinDef.POINT point = new WindowPoint(x, y).toNativePoint();
         if (Win32Api.User32Api.INSTANCE.ClientToScreen(hwnd, point)) {
             return new WindowPoint(point.x, point.y);
@@ -1386,7 +1416,9 @@ public final class NativeWindowsTools {
      * @return 客户区坐标点，转换失败返回 null
      */
     public static WindowPoint screenToClient(WinDef.HWND hwnd, int x, int y) {
-        if (hwnd == null) return null;
+        if (hwnd == null) {
+            return null;
+        }
         WinDef.POINT point = new WindowPoint(x, y).toNativePoint();
         if (Win32Api.User32Api.INSTANCE.ScreenToClient(hwnd, point)) {
             return new WindowPoint(point.x, point.y);

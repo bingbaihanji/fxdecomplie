@@ -56,7 +56,9 @@ public abstract class AbstractCodeContentPanel extends StackPane {
 
     /** 子类在 createContent() 中创建 CodeArea 后调用此方法应用字体和行号 */
     protected final void applyFontAndLineNumbers(jfx.incubator.scene.control.richtext.CodeArea area) {
-        if (area == null) return;
+        if (area == null) {
+            return;
+        }
         try {
             java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
             if (url != null) {
