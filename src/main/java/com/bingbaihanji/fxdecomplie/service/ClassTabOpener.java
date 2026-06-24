@@ -75,12 +75,20 @@ public final class ClassTabOpener {
     }
 
     /** 计算工作区缓存键：使用完整路径 + mtime + size,消除路径碰撞和同路径替换误命中 */
-    private static String computeWorkspaceKey(Workspace workspace) {
+    public static String computeWorkspaceKey(Workspace workspace) {
         File source = workspace.getSourceFile();
         long mtime = source.lastModified();
         long size = source.isFile() ? source.length() : 0L;
         return (source.getAbsolutePath() + "_" + mtime + "_" + size)
                 .replace(':', '_').replace('\\', '_').replace('/', '_');
+    }
+
+    /** 计算 class 字节指纹(CRC32)，用于缓存键防内容变更误命中 */
+    public static String computeClassFingerprint(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return "0";
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+        crc.update(bytes);
+        return Long.toHexString(crc.getValue());
     }
 
     /**
@@ -835,7 +843,7 @@ public final class ClassTabOpener {
         DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
         String optionsHash = DecompilerOptions.hash(engineOptions);
-        String wsKey = computeWorkspaceKey(workspace) + "_" + bytes.length;
+        String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
 
         // ---- L2: 内存反编译缓存(最快路径) ----
         String sourceCode = decompileCache.get(wsKey, internalName, effectiveEngine, optionsHash);

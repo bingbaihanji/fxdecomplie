@@ -84,8 +84,11 @@ public final class FindUsageDialog {
 
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
         java.util.concurrent.atomic.AtomicLong searchGeneration = new java.util.concurrent.atomic.AtomicLong();
+        dialog.setOnHidden(e -> searchGeneration.incrementAndGet()); // 关闭时废弃所有旧任务
 
         Runnable runSearch = () -> {
+            BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+            long gen = searchGeneration.incrementAndGet();
             String query = input.getText();
             if (query == null || query.isBlank()) {
                 status.setText("");
@@ -93,8 +96,6 @@ public final class FindUsageDialog {
                 return;
             }
             status.setText(I18nUtil.getString("usage.searching"));
-            BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
-            long gen = searchGeneration.incrementAndGet();
             Future<?> task = BackgroundTasks.run("FindUsages", () -> {
                 List<UsageResult> results = UsageSearchService.findUsages(index, query);
                 Platform.runLater(() -> {

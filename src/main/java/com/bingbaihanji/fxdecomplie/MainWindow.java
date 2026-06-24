@@ -269,13 +269,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return slash >= 0 ? internalName.substring(0, slash) : "";
     }
 
-    /** 计算与 ClassTabOpener 一致的 L2 缓存工作区键,确保跨组件缓存复用 */
+    /** 委托 ClassTabOpener 计算 L2 缓存工作区键,确保跨组件缓存复用 */
     private static String workspaceKey(Workspace workspace) {
-        File source = workspace.getSourceFile();
-        long mtime = source.lastModified();
-        long size = source.isFile() ? source.length() : 0L;
-        return (source.getAbsolutePath() + "_" + mtime + "_" + size)
-                .replace(':', '_').replace('\\', '_').replace('/', '_');
+        return com.bingbaihanji.fxdecomplie.service.ClassTabOpener.computeWorkspaceKey(workspace);
     }
 
     /** 将项目文件中保存的引擎名字符串还原为枚举值,非法值回退到默认引擎 */
@@ -1709,8 +1705,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     break;
                 }
                 // 优先查询 L2 内存缓存(复用已打开标签页的解编译结果,避免重复解编)
+                String fp = ClassTabOpener.computeClassFingerprint(cls.bytes());
                 String source = classTabOpener.getDecompileCache().get(
-                        workspaceKey(view.workspace()), cls.internalName(),
+                        workspaceKey(view.workspace()) + "_" + fp, cls.internalName(),
                         currentEngine, DecompilerOptions.hash(engineOptions));
                 if (source == null) {
                     // L2 miss: 带超时和 JD 回退的全量解编译

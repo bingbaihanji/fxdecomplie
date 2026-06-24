@@ -83,12 +83,16 @@ public class SearchService {
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache, int limit) {
         if (query == null || query.isBlank()) return List.of();
         int resultLimit = Math.max(1, limit);
+        int softLimit = resultLimit * 2;
         List<SearchResult> all = new ArrayList<>();
         for (SearchProvider provider : providers) {
-            if (Thread.currentThread().isInterrupted()) {
-                return List.of();
-            }
+            if (Thread.currentThread().isInterrupted()) return List.of();
+            if (all.size() >= softLimit) break;
             List<SearchResult> results = provider.search(query, sourceCache);
+            // 单 provider 结果也裁剪到 softLimit
+            if (results.size() > softLimit - all.size()) {
+                results = results.subList(0, Math.max(0, softLimit - all.size()));
+            }
             all.addAll(results);
         }
         // 根据排除模式过滤结果
