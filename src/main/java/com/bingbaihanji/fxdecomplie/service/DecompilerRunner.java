@@ -122,7 +122,7 @@ public final class DecompilerRunner {
             return DecompilerContext.withOptions(options);
         }
         WorkspaceClassPath classPath = new WorkspaceClassPath(workspace);
-        return DecompilerContext.of(classPath::getClassBytes, options, classPath);
+        return DecompilerContext.singleUse(classPath::getClassBytes, options, classPath);
     }
 
     public static boolean isTransientFailureOutput(String source) {
@@ -180,7 +180,8 @@ public final class DecompilerRunner {
 
     private static void closeContext(DecompilerContext context) {
         if (context == null || context == DecompilerContext.EMPTY
-                || context == DecompilerContext.LEGACY_GLOBAL) {
+                || context == DecompilerContext.LEGACY_GLOBAL
+                || !context.closeAfterUse()) {
             return;
         }
         try {

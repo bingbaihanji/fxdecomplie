@@ -4,7 +4,6 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
-import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.google.gson.Gson;

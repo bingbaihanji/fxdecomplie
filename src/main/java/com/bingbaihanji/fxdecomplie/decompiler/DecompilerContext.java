@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 每次反编译的上下文在解析依赖类时，应优先使用此上下文而非旧版全局 BytecodeCache
@@ -22,21 +23,25 @@ public final class DecompilerContext implements AutoCloseable {
     private final Map<String, String> options;
     private final boolean globalFallbackEnabled;
     private final AutoCloseable closeable;
+    private final boolean closeAfterUse;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
                               Map<String, String> options,
                               boolean globalFallbackEnabled) {
-        this(bytecodeProvider, options, globalFallbackEnabled, null);
+        this(bytecodeProvider, options, globalFallbackEnabled, null, false);
     }
 
     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
                               Map<String, String> options,
                               boolean globalFallbackEnabled,
-                              AutoCloseable closeable) {
+                              AutoCloseable closeable,
+                              boolean closeAfterUse) {
         this.bytecodeProvider = Objects.requireNonNull(bytecodeProvider, "bytecodeProvider");
         this.options = options == null ? Map.of() : Map.copyOf(options);
         this.globalFallbackEnabled = globalFallbackEnabled;
         this.closeable = closeable;
+        this.closeAfterUse = closeAfterUse;
     }
 
     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider) {
@@ -51,6 +56,19 @@ public final class DecompilerContext implements AutoCloseable {
     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
                                        Map<String, String> options,
                                        AutoCloseable closeable) {
+        return of(bytecodeProvider, options, closeable, false);
+    }
+
+    public static DecompilerContext singleUse(ClassBytecodeProvider bytecodeProvider,
+                                              Map<String, String> options,
+                                              AutoCloseable closeable) {
+        return of(bytecodeProvider, options, closeable, true);
+    }
+
+    private static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
+                                        Map<String, String> options,
+                                        AutoCloseable closeable,
+                                        boolean closeAfterUse) {
         if (bytecodeProvider == null) {
             if (closeable != null) {
                 try {
@@ -62,7 +80,7 @@ public final class DecompilerContext implements AutoCloseable {
             }
             return withOptions(options);
         }
-        return new DecompilerContext(bytecodeProvider, options, false, closeable);
+        return new DecompilerContext(bytecodeProvider, options, false, closeable, closeAfterUse);
     }
 
     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index) {
@@ -126,9 +144,13 @@ public final class DecompilerContext implements AutoCloseable {
         return !options.isEmpty();
     }
 
+    public boolean closeAfterUse() {
+        return closeAfterUse;
+    }
+
     @Override
     public void close() throws Exception {
-        if (closeable != null) {
+        if (closeable != null && closed.compareAndSet(false, true)) {
             closeable.close();
         }
     }

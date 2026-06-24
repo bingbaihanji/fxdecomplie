@@ -19,6 +19,14 @@ import java.util.function.Consumer;
  */
 public final class CodeLinkHandler {
 
+    /**
+     * 在 CodeArea 上安装 Ctrl+Click 导航。
+     *
+     * <p>优先把点击处的 token 交给上层解析，上层可以结合 import、当前包和 workspace
+     * 文件树完成项目内 class 跳转；没有 token 导航器时退回到行级 metadata。</p>
+     */
+    private static final String LINK_HANDLER_KEY = "CODE_LINK_HANDLER";
+
     private CodeLinkHandler() {
         throw new AssertionError("utility class");
     }
@@ -34,14 +42,6 @@ public final class CodeLinkHandler {
                                Consumer<CodeMetadata.Reference> onNavigate) {
         install(codeArea, metadata, null, onNavigate);
     }
-
-    /**
-     * 在 CodeArea 上安装 Ctrl+Click 导航。
-     *
-     * <p>优先把点击处的 token 交给上层解析，上层可以结合 import、当前包和 workspace
-     * 文件树完成项目内 class 跳转；没有 token 导航器时退回到行级 metadata。</p>
-     */
-    private static final String LINK_HANDLER_KEY = "CODE_LINK_HANDLER";
 
     public static void install(CodeArea codeArea, CodeMetadata metadata,
                                BiConsumer<Integer, String> onTokenNavigate,

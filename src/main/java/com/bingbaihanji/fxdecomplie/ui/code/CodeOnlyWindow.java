@@ -3,12 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
-import com.bingbaihanji.fxdecomplie.model.CommentScope;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbaihanji.fxdecomplie.model.OpenFile;
-import com.bingbaihanji.fxdecomplie.model.Workspace;
-import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
@@ -33,8 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.Future;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -535,7 +530,7 @@ public final class CodeOnlyWindow {
                 String source = DecompilerRunner.decompileWithTimeout(
                         previous.fullPath(), bytes, engine, context,
                         () -> !Thread.currentThread().isInterrupted()
-                              && isEngineSwitchCurrent(tab, requestId));
+                                && isEngineSwitchCurrent(tab, requestId));
                 if (!isEngineSwitchCurrent(tab, requestId)) {
                     return;
                 }

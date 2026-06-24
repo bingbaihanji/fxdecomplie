@@ -27,8 +27,6 @@ public class CodeEditorTab extends Tab {
 
     /** 代码视图面板 */
     private final CodeViewPanel codeViewPanel;
-    /** 标签页显示标题 */
-    private String displayTitle;
     /** 可拖拽的标签标题节点 */
     private final Label titleLabel;
     /** 默认字号 */
@@ -41,6 +39,8 @@ public class CodeEditorTab extends Tab {
     private final byte[] classBytes;
     /** 编辑器内搜索栏 */
     private final EditorSearchBar editorSearchBar;
+    /** 标签页显示标题 */
+    private String displayTitle;
     /** Java 源码编辑器（兼容引用） */
     private CodeArea codeArea;
     /** 打开的文件 */
@@ -198,22 +198,22 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.setSplitToggleSelected(false);
     }
 
+    Consumer<CodeEditorTab> getOnSplitRequested() {
+        return onSplitRequested;
+    }
+
     /** 设置分屏请求回调 */
     public void setOnSplitRequested(Consumer<CodeEditorTab> callback) {
         this.onSplitRequested = callback;
     }
 
-    Consumer<CodeEditorTab> getOnSplitRequested() {
-        return onSplitRequested;
+    Consumer<DecompilerTypeEnum> getOnSwitchEngine() {
+        return onSwitchEngine;
     }
 
     /** 设置切换引擎回调 */
     public void setOnSwitchEngine(Consumer<DecompilerTypeEnum> callback) {
         this.onSwitchEngine = callback;
-    }
-
-    Consumer<DecompilerTypeEnum> getOnSwitchEngine() {
-        return onSwitchEngine;
     }
 
     /** 触发切换引擎（由外部菜单调用） */

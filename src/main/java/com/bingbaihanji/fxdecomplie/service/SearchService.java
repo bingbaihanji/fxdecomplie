@@ -5,9 +5,7 @@ import com.bingbaihanji.fxdecomplie.ui.search.SearchProvider;
 import com.bingbaihanji.fxdecomplie.ui.search.SearchResult;
 import com.bingbaihanji.fxdecomplie.ui.search.SearchScope;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -78,13 +76,6 @@ public class SearchService {
         return false;
     }
 
-    private final java.util.Set<String> addedKeys = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
-
-    /** 清理去重键(每次新搜索前调用) */
-    private void clearAddedKeys() {
-        addedKeys.clear();
-    }
-
     /**
      * 运行所有已注册的提供器并合并结果,按匹配类型优先级和行号排序
      *
@@ -103,11 +94,10 @@ public class SearchService {
         int providerCount = Math.max(1, providers.size());
         int perProviderQuota = Math.max(1, globalSoftLimit / providerCount);
         List<SearchResult> all = new ArrayList<>();
-        clearAddedKeys();
+        Set<String> addedKeys = new HashSet<>();
         for (SearchProvider provider : providers) {
             if (Thread.currentThread().isInterrupted()) return List.of();
             if (all.size() >= globalSoftLimit) break;
-            int beforeSize = all.size();
             List<SearchResult> results = provider.search(query, sourceCache);
             int providerAdded = 0;
             for (SearchResult result : results) {
@@ -152,7 +142,7 @@ public class SearchService {
         }
         int globalSoftLimit = resultLimit * 2;
         int perProviderQuota = Math.max(1, globalSoftLimit / Math.max(1, activeProviderCount));
-        clearAddedKeys();
+        Set<String> addedKeys = new HashSet<>();
         for (SearchProvider provider : providers) {
             if (Thread.currentThread().isInterrupted()) return List.of();
             if (!provider.supports(effectiveScope)) {
@@ -161,7 +151,6 @@ public class SearchService {
             if (all.size() >= globalSoftLimit) {
                 break;
             }
-            int beforeSize = all.size();
             List<SearchResult> results = provider.search(query, sourceCache, options);
             int providerAdded = 0;
             for (SearchResult result : results) {

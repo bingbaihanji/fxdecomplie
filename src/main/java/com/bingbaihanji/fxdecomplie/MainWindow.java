@@ -591,7 +591,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                             progressHandle.update(path, pct);
                         }),
                         (java.util.function.BooleanSupplier) () -> exportCanceled.get());
-            Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     progressHandle.close();
                     statusBar.clearTask();
                     if (exportCanceled.get()) {
