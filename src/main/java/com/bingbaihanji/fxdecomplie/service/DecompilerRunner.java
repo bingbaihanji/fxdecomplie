@@ -179,9 +179,7 @@ public final class DecompilerRunner {
     }
 
     private static void closeContext(DecompilerContext context) {
-        if (context == null || context == DecompilerContext.EMPTY
-                || context == DecompilerContext.LEGACY_GLOBAL
-                || !context.closeAfterUse()) {
+        if (context == null) {
             return;
         }
         try {

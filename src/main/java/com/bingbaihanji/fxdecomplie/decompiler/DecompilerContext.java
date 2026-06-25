@@ -150,7 +150,7 @@ public final class DecompilerContext implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        if (closeable != null && closed.compareAndSet(false, true)) {
+        if (closeAfterUse && closeable != null && closed.compareAndSet(false, true)) {
             closeable.close();
         }
     }
