@@ -105,7 +105,7 @@ public class SearchService {
                     break;
                 }
                 if (!isExcluded(result)) {
-                    String key = result.fullPath() + ":" + result.lineNumber();
+                    String key = result.fullPath() + ":" + result.lineNumber() + ":" + result.matchType().name();
                     if (addedKeys.add(key)) {
                         all.add(result);
                         providerAdded++;
@@ -158,7 +158,7 @@ public class SearchService {
                     break;
                 }
                 if (!isExcluded(result)) {
-                    String key = result.fullPath() + ":" + result.lineNumber();
+                    String key = result.fullPath() + ":" + result.lineNumber() + ":" + result.matchType().name();
                     if (addedKeys.add(key)) {
                         all.add(result);
                         providerAdded++;

@@ -88,6 +88,7 @@ public final class CommentManager {
             logger.error("保存注释失败", e);
         } finally {
             lock.unlock();
+            FILE_LOCKS.remove(lockKey);
         }
     }
 
@@ -130,6 +131,7 @@ public final class CommentManager {
             return false;
         } finally {
             lock.unlock();
+            FILE_LOCKS.remove(lockKey);
         }
     }
 

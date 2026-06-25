@@ -50,7 +50,7 @@ public class RegexHighlighter implements SyntaxDecorator {
 
     /** 预编译的正则分词模式 */
     private static final Pattern TOKEN_PATTERN = Pattern.compile(
-            "(?<MULTICOMMENT>/\\*[\\s\\S]*+\\*/)"
+            "(?<MULTICOMMENT>/\\*[\\s\\S]*?\\*/)"
                     + "|(?<SINGLECOMMENT>//[^\n]*)"
                     + "|(?<STRING>\"(?:\\\\.|[^\"\\\\])*\")"
                     + "|(?<ANNOTATION>@[a-zA-Z_][a-zA-Z0-9_.]*)"

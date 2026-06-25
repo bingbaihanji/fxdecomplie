@@ -948,7 +948,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
         @Override
         public void visitIincInsn(int var, int increment) {
-            int size = 3;
+            int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(Opcodes.IINC, size);
             sb.append(' ').append(opcodeName(Opcodes.IINC))
                     .append(' ').append(var).append(' ').append(increment).append('\n');

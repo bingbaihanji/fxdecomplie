@@ -24,7 +24,6 @@ public final class WorkspaceIndex {
     private final List<ClassIndexEntry> classes;
     private final List<ResourceIndexEntry> resources;
     private final Map<String, ClassIndexEntry> classesByInternalName;
-    private volatile Map<String, byte[]> classBytesByInternalNameCache;
     private volatile Map<String, byte[]> resourceBytesByPathCache;
 
     private WorkspaceIndex(List<ClassIndexEntry> classes, List<ResourceIndexEntry> resources,
@@ -142,26 +141,6 @@ public final class WorkspaceIndex {
 
     public List<ResourceIndexEntry> resources() {
         return resources;
-    }
-
-    public Map<String, byte[]> classBytesByInternalName() {
-        Map<String, byte[]> cached = classBytesByInternalNameCache;
-        if (cached != null) {
-            return cached;
-        }
-        synchronized (this) {
-            if (classBytesByInternalNameCache == null) {
-                Map<String, byte[]> map = new LinkedHashMap<>();
-                for (ClassIndexEntry cls : classes) {
-                    byte[] bytes = cls.bytes();
-                    if (bytes != null) {
-                        map.put(cls.internalName(), bytes);
-                    }
-                }
-                classBytesByInternalNameCache = Collections.unmodifiableMap(map);
-            }
-            return classBytesByInternalNameCache;
-        }
     }
 
     public byte[] getClassBytes(String internalName) {

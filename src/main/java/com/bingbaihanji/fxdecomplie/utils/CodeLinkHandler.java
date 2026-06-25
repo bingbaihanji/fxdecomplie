@@ -107,7 +107,7 @@ public final class CodeLinkHandler {
                     return ref;
                 }
             }
-            return null;
+            return refs.getFirst();
         }
         return null;
     }

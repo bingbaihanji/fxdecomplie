@@ -99,6 +99,13 @@ public final class DecompilerRunner {
             return I18nUtil.getString("decompile.busy", classFilePath);
         } catch (TimeoutException e) {
             future.cancel(true);
+            // 给后台线程一个短暂的窗口退出(其 finally 块会关闭 context),
+            // 然后作为安全兜底再尝试关闭(close 是幂等的)
+            try {
+                future.get(200, java.util.concurrent.TimeUnit.MILLISECONDS);
+            } catch (Exception ignored) {
+                // 任务可能尚未退出，忽略
+            }
             closeContext(context);
             return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
                     + "\n" + I18nUtil.getString("decompile.timeoutHint");

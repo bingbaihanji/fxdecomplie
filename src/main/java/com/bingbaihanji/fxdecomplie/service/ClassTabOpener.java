@@ -241,13 +241,12 @@ public final class ClassTabOpener {
         statusBar.setFilePath(I18nUtil.getString("status.decompiling", node.getFullPath()));
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
+        long requestId = cancelPrevious ? decompileGeneration.incrementAndGet() : -1L;
         if (cancelPrevious) {
-            decompileGeneration.incrementAndGet();
             BackgroundTasks.cancel(currentDecompileTask);
             removeLoadingTab(codeTabPane, currentLoadingTab);
             removePendingTab(codeTabPane, currentPendingTab);
         }
-        long requestId = cancelPrevious ? decompileGeneration.get() : -1L;
 
         Tab loadingTab = createLoadingTab(node, engine);
         AtomicReference<Future<?>> taskRef = new AtomicReference<>();
@@ -429,9 +428,8 @@ public final class ClassTabOpener {
                 "status.redecompiling", engine.name(), fullPath));
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
-        decompileGeneration.incrementAndGet();
+        long requestId = decompileGeneration.incrementAndGet();
         BackgroundTasks.cancel(currentDecompileTask);
-        long requestId = decompileGeneration.get();
         currentDecompileTask = runOpenTask("Redecompile-" + node.getName(), () -> {
             try {
                 if (!isRequestCurrent(requestId, true)) {

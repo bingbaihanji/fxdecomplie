@@ -56,7 +56,7 @@ public final class DecompilerContext implements AutoCloseable {
     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
                                        Map<String, String> options,
                                        AutoCloseable closeable) {
-        return of(bytecodeProvider, options, closeable, false);
+        return of(bytecodeProvider, options, closeable, true);
     }
 
     public static DecompilerContext singleUse(ClassBytecodeProvider bytecodeProvider,

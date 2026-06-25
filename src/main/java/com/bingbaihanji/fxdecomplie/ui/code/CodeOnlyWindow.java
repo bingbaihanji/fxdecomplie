@@ -46,6 +46,9 @@ public final class CodeOnlyWindow {
             "fxdecomplie.codeOnly.engineSwitchTask";
     private static final String ENGINE_SWITCH_REQUEST =
             "fxdecomplie.codeOnly.engineSwitchRequest";
+    /** 每个标签页当前有效的引擎切换请求 ID，支持跨线程安全读取 */
+    private static final java.util.concurrent.ConcurrentMap<CodeEditorTab, AtomicLong>
+            ACTIVE_ENGINE_REQUESTS = new java.util.concurrent.ConcurrentHashMap<>();
     private static final String CODE_ONLY_TARGET =
             "fxdecomplie.codeOnly.target";
     private static final String CODE_ONLY_SPLIT_EDITOR =
@@ -408,6 +411,7 @@ public final class CodeOnlyWindow {
             BackgroundTasks.cancel(future);
         }
         tab.getProperties().remove(ENGINE_SWITCH_REQUEST);
+        ACTIVE_ENGINE_REQUESTS.remove(tab);
     }
 
     private static boolean detachTab(CodeEditorTab tab, TabPane sourcePane, TabPane targetPane) {
@@ -514,21 +518,31 @@ public final class CodeOnlyWindow {
         }
 
         long requestId = ENGINE_SWITCH_IDS.incrementAndGet();
+        ACTIVE_ENGINE_REQUESTS.put(tab, new AtomicLong(requestId));
         tab.getProperties().put(ENGINE_SWITCH_REQUEST, requestId);
         OpenFile previous = tab.getOpenFile();
+
+        // 在 FX 线程预解析字节码和工作区，避免后台线程访问 tab.getProperties()
+        final byte[] preResolvedBytes;
+        try {
+            preResolvedBytes = resolveBytesForTab(tab);
+        } catch (java.io.IOException e) {
+            logger.error("切换引擎前解析字节码失败: {}", previous.fullPath(), e);
+            return;
+        }
+        final DecompilerTypeEnum engine = effectiveEngineFor(preResolvedBytes, requestedEngine);
+        final Map<String, String> options = DecompilerOptions.forEngine(config, engine);
+        final Workspace workspace = resolveWorkspaceForTab(tab);
+
         tab.setSourceReady(false);
         tab.updateVisibleSource("// " + I18nUtil.getString("task.decompiling")
                 + ": " + previous.fullPath() + " [" + requestedEngine.name() + "]");
 
         Future<?> task = BackgroundTasks.run("CodeOnlySwitchEngine-" + previous.fullPath(), () -> {
             try {
-                byte[] bytes = classBytesForTab(tab);
-                DecompilerTypeEnum engine = effectiveEngineFor(bytes, requestedEngine);
-                Map<String, String> options = DecompilerOptions.forEngine(config, engine);
-                Workspace workspace = workspaceForTab(tab);
                 DecompilerContext context = DecompilerRunner.contextForWorkspace(workspace, options);
                 String source = DecompilerRunner.decompileWithTimeout(
-                        previous.fullPath(), bytes, engine, context,
+                        previous.fullPath(), preResolvedBytes, engine, context,
                         () -> !Thread.currentThread().isInterrupted()
                                 && isEngineSwitchCurrent(tab, requestId));
                 if (!isEngineSwitchCurrent(tab, requestId)) {
@@ -555,7 +569,7 @@ public final class CodeOnlyWindow {
                     if (!isEngineSwitchCurrent(tab, requestId)) {
                         return;
                     }
-                    updateCodeOnlyTab(tab, updated, bytes, metadata, options);
+                    updateCodeOnlyTab(tab, updated, preResolvedBytes, metadata, options);
                     installFallbackHandlers(tab, config, editorTheme);
                 });
             } catch (Exception e) {
@@ -574,11 +588,12 @@ public final class CodeOnlyWindow {
     }
 
     private static boolean isEngineSwitchCurrent(CodeEditorTab tab, long requestId) {
-        Object value = tab.getProperties().get(ENGINE_SWITCH_REQUEST);
-        return value instanceof Long id && id == requestId;
+        AtomicLong current = ACTIVE_ENGINE_REQUESTS.get(tab);
+        return current != null && current.get() == requestId;
     }
 
-    private static byte[] classBytesForTab(CodeEditorTab tab) throws java.io.IOException {
+    /** 在 FX 线程解析标签页的字节码（避免跨线程访问 tab.getProperties()） */
+    private static byte[] resolveBytesForTab(CodeEditorTab tab) throws java.io.IOException {
         byte[] bytes = tab.getClassBytes();
         if (bytes != null && bytes.length > 0) {
             return bytes;
@@ -590,7 +605,8 @@ public final class CodeOnlyWindow {
         return null;
     }
 
-    private static Workspace workspaceForTab(CodeEditorTab tab) {
+    /** 在 FX 线程解析标签页的工作区（避免跨线程访问 tab.getProperties()） */
+    private static Workspace resolveWorkspaceForTab(CodeEditorTab tab) {
         Object workspace = tab.getProperties().get("workspace");
         return workspace instanceof Workspace ws ? ws : null;
     }
@@ -622,7 +638,7 @@ public final class CodeOnlyWindow {
                                                        CodeMetadata metadata,
                                                        Map<String, String> options) {
         Workspace workspace = previousContext != null
-                ? previousContext.workspace() : workspaceForTab(tab);
+                ? previousContext.workspace() : resolveWorkspaceForTab(tab);
         FileTreeNode node = previousContext != null ? previousContext.node() : null;
         if (node == null) {
             Object nodeProperty = tab.getProperties().get("fileTreeNode");

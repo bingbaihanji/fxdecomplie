@@ -90,7 +90,8 @@ public final class FindUsageDialog {
         });
 
         Runnable runSearch = () -> {
-            BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+            Future<?> oldTask = currentSearchTask.getAndSet(null);
+            BackgroundTasks.cancel(oldTask);
             long gen = searchGeneration.incrementAndGet();
             String query = input.getText();
             if (query == null || query.isBlank()) {

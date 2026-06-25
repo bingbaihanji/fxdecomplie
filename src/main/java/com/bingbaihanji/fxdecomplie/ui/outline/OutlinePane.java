@@ -95,6 +95,8 @@ public final class OutlinePane extends VBox {
     /** 更新大纲内容 */
     public void update(String sourceCode) {
         long generation = updateGeneration.incrementAndGet();
+        // 快照当前过滤字段文本，避免覆盖用户在解析期间手动输入的内容
+        String filterBefore = filterField.getText();
         BackgroundTasks.run("OutlineParse", () -> {
             if (Thread.currentThread().isInterrupted()) {
                 return;
@@ -103,7 +105,10 @@ public final class OutlinePane extends VBox {
             Platform.runLater(() -> {
                 if (updateGeneration.get() == generation) {
                     sourceList.setAll(members);
-                    filterField.clear();
+                    // 仅当用户在解析期间未修改过滤条件时才清除
+                    if (filterBefore.equals(filterField.getText())) {
+                        filterField.clear();
+                    }
                 }
             });
         });

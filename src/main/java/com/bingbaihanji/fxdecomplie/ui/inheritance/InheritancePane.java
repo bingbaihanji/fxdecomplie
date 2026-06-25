@@ -13,6 +13,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * 类继承层次面板显示当前类的父类链和已知子类
  *
@@ -23,6 +25,7 @@ public final class InheritancePane extends VBox {
 
     private final TreeView<InheritanceNode> treeView;
     private OpenHandler openHandler;
+    private final AtomicLong loadGeneration = new AtomicLong();
 
     public InheritancePane() {
         setPadding(new Insets(4));
@@ -75,9 +78,13 @@ public final class InheritancePane extends VBox {
 
     public void load(String fullPath, WorkspaceIndex index) {
         showIndexing();
+        long gen = loadGeneration.incrementAndGet();
         BackgroundTasks.run("InheritanceBuild", () -> {
             TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
             Platform.runLater(() -> {
+                if (loadGeneration.get() != gen) {
+                    return; // 已过期，丢弃
+                }
                 if (root != null) {
                     treeView.setRoot(root);
                     root.setExpanded(true);
