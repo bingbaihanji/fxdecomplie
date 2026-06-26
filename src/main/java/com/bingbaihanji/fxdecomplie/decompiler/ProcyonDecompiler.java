@@ -24,20 +24,45 @@ public class ProcyonDecompiler implements Decompiler {
         for (var entry : context.options().entrySet()) {
             String value = entry.getValue();
             switch (entry.getKey()) {
+                // 常用
                 case "unicodeOutput", "unicodeOutputEnabled" ->
                         settings.setUnicodeOutputEnabled(Boolean.parseBoolean(value));
                 case "previewFeatures", "previewFeaturesEnabled" ->
                         settings.setPreviewFeaturesEnabled(Boolean.parseBoolean(value));
                 case "showSyntheticMembers" -> settings.setShowSyntheticMembers(Boolean.parseBoolean(value));
-                case "flattenSwitchBlocks" -> settings.setFlattenSwitchBlocks(Boolean.parseBoolean(value));
                 case "forceExplicitImports" -> settings.setForceExplicitImports(Boolean.parseBoolean(value));
                 case "forceExplicitTypeArguments" ->
                         settings.setForceExplicitTypeArguments(Boolean.parseBoolean(value));
+                case "flattenSwitchBlocks" -> settings.setFlattenSwitchBlocks(Boolean.parseBoolean(value));
                 case "retainRedundantCasts" -> settings.setRetainRedundantCasts(Boolean.parseBoolean(value));
                 case "includeLineNumbersInBytecode" ->
                         settings.setIncludeLineNumbersInBytecode(Boolean.parseBoolean(value));
+                case "showDebugLineNumbers" -> settings.setShowDebugLineNumbers(Boolean.parseBoolean(value));
+                case "simplifyMemberReferences" -> settings.setSimplifyMemberReferences(Boolean.parseBoolean(value));
+                // 高级
+                case "alwaysGenerateExceptionVariableForCatchBlocks" ->
+                        settings.setAlwaysGenerateExceptionVariableForCatchBlocks(Boolean.parseBoolean(value));
+                case "forceFullyQualifiedReferences" ->
+                        settings.setForceFullyQualifiedReferences(Boolean.parseBoolean(value));
+                case "excludeNestedTypes" -> settings.setExcludeNestedTypes(Boolean.parseBoolean(value));
+                case "retainPointlessSwitches" -> settings.setRetainPointlessSwitches(Boolean.parseBoolean(value));
+                case "includeErrorDiagnostics" -> settings.setIncludeErrorDiagnostics(Boolean.parseBoolean(value));
+                case "mergeVariables" -> settings.setMergeVariables(Boolean.parseBoolean(value));
+                case "disableForEachTransforms" -> settings.setDisableForEachTransforms(Boolean.parseBoolean(value));
+                case "textBlockLineMinimum" -> {
+                    try { settings.setTextBlockLineMinimum(Integer.parseInt(value)); }
+                    catch (NumberFormatException ignored) {}
+                }
+                case "forcedCompilerTarget" -> {
+                    // CompilerTarget type not available in Procyon 0.6.0
+                }
+                case "languageTarget" -> {
+                    if (value != null && !value.isBlank()) {
+                        settings.setLanguage(com.strobel.decompiler.languages.Languages.java());
+                    }
+                }
                 default -> {
-                    // 未知的 Procyon 选项将被忽略，以便用户可以使用共享的选项 JSON
+                    // Unknown Procyon option — silently ignored
                 }
             }
         }
