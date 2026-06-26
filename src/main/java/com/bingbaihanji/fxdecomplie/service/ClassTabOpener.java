@@ -181,12 +181,36 @@ public final class ClassTabOpener {
         DecompilerRunner.shutdown();
     }
 
+    /** 解析错误弹窗的父窗口：优先焦点窗口，其次第一个可见窗口 */
+    private static javafx.stage.Window resolveOwnerWindow() {
+        // 尝试从焦点节点反查所属窗口
+        javafx.scene.Scene scene = javafx.stage.Window.getWindows().stream()
+                .filter(w -> w instanceof javafx.stage.Stage s && s.isShowing())
+                .findFirst()
+                .map(w -> ((javafx.stage.Stage) w).getScene())
+                .orElse(null);
+        if (scene != null) {
+            javafx.scene.Node focused = scene.getFocusOwner();
+            if (focused != null) {
+                javafx.stage.Window owner = focused.getScene().getWindow();
+                if (owner != null && owner.isShowing()) {
+                    return owner;
+                }
+            }
+            return scene.getWindow();
+        }
+        // 最终回退：取第一个可见窗口
+        return javafx.stage.Window.getWindows().stream()
+                .filter(javafx.stage.Window::isShowing)
+                .findFirst().orElse(null);
+    }
+
+    /** 创建代码编辑器标签页 */
+
     /** 暴露 L2 缓存给全文搜索等批量解编译场景复用已打开的标签页结果 */
     public DecompileCache getDecompileCache() {
         return decompileCache;
     }
-
-    /** 创建代码编辑器标签页 */
 
     /** 设置代码操作回调，用于自动安装右键菜单 */
     public void setCodeActionHandler(CodeActionHandler handler) {
@@ -671,7 +695,6 @@ public final class ClassTabOpener {
         return tab;
     }
 
-
     private CodeEditorTab createPendingCodeTab(TabPane codeTabPane, Tab loadingTab,
                                                FileTreeNode node, Workspace workspace,
                                                OpenFile pendingOpenFile, boolean lineNumbersEnabled,
@@ -994,30 +1017,6 @@ public final class ClassTabOpener {
         } else {
             Platform.runLater(action);
         }
-    }
-
-    /** 解析错误弹窗的父窗口：优先焦点窗口，其次第一个可见窗口 */
-    private static javafx.stage.Window resolveOwnerWindow() {
-        // 尝试从焦点节点反查所属窗口
-        javafx.scene.Scene scene = javafx.stage.Window.getWindows().stream()
-                .filter(w -> w instanceof javafx.stage.Stage s && s.isShowing())
-                .findFirst()
-                .map(w -> ((javafx.stage.Stage) w).getScene())
-                .orElse(null);
-        if (scene != null) {
-            javafx.scene.Node focused = scene.getFocusOwner();
-            if (focused != null) {
-                javafx.stage.Window owner = focused.getScene().getWindow();
-                if (owner != null && owner.isShowing()) {
-                    return owner;
-                }
-            }
-            return scene.getWindow();
-        }
-        // 最终回退：取第一个可见窗口
-        return javafx.stage.Window.getWindows().stream()
-                .filter(javafx.stage.Window::isShowing)
-                .findFirst().orElse(null);
     }
 
     private WorkspaceIndex workspaceIndexForBackground(Workspace workspace) {

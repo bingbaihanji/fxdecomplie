@@ -6,7 +6,6 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.decompiler.ProcyonParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.VineflowerParameters;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
-import com.bingbaihanji.fxdecomplie.model.DecompilerParameter.ParamType;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.util.I18nUtil;
@@ -15,21 +14,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import javafx.application.Platform;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
-import javafx.scene.control.TitledPane;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -37,11 +22,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**
@@ -149,7 +130,8 @@ public final class SettingsDialog {
                 if (jsonText == null || jsonText.isBlank()) return;
                 try {
                     Map<String, Map<String, String>> allOpts = new Gson().fromJson(jsonText,
-                            new TypeToken<Map<String, Map<String, String>>>(){}.getType());
+                            new TypeToken<Map<String, Map<String, String>>>() {
+                            }.getType());
                     applyJsonToControls(allOpts, engineControlMaps);
                     jsonDirty[0] = false;
                     engineOptionsArea.setStyle("-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
@@ -389,9 +371,9 @@ public final class SettingsDialog {
     // ==================== 引擎参数面板构建方法 ====================
 
     private static VBox buildEngineParameterPanel(AppConfig config, String engineName,
-                                                   List<DecompilerParameter> params,
-                                                   TextArea jsonArea,
-                                                   Map<String, javafx.scene.Node> controlMap) {
+                                                  List<DecompilerParameter> params,
+                                                  TextArea jsonArea,
+                                                  Map<String, javafx.scene.Node> controlMap) {
         Map<String, String> engineOpts = config.decompiler().engineOptions()
                 .computeIfAbsent(engineName, ignored -> new LinkedHashMap<>());
 
@@ -419,11 +401,11 @@ public final class SettingsDialog {
     }
 
     private static TitledPane buildTitledParameterPane(String titleKey,
-                                                         List<DecompilerParameter> params,
-                                                         Map<String, String> engineOpts,
-                                                         TextArea jsonArea,
-                                                         Map<String, javafx.scene.Node> controlMap,
-                                                         AppConfig config) {
+                                                       List<DecompilerParameter> params,
+                                                       Map<String, String> engineOpts,
+                                                       TextArea jsonArea,
+                                                       Map<String, javafx.scene.Node> controlMap,
+                                                       AppConfig config) {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(5);
@@ -459,8 +441,8 @@ public final class SettingsDialog {
     }
 
     private static javafx.scene.Node createParameterControl(DecompilerParameter param,
-                                                              String currentValue,
-                                                              Runnable onChange) {
+                                                            String currentValue,
+                                                            Runnable onChange) {
         return switch (param.type()) {
             case BOOLEAN -> {
                 CheckBox cb = new CheckBox();
@@ -504,7 +486,7 @@ public final class SettingsDialog {
     }
 
     private static void updateEngineOptionFromControl(String key, javafx.scene.Node control,
-                                                        Map<String, String> engineOpts) {
+                                                      Map<String, String> engineOpts) {
         String value = switch (control) {
             case CheckBox cb -> {
                 boolean numeric = cb.getUserData() instanceof Boolean b && b;
@@ -542,7 +524,8 @@ public final class SettingsDialog {
         }
         try {
             return new Gson().fromJson(json,
-                    new TypeToken<Map<String, Map<String, String>>>(){}.getType());
+                    new TypeToken<Map<String, Map<String, String>>>() {
+                    }.getType());
         } catch (Exception ignored) {
             return null;
         }
@@ -592,8 +575,10 @@ public final class SettingsDialog {
         switch (control) {
             case CheckBox cb -> cb.setSelected("true".equalsIgnoreCase(value) || "1".equals(value));
             case Spinner<?> sp -> {
-                try { ((Spinner<Integer>) sp).getValueFactory().setValue(Integer.parseInt(value)); }
-                catch (NumberFormatException ignored) {}
+                try {
+                    ((Spinner<Integer>) sp).getValueFactory().setValue(Integer.parseInt(value));
+                } catch (NumberFormatException ignored) {
+                }
             }
             case TextField tf -> tf.setText(value != null ? value : "");
             case ComboBox<?> combo -> {
@@ -601,7 +586,8 @@ public final class SettingsDialog {
                     ((ComboBox<String>) combo).setValue(value);
                 }
             }
-            default -> {}
+            default -> {
+            }
         }
     }
 
@@ -624,6 +610,10 @@ public final class SettingsDialog {
     }
 
     private static int parseOrDefault(String s, int def) {
-        try { return Integer.parseInt(s); } catch (NumberFormatException e) { return def; }
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return def;
+        }
     }
 }

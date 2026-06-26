@@ -162,6 +162,13 @@ public class VineflowerDecompiler implements Decompiler {
 
     // ==================== Decompiler 接口 ====================
 
+    private static String effectiveTypeName(String typeName, byte[] classBytes) {
+        return ClassFileParser.tryParse(classBytes)
+                .map(metadata -> metadata.internalName().replace('\\', '/'))
+                .orElseGet(() -> DecompilerContext.normalizeInternalName(
+                        typeName == null ? "" : typeName));
+    }
+
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
         return decompileType(DecompilerContext.normalizeInternalName(classFilePath),
@@ -269,13 +276,6 @@ public class VineflowerDecompiler implements Decompiler {
             return "// Vineflower decompile failed\n// Class: " + effectiveTypeName;
         }
         return decompiled;
-    }
-
-    private static String effectiveTypeName(String typeName, byte[] classBytes) {
-        return ClassFileParser.tryParse(classBytes)
-                .map(metadata -> metadata.internalName().replace('\\', '/'))
-                .orElseGet(() -> DecompilerContext.normalizeInternalName(
-                        typeName == null ? "" : typeName));
     }
 
     @Override

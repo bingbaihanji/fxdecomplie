@@ -1,5 +1,7 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
+import java.util.Map;
+
 /**
  * 反编译引擎统一接口所有引擎实现必须是无状态或线程安全的
  *
@@ -69,7 +71,7 @@ public interface Decompiler {
     }
 
     /** 反编译选项(默认空,子类可覆盖返回引擎特定配置) */
-    default java.util.Map<String, String> getDefaultOptions() {
-        return java.util.Map.of();
+    default Map<String, String> getDefaultOptions() {
+        return Map.of();
     }
 }

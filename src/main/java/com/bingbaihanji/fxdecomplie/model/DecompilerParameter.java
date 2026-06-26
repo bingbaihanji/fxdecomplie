@@ -15,9 +15,6 @@ public record DecompilerParameter(
         Category category,
         String[] enumValues) {
 
-    public enum ParamType { BOOLEAN, INTEGER, STRING, ENUM }
-    public enum Category { COMMON, ADVANCED }
-
     /** 返回 fallback 英文标签：将 camelCase key 转为可读文本 */
     public String fallbackLabel() {
         StringBuilder sb = new StringBuilder();
@@ -33,4 +30,8 @@ public record DecompilerParameter(
         }
         return sb.toString();
     }
+
+    public enum ParamType {BOOLEAN, INTEGER, STRING, ENUM}
+
+    public enum Category {COMMON, ADVANCED}
 }

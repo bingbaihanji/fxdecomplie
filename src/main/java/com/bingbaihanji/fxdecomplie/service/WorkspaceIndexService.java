@@ -3,6 +3,8 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 
+import java.util.concurrent.Future;
+
 /**
  * 按需构建工作区完整索引打开 JAR 时不自动读取/解析全部 class,
  * 只有搜索、用法、导出等功能真正需要时才启动
@@ -20,7 +22,7 @@ public final class WorkspaceIndexService {
         if (!workspace.markIndexBuildStarted()) {
             return;
         }
-        java.util.concurrent.Future<?> task = BackgroundTasks.run("Index-" + workspace.getName(), () -> {
+        Future<?> task = BackgroundTasks.run("Index-" + workspace.getName(), () -> {
             int previousPriority = Thread.currentThread().getPriority();
             try {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);

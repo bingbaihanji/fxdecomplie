@@ -14,18 +14,6 @@ import java.util.List;
  */
 public final class ProcyonParameters {
 
-    private ProcyonParameters() { throw new AssertionError("constants"); }
-
-    private static DecompilerParameter of(String key, String defaultValue) {
-        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
-                "engine.procyon." + key, "engine.procyon." + key + ".help", Category.COMMON, null);
-    }
-
-    private static DecompilerParameter adv(String key, String defaultValue) {
-        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
-                "engine.procyon." + key, "engine.procyon." + key + ".help", Category.ADVANCED, null);
-    }
-
     public static final List<DecompilerParameter> PARAMETERS = List.of(
             // -- 常用 10 项 --
             of("unicodeOutputEnabled", "true"),
@@ -55,4 +43,18 @@ public final class ProcyonParameters {
                     "engine.procyon.languageTarget.help", Category.ADVANCED,
                     new String[]{"", "JAVA"})
     );
+
+    private ProcyonParameters() {
+        throw new AssertionError("constants");
+    }
+
+    private static DecompilerParameter of(String key, String defaultValue) {
+        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
+                "engine.procyon." + key, "engine.procyon." + key + ".help", Category.COMMON, null);
+    }
+
+    private static DecompilerParameter adv(String key, String defaultValue) {
+        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
+                "engine.procyon." + key, "engine.procyon." + key + ".help", Category.ADVANCED, null);
+    }
 }

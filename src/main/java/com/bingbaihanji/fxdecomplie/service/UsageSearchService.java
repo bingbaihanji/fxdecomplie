@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
@@ -308,8 +309,7 @@ public final class UsageSearchService {
     }
 
     private static String simpleName(String internalName) {
-        int idx = internalName.lastIndexOf('/');
-        return idx >= 0 ? internalName.substring(idx + 1) : internalName;
+        return DecompilerContext.simpleName(internalName);
     }
 
     private static String opcodeName(int opcode) {

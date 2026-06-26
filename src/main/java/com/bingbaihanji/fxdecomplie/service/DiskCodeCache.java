@@ -151,7 +151,7 @@ public final class DiskCodeCache {
                                 return 0L;
                             }
                         }))
-                        .collect(Collectors.toList());
+                        .toList();
             }
             for (Path f : files) {
                 if (totalSize <= targetSize) {

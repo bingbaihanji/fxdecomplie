@@ -269,17 +269,21 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 int len = readS4(raw, off + 2);
                 String name = cpUtf8(raw, nameIdx);
                 attrs.append("  ").append(name);
-                if ("SourceFile".equals(name)) {
-                    int srcIdx = readU2(raw, off + 6);
-                    attrs.append(": #").append(srcIdx).append(" // \"")
-                            .append(escape(cpUtf8(raw, srcIdx))).append('"');
-                } else if ("Signature".equals(name)) {
-                    int sigIdx = readU2(raw, off + 6);
-                    attrs.append(": #").append(sigIdx).append(" // \"")
-                            .append(escape(cpUtf8(raw, sigIdx))).append('"');
-                } else if ("InnerClasses".equals(name)) {
-                    int count = readU2(raw, off + 6);
-                    attrs.append(": ").append(count).append(" entries");
+                switch (name) {
+                    case "SourceFile" -> {
+                        int srcIdx = readU2(raw, off + 6);
+                        attrs.append(": #").append(srcIdx).append(" // \"")
+                                .append(escape(cpUtf8(raw, srcIdx))).append('"');
+                    }
+                    case "Signature" -> {
+                        int sigIdx = readU2(raw, off + 6);
+                        attrs.append(": #").append(sigIdx).append(" // \"")
+                                .append(escape(cpUtf8(raw, sigIdx))).append('"');
+                    }
+                    case "InnerClasses" -> {
+                        int count = readU2(raw, off + 6);
+                        attrs.append(": ").append(count).append(" entries");
+                    }
                 }
                 attrs.append('\n');
                 off += 6 + len;
@@ -355,11 +359,10 @@ final class BytecodeTextBuilder extends ClassVisitor {
         int maxLocals = readU2(raw, attrOff + 8);
         int codeLen = readS4(raw, attrOff + 10);
         int argsSize = computeArgsSize(methodKey);
-        StringBuilder info = new StringBuilder();
-        info.append(String.format("      stack=%d, locals=%d, args_size=%d\n",
-                maxStack, maxLocals, argsSize));
-        info.append(String.format("      code_length=%d (0x%x)\n", codeLen, codeLen));
-        return info.toString();
+        String info = String.format("      stack=%d, locals=%d, args_size=%d\n",
+                maxStack, maxLocals, argsSize) +
+                String.format("      code_length=%d (0x%x)\n", codeLen, codeLen);
+        return info;
     }
 
     /** 根据方法描述符计算 args_size（参数占用的寄存器字数，long/double 占2，实例方法 +1 给 this） */
@@ -404,12 +407,8 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
         // 非 static 方法加 this
         String name = methodKey.substring(0, paren);
-        if (!"<init>".equals(name) && !"<clinit>".equals(name)) {
-            // 无法从 methodKey 判断是否 static，保守 +1
-            size++;
-        } else {
-            size++; // <init> has this
-        }
+        // <init> has this
+        size++;
         return Math.max(1, size);
     }
 
@@ -798,8 +797,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
 
         private static int readS2(byte[] b, int off) {
-            short val = (short) (((b[off] & 0xFF) << 8) | (b[off + 1] & 0xFF));
-            return val;
+            return (short) (((b[off] & 0xFF) << 8) | (b[off + 1] & 0xFF));
         }
 
         @Override

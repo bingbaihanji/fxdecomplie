@@ -15,20 +15,6 @@ import java.util.Map;
  */
 public final class VineflowerParameters {
 
-    private VineflowerParameters() { throw new AssertionError("constants"); }
-
-    private static DecompilerParameter of(String vfKey, String defaultValue) {
-        return new DecompilerParameter(vfKey, ParamType.BOOLEAN, defaultValue,
-                "engine.vineflower." + vfKey, "engine.vineflower." + vfKey + ".help",
-                Category.COMMON, null);
-    }
-
-    private static DecompilerParameter adv(String vfKey, String defaultValue) {
-        return new DecompilerParameter(vfKey, ParamType.BOOLEAN, defaultValue,
-                "engine.vineflower." + vfKey, "engine.vineflower." + vfKey + ".help",
-                Category.ADVANCED, null);
-    }
-
     public static final List<DecompilerParameter> PARAMETERS = List.of(
             of("din", "1"),
             of("dgs", "1"),
@@ -92,7 +78,6 @@ public final class VineflowerParameters {
                     "engine.vineflower.ind", "engine.vineflower.ind.help",
                     Category.ADVANCED, null)
     );
-
     public static final Map<String, String> KEY_LABELS = Map.ofEntries(
             Map.entry("din", "Decompile Inner"),
             Map.entry("dgs", "Decompile Generic Signatures"),
@@ -146,4 +131,20 @@ public final class VineflowerParameters {
             Map.entry("pll", "Preferred Line Length"),
             Map.entry("ind", "Indent String")
     );
+
+    private VineflowerParameters() {
+        throw new AssertionError("constants");
+    }
+
+    private static DecompilerParameter of(String vfKey, String defaultValue) {
+        return new DecompilerParameter(vfKey, ParamType.BOOLEAN, defaultValue,
+                "engine.vineflower." + vfKey, "engine.vineflower." + vfKey + ".help",
+                Category.COMMON, null);
+    }
+
+    private static DecompilerParameter adv(String vfKey, String defaultValue) {
+        return new DecompilerParameter(vfKey, ParamType.BOOLEAN, defaultValue,
+                "engine.vineflower." + vfKey, "engine.vineflower." + vfKey + ".help",
+                Category.ADVANCED, null);
+    }
 }

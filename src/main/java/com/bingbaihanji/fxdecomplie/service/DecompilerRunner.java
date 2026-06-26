@@ -36,6 +36,10 @@ public final class DecompilerRunner {
     private static volatile int consecutiveTimeouts;
     private static volatile ThreadPoolExecutor executor = createExecutor();
 
+    private DecompilerRunner() {
+        throw new AssertionError("utility class");
+    }
+
     private static ThreadPoolExecutor createExecutor() {
         ThreadPoolExecutor ex = new ThreadPoolExecutor(
                 MAX_DECOMPILER_THREADS,
@@ -59,10 +63,6 @@ public final class DecompilerRunner {
         executor = createExecutor();
         old.shutdownNow();
         logger.info("检测到 {} 次连续超时，已重建反编译线程池", CONSECUTIVE_TIMEOUT_THRESHOLD);
-    }
-
-    private DecompilerRunner() {
-        throw new AssertionError("utility class");
     }
 
     public static String decompileWithTimeout(String classFilePath, byte[] classBytes,
@@ -136,9 +136,7 @@ public final class DecompilerRunner {
             return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
                     + "\n" + I18nUtil.getString("decompile.timeoutHint");
         } catch (InterruptedException e) {
-            if (future != null) {
-                future.cancel(true);
-            }
+            future.cancel(true);
             closeContext(context);
             Thread.currentThread().interrupt();
             throw new RuntimeException("反编译被中断: " + classFilePath, e);

@@ -124,10 +124,10 @@ public class AppConfig {
     private static void backupCorruptedConfig() {
         try {
             if (Files.exists(CONFIG_FILE)) {
-                Path backup = Path.of(CONFIG_FILE.toString() + ".bak");
+                Path backup = Path.of(CONFIG_FILE + ".bak");
                 // 若已存在同名备份，追加序号避免覆盖
                 for (int i = 2; i <= 100 && Files.exists(backup); i++) {
-                    backup = Path.of(CONFIG_FILE.toString() + ".bak." + i);
+                    backup = Path.of(CONFIG_FILE + ".bak." + i);
                 }
                 Files.move(CONFIG_FILE, backup);
                 logger.info("已备份损坏的配置文件到: {}", backup);

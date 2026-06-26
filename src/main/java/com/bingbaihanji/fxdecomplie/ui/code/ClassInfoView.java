@@ -154,15 +154,35 @@ public final class ClassInfoView {
         int paren = descriptor.lastIndexOf(')');
         if (paren < 0 || paren + 1 >= descriptor.length()) return "void";
         String ret = descriptor.substring(paren + 1);
-        if ("V".equals(ret)) return "void";
-        if ("I".equals(ret)) return "int";
-        if ("J".equals(ret)) return "long";
-        if ("Z".equals(ret)) return "boolean";
-        if ("F".equals(ret)) return "float";
-        if ("D".equals(ret)) return "double";
-        if ("C".equals(ret)) return "char";
-        if ("B".equals(ret)) return "byte";
-        if ("S".equals(ret)) return "short";
+        switch (ret) {
+            case "V" -> {
+                return "void";
+            }
+            case "I" -> {
+                return "int";
+            }
+            case "J" -> {
+                return "long";
+            }
+            case "Z" -> {
+                return "boolean";
+            }
+            case "F" -> {
+                return "float";
+            }
+            case "D" -> {
+                return "double";
+            }
+            case "C" -> {
+                return "char";
+            }
+            case "B" -> {
+                return "byte";
+            }
+            case "S" -> {
+                return "short";
+            }
+        }
         if (ret.startsWith("L")) return ret.substring(1, ret.length() - 1).replace('/', '.');
         if (ret.startsWith("[")) return ret.replace('/', '.');
         return ret;

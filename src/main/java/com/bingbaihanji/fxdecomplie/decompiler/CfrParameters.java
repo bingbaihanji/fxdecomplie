@@ -14,28 +14,6 @@ import java.util.List;
  */
 public final class CfrParameters {
 
-    private CfrParameters() { throw new AssertionError("constants"); }
-
-    private static DecompilerParameter of(String key, String defaultValue) {
-        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
-                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.COMMON, null);
-    }
-
-    private static DecompilerParameter adv(String key, String defaultValue) {
-        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
-                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
-    }
-
-    private static DecompilerParameter advInt(String key, String defaultValue) {
-        return new DecompilerParameter(key, ParamType.INTEGER, defaultValue,
-                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
-    }
-
-    private static DecompilerParameter advStr(String key, String defaultValue) {
-        return new DecompilerParameter(key, ParamType.STRING, defaultValue,
-                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
-    }
-
     public static final List<DecompilerParameter> PARAMETERS = List.of(
             // -- 常用 20 项 --
             of("decodeenumswitch", "true"),
@@ -120,4 +98,28 @@ public final class CfrParameters {
             advInt("aggressivesizethreshold", "13000"),
             advStr("forceclassfilever", "")
     );
+
+    private CfrParameters() {
+        throw new AssertionError("constants");
+    }
+
+    private static DecompilerParameter of(String key, String defaultValue) {
+        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
+                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.COMMON, null);
+    }
+
+    private static DecompilerParameter adv(String key, String defaultValue) {
+        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
+                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
+    }
+
+    private static DecompilerParameter advInt(String key, String defaultValue) {
+        return new DecompilerParameter(key, ParamType.INTEGER, defaultValue,
+                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
+    }
+
+    private static DecompilerParameter advStr(String key, String defaultValue) {
+        return new DecompilerParameter(key, ParamType.STRING, defaultValue,
+                "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
+    }
 }

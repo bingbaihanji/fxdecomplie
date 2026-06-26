@@ -296,6 +296,16 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /** 判断文件是否为可加载类型（JAR/ZIP/WAR/Class 及目录） */
+    private static boolean isSupportedLoadFile(File file) {
+        if (file.isDirectory()) {
+            return true;
+        }
+        String name = file.getName().toLowerCase(java.util.Locale.ROOT);
+        return name.endsWith(".jar") || name.endsWith(".zip")
+                || name.endsWith(".war") || name.endsWith(".class");
+    }
+
     /** 显示主窗口 */
     public void show(Stage stage) {
         this.stage = stage;
@@ -580,6 +590,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
     }
 
+    // ─── CodeActionHandler 实现 ─────────────────────────────────
+
     /** 弹出导出配置对话框,提交后台导出任务并显示进度 */
     private void doExport(javafx.scene.control.TreeItem<FileTreeNode> rootItem,
                           WorkspaceIndex index, Workspace workspace) {
@@ -649,8 +661,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             BackgroundTasks.cancel(exportTask[0]);
         });
     }
-
-    // ─── CodeActionHandler 实现 ─────────────────────────────────
 
     /** 退出应用 */
     @Override
@@ -1590,6 +1600,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         alert.showAndWait();
     }
 
+    // ── 内部辅助方法 ──
+
     /** 打开设置对话框 */
     @Override
     public void openSettings() {
@@ -1601,8 +1613,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             }
         });
     }
-
-    // ── 内部辅助方法 ──
 
     /** 应用设置对话框确认后的配置变更：切换引擎、更新行号、更新字体 */
     private boolean applySettings(AppConfig updated) {
@@ -1682,6 +1692,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /** 递归遍历文件树,收集所有 .class 节点的完整路径(用于快速打开对话框) */
+
     /** 延迟轮询工作区标签页,等待解编译完成并将 CodeArea 滚动到目标行(最多 2 秒) */
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
         // 最多约 2 秒
@@ -1717,7 +1729,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         delay.play();
     }
 
-    /** 递归遍历文件树,收集所有 .class 节点的完整路径(用于快速打开对话框) */
     /** 递归收集树节点数据(在 FX 线程调用,避免后台线程访问 TreeItem) */
     private void collectTreeNodes(TreeItem<FileTreeNode> item,
                                   java.util.List<FileTreeNode> result) {
@@ -1808,16 +1819,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             view.workspace().putSourceSearchCache(cacheKey, fullSourceCache);
         }
         return fullSourceCache;
-    }
-
-    /** 判断文件是否为可加载类型（JAR/ZIP/WAR/Class 及目录） */
-    private static boolean isSupportedLoadFile(File file) {
-        if (file.isDirectory()) {
-            return true;
-        }
-        String name = file.getName().toLowerCase(java.util.Locale.ROOT);
-        return name.endsWith(".jar") || name.endsWith(".zip")
-                || name.endsWith(".war") || name.endsWith(".class");
     }
 
     /** 加载并打开文件 */

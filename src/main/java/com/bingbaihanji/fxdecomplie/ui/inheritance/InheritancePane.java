@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class InheritancePane extends VBox {
 
     private final TreeView<InheritanceNode> treeView;
-    private OpenHandler openHandler;
     private final AtomicLong loadGeneration = new AtomicLong();
+    private OpenHandler openHandler;
 
     public InheritancePane() {
         setPadding(new Insets(4));
