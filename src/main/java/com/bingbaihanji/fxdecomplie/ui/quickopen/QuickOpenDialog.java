@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.quickopen;
 
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;

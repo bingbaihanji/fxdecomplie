@@ -13,7 +13,7 @@ import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;

@@ -50,8 +50,11 @@ public class ProcyonDecompiler implements Decompiler {
                 case "mergeVariables" -> settings.setMergeVariables(Boolean.parseBoolean(value));
                 case "disableForEachTransforms" -> settings.setDisableForEachTransforms(Boolean.parseBoolean(value));
                 case "textBlockLineMinimum" -> {
-                    try { settings.setTextBlockLineMinimum(Integer.parseInt(value)); }
-                    catch (NumberFormatException ignored) {}
+                    try {
+                        settings.setTextBlockLineMinimum(Integer.parseInt(value));
+                    } catch (NumberFormatException ignored) {
+                        // 非数字值安全忽略，使用 Procyon 默认值
+                    }
                 }
                 case "languageTarget" -> {
                     if (value != null && !value.isBlank()) {

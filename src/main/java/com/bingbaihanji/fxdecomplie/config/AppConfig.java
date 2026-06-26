@@ -68,14 +68,34 @@ public class AppConfig {
                 if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
                     Path parent = jarPath.getParent();
                     if (parent != null) {
-                        return parent;
+                        return appRoot(parent);
                     }
+                } else if (Files.isDirectory(jarPath)) {
+                    return appRoot(jarPath);
                 }
             }
         } catch (Exception ignored) {
             logger.debug("解析应用目录失败，回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
+    }
+
+    private static Path appRoot(Path codeSourceDir) {
+        Path normalized = codeSourceDir.toAbsolutePath().normalize();
+        Path name = normalized.getFileName();
+        if (name != null && "bin".equalsIgnoreCase(name.toString())
+                && normalized.getParent() != null) {
+            return normalized.getParent();
+        }
+        if (name != null && "classes".equalsIgnoreCase(name.toString())) {
+            Path target = normalized.getParent();
+            if (target != null && target.getFileName() != null
+                    && "target".equalsIgnoreCase(target.getFileName().toString())
+                    && target.getParent() != null) {
+                return target.getParent();
+            }
+        }
+        return normalized;
     }
 
     /**
@@ -94,9 +114,27 @@ public class AppConfig {
                 }
             }
         } catch (IOException | com.google.gson.JsonSyntaxException | com.google.gson.JsonIOException e) {
-            logger.warn("加载配置失败,使用默认配置", e);
+            logger.warn("加载配置失败，将备份损坏文件并使用默认配置", e);
+            backupCorruptedConfig();
         }
         return new AppConfig();
+    }
+
+    /** 将损坏的配置文件重命名为 .bak 后缀，便于用户排查与手工恢复 */
+    private static void backupCorruptedConfig() {
+        try {
+            if (Files.exists(CONFIG_FILE)) {
+                Path backup = Path.of(CONFIG_FILE.toString() + ".bak");
+                // 若已存在同名备份，追加序号避免覆盖
+                for (int i = 2; i <= 100 && Files.exists(backup); i++) {
+                    backup = Path.of(CONFIG_FILE.toString() + ".bak." + i);
+                }
+                Files.move(CONFIG_FILE, backup);
+                logger.info("已备份损坏的配置文件到: {}", backup);
+            }
+        } catch (IOException moveEx) {
+            logger.warn("备份损坏配置文件失败", moveEx);
+        }
     }
 
     public int schemaVersion() {

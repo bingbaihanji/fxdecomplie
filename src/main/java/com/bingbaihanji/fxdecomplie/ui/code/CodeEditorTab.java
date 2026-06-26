@@ -3,8 +3,9 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.*;
 import jfx.incubator.scene.control.richtext.CodeArea;
@@ -281,6 +282,12 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.replaceSourcePanel(source, srcPanel);
         codeArea = srcPanel.getCodeArea();
         sourceReady = true;
+
+        // 反编译失败/超时时自动切换到字节码视图，避免用户面对纯错误文本
+        if (DecompilerRunner.isFailureOutput(source)) {
+            codeViewPanel.getDeck().setSelected(CodeContentDeck.TAB_BYTECODE);
+        }
+
         updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
     }
 

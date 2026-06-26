@@ -9,7 +9,7 @@ import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -416,6 +416,12 @@ public final class ClassTabOpener {
      */
     public void refreshCurrentClassTab(Workspace workspace, TabPane codeTabPane, CodeEditorTab currentTab,
                                        DecompilerTypeEnum engine, boolean lineNumbersEnabled) {
+        refreshCurrentClassTab(workspace, codeTabPane, currentTab, engine, lineNumbersEnabled, true);
+    }
+
+    public void refreshCurrentClassTab(Workspace workspace, TabPane codeTabPane, CodeEditorTab currentTab,
+                                       DecompilerTypeEnum engine, boolean lineNumbersEnabled,
+                                       boolean bypassCache) {
         String fullPath = currentTab.getOpenFile().fullPath();
         FileTreeNode node = workspace.findNodeByPath(fullPath);
         if (node == null) {
@@ -447,7 +453,14 @@ public final class ClassTabOpener {
                 }
 
                 String internalName = fullPath.replace(".class", "");
-                DecompileResult result = decompileWithCache(internalName, engine, bytes, node, workspace,
+                if (bypassCache) {
+                    String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
+                    decompileCache.invalidate(wsKey, internalName);
+                }
+                DecompileResult result = bypassCache
+                        ? decompileFresh(internalName, engine, bytes, node, workspace,
+                        () -> isRequestCurrent(requestId, true))
+                        : decompileWithCache(internalName, engine, bytes, node, workspace,
                         () -> isRequestCurrent(requestId, true));
                 if (!isRequestCurrent(requestId, true)) {
                     return;
@@ -905,7 +918,7 @@ public final class ClassTabOpener {
             if (!active.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
-            if (!DecompilerRunner.isTransientFailureOutput(sourceCode)) {
+            if (!DecompilerRunner.isFailureOutput(sourceCode)) {
                 // ---- 保存反编译结果到 L2(即时) ----
                 decompileCache.put(wsKey, internalName, effectiveEngine, optionsHash, sourceCode);
 
@@ -924,6 +937,40 @@ public final class ClassTabOpener {
         return new DecompileResult(sourceCode, metadata, effectiveEngine);
     }
 
+    /** 强制重新反编译当前类，跳过 L2/L3 读取；成功后用新结果回填缓存。 */
+    private DecompileResult decompileFresh(String internalName, DecompilerTypeEnum engine,
+                                           byte[] bytes, FileTreeNode node, Workspace workspace,
+                                           BooleanSupplier active) {
+        DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
+        var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
+        String optionsHash = DecompilerOptions.hash(engineOptions);
+        String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
+        decompileCache.invalidate(wsKey, internalName);
+        DiskCodeCache.invalidate(wsKey, internalName);
+
+        if (!active.getAsBoolean()) {
+            throw new CancellationException("反编译请求已被替换");
+        }
+        Thread.interrupted();
+        DecompilerContext context = DecompilerRunner.contextForWorkspace(workspace, engineOptions);
+        String sourceCode = DecompilerRunner.decompileWithTimeout(node.getFullPath(), bytes,
+                effectiveEngine, context, active, INTERACTIVE_TIMEOUT_SECONDS);
+        if (!active.getAsBoolean()) {
+            throw new CancellationException("反编译请求已被替换");
+        }
+        if (!DecompilerRunner.isFailureOutput(sourceCode)) {
+            decompileCache.put(wsKey, internalName, effectiveEngine, optionsHash, sourceCode);
+            final String finalSource = sourceCode;
+            BackgroundTasks.run("DiskCache-" + internalName, () ->
+                    DiskCodeCache.save(wsKey, internalName, effectiveEngine, optionsHash, finalSource));
+        }
+
+        CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
+                ? OutlineParser.extractMetadata(sourceCode)
+                : new CodeMetadata(java.util.Map.of());
+        return new DecompileResult(sourceCode, metadata, effectiveEngine);
+    }
+
     private DecompilerTypeEnum effectiveEngineFor(byte[] bytes, DecompilerTypeEnum requestedEngine) {
         if (requestedEngine == null) {
             return DecompilerTypeEnum.VINEFLOWER;
@@ -936,12 +983,10 @@ public final class ClassTabOpener {
         return major >= 65 ? DecompilerTypeEnum.VINEFLOWER : requestedEngine;
     }
 
-    /** 显示错误弹窗 */
+    /** 显示错误弹窗，优先以焦点窗口为 owner */
     private void showAlert(String title, String message) {
         Runnable action = () -> {
-            javafx.stage.Window owner = javafx.stage.Window.getWindows().stream()
-                    .filter(javafx.stage.Window::isShowing)
-                    .findFirst().orElse(null);
+            javafx.stage.Window owner = resolveOwnerWindow();
             DialogHelper.showError(owner, title, message);
         };
         if (Platform.isFxApplicationThread()) {
@@ -949,6 +994,30 @@ public final class ClassTabOpener {
         } else {
             Platform.runLater(action);
         }
+    }
+
+    /** 解析错误弹窗的父窗口：优先焦点窗口，其次第一个可见窗口 */
+    private static javafx.stage.Window resolveOwnerWindow() {
+        // 尝试从焦点节点反查所属窗口
+        javafx.scene.Scene scene = javafx.stage.Window.getWindows().stream()
+                .filter(w -> w instanceof javafx.stage.Stage s && s.isShowing())
+                .findFirst()
+                .map(w -> ((javafx.stage.Stage) w).getScene())
+                .orElse(null);
+        if (scene != null) {
+            javafx.scene.Node focused = scene.getFocusOwner();
+            if (focused != null) {
+                javafx.stage.Window owner = focused.getScene().getWindow();
+                if (owner != null && owner.isShowing()) {
+                    return owner;
+                }
+            }
+            return scene.getWindow();
+        }
+        // 最终回退：取第一个可见窗口
+        return javafx.stage.Window.getWindows().stream()
+                .filter(javafx.stage.Window::isShowing)
+                .findFirst().orElse(null);
     }
 
     private WorkspaceIndex workspaceIndexForBackground(Workspace workspace) {

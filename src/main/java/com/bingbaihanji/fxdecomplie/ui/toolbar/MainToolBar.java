@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.toolbar;
 
 import com.bingbaihanji.fxdecomplie.ui.menu.EditActions;
 import com.bingbaihanji.fxdecomplie.ui.menu.FileActions;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;

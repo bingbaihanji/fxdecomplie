@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.util.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -90,7 +91,7 @@ public class StatusBar extends HBox {
     /** 更新当前反编译引擎显示 */
     public void setEngine(String engine) {
         engineLabel.setText(engine == null || engine.isBlank() ? ""
-                : com.bingbaihanji.fxdecomplie.utils.I18nUtil.getString("status.engine", engine));
+                : I18nUtil.getString("status.currentEngine", engine));
     }
 
     /** 更新当前任务提示 */

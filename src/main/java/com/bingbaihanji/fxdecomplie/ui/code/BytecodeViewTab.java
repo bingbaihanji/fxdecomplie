@@ -35,7 +35,7 @@ public final class BytecodeViewTab {
         LineNumberGutter.setEnabled(codeArea, true);
 
         if (classBytes == null) {
-            codeArea.setText("// " + com.bingbaihanji.fxdecomplie.utils.I18nUtil.getString("bytecode.notavailable"));
+            codeArea.setText("// " + com.bingbaihanji.util.I18nUtil.getString("bytecode.notavailable"));
             return codeArea;
         }
 
@@ -49,7 +49,7 @@ public final class BytecodeViewTab {
             pw.flush();
             codeArea.setText(sw.toString());
         } catch (Exception e) {
-            codeArea.setText("// " + com.bingbaihanji.fxdecomplie.utils.I18nUtil.getString("bytecode.parseFailed") + ": " + e.getMessage()
+            codeArea.setText("// " + com.bingbaihanji.util.I18nUtil.getString("bytecode.parseFailed") + ": " + e.getMessage()
                     + "\n// Falling back to class metadata because ASM cannot parse this bytecode version.\n\n"
                     + ClassFileParser.summary(classBytes));
         }

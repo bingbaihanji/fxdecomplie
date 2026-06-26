@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,22 +28,37 @@ public final class DecompilerRunner {
             DecompilerTypeEnum.PROCYON
     };
     private static final int TIMEOUT_SECONDS = 30;
-    private static final int MAX_DECOMPILER_THREADS = Math.clamp(Runtime.getRuntime().availableProcessors() / 2, 1, 2);
+    /** 连续超时阈值：超过后重建线程池以丢弃可能僵死的线程 */
+    private static final int CONSECUTIVE_TIMEOUT_THRESHOLD = 3;
+    private static final int MAX_DECOMPILER_THREADS = Math.clamp(
+            Runtime.getRuntime().availableProcessors() / 2, 1, 2);
     private static final AtomicInteger THREAD_ID = new AtomicInteger();
-    private static final ThreadPoolExecutor EXECUTOR = new ThreadPoolExecutor(
-            MAX_DECOMPILER_THREADS,
-            MAX_DECOMPILER_THREADS,
-            60L,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(MAX_DECOMPILER_THREADS * 2),
-            r -> {
-                Thread t = new Thread(r, "decompiler-" + THREAD_ID.incrementAndGet());
-                t.setDaemon(true);
-                return t;
-            });
+    private static volatile int consecutiveTimeouts;
+    private static volatile ThreadPoolExecutor executor = createExecutor();
 
-    static {
-        EXECUTOR.allowCoreThreadTimeOut(true);
+    private static ThreadPoolExecutor createExecutor() {
+        ThreadPoolExecutor ex = new ThreadPoolExecutor(
+                MAX_DECOMPILER_THREADS,
+                MAX_DECOMPILER_THREADS,
+                60L,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(MAX_DECOMPILER_THREADS * 2),
+                r -> {
+                    Thread t = new Thread(r,
+                            "decompiler-" + THREAD_ID.incrementAndGet());
+                    t.setDaemon(true);
+                    return t;
+                });
+        ex.allowCoreThreadTimeOut(true);
+        return ex;
+    }
+
+    /** 重建反编译线程池，丢弃可能僵死（被取消但未退出）的守护线程 */
+    private static synchronized void rebuildExecutor() {
+        ThreadPoolExecutor old = executor;
+        executor = createExecutor();
+        old.shutdownNow();
+        logger.info("检测到 {} 次连续超时，已重建反编译线程池", CONSECUTIVE_TIMEOUT_THRESHOLD);
     }
 
     private DecompilerRunner() {
@@ -82,7 +97,7 @@ public final class DecompilerRunner {
         Future<String> future = null;
         int timeout = Math.max(1, timeoutSeconds);
         try {
-            future = EXECUTOR.submit(() -> {
+            future = executor.submit(() -> {
                 try {
                     return decompileWithFallback(classFilePath, classBytes, engine, context);
                 } finally {
@@ -93,6 +108,8 @@ public final class DecompilerRunner {
             if (!requestActive.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
+            // 反编译成功，重置连续超时计数器
+            consecutiveTimeouts = 0;
             return source;
         } catch (RejectedExecutionException e) {
             closeContext(context);
@@ -107,6 +124,15 @@ public final class DecompilerRunner {
                 // 任务可能尚未退出，忽略
             }
             closeContext(context);
+            // 连续超时超过阈值时重建线程池，丢弃可能僵死的守护线程
+            int timeouts = ++consecutiveTimeouts;
+            if (timeouts >= CONSECUTIVE_TIMEOUT_THRESHOLD) {
+                rebuildExecutor();
+                consecutiveTimeouts = 0;
+                return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
+                        + "\n" + I18nUtil.getString("decompile.timeoutHint")
+                        + "\n" + I18nUtil.getString("decompile.busyRecovered");
+            }
             return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
                     + "\n" + I18nUtil.getString("decompile.timeoutHint");
         } catch (InterruptedException e) {
@@ -132,6 +158,9 @@ public final class DecompilerRunner {
         return DecompilerContext.singleUse(classPath::getClassBytes, options, classPath);
     }
 
+    /**
+     * 瞬时失败（繁忙/超时），此类输出不应缓存，但提示用户可重试。
+     */
     public static boolean isTransientFailureOutput(String source) {
         if (source == null || source.isBlank()) {
             return true;
@@ -140,11 +169,35 @@ public final class DecompilerRunner {
         return normalized.contains("decompiler is busy")
                 || normalized.contains("反编译器正忙")
                 || normalized.contains("decompilation timed out")
-                || normalized.contains("反编译超时")
-                || normalized.contains("jd-core error")
-                || normalized.contains("jd-core decompile failed")
-                || normalized.startsWith("// decompile failed")
-                || normalized.startsWith("// 反编译失败");
+                || normalized.contains("反编译超时");
+    }
+
+    /**
+     * 任意失败输出（瞬时 + 永久），统一判定入口。
+     * 缓存写入前调用此方法可以避免把错误文本当作源码持久化。
+     */
+    public static boolean isFailureOutput(String source) {
+        if (source == null || source.isBlank()) {
+            return true;
+        }
+        if (isTransientFailureOutput(source)) {
+            return true;
+        }
+        String trimmed = source.trim();
+        // JD-Core 返回的特殊失败文本
+        if (trimmed.startsWith("// JD-Core Error:")
+                || trimmed.startsWith("// JD-Core decompile failed")) {
+            return true;
+        }
+        // 引擎级失败前缀
+        return trimmed.startsWith("// Vineflower Error:")
+                || trimmed.startsWith("// CFR Error:")
+                || trimmed.startsWith("// Procyon Error:")
+                || trimmed.startsWith("// CFR decompile failed")
+                || trimmed.startsWith("// Procyon decompile failed")
+                || trimmed.startsWith("// Vineflower decompile failed")
+                || trimmed.startsWith("// Decompile failed")
+                || trimmed.startsWith("// 反编译失败");
     }
 
     private static String decompileWithFallback(String classFilePath, byte[] classBytes,
@@ -156,26 +209,48 @@ public final class DecompilerRunner {
                 ? DecompilerContext.EMPTY : context;
         String source = decompileWithEngine(classFilePath, classBytes,
                 selectedEngine, effectiveContext);
-        if (selectedEngine != DecompilerTypeEnum.JD || !isJdFailureOutput(source)) {
+
+        // 仅 JD-Core 失败时走回退（Vineflower/CFR/Procyon 的 "Error:" 输出也视为失败）
+        if (!isEngineFailureOutput(source, selectedEngine)) {
             return source;
         }
 
-        String jdReason = extractJdFailureReason(source);
+        String reason = extractFailureReason(source);
         for (DecompilerTypeEnum fallback : JD_FALLBACK_ENGINES) {
+            if (fallback == selectedEngine) {
+                continue;
+            }
             try {
                 String fallbackSource = decompileWithEngine(classFilePath, classBytes,
                         fallback, effectiveContext);
                 if (fallbackSource != null && !fallbackSource.isBlank()
                         && !isDecompilerFailureOutput(fallbackSource)) {
-                    logger.warn("JD-Core 反编译 {} 失败;使用 {} 回退引擎原因: {}",
-                            classFilePath, fallback, jdReason);
-                    return withFallbackNotice(fallbackSource, fallback, jdReason);
+                    logger.warn("{} 反编译 {} 失败;使用 {} 回退引擎原因: {}",
+                            selectedEngine, classFilePath, fallback, reason);
+                    return withFallbackNotice(fallbackSource, fallback, reason);
                 }
             } catch (RuntimeException e) {
                 logger.warn("回退反编译器 {} 对 {} 反编译失败", fallback, classFilePath, e);
             }
         }
         return source;
+    }
+
+    /** 判断指定引擎的输出是否为失败结果（含 Vineflower/CFR/Procyon 的 Error 前缀） */
+    private static boolean isEngineFailureOutput(String source, DecompilerTypeEnum engine) {
+        if (source == null) {
+            return true;
+        }
+        if (isDecompilerFailureOutput(source)) {
+            return true;
+        }
+        String trimmed = source.trim();
+        return switch (engine) {
+            case VINEFLOWER -> trimmed.startsWith("// Vineflower Error:");
+            case CFR -> trimmed.startsWith("// CFR Error:");
+            case PROCYON -> trimmed.startsWith("// Procyon Error:");
+            case JD -> isJdFailureOutput(source);
+        };
     }
 
     private static String decompileWithEngine(String classFilePath, byte[] classBytes,
@@ -221,15 +296,16 @@ public final class DecompilerRunner {
                 || isJdFailureOutput(source);
     }
 
-    private static String extractJdFailureReason(String source) {
+    private static String extractFailureReason(String source) {
         if (source == null || source.isBlank()) {
-            return "未知的 JD-Core 错误";
+            return "未知错误";
         }
         String normalized = source.replace("\r\n", "\n");
-        int errorIndex = normalized.indexOf("JD-Core Error:");
-        if (errorIndex < 0) {
-            errorIndex = normalized.indexOf("JD-Core decompile failed");
-        }
+        int errorIndex = findFirst(normalized,
+                "Vineflower Error:", "CFR Error:", "Procyon Error:",
+                "JD-Core Error:", "JD-Core decompile failed",
+                "CFR decompile failed", "Procyon decompile failed",
+                "Vineflower decompile failed", "Decompile failed");
         String reason = errorIndex >= 0 ? normalized.substring(errorIndex) : normalized;
         int lineEnd = reason.indexOf('\n');
         if (lineEnd >= 0) {
@@ -237,6 +313,17 @@ public final class DecompilerRunner {
         }
         reason = reason.replace("*/", "* /").trim();
         return reason.length() > 220 ? reason.substring(0, 220) + "..." : reason;
+    }
+
+    private static int findFirst(String haystack, String... needles) {
+        int best = -1;
+        for (String n : needles) {
+            int idx = haystack.indexOf(n);
+            if (idx >= 0 && (best < 0 || idx < best)) {
+                best = idx;
+            }
+        }
+        return best;
     }
 
     private static String withFallbackNotice(String source, DecompilerTypeEnum fallback,
@@ -255,13 +342,13 @@ public final class DecompilerRunner {
     }
 
     public static void shutdown() {
-        EXECUTOR.shutdown();
+        executor.shutdown();
         try {
-            if (!EXECUTOR.awaitTermination(2, TimeUnit.SECONDS)) {
-                EXECUTOR.shutdownNow();
+            if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
             }
         } catch (InterruptedException e) {
-            EXECUTOR.shutdownNow();
+            executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
     }

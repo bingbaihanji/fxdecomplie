@@ -85,13 +85,11 @@ public final class ExportService {
         // ---- 步骤 1: 树遍历 — 收集所有可导出的类/资源条目 ----
         List<TreeItem<FileTreeNode>> items = collectExportableItems(root, config.exportResources());
         ExportState state = new ExportState(items.size(), onProgress);
-        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
-
         // ---- 步骤 2: 反编译并写入 — 分发到 ZIP 或目录路径 ----
         if (config.format() == ExportConfig.Format.ZIP) {
-            exportAllToZip(items, context, config, commentScope, state, canceled);
+            exportAllToZip(items, index, config, commentScope, state, canceled);
         } else {
-            exportAllToDir(items, context, config, commentScope, state, canceled);
+            exportAllToDir(items, index, config, commentScope, state, canceled);
         }
 
         return new ExportResult(state.totalFiles, state.successCount, state.errors);
@@ -187,7 +185,7 @@ public final class ExportService {
                 || data.getNodeType() == FileTreeNode.NodeTypeEnum.JAVA_FILE));
     }
 
-    private static void exportAllToDir(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
+    private static void exportAllToDir(List<TreeItem<FileTreeNode>> items, WorkspaceIndex index,
                                        ExportConfig config, CommentScope commentScope, ExportState state,
                                        BooleanSupplier canceled)
             throws IOException {
@@ -201,7 +199,7 @@ public final class ExportService {
             FileTreeNode data = item.getValue();
             try {
                 // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
-                ExportContent content = buildExportContent(data, context, config, commentScope);
+                ExportContent content = buildExportContent(data, index, config, commentScope);
                 // ---- 路径验证: 确保输出保持在目标目录内 ----
                 Path target = resolveSafeOutputPath(outputDir, content.relativePath());
                 // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
@@ -229,7 +227,7 @@ public final class ExportService {
         }
     }
 
-    private static void exportAllToZip(List<TreeItem<FileTreeNode>> items, DecompilerContext context,
+    private static void exportAllToZip(List<TreeItem<FileTreeNode>> items, WorkspaceIndex index,
                                        ExportConfig config, CommentScope commentScope, ExportState state,
                                        BooleanSupplier canceled)
             throws IOException {
@@ -255,7 +253,7 @@ public final class ExportService {
                 }
                 FileTreeNode data = item.getValue();
                 try {
-                    ExportContent content = buildExportContent(data, context, config, commentScope);
+                    ExportContent content = buildExportContent(data, index, config, commentScope);
                     String entryName = sanitizeZipEntryName(content.relativePath());
                     entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
                     if (entryName != null) {
@@ -279,10 +277,11 @@ public final class ExportService {
         }
     }
 
-    private static ExportContent buildExportContent(FileTreeNode data, DecompilerContext context,
+    private static ExportContent buildExportContent(FileTreeNode data, WorkspaceIndex index,
                                                     ExportConfig config, CommentScope commentScope)
             throws IOException {
         if (data.isClassFile()) {
+            DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
             byte[] bytes = resolveClassBytes(data, context);
             if (bytes == null) {
                 throw new IllegalStateException(

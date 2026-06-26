@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;

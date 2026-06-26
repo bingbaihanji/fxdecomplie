@@ -7,7 +7,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 每次反编译的上下文在解析依赖类时，应优先使用此上下文而非旧版全局 BytecodeCache
+ * 每次反编译的上下文,通过 WorkspaceIndex 按工作区隔离地解析依赖类字节码
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -15,31 +15,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class DecompilerContext implements AutoCloseable {
 
     public static final DecompilerContext EMPTY = new DecompilerContext(
-            internalName -> null, Map.of(), false);
-    public static final DecompilerContext LEGACY_GLOBAL = new DecompilerContext(
-            internalName -> null, Map.of(), true);
+            internalName -> null, Map.of());
 
     private final ClassBytecodeProvider bytecodeProvider;
     private final Map<String, String> options;
-    private final boolean globalFallbackEnabled;
     private final AutoCloseable closeable;
     private final boolean closeAfterUse;
     private final AtomicBoolean closed = new AtomicBoolean();
 
     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
-                              Map<String, String> options,
-                              boolean globalFallbackEnabled) {
-        this(bytecodeProvider, options, globalFallbackEnabled, null, false);
+                              Map<String, String> options) {
+        this(bytecodeProvider, options, null, false);
     }
 
     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
                               Map<String, String> options,
-                              boolean globalFallbackEnabled,
                               AutoCloseable closeable,
                               boolean closeAfterUse) {
         this.bytecodeProvider = Objects.requireNonNull(bytecodeProvider, "bytecodeProvider");
         this.options = options == null ? Map.of() : Map.copyOf(options);
-        this.globalFallbackEnabled = globalFallbackEnabled;
         this.closeable = closeable;
         this.closeAfterUse = closeAfterUse;
     }
@@ -80,7 +74,7 @@ public final class DecompilerContext implements AutoCloseable {
             }
             return withOptions(options);
         }
-        return new DecompilerContext(bytecodeProvider, options, false, closeable, closeAfterUse);
+        return new DecompilerContext(bytecodeProvider, options, closeable, closeAfterUse);
     }
 
     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index) {
@@ -96,11 +90,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     public static DecompilerContext withOptions(Map<String, String> options) {
-        return new DecompilerContext(internalName -> null, options, false);
-    }
-
-    public static DecompilerContext legacyGlobalWithOptions(Map<String, String> options) {
-        return new DecompilerContext(internalName -> null, options, true);
+        return new DecompilerContext(internalName -> null, options);
     }
 
     public static String normalizeInternalName(String internalName) {
@@ -125,11 +115,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     public byte[] resolveClassBytes(String internalName) {
-        byte[] bytes = getClassBytes(internalName);
-        if (bytes != null) {
-            return bytes;
-        }
-        return globalFallbackEnabled ? BytecodeCache.get(normalizeInternalName(internalName)) : null;
+        return getClassBytes(internalName);
     }
 
     public Map<String, String> options() {

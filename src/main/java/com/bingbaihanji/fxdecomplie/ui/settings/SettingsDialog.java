@@ -9,12 +9,27 @@ import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter.ParamType;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import javafx.scene.control.*;
+import javafx.application.Platform;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -48,13 +63,13 @@ public final class SettingsDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("menu.edit.settings"));
         dialog.setHeaderText(null);
-        dialog.setOnShown(e -> {
+        dialog.setOnShown(e -> Platform.runLater(() -> {
             var window = dialog.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof Stage s) {
                 setDialogIcon(s);
             }
-        });
+        }));
 
         TabPane tabPane = new TabPane();
 
@@ -79,6 +94,12 @@ public final class SettingsDialog {
 
         // 初始化 JSON
         refreshEngineOptionsJson(config, engineOptionsArea);
+        boolean[] jsonDirty = {false};
+        engineOptionsArea.textProperty().addListener((obs, old, value) -> {
+            if (engineOptionsArea.isFocused()) {
+                jsonDirty[0] = true;
+            }
+        });
 
         // 跟踪每个引擎的参数控件 (key → control)，用于 JSON → 面板回填
         Map<String, Map<String, javafx.scene.Node>> engineControlMaps = new LinkedHashMap<>();
@@ -129,17 +150,8 @@ public final class SettingsDialog {
                 try {
                     Map<String, Map<String, String>> allOpts = new Gson().fromJson(jsonText,
                             new TypeToken<Map<String, Map<String, String>>>(){}.getType());
-                    String activeEngine = getActiveEngineName(engineTabPane);
-                    Map<String, String> engineOpts = allOpts.getOrDefault(activeEngine, Map.of());
-                    Map<String, javafx.scene.Node> controls = engineControlMaps.get(activeEngine);
-                    if (controls != null) {
-                        for (var entry : engineOpts.entrySet()) {
-                            javafx.scene.Node ctrl = controls.get(entry.getKey());
-                            if (ctrl != null) {
-                                setControlValue(ctrl, entry.getValue());
-                            }
-                        }
-                    }
+                    applyJsonToControls(allOpts, engineControlMaps);
+                    jsonDirty[0] = false;
                     engineOptionsArea.setStyle("-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
                             + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px;");
                 } catch (Exception ex) {
@@ -303,10 +315,21 @@ public final class SettingsDialog {
 
             // 保存引擎选项（已通过面板控件实时更新到 engineControlMaps + engineOptions Map）
             try {
+                Map<String, Map<String, String>> jsonOpts =
+                        parseEngineOptionsJson(engineOptionsArea.getText());
+                if (jsonDirty[0] || engineOptionsArea.isFocused()) {
+                    applyJsonToControls(jsonOpts, engineControlMaps);
+                    jsonDirty[0] = false;
+                }
+
                 for (var engineEntry : engineControlMaps.entrySet()) {
                     String engName = engineEntry.getKey();
                     Map<String, String> engOpts = config.decompiler().engineOptions()
                             .computeIfAbsent(engName, k -> new LinkedHashMap<>());
+                    engOpts.clear();
+                    if (jsonOpts != null && jsonOpts.get(engName) != null) {
+                        engOpts.putAll(jsonOpts.get(engName));
+                    }
                     for (var ctrlEntry : engineEntry.getValue().entrySet()) {
                         String key = ctrlEntry.getKey();
                         String val = readControlValue(ctrlEntry.getValue());
@@ -314,19 +337,7 @@ public final class SettingsDialog {
                             engOpts.put(key, val);
                         }
                     }
-                }
-                // Also merge JSON area if user manually edited it
-                String json = engineOptionsArea.getText();
-                if (json != null && !json.isBlank()) {
-                    try {
-                        Map<String, Map<String, String>> jsonOpts = new Gson().fromJson(json,
-                                new TypeToken<Map<String, Map<String, String>>>(){}.getType());
-                        for (var entry : jsonOpts.entrySet()) {
-                            config.decompiler().engineOptions()
-                                    .computeIfAbsent(entry.getKey(), k -> new LinkedHashMap<>())
-                                    .putAll(entry.getValue());
-                        }
-                    } catch (Exception ignored) {}
+                    logger.info("引擎选项已保存 [{}]: {} 项", engName, engOpts.size());
                 }
             } catch (Exception ex) {
                 logger.warn("保存引擎选项失败", ex);
@@ -382,7 +393,7 @@ public final class SettingsDialog {
                                                    TextArea jsonArea,
                                                    Map<String, javafx.scene.Node> controlMap) {
         Map<String, String> engineOpts = config.decompiler().engineOptions()
-                .getOrDefault(engineName, new LinkedHashMap<>());
+                .computeIfAbsent(engineName, ignored -> new LinkedHashMap<>());
 
         List<DecompilerParameter> common = new ArrayList<>();
         List<DecompilerParameter> advanced = new ArrayList<>();
@@ -454,6 +465,9 @@ public final class SettingsDialog {
             case BOOLEAN -> {
                 CheckBox cb = new CheckBox();
                 cb.setSelected("true".equalsIgnoreCase(currentValue) || "1".equals(currentValue));
+                boolean numericBool = "1".equals(param.defaultValue())
+                        || "0".equals(param.defaultValue());
+                cb.setUserData(numericBool);
                 cb.selectedProperty().addListener((obs, old, val) -> onChange.run());
                 yield cb;
             }
@@ -492,7 +506,12 @@ public final class SettingsDialog {
     private static void updateEngineOptionFromControl(String key, javafx.scene.Node control,
                                                         Map<String, String> engineOpts) {
         String value = switch (control) {
-            case CheckBox cb -> cb.isSelected() ? "true" : "false";
+            case CheckBox cb -> {
+                boolean numeric = cb.getUserData() instanceof Boolean b && b;
+                yield numeric
+                        ? (cb.isSelected() ? "1" : "0")
+                        : (cb.isSelected() ? "true" : "false");
+            }
             case Spinner<?> sp -> sp.getValue().toString();
             case TextField tf -> tf.getText();
             case ComboBox<?> combo -> {
@@ -514,6 +533,37 @@ public final class SettingsDialog {
             jsonArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ignored) {
             logger.debug("syncJsonFromConfig 序列化失败", ignored);
+        }
+    }
+
+    private static Map<String, Map<String, String>> parseEngineOptionsJson(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            return new Gson().fromJson(json,
+                    new TypeToken<Map<String, Map<String, String>>>(){}.getType());
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static void applyJsonToControls(Map<String, Map<String, String>> jsonOpts,
+                                            Map<String, Map<String, javafx.scene.Node>> engineControlMaps) {
+        if (jsonOpts == null || engineControlMaps == null) {
+            return;
+        }
+        for (var engineEntry : jsonOpts.entrySet()) {
+            Map<String, javafx.scene.Node> controls = engineControlMaps.get(engineEntry.getKey());
+            if (controls == null || engineEntry.getValue() == null) {
+                continue;
+            }
+            for (var optionEntry : engineEntry.getValue().entrySet()) {
+                javafx.scene.Node ctrl = controls.get(optionEntry.getKey());
+                if (ctrl != null) {
+                    setControlValue(ctrl, optionEntry.getValue());
+                }
+            }
         }
     }
 
@@ -557,7 +607,12 @@ public final class SettingsDialog {
 
     private static String readControlValue(javafx.scene.Node control) {
         return switch (control) {
-            case CheckBox cb -> String.valueOf(cb.isSelected());
+            case CheckBox cb -> {
+                boolean numeric = cb.getUserData() instanceof Boolean b && b;
+                yield numeric
+                        ? (cb.isSelected() ? "1" : "0")
+                        : String.valueOf(cb.isSelected());
+            }
             case Spinner<?> sp -> sp.getValue().toString();
             case TextField tf -> tf.getText();
             case ComboBox<?> combo -> {

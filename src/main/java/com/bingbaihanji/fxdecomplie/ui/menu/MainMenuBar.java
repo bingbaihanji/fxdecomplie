@@ -1,11 +1,13 @@
 package com.bingbaihanji.fxdecomplie.ui.menu;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 主菜单栏组件,提供文件、编辑、视图、引擎、主题和帮助菜单
@@ -14,6 +16,9 @@ import java.util.List;
  * @date 2026-06-17
  */
 public class MainMenuBar extends MenuBar {
+
+    private final Map<DecompilerTypeEnum, RadioMenuItem> engineItems =
+            new EnumMap<>(DecompilerTypeEnum.class);
 
     /**
      * @param actions       菜单动作回调
@@ -152,7 +157,16 @@ public class MainMenuBar extends MenuBar {
         item.setToggleGroup(group);
         item.setSelected(currentEngine == type);
         item.setOnAction(event -> actions.selectEngine(type));
+        engineItems.put(type, item);
         return item;
+    }
+
+    /** 同步外部设置变更后的引擎菜单选中状态 */
+    public void setSelectedEngine(DecompilerTypeEnum engine) {
+        RadioMenuItem item = engineItems.get(engine);
+        if (item != null) {
+            item.setSelected(true);
+        }
     }
 
     /** 创建带快捷键的菜单项 */

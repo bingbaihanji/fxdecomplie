@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -9,40 +8,40 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+/**
+ * DecompilerContext 单元测试 —— 验证工作区隔离的依赖类字节码解析
+ *
+ * @author bingbaihanji
+ * @date 2026-06-27
+ */
 class DecompilerContextTest {
 
-    @AfterEach
-    void clearGlobalCache() {
-        BytecodeCache.clear();
-    }
-
     @Test
-    void resolvesWorkspaceBytesBeforeGlobalCache() {
+    void resolvesClassBytesFromProvider() {
         byte[] workspaceBytes = {1, 2, 3};
-        byte[] globalBytes = {9, 9, 9};
-        BytecodeCache.put("com/example/Demo", globalBytes);
 
         DecompilerContext context = DecompilerContext.of(internalName ->
                 "com/example/Demo".equals(internalName) ? workspaceBytes : null);
 
-        assertArrayEquals(workspaceBytes, context.resolveClassBytes("com/example/Demo.class"));
+        assertArrayEquals(workspaceBytes,
+                context.resolveClassBytes("com/example/Demo.class"));
     }
 
     @Test
-    void emptyContextDoesNotFallbackToGlobalCache() {
-        byte[] globalBytes = {4, 5, 6};
-        BytecodeCache.put("com/example/Legacy", globalBytes);
-
-        assertNull(DecompilerContext.EMPTY.resolveClassBytes("com/example/Legacy.class"));
+    void emptyContextReturnsNull() {
+        assertNull(DecompilerContext.EMPTY.resolveClassBytes("com/example/NotFound.class"));
     }
 
     @Test
-    void legacyContextCanFallbackToGlobalCache() {
-        byte[] globalBytes = {4, 5, 6};
-        BytecodeCache.put("com/example/Legacy", globalBytes);
+    void resolvesClassBytesWithAutoNormalization() {
+        byte[] workspaceBytes = {7, 8, 9};
 
-        assertArrayEquals(globalBytes, DecompilerContext.LEGACY_GLOBAL
-                .resolveClassBytes("com/example/Legacy.class"));
+        DecompilerContext context = DecompilerContext.of(internalName ->
+                "com/example/Foo".equals(internalName) ? workspaceBytes : null);
+
+        // 带 .class 后缀和反斜杠的路径应自动归一化
+        assertArrayEquals(workspaceBytes,
+                context.resolveClassBytes("com\\example\\Foo.class"));
     }
 
     @Test

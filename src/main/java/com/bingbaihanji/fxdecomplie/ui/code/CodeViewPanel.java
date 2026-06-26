@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.control.CheckBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;

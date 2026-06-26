@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.io;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
+//import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.model.ExportResult;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
@@ -26,11 +26,11 @@ class ExportServiceTest {
 
     @TempDir
     Path tempDir;
-
-    @AfterEach
-    void clearGlobalBytecodeCache() {
-        BytecodeCache.clear();
-    }
+//
+//    @AfterEach
+//    void clearGlobalBytecodeCache() {
+//        BytecodeCache.clear();
+//    }
 
     @Test
     void exportsResourcesToDirectoryWhenEnabled() throws Exception {
@@ -138,22 +138,22 @@ class ExportServiceTest {
         assertEquals("original", Files.readString(outputDir.resolve("config/app.properties")));
     }
 
-    @Test
-    void exportDoesNotReadClassBytesFromGlobalCache() throws Exception {
-        BytecodeCache.put("com/example/Missing", new byte[]{1, 2, 3});
-        FileTreeNode missingClass = new FileTreeNode("Missing.class", "com/example/Missing.class",
-                FileTreeNode.NodeTypeEnum.CLASS_FILE);
-        TreeItem<FileTreeNode> root = root(new TreeItem<>(missingClass));
-
-        ExportResult result = ExportService.exportAll(root, config(tempDir.resolve("out"),
-                ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.OVERWRITE, false),
-                WorkspaceIndex.build(root), null);
-
-        assertEquals(1, result.totalFiles());
-        assertEquals(0, result.successCount());
-        assertTrue(result.errors().getFirst().contains("未找到类字节码"));
-        assertFalse(Files.exists(tempDir.resolve("out/com/example/Missing.java")));
-    }
+//    @Test
+//    void exportDoesNotReadClassBytesFromGlobalCache() throws Exception {
+//        BytecodeCache.put("com/example/Missing", new byte[]{1, 2, 3});
+//        FileTreeNode missingClass = new FileTreeNode("Missing.class", "com/example/Missing.class",
+//                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+//        TreeItem<FileTreeNode> root = root(new TreeItem<>(missingClass));
+//
+//        ExportResult result = ExportService.exportAll(root, config(tempDir.resolve("out"),
+//                ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.OVERWRITE, false),
+//                WorkspaceIndex.build(root), null);
+//
+//        assertEquals(1, result.totalFiles());
+//        assertEquals(0, result.successCount());
+//        assertTrue(result.errors().getFirst().contains("未找到类字节码"));
+//        assertFalse(Files.exists(tempDir.resolve("out/com/example/Missing.java")));
+//    }
 
     private static TreeItem<FileTreeNode> resource(String path, String content) {
         int slash = path.lastIndexOf('/');

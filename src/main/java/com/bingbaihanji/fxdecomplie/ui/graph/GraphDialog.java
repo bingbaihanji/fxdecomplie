@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.graph;
 
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.Platform;
 import javafx.scene.Node;

@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.search;
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.SearchService;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;

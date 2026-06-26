@@ -40,7 +40,10 @@ public class DecompileCache {
     }
 
     public void invalidate(String workspaceKey, String internalName) {
-        cache.keySet().removeIf(k -> k.startsWith(workspaceKey + "#" + internalName + "#"));
+        String prefix = workspaceKey + "#" + internalName + "#";
+        synchronized (cache) {
+            cache.keySet().removeIf(k -> k.startsWith(prefix));
+        }
     }
 
     public void clear() {

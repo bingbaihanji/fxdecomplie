@@ -71,6 +71,39 @@ public final class DiskCodeCache {
         }
     }
 
+    /** 删除指定工作区和内部名称的所有引擎/选项缓存文件 */
+    public static void invalidate(String workspaceHash, String internalName) {
+        if (workspaceHash == null || internalName == null) {
+            return;
+        }
+        String safeWorkspace = sanitizePathPart(workspaceHash);
+        String safeName = sanitizePathPart(internalName);
+        Path dir = CACHE_ROOT.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWorkspace);
+        if (!Files.exists(dir)) {
+            return;
+        }
+        try (var engineDirs = Files.list(dir)) {
+            engineDirs.filter(Files::isDirectory).forEach(engineDir -> {
+                try (var files = Files.list(engineDir)) {
+                    files.filter(f -> {
+                        String fname = f.getFileName().toString();
+                        return fname.startsWith(safeName + ".");
+                    }).forEach(f -> {
+                        try {
+                            Files.deleteIfExists(f);
+                        } catch (IOException ignored) {
+                            // 删除单个缓存文件失败不阻塞其余操作
+                        }
+                    });
+                } catch (IOException ignored) {
+                    // 目录不可读时跳过
+                }
+            });
+        } catch (IOException ignored) {
+            // 工作区目录不可读时跳过
+        }
+    }
+
     public static void cleanAll() {
         try {
             if (Files.exists(CACHE_ROOT)) {

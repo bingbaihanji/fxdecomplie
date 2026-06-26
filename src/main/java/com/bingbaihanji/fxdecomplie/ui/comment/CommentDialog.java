@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.comment;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;

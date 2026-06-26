@@ -51,15 +51,37 @@ public final class FxDecompilerApp {
             var codeSource = FxDecompilerApp.class.getProtectionDomain().getCodeSource();
             if (codeSource != null && codeSource.getLocation() != null) {
                 Path jarPath = Path.of(codeSource.getLocation().toURI());
-                Path parent = jarPath.getParent();
-                if (parent != null) {
-                    return parent;
+                if (java.nio.file.Files.isDirectory(jarPath)) {
+                    return appRoot(jarPath);
+                } else {
+                    Path parent = jarPath.getParent();
+                    if (parent != null) {
+                        return appRoot(parent);
+                    }
                 }
             }
         } catch (Exception ignored) {
             logger.debug("解析应用目录失败，回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
+    }
+
+    private static Path appRoot(Path codeSourceDir) {
+        Path normalized = codeSourceDir.toAbsolutePath().normalize();
+        Path name = normalized.getFileName();
+        if (name != null && "bin".equalsIgnoreCase(name.toString())
+                && normalized.getParent() != null) {
+            return normalized.getParent();
+        }
+        if (name != null && "classes".equalsIgnoreCase(name.toString())) {
+            Path target = normalized.getParent();
+            if (target != null && target.getFileName() != null
+                    && "target".equalsIgnoreCase(target.getFileName().toString())
+                    && target.getParent() != null) {
+                return target.getParent();
+            }
+        }
+        return normalized;
     }
 
     public static void main(String[] args) {
@@ -200,9 +222,9 @@ public final class FxDecompilerApp {
 
         private void applyConfiguredLocale() {
             if ("en".equalsIgnoreCase(config.language())) {
-                com.bingbaihanji.fxdecomplie.utils.I18nUtil.switchLocale(Locale.ENGLISH);
+                com.bingbaihanji.util.I18nUtil.switchLocale(Locale.ENGLISH);
             } else if ("zh-CN".equalsIgnoreCase(config.language())) {
-                com.bingbaihanji.fxdecomplie.utils.I18nUtil.switchLocale(Locale.SIMPLIFIED_CHINESE);
+                com.bingbaihanji.util.I18nUtil.switchLocale(Locale.SIMPLIFIED_CHINESE);
             }
         }
 

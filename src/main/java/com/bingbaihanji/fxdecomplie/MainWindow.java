@@ -23,7 +23,7 @@ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
 import com.bingbaihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbaihanji.fxdecomplie.ui.window.AppHeaderBar;
-import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.HostServices;
 import javafx.application.Platform;
@@ -85,6 +85,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private boolean lineNumbersEnabled;
     /** 工具栏 */
     private MainToolBar toolBar;
+    /** 主菜单栏 */
+    private MainMenuBar menuBar;
 
     public MainWindow(AppConfig config) {
         this(config, false, null);
@@ -327,7 +329,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 }
         );
 
-        MainMenuBar menuBar = new MainMenuBar(this, currentEngine);
+        menuBar = new MainMenuBar(this, currentEngine);
         toolBar = new MainToolBar(this, this);
         VBox topBars = new VBox();
         if (useHeaderBar) {
@@ -348,9 +350,20 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
         root.setOnDragDropped(event -> {
             java.util.List<java.io.File> files = event.getDragboard().getFiles();
-            if (files != null) {
+            if (files != null && !files.isEmpty()) {
+                boolean allSupported = true;
                 for (java.io.File f : files) {
-                    loadFile(f);
+                    if (!isSupportedLoadFile(f)) {
+                        showError(I18nUtil.getString("dialog.error.title"),
+                                I18nUtil.getString("dialog.load.unsupported", f.getName()));
+                        allSupported = false;
+                        break;
+                    }
+                }
+                if (allSupported) {
+                    for (java.io.File f : files) {
+                        loadFile(f);
+                    }
                 }
             }
             event.setDropCompleted(true);
@@ -753,6 +766,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         currentEngine = engine;
         config.decompiler().defaultEngine(engine);
+        if (menuBar != null) {
+            menuBar.setSelectedEngine(engine);
+        }
         tabManager.setCurrentEngineName(engine.name());
         statusBar.setEngine(engine.name());
         statusBar.setFilePath(I18nUtil.getString("status.currentEngine", engine.name()));
@@ -760,24 +776,31 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         WorkspaceView view = tabManager.currentWorkspaceView();
         CodeEditorTab currentTab = tabManager.currentCodeTab();
         if (view != null && currentTab != null) {
+            TabPane targetPane = view.splitEditorPane().tabPaneFor(currentTab);
             classTabOpener.cancelCurrentTask();
             classTabOpener.refreshCurrentClassTab(
-                    view.workspace(), view.codeTabPane(), currentTab, engine, lineNumbersEnabled);
+                    view.workspace(), targetPane, currentTab, engine, lineNumbersEnabled);
         }
     }
 
     /** 用当前引擎重新反编译当前类 */
     @Override
     public void refreshCurrentTab() {
+        refreshCurrentTab(currentEngine);
+    }
+
+    /** 用指定引擎重新反编译当前类 */
+    private void refreshCurrentTab(DecompilerTypeEnum engine) {
         WorkspaceView view = tabManager.currentWorkspaceView();
         CodeEditorTab currentTab = tabManager.currentCodeTab();
         if (view == null || currentTab == null) {
             statusBar.setFilePath(I18nUtil.getString("toolbar.reload.disabled"));
             return;
         }
+        TabPane targetPane = view.splitEditorPane().tabPaneFor(currentTab);
         classTabOpener.cancelCurrentTask();
         classTabOpener.refreshCurrentClassTab(
-                view.workspace(), view.codeTabPane(), currentTab, currentEngine, lineNumbersEnabled);
+                view.workspace(), targetPane, currentTab, engine, lineNumbersEnabled);
         statusBar.setFilePath(I18nUtil.getString("status.reloading", currentTab.getOpenFile().fullPath()));
     }
 
@@ -1570,16 +1593,24 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 打开设置对话框 */
     @Override
     public void openSettings() {
-        SettingsDialog.show(stage, config, this::applySettings);
+        SettingsDialog.show(stage, config, updated -> {
+            boolean engineSwitched = applySettings(updated);
+            DecompilerTypeEnum activeTabEngine = activeCodeTabEngine();
+            if (!engineSwitched && tabManager != null && tabManager.currentCodeTab() != null) {
+                refreshCurrentTab(activeTabEngine);
+            }
+        });
     }
 
     // ── 内部辅助方法 ──
 
     /** 应用设置对话框确认后的配置变更：切换引擎、更新行号、更新字体 */
-    private void applySettings(AppConfig updated) {
+    private boolean applySettings(AppConfig updated) {
         DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
+        boolean engineSwitched = false;
         if (configuredEngine != currentEngine) {
             selectEngine(configuredEngine);
+            engineSwitched = true;
         }
         lineNumbersEnabled = updated.decompiler().lineNumbersEnabled();
         int newFontSize = updated.theme().fontSize();
@@ -1590,11 +1621,23 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     tab.applyFontSettings(newFontSize, newFontFamily);
                 })
         );
+        return engineSwitched;
+    }
+
+    private DecompilerTypeEnum activeCodeTabEngine() {
+        CodeEditorTab currentTab = tabManager == null ? null : tabManager.currentCodeTab();
+        if (currentTab == null || currentTab.getOpenFile() == null) {
+            return currentEngine;
+        }
+        return currentTab.getOpenFile().engine();
     }
 
     /** 将导出对话框中选择的选项写回全局配置,下次打开时记住 */
     private void persistExportConfig(ExportConfig exportConfig) {
-        config.export().defaultEngine(exportConfig.engine().name());
+        boolean followCurrent = config.export().defaultEngine().isBlank();
+        if (!followCurrent || exportConfig.engine() != currentEngine) {
+            config.export().defaultEngine(exportConfig.engine().name());
+        }
         config.export().defaultFormat(exportConfig.format().name());
         config.export().conflictPolicy(exportConfig.conflictPolicy().name());
         config.export().exportResources(exportConfig.exportResources());
@@ -1765,6 +1808,16 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             view.workspace().putSourceSearchCache(cacheKey, fullSourceCache);
         }
         return fullSourceCache;
+    }
+
+    /** 判断文件是否为可加载类型（JAR/ZIP/WAR/Class 及目录） */
+    private static boolean isSupportedLoadFile(File file) {
+        if (file.isDirectory()) {
+            return true;
+        }
+        String name = file.getName().toLowerCase(java.util.Locale.ROOT);
+        return name.endsWith(".jar") || name.endsWith(".zip")
+                || name.endsWith(".war") || name.endsWith(".class");
     }
 
     /** 加载并打开文件 */
