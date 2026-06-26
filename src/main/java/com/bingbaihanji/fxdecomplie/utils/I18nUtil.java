@@ -100,6 +100,21 @@ public class I18nUtil {
     }
 
     /**
+     * 获取国际化文本，若 key 不存在则返回默认值。
+     *
+     * @param key          配置文件中的key
+     * @param defaultValue 当 key 不存在时返回的默认值
+     * @return 对应的值或默认值
+     */
+    public static String getStringOrDefault(String key, String defaultValue) {
+        try {
+            return resourceBundle.getString(key);
+        } catch (Exception e) {
+            return defaultValue;
+        }
+    }
+
+    /**
      * 切换语言
      *
      * @param locale 目标语言环境
