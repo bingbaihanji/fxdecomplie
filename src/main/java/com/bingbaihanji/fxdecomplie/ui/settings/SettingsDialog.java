@@ -395,9 +395,9 @@ public final class SettingsDialog {
         }
 
         var commonPane = buildTitledParameterPane("settings.engine.common", common, engineOpts,
-                jsonArea, controlMap);
+                jsonArea, controlMap, config);
         var advancedPane = buildTitledParameterPane("settings.engine.advanced", advanced, engineOpts,
-                jsonArea, controlMap);
+                jsonArea, controlMap, config);
         advancedPane.setExpanded(false);
 
         ScrollPane scroll = new ScrollPane(new VBox(5, commonPane, advancedPane));
@@ -411,7 +411,8 @@ public final class SettingsDialog {
                                                          List<DecompilerParameter> params,
                                                          Map<String, String> engineOpts,
                                                          TextArea jsonArea,
-                                                         Map<String, javafx.scene.Node> controlMap) {
+                                                         Map<String, javafx.scene.Node> controlMap,
+                                                         AppConfig config) {
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(5);
@@ -432,7 +433,7 @@ public final class SettingsDialog {
             javafx.scene.Node[] controlHolder = new javafx.scene.Node[1];
             controlHolder[0] = createParameterControl(param, currentValue, () -> {
                 updateEngineOptionFromControl(param.key(), controlHolder[0], engineOpts);
-                syncJsonFromMap(engineOpts, jsonArea);
+                syncJsonFromConfig(config, jsonArea);
             });
 
             controlMap.put(param.key(), controlHolder[0]);
@@ -503,14 +504,17 @@ public final class SettingsDialog {
         engineOpts.put(key, value);
     }
 
-    private static void syncJsonFromMap(Map<String, String> engineOpts, TextArea jsonArea) {
+    private static void syncJsonFromConfig(AppConfig config, TextArea jsonArea) {
         if (jsonArea.isFocused()) {
             return;
         }
         try {
-            String json = new GsonBuilder().setPrettyPrinting().create().toJson(engineOpts);
-            jsonArea.setText(("{}".equals(json)) ? "" : json);
-        } catch (Exception ignored) {}
+            String json = new GsonBuilder().setPrettyPrinting().create()
+                    .toJson(config.decompiler().engineOptions());
+            jsonArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
+        } catch (Exception ignored) {
+            logger.debug("syncJsonFromConfig 序列化失败", ignored);
+        }
     }
 
     private static void refreshEngineOptionsJson(AppConfig config, TextArea jsonArea) {

@@ -59,7 +59,7 @@ public final class CfrParameters {
             of("override", "true"),
             of("eclipse", "true"),
 
-            // -- 高级 57 项 --
+            // -- 高级 62 项 --
             adv("showversion", "false"),
             adv("hideutf", "false"),
             adv("hidelongstrings", "false"),

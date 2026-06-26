@@ -1,0 +1,4110 @@
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java b/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java
+index cfa2ab6..7148bfb 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/FxDecompilerApp.java
+@@ -52,7 +52,9 @@ public final class FxDecompilerApp {
+             if (codeSource != null && codeSource.getLocation() != null) {
+                 Path jarPath = Path.of(codeSource.getLocation().toURI());
+                 Path parent = jarPath.getParent();
+-                if (parent != null) return parent;
++                if (parent != null) {
++                    return parent;
++                }
+             }
+         } catch (Exception ignored) {
+             logger.debug("解析应用目录失败，回退到 user.dir", ignored);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java b/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java
+index f26fa97..0675058 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/MainWindow.java
+@@ -269,13 +269,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+         return slash >= 0 ? internalName.substring(0, slash) : "";
+     }
+ 
+-    /** 计算与 ClassTabOpener 一致的 L2 缓存工作区键,确保跨组件缓存复用 */
++    /** 委托 ClassTabOpener 计算 L2 缓存工作区键,确保跨组件缓存复用 */
+     private static String workspaceKey(Workspace workspace) {
+-        File source = workspace.getSourceFile();
+-        long mtime = source.lastModified();
+-        long size = source.isFile() ? source.length() : 0L;
+-        return (source.getAbsolutePath() + "_" + mtime + "_" + size)
+-                .replace(':', '_').replace('\\', '_').replace('/', '_');
++        return com.bingbaihanji.fxdecomplie.service.ClassTabOpener.computeWorkspaceKey(workspace);
+     }
+ 
+     /** 将项目文件中保存的引擎名字符串还原为枚举值,非法值回退到默认引擎 */
+@@ -289,8 +285,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+ 
+     /** 为对话框/Stage 设置应用 Logo 图标 */
+     private static void setAlertIcon(javafx.stage.Stage s) {
+-        try {
+-            var stream = MainWindow.class.getResourceAsStream("/icon/logo.png");
++        try (var stream = MainWindow.class.getResourceAsStream("/icon/logo.png")) {
+             if (stream != null) {
+                 s.getIcons().add(new javafx.scene.image.Image(stream));
+             }
+@@ -551,9 +546,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+         }
+         statusBar.setTask(I18nUtil.getString("task.indexing"));
+         statusBar.setFilePath(I18nUtil.getString("status.indexing", rootItem.getValue().getName()));
++        // 在 FX 线程预提取 FileTreeNode 数据快照,避免后台线程访问 TreeItem
++        java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
++        collectTreeNodes(rootItem, nodesSnapshot);
+         BackgroundTasks.run("Index-ExportNode", () -> {
+             try {
+-                WorkspaceIndex index = WorkspaceIndex.build(rootItem);
++                WorkspaceIndex index = WorkspaceIndex.build(nodesSnapshot);
+                 Platform.runLater(() -> {
+                     statusBar.clearTask();
+                     WorkspaceView view = tabManager.currentWorkspaceView();
+@@ -583,10 +581,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+         final Future<?>[] exportTask = new Future<?>[1];
+         java.util.concurrent.atomic.AtomicBoolean exportCanceled = new java.util.concurrent.atomic.AtomicBoolean(false);
+         statusBar.setTask(I18nUtil.getString("task.exporting"));
+-        progressHandle.setOnCancel(() -> {
+-            exportCanceled.set(true);
+-            BackgroundTasks.cancel(exportTask[0]);
+-        });
+         exportTask[0] = BackgroundTasks.run("Export", () -> {
+             try {
+                 ExportResult result = ExportService.exportAll(
+@@ -614,6 +608,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+                 Platform.runLater(() -> {
+                     progressHandle.close();
+                     statusBar.clearTask();
++                    if (exportCanceled.get()) {
++                        statusBar.setFilePath(I18nUtil.getString("dialog.export.canceled"));
++                        showWarning(I18nUtil.getString("dialog.export.title"),
++                                I18nUtil.getString("dialog.export.canceled"));
++                        return;
++                    }
+                     showError(I18nUtil.getString("dialog.error.title"),
+                             I18nUtil.getString("dialog.export.failed", ex.getMessage()));
+                 });
+@@ -631,6 +631,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+                 });
+             }
+         });
++        progressHandle.setOnCancel(() -> {
++            exportCanceled.set(true);
++            BackgroundTasks.cancel(exportTask[0]);
++        });
+     }
+ 
+     // ─── CodeActionHandler 实现 ─────────────────────────────────
+@@ -794,9 +798,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+ 
+     @Override
+     public void goToDeclaration(CodeMetadata.Reference reference) {
+-        if (reference == null || reference.targetClass() == null) return;
++        if (reference == null || reference.targetClass() == null) {
++            return;
++        }
+         WorkspaceView view = tabManager.currentWorkspaceView();
+-        if (view == null) return;
++        if (view == null) {
++            return;
++        }
+         FileTreeNode node = findNodeForReference(view.workspace(), reference);
+         if (node != null) {
+             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
+@@ -848,7 +856,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+     @Override
+     public void openClass(String fullPath, int line) {
+         WorkspaceView view = tabManager.currentWorkspaceView();
+-        if (view == null || fullPath == null) return;
++        if (view == null || fullPath == null) {
++            return;
++        }
+         FileTreeNode node = view.workspace().findNodeByPath(fullPath);
+         if (node != null) {
+             classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
+@@ -858,7 +868,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+ 
+     @Override
+     public void showInheritanceGraph(CodeViewContext context) {
+-        if (context == null) return;
++        if (context == null) {
++            return;
++        }
+         String fullPath = context.classInternalName();
+         if (fullPath == null || fullPath.isBlank()) {
+             showGraphFailed(fullPath, null);
+@@ -906,7 +918,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+ 
+     @Override
+     public void showMethodGraph(CodeViewContext context) {
+-        if (context == null) return;
++        if (context == null) {
++            return;
++        }
+         String fullPath = context.classInternalName();
+         if (fullPath == null || fullPath.isBlank()) {
+             showGraphFailed(fullPath, null);
+@@ -968,13 +982,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+ 
+     @Override
+     public void addOrUpdateComment(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caretPosition) {
+-        if (context == null) return;
++        if (context == null) {
++            return;
++        }
+         String text = context.openFile() != null ? context.openFile().sourceCode() : "";
+         int line = caretPosition == null ? 1 : Math.max(1, caretPosition.index() + 1);
+         String memberSig = "";
+         // 从源码中提取当前方法签名
+         String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper.findMethodAtLine(text, line);
+-        if (methodName != null) memberSig = methodName;
++        if (methodName != null) {
++            memberSig = methodName;
++        }
+ 
+         // 查找已有注释
+         java.util.List<CommentData> existing = com.bingbaihanji.fxdecomplie.service.CommentManager
+@@ -999,7 +1017,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+ 
+     @Override
+     public void searchInWorkspace(String selectedText) {
+-        if (selectedText == null || selectedText.isBlank()) return;
++        if (selectedText == null || selectedText.isBlank()) {
++            return;
++        }
+         openSearch(selectedText);
+     }
+ 
+@@ -1456,9 +1476,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+                     I18nUtil.getString("dialog.needOpenFile"));
+             return;
+         }
++        java.util.List<String> classNames = new java.util.ArrayList<>();
++        collectClassNames(view.workspace().getTreeRoot(), classNames);
+         BackgroundTasks.run("QuickOpen-" + view.workspace().getName(), () -> {
+-            java.util.List<String> classNames = new java.util.ArrayList<>();
+-            collectClassNames(view.workspace().getTreeRoot(), classNames);
+             Platform.runLater(() -> QuickOpenDialog.show(stage, classNames, fullPath -> {
+                 FileTreeNode node = view.workspace().findNodeByPath(fullPath);
+                 if (node != null) {
+@@ -1522,7 +1542,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+         alert.setOnShown(e -> {
+             var win = alert.getDialogPane().getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(win);
+-            if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
++            if (win instanceof javafx.stage.Stage s) {
++                setAlertIcon(s);
++            }
+         });
+ 
+         javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink("www.bingbaihanji.com");
+@@ -1541,6 +1563,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+                 new javafx.scene.control.Label(I18nUtil.getString("about.website")),
+                 link);
+         alert.getDialogPane().setContent(content);
++        logger.info("显示关于对话框");
+         alert.showAndWait();
+     }
+ 
+@@ -1652,6 +1675,18 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+     }
+ 
+     /** 递归遍历文件树,收集所有 .class 节点的完整路径(用于快速打开对话框) */
++    /** 递归收集树节点数据(在 FX 线程调用,避免后台线程访问 TreeItem) */
++    private void collectTreeNodes(TreeItem<FileTreeNode> item,
++                                  java.util.List<FileTreeNode> result) {
++        FileTreeNode data = item.getValue();
++        if (data != null) {
++            result.add(data);
++        }
++        for (TreeItem<FileTreeNode> child : item.getChildren()) {
++            collectTreeNodes(child, result);
++        }
++    }
++
+     private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {
+         FileTreeNode data = item.getValue();
+         if (data != null && data.isClassFile()) {
+@@ -1709,13 +1744,15 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+                     break;
+                 }
+                 // 优先查询 L2 内存缓存(复用已打开标签页的解编译结果,避免重复解编)
++                byte[] classBytes = cls.bytes();
++                String fp = ClassTabOpener.computeClassFingerprint(classBytes);
+                 String source = classTabOpener.getDecompileCache().get(
+-                        workspaceKey(view.workspace()), cls.internalName(),
++                        workspaceKey(view.workspace()) + "_" + fp, cls.internalName(),
+                         currentEngine, DecompilerOptions.hash(engineOptions));
+                 if (source == null) {
+                     // L2 miss: 带超时和 JD 回退的全量解编译
+                     source = DecompilerRunner.decompileWithTimeout(
+-                            cls.fullPath(), cls.bytes(), currentEngine, context,
++                            cls.fullPath(), classBytes, currentEngine, context,
+                             () -> !Thread.currentThread().isInterrupted());
+                 }
+                 if (!DecompilerRunner.isTransientFailureOutput(source)) {
+@@ -1771,10 +1808,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
+         alert.setOnShown(e -> {
+             var win = alert.getDialogPane().getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(win);
+-            if (win instanceof javafx.stage.Stage s) setAlertIcon(s);
++            if (win instanceof javafx.stage.Stage s) {
++                setAlertIcon(s);
++            }
+         });
+         ButtonType openOutput = new ButtonType(I18nUtil.getString("dialog.export.openOutput"));
+         alert.getButtonTypes().add(openOutput);
++        logger.info("显示导出完成对话框: {}", message);
+         if (details != null && !details.isEmpty()) {
+             ButtonType copyDetails = new ButtonType(I18nUtil.getString("dialog.copyDetails"));
+             alert.getButtonTypes().add(copyDetails);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/bytecode/ClassFileParser.java b/src/main/java/com/bingbaihanji/fxdecomplie/bytecode/ClassFileParser.java
+index bc9d113..02ae1a9 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/bytecode/ClassFileParser.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/bytecode/ClassFileParser.java
+@@ -55,6 +55,9 @@ public final class ClassFileParser {
+             List<ClassFileMetadata.MemberInfo> fields = readMembers(in, constantPool);
+             List<ClassFileMetadata.MemberInfo> methods = readMembers(in, constantPool);
+ 
++            // 跳过类级属性
++            skipAttributes(in);
++
+             return new ClassFileMetadata(minor, major, accessFlags, internalName, superName,
+                     interfaces, constantPoolCount, fields, methods);
+         }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java b/src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java
+index b9d1ac8..5e2fd57 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/config/AppConfig.java
+@@ -67,7 +67,9 @@ public class AppConfig {
+                 Path jarPath = Path.of(codeSource.getLocation().toURI());
+                 if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
+                     Path parent = jarPath.getParent();
+-                    if (parent != null) return parent;
++                    if (parent != null) {
++                        return parent;
++                    }
+                 }
+             }
+         } catch (Exception ignored) {
+@@ -167,7 +169,7 @@ public class AppConfig {
+         }
+     }
+ 
+-    public void recentFiles(List<String> v) {
++    public synchronized void recentFiles(List<String> v) {
+         recentFiles = v;
+     }
+ 
+@@ -211,31 +213,57 @@ public class AppConfig {
+     }
+ 
+     private void normalize() {
+-        if (window == null) window = new Window();
+-        if (theme == null) theme = new Theme();
+-        if (decompiler == null) decompiler = new Decompiler();
+-        if (export == null) export = new Export();
+-        if (search == null) search = new Search();
+-        if (platform == null) platform = new Platform();
+-        if (recentFiles == null) recentFiles = new ArrayList<>();
+-        if (language == null) language = "";
++        if (window == null) {
++            window = new Window();
++        }
++        if (theme == null) {
++            theme = new Theme();
++        }
++        if (decompiler == null) {
++            decompiler = new Decompiler();
++        }
++        if (export == null) {
++            export = new Export();
++        }
++        if (search == null) {
++            search = new Search();
++        }
++        if (platform == null) {
++            platform = new Platform();
++        }
++        if (recentFiles == null) {
++            recentFiles = new ArrayList<>();
++        }
++        if (language == null) {
++            language = "";
++        }
+         if (decompiler.defaultEngine == null) {
+             decompiler.defaultEngine = DecompilerTypeEnum.VINEFLOWER;
+         }
+         if (decompiler.engineOptions == null) {
+             decompiler.engineOptions = new LinkedHashMap<>();
+         }
+-        if (theme.path == null) theme.path = "";
++        if (theme.path == null) {
++            theme.path = "";
++        }
+         if (theme.fontFamily == null || theme.fontFamily.isBlank()) theme.fontFamily = "Consolas";
+         theme.fontSize = Math.clamp(theme.fontSize, 8, 48);
+         window.width = Math.max(640, window.width);
+         window.height = Math.max(480, window.height);
+-        if (export.defaultEngine == null) export.defaultEngine = "";
+-        if (export.defaultFormat == null || export.defaultFormat.isBlank()) export.defaultFormat = "DIR";
+-        if (export.conflictPolicy == null || export.conflictPolicy.isBlank()) {
++        if (export.defaultEngine == null) {
++            export.defaultEngine = "";
++        }
++        if (export.defaultFormat == null || export.defaultFormat.isBlank()
++                || !java.util.Set.of("DIR", "ZIP").contains(export.defaultFormat)) {
++            export.defaultFormat = "DIR";
++        }
++        if (export.conflictPolicy == null || export.conflictPolicy.isBlank()
++                || !java.util.Set.of("SKIP", "OVERWRITE", "RENAME").contains(export.conflictPolicy)) {
+             export.conflictPolicy = "OVERWRITE";
+         }
+-        if (export.lastPath == null) export.lastPath = "";
++        if (export.lastPath == null) {
++            export.lastPath = "";
++        }
+         search.resultLimit = Math.clamp(search.resultLimit, 50, 2000);
+         if (platform.cornerPreference == null || platform.cornerPreference.isBlank()) {
+             platform.cornerPreference = "DO_NOT_ROUND";
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerContext.java b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerContext.java
+index 3ed8235..5c8a781 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerContext.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/DecompilerContext.java
+@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+ 
+ import java.util.Map;
+ import java.util.Objects;
++import java.util.concurrent.atomic.AtomicBoolean;
+ 
+ /**
+  * 每次反编译的上下文在解析依赖类时，应优先使用此上下文而非旧版全局 BytecodeCache
+@@ -22,21 +23,25 @@ public final class DecompilerContext implements AutoCloseable {
+     private final Map<String, String> options;
+     private final boolean globalFallbackEnabled;
+     private final AutoCloseable closeable;
++    private final boolean closeAfterUse;
++    private final AtomicBoolean closed = new AtomicBoolean();
+ 
+     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
+                               Map<String, String> options,
+                               boolean globalFallbackEnabled) {
+-        this(bytecodeProvider, options, globalFallbackEnabled, null);
++        this(bytecodeProvider, options, globalFallbackEnabled, null, false);
+     }
+ 
+     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
+                               Map<String, String> options,
+                               boolean globalFallbackEnabled,
+-                              AutoCloseable closeable) {
++                              AutoCloseable closeable,
++                              boolean closeAfterUse) {
+         this.bytecodeProvider = Objects.requireNonNull(bytecodeProvider, "bytecodeProvider");
+         this.options = options == null ? Map.of() : Map.copyOf(options);
+         this.globalFallbackEnabled = globalFallbackEnabled;
+         this.closeable = closeable;
++        this.closeAfterUse = closeAfterUse;
+     }
+ 
+     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider) {
+@@ -51,9 +56,31 @@ public final class DecompilerContext implements AutoCloseable {
+     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
+                                        Map<String, String> options,
+                                        AutoCloseable closeable) {
+-        return bytecodeProvider == null
+-                ? withOptions(options)
+-                : new DecompilerContext(bytecodeProvider, options, false, closeable);
++        return of(bytecodeProvider, options, closeable, false);
++    }
++
++    public static DecompilerContext singleUse(ClassBytecodeProvider bytecodeProvider,
++                                              Map<String, String> options,
++                                              AutoCloseable closeable) {
++        return of(bytecodeProvider, options, closeable, true);
++    }
++
++    private static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
++                                        Map<String, String> options,
++                                        AutoCloseable closeable,
++                                        boolean closeAfterUse) {
++        if (bytecodeProvider == null) {
++            if (closeable != null) {
++                try {
++                    closeable.close();
++                } catch (Exception e) {
++                    throw new IllegalArgumentException(
++                            "bytecodeProvider 为 null 时无法持有 closeable", e);
++                }
++            }
++            return withOptions(options);
++        }
++        return new DecompilerContext(bytecodeProvider, options, false, closeable, closeAfterUse);
+     }
+ 
+     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index) {
+@@ -117,9 +144,13 @@ public final class DecompilerContext implements AutoCloseable {
+         return !options.isEmpty();
+     }
+ 
++    public boolean closeAfterUse() {
++        return closeAfterUse;
++    }
++
+     @Override
+     public void close() throws Exception {
+-        if (closeable != null) {
++        if (closeAfterUse && closeable != null && closed.compareAndSet(false, true)) {
+             closeable.close();
+         }
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/JdDecompiler.java b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/JdDecompiler.java
+index 0c8893c..4e9c68f 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/JdDecompiler.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/JdDecompiler.java
+@@ -139,7 +139,9 @@ public class JdDecompiler implements Decompiler {
+ 
+         @Override
+         public void unindent() {
+-            if (indent > 0) indent--;
++            if (indent > 0) {
++                indent--;
++            }
+         }
+ 
+         @Override
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java
+index 6e53540..6294ce0 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/ProcyonDecompiler.java
+@@ -126,7 +126,9 @@ public class ProcyonDecompiler implements Decompiler {
+             String normalized = internalName.replace('\\', '/');
+             byte[] bytes = null;
+             if (normalized.equals(targetName) || normalized.equals(targetName + ".class")) {
+-                if (targetBytes == null) return false;
++                if (targetBytes == null) {
++                    return false;
++                }
+                 bytes = targetBytes;
+             }
+             if (bytes == null) {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java
+index 2bfd988..064d539 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/decompiler/VineflowerDecompiler.java
+@@ -99,10 +99,12 @@ public class VineflowerDecompiler implements Decompiler {
+ 
+             IResultSaver resultSaver = new IResultSaver() {
+                 @Override
+-                public void saveFolder(String path) {}
++                public void saveFolder(String path) {
++                }
+ 
+                 @Override
+-                public void copyFile(String source, String path, String entryName) {}
++                public void copyFile(String source, String path, String entryName) {
++                }
+ 
+                 @Override
+                 public void saveClassFile(String path, String qualifiedName, String entryName,
+@@ -113,13 +115,16 @@ public class VineflowerDecompiler implements Decompiler {
+                 }
+ 
+                 @Override
+-                public void createArchive(String path, String archiveName, Manifest manifest) {}
++                public void createArchive(String path, String archiveName, Manifest manifest) {
++                }
+ 
+                 @Override
+-                public void saveDirEntry(String path, String archiveName, String entryName) {}
++                public void saveDirEntry(String path, String archiveName, String entryName) {
++                }
+ 
+                 @Override
+-                public void copyEntry(String source, String path, String archiveName, String entry) {}
++                public void copyEntry(String source, String path, String archiveName, String entry) {
++                }
+ 
+                 @Override
+                 public void saveClassEntry(String path, String archiveName, String qualifiedName,
+@@ -130,7 +135,8 @@ public class VineflowerDecompiler implements Decompiler {
+                 }
+ 
+                 @Override
+-                public void closeArchive(String path, String archiveName) {}
++                public void closeArchive(String path, String archiveName) {
++                }
+             };
+ 
+             IFernflowerLogger fernflowerLogger = new IFernflowerLogger() {
+@@ -178,7 +184,7 @@ public class VineflowerDecompiler implements Decompiler {
+     }
+ 
+     @Override
+-    public  Map<String, String> getDefaultOptions() {
++    public Map<String, String> getDefaultOptions() {
+         Map<String, String> stringOpts = new LinkedHashMap<>();
+         DEFAULT_OPTIONS.forEach((k, v) -> stringOpts.put(k, String.valueOf(v)));
+         return stringOpts;
+@@ -240,7 +246,8 @@ public class VineflowerDecompiler implements Decompiler {
+             // 将 Vineflower 输出委托给全局 IResultSaver
+             return new IOutputSink() {
+                 @Override
+-                public void begin() {}
++                public void begin() {
++                }
+ 
+                 @Override
+                 public void acceptClass(String qualifiedName, String fileName,
+@@ -249,13 +256,16 @@ public class VineflowerDecompiler implements Decompiler {
+                 }
+ 
+                 @Override
+-                public void acceptDirectory(String directory) {}
++                public void acceptDirectory(String directory) {
++                }
+ 
+                 @Override
+-                public void acceptOther(String path) {}
++                public void acceptOther(String path) {
++                }
+ 
+                 @Override
+-                public void close() {}
++                public void close() {
++                }
+             };
+         }
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/model/CommentData.java b/src/main/java/com/bingbaihanji/fxdecomplie/model/CommentData.java
+index 799bf7d..1f20b10 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/model/CommentData.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/model/CommentData.java
+@@ -39,6 +39,18 @@ public record CommentData(
+         if (style == null) {
+             style = CommentStyle.LINE;
+         }
++        if (time == null) {
++            time = "";
++        }
++        if (author == null) {
++            author = "";
++        }
++        if (sourceHash == null) {
++            sourceHash = "";
++        }
++        if (optionsHash == null) {
++            optionsHash = "";
++        }
+     }
+ 
+     /** 注释样式 */
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/model/OpenFile.java b/src/main/java/com/bingbaihanji/fxdecomplie/model/OpenFile.java
+index 0a35a9c..8483041 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/model/OpenFile.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/model/OpenFile.java
+@@ -37,7 +37,9 @@ public record OpenFile(String className, String fullPath, String sourceCode, Dec
+      */
+     @Override
+     public boolean equals(Object o) {
+-        if (this == o) return true;
++        if (this == o) {
++            return true;
++        }
+         if (!(o instanceof OpenFile other)) return false;
+         return Objects.equals(fullPath, other.fullPath) && engine == other.engine;
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java b/src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java
+index b3c59f9..4a5cfd8 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/model/Workspace.java
+@@ -219,7 +219,9 @@ public class Workspace implements AutoCloseable {
+ 
+     @Override
+     public boolean equals(Object o) {
+-        if (this == o) return true;
++        if (this == o) {
++            return true;
++        }
+         if (!(o instanceof Workspace other)) return false;
+         return Objects.equals(sourceFile, other.sourceFile);
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/model/WorkspaceIndex.java b/src/main/java/com/bingbaihanji/fxdecomplie/model/WorkspaceIndex.java
+index 2a51659..a5efba9 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/model/WorkspaceIndex.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/model/WorkspaceIndex.java
+@@ -24,6 +24,8 @@ public final class WorkspaceIndex {
+     private final List<ClassIndexEntry> classes;
+     private final List<ResourceIndexEntry> resources;
+     private final Map<String, ClassIndexEntry> classesByInternalName;
++    private volatile Map<String, byte[]> classBytesByInternalNameCache;
++    private volatile Map<String, byte[]> resourceBytesByPathCache;
+ 
+     private WorkspaceIndex(List<ClassIndexEntry> classes, List<ResourceIndexEntry> resources,
+                            Map<String, ClassIndexEntry> classesByInternalName) {
+@@ -33,32 +35,46 @@ public final class WorkspaceIndex {
+     }
+ 
+     public static WorkspaceIndex build(TreeItem<FileTreeNode> root) {
+-        List<ClassIndexEntry> classes = new ArrayList<>();
+-        List<ResourceIndexEntry> resources = new ArrayList<>();
+-        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
+-
++        List<FileTreeNode> nodes = new ArrayList<>();
+         ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+         queue.add(root);
+         while (!queue.isEmpty()) {
+             TreeItem<FileTreeNode> item = queue.removeFirst();
+             FileTreeNode node = item.getValue();
+             if (node != null) {
+-                if (node.isClassFile() && node.hasByteSource()) {
+-                    ClassIndexEntry entry = indexClass(node);
+-                    if (entry != null) {
+-                        classes.add(entry);
+-                        classEntries.put(entry.internalName(), entry);
+-                    }
+-                } else if (node.isTextFile() && node.hasByteSource()
+-                        && shouldIndexResource(node)) {
+-                    byte[] bytes = readNodeBytes(node);
+-                    if (bytes != null) {
+-                        resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
+-                    }
+-                }
++                nodes.add(node);
+             }
+             queue.addAll(item.getChildren());
+         }
++        return build(nodes);
++    }
++
++    /**
++     * 从已提取的 FileTreeNode 列表构建索引（线程安全,可在后台线程调用）
++     *
++     * @param nodes class 和资源 FileTreeNode 列表
++     * @return 工作区索引
++     */
++    public static WorkspaceIndex build(List<FileTreeNode> nodes) {
++        List<ClassIndexEntry> classes = new ArrayList<>();
++        List<ResourceIndexEntry> resources = new ArrayList<>();
++        Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
++
++        for (FileTreeNode node : nodes) {
++            if (node.isClassFile() && node.hasByteSource()) {
++                ClassIndexEntry entry = indexClass(node);
++                if (entry != null) {
++                    classes.add(entry);
++                    classEntries.put(entry.internalName(), entry);
++                }
++            } else if (node.isTextFile() && node.hasByteSource()
++                    && shouldIndexResource(node)) {
++                byte[] bytes = readNodeBytes(node);
++                if (bytes != null) {
++                    resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
++                }
++            }
++        }
+         return new WorkspaceIndex(classes, resources, classEntries);
+     }
+ 
+@@ -94,6 +110,10 @@ public final class WorkspaceIndex {
+ 
+     private static boolean shouldIndexResource(FileTreeNode node) {
+         long size = node.getSize();
++        if (size <= 0) {
++            logger.debug("跳过大小未知的资源文件: {}", node.getFullPath());
++            return false;
++        }
+         if (size > MAX_INDEXED_RESOURCE_BYTES) {
+             logger.info("跳过过大资源文件，不加入工作区索引: {} ({} 字节)",
+                     node.getFullPath(), size);
+@@ -125,14 +145,23 @@ public final class WorkspaceIndex {
+     }
+ 
+     public Map<String, byte[]> classBytesByInternalName() {
+-        Map<String, byte[]> map = new LinkedHashMap<>();
+-        for (ClassIndexEntry cls : classes) {
+-            byte[] bytes = cls.bytes();
+-            if (bytes != null) {
+-                map.put(cls.internalName(), bytes);
++        Map<String, byte[]> cached = classBytesByInternalNameCache;
++        if (cached != null) {
++            return cached;
++        }
++        synchronized (this) {
++            if (classBytesByInternalNameCache == null) {
++                Map<String, byte[]> map = new LinkedHashMap<>();
++                for (ClassIndexEntry cls : classes) {
++                    byte[] bytes = cls.bytes();
++                    if (bytes != null) {
++                        map.put(cls.internalName(), bytes);
++                    }
++                }
++                classBytesByInternalNameCache = Collections.unmodifiableMap(map);
+             }
++            return classBytesByInternalNameCache;
+         }
+-        return Collections.unmodifiableMap(map);
+     }
+ 
+     public byte[] getClassBytes(String internalName) {
+@@ -145,11 +174,20 @@ public final class WorkspaceIndex {
+     }
+ 
+     public Map<String, byte[]> resourceBytesByPath() {
+-        Map<String, byte[]> map = new LinkedHashMap<>();
+-        for (ResourceIndexEntry resource : resources) {
+-            map.put(resource.fullPath(), resource.bytes());
++        Map<String, byte[]> cached = resourceBytesByPathCache;
++        if (cached != null) {
++            return cached;
++        }
++        synchronized (this) {
++            if (resourceBytesByPathCache == null) {
++                Map<String, byte[]> map = new LinkedHashMap<>();
++                for (ResourceIndexEntry resource : resources) {
++                    map.put(resource.fullPath(), resource.bytes());
++                }
++                resourceBytesByPathCache = Collections.unmodifiableMap(map);
++            }
++            return resourceBytesByPathCache;
+         }
+-        return map;
+     }
+ 
+     public Map<String, String> bytecodeTextByPath() {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/BackgroundTasks.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/BackgroundTasks.java
+index 68a19e0..9780241 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/BackgroundTasks.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/BackgroundTasks.java
+@@ -43,6 +43,7 @@ public final class BackgroundTasks {
+             return EXECUTOR.submit(() -> {
+                 Thread.currentThread().setName(name);
+                 // 清除线程池复用残留的中断标志,避免反编译器抛出 InterruptedException
++                // 任务内需要通过 isInterrupted() 自行检查取消信号
+                 Thread.interrupted();
+                 task.run();
+             });
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java
+index b0e36f3..540fe47 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/ClassTabOpener.java
+@@ -75,7 +75,7 @@ public final class ClassTabOpener {
+     }
+ 
+     /** 计算工作区缓存键：使用完整路径 + mtime + size,消除路径碰撞和同路径替换误命中 */
+-    private static String computeWorkspaceKey(Workspace workspace) {
++    public static String computeWorkspaceKey(Workspace workspace) {
+         File source = workspace.getSourceFile();
+         long mtime = source.lastModified();
+         long size = source.isFile() ? source.length() : 0L;
+@@ -83,6 +83,16 @@ public final class ClassTabOpener {
+                 .replace(':', '_').replace('\\', '_').replace('/', '_');
+     }
+ 
++    /** 计算 class 字节指纹(CRC32)，用于缓存键防内容变更误命中 */
++    public static String computeClassFingerprint(byte[] bytes) {
++        if (bytes == null || bytes.length == 0) {
++            return "0";
++        }
++        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
++        crc.update(bytes);
++        return Long.toHexString(crc.getValue());
++    }
++
+     /**
+      * 判断异常是否由线程中断引起(用户导航取消任务,不应弹窗)
+      * 递归检查异常链中每一层,最终兜底检查当前线程中断标志
+@@ -90,8 +100,12 @@ public final class ClassTabOpener {
+     private static boolean isInterruptRelated(Exception ex) {
+         Throwable cause = ex;
+         while (cause != null) {
+-            if (cause instanceof InterruptedException) return true;
+-            if (cause instanceof CancellationException) return true;
++            if (cause instanceof InterruptedException) {
++                return true;
++            }
++            if (cause instanceof CancellationException) {
++                return true;
++            }
+             cause = cause.getCause();
+         }
+         return Thread.currentThread().isInterrupted();
+@@ -218,7 +232,9 @@ public final class ClassTabOpener {
+         Tab existingTab = findOrRemoveOpenClassTab(codeTabPane, node, engine, replaceDifferentEngine);
+         if (existingTab != null) {
+             codeTabPane.getSelectionModel().select(existingTab);
+-            if (onTabReady != null) onTabReady.run();
++            if (onTabReady != null) {
++                onTabReady.run();
++            }
+             return;
+         }
+ 
+@@ -226,18 +242,15 @@ public final class ClassTabOpener {
+         statusBar.setTask(I18nUtil.getString("task.decompiling"));
+ 
+         if (cancelPrevious) {
++            decompileGeneration.incrementAndGet();
+             BackgroundTasks.cancel(currentDecompileTask);
+             removeLoadingTab(codeTabPane, currentLoadingTab);
+             removePendingTab(codeTabPane, currentPendingTab);
+         }
+-        long requestId = cancelPrevious ? decompileGeneration.incrementAndGet() : -1L;
++        long requestId = cancelPrevious ? decompileGeneration.get() : -1L;
+ 
+         Tab loadingTab = createLoadingTab(node, engine);
+         AtomicReference<Future<?>> taskRef = new AtomicReference<>();
+-        loadingTab.setOnClosed(e -> {
+-            BackgroundTasks.cancel(taskRef.get());
+-            clearCurrentLoadingTab(loadingTab);
+-        });
+         codeTabPane.getTabs().add(loadingTab);
+         codeTabPane.getSelectionModel().select(loadingTab);
+         if (cancelPrevious) {
+@@ -320,7 +333,9 @@ public final class ClassTabOpener {
+                     pendingTab.updateDecompiledContent(openFile, metadata, completedNavigate);
+                     pendingTab.setSourceReady(true);
+                     codeTabPane.getSelectionModel().select(pendingTab);
+-                    if (onTabReady != null) onTabReady.run();
++                    if (onTabReady != null) {
++                        onTabReady.run();
++                    }
+                     statusBar.setFilePath(
+                             WorkspaceTabManager.formatClassPath(node.getFullPath()));
+                     statusBar.setEncoding("UTF-8");
+@@ -379,6 +394,13 @@ public final class ClassTabOpener {
+             }
+         });
+         taskRef.set(task);
++        loadingTab.setOnClosed(e -> {
++            Future<?> f = taskRef.get();
++            if (f != null) {
++                BackgroundTasks.cancel(f);
++            }
++            clearCurrentLoadingTab(loadingTab);
++        });
+         if (cancelPrevious) {
+             currentDecompileTask = task;
+         }
+@@ -407,8 +429,9 @@ public final class ClassTabOpener {
+                 "status.redecompiling", engine.name(), fullPath));
+         statusBar.setTask(I18nUtil.getString("task.decompiling"));
+ 
++        decompileGeneration.incrementAndGet();
+         BackgroundTasks.cancel(currentDecompileTask);
+-        long requestId = decompileGeneration.incrementAndGet();
++        long requestId = decompileGeneration.get();
+         currentDecompileTask = runOpenTask("Redecompile-" + node.getName(), () -> {
+             try {
+                 if (!isRequestCurrent(requestId, true)) {
+@@ -554,7 +577,9 @@ public final class ClassTabOpener {
+     /** 读取文件字节码(文本文件版本,和 readClassBytes 逻辑相同) */
+     private byte[] readFileBytes(FileTreeNode node, Workspace workspace) throws IOException {
+         byte[] bytes = node.resolveBytes();
+-        if (bytes != null) return bytes;
++        if (bytes != null) {
++            return bytes;
++        }
+         if (!workspace.isArchive()) {
+             File source = workspace.getSourceFile();
+             return Files.readAllBytes(new File(source, node.getFullPath()).toPath());
+@@ -567,7 +592,9 @@ public final class ClassTabOpener {
+     private void installContextMenu(CodeEditorTab codeTab, FileTreeNode node, Workspace workspace,
+                                     OpenFile openFile, byte[] classBytes, CodeMetadata metadata) {
+         CodeActionHandler handler = codeActionHandler;
+-        if (handler == null) return;
++        if (handler == null) {
++            return;
++        }
+         WorkspaceIndex index = workspace.getIndex();
+         String workspaceHash = com.bingbaihanji.fxdecomplie.model.CommentScope.workspaceHash(workspace);
+         String sourceHash = CommentExportDecorator.sourceHash(openFile.sourceCode());
+@@ -596,7 +623,9 @@ public final class ClassTabOpener {
+             if (sep == null || sep.activeCellCount() >= 3) return;
+             Workspace ws = (Workspace) sourceTab.getProperties().get("workspace");
+             FileTreeNode node = (FileTreeNode) sourceTab.getProperties().get("fileTreeNode");
+-            if (ws == null || node == null) return;
++            if (ws == null || node == null) {
++                return;
++            }
+             // 使用与源 tab 相同的引擎
+             DecompilerTypeEnum sameEngine = sourceTab.getOpenFile().engine();
+             // 创建分屏 cell
+@@ -609,17 +638,23 @@ public final class ClassTabOpener {
+                     break;
+                 }
+             }
+-            if (targetPane == null) targetPane = sep.allTabPanes().get(sep.activeCellCount() - 1);
++            if (targetPane == null) {
++                targetPane = sep.allTabPanes().get(sep.activeCellCount() - 1);
++            }
+             openClassTab(node, ws, targetPane, sameEngine, lineNumbersEnabled, true, false);
+         });
+         // 设置切换引擎回调：原地用新引擎重反编译
+         tab.setOnSwitchEngine(newEngine -> {
+             Workspace ws = (Workspace) tab.getProperties().get("workspace");
+             FileTreeNode node = (FileTreeNode) tab.getProperties().get("fileTreeNode");
+-            if (ws == null || node == null) return;
++            if (ws == null || node == null) {
++                return;
++            }
+             TabPane pane = tab.getSplitEditorPane() != null
+                     ? tab.getSplitEditorPane().tabPaneFor(tab) : null;
+-            if (pane == null) return;
++            if (pane == null) {
++                return;
++            }
+             refreshCurrentClassTab(ws, pane, tab, newEngine, lineNumbersEnabled);
+         });
+         return tab;
+@@ -659,15 +694,20 @@ public final class ClassTabOpener {
+                     return;
+                 }
+                 codeTabPane.getSelectionModel().select(pendingTab);
+-                if (onTabReady != null) onTabReady.run();
++                if (onTabReady != null) {
++                    onTabReady.run();
++                }
+                 statusBar.setFilePath(WorkspaceTabManager.formatClassPath(node.getFullPath()));
+                 statusBar.setEncoding("UTF-8");
+                 statusBar.setEngine(pendingOpenFile.engine().name());
+                 bindCaretPosition(pendingTab);
+                 installContextMenu(pendingTab, node, workspace, pendingOpenFile, bytes, metadata);
+                 created.complete(pendingTab);
+-            } catch (Throwable t) {
+-                created.completeExceptionally(t);
++            } catch (Exception e) {
++                created.completeExceptionally(e);
++            } catch (Error e) {
++                created.completeExceptionally(e);
++                throw e;
+             }
+         });
+         try {
+@@ -804,10 +844,14 @@ public final class ClassTabOpener {
+     /** 读取类字节码(依次尝试节点缓存、工作区索引、全局缓存、磁盘读取) */
+     private byte[] readClassBytes(FileTreeNode node, Workspace workspace) throws IOException {
+         byte[] bytes = WorkspaceByteReader.readNodeBytes(workspace, node, true);
+-        if (bytes != null) return bytes;
++        if (bytes != null) {
++            return bytes;
++        }
+         String internalName = node.getFullPath().replace(".class", "");
+         bytes = workspaceIndexForBackground(workspace).getClassBytes(internalName);
+-        if (bytes != null) return bytes;
++        if (bytes != null) {
++            return bytes;
++        }
+         if (!workspace.isArchive()) {
+             File source = workspace.getSourceFile();
+             return Files.readAllBytes(new File(source, node.getFullPath()).toPath());
+@@ -835,7 +879,7 @@ public final class ClassTabOpener {
+         DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
+         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
+         String optionsHash = DecompilerOptions.hash(engineOptions);
+-        String wsKey = computeWorkspaceKey(workspace) + "_" + bytes.length;
++        String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
+ 
+         // ---- L2: 内存反编译缓存(最快路径) ----
+         String sourceCode = decompileCache.get(wsKey, internalName, effectiveEngine, optionsHash);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentManager.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentManager.java
+index f2bb11c..7da0dd2 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentManager.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/CommentManager.java
+@@ -30,6 +30,8 @@ public final class CommentManager {
+     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+     private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {
+     }.getType();
++    private static final java.util.concurrent.ConcurrentMap<String, java.util.concurrent.locks.ReentrantLock>
++            FILE_LOCKS = new java.util.concurrent.ConcurrentHashMap<>();
+ 
+     private static volatile Path commentRootDir;
+ 
+@@ -57,7 +59,13 @@ public final class CommentManager {
+      * @param comment       注释数据
+      */
+     public static void save(String workspaceHash, CommentData comment) {
+-        if (comment == null) return;
++        if (comment == null) {
++            return;
++        }
++        String lockKey = workspaceHash + ":" + comment.className();
++        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
++                k -> new java.util.concurrent.locks.ReentrantLock());
++        lock.lock();
+         try {
+             List<CommentData> existing = loadAll(workspaceHash, comment.className());
+             // 更新同位置已有注释，否则追加
+@@ -78,6 +86,8 @@ public final class CommentManager {
+             logger.debug("注释已保存: {}#L{}", comment.className(), comment.line());
+         } catch (Exception e) {
+             logger.error("保存注释失败", e);
++        } finally {
++            lock.unlock();
+         }
+     }
+ 
+@@ -97,6 +107,10 @@ public final class CommentManager {
+      */
+     public static boolean delete(String workspaceHash, String className,
+                                  String memberSignature, int line, String time) {
++        String lockKey = workspaceHash + ":" + className;
++        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
++                k -> new java.util.concurrent.locks.ReentrantLock());
++        lock.lock();
+         try {
+             List<CommentData> existing = loadAll(workspaceHash, className);
+             boolean removed = existing.removeIf(c ->
+@@ -114,6 +128,8 @@ public final class CommentManager {
+         } catch (Exception e) {
+             logger.error("删除注释失败", e);
+             return false;
++        } finally {
++            lock.unlock();
+         }
+     }
+ 
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/DecompilerRunner.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/DecompilerRunner.java
+index 5fb3d0c..db8d3b7 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/DecompilerRunner.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/DecompilerRunner.java
+@@ -99,10 +99,14 @@ public final class DecompilerRunner {
+             return I18nUtil.getString("decompile.busy", classFilePath);
+         } catch (TimeoutException e) {
+             future.cancel(true);
++            closeContext(context);
+             return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
+                     + "\n" + I18nUtil.getString("decompile.timeoutHint");
+         } catch (InterruptedException e) {
+-            future.cancel(true);
++            if (future != null) {
++                future.cancel(true);
++            }
++            closeContext(context);
+             Thread.currentThread().interrupt();
+             throw new RuntimeException("反编译被中断: " + classFilePath, e);
+         } catch (java.util.concurrent.ExecutionException e) {
+@@ -118,7 +122,7 @@ public final class DecompilerRunner {
+             return DecompilerContext.withOptions(options);
+         }
+         WorkspaceClassPath classPath = new WorkspaceClassPath(workspace);
+-        return DecompilerContext.of(classPath::getClassBytes, options, classPath);
++        return DecompilerContext.singleUse(classPath::getClassBytes, options, classPath);
+     }
+ 
+     public static boolean isTransientFailureOutput(String source) {
+@@ -132,7 +136,8 @@ public final class DecompilerRunner {
+                 || normalized.contains("反编译超时")
+                 || normalized.contains("jd-core error")
+                 || normalized.contains("jd-core decompile failed")
+-                || normalized.startsWith("// decompile failed");
++                || normalized.startsWith("// decompile failed")
++                || normalized.startsWith("// 反编译失败");
+     }
+ 
+     private static String decompileWithFallback(String classFilePath, byte[] classBytes,
+@@ -173,38 +178,8 @@ public final class DecompilerRunner {
+                 .decompile(classFilePath, classBytes, context);
+     }
+ 
+-    private static byte[] resolveWorkspaceClassBytes(Workspace workspace, String internalName) {
+-        if (workspace == null || internalName == null || internalName.isBlank()) {
+-            return null;
+-        }
+-        String normalized = DecompilerContext.normalizeInternalName(internalName);
+-        if (workspace.isIndexReady()) {
+-            byte[] bytes = workspace.getIndex().getClassBytes(normalized);
+-            if (bytes != null) {
+-                return bytes;
+-            }
+-        }
+-
+-        FileTreeNode node = workspace.findNodeByPath(normalized + ".class");
+-        if (node != null) {
+-            try {
+-                return WorkspaceByteReader.readNodeBytes(workspace, node, false);
+-            } catch (IOException e) {
+-                logger.debug("解析依赖类失败: {}", normalized, e);
+-            }
+-        }
+-
+-        try {
+-            return WorkspaceByteReader.readClassBytes(workspace, normalized, false);
+-        } catch (IOException e) {
+-            logger.debug("从工作区读取依赖类失败: {}", normalized, e);
+-        }
+-        return null;
+-    }
+-
+     private static void closeContext(DecompilerContext context) {
+-        if (context == null || context == DecompilerContext.EMPTY
+-                || context == DecompilerContext.LEGACY_GLOBAL) {
++        if (context == null) {
+             return;
+         }
+         try {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/DiskCodeCache.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/DiskCodeCache.java
+index 5460c15..d341a8e 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/DiskCodeCache.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/DiskCodeCache.java
+@@ -103,7 +103,9 @@ public final class DiskCodeCache {
+                             }
+                         }).sum();
+             }
+-            if (totalSize <= MAX_CACHE_SIZE_BYTES) return;
++            if (totalSize <= MAX_CACHE_SIZE_BYTES) {
++                return;
++            }
+             // 第二遍扫描:收集、按时间排序,删除最旧的直至低于目标大小
+             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
+             List<Path> files;
+@@ -119,7 +121,9 @@ public final class DiskCodeCache {
+                         .collect(Collectors.toList());
+             }
+             for (Path f : files) {
+-                if (totalSize <= targetSize) break;
++                if (totalSize <= targetSize) {
++                    break;
++                }
+                 try {
+                     long sz = Files.size(f);
+                     Files.deleteIfExists(f);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/ExportService.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/ExportService.java
+index 4b8e1d8..5d8667b 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/ExportService.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/ExportService.java
+@@ -209,7 +209,16 @@ public final class ExportService {
+                 if (target != null) {
+                     // ---- 写入: 创建父目录并写入内容 ----
+                     Files.createDirectories(target.getParent());
+-                    Files.write(target, content.bytes());
++                    try {
++                        Files.write(target, content.bytes());
++                    } catch (Exception e) {
++                        try {
++                            Files.deleteIfExists(target);
++                        } catch (IOException ignored) {
++                            logger.debug("清理失败写入残留文件失败: {}", target, ignored);
++                        }
++                        throw e;
++                    }
+                     state.successCount++;
+                 }
+             } catch (Exception e) {
+@@ -253,9 +262,12 @@ public final class ExportService {
+                         writtenEntries.add(entryName);
+                         zos.putNextEntry(new ZipEntry(entryName));
+                         entryOpen = true;
+-                        zos.write(content.bytes());
+-                        zos.closeEntry();
+-                        entryOpen = false;
++                        try {
++                            zos.write(content.bytes());
++                        } finally {
++                            zos.closeEntry();
++                            entryOpen = false;
++                        }
+                         state.successCount++;
+                     }
+                 } catch (Exception e) {
+@@ -282,7 +294,9 @@ public final class ExportService {
+             if (DecompilerRunner.isTransientFailureOutput(source)) {
+                 throw new IllegalStateException(firstLine(source));
+             }
+-            source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
++            if (commentScope != null && commentScope.enabled()) {
++                source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
++            }
+             return new ExportContent(data.getFullPath().replace(".class", ".java"),
+                     source.getBytes(StandardCharsets.UTF_8));
+         }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/FileTreeBuilder.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/FileTreeBuilder.java
+index 11bf87a..41d2293 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/FileTreeBuilder.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/FileTreeBuilder.java
+@@ -61,7 +61,9 @@ public final class FileTreeBuilder {
+             TreeItem<FileTreeNode> root, String fullPath,
+             Map<String, TreeItem<FileTreeNode>> pathMap) {
+         int lastSlash = fullPath.lastIndexOf('/');
+-        if (lastSlash < 0) return root;
++        if (lastSlash < 0) {
++            return root;
++        }
+ 
+         String parentPath = fullPath.substring(0, lastSlash);
+         String[] parts = parentPath.split("/");
+@@ -98,7 +100,9 @@ public final class FileTreeBuilder {
+                 FileTreeNode bData = b.getValue();
+                 boolean aDir = aData.getNodeType() == FileTreeNode.NodeTypeEnum.PACKAGE;
+                 boolean bDir = bData.getNodeType() == FileTreeNode.NodeTypeEnum.PACKAGE;
+-                if (aDir != bDir) return aDir ? -1 : 1;
++                if (aDir != bDir) {
++                    return aDir ? -1 : 1;
++                }
+                 return aData.getName().compareToIgnoreCase(bData.getName());
+             });
+             queue.addAll(node.getChildren());
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/SearchService.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/SearchService.java
+index 0d6e82b..7bcea3b 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/SearchService.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/SearchService.java
+@@ -5,9 +5,7 @@ import com.bingbaihanji.fxdecomplie.ui.search.SearchProvider;
+ import com.bingbaihanji.fxdecomplie.ui.search.SearchResult;
+ import com.bingbaihanji.fxdecomplie.ui.search.SearchScope;
+ 
+-import java.util.ArrayList;
+-import java.util.List;
+-import java.util.Map;
++import java.util.*;
+ import java.util.concurrent.CopyOnWriteArrayList;
+ import java.util.regex.Pattern;
+ import java.util.stream.Collectors;
+@@ -28,17 +26,6 @@ public class SearchService {
+     /** 预编译的排除模式,用于性能优化 */
+     private volatile List<Pattern> compiledExcludePatterns = List.of();
+ 
+-    private static boolean matchesExcludePattern(String path, List<String> patterns) {
+-        if (path == null) return false;
+-        for (String pattern : patterns) {
+-            if (pattern == null || pattern.isBlank()) {
+-                continue;
+-            }
+-            if (globContainsPattern(pattern).matcher(path).find()) return true;
+-        }
+-        return false;
+-    }
+-
+     private static Pattern globContainsPattern(String glob) {
+         StringBuilder regex = new StringBuilder();
+         for (int i = 0; i < glob.length(); i++) {
+@@ -63,12 +50,32 @@ public class SearchService {
+     }
+ 
+     public void setExcludePatterns(List<String> patterns) {
+-        this.excludePatterns = patterns != null ? List.copyOf(patterns) : List.of();
++        this.excludePatterns = patterns == null
++                ? List.of()
++                : patterns.stream()
++                .filter(pattern -> pattern != null && !pattern.isBlank())
++                .toList();
+         this.compiledExcludePatterns = this.excludePatterns.stream()
+                 .map(SearchService::globContainsPattern)
+                 .collect(Collectors.toList());
+     }
+ 
++    private boolean isExcluded(SearchResult result) {
++        if (result == null || compiledExcludePatterns.isEmpty()) {
++            return false;
++        }
++        String path = result.fullPath();
++        if (path == null || path.isBlank()) {
++            return false;
++        }
++        for (Pattern pattern : compiledExcludePatterns) {
++            if (pattern.matcher(path).find()) {
++                return true;
++            }
++        }
++        return false;
++    }
++
+     /**
+      * 运行所有已注册的提供器并合并结果,按匹配类型优先级和行号排序
+      *
+@@ -83,27 +90,34 @@ public class SearchService {
+     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache, int limit) {
+         if (query == null || query.isBlank()) return List.of();
+         int resultLimit = Math.max(1, limit);
++        int globalSoftLimit = resultLimit * 2;
++        int providerCount = Math.max(1, providers.size());
++        int perProviderQuota = Math.max(1, globalSoftLimit / providerCount);
+         List<SearchResult> all = new ArrayList<>();
++        Set<String> addedKeys = new HashSet<>();
+         for (SearchProvider provider : providers) {
+-            if (Thread.currentThread().isInterrupted()) {
+-                return List.of();
+-            }
++            if (Thread.currentThread().isInterrupted()) return List.of();
++            if (all.size() >= globalSoftLimit) break;
+             List<SearchResult> results = provider.search(query, sourceCache);
+-            all.addAll(results);
+-        }
+-        // 根据排除模式过滤结果
+-        if (!compiledExcludePatterns.isEmpty()) {
+-            all.removeIf(result -> {
+-                String path = result.fullPath();
+-                for (Pattern pattern : compiledExcludePatterns) {
+-                    if (pattern.matcher(path).find()) return true;
++            int providerAdded = 0;
++            for (SearchResult result : results) {
++                if (all.size() >= globalSoftLimit || providerAdded >= perProviderQuota) {
++                    break;
+                 }
+-                return false;
+-            });
++                if (!isExcluded(result)) {
++                    String key = result.fullPath() + ":" + result.lineNumber();
++                    if (addedKeys.add(key)) {
++                        all.add(result);
++                        providerAdded++;
++                    }
++                }
++            }
+         }
+         all.sort((a, b) -> {
+             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
+-            if (typeCmp != 0) return typeCmp;
++            if (typeCmp != 0) {
++                return typeCmp;
++            }
+             return Integer.compare(a.lineNumber(), b.lineNumber());
+         });
+         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
+@@ -120,30 +134,43 @@ public class SearchService {
+         int resultLimit = Math.max(1, limit);
+         List<SearchResult> all = new ArrayList<>();
+         SearchScope effectiveScope = scope == null ? SearchScope.ALL : scope;
+-        // 提前停止：结果数达到 2 倍限制后跳过剩余 provider（避免全量搜索后截断浪费）
+-        int softLimit = resultLimit * 2;
++        int activeProviderCount = 0;
++        for (SearchProvider provider : providers) {
++            if (provider.supports(effectiveScope)) {
++                activeProviderCount++;
++            }
++        }
++        int globalSoftLimit = resultLimit * 2;
++        int perProviderQuota = Math.max(1, globalSoftLimit / Math.max(1, activeProviderCount));
++        Set<String> addedKeys = new HashSet<>();
+         for (SearchProvider provider : providers) {
+             if (Thread.currentThread().isInterrupted()) return List.of();
+             if (!provider.supports(effectiveScope)) {
+                 continue;
+             }
+-            if (all.size() >= softLimit) break;
++            if (all.size() >= globalSoftLimit) {
++                break;
++            }
+             List<SearchResult> results = provider.search(query, sourceCache, options);
+-            all.addAll(results);
+-        }
+-        // 根据排除模式过滤结果
+-        if (!compiledExcludePatterns.isEmpty()) {
+-            all.removeIf(result -> {
+-                String path = result.fullPath();
+-                for (Pattern pattern : compiledExcludePatterns) {
+-                    if (pattern.matcher(path).find()) return true;
++            int providerAdded = 0;
++            for (SearchResult result : results) {
++                if (all.size() >= globalSoftLimit || providerAdded >= perProviderQuota) {
++                    break;
+                 }
+-                return false;
+-            });
++                if (!isExcluded(result)) {
++                    String key = result.fullPath() + ":" + result.lineNumber();
++                    if (addedKeys.add(key)) {
++                        all.add(result);
++                        providerAdded++;
++                    }
++                }
++            }
+         }
+         all.sort((a, b) -> {
+             int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
+-            if (typeCmp != 0) return typeCmp;
++            if (typeCmp != 0) {
++                return typeCmp;
++            }
+             return Integer.compare(a.lineNumber(), b.lineNumber());
+         });
+         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/service/UsageSearchService.java b/src/main/java/com/bingbaihanji/fxdecomplie/service/UsageSearchService.java
+index 88934a6..a3c2fd9 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/service/UsageSearchService.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/service/UsageSearchService.java
+@@ -333,7 +333,7 @@ public final class UsageSearchService {
+     private record Target(String raw, String classPart, String memberPart) {
+         private static Target parse(String query) {
+             String rawQuery = query.trim()
+-                    .replace(".class", "")
++                    .replaceAll("\\.class$", "")
+                     .replace('\\', '/')
+                     .toLowerCase(Locale.ROOT);
+             String classQuery = rawQuery.replace('.', '/');
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/DialogHelper.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/DialogHelper.java
+index 47b76d4..d48763e 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/DialogHelper.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/DialogHelper.java
+@@ -44,6 +44,14 @@ public final class DialogHelper {
+     }
+ 
+     public static void showAlert(Window owner, Alert.AlertType type, String title, String message) {
++        // 同步记录到控制台/日志文件，确保报错时有轨迹可查
++        String logMsg = title + " - " + message;
++        switch (type) {
++            case ERROR -> logger.error(logMsg);
++            case WARNING -> logger.warn(logMsg);
++            case INFORMATION -> logger.info(logMsg);
++            default -> logger.debug(logMsg);
++        }
+         Alert alert = new Alert(type, message);
+         alert.setTitle(title);
+         alert.setHeaderText(null);
+@@ -57,14 +65,15 @@ public final class DialogHelper {
+         alert.setOnShown(e -> {
+             var window = alert.getDialogPane().getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(window);
+-            if (window instanceof Stage s) setDialogIcon(s);
++            if (window instanceof Stage s) {
++                setDialogIcon(s);
++            }
+         });
+         alert.showAndWait();
+     }
+ 
+     private static void setDialogIcon(Stage stage) {
+-        try {
+-            var stream = DialogHelper.class.getResourceAsStream("/icon/logo.png");
++        try (var stream = DialogHelper.class.getResourceAsStream("/icon/logo.png")) {
+             if (stream != null) {
+                 stage.getIcons().add(new Image(stream));
+             }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java
+index 06be46e..c9cb97d 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/WorkspaceTabManager.java
+@@ -213,9 +213,13 @@ public final class WorkspaceTabManager {
+                                      TabPane codeTabPane, NavigationService navigationService,
+                                      BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                      BiConsumer<FileTreeNode, TabPane> onTextFileClick) {
+-        if (item == null) return;
++        if (item == null) {
++            return;
++        }
+         FileTreeNode node = item.getValue();
+-        if (node == null) return;
++        if (node == null) {
++            return;
++        }
+         if (node.isClassFile()) {
+             navigationService.openPath(navigationService.classPath(workspace, node),
+                     workspace, codeTabPane, onClassClick, onTextFileClick);
+@@ -562,7 +566,9 @@ public final class WorkspaceTabManager {
+     /** 获取当前选中的代码标签页 */
+     public CodeEditorTab currentCodeTab() {
+         WorkspaceView view = currentWorkspaceView();
+-        if (view == null) return null;
++        if (view == null) {
++            return null;
++        }
+         return view.splitEditorPane().currentCodeTab();
+     }
+ 
+@@ -579,7 +585,11 @@ public final class WorkspaceTabManager {
+             statusBar.setFilePath(formatClassPath(codeTab.getOpenFile().fullPath()));
+             statusBar.setEncoding("UTF-8");
+             statusBar.setEngine(codeTab.getOpenFile().engine().name());
+-            var caret = codeTab.getCodeArea().getCaretPosition();
++            var codeArea = codeTab.getCodeArea();
++            if (codeArea == null) {
++                return;
++            }
++            var caret = codeArea.getCaretPosition();
+             statusBar.setCursorPosition(caret.index() + 1, caret.offset() + 1);
+         }
+     }
+@@ -634,7 +644,8 @@ public final class WorkspaceTabManager {
+         alert.setTitle(I18nUtil.getString("workspace.close.title"));
+         alert.setHeaderText(null);
+         alert.setContentText(I18nUtil.getString("workspace.close.message"));
+-        alert.initOwner(outerTabPane.getScene().getWindow());
++        var scene = outerTabPane.getScene();
++        alert.initOwner(scene != null ? scene.getWindow() : null);
+         try {
+             alert.getDialogPane().getStylesheets().add(
+                     com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
+@@ -646,6 +657,9 @@ public final class WorkspaceTabManager {
+ 
+     /** 清理已关闭的工作区 */
+     private void cleanupClosedWorkspace(Tab tab) {
++        if (!workspaceViews.containsKey(tab)) {
++            return;
++        }
+         WorkspaceView view = workspaceViews.remove(tab);
+         WorkspaceTools tools = workspaceTools.remove(tab);
+ 
+@@ -720,7 +734,11 @@ public final class WorkspaceTabManager {
+             statusBar.setFilePath(formatClassPath(codeTab.getOpenFile().fullPath()));
+             statusBar.setEncoding("UTF-8");
+             statusBar.setEngine(codeTab.getOpenFile().engine().name());
+-            var caret = codeTab.getCodeArea().getCaretPosition();
++            var codeArea = codeTab.getCodeArea();
++            if (codeArea == null) {
++                return;
++            }
++            var caret = codeArea.getCaretPosition();
+             statusBar.setCursorPosition(caret.index() + 1, caret.offset() + 1);
+         }
+     }
+@@ -741,7 +759,9 @@ public final class WorkspaceTabManager {
+         }
+         for (TreeItem<FileTreeNode> child : item.getChildren()) {
+             FileTreeNode found = findClassNode(child, className);
+-            if (found != null) return found;
++            if (found != null) {
++                return found;
++            }
+         }
+         return null;
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/AbstractCodeContentPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/AbstractCodeContentPanel.java
+index f262048..def2db2 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/AbstractCodeContentPanel.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/AbstractCodeContentPanel.java
+@@ -56,7 +56,9 @@ public abstract class AbstractCodeContentPanel extends StackPane {
+ 
+     /** 子类在 createContent() 中创建 CodeArea 后调用此方法应用字体和行号 */
+     protected final void applyFontAndLineNumbers(jfx.incubator.scene.control.richtext.CodeArea area) {
+-        if (area == null) return;
++        if (area == null) {
++            return;
++        }
+         try {
+             java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
+             if (url != null) {
+@@ -162,6 +164,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
+ 
+     /** 错误提示 */
+     protected void showError(String msg) {
++        logger.error("内容面板加载失败: {}", msg);
+         getChildren().setAll(new Label(msg));
+     }
+ 
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeHighlighter.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeHighlighter.java
+index f3dcc01..7f2c677 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeHighlighter.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeHighlighter.java
+@@ -269,7 +269,9 @@ final class BytecodeHighlighter implements SyntaxDecorator {
+                     if (line.charAt(end) == '\\') end++;
+                     end++;
+                 }
+-                if (end < len) end++;
++                if (end < len) {
++                    end++;
++                }
+                 tokens.add(new Token(Kind.STRING, line.substring(pos, end)));
+                 pos = end;
+                 continue;
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeTextBuilder.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeTextBuilder.java
+index 88d0b5b..c49cc3a 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeTextBuilder.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/BytecodeTextBuilder.java
+@@ -45,7 +45,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+     /** 从 raw bytes 解析并格式化常量池，每行一个条目带注释 */
+     static String formatConstantPool(byte[] raw) {
+-        if (raw == null || raw.length < 10) return "";
++        if (raw == null || raw.length < 10) {
++            return "";
++        }
+         try {
+             int count = readU2(raw, 8);
+             // 防御：count 不能超过文件大小（每个条目最少1字节tag）
+@@ -182,7 +184,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+     /** 格式化类头信息（magic、版本号、访问标志、this_class、super_class） */
+     static String formatClassHeader(byte[] raw, String className, String superName,
+                                     String[] interfaces) {
+-        if (raw == null || raw.length < 10) return "";
++        if (raw == null || raw.length < 10) {
++            return "";
++        }
+         StringBuilder h = new StringBuilder(512);
+ 
+         // Class 路径标记
+@@ -220,7 +224,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+             h.append(" [");
+             int ifOff = bodyOff + 8;
+             for (int i = 0; i < ifCount; i++) {
+-                if (i > 0) h.append(", ");
++                if (i > 0) {
++                    h.append(", ");
++                }
+                 int ifIdx = readU2(raw, ifOff + i * 2);
+                 h.append('#').append(ifIdx).append(" // ").append(cpUtf8(raw, ifIdx));
+             }
+@@ -232,7 +238,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+     /** 解析类文件属性名（SourceFile、Signature 等） */
+     static String parseClassAttributes(byte[] raw) {
+-        if (raw == null || raw.length < 10) return "";
++        if (raw == null || raw.length < 10) {
++            return "";
++        }
+         StringBuilder attrs = new StringBuilder();
+         try {
+             int off = skipToClassBody(raw) + 6; // skip access, this, super
+@@ -287,7 +295,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+     /** 扫描所有方法的 Code 属性文件偏移，返回 methodKey → code[] 的文件偏移 */
+     static Map<String, Integer> scanCodeOffsets(byte[] raw) {
+         Map<String, Integer> map = new LinkedHashMap<>();
+-        if (raw == null || raw.length < 10) return map;
++        if (raw == null || raw.length < 10) {
++            return map;
++        }
+         try {
+             int off = skipToClassBody(raw) + 6; // skip access, this, super
+             int ifCount = readU2(raw, off);
+@@ -334,7 +344,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+     static String formatCodeHeader(byte[] raw, String methodKey) {
+         Map<String, Integer> offsets = scanCodeOffsets(raw);
+         Integer codeOff = offsets.get(methodKey);
+-        if (codeOff == null) return "";
++        if (codeOff == null) {
++            return "";
++        }
+         // codeOff = file offset of code[] start
+         // codeOff - 14 = Code attribute start
+         // codeOff - 14 + 6 = attribute header end
+@@ -355,7 +367,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+         // methodKey = name + desc
+         // 从 methodKey 中提取描述符部分
+         int paren = methodKey.indexOf('(');
+-        if (paren < 0) return 1;
++        if (paren < 0) {
++            return 1;
++        }
+         String desc = methodKey.substring(paren);
+         int size = 0;
+         boolean inArray = false;
+@@ -402,18 +416,24 @@ final class BytecodeTextBuilder extends ClassVisitor {
+     // -- 字节操作工具 --
+ 
+     static int readU2(byte[] b, int off) {
+-        if (off < 0 || off + 1 >= b.length) return 0;
++        if (off < 0 || off + 1 >= b.length) {
++            return 0;
++        }
+         return ((b[off] & 0xFF) << 8) | (b[off + 1] & 0xFF);
+     }
+ 
+     private static int readS4(byte[] b, int off) {
+-        if (off < 0 || off + 3 >= b.length) return 0;
++        if (off < 0 || off + 3 >= b.length) {
++            return 0;
++        }
+         return ((b[off] & 0xFF) << 24) | ((b[off + 1] & 0xFF) << 16)
+                 | ((b[off + 2] & 0xFF) << 8) | (b[off + 3] & 0xFF);
+     }
+ 
+     private static long readS8(byte[] b, int off) {
+-        if (off < 0 || off + 7 >= b.length) return 0;
++        if (off < 0 || off + 7 >= b.length) {
++            return 0;
++        }
+         return ((long) (b[off] & 0xFF) << 56) | ((long) (b[off + 1] & 0xFF) << 48)
+                 | ((long) (b[off + 2] & 0xFF) << 40) | ((long) (b[off + 3] & 0xFF) << 32)
+                 | ((long) (b[off + 4] & 0xFF) << 24) | ((long) (b[off + 5] & 0xFF) << 16)
+@@ -423,12 +443,16 @@ final class BytecodeTextBuilder extends ClassVisitor {
+     /** 常量池字节数（不含 tag 字节，用于跳过常量池） */
+     private static int cpByteSize(byte[] raw) {
+         int count = readU2(raw, 8);
+-        if (count < 1 || count > raw.length) return 0;
++        if (count < 1 || count > raw.length) {
++            return 0;
++        }
+         int off = 10;
+         for (int i = 1; i < count && off < raw.length; i++) {
+             int tag = raw[off++] & 0xFF;
+             off += cpEntryDataSize(tag, raw, off);
+-            if (tag == 5 || tag == 6) i++;
++            if (tag == 5 || tag == 6) {
++                i++;
++            }
+         }
+         return off - 10;
+     }
+@@ -469,22 +493,32 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+     /** 获取 index 处的 UTF8 常量池内容 */
+     static String cpUtf8(byte[] raw, int index) {
+-        if (index < 1 || raw == null || raw.length < 10) return "?";
++        if (index < 1 || raw == null || raw.length < 10) {
++            return "?";
++        }
+         // 防御：index 不应超过可用的常量池条目数
+-        if (index > raw.length) return "?";
++        if (index > raw.length) {
++            return "?";
++        }
+         try {
+             int off = 10;
+             int cpCount = readU2(raw, 8);
+             for (int i = 1; i < index && i < cpCount && off < raw.length; i++) {
+                 int tag = raw[off++] & 0xFF;
+                 off += cpEntryDataSize(tag, raw, off);
+-                if (tag == 5 || tag == 6) i++;
++                if (tag == 5 || tag == 6) {
++                    i++;
++                }
++            }
++            if (off >= raw.length) {
++                return "?";
+             }
+-            if (off >= raw.length) return "?";
+             int tag = raw[off++] & 0xFF;
+             if (tag == 1) {
+                 int len = readU2(raw, off);
+-                if (off + 2 + len > raw.length) return "?"; // 防御：UTF8内容不超出数组
++                if (off + 2 + len > raw.length) {
++                    return "?";
++                } // 防御：UTF8内容不超出数组
+                 return new String(raw, off + 2, len, java.nio.charset.StandardCharsets.UTF_8);
+             }
+             return "?";
+@@ -528,14 +562,36 @@ final class BytecodeTextBuilder extends ClassVisitor {
+             case Opcodes.INVOKEINTERFACE, Opcodes.INVOKEDYNAMIC -> 5;
+             case Opcodes.NEW, Opcodes.ANEWARRAY, Opcodes.CHECKCAST, Opcodes.INSTANCEOF -> 3;
+             case Opcodes.MULTIANEWARRAY -> 4;
+-            case 196 -> 0; // WIDE — 具体由后续指令决定
++            case 196 -> 1; // WIDE — 前缀本身占1字节,实际大小由 actualSize 计算
+             default -> 1;
+         };
+     }
+ 
++    /**
++     * 获取指令在字节码中的实际大小(含 WIDE 前缀)
++     *
++     * @param raw  原始字节码
++     * @param offset 当前指令在 raw 中的偏移
++     * @return 指令实际占用字节数
++     */
++    static int actualSize(byte[] raw, int offset) {
++        int b = raw[offset] & 0xFF;
++        if (b != 0xC4) {
++            return sizeOf(b);
++        }
++        // WIDE 前缀: WIDE(1) + 实际opcode(1) + 宽操作数
++        int next = raw[offset + 1] & 0xFF;
++        if (next == Opcodes.IINC) {
++            return 6; // WIDE(1) + IINC(1) + index(2) + const(2)
++        }
++        return 4; // WIDE(1) + opcode(1) + wideIndex(2)
++    }
++
+     /** 转义特殊字符 */
+     static String escape(String s) {
+-        if (s == null) return "";
++        if (s == null) {
++            return "";
++        }
+         StringBuilder sb = new StringBuilder(s.length());
+         for (char c : s.toCharArray()) {
+             switch (c) {
+@@ -680,7 +736,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+         sb.append(' ').append(name).append('(');
+         Type[] argTypes = Type.getArgumentTypes(descriptor);
+         for (int i = 0; i < argTypes.length; i++) {
+-            if (i > 0) sb.append(", ");
++            if (i > 0) {
++                sb.append(", ");
++            }
+             sb.append(SmaliTextBuilder.formatTypeReadable(argTypes[i]));
+         }
+         sb.append(')').append(SmaliTextBuilder.formatTypeReadable(Type.getReturnType(descriptor)));
+@@ -758,7 +816,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
+         @Override
+         public void visitLocalVariable(String name, String descriptor, String signature,
+                                        Label start, Label end, int index) {
+-            if (name == null) return;
++            if (name == null) {
++                return;
++            }
+             String typeStr = SmaliTextBuilder.formatTypeReadable(Type.getType(descriptor));
+             sb.append(INSN_INDENT)
+                     .append(String.format("    ; .local p%d, \"%s\":L%s;\n", index, name, typeStr));
+@@ -785,7 +845,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+         @Override
+         public void visitIntInsn(int opcode, int operand) {
+-            int size = sizeOf(opcode);
++            int size = actualSize(raw, codeOffset + pc);
+             appendInsnHex(opcode, size);
+             sb.append(' ').append(opcodeName(opcode)).append(' ').append(operand).append('\n');
+             pc += size;
+@@ -793,7 +853,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+         @Override
+         public void visitVarInsn(int opcode, int var) {
+-            int size = sizeOf(opcode);
++            int size = actualSize(raw, codeOffset + pc);
+             appendInsnHex(opcode, size);
+             sb.append(' ').append(opcodeName(opcode)).append(' ').append(var).append('\n');
+             pc += size;
+@@ -801,7 +861,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+         @Override
+         public void visitTypeInsn(int opcode, String type) {
+-            int size = sizeOf(opcode);
++            int size = actualSize(raw, codeOffset + pc);
+             appendInsnHex(opcode, size);
+             sb.append(' ').append(opcodeName(opcode)).append(' ').append(type.replace('/', '.'));
+             sb.append("    // L").append(type.replace('.', '/')).append(';').append('\n');
+@@ -810,7 +870,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+         @Override
+         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+-            int size = sizeOf(opcode);
++            int size = actualSize(raw, codeOffset + pc);
+             appendInsnHex(opcode, size);
+             int idx = readU2(raw, codeOffset + pc + 1); // 操作数中的字段引用索引
+             String typeStr = SmaliTextBuilder.formatTypeReadable(Type.getType(descriptor));
+@@ -823,7 +883,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
+         @Override
+         public void visitMethodInsn(int opcode, String owner, String name,
+                                     String descriptor, boolean isInterface) {
+-            int size = sizeOf(opcode);
++            int size = actualSize(raw, codeOffset + pc);
+             appendInsnHex(opcode, size);
+             int idx = readU2(raw, codeOffset + pc + 1);
+             sb.append(' ').append(opcodeName(opcode)).append(" #").append(idx)
+@@ -845,7 +905,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
+ 
+         @Override
+         public void visitJumpInsn(int opcode, Label label) {
+-            int size = sizeOf(opcode);
++            int size = actualSize(raw, codeOffset + pc);
+             appendInsnHex(opcode, size);
+             int offset = readS2(raw, codeOffset + pc + 1);
+             int target = pc + offset;
+@@ -877,9 +937,11 @@ final class BytecodeTextBuilder extends ClassVisitor {
+             sb.append(' ').append(opcodeName(opcode)).append(" #").append(idx);
+             // 注释解析后的值
+             sb.append("  // ");
+-            if (cst instanceof String s) sb.append('"').append(escape(s)).append('"');
+-            else if (cst instanceof Type t) sb.append("class ").append(t.getInternalName());
+-            else sb.append(cst);
++            if (cst instanceof String s) {
++                sb.append('"').append(escape(s)).append('"');
++            } else if (cst instanceof Type t) {
++                sb.append("class ").append(t.getInternalName());
++            } else sb.append(cst);
+             sb.append('\n');
+             pc += size;
+         }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassInfoView.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassInfoView.java
+index bd02bfa..fbfc5a9 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassInfoView.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassInfoView.java
+@@ -171,7 +171,9 @@ public final class ClassInfoView {
+     private static String extractParams(String descriptor) {
+         int paren = descriptor.indexOf('(');
+         int endParen = descriptor.lastIndexOf(')');
+-        if (paren < 0 || endParen <= paren) return "";
++        if (paren < 0 || endParen <= paren) {
++            return "";
++        }
+         String params = descriptor.substring(paren + 1, endParen);
+         if (params.isEmpty()) return "";
+         // Simplify: just show the raw descriptor for params
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeAreaContextMenu.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeAreaContextMenu.java
+index cd2d1be..5f9e9ce 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeAreaContextMenu.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeAreaContextMenu.java
+@@ -100,25 +100,33 @@ public class CodeAreaContextMenu extends ContextMenu {
+     }
+ 
+     private void onGotoDeclaration() {
+-        if (actionHandler == null || context == null || codeArea == null) return;
++        if (actionHandler == null || context == null || codeArea == null) {
++            return;
++        }
+         int line = currentLine();
+         actionHandler.goToDeclaration(context, line, tokenAtActionPosition());
+     }
+ 
+     private void onShowInheritanceGraph() {
+-        if (actionHandler == null || context == null) return;
++        if (actionHandler == null || context == null) {
++            return;
++        }
+         logger.info("代码区右键菜单触发查看继承图: {}", context.classInternalName());
+         actionHandler.showInheritanceGraph(context);
+     }
+ 
+     private void onShowMethodGraph() {
+-        if (actionHandler == null || context == null) return;
++        if (actionHandler == null || context == null) {
++            return;
++        }
+         logger.info("代码区右键菜单触发查看方法图: {}", context.classInternalName());
+         actionHandler.showMethodGraph(context);
+     }
+ 
+     private void onAddComment() {
+-        if (actionHandler == null || context == null) return;
++        if (actionHandler == null || context == null) {
++            return;
++        }
+         TextPos caret = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
+         actionHandler.addOrUpdateComment(context, caret);
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeContentDeck.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeContentDeck.java
+index 14036b3..c88590f 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeContentDeck.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeContentDeck.java
+@@ -119,7 +119,9 @@ public class CodeContentDeck extends VBox {
+         btn.setMinWidth(60);
+         btn.setMaxHeight(28);
+         btn.setOnAction(e -> {
+-            if (suppressAction) return;
++            if (suppressAction) {
++                return;
++            }
+             if (btn.isSelected()) {
+                 selectTab(index);
+             }
+@@ -132,7 +134,9 @@ public class CodeContentDeck extends VBox {
+      * 切换到指定索引的标签页，首次切换时触发懒加载
+      */
+     private void selectTab(int index) {
+-        if (index < 0 || index >= 4) return;
++        if (index < 0 || index >= 4) {
++            return;
++        }
+         cancelGen.incrementAndGet(); // 取消旧任务
+         activeIndex.set(index);
+ 
+@@ -176,7 +180,9 @@ public class CodeContentDeck extends VBox {
+                 panel.fontSize = this.fontSize;
+                 panel.fontFamily = this.fontFamily;
+                 var area = getCodeArea(panel);
+-                if (area != null) area.setFont(font);
++                if (area != null) {
++                    area.setFont(font);
++                }
+             }
+         }
+     }
+@@ -188,7 +194,9 @@ public class CodeContentDeck extends VBox {
+             if (panel != null) {
+                 panel.lineNumbersEnabled = enabled;
+                 var area = getCodeArea(panel);
+-                if (area != null) LineNumberGutter.setEnabled(area, enabled);
++                if (area != null) {
++                    LineNumberGutter.setEnabled(area, enabled);
++                }
+             }
+         }
+     }
+@@ -196,7 +204,9 @@ public class CodeContentDeck extends VBox {
+     private javafx.scene.text.Font loadFont() {
+         try {
+             java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
+-            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
++            if (url != null) {
++                return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
++            }
+         } catch (Exception ignored) {
+             logger.debug("加载自定义字体失败，回退到系统字体", ignored);
+         }
+@@ -218,7 +228,9 @@ public class CodeContentDeck extends VBox {
+      * @param panel     已按当前主题和导航元数据创建好的源码面板
+      */
+     public void replaceSourcePanel(String newSource, SourceContentPanel panel) {
+-        if (panel == null) return;
++        if (panel == null) {
++            return;
++        }
+         AbstractCodeContentPanel oldSource = panels[TAB_CODE];
+         if (oldSource != null && oldSource != panel) {
+             oldSource.dispose();
+@@ -313,7 +325,9 @@ public class CodeContentDeck extends VBox {
+     public void dispose() {
+         cancelGen.incrementAndGet();
+         for (AbstractCodeContentPanel panel : panels) {
+-            if (panel != null) panel.dispose();
++            if (panel != null) {
++                panel.dispose();
++            }
+         }
+     }
+ }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java
+index 9031abc..43c0ee0 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeEditorTab.java
+@@ -27,8 +27,6 @@ public class CodeEditorTab extends Tab {
+ 
+     /** 代码视图面板 */
+     private final CodeViewPanel codeViewPanel;
+-    /** 标签页显示标题 */
+-    private final String displayTitle;
+     /** 可拖拽的标签标题节点 */
+     private final Label titleLabel;
+     /** 默认字号 */
+@@ -41,6 +39,8 @@ public class CodeEditorTab extends Tab {
+     private final byte[] classBytes;
+     /** 编辑器内搜索栏 */
+     private final EditorSearchBar editorSearchBar;
++    /** 标签页显示标题 */
++    private String displayTitle;
+     /** Java 源码编辑器（兼容引用） */
+     private CodeArea codeArea;
+     /** 打开的文件 */
+@@ -78,7 +78,7 @@ public class CodeEditorTab extends Tab {
+                          int fontSize, boolean wrapText, boolean lineNumbersEnabled, byte[] classBytes,
+                          CodeMetadata metadata, Consumer<CodeMetadata.Reference> onNavigate) {
+         this.openFile = Objects.requireNonNull(openFile, "openFile");
+-        this.displayTitle = openFile.className() + " [" + openFile.engine().name() + "]";
++        this.displayTitle = displayTitleFor(openFile);
+         this.defaultFontSize = fontSize;
+         this.theme = theme;
+         this.fontFamily = fontFamily;
+@@ -99,7 +99,9 @@ public class CodeEditorTab extends Tab {
+         // 分屏勾选框 → 触发 SplitEditorPane 分屏
+         viewPanel.setOnSplitToggled(enabled -> {
+             SplitEditorPane sep = getSplitEditorPane();
+-            if (sep == null) return;
++            if (sep == null) {
++                return;
++            }
+             if (enabled) {
+                 requestSplit();
+             } else {
+@@ -126,6 +128,10 @@ public class CodeEditorTab extends Tab {
+         return label;
+     }
+ 
++    private static String displayTitleFor(OpenFile openFile) {
++        return openFile.className() + " [" + openFile.engine().name() + "]";
++    }
++
+     /** 构建切换引擎子菜单 */
+     static Menu buildEngineSwitchMenu(CodeEditorTab tab) {
+         Menu engineMenu = new Menu(I18nUtil.getString("context.switchEngine"));
+@@ -144,7 +150,9 @@ public class CodeEditorTab extends Tab {
+     private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
+         try {
+             java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
+-            if (url != null) return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
++            if (url != null) {
++                return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
++            }
+         } catch (Exception ignored) {
+             logger.debug("加载自定义字体失败，回退到系统字体", ignored);
+         }
+@@ -172,6 +180,10 @@ public class CodeEditorTab extends Tab {
+ 
+     /** 设置所属的分屏编辑器（由 SplitEditorPane 在 tab 选中时调用） */
+     public void setSplitEditorPane(SplitEditorPane pane) {
++        if (pane == null) {
++            clearSplitEditorPane();
++            return;
++        }
+         getProperties().put("splitEditorPane", pane);
+         // 同步分屏状态到勾选框
+         pane.setOnSplitStateChanged(() -> {
+@@ -180,11 +192,25 @@ public class CodeEditorTab extends Tab {
+         });
+     }
+ 
++    /** 清除所属分屏编辑器引用，用于移动到纯代码窗口等非分屏容器 */
++    public void clearSplitEditorPane() {
++        getProperties().remove("splitEditorPane");
++        codeViewPanel.setSplitToggleSelected(false);
++    }
++
++    Consumer<CodeEditorTab> getOnSplitRequested() {
++        return onSplitRequested;
++    }
++
+     /** 设置分屏请求回调 */
+     public void setOnSplitRequested(Consumer<CodeEditorTab> callback) {
+         this.onSplitRequested = callback;
+     }
+ 
++    Consumer<DecompilerTypeEnum> getOnSwitchEngine() {
++        return onSwitchEngine;
++    }
++
+     /** 设置切换引擎回调 */
+     public void setOnSwitchEngine(Consumer<DecompilerTypeEnum> callback) {
+         this.onSwitchEngine = callback;
+@@ -246,6 +272,7 @@ public class CodeEditorTab extends Tab {
+     public void updateDecompiledContent(OpenFile updatedOpenFile, CodeMetadata updatedMetadata,
+                                         Consumer<CodeMetadata.Reference> updatedOnNavigate) {
+         this.openFile = Objects.requireNonNull(updatedOpenFile, "updatedOpenFile");
++        this.displayTitle = displayTitleFor(updatedOpenFile);
+         this.metadata = updatedMetadata != null ? updatedMetadata : new CodeMetadata(java.util.Map.of());
+         this.onNavigate = updatedOnNavigate;
+         String source = updatedOpenFile.sourceCode();
+@@ -254,6 +281,7 @@ public class CodeEditorTab extends Tab {
+         codeViewPanel.replaceSourcePanel(source, srcPanel);
+         codeArea = srcPanel.getCodeArea();
+         sourceReady = true;
++        updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
+     }
+ 
+     /**
+@@ -312,7 +340,9 @@ public class CodeEditorTab extends Tab {
+         dialog.setOnShown(e -> {
+             var win = dialog.getDialogPane().getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(win);
+-            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
++            if (win instanceof javafx.stage.Stage s) {
++                setDialogIcon(s);
++            }
+         });
+ 
+         dialog.showAndWait().ifPresent(input -> {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeOnlyWindow.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeOnlyWindow.java
+index 477b268..12d4293 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeOnlyWindow.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeOnlyWindow.java
+@@ -1,10 +1,18 @@
+ package com.bingbaihanji.fxdecomplie.ui.code;
+ 
+ import com.bingbaihanji.fxdecomplie.config.AppConfig;
+-import com.bingbaihanji.fxdecomplie.model.OpenFile;
++import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
++import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
++import com.bingbaihanji.fxdecomplie.model.*;
++import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
++import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
++import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
++import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
++import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
+ import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
+ import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
+ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
++import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
+ import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+ import javafx.application.Platform;
+ import javafx.scene.Node;
+@@ -21,6 +29,8 @@ import org.slf4j.LoggerFactory;
+ 
+ import java.util.*;
+ import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.Future;
++import java.util.concurrent.atomic.AtomicLong;
+ 
+ /**
+  * 轻量级纯代码窗口，用于分离的编辑器标签页
+@@ -32,24 +42,46 @@ public final class CodeOnlyWindow {
+             new DataFormat("application/x-fxdecomplie-code-tab");
+     private static final String DRAG_SOURCE_INSTALLED =
+             "fxdecomplie.codeTabDragSourceInstalled";
++    private static final String ENGINE_SWITCH_TASK =
++            "fxdecomplie.codeOnly.engineSwitchTask";
++    private static final String ENGINE_SWITCH_REQUEST =
++            "fxdecomplie.codeOnly.engineSwitchRequest";
++    private static final String CODE_ONLY_TARGET =
++            "fxdecomplie.codeOnly.target";
++    private static final String CODE_ONLY_SPLIT_EDITOR =
++            "fxdecomplie.codeOnly.splitEditor";
++    private static final String CODE_ONLY_CLOSE_CLEANUP =
++            "fxdecomplie.codeOnly.closeCleanup";
++    private static final String ORIGINAL_HANDLERS_SAVED =
++            "fxdecomplie.codeOnly.originalHandlersSaved";
++    private static final String ORIGINAL_SPLIT_HANDLER =
++            "fxdecomplie.codeOnly.originalSplitHandler";
++    private static final String ORIGINAL_ENGINE_HANDLER =
++            "fxdecomplie.codeOnly.originalEngineHandler";
+     private static final String TOKEN_PREFIX = "fxdecomplie-code-tab:";
+     private static final int MAX_DRAG_PAYLOADS = 128;
++    private static final int METADATA_SOURCE_THRESHOLD = 500_000;
+     private static final Map<String, CodeTabPayload> DRAG_PAYLOADS =
+             new ConcurrentHashMap<>();
+     private static final Map<String, TabPane> DRAG_SOURCES =
+             new ConcurrentHashMap<>();
+     private static final Map<String, CodeEditorTab> DRAG_SOURCE_TABS =
+             new ConcurrentHashMap<>();
++    private static final AtomicLong ENGINE_SWITCH_IDS = new AtomicLong();
+     private static final Logger logger = LoggerFactory.getLogger(CodeOnlyWindow.class);
+ 
+     private final AppConfig config;
+     private final VsCodeThemeLoader.ThemeData editorTheme;
+-    private final TabPane tabPane = new TabPane();
++    private final SplitEditorPane splitEditorPane;
++    private final TabPane tabPane;
+     private final Stage stage;
+ 
+     private CodeOnlyWindow(AppConfig config, Stage stage) {
+         this.config = config;
+         this.editorTheme = AppTheme.loadEditorTheme(config);
++        this.splitEditorPane = new SplitEditorPane(config, editorTheme);
++        this.tabPane = splitEditorPane.primaryTabPane();
++        markCodeOnlyPane(tabPane, splitEditorPane);
+         this.stage = stage;
+     }
+ 
+@@ -126,17 +158,7 @@ public final class CodeOnlyWindow {
+         });
+         tabPane.addEventFilter(DragEvent.DRAG_DROPPED, event -> {
+             String token = getDragToken(event.getDragboard());
+-            TabPane sourcePane = resolveSourcePane(token, true);
+-            CodeEditorTab sourceTab = resolveSourceTab(token, true);
+-            CodeTabPayload payload = resolvePayload(token, true);
+-            if (payload != null && sourcePane != tabPane) {
+-                CodeEditorTab newTab = createTab(payload, config, editorTheme);
+-                if (sourcePane != null) {
+-                    removeSourceTab(sourcePane, sourceTab, payload);
+-                }
+-                tabPane.getTabs().add(newTab);
+-                tabPane.getSelectionModel().select(newTab);
+-                enableTabDrag(newTab);
++            if (dropTabInto(tabPane, token, config, editorTheme, false)) {
+                 event.setDropCompleted(true);
+                 event.consume();
+                 return;
+@@ -186,7 +208,9 @@ public final class CodeOnlyWindow {
+     }
+ 
+     private static CodeTabPayload resolvePayload(String token, boolean remove) {
+-        if (token == null) return null;
++        if (token == null) {
++            return null;
++        }
+         return remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
+     }
+ 
+@@ -220,28 +244,23 @@ public final class CodeOnlyWindow {
+     }
+ 
+     private static TabPane resolveSourcePane(String token, boolean remove) {
+-        if (token == null) return null;
++        if (token == null) {
++            return null;
++        }
+         return remove ? DRAG_SOURCES.remove(token) : DRAG_SOURCES.get(token);
+     }
+ 
+     private static CodeEditorTab resolveSourceTab(String token, boolean remove) {
+-        if (token == null) return null;
++        if (token == null) {
++            return null;
++        }
+         return remove ? DRAG_SOURCE_TABS.remove(token) : DRAG_SOURCE_TABS.get(token);
+     }
+ 
+-    private static void removeSourceTab(TabPane pane, CodeEditorTab sourceTab,
+-                                        CodeTabPayload payload) {
+-        if (pane == null || payload == null) return;
+-        Platform.runLater(() -> {
+-            if (sourceTab != null && pane.getTabs().remove(sourceTab)) {
+-                return;
+-            }
+-            removeMatchingTabNow(pane, payload);
+-        });
+-    }
+-
+     private static void removeMatchingTabNow(TabPane pane, CodeTabPayload payload) {
+-        if (pane == null || payload == null) return;
++        if (pane == null || payload == null) {
++            return;
++        }
+         List<Tab> toRemove = new ArrayList<>();
+         for (Tab tab : pane.getTabs()) {
+             if (tab instanceof CodeEditorTab codeTab
+@@ -265,31 +284,415 @@ public final class CodeOnlyWindow {
+     }
+ 
+     private static void cleanupDragToken(String token) {
+-        if (token == null) return;
++        if (token == null) {
++            return;
++        }
+         DRAG_PAYLOADS.remove(token);
+         DRAG_SOURCES.remove(token);
+         DRAG_SOURCE_TABS.remove(token);
+     }
+ 
++    private static boolean dropTabInto(TabPane targetPane, String token, AppConfig config,
++                                       VsCodeThemeLoader.ThemeData editorTheme,
++                                       boolean clearSplitContext) {
++        if (targetPane == null || token == null) {
++            return false;
++        }
++        TabPane sourcePane = resolveSourcePane(token, true);
++        CodeEditorTab sourceTab = resolveSourceTab(token, true);
++        CodeTabPayload payload = resolvePayload(token, true);
++        if (sourcePane == targetPane || (sourceTab != null && sourceTab.getTabPane() == targetPane)) {
++            return false;
++        }
++
++        CodeEditorTab droppedTab = sourceTab != null
++                ? sourceTab
++                : payload == null ? null : createTab(payload, config, editorTheme);
++        if (droppedTab == null) {
++            return false;
++        }
++
++        if (sourceTab != null) {
++            if (!detachTab(sourceTab, sourcePane, targetPane)) {
++                return false;
++            }
++        } else if (sourcePane != null) {
++            removeMatchingTabNow(sourcePane, payload);
++        }
++
++        if (clearSplitContext) {
++            droppedTab.clearSplitEditorPane();
++        }
++        targetPane.getTabs().add(droppedTab);
++        targetPane.getSelectionModel().select(droppedTab);
++        if (isCodeOnlyTarget(targetPane)) {
++            configureForCodeOnlyTarget(droppedTab, targetPane, config, editorTheme);
++        } else {
++            restoreOriginalHandlers(droppedTab);
++        }
++        enableTabDrag(droppedTab);
++        return true;
++    }
++
++    private static void markCodeOnlyPane(TabPane pane, SplitEditorPane splitEditorPane) {
++        if (pane == null) {
++            return;
++        }
++        pane.getProperties().put(CODE_ONLY_TARGET, true);
++        if (splitEditorPane != null) {
++            pane.getProperties().put(CODE_ONLY_SPLIT_EDITOR, splitEditorPane);
++        }
++    }
++
++    private static void configureForCodeOnlyTarget(CodeEditorTab tab, TabPane targetPane,
++                                                   AppConfig config,
++                                                   VsCodeThemeLoader.ThemeData editorTheme) {
++        if (tab == null || targetPane == null || !isCodeOnlyTarget(targetPane)) {
++            return;
++        }
++        saveOriginalHandlers(tab);
++        Object sep = targetPane.getProperties().get(CODE_ONLY_SPLIT_EDITOR);
++        if (sep instanceof SplitEditorPane splitEditor) {
++            tab.setSplitEditorPane(splitEditor);
++        }
++        installFallbackHandlers(tab, config, editorTheme);
++        installCloseCleanup(tab);
++    }
++
++    private static boolean isCodeOnlyTarget(TabPane pane) {
++        return pane != null && Boolean.TRUE.equals(pane.getProperties().get(CODE_ONLY_TARGET));
++    }
++
++    private static void saveOriginalHandlers(CodeEditorTab tab) {
++        if (tab == null || Boolean.TRUE.equals(tab.getProperties().get(ORIGINAL_HANDLERS_SAVED))) {
++            return;
++        }
++        tab.getProperties().put(ORIGINAL_HANDLERS_SAVED, true);
++        var splitHandler = tab.getOnSplitRequested();
++        if (splitHandler != null) {
++            tab.getProperties().put(ORIGINAL_SPLIT_HANDLER, splitHandler);
++        }
++        var engineHandler = tab.getOnSwitchEngine();
++        if (engineHandler != null) {
++            tab.getProperties().put(ORIGINAL_ENGINE_HANDLER, engineHandler);
++        }
++    }
++
++    @SuppressWarnings("unchecked")
++    private static void restoreOriginalHandlers(CodeEditorTab tab) {
++        if (tab == null || !Boolean.TRUE.equals(tab.getProperties().remove(ORIGINAL_HANDLERS_SAVED))) {
++            return;
++        }
++        Object splitHandler = tab.getProperties().remove(ORIGINAL_SPLIT_HANDLER);
++        Object engineHandler = tab.getProperties().remove(ORIGINAL_ENGINE_HANDLER);
++        tab.setOnSplitRequested(splitHandler instanceof java.util.function.Consumer<?>
++                ? (java.util.function.Consumer<CodeEditorTab>) splitHandler : null);
++        tab.setOnSwitchEngine(engineHandler instanceof java.util.function.Consumer<?>
++                ? (java.util.function.Consumer<DecompilerTypeEnum>) engineHandler : null);
++    }
++
++    private static void installCloseCleanup(CodeEditorTab tab) {
++        if (tab == null || Boolean.TRUE.equals(tab.getProperties().get(CODE_ONLY_CLOSE_CLEANUP))) {
++            return;
++        }
++        tab.getProperties().put(CODE_ONLY_CLOSE_CLEANUP, true);
++        tab.addEventHandler(Tab.CLOSED_EVENT, event -> cancelEngineSwitch(tab));
++    }
++
++    private static void cancelEngineSwitch(CodeEditorTab tab) {
++        if (tab == null) {
++            return;
++        }
++        Object task = tab.getProperties().remove(ENGINE_SWITCH_TASK);
++        if (task instanceof Future<?> future) {
++            BackgroundTasks.cancel(future);
++        }
++        tab.getProperties().remove(ENGINE_SWITCH_REQUEST);
++    }
++
++    private static boolean detachTab(CodeEditorTab tab, TabPane sourcePane, TabPane targetPane) {
++        TabPane owner = tab.getTabPane();
++        if (owner == targetPane) {
++            return false;
++        }
++        if (owner != null) {
++            owner.getTabs().remove(tab);
++        } else if (sourcePane != null) {
++            sourcePane.getTabs().remove(tab);
++        }
++        return tab.getTabPane() == null;
++    }
++
+     public static CodeEditorTab copyTab(CodeEditorTab sourceTab, AppConfig config,
+                                         VsCodeThemeLoader.ThemeData editorTheme) {
+         CodeEditorTab copy = createTab(toPayload(sourceTab), config, editorTheme);
+-        // 保留工作区上下文，使副窗口也能使用右键跳转/注释等功能
++        copyRuntimeContext(sourceTab, copy);
++        return copy;
++    }
++
++    private static void copyRuntimeContext(CodeEditorTab sourceTab, CodeEditorTab copy) {
++        if (sourceTab == null || copy == null) {
++            return;
++        }
+         Object ws = sourceTab.getProperties().get("workspace");
+         Object node = sourceTab.getProperties().get("fileTreeNode");
+-        if (ws != null) copy.getProperties().put("workspace", ws);
+-        if (node != null) copy.getProperties().put("fileTreeNode", node);
+-        return copy;
++        if (ws != null) {
++            copy.getProperties().put("workspace", ws);
++        }
++        if (node != null) {
++            copy.getProperties().put("fileTreeNode", node);
++        }
++        if (Boolean.TRUE.equals(sourceTab.getProperties().get("pinned"))) {
++            copy.getProperties().put("pinned", true);
++            copy.updatePinnedDisplay(true);
++        }
++        CodeViewPanel sourcePanel = sourceTab.getCodeViewPanel();
++        CodeViewPanel copyPanel = copy.getCodeViewPanel();
++        if (sourcePanel == null || copyPanel == null) {
++            return;
++        }
++        CodeViewContext context = sourcePanel.getContextMenuContext();
++        CodeActionHandler handler = sourcePanel.getContextMenuHandler();
++        if (context != null && handler != null) {
++            copyPanel.installContextMenu(context, handler);
++            copy.updateVisibleSource(displaySourceFor(copy.getOpenFile(), context));
++        }
+     }
+ 
+     private static CodeEditorTab createTab(CodeTabPayload payload, AppConfig config,
+                                            VsCodeThemeLoader.ThemeData editorTheme) {
+         OpenFile openFile = new OpenFile(payload.className(), payload.fullPath(),
+                 payload.sourceCode(), payload.engine());
+-        return new CodeEditorTab(openFile, editorTheme,
++        CodeEditorTab tab = new CodeEditorTab(openFile, editorTheme,
+                 config.theme().fontFamily(), config.theme().fontSize(),
+                 config.decompiler().wrapText(), config.decompiler().lineNumbersEnabled(),
+                 payload.classBytes(), OutlineParser.extractMetadata(payload.sourceCode()), null);
++        installFallbackHandlers(tab, config, editorTheme);
++        return tab;
++    }
++
++    private static void installFallbackHandlers(CodeEditorTab tab, AppConfig config,
++                                                VsCodeThemeLoader.ThemeData editorTheme) {
++        tab.setOnSwitchEngine(newEngine -> switchEngineInCodeOnlyWindow(
++                tab, config, editorTheme, newEngine));
++        tab.setOnSplitRequested(sourceTab -> {
++            SplitEditorPane sep = sourceTab.getSplitEditorPane();
++            if (sep == null || sep.activeCellCount() >= 3) {
++                return;
++            }
++            TabPane sourcePane = sep.tabPaneFor(sourceTab);
++            sep.splitRight(sourceTab);
++            TabPane targetPane = null;
++            for (TabPane pane : sep.allTabPanes()) {
++                if (pane != sourcePane && pane.getTabs().isEmpty()) {
++                    targetPane = pane;
++                    break;
++                }
++            }
++            if (targetPane == null) {
++                var panes = sep.allTabPanes();
++                targetPane = panes.get(panes.size() - 1);
++            }
++            markCodeOnlyPane(targetPane, sep);
++            CodeEditorTab copy = copyTab(sourceTab, config, editorTheme);
++            copy.setSplitEditorPane(sep);
++            targetPane.getTabs().add(copy);
++            targetPane.getSelectionModel().select(copy);
++            enableTabDrag(copy);
++        });
++    }
++
++    private static void switchEngineInCodeOnlyWindow(CodeEditorTab tab, AppConfig config,
++                                                     VsCodeThemeLoader.ThemeData editorTheme,
++                                                     DecompilerTypeEnum requestedEngine) {
++        if (tab == null || requestedEngine == null || tab.getOpenFile() == null) {
++            return;
++        }
++        Object oldTask = tab.getProperties().get(ENGINE_SWITCH_TASK);
++        if (oldTask instanceof Future<?> future) {
++            BackgroundTasks.cancel(future);
++        }
++
++        long requestId = ENGINE_SWITCH_IDS.incrementAndGet();
++        tab.getProperties().put(ENGINE_SWITCH_REQUEST, requestId);
++        OpenFile previous = tab.getOpenFile();
++        tab.setSourceReady(false);
++        tab.updateVisibleSource("// " + I18nUtil.getString("task.decompiling")
++                + ": " + previous.fullPath() + " [" + requestedEngine.name() + "]");
++
++        Future<?> task = BackgroundTasks.run("CodeOnlySwitchEngine-" + previous.fullPath(), () -> {
++            try {
++                byte[] bytes = classBytesForTab(tab);
++                DecompilerTypeEnum engine = effectiveEngineFor(bytes, requestedEngine);
++                Map<String, String> options = DecompilerOptions.forEngine(config, engine);
++                Workspace workspace = workspaceForTab(tab);
++                DecompilerContext context = DecompilerRunner.contextForWorkspace(workspace, options);
++                String source = DecompilerRunner.decompileWithTimeout(
++                        previous.fullPath(), bytes, engine, context,
++                        () -> !Thread.currentThread().isInterrupted()
++                                && isEngineSwitchCurrent(tab, requestId));
++                if (!isEngineSwitchCurrent(tab, requestId)) {
++                    return;
++                }
++                if (DecompilerRunner.isTransientFailureOutput(source)) {
++                    logger.error("副窗口切换反编译引擎失败: {} -> {}\n{}",
++                            previous.fullPath(), engine, source);
++                    Platform.runLater(() -> {
++                        if (isEngineSwitchCurrent(tab, requestId)) {
++                            restorePreviousSource(tab, previous);
++                            tab.setSourceReady(true);
++                            showDecompileFailed(tab, source);
++                        }
++                    });
++                    return;
++                }
++
++                CodeMetadata metadata = source != null && source.length() <= METADATA_SOURCE_THRESHOLD
++                        ? OutlineParser.extractMetadata(source)
++                        : new CodeMetadata(Map.of());
++                OpenFile updated = new OpenFile(previous.className(), previous.fullPath(), source, engine);
++                Platform.runLater(() -> {
++                    if (!isEngineSwitchCurrent(tab, requestId)) {
++                        return;
++                    }
++                    updateCodeOnlyTab(tab, updated, bytes, metadata, options);
++                    installFallbackHandlers(tab, config, editorTheme);
++                });
++            } catch (Exception e) {
++                logger.error("副窗口切换反编译引擎异常: {} -> {}",
++                        previous.fullPath(), requestedEngine, e);
++                Platform.runLater(() -> {
++                    if (isEngineSwitchCurrent(tab, requestId)) {
++                        restorePreviousSource(tab, previous);
++                        tab.setSourceReady(true);
++                        showDecompileFailed(tab, e.getMessage());
++                    }
++                });
++            }
++        });
++        tab.getProperties().put(ENGINE_SWITCH_TASK, task);
++    }
++
++    private static boolean isEngineSwitchCurrent(CodeEditorTab tab, long requestId) {
++        Object value = tab.getProperties().get(ENGINE_SWITCH_REQUEST);
++        return value instanceof Long id && id == requestId;
++    }
++
++    private static byte[] classBytesForTab(CodeEditorTab tab) throws java.io.IOException {
++        byte[] bytes = tab.getClassBytes();
++        if (bytes != null && bytes.length > 0) {
++            return bytes;
++        }
++        Object node = tab.getProperties().get("fileTreeNode");
++        if (node instanceof FileTreeNode fileTreeNode) {
++            return fileTreeNode.resolveBytes();
++        }
++        return null;
++    }
++
++    private static Workspace workspaceForTab(CodeEditorTab tab) {
++        Object workspace = tab.getProperties().get("workspace");
++        return workspace instanceof Workspace ws ? ws : null;
++    }
++
++    private static void updateCodeOnlyTab(CodeEditorTab tab, OpenFile openFile, byte[] bytes,
++                                          CodeMetadata metadata, Map<String, String> options) {
++        CodeViewPanel panel = tab.getCodeViewPanel();
++        CodeViewContext previousContext = panel == null ? null : panel.getContextMenuContext();
++        CodeActionHandler handler = panel == null ? null : panel.getContextMenuHandler();
++        tab.updateDecompiledContent(openFile, metadata, null);
++
++        CodeViewContext context = buildUpdatedContext(tab, previousContext,
++                openFile, bytes, metadata, options);
++        if (context != null && handler != null) {
++            tab.getCodeViewPanel().installContextMenu(context, handler);
++            tab.updateVisibleSource(displaySourceFor(openFile, context));
++        }
++        tab.setSourceReady(true);
++        tab.getProperties().remove(ENGINE_SWITCH_TASK);
++        TabPane pane = tab.getTabPane();
++        if (pane != null) {
++            pane.getSelectionModel().select(tab);
++        }
++    }
++
++    private static CodeViewContext buildUpdatedContext(CodeEditorTab tab,
++                                                       CodeViewContext previousContext,
++                                                       OpenFile openFile, byte[] bytes,
++                                                       CodeMetadata metadata,
++                                                       Map<String, String> options) {
++        Workspace workspace = previousContext != null
++                ? previousContext.workspace() : workspaceForTab(tab);
++        FileTreeNode node = previousContext != null ? previousContext.node() : null;
++        if (node == null) {
++            Object nodeProperty = tab.getProperties().get("fileTreeNode");
++            if (nodeProperty instanceof FileTreeNode fileTreeNode) {
++                node = fileTreeNode;
++            }
++        }
++        WorkspaceIndex index = workspace != null && workspace.isIndexReady()
++                ? workspace.getIndex()
++                : previousContext != null ? previousContext.workspaceIndex() : WorkspaceIndex.EMPTY;
++        String workspaceHash = previousContext != null
++                ? previousContext.workspaceHash()
++                : CommentScope.workspaceHash(workspace);
++        String optionsHash = DecompilerOptions.hash(options);
++        return new CodeViewContext(workspace, node, openFile, bytes, metadata, index,
++                workspaceHash, CommentExportDecorator.sourceHash(openFile.sourceCode()), optionsHash);
++    }
++
++    private static void restorePreviousSource(CodeEditorTab tab, OpenFile previous) {
++        CodeViewPanel panel = tab == null ? null : tab.getCodeViewPanel();
++        CodeViewContext context = panel == null ? null : panel.getContextMenuContext();
++        tab.updateVisibleSource(displaySourceFor(previous, context));
++        tab.getProperties().remove(ENGINE_SWITCH_TASK);
++    }
++
++    private static String displaySourceFor(OpenFile openFile, CodeViewContext context) {
++        if (openFile == null) {
++            return "";
++        }
++        if (context == null) {
++            return openFile.sourceCode();
++        }
++        return CommentExportDecorator.applyForClass(openFile.sourceCode(), openFile.fullPath(),
++                new CommentScope(context.workspaceHash(), context.optionsHash()));
++    }
++
++    private static DecompilerTypeEnum effectiveEngineFor(byte[] bytes,
++                                                         DecompilerTypeEnum requestedEngine) {
++        if (requestedEngine == null) {
++            return DecompilerTypeEnum.VINEFLOWER;
++        }
++        if (requestedEngine != DecompilerTypeEnum.JD) {
++            return requestedEngine;
++        }
++        int major = classMajorVersion(bytes);
++        return major >= 65 ? DecompilerTypeEnum.VINEFLOWER : requestedEngine;
++    }
++
++    private static int classMajorVersion(byte[] bytes) {
++        if (bytes == null || bytes.length < 8) {
++            return 0;
++        }
++        return ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
++    }
++
++    private static void showDecompileFailed(CodeEditorTab tab, String message) {
++        javafx.stage.Window owner = tab.getTabPane() == null
++                || tab.getTabPane().getScene() == null
++                ? null : tab.getTabPane().getScene().getWindow();
++        DialogHelper.showError(owner, I18nUtil.getString("dialog.error.title"),
++                I18nUtil.getString("dialog.decompile.failed", firstLine(message)));
++    }
++
++    private static String firstLine(String message) {
++        if (message == null || message.isBlank()) {
++            return "unknown";
++        }
++        String normalized = message.replace("\r\n", "\n").replace('\r', '\n');
++        int idx = normalized.indexOf('\n');
++        return idx >= 0 ? normalized.substring(0, idx) : normalized;
+     }
+ 
+     private static CodeTabPayload toPayload(CodeEditorTab tab) {
+@@ -312,7 +715,9 @@ public final class CodeOnlyWindow {
+     }
+ 
+     public void addTab(CodeEditorTab tab) {
++        tab.setSplitEditorPane(splitEditorPane);
+         tabPane.getTabs().add(tab);
++        configureForCodeOnlyTarget(tab, tabPane, config, editorTheme);
+         enableTabDrag(tab);
+         tabPane.getSelectionModel().select(tab);
+         updateTitle();
+@@ -321,36 +726,10 @@ public final class CodeOnlyWindow {
+     private void show() {
+         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
+ 
+-        // 仅接受来自其他 TabPane 的拖放(阻止自拖放)
+-        tabPane.addEventFilter(DragEvent.DRAG_OVER, event -> {
+-            TabPane sourcePane = resolveSourcePane(event.getDragboard(), false);
+-            if (sourcePane != tabPane && hasPayload(event.getDragboard())) {
+-                event.acceptTransferModes(TransferMode.MOVE);
+-                event.consume();
+-            }
+-        });
+-        tabPane.addEventFilter(DragEvent.DRAG_DROPPED, event -> {
+-            String token = getDragToken(event.getDragboard());
+-            TabPane sourcePane = resolveSourcePane(token, true);
+-            CodeEditorTab sourceTab = resolveSourceTab(token, true);
+-            CodeTabPayload payload = resolvePayload(token, true);
+-            if (payload != null && sourcePane != tabPane) {
+-                CodeEditorTab newTab = createTab(payload, config, editorTheme);
+-                if (sourcePane != null) {
+-                    removeSourceTab(sourcePane, sourceTab, payload);
+-                }
+-                addTab(newTab);
+-                event.setDropCompleted(true);
+-                event.consume();
+-                return;
+-            }
+-            event.setDropCompleted(false);
+-        });
+-
+         tabPane.getSelectionModel().selectedItemProperty()
+                 .addListener((obs, oldTab, newTab) -> updateTitle());
+ 
+-        BorderPane root = new BorderPane(tabPane);
++        BorderPane root = new BorderPane(splitEditorPane);
+         root.getStyleClass().add("app-root");
+ 
+         Scene scene = new Scene(root, stage.getWidth(), stage.getHeight());
+@@ -359,10 +738,15 @@ public final class CodeOnlyWindow {
+ 
+         updateTitle();
+         stage.setScene(scene);
++        stage.setOnHidden(event -> cancelAllEngineSwitchTasks());
+         stage.show();
+         DefaultWindowTheme.applyWindowDarkMode(stage);
+     }
+ 
++    private void cancelAllEngineSwitchTasks() {
++        splitEditorPane.forEachTab(CodeOnlyWindow::cancelEngineSwitch);
++    }
++
+     // ==================== 应用图标 ====================
+ 
+     private void updateTitle() {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewPanel.java
+index a5de01a..9d51299 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewPanel.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/CodeViewPanel.java
+@@ -90,10 +90,22 @@ public class CodeViewPanel extends VBox {
+         installContextMenuOnCurrentSource();
+     }
+ 
++    /** @return 当前源码右键菜单上下文，供标签复制/迁移时复用 */
++    public CodeViewContext getContextMenuContext() {
++        return contextMenuContext;
++    }
++
++    /** @return 当前源码右键菜单处理器，供标签复制/迁移时复用 */
++    public CodeActionHandler getContextMenuHandler() {
++        return contextMenuHandler;
++    }
++
+     private void installContextMenuOnCurrentSource() {
+         SourceContentPanel sourcePanel = deck.getSourcePanel();
+         var area = sourcePanel == null ? null : sourcePanel.getCodeArea();
+-        if (area == null) return;
++        if (area == null) {
++            return;
++        }
+         if (contextMenuContext == null || contextMenuHandler == null) {
+             sourcePanel.setTokenNavigateHandler(null);
+             return;
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java
+index d81cb93..e0347a7 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/EditorSearchBar.java
+@@ -58,8 +58,11 @@ public final class EditorSearchBar extends HBox {
+ 
+         input.textProperty().addListener((obs, old, text) -> performSearch());
+         input.setOnKeyPressed(e -> {
+-            if (e.getCode() == KeyCode.ESCAPE) hide();
+-            else if (e.getCode() == KeyCode.ENTER) navigateMatch(1);
++            if (e.getCode() == KeyCode.ESCAPE) {
++                hide();
++            } else if (e.getCode() == KeyCode.ENTER) {
++                navigateMatch(1);
++            }
+         });
+     }
+ 
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliHighlighter.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliHighlighter.java
+index fb6b7d2..54c225d 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliHighlighter.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliHighlighter.java
+@@ -184,7 +184,9 @@ final class SmaliHighlighter implements SyntaxDecorator {
+                     if (line.charAt(end) == '\\') end++;
+                     end++;
+                 }
+-                if (end < len) end++;
++                if (end < len) {
++                    end++;
++                }
+                 tokens.add(new Token(Kind.STRING, line.substring(pos, end)));
+                 pos = end;
+                 continue;
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliTextBuilder.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliTextBuilder.java
+index 7c82353..b475c16 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliTextBuilder.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SmaliTextBuilder.java
+@@ -65,8 +65,12 @@ final class SmaliTextBuilder extends ClassVisitor {
+     }
+ 
+     static String formatValue(Object value) {
+-        if (value instanceof String s) return "\"" + s + "\"";
+-        if (value instanceof Type t) return formatType(t);
++        if (value instanceof String s) {
++            return "\"" + s + "\"";
++        }
++        if (value instanceof Type t) {
++            return formatType(t);
++        }
+         return String.valueOf(value);
+     }
+ 
+@@ -246,13 +250,17 @@ final class SmaliTextBuilder extends ClassVisitor {
+             return "unknown-" + opcode;
+         }
+         String upper = org.objectweb.asm.util.Printer.OPCODES[opcode];
+-        if (upper == null) return "unknown-" + opcode;
++        if (upper == null) {
++            return "unknown-" + opcode;
++        }
+         return upper.toLowerCase().replace('_', '-');
+     }
+ 
+     /** 格式化类型字符串 */
+     static String formatType(Type type) {
+-        if (type == null) return "?";
++        if (type == null) {
++            return "?";
++        }
+         return switch (type.getSort()) {
+             case Type.VOID -> "V";
+             case Type.BOOLEAN -> "Z";
+@@ -271,7 +279,9 @@ final class SmaliTextBuilder extends ClassVisitor {
+ 
+     /** 格式化类型为可读形式（用于 .field 和 .local） */
+     static String formatTypeReadable(Type type) {
+-        if (type == null) return "?";
++        if (type == null) {
++            return "?";
++        }
+         return switch (type.getSort()) {
+             case Type.VOID -> "void";
+             case Type.BOOLEAN -> "boolean";
+@@ -377,7 +387,9 @@ final class SmaliTextBuilder extends ClassVisitor {
+         int major = version & 0xFFFF;
+         out.append("# version ").append(major);
+         String javaVer = javaVersionName(major);
+-        if (javaVer != null) out.append(" (").append(javaVer).append(")");
++        if (javaVer != null) {
++            out.append(" (").append(javaVer).append(")");
++        }
+         out.append('\n');
+ 
+         // .class
+@@ -573,7 +585,9 @@ final class SmaliTextBuilder extends ClassVisitor {
+             // 解析参数类型
+             Type[] argTypes = Type.getArgumentTypes(descriptor);
+             for (int i = 0; i < argTypes.length; i++) {
+-                if (i > 0) mb.append(", ");
++                if (i > 0) {
++                    mb.append(", ");
++                }
+                 mb.append(formatTypeReadable(argTypes[i]));
+             }
+             mb.append(')').append(formatTypeReadable(Type.getReturnType(descriptor)));
+@@ -643,7 +657,9 @@ final class SmaliTextBuilder extends ClassVisitor {
+             mb.append(METHOD_INDENT).append(METHOD_INDENT)
+                     .append("filled-new-array v0, [");
+             for (int i = 0; i < numDimensions; i++) {
+-                if (i > 0) mb.append(", ");
++                if (i > 0) {
++                    mb.append(", ");
++                }
+                 mb.append("v0");
+             }
+             mb.append("], ").append(descriptor);
+@@ -677,7 +693,9 @@ final class SmaliTextBuilder extends ClassVisitor {
+ 
+             // .registers
+             int registers = maxLocals + maxStack;
+-            if (registers < 1) registers = 1;
++            if (registers < 1) {
++                registers = 1;
++            }
+             header.append(METHOD_INDENT).append(".registers ").append(registers).append('\n');
+ 
+             header.append(mb);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SourceContentPanel.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SourceContentPanel.java
+index c33c785..0107c8b 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SourceContentPanel.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SourceContentPanel.java
+@@ -102,7 +102,9 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
+     private Font loadFont() {
+         try {
+             java.net.URL fontUrl = getClass().getResource(FIRA_CODE_LIGHT);
+-            if (fontUrl != null) return Font.loadFont(fontUrl.toExternalForm(), fontSize);
++            if (fontUrl != null) {
++                return Font.loadFont(fontUrl.toExternalForm(), fontSize);
++            }
+         } catch (Exception ignored) {
+             logger.debug("加载自定义字体失败，回退到系统字体", ignored);
+         }
+@@ -164,11 +166,15 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
+ 
+     /** 重置字号 */
+     public void resetZoom(int defaultFontSize) {
+-        if (codeArea != null) codeArea.setFont(Font.font(codeArea.getFont().getFamily(), defaultFontSize));
++        if (codeArea != null) {
++            codeArea.setFont(Font.font(codeArea.getFont().getFamily(), defaultFontSize));
++        }
+     }
+ 
+     public void setLineNumbersEnabled(boolean enabled) {
+-        if (codeArea != null) LineNumberGutter.setEnabled(codeArea, enabled);
++        if (codeArea != null) {
++            LineNumberGutter.setEnabled(codeArea, enabled);
++        }
+     }
+ 
+     @Override
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SplitEditorPane.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SplitEditorPane.java
+index 2fccd44..1f76cbf 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SplitEditorPane.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/SplitEditorPane.java
+@@ -66,7 +66,9 @@ public final class SplitEditorPane extends StackPane {
+     /** 选择一个与 exclude 不同的引擎 */
+     public static DecompilerTypeEnum chooseDifferentEngine(DecompilerTypeEnum exclude) {
+         for (DecompilerTypeEnum e : DecompilerTypeEnum.values()) {
+-            if (e != exclude) return e;
++            if (e != exclude) {
++                return e;
++            }
+         }
+         return DecompilerTypeEnum.VINEFLOWER;
+     }
+@@ -126,7 +128,9 @@ public final class SplitEditorPane extends StackPane {
+     public List<TabPane> allTabPanes() {
+         List<TabPane> result = new ArrayList<>(MAX_CELLS);
+         for (Node node : splitPane.getItems()) {
+-            if (node instanceof TabPane tp) result.add(tp);
++            if (node instanceof TabPane tp) {
++                result.add(tp);
++            }
+         }
+         return result;
+     }
+@@ -157,7 +161,9 @@ public final class SplitEditorPane extends StackPane {
+     /** 对所有 cell 中的 CodeEditorTab 执行操作 */
+     public void forEachTab(Consumer<CodeEditorTab> action) {
+         for (TabPane cell : cells) {
+-            if (cell == null) continue;
++            if (cell == null) {
++                continue;
++            }
+             for (Tab tab : cell.getTabs()) {
+                 if (tab instanceof CodeEditorTab ct) {
+                     action.accept(ct);
+@@ -170,14 +176,18 @@ public final class SplitEditorPane extends StackPane {
+      * 在 sourceTab 右侧创建新分屏。已达上限 3 则无操作。
+      */
+     public void splitRight(CodeEditorTab sourceTab) {
+-        if (activeCount >= MAX_CELLS) return;
++        if (activeCount >= MAX_CELLS) {
++            return;
++        }
+ 
+         // 以 splitPane 中的实际位置为准（cells 数组可能因压缩而产生空洞）
+         int srcPos = 0;
+         if (sourceTab != null) {
+             TabPane srcPane = tabPaneFor(sourceTab);
+             srcPos = splitPane.getItems().indexOf(srcPane);
+-            if (srcPos < 0) srcPos = 0;
++            if (srcPos < 0) {
++                srcPos = 0;
++            }
+         }
+         int targetPos = srcPos + 1;
+         if (targetPos > splitPane.getItems().size()) targetPos = splitPane.getItems().size();
+@@ -217,14 +227,18 @@ public final class SplitEditorPane extends StackPane {
+ 
+         splitPane.getItems().remove(cell);
+         // 清除聚焦引用（如果指向已关闭的 cell）
+-        if (focusedCell == cell) focusedCell = null;
++        if (focusedCell == cell) {
++            focusedCell = null;
++        }
+         activeCount = splitPane.getItems().size();
+         rebalanceDividers(); // 内部调用 syncCellsArray 自动压缩
+     }
+ 
+     private int findCellIndex(TabPane cell) {
+         for (int i = 0; i < MAX_CELLS; i++) {
+-            if (cells[i] == cell) return i;
++            if (cells[i] == cell) {
++                return i;
++            }
+         }
+         return -1;
+     }
+@@ -251,7 +265,9 @@ public final class SplitEditorPane extends StackPane {
+                 break;
+             }
+         }
+-        if (donor == null) return; // 右侧也没有内容，保持 cell0 空着
++        if (donor == null) {
++            return;
++        } // 右侧也没有内容，保持 cell0 空着
+ 
+         // 将 donor 的 tab 移到 cell0
+         List<Tab> tabs = new ArrayList<>(donor.getTabs());
+@@ -367,7 +383,9 @@ public final class SplitEditorPane extends StackPane {
+             MenuItem closeRight = new MenuItem(I18nUtil.getString("context.closeRight"));
+             closeRight.setDisable(current == null);
+             closeRight.setOnAction(e -> {
+-                if (current == null) return;
++                if (current == null) {
++                    return;
++                }
+                 int index = pane.getTabs().indexOf(current);
+                 var toClose = pane.getTabs().stream()
+                         .skip(index + 1L)
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/TextFileDecorator.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/TextFileDecorator.java
+index 22a3b7f..dad721a 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/TextFileDecorator.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/TextFileDecorator.java
+@@ -34,7 +34,9 @@ public final class TextFileDecorator implements SyntaxDecorator {
+     @Override
+     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
+         String text = model.getPlainText(paragraphIndex);
+-        if (text == null || text.isEmpty()) return RichParagraph.builder().build();
++        if (text == null || text.isEmpty()) {
++            return RichParagraph.builder().build();
++        }
+         return RichParagraph.builder().addSegment(text, DEFAULT_STYLE).build();
+     }
+ 
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/comment/CommentDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/comment/CommentDialog.java
+index c9df690..bd50a48 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/comment/CommentDialog.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/comment/CommentDialog.java
+@@ -87,11 +87,15 @@ public final class CommentDialog {
+         dialog.setOnShown(e -> {
+             var win = dialogPane.getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(win);
+-            if (win instanceof javafx.stage.Stage s) setDialogIcon(s);
++            if (win instanceof javafx.stage.Stage s) {
++                setDialogIcon(s);
++            }
+         });
+ 
+         dialog.setResultConverter(button -> {
+-            if (button != ButtonType.OK) return null;
++            if (button != ButtonType.OK) {
++                return null;
++            }
+             String text = textArea.getText();
+             if (text == null || text.isBlank()) {
+                 return existing != null ? new CommentData(className, memberSignature, line,
+@@ -110,8 +114,7 @@ public final class CommentDialog {
+     }
+ 
+     private static void setDialogIcon(javafx.stage.Stage stage) {
+-        try {
+-            var stream = CommentDialog.class.getResourceAsStream("/icon/logo.png");
++        try (var stream = CommentDialog.class.getResourceAsStream("/icon/logo.png")) {
+             if (stream != null) {
+                 stage.getIcons().add(new javafx.scene.image.Image(stream));
+             }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/export/ExportDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/export/ExportDialog.java
+index c7f0a2c..20ad3ec 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/export/ExportDialog.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/export/ExportDialog.java
+@@ -47,7 +47,9 @@ public final class ExportDialog {
+         dialog.setOnShown(e -> {
+             var window = dialog.getDialogPane().getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(window);
+-            if (window instanceof javafx.stage.Stage s) setDialogIcon(s);
++            if (window instanceof javafx.stage.Stage s) {
++                setDialogIcon(s);
++            }
+         });
+ 
+         ButtonType exportButtonType = new ButtonType(
+@@ -133,7 +135,9 @@ public final class ExportDialog {
+         dialog.setOnShown(e -> {
+             var window = dialog.getDialogPane().getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(window);
+-            if (window instanceof javafx.stage.Stage s) setDialogIcon(s);
++            if (window instanceof javafx.stage.Stage s) {
++                setDialogIcon(s);
++            }
+         });
+ 
+         ProgressBar progressBar = new ProgressBar(0);
+@@ -158,7 +162,9 @@ public final class ExportDialog {
+             handle.cancel();
+         });
+         dialog.setOnCloseRequest(event -> {
+-            if (handle.closing) return; // 正常完成关闭，直接放行
++            if (handle.closing) {
++                return;
++            } // 正常完成关闭，直接放行
+             event.consume();
+             cancelButton.setDisable(true);
+             currentFileLabel.setText(I18nUtil.getString("dialog.export.progress.canceling"));
+@@ -281,7 +287,8 @@ public final class ExportDialog {
+         private final Dialog<Void> dialog;
+         private final ProgressBar progressBar;
+         private final Label currentFileLabel;
+-        private Runnable onCancel = () -> {};
++        private Runnable onCancel = () -> {
++        };
+         /** 正常完成关闭标记，防止 setOnCloseRequest 误触发取消 UI */
+         private boolean closing;
+ 
+@@ -293,7 +300,8 @@ public final class ExportDialog {
+         }
+ 
+         public void setOnCancel(Runnable onCancel) {
+-            this.onCancel = onCancel != null ? onCancel : () -> {};
++            this.onCancel = onCancel != null ? onCancel : () -> {
++            };
+         }
+ 
+         public void update(String currentPath, int percent) {
+@@ -304,12 +312,15 @@ public final class ExportDialog {
+ 
+         public void close() {
+             closing = true;
+-            onCancel = () -> {}; // 正常完成时阻止取消回调
++            onCancel = () -> {
++            }; // 正常完成时阻止取消回调
+             dialog.close();
+         }
+ 
+         private void cancel() {
+-            if (closing) return; // 正常关闭时跳过
++            if (closing) {
++                return;
++            } // 正常关闭时跳过
+             onCancel.run();
+         }
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphService.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphService.java
+index ff7d28f..18461fd 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphService.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/graph/GraphService.java
+@@ -51,7 +51,9 @@ public final class GraphService {
+ 
+     private static void appendInheritanceNodes(StringBuilder sb, TreeItem<InheritanceNode> item,
+                                                Set<String> seen, int depth) {
+-        if (item == null || depth > 20) return;
++        if (item == null || depth > 20) {
++            return;
++        }
+         InheritanceNode node = item.getValue();
+         if (node == null || seen.contains(node.className())) return;
+         seen.add(node.className());
+@@ -81,9 +83,13 @@ public final class GraphService {
+      */
+     private static void appendInheritanceEdges(StringBuilder sb, TreeItem<InheritanceNode> item,
+                                                Set<String> seen) {
+-        if (item == null) return;
++        if (item == null) {
++            return;
++        }
+         InheritanceNode parent = item.getValue();
+-        if (parent == null) return;
++        if (parent == null) {
++            return;
++        }
+ 
+         for (TreeItem<InheritanceNode> child : item.getChildren()) {
+             InheritanceNode childNode = child.getValue();
+@@ -129,7 +135,9 @@ public final class GraphService {
+         Map<String, Integer> nodeIndex = new LinkedHashMap<>();
+         int count = 0;
+         for (MethodNode node : graph.methods()) {
+-            if (count >= MAX_METHOD_NODES) break;
++            if (count >= MAX_METHOD_NODES) {
++                break;
++            }
+             String key = nodeKey(node);
+             nodeIndex.put(key, count);
+             String id = "N" + count;
+@@ -179,7 +187,9 @@ public final class GraphService {
+ 
+     /** 转义 DOT 字符串中的特殊字符 */
+     public static String escapeDot(String s) {
+-        if (s == null) return "";
++        if (s == null) {
++            return "";
++        }
+         return s.replace("\\", "\\\\")
+                 .replace("\"", "\\\"")
+                 .replace("\n", "\\n")
+@@ -190,7 +200,9 @@ public final class GraphService {
+     }
+ 
+     private static String shortName(String fullName) {
+-        if (fullName == null) return "";
++        if (fullName == null) {
++            return "";
++        }
+         int dot = fullName.lastIndexOf('.');
+         return dot >= 0 ? fullName.substring(dot + 1) : fullName;
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritancePane.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritancePane.java
+index 43b7c40..744fe33 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritancePane.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritancePane.java
+@@ -1,7 +1,9 @@
+ package com.bingbaihanji.fxdecomplie.ui.inheritance;
+ 
+ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
++import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+ import com.bingbaihanji.fxdecomplie.utils.I18nUtil;
++import javafx.application.Platform;
+ import javafx.geometry.Insets;
+ import javafx.scene.control.Label;
+ import javafx.scene.control.TreeCell;
+@@ -72,13 +74,18 @@ public final class InheritancePane extends VBox {
+     }
+ 
+     public void load(String fullPath, WorkspaceIndex index) {
+-        TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
+-        if (root != null) {
+-            treeView.setRoot(root);
+-            root.setExpanded(true);
+-        } else {
+-            showUnavailable();
+-        }
++        showIndexing();
++        BackgroundTasks.run("InheritanceBuild", () -> {
++            TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
++            Platform.runLater(() -> {
++                if (root != null) {
++                    treeView.setRoot(root);
++                    root.setExpanded(true);
++                } else {
++                    showUnavailable();
++                }
++            });
++        });
+     }
+ 
+     public void showIndexing() {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritanceService.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritanceService.java
+index c80b2ac..d8b7f58 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritanceService.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/inheritance/InheritanceService.java
+@@ -184,7 +184,10 @@ public final class InheritanceService {
+     }
+ 
+     private static String toInternal(String path) {
+-        return path.replace(".class", "").replace("\\", "/");
++        if (path.endsWith(".class")) {
++            return path.substring(0, path.length() - 6).replace("\\", "/");
++        }
++        return path.replace("\\", "/");
+     }
+ 
+     private static String simpleName(String internalName) {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/MainMenuBar.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/MainMenuBar.java
+index 56fbf48..22e7544 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/MainMenuBar.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/menu/MainMenuBar.java
+@@ -64,7 +64,9 @@ public class MainMenuBar extends MenuBar {
+                 for (String path : recents) {
+                     String display = path;
+                     int sep = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+-                    if (sep > 0) display = path.substring(sep + 1) + "  —  " + path;
++                    if (sep > 0) {
++                        display = path.substring(sep + 1) + "  —  " + path;
++                    }
+                     MenuItem item = new MenuItem(display);
+                     item.setOnAction(ev -> actions.openRecentFile(path));
+                     recentMenu.getItems().add(item);
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlinePane.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlinePane.java
+index da89c04..a10da6c 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlinePane.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlinePane.java
+@@ -95,13 +95,15 @@ public final class OutlinePane extends VBox {
+     /** 更新大纲内容 */
+     public void update(String sourceCode) {
+         long generation = updateGeneration.incrementAndGet();
+-        sourceList.clear();
+-        filterField.clear();
+         BackgroundTasks.run("OutlineParse", () -> {
++            if (Thread.currentThread().isInterrupted()) {
++                return;
++            }
+             List<OutlineMember> members = OutlineParser.parse(sourceCode);
+             Platform.runLater(() -> {
+                 if (updateGeneration.get() == generation) {
+                     sourceList.setAll(members);
++                    filterField.clear();
+                 }
+             });
+         });
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlineParser.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlineParser.java
+index ba15b65..cd0c3c7 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlineParser.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/outline/OutlineParser.java
+@@ -19,7 +19,7 @@ public final class OutlineParser {
+ 
+     private static final Pattern METHOD_PATTERN = Pattern.compile(
+             "^\\s*((?:public|protected|private|static|final|synchronized|abstract|native|\\s)*)"
+-                    + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
++                    + "[\\w<>\\[\\],.\\s]+\\s+(\\w+)\\s*\\([^)]*(?:\\([^)]*\\)[^)]*)*\\)\\s*(?:throws\\s+[\\w.,\\s]+)?\\s*[{;]");
+ 
+     private static final Pattern FIELD_PATTERN = Pattern.compile(
+             "^\\s*((?:public|protected|private|static|final|volatile|transient|\\s)*)"
+@@ -116,7 +116,9 @@ public final class OutlineParser {
+     }
+ 
+     private static String extractModifiers(String raw) {
+-        if (raw == null) return "";
++        if (raw == null) {
++            return "";
++        }
+         return raw.trim().replaceAll("\\s+", " ");
+     }
+ }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/quickopen/QuickOpenDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/quickopen/QuickOpenDialog.java
+index a369600..c3b0e9d 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/quickopen/QuickOpenDialog.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/quickopen/QuickOpenDialog.java
+@@ -58,6 +58,9 @@ public final class QuickOpenDialog {
+         FilteredList<String> filtered = new FilteredList<>(
+                 FXCollections.observableArrayList(classNames), p -> true);
+         listView.setItems(filtered);
++        if (!listView.getItems().isEmpty()) {
++            listView.getSelectionModel().select(0);
++        }
+ 
+         listView.setCellFactory(lv -> new ListCell<>() {
+             @Override
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CodeSearchProvider.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CodeSearchProvider.java
+index 63f62b9..a03becd 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CodeSearchProvider.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CodeSearchProvider.java
+@@ -24,7 +24,7 @@ public class CodeSearchProvider implements SearchProvider {
+ 
+         String lowerQuery = query.toLowerCase();
+         for (var entry : sourceCache.entrySet()) {
+-            if (results.size() >= MAX_RESULTS) break;
++            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) break;
+             String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
+             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
+                 if (lines[i].toLowerCase().contains(lowerQuery)) {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CommentSearchProvider.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CommentSearchProvider.java
+index c3f61b6..07848b3 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CommentSearchProvider.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/CommentSearchProvider.java
+@@ -28,7 +28,7 @@ public class CommentSearchProvider implements SearchProvider {
+ 
+         String lowerQuery = query.toLowerCase();
+         for (var entry : sourceCache.entrySet()) {
+-            if (results.size() >= MAX_RESULTS) break;
++            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) break;
+             String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
+             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
+                 String trimmed = lines[i].trim();
+@@ -56,7 +56,7 @@ public class CommentSearchProvider implements SearchProvider {
+         if (query == null || query.isBlank()) return results;
+ 
+         for (var entry : sourceCache.entrySet()) {
+-            if (results.size() >= MAX_RESULTS) break;
++            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) break;
+             String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
+             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
+                 String trimmed = lines[i].trim();
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/IndexedMemberSearchProvider.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/IndexedMemberSearchProvider.java
+index f9a4fb4..f82c6d7 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/IndexedMemberSearchProvider.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/IndexedMemberSearchProvider.java
+@@ -59,6 +59,7 @@ public class IndexedMemberSearchProvider implements SearchProvider {
+         }
+         String lowerQuery = query.toLowerCase();
+         for (ClassIndexEntry cls : index.classes()) {
++            if (Thread.currentThread().isInterrupted()) break;
+             addMatches(results, cls.methods(), lowerQuery, SearchResult.MatchType.METHOD_NAME);
+             addMatches(results, cls.fields(), lowerQuery, SearchResult.MatchType.FIELD_NAME);
+             if (results.size() >= MAX_RESULTS) {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/ResourceSearchProvider.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/ResourceSearchProvider.java
+index 9b445ec..91c3581 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/ResourceSearchProvider.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/ResourceSearchProvider.java
+@@ -34,7 +34,7 @@ public class ResourceSearchProvider implements SearchProvider {
+ 
+         String lowerQuery = query.toLowerCase();
+         for (var entry : resourceCache.entrySet()) {
+-            if (results.size() >= MAX_RESULTS) break;
++            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) break;
+             try {
+                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
+                 String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchDialog.java
+index 5d9bad2..df28f53 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchDialog.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchDialog.java
+@@ -191,7 +191,9 @@ public final class SearchDialog {
+                         if (gen != searchGen.get()) return; // 过时搜索,丢弃
+                         TreeItem<SearchResult> rootNode = buildResultTree(results, resultLimit);
+                         resultTree.setRoot(rootNode);
+-                        if (rootNode != null) rootNode.setExpanded(true);
++                        if (rootNode != null) {
++                            rootNode.setExpanded(true);
++                        }
+                         int shown = rootNode != null
+                                 ? countLeaves(rootNode) : 0;
+                         statusLabel.setText(shown >= resultLimit
+@@ -296,12 +298,16 @@ public final class SearchDialog {
+ 
+         int leafCount = 0;
+         for (var entry : groups.entrySet()) {
+-            if (leafCount >= maxResults) break;
++            if (leafCount >= maxResults) {
++                break;
++            }
+             // 分组标题使用特殊的 SearchResult: 空路径,以分组标签作为 matchLine
+             TreeItem<SearchResult> groupItem = new TreeItem<>(
+                     new SearchResult("", entry.getKey(), 0, SearchResult.MatchType.CODE_TEXT));
+             for (SearchResult r : entry.getValue()) {
+-                if (leafCount >= maxResults) break;
++                if (leafCount >= maxResults) {
++                    break;
++                }
+                 groupItem.getChildren().add(new TreeItem<>(r));
+                 leafCount++;
+             }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchProvider.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchProvider.java
+index 0be9928..f2cb18b 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchProvider.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/search/SearchProvider.java
+@@ -31,7 +31,9 @@ public interface SearchProvider {
+      * 供子类在逐行遍历源码时调用
+      */
+     default boolean lineMatches(String line, String query, SearchOptions options) {
+-        if (line == null || query == null) return false;
++        if (line == null || query == null) {
++            return false;
++        }
+ 
+         if (options.regex()) {
+             try {
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/settings/SettingsDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/settings/SettingsDialog.java
+index f6a0062..b0d7187 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/settings/SettingsDialog.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/settings/SettingsDialog.java
+@@ -44,7 +44,9 @@ public final class SettingsDialog {
+         dialog.setOnShown(e -> {
+             var window = dialog.getDialogPane().getScene().getWindow();
+             DefaultWindowTheme.applyWindowDarkMode(window);
+-            if (window instanceof Stage s) setDialogIcon(s);
++            if (window instanceof Stage s) {
++                setDialogIcon(s);
++            }
+         });
+ 
+         TabPane tabPane = new TabPane();
+@@ -72,7 +74,7 @@ public final class SettingsDialog {
+                     .toJson(config.decompiler().engineOptions());
+             engineOptionsArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
+         } catch (Exception ignored) {
+-            logger.debug("序列化引擎选项JSON失败", ignored);
++            logger.warn("序列化引擎选项JSON失败", ignored);
+             engineOptionsArea.setText("");
+         }
+ 
+@@ -168,14 +170,10 @@ public final class SettingsDialog {
+         Button cleanCacheButton = new Button(I18nUtil.getString("settings.cache.clean"));
+         cleanCacheButton.setOnAction(event -> {
+             DiskCodeCache.cleanAll();
+-            Alert alert = new Alert(Alert.AlertType.INFORMATION,
++            com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(
++                    owner,
++                    I18nUtil.getString("settings.cache"),
+                     I18nUtil.getString("settings.cache.cleaned"));
+-            alert.initOwner(owner);
+-            alert.setHeaderText(null);
+-            alert.setTitle(I18nUtil.getString("settings.cache"));
+-            alert.setOnShown(ev -> DefaultWindowTheme
+-                    .applyWindowDarkMode(alert.getDialogPane().getScene().getWindow()));
+-            alert.showAndWait();
+         });
+         cacheTab.setContent(new VBox(10,
+                 new Label(I18nUtil.getString("settings.cache.path")),
+@@ -249,8 +247,7 @@ public final class SettingsDialog {
+                     config.decompiler().engineOptions().clear();
+                 }
+             } catch (Exception ignored) {
+-                logger.debug("解析引擎选项JSON失败，保留现有选项", ignored);
+-                // JSON 无效 — 保留现有选项
++                logger.warn("解析引擎选项JSON无效，保留现有选项", ignored);
+             }
+ 
+             // 应用语言变更
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/RegexHighlighter.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/RegexHighlighter.java
+index eddc09d..9012767 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/RegexHighlighter.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/RegexHighlighter.java
+@@ -50,7 +50,7 @@ public class RegexHighlighter implements SyntaxDecorator {
+ 
+     /** 预编译的正则分词模式 */
+     private static final Pattern TOKEN_PATTERN = Pattern.compile(
+-            "(?<MULTICOMMENT>/\\*[\\s\\S]*?\\*/)"
++            "(?<MULTICOMMENT>/\\*[\\s\\S]*+\\*/)"
+                     + "|(?<SINGLECOMMENT>//[^\n]*)"
+                     + "|(?<STRING>\"(?:\\\\.|[^\"\\\\])*\")"
+                     + "|(?<ANNOTATION>@[a-zA-Z_][a-zA-Z0-9_.]*)"
+@@ -105,7 +105,9 @@ public class RegexHighlighter implements SyntaxDecorator {
+     /** 检查标识符后是否紧跟 ((方法调用/声明) */
+     private static boolean isMethod(String line, int endPos) {
+         int lineEnd = line.indexOf('\n', endPos);
+-        if (lineEnd < 0) lineEnd = line.length();
++        if (lineEnd < 0) {
++            lineEnd = line.length();
++        }
+         String rest = line.substring(endPos, Math.min(lineEnd, endPos + 30)).trim();
+         return rest.startsWith("(");
+     }
+@@ -113,7 +115,9 @@ public class RegexHighlighter implements SyntaxDecorator {
+     /** 检查标识符后是否紧跟 = 或 ;(字段声明) */
+     private static boolean isField(String line, int endPos) {
+         int lineEnd = line.indexOf('\n', endPos);
+-        if (lineEnd < 0) lineEnd = line.length();
++        if (lineEnd < 0) {
++            lineEnd = line.length();
++        }
+         String rest = line.substring(endPos, Math.min(lineEnd, endPos + 30)).trim();
+         return rest.startsWith("=") || rest.startsWith(";");
+     }
+@@ -123,11 +127,15 @@ public class RegexHighlighter implements SyntaxDecorator {
+         int lineStart = line.lastIndexOf('\n', startPos);
+         lineStart = lineStart < 0 ? 0 : lineStart + 1;
+         int lineEnd = line.indexOf('\n', endPos);
+-        if (lineEnd < 0) lineEnd = line.length();
++        if (lineEnd < 0) {
++            lineEnd = line.length();
++        }
+         String currentLine = line.substring(lineStart, lineEnd);
+         int openParen = currentLine.indexOf('(');
+         int closeParen = currentLine.indexOf(')');
+-        if (openParen < 0 || closeParen < 0 || openParen >= closeParen) return false;
++        if (openParen < 0 || closeParen < 0 || openParen >= closeParen) {
++            return false;
++        }
+         int posInLine = startPos - lineStart;
+         return posInLine > openParen && posInLine < closeParen;
+     }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java
+index 635f0c9..0e21997 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/theme/VsCodeThemeLoader.java
+@@ -56,8 +56,12 @@ public final class VsCodeThemeLoader {
+     /** 创建样式属性 */
+     private static StyleAttributeMap style(String colorHex, boolean bold, boolean italic) {
+         var b = StyleAttributeMap.builder().setTextColor(Color.web(colorHex));
+-        if (bold) b.setBold(true);
+-        if (italic) b.setItalic(true);
++        if (bold) {
++            b.setBold(true);
++        }
++        if (italic) {
++            b.setItalic(true);
++        }
+         return b.build();
+     }
+ 
+@@ -70,7 +74,9 @@ public final class VsCodeThemeLoader {
+     /** 从 classpath 资源加载主题 */
+     public static ThemeData loadResource(String resourcePath) throws IOException {
+         try (InputStream in = VsCodeThemeLoader.class.getResourceAsStream(resourcePath)) {
+-            if (in == null) throw new IOException("Resource not found: " + resourcePath);
++            if (in == null) {
++                throw new IOException("Resource not found: " + resourcePath);
++            }
+             String json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+             return parse(json);
+         }
+@@ -93,7 +99,9 @@ public final class VsCodeThemeLoader {
+             for (JsonElement e : tokenColors) {
+                 JsonObject tc = e.getAsJsonObject();
+                 String scope = extractScope(tc.get("scope"));
+-                if (scope == null) continue;
++                if (scope == null) {
++                    continue;
++                }
+ 
+                 JsonObject settings = tc.getAsJsonObject("settings");
+                 String fgHex = getString(settings, "foreground", "#d4d4d4");
+@@ -102,7 +110,15 @@ public final class VsCodeThemeLoader {
+                 boolean italic = fontStyle.contains("italic");
+ 
+                 String key = scope.contains(",") ? scope.split(",")[0].trim() : scope;
+-                if (key.startsWith(".")) key = key.substring(1);
++                if (key.startsWith(".")) {
++                    String strippedKey = key.substring(1);
++                    // 双向查找:去点优先,没命中再用原点
++                    if (!tokenStyles.containsKey(strippedKey)) {
++                        tokenStyles.putIfAbsent(strippedKey, style(fgHex, bold, italic));
++                    }
++                    tokenStyles.putIfAbsent(key, style(fgHex, bold, italic));
++                    continue;
++                }
+                 tokenStyles.putIfAbsent(key, style(fgHex, bold, italic));
+             }
+         }
+@@ -112,7 +128,9 @@ public final class VsCodeThemeLoader {
+ 
+     /** 从 scope 字段提取第一个 scope 名称 */
+     private static String extractScope(JsonElement scopeElem) {
+-        if (scopeElem == null) return null;
++        if (scopeElem == null) {
++            return null;
++        }
+         if (scopeElem.isJsonPrimitive()) return scopeElem.getAsString();
+         if (scopeElem.isJsonArray()) {
+             JsonArray arr = scopeElem.getAsJsonArray();
+@@ -123,7 +141,9 @@ public final class VsCodeThemeLoader {
+ 
+     /** 从 colors 节点解析颜色 */
+     private static Color parseColor(JsonObject colors, String key, String defaultHex) {
+-        if (colors == null) return Color.web(defaultHex);
++        if (colors == null) {
++            return Color.web(defaultHex);
++        }
+         JsonElement e = colors.get(key);
+         if (e == null || e.isJsonNull()) return Color.web(defaultHex);
+         return Color.web(e.getAsString());
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/toolbar/MainToolBar.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/toolbar/MainToolBar.java
+index d809d45..6346b28 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/toolbar/MainToolBar.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/toolbar/MainToolBar.java
+@@ -95,8 +95,7 @@ public class MainToolBar extends ToolBar {
+ 
+     /** 从 classpath 加载按钮图标 */
+     private void loadIcon(Button btn, String iconName) {
+-        try {
+-            InputStream is = getClass().getResourceAsStream(ICON_BASE + iconName);
++        try (InputStream is = getClass().getResourceAsStream(ICON_BASE + iconName)) {
+             if (is != null) {
+                 Image img = new Image(is, ICON_SIZE, ICON_SIZE, true, true);
+                 btn.setGraphic(new ImageView(img));
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeCell.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeCell.java
+index 5efd789..ea1120d 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeCell.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeCell.java
+@@ -26,8 +26,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
+     private static final Image CLASS_FILE_ICON = loadIcon("/icon/javabytecode.png");
+ 
+     private static Image loadIcon(String path) {
+-        try {
+-            var stream = FileTreeCell.class.getResourceAsStream(path);
++        try (var stream = FileTreeCell.class.getResourceAsStream(path)) {
+             if (stream != null) {
+                 return new Image(stream);
+             }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeView.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeView.java
+index 6c3d66c..c14c511 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeView.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/tree/FileTreeView.java
+@@ -19,6 +19,7 @@ public class FileTreeView extends TreeView<FileTreeNode> {
+         super(root);
+         setShowRoot(true);
+         getStyleClass().add("file-tree-view");
+-        // Cell factory 由 WorkspaceTabManager.installTreeContextMenu 设置(含右键菜单绑定)
++        setCellFactory(tv -> new FileTreeCell());
++        // Cell factory 可在外部由 WorkspaceTabManager.installTreeContextMenu 覆盖(含右键菜单绑定)
+     }
+ }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/usage/FindUsageDialog.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/usage/FindUsageDialog.java
+index a651884..36ab65d 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/usage/FindUsageDialog.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/usage/FindUsageDialog.java
+@@ -84,8 +84,14 @@ public final class FindUsageDialog {
+ 
+         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
+         java.util.concurrent.atomic.AtomicLong searchGeneration = new java.util.concurrent.atomic.AtomicLong();
++        dialog.setOnHidden(e -> {
++            searchGeneration.incrementAndGet();
++            BackgroundTasks.cancel(currentSearchTask.get());
++        });
+ 
+         Runnable runSearch = () -> {
++            BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
++            long gen = searchGeneration.incrementAndGet();
+             String query = input.getText();
+             if (query == null || query.isBlank()) {
+                 status.setText("");
+@@ -93,8 +99,6 @@ public final class FindUsageDialog {
+                 return;
+             }
+             status.setText(I18nUtil.getString("usage.searching"));
+-            BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+-            long gen = searchGeneration.incrementAndGet();
+             Future<?> task = BackgroundTasks.run("FindUsages", () -> {
+                 List<UsageResult> results = UsageSearchService.findUsages(index, query);
+                 Platform.runLater(() -> {
+@@ -132,7 +136,6 @@ public final class FindUsageDialog {
+         scene.getStylesheets().add(
+                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
+         dialog.setScene(scene);
+-        dialog.setOnHidden(event -> BackgroundTasks.cancel(currentSearchTask.get()));
+         dialog.show();
+         DefaultWindowTheme.applyWindowDarkMode(dialog);
+         input.requestFocus();
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/ui/window/AppHeaderBar.java b/src/main/java/com/bingbaihanji/fxdecomplie/ui/window/AppHeaderBar.java
+index 8ed2022..b2978e2 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/ui/window/AppHeaderBar.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/ui/window/AppHeaderBar.java
+@@ -184,8 +184,7 @@ public final class AppHeaderBar {
+         iv.setFitWidth(20);
+         iv.setFitHeight(20);
+         iv.setPreserveRatio(true);
+-        try {
+-            var stream = AppHeaderBar.class.getResourceAsStream("/icon/logo.png");
++        try (var stream = AppHeaderBar.class.getResourceAsStream("/icon/logo.png")) {
+             if (stream != null) {
+                 iv.setImage(new Image(stream));
+             }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/utils/CodeLinkHandler.java b/src/main/java/com/bingbaihanji/fxdecomplie/utils/CodeLinkHandler.java
+index 142f7b8..9bc7075 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/utils/CodeLinkHandler.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/utils/CodeLinkHandler.java
+@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.utils;
+ 
+ import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+ import javafx.scene.input.MouseButton;
++import javafx.scene.input.MouseEvent;
+ import jfx.incubator.scene.control.richtext.CodeArea;
+ import jfx.incubator.scene.control.richtext.TextPos;
+ 
+@@ -18,6 +19,14 @@ import java.util.function.Consumer;
+  */
+ public final class CodeLinkHandler {
+ 
++    /**
++     * 在 CodeArea 上安装 Ctrl+Click 导航。
++     *
++     * <p>优先把点击处的 token 交给上层解析，上层可以结合 import、当前包和 workspace
++     * 文件树完成项目内 class 跳转；没有 token 导航器时退回到行级 metadata。</p>
++     */
++    private static final String LINK_HANDLER_KEY = "CODE_LINK_HANDLER";
++
+     private CodeLinkHandler() {
+         throw new AssertionError("utility class");
+     }
+@@ -34,19 +43,15 @@ public final class CodeLinkHandler {
+         install(codeArea, metadata, null, onNavigate);
+     }
+ 
+-    /**
+-     * 在 CodeArea 上安装 Ctrl+Click 导航。
+-     *
+-     * <p>优先把点击处的 token 交给上层解析，上层可以结合 import、当前包和 workspace
+-     * 文件树完成项目内 class 跳转；没有 token 导航器时退回到行级 metadata。</p>
+-     */
+     public static void install(CodeArea codeArea, CodeMetadata metadata,
+                                BiConsumer<Integer, String> onTokenNavigate,
+                                Consumer<CodeMetadata.Reference> onNavigate) {
+         if (codeArea == null) {
+             return;
+         }
+-        codeArea.setOnMouseClicked(event -> {
++        // 先移除旧处理器
++        uninstall(codeArea);
++        javafx.event.EventHandler<javafx.scene.input.MouseEvent> handler = event -> {
+             if (event.getButton() == MouseButton.PRIMARY && event.isControlDown()) {
+                 var pos = codeArea.getTextPosition(event.getScreenX(), event.getScreenY());
+                 int line = pos == null ? codeArea.getCaretPosition().index() + 1 : pos.index() + 1;
+@@ -65,13 +70,21 @@ public final class CodeLinkHandler {
+                     event.consume();
+                 }
+             }
+-        });
++        };
++        codeArea.getProperties().put(LINK_HANDLER_KEY, handler);
++        codeArea.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
+     }
+ 
+     /** 移除之前在 CodeArea 上安装的导航处理器 */
++    @SuppressWarnings("unchecked")
+     public static void uninstall(CodeArea codeArea) {
+-        if (codeArea != null) {
+-            codeArea.setOnMouseClicked(null);
++        if (codeArea == null) {
++            return;
++        }
++        var handler = (javafx.event.EventHandler<javafx.scene.input.MouseEvent>)
++                codeArea.getProperties().remove(LINK_HANDLER_KEY);
++        if (handler != null) {
++            codeArea.removeEventHandler(MouseEvent.MOUSE_CLICKED, handler);
+         }
+     }
+ 
+@@ -96,7 +109,7 @@ public final class CodeLinkHandler {
+             }
+             return null;
+         }
+-        return refs.getFirst();
++        return null;
+     }
+ 
+     private static String tokenAt(String text, TextPos pos) {
+@@ -124,7 +137,11 @@ public final class CodeLinkHandler {
+         int currentLine = 0;
+         int lineStart = 0;
+         for (int i = 0; i < text.length() && currentLine < line; i++) {
+-            if (text.charAt(i) == '\n') {
++            char c = text.charAt(i);
++            if (c == '\r') {
++                continue;
++            }
++            if (c == '\n') {
+                 currentLine++;
+                 lineStart = i + 1;
+             }
+diff --git a/src/main/java/com/bingbaihanji/fxdecomplie/utils/I18nUtil.java b/src/main/java/com/bingbaihanji/fxdecomplie/utils/I18nUtil.java
+index 4d7af33..401ae62 100644
+--- a/src/main/java/com/bingbaihanji/fxdecomplie/utils/I18nUtil.java
++++ b/src/main/java/com/bingbaihanji/fxdecomplie/utils/I18nUtil.java
+@@ -366,7 +366,9 @@ public class I18nUtil {
+     public String get(String key, Object... params) {
+         try {
+             String pattern = bundle.getString(key);
+-            if (params == null || params.length == 0) return pattern;
++            if (params == null || params.length == 0) {
++                return pattern;
++            }
+             return java.text.MessageFormat.format(pattern, params);
+         } catch (Exception e) {
+             return key;
+diff --git a/src/main/java/com/bingbaihanji/windows/jfx/FxTools.java b/src/main/java/com/bingbaihanji/windows/jfx/FxTools.java
+index aa3c749..a81e705 100644
+--- a/src/main/java/com/bingbaihanji/windows/jfx/FxTools.java
++++ b/src/main/java/com/bingbaihanji/windows/jfx/FxTools.java
+@@ -242,7 +242,9 @@ public final class FxTools {
+      * 当前已在 FX 线程则直接关闭，否则通过 {@code Platform.runLater} 调度
+      */
+     public static void closeStage(Stage stage) {
+-        if (stage == null) return;
++        if (stage == null) {
++            return;
++        }
+         if (Platform.isFxApplicationThread()) {
+             stage.close();
+         } else {
+@@ -299,7 +301,9 @@ public final class FxTools {
+      * @param show  true=显示(如已最小化则还原)，false=隐藏
+      */
+     public static void toggleStage(Stage stage, boolean show) {
+-        if (stage == null) return;
++        if (stage == null) {
++            return;
++        }
+         if (show) {
+             if (stage.isIconified()) {
+                 stage.setIconified(false);
+@@ -315,7 +319,9 @@ public final class FxTools {
+      * 将 Stage 移到最前并请求焦点
+      */
+     public static void toFront(Stage stage) {
+-        if (stage == null) return;
++        if (stage == null) {
++            return;
++        }
+         if (!stage.isShowing()) {
+             stage.show();
+         }
+diff --git a/src/main/java/com/bingbaihanji/windows/platform/win32/NativeWindowsTools.java b/src/main/java/com/bingbaihanji/windows/platform/win32/NativeWindowsTools.java
+index 5dcf5a5..7f6658e 100644
+--- a/src/main/java/com/bingbaihanji/windows/platform/win32/NativeWindowsTools.java
++++ b/src/main/java/com/bingbaihanji/windows/platform/win32/NativeWindowsTools.java
+@@ -29,7 +29,9 @@ public final class NativeWindowsTools {
+      * @return 重建的 HWND，值为 0 时返回 null
+      */
+     public static WinDef.HWND getHWndByEnumeration(Long headId) {
+-        if (headId == null || headId == 0L) return null;
++        if (headId == null || headId == 0L) {
++            return null;
++        }
+         return new WinDef.HWND(Pointer.createConstant(headId));
+     }
+ 
+@@ -732,7 +734,9 @@ public final class NativeWindowsTools {
+      * 此时使用 Alt+Tab 模拟 + SetWindowPos 作为补充手段</p>
+      */
+     public static WindowOperationResult bringToFront(WinDef.HWND hwnd) {
+-        if (hwnd == null) return skippedNullHandle("bringToFront");
++        if (hwnd == null) {
++            return skippedNullHandle("bringToFront");
++        }
+         Win32Api.User32Api api = Win32Api.User32Api.INSTANCE;
+         // 先尝试恢复最小化的窗口
+         if (api.IsIconic(hwnd)) {
+@@ -782,7 +786,9 @@ public final class NativeWindowsTools {
+      * @param timeoutMs 闪烁间隔毫秒数(0 = 使用系统默认)
+      */
+     public static WindowOperationResult flashWindow(WinDef.HWND hwnd, int count, int timeoutMs) {
+-        if (hwnd == null) return skippedNullHandle("flashWindow");
++        if (hwnd == null) {
++            return skippedNullHandle("flashWindow");
++        }
+         Win32Api.User32Api.FLASHWINFO fw = new Win32Api.User32Api.FLASHWINFO();
+         fw.cbSize = fw.size();
+         fw.hwnd = hwnd;
+@@ -806,7 +812,9 @@ public final class NativeWindowsTools {
+ 
+     /** 停止窗口闪烁 */
+     public static WindowOperationResult stopFlashWindow(WinDef.HWND hwnd) {
+-        if (hwnd == null) return skippedNullHandle("stopFlashWindow");
++        if (hwnd == null) {
++            return skippedNullHandle("stopFlashWindow");
++        }
+         Win32Api.User32Api.FLASHWINFO fw = new Win32Api.User32Api.FLASHWINFO();
+         fw.cbSize = fw.size();
+         fw.hwnd = hwnd;
+@@ -831,7 +839,9 @@ public final class NativeWindowsTools {
+      * 禁用后窗口无法接收点击和按键，适合在长时间任务期间防止用户误操作
+      */
+     public static WindowOperationResult enableWindow(WinDef.HWND hwnd, boolean enabled) {
+-        if (hwnd == null) return skippedNullHandle("enableWindow");
++        if (hwnd == null) {
++            return skippedNullHandle("enableWindow");
++        }
+         Win32Api.User32Api.INSTANCE.EnableWindow(hwnd, enabled);
+         return WindowOperationResult.success("enableWindow");
+     }
+@@ -1014,7 +1024,9 @@ public final class NativeWindowsTools {
+      * @param hide true=隐藏，false=恢复显示
+      */
+     public static WindowOperationResult hideFromAltTab(WinDef.HWND hwnd, boolean hide) {
+-        if (hwnd == null) return skippedNullHandle("hideFromAltTab");
++        if (hwnd == null) {
++            return skippedNullHandle("hideFromAltTab");
++        }
+         BaseTSD.LONG_PTR exStyle = Win32Api.User32Api.INSTANCE.GetWindowLongPtr(
+                 hwnd, Win32Constants.WindowLongIndex.GWL_EXSTYLE);
+         long style = exStyle.longValue();
+@@ -1032,7 +1044,9 @@ public final class NativeWindowsTools {
+      * @return 操作结果
+      */
+     public static WindowOperationResult showInTaskbar(WinDef.HWND hwnd, boolean show) {
+-        if (hwnd == null) return skippedNullHandle("showInTaskbar");
++        if (hwnd == null) {
++            return skippedNullHandle("showInTaskbar");
++        }
+         long style = getExtendedWindowStyle(hwnd);
+         long newStyle = show
+                 ? (style | Win32Constants.WindowStyleEx.WS_EX_APPWINDOW)
+@@ -1051,7 +1065,9 @@ public final class NativeWindowsTools {
+      * @return 窗口位置信息，获取失败返回 null
+      */
+     private static Win32Api.User32Api.WINDOWPLACEMENT getNativeWindowPlacement(WinDef.HWND hwnd) {
+-        if (hwnd == null) return null;
++        if (hwnd == null) {
++            return null;
++        }
+         Win32Api.User32Api.WINDOWPLACEMENT wp = new Win32Api.User32Api.WINDOWPLACEMENT();
+         wp.length = wp.size();
+         wp.write();
+@@ -1085,7 +1101,9 @@ public final class NativeWindowsTools {
+      */
+     public static WindowOperationResult setWindowPlacement(WinDef.HWND hwnd,
+                                                            WindowPlacement placement) {
+-        if (hwnd == null) return skippedNullHandle("setWindowPlacement");
++        if (hwnd == null) {
++            return skippedNullHandle("setWindowPlacement");
++        }
+         if (placement == null) {
+             return WindowOperationResult.skipped("setWindowPlacement", "窗口位置信息为空");
+         }
+@@ -1109,7 +1127,9 @@ public final class NativeWindowsTools {
+      * @param h    正常状态高度
+      */
+     public static WindowOperationResult setWindowNormalRect(WinDef.HWND hwnd, int x, int y, int w, int h) {
+-        if (hwnd == null) return skippedNullHandle("setWindowNormalRect");
++        if (hwnd == null) {
++            return skippedNullHandle("setWindowNormalRect");
++        }
+         Win32Api.User32Api.WINDOWPLACEMENT wp = getNativeWindowPlacement(hwnd);
+         if (wp == null) {
+             return WindowOperationResult.failed("setWindowNormalRect", Native.getLastError(),
+@@ -1201,7 +1221,9 @@ public final class NativeWindowsTools {
+ 
+     /** 获取窗口标题 */
+     public static String getWindowTitle(WinDef.HWND hwnd) {
+-        if (hwnd == null) return "";
++        if (hwnd == null) {
++            return "";
++        }
+         int length = Win32Api.User32Api.INSTANCE.GetWindowTextLength(hwnd);
+         if (length <= 0) {
+             return "";
+@@ -1324,7 +1346,9 @@ public final class NativeWindowsTools {
+      * @return 操作结果
+      */
+     public static WindowOperationResult moveWindowTo(WinDef.HWND hwnd, int x, int y) {
+-        if (hwnd == null) return skippedNullHandle("moveWindowTo");
++        if (hwnd == null) {
++            return skippedNullHandle("moveWindowTo");
++        }
+         return setWindowPos(hwnd, null, x, y, 0, 0,
+                 Win32Constants.SetWindowPosFlags.SWP_NOSIZE
+                         | Win32Constants.SetWindowPosFlags.SWP_NOZORDER);
+@@ -1339,7 +1363,9 @@ public final class NativeWindowsTools {
+      * @return 操作结果
+      */
+     public static WindowOperationResult resizeWindow(WinDef.HWND hwnd, int width, int height) {
+-        if (hwnd == null) return skippedNullHandle("resizeWindow");
++        if (hwnd == null) {
++            return skippedNullHandle("resizeWindow");
++        }
+         return setWindowPos(hwnd, null, 0, 0, width, height,
+                 Win32Constants.SetWindowPosFlags.SWP_NOMOVE
+                         | Win32Constants.SetWindowPosFlags.SWP_NOZORDER);
+@@ -1352,7 +1378,9 @@ public final class NativeWindowsTools {
+      * @return 操作结果
+      */
+     public static WindowOperationResult centerWindowOnVirtualScreen(WinDef.HWND hwnd) {
+-        if (hwnd == null) return skippedNullHandle("centerWindowOnVirtualScreen");
++        if (hwnd == null) {
++            return skippedNullHandle("centerWindowOnVirtualScreen");
++        }
+         WindowRect screen = getVirtualScreenBounds();
+         WindowRect window = getWindowBounds(hwnd);
+         int x = screen.left() + (screen.width() - window.width()) / 2;
+@@ -1369,7 +1397,9 @@ public final class NativeWindowsTools {
+      * @return 屏幕坐标点，转换失败返回 null
+      */
+     public static WindowPoint clientToScreen(WinDef.HWND hwnd, int x, int y) {
+-        if (hwnd == null) return null;
++        if (hwnd == null) {
++            return null;
++        }
+         WinDef.POINT point = new WindowPoint(x, y).toNativePoint();
+         if (Win32Api.User32Api.INSTANCE.ClientToScreen(hwnd, point)) {
+             return new WindowPoint(point.x, point.y);
+@@ -1386,7 +1416,9 @@ public final class NativeWindowsTools {
+      * @return 客户区坐标点，转换失败返回 null
+      */
+     public static WindowPoint screenToClient(WinDef.HWND hwnd, int x, int y) {
+-        if (hwnd == null) return null;
++        if (hwnd == null) {
++            return null;
++        }
+         WinDef.POINT point = new WindowPoint(x, y).toNativePoint();
+         if (Win32Api.User32Api.INSTANCE.ScreenToClient(hwnd, point)) {
+             return new WindowPoint(point.x, point.y);

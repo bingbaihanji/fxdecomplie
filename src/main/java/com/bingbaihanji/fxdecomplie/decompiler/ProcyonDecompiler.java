@@ -53,9 +53,6 @@ public class ProcyonDecompiler implements Decompiler {
                     try { settings.setTextBlockLineMinimum(Integer.parseInt(value)); }
                     catch (NumberFormatException ignored) {}
                 }
-                case "forcedCompilerTarget" -> {
-                    // CompilerTarget type not available in Procyon 0.6.0
-                }
                 case "languageTarget" -> {
                     if (value != null && !value.isBlank()) {
                         settings.setLanguage(com.strobel.decompiler.languages.Languages.java());
