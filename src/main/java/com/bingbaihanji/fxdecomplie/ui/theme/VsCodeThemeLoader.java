@@ -50,7 +50,7 @@ public final class VsCodeThemeLoader {
 
         return new ThemeData("Default Dark", "dark",
                 Color.web("#191b1d"), Color.web("#9aa7b0"), Color.web("#414c4c"),
-                "Fira Code Light", 14, tokenStyles);
+                "Fira Code", 14, tokenStyles);
     }
 
     /** 创建样式属性 */
