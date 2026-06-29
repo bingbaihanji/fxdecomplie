@@ -1605,11 +1605,21 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 打开设置对话框 */
     @Override
     public void openSettings() {
+        String oldEditorTheme = config.theme().editorTheme();
         SettingsDialog.show(stage, config, updated -> {
             boolean engineSwitched = applySettings(updated);
             DecompilerTypeEnum activeTabEngine = activeCodeTabEngine();
             if (!engineSwitched && tabManager != null && tabManager.currentCodeTab() != null) {
                 refreshCurrentTab(activeTabEngine);
+            }
+            // 检测编辑器主题变更（必须在对话框关闭后比较，因为 config 已被对话框修改）
+            String newEditorTheme = config.theme().editorTheme();
+            if (!newEditorTheme.equals(oldEditorTheme)) {
+                editorTheme = AppTheme.loadEditorTheme(config);
+                tabManager.getWorkspaceViews().values().forEach(view ->
+                        view.splitEditorPane().forEachTab(tab ->
+                                tab.reapplyTheme(editorTheme))
+                );
             }
         });
     }
@@ -1631,18 +1641,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     tab.applyFontSettings(newFontSize, newFontFamily);
                 })
         );
-
-        // 检测编辑器主题变更，重新应用语法高亮
-        String newEditorTheme = updated.theme().editorTheme();
-        VsCodeThemeLoader.ThemeData newTheme = AppTheme.loadEditorTheme(updated);
-        if (!newEditorTheme.equals(config.theme().editorTheme())
-                || !newTheme.equals(editorTheme)) {
-            editorTheme = newTheme;
-            tabManager.getWorkspaceViews().values().forEach(view ->
-                    view.splitEditorPane().forEachTab(tab ->
-                            tab.reapplyTheme(newTheme))
-            );
-        }
 
         return engineSwitched;
     }
