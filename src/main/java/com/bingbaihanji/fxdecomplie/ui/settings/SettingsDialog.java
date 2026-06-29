@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.VineflowerParameters;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+import com.bingbaihanji.fxdecomplie.ui.theme.ThemeManager;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.google.gson.Gson;
@@ -174,10 +175,102 @@ public final class SettingsDialog {
                 ? config.theme().fontFamily() : "Consolas");
         fontFamilyCombo.setEditable(true);
 
+        // 编辑器配色下拉框
+        ComboBox<String> editorThemeCombo = new ComboBox<>();
+        editorThemeCombo.getItems().addAll(ThemeManager.getAllThemes());
+        String currentEditorTheme = config.theme().editorTheme();
+        if (currentEditorTheme == null || currentEditorTheme.isBlank()) {
+            currentEditorTheme = "Dark+";
+        }
+        editorThemeCombo.setValue(currentEditorTheme);
+
+        // 导入/导出/删除按钮
+        Button importThemeBtn = new Button(I18nUtil.getString("settings.editorTheme.import"));
+        Button exportThemeBtn = new Button(I18nUtil.getString("settings.editorTheme.export"));
+        Button deleteThemeBtn = new Button(I18nUtil.getString("settings.editorTheme.delete"));
+        deleteThemeBtn.setDisable("Dark+".equals(currentEditorTheme));
+
+        HBox themeBtnBar = new HBox(8, importThemeBtn, exportThemeBtn, deleteThemeBtn);
+        VBox themeSection = new VBox(6,
+                new Label(I18nUtil.getString("settings.editorTheme")),
+                editorThemeCombo,
+                themeBtnBar);
+
         uiTab.setContent(new VBox(10,
                 new Label(I18nUtil.getString("settings.fontSize")), fontSizeSpinner,
                 new Label(I18nUtil.getString("settings.fontFamily")), fontFamilyCombo,
-                lineNumCheck, wrapCheck));
+                lineNumCheck, wrapCheck,
+                new Separator(),
+                themeSection));
+
+        // ---- 编辑器配色事件处理 ----
+        editorThemeCombo.valueProperty().addListener((obs, old, val) -> {
+            if (val != null) {
+                deleteThemeBtn.setDisable("Dark+".equals(val)
+                        || ThemeManager.getBuiltinThemes().contains(val));
+            }
+        });
+
+        importThemeBtn.setOnAction(e -> {
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle(I18nUtil.getString("settings.editorTheme.importTitle"));
+            fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("JSON Files", "*.json"));
+            var selected = fileChooser.showOpenDialog(dialog.getDialogPane().getScene().getWindow());
+            if (selected != null) {
+                try {
+                    String importedName = ThemeManager.importTheme(selected.toPath());
+                    refreshThemeCombo(editorThemeCombo, importedName);
+                } catch (Exception ex) {
+                    logger.warn("导入主题失败", ex);
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle(I18nUtil.getString("dialog.error.title"));
+                    alert.setHeaderText(null);
+                    alert.setContentText(I18nUtil.getString("settings.editorTheme.invalidJson",
+                            ex.getMessage()));
+                    alert.showAndWait();
+                }
+            }
+        });
+
+        exportThemeBtn.setOnAction(e -> {
+            String selectedTheme = editorThemeCombo.getValue();
+            if (selectedTheme == null || selectedTheme.isBlank()) {
+                return;
+            }
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle(I18nUtil.getString("settings.editorTheme.exportTitle"));
+            fileChooser.setInitialFileName(selectedTheme + ".json");
+            fileChooser.getExtensionFilters().add(
+                    new javafx.stage.FileChooser.ExtensionFilter("JSON Files", "*.json"));
+            var target = fileChooser.showSaveDialog(dialog.getDialogPane().getScene().getWindow());
+            if (target != null) {
+                try {
+                    ThemeManager.exportTheme(selectedTheme, target.toPath());
+                } catch (Exception ex) {
+                    logger.warn("导出主题失败", ex);
+                }
+            }
+        });
+
+        deleteThemeBtn.setOnAction(e -> {
+            String selectedTheme = editorThemeCombo.getValue();
+            if (selectedTheme == null || "Dark+".equals(selectedTheme)
+                    || ThemeManager.getBuiltinThemes().contains(selectedTheme)) {
+                return;
+            }
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle(I18nUtil.getString("dialog.confirm.title"));
+            confirm.setHeaderText(null);
+            confirm.setContentText(I18nUtil.getString("settings.editorTheme.deleteConfirm",
+                    selectedTheme));
+            confirm.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    ThemeManager.deleteExternalTheme(selectedTheme);
+                    refreshThemeCombo(editorThemeCombo, "Dark+");
+                }
+            });
+        });
 
         // 搜索标签页
         Tab searchTab = new Tab(I18nUtil.getString("settings.search"));
@@ -270,6 +363,7 @@ public final class SettingsDialog {
             exportPathField.setText("");
             engineOptionsArea.setText("");
             langCombo.setValue("简体中文");
+            editorThemeCombo.setValue("Dark+");
         });
 
         VBox content = new VBox(10, tabPane, restoreDefaultsBtn);
@@ -323,6 +417,11 @@ public final class SettingsDialog {
                 }
             } catch (Exception ex) {
                 logger.warn("保存引擎选项失败", ex);
+            }
+
+            // 保存编辑器配色
+            if (editorThemeCombo.getValue() != null) {
+                config.theme().editorTheme(editorThemeCombo.getValue());
             }
 
             // 应用语言变更
@@ -614,6 +713,19 @@ public final class SettingsDialog {
             return Integer.parseInt(s);
         } catch (NumberFormatException e) {
             return def;
+        }
+    }
+
+    /** 刷新编辑器配色下拉框：重新扫描主题列表并选中指定主题 */
+    private static void refreshThemeCombo(ComboBox<String> combo, String selectName) {
+        String currentValue = combo.getValue();
+        combo.getItems().setAll(ThemeManager.getAllThemes());
+        if (selectName != null && combo.getItems().contains(selectName)) {
+            combo.setValue(selectName);
+        } else if (currentValue != null && combo.getItems().contains(currentValue)) {
+            combo.setValue(currentValue);
+        } else {
+            combo.setValue("Dark+");
         }
     }
 }
