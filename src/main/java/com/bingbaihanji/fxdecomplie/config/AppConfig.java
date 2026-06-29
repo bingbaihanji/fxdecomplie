@@ -284,6 +284,9 @@ public class AppConfig {
         if (theme.path == null) {
             theme.path = "";
         }
+        if (theme.editorTheme == null || theme.editorTheme.isBlank()) {
+            theme.editorTheme = "Dark+";
+        }
         if (theme.fontFamily == null || theme.fontFamily.isBlank()) theme.fontFamily = "Consolas";
         theme.fontSize = Math.clamp(theme.fontSize, 8, 48);
         window.width = Math.max(640, window.width);
@@ -386,6 +389,8 @@ public class AppConfig {
         private String fontFamily = "Consolas";
         /** 编辑器字号 */
         private int fontSize = 14;
+        /** 编辑器配色主题名称, "" 或 "Dark+" 表示内置默认 */
+        private String editorTheme = "";
 
         public String path() {
             return path;
@@ -411,9 +416,18 @@ public class AppConfig {
             fontSize = v;
         }
 
+        public String editorTheme() {
+            return editorTheme;
+        }
+
+        public void editorTheme(String v) {
+            editorTheme = v;
+        }
+
         @Override
         public String toString() {
-            return "Theme{path='" + path + "', fontFamily='" + fontFamily + "', fontSize=" + fontSize + "}";
+            return "Theme{path='" + path + "', editorTheme='" + editorTheme
+                    + "', fontFamily='" + fontFamily + "', fontSize=" + fontSize + "}";
         }
     }
 
