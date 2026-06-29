@@ -63,7 +63,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 应用配置 */
     private final AppConfig config;
     /** 编辑器主题数据 */
-    private final VsCodeThemeLoader.ThemeData editorTheme;
+    private VsCodeThemeLoader.ThemeData editorTheme;
     /** 是否使用自定义标题栏 */
     private final boolean useHeaderBar;
     /** HostServices 用于打开外部链接 */
@@ -1631,6 +1631,19 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     tab.applyFontSettings(newFontSize, newFontFamily);
                 })
         );
+
+        // 检测编辑器主题变更，重新应用语法高亮
+        String newEditorTheme = updated.theme().editorTheme();
+        VsCodeThemeLoader.ThemeData newTheme = AppTheme.loadEditorTheme(updated);
+        if (!newEditorTheme.equals(config.theme().editorTheme())
+                || !newTheme.equals(editorTheme)) {
+            editorTheme = newTheme;
+            tabManager.getWorkspaceViews().values().forEach(view ->
+                    view.splitEditorPane().forEachTab(tab ->
+                            tab.reapplyTheme(newTheme))
+            );
+        }
+
         return engineSwitched;
     }
 

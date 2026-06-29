@@ -32,7 +32,7 @@ public class CodeEditorTab extends Tab {
     private final Label titleLabel;
     /** 默认字号 */
     private final int defaultFontSize;
-    private final VsCodeThemeLoader.ThemeData theme;
+    private VsCodeThemeLoader.ThemeData theme;
     private final String fontFamily;
     private final boolean wrapText;
     private final boolean lineNumbersEnabled;
@@ -392,5 +392,17 @@ public class CodeEditorTab extends Tab {
     /** 应用字体设置到所有已有面板（Code/Smali/Bytecode/Simple） */
     public void applyFontSettings(int fontSize, String fontFamily) {
         codeViewPanel.applyFontSettings(fontSize, fontFamily);
+    }
+
+    /** 重新应用编辑器语法高亮主题到源码面板 */
+    public void reapplyTheme(VsCodeThemeLoader.ThemeData newTheme) {
+        this.theme = newTheme;
+        com.bingbaihanji.fxdecomplie.ui.code.SourceContentPanel srcPanel =
+                codeViewPanel != null && codeViewPanel.getDeck() != null
+                        ? codeViewPanel.getDeck().getSourcePanel()
+                        : null;
+        if (srcPanel != null) {
+            srcPanel.reapplyTheme(newTheme);
+        }
     }
 }

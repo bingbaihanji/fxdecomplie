@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 
 /**
  * 应用主题工具类,负责加载暗色样式表和编辑器主题
@@ -22,10 +21,6 @@ public final class AppTheme {
     /** 暗色 CSS 样式表路径 */
     private static final String DARK_STYLESHEET =
             "/com/bingbaihanji/fxdecomplie/themes/dark.css";
-    /** 内置暗色主题 JSON 路径 */
-    private static final String DARK_PLUS_THEME =
-            "/com/bingbaihanji/fxdecomplie/themes/dark-plus.json";
-
     private AppTheme() {
         throw new AssertionError("utility class");
     }
@@ -40,20 +35,20 @@ public final class AppTheme {
     }
 
     /**
-     * 加载编辑器主题
+     * 加载编辑器主题。
      *
      * @param config 应用配置
-     * @return 主题数据(优先配置文件路径 → 内置 Dark+ → 硬编码默认)
+     * @return 主题数据（通过 ThemeManager 按名称加载，失败时回退到硬编码默认值）
      */
     public static VsCodeThemeLoader.ThemeData loadEditorTheme(AppConfig config) {
-        String configuredPath = config.theme().path() == null ? "" : config.theme().path().trim();
+        String themeName = config.theme().editorTheme();
         try {
-            if (!configuredPath.isEmpty()) {
-                return VsCodeThemeLoader.load(Path.of(configuredPath));
+            if (themeName != null && !themeName.isBlank()) {
+                return ThemeManager.resolveThemeData(themeName);
             }
-            return VsCodeThemeLoader.loadResource(DARK_PLUS_THEME);
-        } catch (IOException | RuntimeException e) {
-            logger.warn("加载编辑器主题失败,使用默认暗色主题", e);
+            return ThemeManager.resolveThemeData("Dark+");
+        } catch (RuntimeException e) {
+            logger.warn("加载编辑器主题失败，使用默认暗色主题", e);
             return VsCodeThemeLoader.defaultDark();
         }
     }

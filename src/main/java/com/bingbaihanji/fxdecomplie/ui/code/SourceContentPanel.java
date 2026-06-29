@@ -137,6 +137,21 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         return codeArea;
     }
 
+    /**
+     * 用新主题数据重建语法高亮器并应用到 CodeArea。
+     * 仅在 codeArea 已创建时生效。
+     */
+    public void reapplyTheme(VsCodeThemeLoader.ThemeData newTheme) {
+        if (codeArea == null) {
+            return;
+        }
+        try {
+            codeArea.setSyntaxDecorator(new RegexHighlighter(newTheme));
+        } catch (Exception e) {
+            logger.warn("重新应用编辑器主题失败", e);
+        }
+    }
+
     /** 安装基于点击处 token 的项目内跳转处理器 */
     public void setTokenNavigateHandler(BiConsumer<Integer, String> onTokenNavigate) {
         this.onTokenNavigate = onTokenNavigate;
