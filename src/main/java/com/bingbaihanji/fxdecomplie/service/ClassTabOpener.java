@@ -44,7 +44,7 @@ public final class ClassTabOpener {
     /** 应用配置 */
     private final AppConfig config;
     /** 编辑器主题数据 */
-    private final VsCodeThemeLoader.ThemeData editorTheme;
+    private volatile VsCodeThemeLoader.ThemeData editorTheme;
     /** 状态栏引用 */
     private final StatusBar statusBar;
     /** L2 反编译源码缓存,避免重复反编译已打开的类 */
@@ -66,6 +66,11 @@ public final class ClassTabOpener {
         this.config = config;
         this.editorTheme = editorTheme;
         this.statusBar = statusBar;
+    }
+
+    /** 更新编辑器主题，后续新打开的标签页将使用新主题 */
+    public void setEditorTheme(VsCodeThemeLoader.ThemeData newTheme) {
+        this.editorTheme = newTheme;
     }
 
     /** 提取简短类名(去 .class 后缀) */
