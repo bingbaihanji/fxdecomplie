@@ -68,7 +68,7 @@ public class AppConfig {
                 if (Files.isRegularFile(jarPath) && jarPath.toString().endsWith(".jar")) {
                     Path parent = jarPath.getParent();
                     if (parent != null) {
-                        return appRoot(parent);
+                        return parent.toAbsolutePath().normalize();
                     }
                 } else if (Files.isDirectory(jarPath)) {
                     return appRoot(jarPath);
@@ -83,10 +83,7 @@ public class AppConfig {
     private static Path appRoot(Path codeSourceDir) {
         Path normalized = codeSourceDir.toAbsolutePath().normalize();
         Path name = normalized.getFileName();
-        if (name != null && "bin".equalsIgnoreCase(name.toString())
-                && normalized.getParent() != null) {
-            return normalized.getParent();
-        }
+        // 开发期 classpath 在 target/classes/,config 存项目根避免被 mvn clean 删除
         if (name != null && "classes".equalsIgnoreCase(name.toString())) {
             Path target = normalized.getParent();
             if (target != null && target.getFileName() != null
