@@ -23,6 +23,7 @@ module fxdecomplie {
     requires cfr;
     requires com.sun.jna.platform;
     requires com.sun.jna;
+    requires javafx.web;
 
     // 导出 decompiler 包供 Gson 访问枚举
     exports com.bingbaihanji.fxdecomplie.decompiler;

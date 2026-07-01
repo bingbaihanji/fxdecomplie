@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.Node;
 import javafx.scene.control.ToggleButton;
@@ -14,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 管理四种代码内容视图（Code/Smali/Bytecode/Simple）的懒加载、切换和销毁
+ * 管理五种代码内容视图（Code/Smali/Bytecode/Simple/HEX）的懒加载、切换和销毁
  *
  * <p>底部使用 HBox + ToggleButton ToggleGroup 而非嵌套 TabPane，
  * 避免与主代码标签、Split view、拖拽之间互相干扰</p>
@@ -32,6 +33,10 @@ public class CodeContentDeck extends VBox {
     public static final int TAB_BYTECODE = 2;
     /** 简化代码索引 */
     public static final int TAB_SIMPLE = 3;
+    /** HEX 十六进制视图索引 */
+    public static final int TAB_HEX = 4;
+    /** 标签总数 */
+    private static final int TAB_COUNT = 5;
     private static final Logger logger = LoggerFactory.getLogger(CodeContentDeck.class);
     private final AbstractCodeContentPanel[] panels;
     private final ToggleButton[] buttons;
@@ -46,6 +51,8 @@ public class CodeContentDeck extends VBox {
     private boolean suppressAction;
     /** 源码内容提供回调，Simple 面板按需读取 */
     private volatile String sourceCode;
+    /** 编辑器主题，用于 HEX 面板配色 */
+    private volatile VsCodeThemeLoader.ThemeData theme;
     /** 字体族 */
     private volatile String fontFamily = "Consolas";
     /** 字号 */
@@ -68,9 +75,9 @@ public class CodeContentDeck extends VBox {
         this.fontFamily = fontFamily;
         this.fontSize = fontSize;
         this.lineNumbersEnabled = lineNumbersEnabled;
-        this.panels = new AbstractCodeContentPanel[4];
+        this.panels = new AbstractCodeContentPanel[TAB_COUNT];
         this.panels[TAB_CODE] = sourcePanel;
-        this.buttons = new ToggleButton[4];
+        this.buttons = new ToggleButton[TAB_COUNT];
         this.toggleGroup = new ToggleGroup();
         this.contentArea = new StackPane();
         this.bottomBar = buildBottomBar();
@@ -103,6 +110,7 @@ public class CodeContentDeck extends VBox {
         addToggle(bar, 1, "tab.smali");
         addToggle(bar, 2, "tab.bytecode");
         addToggle(bar, 3, "tab.simple");
+        addToggle(bar, 4, "tab.hex");
 
         // 右侧弹簧
         Node spacer = new javafx.scene.layout.Region();
@@ -116,7 +124,7 @@ public class CodeContentDeck extends VBox {
         ToggleButton btn = new ToggleButton(I18nUtil.getString(i18nKey));
         btn.getStyleClass().add("code-deck-toggle");
         btn.setToggleGroup(toggleGroup);
-        btn.setMinWidth(60);
+        btn.setMinWidth(68);
         btn.setMaxHeight(28);
         btn.setOnAction(e -> {
             if (suppressAction) {
@@ -134,7 +142,7 @@ public class CodeContentDeck extends VBox {
      * 切换到指定索引的标签页，首次切换时触发懒加载
      */
     private void selectTab(int index) {
-        if (index < 0 || index >= 4) {
+        if (index < 0 || index >= TAB_COUNT) {
             return;
         }
         cancelGen.incrementAndGet(); // 取消旧任务
@@ -164,6 +172,7 @@ public class CodeContentDeck extends VBox {
             case TAB_SMALI -> new SmaliContentPanel(classBytes);
             case TAB_BYTECODE -> new BytecodeContentPanel(classBytes);
             case TAB_SIMPLE -> new SimpleContentPanel(sourceCode);
+            case TAB_HEX -> new HexContentPanel(classBytes, theme);
             default -> throw new IllegalArgumentException("未知面板索引: " + index);
         };
         panel.setFontSettings(fontFamily, fontSize, lineNumbersEnabled);
@@ -319,6 +328,14 @@ public class CodeContentDeck extends VBox {
     /** 程序化选中指定标签 */
     public void setSelected(int index) {
         selectTab(index);
+    }
+
+    /** 设置编辑器主题（用于 HEX 面板配色） */
+    public void setTheme(VsCodeThemeLoader.ThemeData newTheme) {
+        this.theme = newTheme;
+        if (panels[TAB_HEX] instanceof HexContentPanel hex) {
+            hex.reapplyTheme(newTheme);
+        }
     }
 
     /** 释放所有面板资源 */

@@ -110,6 +110,8 @@ public class CodeEditorTab extends Tab {
             }
         });
         this.codeViewPanel = viewPanel;
+        // 初始主题传递到 CodeContentDeck（HEX 面板懒加载时需要）
+        viewPanel.getDeck().setTheme(theme);
 
         this.codeArea = srcPanel.getCodeArea();
         this.editorSearchBar = viewPanel.getSearchBar();
@@ -394,7 +396,7 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.applyFontSettings(fontSize, fontFamily);
     }
 
-    /** 重新应用编辑器语法高亮主题到源码面板 */
+    /** 重新应用编辑器语法高亮主题到源码面板和 HEX 面板 */
     public void reapplyTheme(VsCodeThemeLoader.ThemeData newTheme) {
         this.theme = newTheme;
         com.bingbaihanji.fxdecomplie.ui.code.SourceContentPanel srcPanel =
@@ -403,6 +405,10 @@ public class CodeEditorTab extends Tab {
                         : null;
         if (srcPanel != null) {
             srcPanel.reapplyTheme(newTheme);
+        }
+        // 同步主题到 CodeContentDeck，以便 HEX 面板配色跟随
+        if (codeViewPanel != null && codeViewPanel.getDeck() != null) {
+            codeViewPanel.getDeck().setTheme(newTheme);
         }
     }
 }
