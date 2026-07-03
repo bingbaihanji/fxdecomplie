@@ -321,13 +321,18 @@ public final class ExportService {
             if (DecompilerRunner.isFailureOutput(source)) {
                 throw new IllegalStateException(firstLine(source));
             }
+            String fullPath = data.getFullPath();
+            String internalName = fullPath.endsWith(".class")
+                    ? fullPath.substring(0, fullPath.length() - 6)
+                    : fullPath;
+            String workspaceHash = commentScope == null ? "" : commentScope.workspaceHash();
+            source = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .applyRenames(source, workspaceHash, internalName);
             if (commentScope != null && commentScope.enabled()) {
                 source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
             }
-            String fullPath = data.getFullPath();
-            String javaPath = fullPath.endsWith(".class")
-                    ? fullPath.substring(0, fullPath.length() - 6) + ".java"
-                    : fullPath;
+            String javaPath = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .renamedJavaPath(fullPath, workspaceHash);
             return new ExportContent(javaPath,
                     source.getBytes(StandardCharsets.UTF_8));
         }

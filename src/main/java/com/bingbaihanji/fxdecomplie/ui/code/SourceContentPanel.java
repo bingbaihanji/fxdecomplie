@@ -35,6 +35,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private final CodeMetadata metadata;
     private final Consumer<CodeMetadata.Reference> onNavigate;
     private CodeArea codeArea;
+    private BracketHighlighter bracketHighlighter;
     private String sourceCode;
     private BiConsumer<Integer, String> onTokenNavigate;
     private boolean linkNavigationEnabled;
@@ -78,8 +79,11 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         codeArea.setFont(loadFont());
 
         if (!large) {
-            codeArea.setSyntaxDecorator(new RegexHighlighter(theme));
+            RegexHighlighter regexHighlighter = new RegexHighlighter(theme);
+            codeArea.setSyntaxDecorator(regexHighlighter);
             codeArea.setHighlightCurrentParagraph(true);
+            bracketHighlighter = new BracketHighlighter(codeArea, regexHighlighter);
+            bracketHighlighter.install();
         }
         codeArea.setText(src == null ? "" : src);
         cachedLineCount = -1;
@@ -215,6 +219,10 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     @Override
     public void dispose() {
         super.dispose();
+        if (bracketHighlighter != null) {
+            bracketHighlighter.dispose();
+            bracketHighlighter = null;
+        }
         codeArea = null;
     }
 }

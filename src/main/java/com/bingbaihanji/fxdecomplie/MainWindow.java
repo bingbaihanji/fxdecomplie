@@ -584,13 +584,16 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         // 在 FX 线程预提取 FileTreeNode 数据快照,避免后台线程访问 TreeItem
         java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
         collectTreeNodes(rootItem, nodesSnapshot);
+        WorkspaceView exportView = tabManager.currentWorkspaceView();
+        Workspace exportWorkspace = exportView == null ? null : exportView.workspace();
         BackgroundTasks.run("Index-ExportNode", () -> {
             try {
-                WorkspaceIndex index = WorkspaceIndex.build(nodesSnapshot);
+                WorkspaceIndex index = exportWorkspace == null
+                        ? WorkspaceIndex.build(nodesSnapshot)
+                        : exportWorkspace.getOrBuildIndex();
                 Platform.runLater(() -> {
                     statusBar.clearTask();
-                    WorkspaceView view = tabManager.currentWorkspaceView();
-                    doExport(nodesSnapshot, index, view == null ? null : view.workspace());
+                    doExport(nodesSnapshot, index, exportWorkspace);
                 });
             } catch (Exception ex) {
                 Platform.runLater(() -> {
@@ -974,6 +977,55 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     @Override
+    public void showControlFlowGraph(CodeViewContext context) {
+        if (context == null || context.openFile() == null) {
+            return;
+        }
+        String source = context.openFile().sourceCode();
+        // 获取当前光标行，确定所在方法
+        WorkspaceView view = workspaceViewFor(context.workspace());
+        if (view == null) {
+            return;
+        }
+        int line = 1;
+        CodeEditorTab codeTab = view.splitEditorPane().currentCodeTab();
+        if (codeTab != null && codeTab.getCodeArea() != null) {
+            var caret = codeTab.getCodeArea().getCaretPosition();
+            if (caret != null) {
+                line = caret.index() + 1;
+            }
+        }
+        String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper
+                .findMethodAtLine(source, line);
+        if (methodName == null || methodName.isBlank()) {
+            return;
+        }
+        statusBar.setTask(I18nUtil.getString("task.loading"));
+        statusBar.setFilePath("CFG - " + methodName);
+        GraphDialog dialog = new GraphDialog(stage, "CFG - " + methodName);
+        dialog.show();
+        BackgroundTasks.run("CFG-" + methodName, () -> {
+            try {
+                byte[] classBytes = classBytesForContext(context);
+                if (classBytes == null) {
+                    Platform.runLater(() -> showGraphFailed(dialog, null, null));
+                    return;
+                }
+                String dot = com.bingbaihanji.fxdecomplie.ui.graph.CfgAnalyzer
+                        .buildCfgDot(classBytes, methodName, null);
+                Platform.runLater(() -> dialog.showDot(dot));
+                Platform.runLater(statusBar::clearTask);
+            } catch (Exception e) {
+                logger.error("CFG生成失败", e);
+                Platform.runLater(() -> {
+                    showGraphFailed(dialog, null, e);
+                    statusBar.clearTask();
+                });
+            }
+        });
+    }
+
+    @Override
     public void showMethodGraph(CodeViewContext context) {
         if (context == null) {
             return;
@@ -1070,6 +1122,300 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     refreshVisibleComments(context);
                     statusBar.setFilePath(I18nUtil.getString("comment.saved") + " L" + comment.line());
                 });
+    }
+
+    @Override
+    public void deleteComment(CodeViewContext ctx, int line) {
+        if (ctx == null) {
+            return;
+        }
+        final CodeViewContext context = ctx;
+        String text = context.openFile() != null ? context.openFile().sourceCode() : "";
+        String memberSig = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper.findMethodAtLine(text, line);
+        final String effectiveSig = (memberSig != null) ? memberSig : "";
+        java.util.List<CommentData> existing = CommentManager.load(
+                context.workspaceHash(), context.classInternalName());
+        CommentData toDelete = null;
+        for (CommentData c : existing) {
+            if (c.line() == line && c.memberSignature().equals(effectiveSig)) {
+                toDelete = c;
+                break;
+            }
+        }
+        if (toDelete == null) {
+            return;
+        }
+        final CommentData finalToDelete = toDelete;
+        final String wsHash = context.workspaceHash();
+        final String clsName = context.classInternalName();
+        final int targetLine = line;
+        if (com.bingbaihanji.fxdecomplie.ui.DialogHelper.showConfirm(stage,
+                I18nUtil.getString("comment.delete"),
+                I18nUtil.getString("comment.confirmDelete"))) {
+            BackgroundTasks.run("CommentDelete", () -> {
+                CommentManager.delete(wsHash, clsName,
+                        finalToDelete.memberSignature(), finalToDelete.line(), finalToDelete.time());
+                Platform.runLater(() -> {
+                    refreshVisibleComments(context);
+                    statusBar.setFilePath(I18nUtil.getString("comment.delete") + " L" + targetLine);
+                });
+            });
+        }
+    }
+
+    @Override
+    public void renameAtCaret(CodeViewContext context,
+                               jfx.incubator.scene.control.richtext.TextPos caret) {
+        if (context == null || caret == null) {
+            statusBar.setFilePath("Rename unavailable: no code context");
+            return;
+        }
+        WorkspaceView view = workspaceViewFor(context.workspace());
+        if (view == null) {
+            statusBar.setFilePath("Rename unavailable: workspace not found");
+            return;
+        }
+        CodeEditorTab codeTab = codeTabForContext(view, context);
+        if (codeTab == null || codeTab.getCodeArea() == null) {
+            statusBar.setFilePath("Rename unavailable: code tab not found");
+            return;
+        }
+        String text = codeTab.getCodeArea().getText();
+        if (text == null || text.isEmpty()) {
+            statusBar.setFilePath("Rename unavailable: source is empty");
+            return;
+        }
+        int offset = flatOffset(text, caret);
+        String caretName = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .identifierAt(text, offset);
+        if (caretName.isBlank()) {
+            statusBar.setFilePath("Rename unavailable: place cursor on a Java name");
+            return;
+        }
+        WorkspaceIndex index = context.workspace() != null && context.workspace().isIndexReady()
+                ? context.workspace().getIndex() : context.workspaceIndex();
+        String wsHash = CommentScope.workspaceHash(context.workspace());
+        var targetOpt = com.bingbaihanji.fxdecomplie.rename.RenameService.resolveTarget(
+                text, offset, context.classInternalName(), context.classBytes(), index, wsHash);
+        var target = targetOpt.orElseGet(() -> new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
+                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_IDENTIFIER,
+                        context.classInternalName(), caretName, caretName, ""),
+                "identifier", caretName));
+        target = refineClassRenameTarget(context.workspace(), context.classInternalName(), caretName, target);
+        var baseEntry = target.entry();
+        String oldName = target.currentName();
+
+        // 显示对话框
+        String newName = com.bingbaihanji.fxdecomplie.rename.RenameDialog
+                .show(stage, oldName, target.kind());
+        if (newName == null || newName.equals(oldName)) {
+            statusBar.setFilePath("Rename canceled: " + oldName);
+            return;
+        }
+
+        com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry =
+                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+                        baseEntry.type(), baseEntry.className(), oldName, newName,
+                        baseEntry.desc());
+        String currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .applySingleRename(text, visibleEntry, codeTab.getOpenFile().fullPath(), wsHash);
+        if (java.util.Objects.equals(currentRenamedSource, text)) {
+            currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .replaceVisibleIdentifier(text, oldName, newName);
+        }
+        if (!java.util.Objects.equals(currentRenamedSource, text)) {
+            String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
+            codeTab.updateSourceCode(displayClass, currentRenamedSource);
+            reinstallCodeContext(codeTab, currentRenamedSource);
+        }
+
+        // 保存
+        com.bingbaihanji.fxdecomplie.rename.RenameEntry entry =
+                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+                        baseEntry.type(), baseEntry.className(), baseEntry.oldName(),
+                        newName, baseEntry.desc());
+        boolean saved = com.bingbaihanji.fxdecomplie.rename.RenameService.save(wsHash,
+                entry);
+        if (!java.util.Objects.equals(currentRenamedSource, text)) {
+            String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
+            codeTab.updateSourceCode(displayClass, currentRenamedSource);
+            reinstallCodeContext(codeTab, currentRenamedSource);
+        }
+
+        if (context.workspace() != null) {
+            context.workspace().clearSourceSearchCaches();
+        }
+        int changedTabs = refreshOpenTabsAfterRename(context.workspace(), wsHash, visibleEntry, codeTab);
+        refreshWorkspaceTree(context.workspace());
+        int totalChangedTabs = changedTabs + (java.util.Objects.equals(currentRenamedSource, text) ? 0 : 1);
+        logger.info("重命名完成: type={}, class={}, old={}, new={}, changedTabs={}",
+                baseEntry.type(), baseEntry.className(), oldName, newName, totalChangedTabs);
+        if (totalChangedTabs == 0) {
+            statusBar.setFilePath((saved ? "Rename saved" : "Rename memory-only")
+                    + " but no visible text changed: " + oldName + " -> " + newName);
+        } else {
+            statusBar.setFilePath((saved ? "Renamed " : "Renamed memory-only ")
+                    + target.kind() + " [" + baseEntry.type()
+                    + "]: " + oldName + " -> " + newName);
+        }
+    }
+
+    private com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget refineClassRenameTarget(
+            Workspace workspace, String currentClassName, String caretName,
+            com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget target) {
+        if (target == null || caretName == null || caretName.isBlank()) {
+            return target;
+        }
+        var entry = target.entry();
+        if (entry != null && com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS
+                .equals(entry.type())) {
+            return target;
+        }
+        String currentInternal = normalizeInternalClassName(currentClassName);
+        String currentSimple = tokenSimpleName(currentInternal);
+        FileTreeNode node = null;
+        if (caretName.equals(currentSimple)) {
+            node = workspace == null ? null : workspace.findNodeByPath(currentInternal + ".class");
+        }
+        if (node == null) {
+            node = findNodeBySimpleNameInTree(workspace, caretName, currentClassName);
+        }
+        if (node == null || !node.isClassFile()) {
+            return target;
+        }
+        String owner = node.getFullPath();
+        if (owner.endsWith(".class")) {
+            owner = owner.substring(0, owner.length() - ".class".length());
+        }
+        return new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
+                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS,
+                        owner, caretName, caretName, ""),
+                "class", caretName);
+    }
+
+    private CodeEditorTab codeTabForContext(WorkspaceView view, CodeViewContext context) {
+        if (view == null || context == null || context.openFile() == null) {
+            return view == null ? null : view.splitEditorPane().currentCodeTab();
+        }
+        String fullPath = context.openFile().fullPath();
+        DecompilerTypeEnum engine = context.openFile().engine();
+        for (TabPane pane : view.splitEditorPane().allTabPanes()) {
+            for (Tab tab : pane.getTabs()) {
+                if (tab instanceof CodeEditorTab codeTab
+                        && codeTab.getOpenFile() != null
+                        && fullPath.equals(codeTab.getOpenFile().fullPath())
+                        && engine == codeTab.getOpenFile().engine()) {
+                    return codeTab;
+                }
+            }
+        }
+        return view.splitEditorPane().currentCodeTab();
+    }
+
+    private int refreshOpenTabsAfterRename(Workspace workspace, String workspaceHash,
+                                           com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry) {
+        return refreshOpenTabsAfterRename(workspace, workspaceHash, visibleEntry, null);
+    }
+
+    private int refreshOpenTabsAfterRename(Workspace workspace, String workspaceHash,
+                                           com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry,
+                                           CodeEditorTab skipTab) {
+        WorkspaceView view = workspaceViewFor(workspace);
+        if (view == null || workspaceHash == null || workspaceHash.isBlank()) {
+            return 0;
+        }
+        int changedTabs = 0;
+        for (TabPane pane : view.splitEditorPane().allTabPanes()) {
+            for (Tab tab : pane.getTabs()) {
+                if (!(tab instanceof CodeEditorTab codeTab) || codeTab.getOpenFile() == null) {
+                    continue;
+                }
+                if (skipTab != null && codeTab == skipTab) {
+                    continue;
+                }
+                OpenFile openFile = codeTab.getOpenFile();
+                String currentVisibleSource = codeTab.getCodeArea() == null
+                        ? openFile.sourceCode() : codeTab.getCodeArea().getText();
+                String renamedSource;
+                if (visibleEntry == null) {
+                    renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                            .applyRenames(currentVisibleSource, workspaceHash, openFile.fullPath());
+                } else if (com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS
+                        .equals(visibleEntry.type())) {
+                    renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                            .replaceVisibleIdentifier(currentVisibleSource,
+                                    visibleEntry.oldName(), visibleEntry.newName());
+                    if (java.util.Objects.equals(renamedSource, currentVisibleSource)) {
+                        renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                                .applySingleRename(currentVisibleSource, visibleEntry,
+                                        openFile.fullPath(), workspaceHash);
+                    }
+                } else {
+                    renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                            .applySingleRename(currentVisibleSource, visibleEntry,
+                                    openFile.fullPath(), workspaceHash);
+                    if (java.util.Objects.equals(renamedSource, currentVisibleSource)) {
+                        renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                                .replaceVisibleIdentifier(currentVisibleSource,
+                                        visibleEntry.oldName(), visibleEntry.newName());
+                    }
+                }
+                if (java.util.Objects.equals(renamedSource, currentVisibleSource)) {
+                    continue;
+                }
+                String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .displayClassName(openFile.fullPath(), workspaceHash);
+                codeTab.updateSourceCode(displayClass, renamedSource);
+                changedTabs++;
+                reinstallCodeContext(codeTab, renamedSource);
+            }
+        }
+        return changedTabs;
+    }
+
+    private void reinstallCodeContext(CodeEditorTab codeTab, String sourceCode) {
+        if (codeTab == null) {
+            return;
+        }
+        var panel = codeTab.getCodeViewPanel();
+        CodeViewContext oldCtx = panel == null ? null : panel.getContextMenuContext();
+        CodeActionHandler handler = panel == null ? null : panel.getContextMenuHandler();
+        if (oldCtx != null && handler != null) {
+            String sourceHash = CommentExportDecorator.sourceHash(sourceCode);
+            CodeViewContext newCtx = new CodeViewContext(oldCtx.workspace(), oldCtx.node(),
+                    codeTab.getOpenFile(), oldCtx.classBytes(), codeTab.getMetadata(),
+                    oldCtx.workspaceIndex(), oldCtx.workspaceHash(), sourceHash,
+                    oldCtx.optionsHash());
+            panel.installContextMenu(newCtx, handler);
+        }
+    }
+
+    private void refreshWorkspaceTree(Workspace workspace) {
+        WorkspaceView view = workspaceViewFor(workspace);
+        if (view != null && view.treeView() != null) {
+            view.treeView().refresh();
+        }
+    }
+
+    private static int flatOffset(String text,
+                                   jfx.incubator.scene.control.richtext.TextPos pos) {
+        int line = pos.index();
+        int col = pos.offset();
+        int off = 0;
+        int ls = 0;
+        for (int i = 0; i < line && ls < text.length(); i++) {
+            int nl = text.indexOf('\n', ls);
+            if (nl < 0) {
+                break;
+            }
+            off += (nl - ls) + 1;
+            ls = nl + 1;
+        }
+        return Math.min(text.length(), off + col);
     }
 
     @Override
@@ -1471,6 +1817,28 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             classTabOpener.openClassTab(node, view.workspace(), targetPane,
                     engines[i], lineNumbersEnabled, i == 0, i == 0);
         }
+    }
+
+    @Override
+    public void deobfuscate() {
+        WorkspaceView view = tabManager.currentWorkspaceView();
+        if (view == null) {
+            return;
+        }
+        Workspace workspace = view.workspace();
+        var rootItem = workspace.getTreeRoot();
+        java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions =
+                com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.scanFromTree(rootItem);
+        if (suggestions.isEmpty()) {
+            com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog.show(stage, List.of());
+            return;
+        }
+        String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
+                .of(workspace, "").workspaceHash();
+        com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog.show(stage, suggestions)
+                .forEach(entry -> com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .save(wsHash, entry));
+        statusBar.setFilePath("Deobfuscated: " + suggestions.size() + " classes renamed");
     }
 
     /** 打开搜索对话框 */
@@ -1888,7 +2256,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                                     node, workspace, codeTabPane),
                             this::exportTreeItem,
                             node -> openFindUsagesForNode(workspace, node),
-                            this::openSearchForPackage);
+                            this::openSearchForPackage,
+                            (node, codeTabPane) -> classTabOpener.openFileInHexView(
+                                    node, workspace, codeTabPane));
                     refreshToolbarState();
                 },
                 errorMsg -> {

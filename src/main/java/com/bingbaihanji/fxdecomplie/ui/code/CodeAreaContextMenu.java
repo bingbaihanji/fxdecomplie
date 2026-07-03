@@ -27,7 +27,9 @@ public class CodeAreaContextMenu extends ContextMenu {
     private final MenuItem gotoDeclarationItem;
     private final MenuItem inheritanceGraphItem;
     private final MenuItem methodGraphItem;
+    private final MenuItem controlFlowGraphItem;
     private final MenuItem addCommentItem;
+    private final MenuItem deleteCommentItem;
     private TextPos actionPosition;
 
     public CodeAreaContextMenu(CodeArea codeArea, CodeViewContext context, CodeActionHandler actionHandler) {
@@ -44,15 +46,28 @@ public class CodeAreaContextMenu extends ContextMenu {
         methodGraphItem = new MenuItem(I18nUtil.getString("context.methodGraph"));
         methodGraphItem.setOnAction(e -> onShowMethodGraph());
 
+        controlFlowGraphItem = new MenuItem("Show CFG");
+        controlFlowGraphItem.setOnAction(e -> onShowControlFlowGraph());
+
+        MenuItem renameItem = new MenuItem("Rename (Shift+F6)");
+        renameItem.setOnAction(e -> onRename());
+
         addCommentItem = new MenuItem(I18nUtil.getString("context.addComment"));
         addCommentItem.setOnAction(e -> onAddComment());
+
+        deleteCommentItem = new MenuItem(I18nUtil.getString("comment.delete"));
+        deleteCommentItem.setOnAction(e -> onDeleteComment());
 
         getItems().addAll(
                 gotoDeclarationItem,
                 inheritanceGraphItem,
                 methodGraphItem,
+                controlFlowGraphItem,
                 new SeparatorMenuItem(),
-                addCommentItem
+                renameItem,
+                new SeparatorMenuItem(),
+                addCommentItem,
+                deleteCommentItem
         );
 
         setOnShowing(e -> refreshState());
@@ -96,6 +111,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         gotoDeclarationItem.setDisable(context == null || codeArea == null);
         inheritanceGraphItem.setDisable(!hasClassContext);
         methodGraphItem.setDisable(!hasClassContext);
+        controlFlowGraphItem.setDisable(!hasClassContext);
         addCommentItem.setDisable(codeArea == null);
     }
 
@@ -123,12 +139,37 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.showMethodGraph(context);
     }
 
+    private void onShowControlFlowGraph() {
+        if (actionHandler == null || context == null) {
+            return;
+        }
+        logger.info("代码区右键菜单触发查看CFG: {}", context.classInternalName());
+        actionHandler.showControlFlowGraph(context);
+    }
+
     private void onAddComment() {
         if (actionHandler == null || context == null) {
             return;
         }
         TextPos caret = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         actionHandler.addOrUpdateComment(context, caret);
+    }
+
+    private void onRename() {
+        if (actionHandler == null || context == null) {
+            return;
+        }
+        TextPos caret = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
+        actionHandler.renameAtCaret(context, caret);
+    }
+
+    private void onDeleteComment() {
+        if (actionHandler == null || context == null) {
+            return;
+        }
+        TextPos caret = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
+        int line = caret == null ? 1 : Math.max(1, caret.index() + 1);
+        actionHandler.deleteComment(context, line);
     }
 
     private int currentLine() {

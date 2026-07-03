@@ -130,6 +130,19 @@ public class FileTreeNode {
         return nodeType == NodeTypeEnum.RESOURCE || nodeType == NodeTypeEnum.JAVA_FILE;
     }
 
+    /** @return 是否为二进制资源文件（DLL/SO/EXE 等，可用 Hex 查看） */
+    public boolean isBinaryFile() {
+        return nodeType == NodeTypeEnum.BINARY;
+    }
+
+    /** @return 是否为图片文件 */
+    public boolean isImageFile() {
+        String name = getName().toLowerCase();
+        return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg")
+                || name.endsWith(".gif") || name.endsWith(".bmp") || name.endsWith(".svg")
+                || name.endsWith(".ico") || name.endsWith(".webp");
+    }
+
     @Override
     public String toString() {
         return "FileTreeNode{name='" + name + "', type=" + nodeType + ", path='" + fullPath + "'}";

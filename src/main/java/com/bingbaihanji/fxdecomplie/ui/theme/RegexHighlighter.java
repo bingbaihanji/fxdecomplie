@@ -140,13 +140,59 @@ public class RegexHighlighter implements SyntaxDecorator {
         return posInLine > openParen && posInLine < closeParen;
     }
 
+    /**
+     * 根据 token 文本和上下文确定其样式，供外部（如 BracketHighlighter）复用。
+     *
+     * @param matched   token 文本
+     * @param groupName 正则组名（"MULTICOMMENT","SINGLECOMMENT","STRING","ANNOTATION","NUMBER","IDENTIFIER"或null）
+     * @param fullLine  段落完整文本（用于上下文判断）
+     * @param endPos    token 结束位置
+     * @param startPos  token 起始位置
+     * @return 对应样式属性
+     */
+    public StyleAttributeMap classifyToken(String matched, String groupName,
+                                            String fullLine, int endPos, int startPos) {
+        if (groupName == null) {
+            return styleDefault;
+        }
+        return switch (groupName) {
+            case "MULTICOMMENT", "SINGLECOMMENT" -> styleComment;
+            case "STRING" -> styleString;
+            case "ANNOTATION" -> styleAnnotation;
+            case "NUMBER" -> styleNumber;
+            case "IDENTIFIER" -> {
+                if (KEYWORDS.contains(matched)) {
+                    yield styleKeyword;
+                }
+                if (isMethod(fullLine, endPos)) {
+                    yield styleMethod;
+                }
+                if (isField(fullLine, endPos)) {
+                    yield styleField;
+                }
+                if (isType(matched)) {
+                    yield styleType;
+                }
+                if (isParameter(fullLine, startPos, endPos)) {
+                    yield styleParameter;
+                }
+                yield styleDefault;
+            }
+            default -> styleDefault;
+        };
+    }
+
     /** 根据 scope 列表解析样式(优先精确匹配 → 前缀匹配 → 回退) */
     private StyleAttributeMap resolveStyle(Map<String, StyleAttributeMap> styles, List<String> scopes) {
         for (String scope : scopes) {
-            if (styles.containsKey(scope)) return styles.get(scope);
+            if (styles.containsKey(scope)) {
+                return styles.get(scope);
+            }
             for (var entry : styles.entrySet()) {
                 String key = entry.getKey();
-                if (key.startsWith(scope + ".")) return entry.getValue();
+                if (key.startsWith(scope + ".")) {
+                    return entry.getValue();
+                }
             }
         }
         return styles.getOrDefault("default",

@@ -129,8 +129,11 @@ public class MainMenuBar extends MenuBar {
         MenuItem compareAllItem = new MenuItem(I18nUtil.getString("menu.engine.compareAll"));
         compareAllItem.setOnAction(e -> actions.compareEngines());
 
+        MenuItem deobfuscateItem = new MenuItem("Deobfuscate");
+        deobfuscateItem.setOnAction(e -> actions.deobfuscate());
+
         engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem,
-                new SeparatorMenuItem(), compareAllItem);
+                new SeparatorMenuItem(), compareAllItem, deobfuscateItem);
         return engineMenu;
     }
 

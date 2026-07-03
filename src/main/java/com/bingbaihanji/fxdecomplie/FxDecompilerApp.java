@@ -171,6 +171,8 @@ public final class FxDecompilerApp {
             DefaultWindowTheme.configure(windowAppearance(config));
             DiskCodeCache.cleanIfNeeded();
             CommentManager.setRootDir(AppConfig.appDir().resolve("fxdecomplie").resolve("comments"));
+            com.bingbaihanji.fxdecomplie.rename.RenameService.setRootDir(
+                    AppConfig.appDir().resolve("fxdecomplie").resolve("renames"));
             applyConfiguredLocale();
 
             IconHelper.setStageIcon(stage);

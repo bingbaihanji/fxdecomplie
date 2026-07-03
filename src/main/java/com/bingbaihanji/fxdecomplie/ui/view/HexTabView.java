@@ -18,7 +18,7 @@ import javafx.scene.web.WebView;
 public class HexTabView extends StackPane {
 
     private static final int BYTES_PER_ROW = 16;
-    private static final int MAX_BYTES = 512 * 1024;
+    private static final int MAX_BYTES = 1024 * 1024;
 
     private static final String HTML_TEMPLATE = """
             <!DOCTYPE html>
@@ -35,16 +35,22 @@ public class HexTabView extends StackPane {
                  font-size:13px;line-height:1.4;color:%2$s;}
             table{table-layout:fixed;
                   width:calc(var(--c-off) + var(--c-hex) + var(--c-asc));
-                  border-collapse:collapse;}
-            td,th{padding:1px 8px;white-space:pre;overflow:hidden;}
-            /* 三列宽度统一绑定 CSS 变量 */
-            td:nth-child(1),th:nth-child(1){width:var(--c-off);}
-            td:nth-child(2),th:nth-child(2){width:var(--c-hex);}
-            td:nth-child(3),th:nth-child(3){width:var(--c-asc);}
-            /* 表头 — sticky 固定，作为拖拽手柄的定位父级 */
-            thead th{position:sticky;top:0;z-index:5;
-                     border:1px solid %3$s;background:%4$s;
-                     font-weight:bold;color:%5$s;text-align:left;}
+                  border-collapse:collapse;border-spacing:0;}
+            td,th{padding:1px 8px;white-space:pre;overflow:hidden;line-height:1.45;}
+            /* 三列宽度 + 列对齐 + 选中限制 */
+            td:nth-child(1),th:nth-child(1){width:var(--c-off);text-align:left;
+                user-select:none;-webkit-user-select:none;}
+            td:nth-child(2),th:nth-child(2){width:var(--c-hex);text-align:center;}
+            td:nth-child(3),th:nth-child(3){width:var(--c-asc);text-align:center;
+                user-select:none;-webkit-user-select:none;}
+            /* 整个 thead sticky，双行表头同步固定无间隙 */
+            thead{position:sticky;top:0;z-index:5;}
+            thead th{border:1px solid %3$s;background:%4$s;
+                     font-weight:bold;color:%5$s;text-align:center;}
+            thead th:first-child{text-align:left;}
+            /* 子表头行 — -1px 消除 WebView border-collapse 间隙 */
+            thead tr.sub-row th{font-weight:normal;font-size:13px;padding:1px 8px;
+                position:relative;top:-1px;}
             /* 列间竖线 */
             .roff{border-right:1px solid %3$s;}
             /* 奇偶行 */
@@ -54,16 +60,25 @@ public class HexTabView extends StackPane {
             .rhandle{position:absolute;right:-5px;top:0;width:8px;height:100%%;
                      cursor:col-resize;z-index:10;}
             .rhandle:hover,.rhandle.active{background:rgba(255,255,255,0.1);}
+            /* 状态栏 */
+            .stbar{position:sticky;bottom:0;z-index:15;background:%4$s;border-top:1px solid %3$s;
+                   padding:2px 10px;font-size:11px;color:%5$s;}
             </style></head><body>
             <table>
-            <thead><tr>
-              <th class="roff">Offset<span class="rhandle" data-col="off"></span></th>
+            <thead>
+            <tr>
+              <th class="roff" rowspan="2">Offset<span class="rhandle" data-col="off"></span></th>
               <th class="roff">Hex<span class="rhandle" data-col="hex"></span></th>
-              <th>ASCII<span class="rhandle" data-col="asc"></span></th>
-            </tr></thead>
+              <th rowspan="2">ASCII<span class="rhandle" data-col="asc"></span></th>
+            </tr>
+            <tr class="sub-row">
+              <th class="roff sub-hx">00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F</th>
+            </tr>
+            </thead>
             <tbody>
             %8$s
             </tbody></table>
+            <div class="stbar" id="sb">Bytes: %9$d &nbsp;|&nbsp; %10$s</div>
             <script>
             var root=document.documentElement;
             var props={off:'--c-off',hex:'--c-hex',asc:'--c-asc'};
@@ -104,9 +119,13 @@ public class HexTabView extends StackPane {
     }
 
     public void setTheme(ThemeData newTheme) {
-        if (newTheme == null) { return; }
+        if (newTheme == null) {
+            return;
+        }
         this.theme = newTheme;
-        if (currentData != null) render();
+        if (currentData != null) {
+            render();
+        }
     }
 
     public void load(byte[] data) {
@@ -191,10 +210,15 @@ public class HexTabView extends StackPane {
             rows.append("</td></tr>");
         }
 
+        boolean truncated = data.length > MAX_BYTES;
+        String statusText = truncated
+                ? "Showing first " + (MAX_BYTES / 1024) + " KB of " + (data.length / 1024) + " KB"
+                : data.length + " bytes";
+
         return HTML_TEMPLATE.formatted(
                 c.bodyBg, c.text, c.border, c.headerBg,
                 c.secondaryText, c.gridLine, c.altRowBg,
-                rows.toString());
+                rows.toString(), data.length, statusText);
     }
 
     public record HexColors(String bodyBg, String text, String border, String headerBg,

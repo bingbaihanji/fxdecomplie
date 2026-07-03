@@ -31,7 +31,8 @@ public final class ClassDiscoverer {
 
     /** 资源文件扩展名匹配模式 */
     private static final Pattern RESOURCE_PATTERN = Pattern.compile(
-            ".*\\.(xml|json|properties|txt|html|css|js|md|yml|yaml|cfg|ini|sh|bat|sql)$");
+            ".*\\.(xml|json|properties|txt|html|css|js|md|yml|yaml|cfg|ini|sh|bat|sql"
+                    + "|png|jpg|jpeg|gif|bmp|svg|ico|webp)$");
 
     private ClassDiscoverer() {
         throw new AssertionError("utility class");

@@ -7,6 +7,8 @@ import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Function;
+
 /**
  * 文件树单元格渲染器,根据节点类型显示对应的图标和样式
  *
@@ -24,6 +26,15 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
     private static final Image PACKAGE_ICON = loadIcon("/icon/package.png");
     /** 字节码(.class)图标 */
     private static final Image CLASS_FILE_ICON = loadIcon("/icon/javabytecode.png");
+    private final Function<FileTreeNode, String> displayNameProvider;
+
+    public FileTreeCell() {
+        this(null);
+    }
+
+    public FileTreeCell(Function<FileTreeNode, String> displayNameProvider) {
+        this.displayNameProvider = displayNameProvider;
+    }
 
     private static Image loadIcon(String path) {
         try (var stream = FileTreeCell.class.getResourceAsStream(path)) {
@@ -80,7 +91,8 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
             setGraphic(null);
         } else {
             ImageView iconView = createIcon(item);
-            setText(item.getName());
+            String displayName = displayNameProvider == null ? null : displayNameProvider.apply(item);
+            setText(displayName == null || displayName.isBlank() ? item.getName() : displayName);
             setGraphic(iconView);
         }
     }

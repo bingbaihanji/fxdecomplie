@@ -199,6 +199,10 @@ public class Workspace implements AutoCloseable {
         }
     }
 
+    public void clearSourceSearchCaches() {
+        sourceSearchCaches.clear();
+    }
+
     @Override
     public void close() {
         if (treeRoot == null) {

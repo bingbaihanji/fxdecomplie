@@ -107,7 +107,7 @@ public final class NavigationService {
         // ---- 分发: 根据节点类型路由到类打开器或资源打开器 ----
         if (node.isClassFile()) {
             classOpener.accept(node, codeTabPane);
-        } else if (node.isTextFile()) {
+        } else if (node.isTextFile() || node.isBinaryFile()) {
             resourceOpener.accept(node, codeTabPane);
         }
     }

@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -28,6 +29,22 @@ public final class DialogHelper {
 
     public static void showWarning(Stage owner, String title, String message) {
         showAlert(owner, Alert.AlertType.WARNING, title, message);
+    }
+
+    /** 确认对话框（是/否），返回 true 表示用户点击"是" */
+    public static boolean showConfirm(Stage owner, String title, String message) {
+        logger.info("{} - {}", title, message);
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.YES, ButtonType.NO);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        if (owner != null) alert.initOwner(owner);
+        try { alert.getDialogPane().getStylesheets().add(AppTheme.darkStylesheet()); } catch (RuntimeException ignored) {}
+        alert.setOnShown(e -> {
+            var w = alert.getDialogPane().getScene().getWindow();
+            DefaultWindowTheme.applyWindowDarkMode(w);
+            if (w instanceof Stage s) IconHelper.setStageIcon(s);
+        });
+        return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }
 
     public static void showError(Stage owner, String title, String message) {

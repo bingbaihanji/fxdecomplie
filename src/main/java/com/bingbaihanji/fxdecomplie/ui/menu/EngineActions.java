@@ -14,4 +14,7 @@ public interface EngineActions {
 
     /** 用全部引擎反编译当前类并排打开 */
     void compareEngines();
+
+    /** 自动反混淆 */
+    void deobfuscate();
 }

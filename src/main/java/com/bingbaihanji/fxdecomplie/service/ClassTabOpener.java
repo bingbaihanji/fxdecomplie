@@ -367,11 +367,18 @@ public final class ClassTabOpener {
                     return;
                 }
                 String sourceCode = result.sourceCode();
+                // 应用用户保存的重命名映射
+                String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
+                        .of(workspace, "").workspaceHash();
+                sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .applyRenames(sourceCode, wsHash, internalName);
                 CodeMetadata metadata = result.metadata();
                 DecompilerTypeEnum usedEngine = result.engine();
                 Consumer<CodeMetadata.Reference> completedNavigate = createNavigationHandler(
                         workspace, codeTabPane, usedEngine, lineNumbersEnabled);
-                OpenFile openFile = new OpenFile(className(node), node.getFullPath(), sourceCode, usedEngine);
+                String displayName = com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .displayClassName(internalName, wsHash);
+                OpenFile openFile = new OpenFile(displayName, node.getFullPath(), sourceCode, usedEngine);
 
                 Platform.runLater(() -> {
                     if (!isRequestCurrent(requestId, cancelPrevious)) {
@@ -513,9 +520,16 @@ public final class ClassTabOpener {
                     return;
                 }
                 String sourceCode = result.sourceCode();
+                // 应用用户保存的重命名映射
+                String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
+                        .of(workspace, "").workspaceHash();
+                sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .applyRenames(sourceCode, wsHash, internalName);
                 CodeMetadata metadata = result.metadata();
                 DecompilerTypeEnum usedEngine = result.engine();
-                OpenFile openFile = new OpenFile(className(node), fullPath, sourceCode, usedEngine);
+                String displayName = com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .displayClassName(internalName, wsHash);
+                OpenFile openFile = new OpenFile(displayName, fullPath, sourceCode, usedEngine);
 
                 Platform.runLater(() -> {
                     if (!isRequestCurrent(requestId, refreshGeneration, true)) {
@@ -573,7 +587,95 @@ public final class ClassTabOpener {
      * 打开文本文件标签页(XML/JSON/YML/properties/.java 等)
      * 读取字节码转为 UTF-8 文本,在只读 CodeArea 中显示
      */
+    /** 以 Hex 视图打开任意文件（右键菜单入口，始终新建标签页） */
+    public void openFileInHexView(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
+        statusBar.setFilePath(I18nUtil.getString("status.reading", node.getFullPath()));
+        BackgroundTasks.run("HexView-" + node.getName(), () -> {
+            try {
+                byte[] bytes = readFileBytes(node, workspace);
+                if (bytes == null) {
+                    Platform.runLater(() -> showAlert(I18nUtil.getString("dialog.error.title"),
+                            I18nUtil.getString("dialog.read.unable", node.getFullPath())));
+                    Platform.runLater(statusBar::clearTask);
+                    return;
+                }
+                Platform.runLater(() -> {
+                    com.bingbaihanji.fxdecomplie.ui.view.HexTabView hexView =
+                            new com.bingbaihanji.fxdecomplie.ui.view.HexTabView(editorTheme);
+                    hexView.load(bytes);
+                    Tab tab = new Tab(node.getName() + " [Hex]", hexView);
+                    tab.setUserData(node.getFullPath());
+                    codeTabPane.getTabs().add(tab);
+                    codeTabPane.getSelectionModel().select(tab);
+                    statusBar.setFilePath(node.getFullPath());
+                    statusBar.clearTask();
+                });
+            } catch (Exception ex) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
+                logger.error("Hex 视图打开失败: {}", node.getFullPath(), ex);
+                Platform.runLater(() -> {
+                    showAlert(I18nUtil.getString("dialog.error.title"),
+                            I18nUtil.getString("dialog.read.failed", errorReason(ex)));
+                    statusBar.clearTask();
+                });
+            }
+        });
+    }
+
+    /** 打开图片文件标签页 */
+    private void openImageFileTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
+        for (Tab tab : codeTabPane.getTabs()) {
+            if (node.getFullPath().equals(tab.getUserData())) {
+                codeTabPane.getSelectionModel().select(tab);
+                return;
+            }
+        }
+        statusBar.setFilePath(I18nUtil.getString("status.reading", node.getFullPath()));
+        BackgroundTasks.run("ImageView-" + node.getName(), () -> {
+            try {
+                byte[] bytes = readFileBytes(node, workspace);
+                if (bytes == null || bytes.length == 0) {
+                    Platform.runLater(() -> {
+                        showAlert(I18nUtil.getString("dialog.error.title"),
+                                "Cannot read: " + node.getFullPath());
+                        statusBar.clearTask();
+                    });
+                    return;
+                }
+                Platform.runLater(() -> {
+                    com.bingbaihanji.fxdecomplie.ui.view.ImageViewer viewer =
+                            new com.bingbaihanji.fxdecomplie.ui.view.ImageViewer();
+                    viewer.loadImage(bytes);
+                    viewer.requestFocus();
+                    Tab tab = new Tab(node.getName(), viewer);
+                    tab.setUserData(node.getFullPath());
+                    codeTabPane.getTabs().add(tab);
+                    codeTabPane.getSelectionModel().select(tab);
+                    statusBar.setFilePath(node.getFullPath());
+                    statusBar.clearTask();
+                });
+            } catch (Exception ex) {
+                if (Thread.currentThread().isInterrupted()) {
+                    return;
+                }
+                logger.error("图片加载失败: {}", node.getFullPath(), ex);
+                Platform.runLater(() -> {
+                    showAlert(I18nUtil.getString("dialog.error.title"),
+                            I18nUtil.getString("dialog.read.failed", errorReason(ex)));
+                    statusBar.clearTask();
+                });
+            }
+        });
+    }
+
     public void openTextFileTab(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
+        // 图片文件使用图片查看器打开
+        if (node.isImageFile()) {
+            openImageFileTab(node, workspace, codeTabPane);
+            return;
+        }
         // 去重检查：使用完整路径避免同名不同路径文件冲突
         for (Tab tab : codeTabPane.getTabs()) {
             if (node.getFullPath().equals(tab.getUserData())) {
@@ -633,9 +735,13 @@ public final class ClassTabOpener {
         });
     }
 
-    /** 读取文件字节码(文本文件版本,和 readClassBytes 逻辑相同) */
+    /** 读取文件字节码（与 readClassBytes 逻辑一致，但不查 class 索引） */
     private byte[] readFileBytes(FileTreeNode node, Workspace workspace) throws IOException {
-        byte[] bytes = node.resolveBytes();
+        byte[] bytes = WorkspaceByteReader.readNodeBytes(workspace, node, false);
+        if (bytes != null) {
+            return bytes;
+        }
+        bytes = node.resolveBytes();
         if (bytes != null) {
             return bytes;
         }
@@ -643,7 +749,6 @@ public final class ClassTabOpener {
             File source = workspace.getSourceFile();
             return Files.readAllBytes(new File(source, node.getFullPath()).toPath());
         }
-        // 对于归档文件,字节码应已在 ClassDiscoverer 中缓存
         return null;
     }
 

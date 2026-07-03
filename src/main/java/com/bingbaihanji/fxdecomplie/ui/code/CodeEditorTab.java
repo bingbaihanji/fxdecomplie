@@ -283,6 +283,19 @@ public class CodeEditorTab extends Tab {
         updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
     }
 
+    /** 更新源码模型和可见 Code 面板，用于重命名等不需要重新反编译的场景。 */
+    public void updateSourceCode(String newClassName, String newSource) {
+        String className = newClassName == null || newClassName.isBlank()
+                ? openFile.className() : newClassName;
+        this.openFile = new OpenFile(className, openFile.fullPath(),
+                newSource == null ? "" : newSource, openFile.engine());
+        this.displayTitle = displayTitleFor(openFile);
+        codeViewPanel.refreshWithNewSource(openFile.sourceCode());
+        codeArea = codeViewPanel.getSourceCodeArea();
+        sourceReady = true;
+        updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
+    }
+
     /**
      * 只更新当前编辑器可见源码，不改变 OpenFile 中保存的原始反编译源码。
      * 用于显示用户注释等装饰内容，导出仍可基于原始源码重新计算。

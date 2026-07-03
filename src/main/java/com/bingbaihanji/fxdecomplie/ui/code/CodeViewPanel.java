@@ -28,6 +28,8 @@ public class CodeViewPanel extends VBox {
     private CodeActionHandler contextMenuHandler;
     /** 分屏开关回调（true=开启, false=关闭） */
     private Consumer<Boolean> onSplitToggled;
+    /** Ctrl+; 快捷键处理器引用（用于先移除再添加，防止重复注册） */
+    private javafx.event.EventHandler<javafx.scene.input.KeyEvent> commentKeyHandler;
 
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
         this(sourceCode, classBytes, null, "Consolas", 14, true);
@@ -120,6 +122,23 @@ public class CodeViewPanel extends VBox {
             menu.show(area, e.getScreenX(), e.getScreenY());
             e.consume();
         });
+
+        // Ctrl+; 快捷键：先移除旧处理器再添加，防止重复调用时堆积
+        if (commentKeyHandler != null) {
+            area.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, commentKeyHandler);
+        }
+        commentKeyHandler = e -> {
+            if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.SEMICOLON) {
+                e.consume();
+                contextMenuHandler.addOrUpdateComment(contextMenuContext, area.getCaretPosition());
+                return;
+            }
+            if (e.getCode() == javafx.scene.input.KeyCode.F6 && e.isShiftDown()) {
+                e.consume();
+                contextMenuHandler.renameAtCaret(contextMenuContext, area.getCaretPosition());
+            }
+        };
+        area.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, commentKeyHandler);
     }
 
     /** 更新编辑器搜索栏关联的 CodeArea */

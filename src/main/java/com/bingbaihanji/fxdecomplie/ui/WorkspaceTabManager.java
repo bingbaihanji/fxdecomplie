@@ -4,11 +4,14 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 
+import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.ui.comment.CommentListPane;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
@@ -127,10 +130,12 @@ public final class WorkspaceTabManager {
                                                BiConsumer<FileTreeNode, TabPane> onTextFileClick,
                                                TreeItemAction onExportNode,
                                                java.util.function.Consumer<FileTreeNode> onFindUsage,
-                                               java.util.function.Consumer<FileTreeNode> onSearchPackage) {
+                                               java.util.function.Consumer<FileTreeNode> onSearchPackage,
+                                               BiConsumer<FileTreeNode, TabPane> onHexClick) {
         treeView.setCellFactory(tv -> {
             com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell cell =
-                    new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell();
+                    new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell(
+                            node -> displayTreeNodeName(workspace, node));
             cell.setOnContextMenuRequested(event -> {
                 TreeItem<FileTreeNode> item = cell.getTreeItem();
                 if (cell.isEmpty() || item == null || item.getValue() == null) {
@@ -139,12 +144,21 @@ public final class WorkspaceTabManager {
                 treeView.getSelectionModel().select(item);
                 ContextMenu menu = buildTreeContextMenu(item, workspace, codeTabPane,
                         navigationService, onClassClick, onTextFileClick, onExportNode,
-                        onFindUsage, onSearchPackage);
+                        onFindUsage, onSearchPackage, onHexClick);
                 menu.show(cell, event.getScreenX(), event.getScreenY());
                 event.consume();
             });
             return cell;
         });
+    }
+
+    private static String displayTreeNodeName(Workspace workspace, FileTreeNode node) {
+        if (workspace == null || node == null || !node.isClassFile()) {
+            return node == null ? "" : node.getName();
+        }
+        String workspaceHash = CommentScope.workspaceHash(workspace);
+        String displayName = RenameService.displayClassName(node.getFullPath(), workspaceHash);
+        return displayName == null || displayName.isBlank() ? node.getName() : displayName + ".class";
     }
 
     private static ContextMenu buildTreeContextMenu(TreeItem<FileTreeNode> item, Workspace workspace,
@@ -154,7 +168,8 @@ public final class WorkspaceTabManager {
                                                     BiConsumer<FileTreeNode, TabPane> onTextFileClick,
                                                     TreeItemAction onExportNode,
                                                     java.util.function.Consumer<FileTreeNode> onFindUsage,
-                                                    java.util.function.Consumer<FileTreeNode> onSearchPackage) {
+                                                    java.util.function.Consumer<FileTreeNode> onSearchPackage,
+                                                    BiConsumer<FileTreeNode, TabPane> onHexClick) {
         FileTreeNode node = item.getValue();
         ContextMenu menu = new ContextMenu();
 
@@ -169,6 +184,10 @@ public final class WorkspaceTabManager {
                         workspace, codeTabPane, onClassClick, onTextFileClick);
             }
         });
+
+        MenuItem openHex = new MenuItem("Open in Hex");
+        openHex.setDisable(node.isClassFile());
+        openHex.setOnAction(e -> onHexClick.accept(node, codeTabPane));
 
         MenuItem export = new MenuItem(I18nUtil.getString("context.exportNode"));
         export.setOnAction(e -> onExportNode.accept(item));
@@ -207,7 +226,7 @@ public final class WorkspaceTabManager {
         MenuItem collapse = new MenuItem(I18nUtil.getString("context.collapse"));
         collapse.setOnAction(e -> collapseStatic(item));
 
-        menu.getItems().addAll(open, back, forward, export, findUsage, searchPackage, new SeparatorMenuItem(),
+        menu.getItems().addAll(open, openHex, back, forward, export, findUsage, searchPackage, new SeparatorMenuItem(),
                 copyPath, copyClassName, new SeparatorMenuItem(), expand, collapse);
         return menu;
     }
@@ -215,7 +234,8 @@ public final class WorkspaceTabManager {
     private static void openTreeItem(TreeItem<FileTreeNode> item, Workspace workspace,
                                      TabPane codeTabPane, NavigationService navigationService,
                                      BiConsumer<FileTreeNode, TabPane> onClassClick,
-                                     BiConsumer<FileTreeNode, TabPane> onTextFileClick) {
+                                     BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                     BiConsumer<FileTreeNode, TabPane> onHexClick) {
         if (item == null) {
             return;
         }
@@ -394,6 +414,7 @@ public final class WorkspaceTabManager {
         addWorkspaceTab(workspace, onClassClick, onTextFileClick, onExportNode,
                 node -> {
                 }, node -> {
+                }, (node, pane) -> {
                 });
     }
 
@@ -412,7 +433,8 @@ public final class WorkspaceTabManager {
                                 BiConsumer<FileTreeNode, TabPane> onTextFileClick,
                                 TreeItemAction onExportNode,
                                 java.util.function.Consumer<FileTreeNode> onFindUsage,
-                                java.util.function.Consumer<FileTreeNode> onSearchPackage) {
+                                java.util.function.Consumer<FileTreeNode> onSearchPackage,
+                                BiConsumer<FileTreeNode, TabPane> onHexClick) {
         removeWelcomeTab();
 
         FileTreeView treeView = new FileTreeView(workspace.getTreeRoot());
@@ -437,31 +459,34 @@ public final class WorkspaceTabManager {
                 return;
             }
             TreeItem<FileTreeNode> item = treeView.getSelectionModel().getSelectedItem();
-            openTreeItem(item, workspace, codeTabPane, navigationService, onClassClick, onTextFileClick);
+            openTreeItem(item, workspace, codeTabPane, navigationService, onClassClick, onTextFileClick, onHexClick);
         });
         treeView.setOnKeyPressed(e -> {
             if (e.getCode() == javafx.scene.input.KeyCode.ENTER) {
                 TreeItem<FileTreeNode> item = treeView.getSelectionModel().getSelectedItem();
-                openTreeItem(item, workspace, codeTabPane, navigationService, onClassClick, onTextFileClick);
+                openTreeItem(item, workspace, codeTabPane, navigationService, onClassClick, onTextFileClick, onHexClick);
                 e.consume();
             }
         });
         installTreeContextMenu(treeView, workspace, codeTabPane, navigationService,
                 onClassClick, onTextFileClick, onExportNode,
-                onFindUsage, onSearchPackage);
+                onFindUsage, onSearchPackage, onHexClick);
 
         OutlinePane outlinePane = new OutlinePane();
         InheritancePane inheritancePane = new InheritancePane();
+        CommentListPane commentListPane = new CommentListPane();
 
         javafx.scene.control.Tab outlineTab = new javafx.scene.control.Tab(I18nUtil.getString("tab.outline"), outlinePane);
         outlineTab.setClosable(true);
         javafx.scene.control.Tab inheritTab = new javafx.scene.control.Tab(I18nUtil.getString("tab.inheritance"), inheritancePane);
         inheritTab.setClosable(true);
+        javafx.scene.control.Tab commentsTab = new javafx.scene.control.Tab(I18nUtil.getString("tab.comments"), commentListPane);
+        commentsTab.setClosable(true);
 
         TabPane sideTabPane = new TabPane();
         sideTabPane.getStyleClass().add("bottom-tool-window");
         sideTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
-        sideTabPane.getTabs().addAll(outlineTab, inheritTab);
+        sideTabPane.getTabs().addAll(outlineTab, inheritTab, commentsTab);
         sideTabPane.setMinHeight(0);
         sideTabPane.setPrefHeight(228);
         sideTabPane.setMaxHeight(Double.MAX_VALUE);
@@ -482,16 +507,19 @@ public final class WorkspaceTabManager {
         SplitPane splitPane = new SplitPane(treeView, editorSplitPane);
         splitPane.setDividerPositions(0.25);
 
-        // 代码标签页切换时更新大纲和继承面板
+        // 代码标签页切换时更新大纲、继承和注释面板
         codeTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab instanceof CodeEditorTab codeTab) {
                 outlinePane.update(codeTab.getOpenFile().sourceCode());
                 String selectedPath = codeTab.getOpenFile().fullPath();
                 boolean inheritanceSelected = sideTabPane.getSelectionModel().getSelectedItem() == inheritTab;
                 refreshInheritancePane(workspace, codeTabPane, inheritancePane, selectedPath, inheritanceSelected);
+                String wsHash = CommentScope.of(workspace, "").workspaceHash();
+                commentListPane.load(wsHash, selectedPath);
             } else {
                 outlinePane.clear();
                 inheritancePane.clear();
+                commentListPane.clear();
             }
         });
 
@@ -520,11 +548,23 @@ public final class WorkspaceTabManager {
             }
         });
 
+        // 绑定注释面板回调
+        commentListPane.setOnJumpToLine(line -> {
+            CodeEditorTab codeTab = getCurrentCodeTab(codeTabPane);
+            if (codeTab != null) {
+                var area = codeTab.getCodeArea();
+                area.select(jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0),
+                        jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0));
+                area.requestFocus();
+            }
+        });
+
         Tab tab = new Tab(workspace.getName(), splitPane);
         WorkspaceTools tools = new WorkspaceTools(
-                editorSplitPane, bottomToolContainer, sideTabPane, outlineTab, inheritTab);
+                editorSplitPane, bottomToolContainer, sideTabPane, outlineTab, inheritTab, commentsTab);
         outlineTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
         inheritTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
+        commentsTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
         WorkspaceView view = new WorkspaceView(workspace, treeView, splitEditorPane, tab);
         workspaceViews.put(tab, view);
         workspaceTools.put(tab, tools);
@@ -924,15 +964,17 @@ public final class WorkspaceTabManager {
         private final TabPane toolTabPane;
         private final Tab outlineTab;
         private final Tab inheritanceTab;
+        private final Tab commentsTab;
         private double dividerPosition = 0.72;
 
         private WorkspaceTools(SplitPane editorSplitPane, Node toolContainer, TabPane toolTabPane,
-                               Tab outlineTab, Tab inheritanceTab) {
+                               Tab outlineTab, Tab inheritanceTab, Tab commentsTab) {
             this.editorSplitPane = editorSplitPane;
             this.toolContainer = toolContainer;
             this.toolTabPane = toolTabPane;
             this.outlineTab = outlineTab;
             this.inheritanceTab = inheritanceTab;
+            this.commentsTab = commentsTab;
         }
     }
 }
