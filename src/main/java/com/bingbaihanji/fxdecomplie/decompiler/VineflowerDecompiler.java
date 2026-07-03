@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
+import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.extern.IContextSource;
@@ -14,7 +15,12 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.Manifest;
 
 /**
@@ -26,59 +32,6 @@ import java.util.jar.Manifest;
 public class VineflowerDecompiler implements Decompiler {
 
     private static final Logger logger = LoggerFactory.getLogger(VineflowerDecompiler.class);
-    private static final Map<String, String> OPTION_ALIASES = Map.ofEntries(
-            Map.entry("rbr", IFernflowerPreferences.REMOVE_BRIDGE),
-            Map.entry("rsy", IFernflowerPreferences.REMOVE_SYNTHETIC),
-            Map.entry("din", IFernflowerPreferences.DECOMPILE_INNER),
-            Map.entry("dc4", IFernflowerPreferences.DECOMPILE_CLASS_1_4),
-            Map.entry("das", IFernflowerPreferences.DECOMPILE_ASSERTIONS),
-            Map.entry("hes", IFernflowerPreferences.HIDE_EMPTY_SUPER),
-            Map.entry("hdc", IFernflowerPreferences.HIDE_DEFAULT_CONSTRUCTOR),
-            Map.entry("dgs", IFernflowerPreferences.DECOMPILE_GENERIC_SIGNATURES),
-            Map.entry("ner", IFernflowerPreferences.INCORPORATE_RETURNS),
-            Map.entry("esm", IFernflowerPreferences.ENSURE_SYNCHRONIZED_MONITOR),
-            Map.entry("den", IFernflowerPreferences.DECOMPILE_ENUM),
-            Map.entry("dec", IFernflowerPreferences.DECOMPILE_PREVIEW),
-            Map.entry("rgn", IFernflowerPreferences.REMOVE_GET_CLASS_NEW),
-            Map.entry("lit", IFernflowerPreferences.LITERALS_AS_IS),
-            Map.entry("bto", IFernflowerPreferences.BOOLEAN_TRUE_ONE),
-            Map.entry("asc", IFernflowerPreferences.ASCII_STRING_CHARACTERS),
-            Map.entry("sns", IFernflowerPreferences.SYNTHETIC_NOT_SET),
-            Map.entry("uto", IFernflowerPreferences.UNDEFINED_PARAM_TYPE_OBJECT),
-            Map.entry("udv", IFernflowerPreferences.USE_DEBUG_VAR_NAMES),
-            Map.entry("ump", IFernflowerPreferences.USE_METHOD_PARAMETERS),
-            Map.entry("rer", IFernflowerPreferences.REMOVE_EMPTY_RANGES),
-            Map.entry("fdi", IFernflowerPreferences.FINALLY_DEINLINE),
-            Map.entry("lac", IFernflowerPreferences.LAMBDA_TO_ANONYMOUS_CLASS),
-            Map.entry("bsm", IFernflowerPreferences.BYTECODE_SOURCE_MAPPING),
-            Map.entry("dcl", IFernflowerPreferences.DUMP_ORIGINAL_LINES),
-            Map.entry(IFernflowerPreferences.DUMP_CODE_LINES, IFernflowerPreferences.DUMP_ORIGINAL_LINES),
-            Map.entry("iib", IFernflowerPreferences.IGNORE_INVALID_BYTECODE),
-            Map.entry("vac", IFernflowerPreferences.VERIFY_ANONYMOUS_CLASSES),
-            Map.entry("tcs", IFernflowerPreferences.TERNARY_CONSTANT_SIMPLIFICATION),
-            Map.entry("pam", IFernflowerPreferences.PATTERN_MATCHING),
-            Map.entry("tlf", IFernflowerPreferences.TRY_LOOP_FIX),
-            Map.entry("tco", IFernflowerPreferences.TERNARY_CONDITIONS),
-            Map.entry("swi", IFernflowerPreferences.SWITCH_EXPRESSIONS),
-            Map.entry("shs", IFernflowerPreferences.SHOW_HIDDEN_STATEMENTS),
-            Map.entry("ovr", IFernflowerPreferences.OVERRIDE_ANNOTATION),
-            Map.entry("sst", IFernflowerPreferences.SIMPLIFY_STACK_SECOND_PASS),
-            Map.entry("vvm", IFernflowerPreferences.VERIFY_VARIABLE_MERGES),
-            Map.entry("ega", IFernflowerPreferences.EXPLICIT_GENERIC_ARGUMENTS),
-            Map.entry("isl", IFernflowerPreferences.INLINE_SIMPLE_LAMBDAS),
-            Map.entry("log", IFernflowerPreferences.LOG_LEVEL),
-            Map.entry("mpm", IFernflowerPreferences.MAX_PROCESSING_METHOD),
-            Map.entry("pll", IFernflowerPreferences.PREFERRED_LINE_LENGTH),
-            Map.entry("ind", IFernflowerPreferences.INDENT_STRING),
-            Map.entry("sef", IFernflowerPreferences.SKIP_EXTRA_FILES),
-            Map.entry("wia", IFernflowerPreferences.WARN_INCONSISTENT_INNER_CLASSES),
-            Map.entry("dbe", IFernflowerPreferences.DUMP_BYTECODE_ON_ERROR),
-            Map.entry("dee", IFernflowerPreferences.DUMP_EXCEPTION_ON_ERROR),
-            Map.entry("dcc", IFernflowerPreferences.DECOMPILER_COMMENTS),
-            Map.entry("sfc", IFernflowerPreferences.SOURCE_FILE_COMMENTS),
-            Map.entry("ccd", IFernflowerPreferences.DECOMPILE_COMPLEX_CONDYS),
-            Map.entry("fji", IFernflowerPreferences.FORCE_JSR_INLINE)
-    );
 
     /** Vineflower 默认反编译选项 */
     private static final Map<String, Object> DEFAULT_OPTIONS = createDefaultOptions();
@@ -137,7 +90,7 @@ public class VineflowerDecompiler implements Decompiler {
             if (key == null || key.isBlank()) {
                 return;
             }
-            normalized.put(OPTION_ALIASES.getOrDefault(key, key), normalizeOptionValue(value));
+            normalized.put(DecompilerOptions.VINEFLOWER_OPTION_ALIASES.getOrDefault(key, key), normalizeOptionValue(value));
         });
         return normalized;
     }

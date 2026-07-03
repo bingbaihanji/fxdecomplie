@@ -1,4 +1,4 @@
-package com.bingbaihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.model;
 
 /**
  * 单条搜索结果记录

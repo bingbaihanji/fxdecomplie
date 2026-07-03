@@ -47,7 +47,12 @@ public final class DiskCodeCache {
                               DecompilerTypeEnum engine, String optionsHash) {
         Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
         try {
-            return Files.exists(file) ? Files.readString(file, StandardCharsets.UTF_8) : null;
+            if (!Files.exists(file)) {
+                return null;
+            }
+            String content = Files.readString(file, StandardCharsets.UTF_8);
+            // 零字节文件（写入时崩溃/断电残留）视为缓存未命中，触发重新反编译
+            return content.isEmpty() ? null : content;
         } catch (IOException e) {
             logger.debug("加载磁盘代码缓存失败: {}", file, e);
             return null;

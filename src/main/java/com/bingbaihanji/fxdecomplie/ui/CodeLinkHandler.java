@@ -1,4 +1,4 @@
-package com.bingbaihanji.fxdecomplie.utils;
+package com.bingbaihanji.fxdecomplie.ui;
 
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import javafx.scene.input.MouseButton;

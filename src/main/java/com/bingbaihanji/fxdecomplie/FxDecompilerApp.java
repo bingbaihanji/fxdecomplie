@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.service.CommentManager;
@@ -51,13 +52,14 @@ public final class FxDecompilerApp {
             var codeSource = FxDecompilerApp.class.getProtectionDomain().getCodeSource();
             if (codeSource != null && codeSource.getLocation() != null) {
                 Path jarPath = Path.of(codeSource.getLocation().toURI());
-                if (java.nio.file.Files.isDirectory(jarPath)) {
-                    return appRoot(jarPath);
-                } else {
+                if (Files.isRegularFile(jarPath)
+                        && jarPath.toString().endsWith(".jar")) {
                     Path parent = jarPath.getParent();
                     if (parent != null) {
-                        return appRoot(parent);
+                        return parent.toAbsolutePath().normalize();
                     }
+                } else if (Files.isDirectory(jarPath)) {
+                    return appRoot(jarPath);
                 }
             }
         } catch (Exception ignored) {
@@ -66,13 +68,10 @@ public final class FxDecompilerApp {
         return Path.of(System.getProperty("user.dir"));
     }
 
+    /** IDE 开发期 classpath 在 target/classes/，返回项目根目录避免 mvn clean 删除数据 */
     private static Path appRoot(Path codeSourceDir) {
         Path normalized = codeSourceDir.toAbsolutePath().normalize();
         Path name = normalized.getFileName();
-        if (name != null && "bin".equalsIgnoreCase(name.toString())
-                && normalized.getParent() != null) {
-            return normalized.getParent();
-        }
         if (name != null && "classes".equalsIgnoreCase(name.toString())) {
             Path target = normalized.getParent();
             if (target != null && target.getFileName() != null
@@ -145,16 +144,6 @@ public final class FxDecompilerApp {
             }
         }
 
-        private static void setAppIcon(Stage stage) {
-            try (var stream = FxApplication.class.getResourceAsStream("/icon/logo.png")) {
-                if (stream != null) {
-                    stage.getIcons().add(new javafx.scene.image.Image(stream));
-                }
-            } catch (Exception ignored) {
-                logger.debug("设置应用图标失败", ignored);
-            }
-        }
-
         /** 为主窗口应用平台原生窗口外观(DWM 暗色主题、阴影、圆角等) */
         public void initWindows(Stage primaryStage) {
             DefaultWindowTheme.applyWindowDarkMode(primaryStage);
@@ -184,7 +173,7 @@ public final class FxDecompilerApp {
             CommentManager.setRootDir(AppConfig.appDir().resolve("fxdecomplie").resolve("comments"));
             applyConfiguredLocale();
 
-            setAppIcon(stage);
+            IconHelper.setStageIcon(stage);
 
             try {
                 stage.initStyle(StageStyle.EXTENDED);

@@ -140,12 +140,14 @@ public final class SplitEditorPane extends StackPane {
         return activeCount;
     }
 
-    /** @return 给定 tab 所在的 TabPane */
+    /** @return 给定 tab 所在的 TabPane，未找到时返回 {@code null} */
     public TabPane tabPaneFor(Tab tab) {
-        for (TabPane cell : cells) {
-            if (cell != null && cell.getTabs().contains(tab)) return cell;
+        for (Node node : splitPane.getItems()) {
+            if (node instanceof TabPane cell && cell.getTabs().contains(tab)) {
+                return cell;
+            }
         }
-        return primaryTabPane();
+        return null;
     }
 
     /** @return 获得焦点的 cell 中选中的 CodeEditorTab */
@@ -173,11 +175,13 @@ public final class SplitEditorPane extends StackPane {
     }
 
     /**
-     * 在 sourceTab 右侧创建新分屏。已达上限 3 则无操作。
+     * 在 sourceTab 右侧创建新分屏。已达上限 3 则返回 {@code null}。
+     *
+     * @return 新创建的 cell，已达上限时返回 {@code null}
      */
-    public void splitRight(CodeEditorTab sourceTab) {
+    public TabPane splitRight(CodeEditorTab sourceTab) {
         if (activeCount >= MAX_CELLS) {
-            return;
+            return null;
         }
 
         // 以 splitPane 中的实际位置为准（cells 数组可能因压缩而产生空洞）
@@ -190,11 +194,14 @@ public final class SplitEditorPane extends StackPane {
             }
         }
         int targetPos = srcPos + 1;
-        if (targetPos > splitPane.getItems().size()) targetPos = splitPane.getItems().size();
+        if (targetPos > splitPane.getItems().size()) {
+            targetPos = splitPane.getItems().size();
+        }
 
-        createCellAt(targetPos);
+        TabPane newCell = createCellAt(targetPos);
         activeCount = splitPane.getItems().size();
         rebalanceDividers();
+        return newCell;
     }
 
     /** 设置分屏状态变化回调 */
@@ -292,7 +299,10 @@ public final class SplitEditorPane extends StackPane {
 
     /** 按活跃 cell 数量重新均分分隔线 */
     private void rebalanceDividers() {
-        int count = activeCount;
+        // 使用 splitPane.getItems().size() 而非 activeCount 作为权威来源，
+        // 避免手动维护的 activeCount 与实际不符时设置错误的分隔线位置
+        int count = splitPane.getItems().size();
+        activeCount = count;
         if (count <= 1) {
             splitPane.setDividerPositions(1.0);
         } else if (count == 2) {

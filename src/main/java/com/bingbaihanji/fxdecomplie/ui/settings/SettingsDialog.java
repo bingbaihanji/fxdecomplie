@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.settings;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.CfrParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.decompiler.ProcyonParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.VineflowerParameters;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
@@ -49,7 +50,7 @@ public final class SettingsDialog {
             var window = dialog.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof Stage s) {
-                setDialogIcon(s);
+                IconHelper.setStageIcon(s);
             }
         }));
 
@@ -457,16 +458,6 @@ public final class SettingsDialog {
         }
     }
 
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        try (var stream = SettingsDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置对话框图标失败", ignored);
-        }
-    }
-
     // ==================== 引擎参数面板构建方法 ====================
 
     private static VBox buildEngineParameterPanel(AppConfig config, String engineName,
@@ -625,7 +616,8 @@ public final class SettingsDialog {
             return new Gson().fromJson(json,
                     new TypeToken<Map<String, Map<String, String>>>() {
                     }.getType());
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            logger.warn("解析引擎选项 JSON 失败", ex);
             return null;
         }
     }
@@ -654,7 +646,8 @@ public final class SettingsDialog {
             String json = new GsonBuilder().setPrettyPrinting().create()
                     .toJson(config.decompiler().engineOptions());
             jsonArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            logger.warn("序列化引擎选项 JSON 失败", ex);
             jsonArea.setText("");
         }
     }

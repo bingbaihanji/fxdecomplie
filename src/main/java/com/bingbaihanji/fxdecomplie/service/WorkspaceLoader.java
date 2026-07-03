@@ -52,19 +52,39 @@ public final class WorkspaceLoader {
                     }
                     config.addRecentFile(file.getAbsolutePath());
                 });
-            } catch (IOException e) {
+            } catch (Exception e) {
+                String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
                 Platform.runLater(() -> {
                     if (onError != null) {
-                        onError.accept(e.getMessage());
+                        onError.accept(msg);
                     }
                 });
+            } catch (Error e) {
+                // OOM / StackOverflow 等致命错误：通知 UI 后重新抛出以保留原始语义
+                Platform.runLater(() -> {
+                    if (onError != null) {
+                        onError.accept("Fatal: " + e.getClass().getSimpleName());
+                    }
+                });
+                throw e;
             }
         });
     }
 
-    /** 判断文件是否为归档文件(JAR/ZIP) */
+    /** 判断文件是否为归档文件(JAR/ZIP)，验证扩展名 + 文件头 ZIP 魔数 */
     private static boolean isArchiveFile(File file) {
         String name = file.getName().toLowerCase();
-        return name.endsWith(".jar") || name.endsWith(".zip");
+        if (!name.endsWith(".jar") && !name.endsWith(".zip")) {
+            return false;
+        }
+        // 验证文件头是否为 ZIP 格式（PK\x03\x04），避免把伪装成 .jar 的普通文件当作归档
+        try (var in = new java.io.FileInputStream(file)) {
+            byte[] header = new byte[4];
+            return in.read(header) == 4
+                    && header[0] == 0x50 && header[1] == 0x4B
+                    && header[2] == 0x03 && header[3] == 0x04;
+        } catch (IOException e) {
+            return false;
+        }
     }
 }

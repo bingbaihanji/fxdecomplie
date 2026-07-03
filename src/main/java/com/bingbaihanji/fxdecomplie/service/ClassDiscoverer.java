@@ -105,6 +105,7 @@ public final class ClassDiscoverer {
                 try {
                     return Files.isRegularFile(p) && !Files.isSymbolicLink(p);
                 } catch (Exception e) {
+                    logger.debug("File walk filter 跳过异常文件: {}", p, e);
                     return false;
                 }
             }).forEach(p -> {

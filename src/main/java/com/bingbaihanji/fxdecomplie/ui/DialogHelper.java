@@ -3,7 +3,6 @@ package com.bingbaihanji.fxdecomplie.ui;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.Alert;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -61,24 +60,16 @@ public final class DialogHelper {
         try {
             alert.getDialogPane().getStylesheets().add(AppTheme.darkStylesheet());
         } catch (RuntimeException ignored) {
+            logger.debug("应用暗色样式表失败", ignored);
         }
         alert.setOnShown(e -> {
             var window = alert.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof Stage s) {
-                setDialogIcon(s);
+                IconHelper.setStageIcon(s);
             }
         });
         alert.showAndWait();
     }
 
-    private static void setDialogIcon(Stage stage) {
-        try (var stream = DialogHelper.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置对话框图标失败", ignored);
-        }
-    }
 }

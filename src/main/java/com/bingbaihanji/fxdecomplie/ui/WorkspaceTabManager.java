@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
-import com.bingbaihanji.fxdecomplie.model.WorkspaceView;
+
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
@@ -195,8 +195,11 @@ public final class WorkspaceTabManager {
 
         MenuItem copyClassName = new MenuItem(I18nUtil.getString("context.copyClassName"));
         copyClassName.setDisable(!node.isClassFile());
-        copyClassName.setOnAction(e -> copyToClipboard(
-                node.getFullPath().replace(".class", "").replace('/', '.').replace('\\', '.')));
+        copyClassName.setOnAction(e -> {
+            String fp = node.getFullPath();
+            String name = fp.endsWith(".class") ? fp.substring(0, fp.length() - 6) : fp;
+            copyToClipboard(name.replace('/', '.').replace('\\', '.'));
+        });
 
         MenuItem expand = new MenuItem(I18nUtil.getString("context.expand"));
         expand.setOnAction(e -> expand(item));
@@ -752,10 +755,14 @@ public final class WorkspaceTabManager {
     /** 在文件树中查找指定类名的节点 */
     private FileTreeNode findClassNode(TreeItem<FileTreeNode> item, String className) {
         FileTreeNode data = item.getValue();
-        String searchName = className.replace(".class", "").replace("\\", "/");
-        if (data != null && data.isClassFile()
-                && data.getFullPath().replace(".class", "").equals(searchName)) {
-            return data;
+        String searchName = className.endsWith(".class") ? className.substring(0, className.length() - 6) : className;
+        searchName = searchName.replace("\\", "/");
+        if (data != null && data.isClassFile()) {
+            String fp = data.getFullPath();
+            String name = fp.endsWith(".class") ? fp.substring(0, fp.length() - 6) : fp;
+            if (name.equals(searchName)) {
+                return data;
+            }
         }
         for (TreeItem<FileTreeNode> child : item.getChildren()) {
             FileTreeNode found = findClassNode(child, className);

@@ -1,6 +1,8 @@
-package com.bingbaihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
+import com.bingbaihanji.fxdecomplie.model.SearchResult;
+import com.bingbaihanji.fxdecomplie.model.SearchScope;
 
 import java.util.List;
 import java.util.Map;

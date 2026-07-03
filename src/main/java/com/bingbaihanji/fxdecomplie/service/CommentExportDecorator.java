@@ -86,7 +86,8 @@ public final class CommentExportDecorator {
             String methodName = nameIdx > 0 ? c.memberSignature().substring(0, nameIdx) : c.memberSignature();
             for (int i = 0; i < lines.length; i++) {
                 if (lines[i].contains(methodName)) {
-                    return Math.max(1, i + 1 + (c.line() - 1 - i));
+                    // 将注释放在找到的方法声明行之后（源码变更时行号会偏移）
+                    return Math.max(1, i + 2);
                 }
             }
         }

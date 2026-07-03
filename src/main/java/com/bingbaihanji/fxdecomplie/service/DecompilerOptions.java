@@ -13,7 +13,8 @@ import java.util.Map;
  */
 public final class DecompilerOptions {
 
-    private static final Map<String, String> VINEFLOWER_OPTION_ALIASES = Map.ofEntries(
+    /** Vineflower 选项别名映射（缩写 → 规范名称），同时供 VineflowerDecompiler 和本类使用 */
+    public static final Map<String, String> VINEFLOWER_OPTION_ALIASES = Map.ofEntries(
             Map.entry("rbr", IFernflowerPreferences.REMOVE_BRIDGE),
             Map.entry("rsy", IFernflowerPreferences.REMOVE_SYNTHETIC),
             Map.entry("din", IFernflowerPreferences.DECOMPILE_INNER),

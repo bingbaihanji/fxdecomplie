@@ -1,4 +1,4 @@
-package com.bingbaihanji.fxdecomplie.ui.search;
+package com.bingbaihanji.fxdecomplie.model;
 
 /**
  * 搜索对话框中选定的搜索执行范围

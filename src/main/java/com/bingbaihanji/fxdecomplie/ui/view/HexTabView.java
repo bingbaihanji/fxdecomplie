@@ -78,7 +78,7 @@ public class HexTabView extends StackPane {
               });
             });
             document.addEventListener('mousemove',function(e){
-              if(!drag) return;
+              if(!drag) { return; }
               var nw=Math.max(40, drag.startW+(e.clientX-drag.sx));
               root.style.setProperty(drag.prop, nw+'px');
             });
@@ -104,7 +104,7 @@ public class HexTabView extends StackPane {
     }
 
     public void setTheme(ThemeData newTheme) {
-        if (newTheme == null) return;
+        if (newTheme == null) { return; }
         this.theme = newTheme;
         if (currentData != null) render();
     }

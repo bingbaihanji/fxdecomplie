@@ -1,9 +1,8 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
-import com.bingbaihanji.fxdecomplie.ui.search.SearchProvider;
-import com.bingbaihanji.fxdecomplie.ui.search.SearchResult;
-import com.bingbaihanji.fxdecomplie.ui.search.SearchScope;
+import com.bingbaihanji.fxdecomplie.model.SearchResult;
+import com.bingbaihanji.fxdecomplie.model.SearchScope;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;

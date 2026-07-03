@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.comment;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.geometry.Insets;
@@ -88,7 +89,7 @@ public final class CommentDialog {
             var win = dialogPane.getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(win);
             if (win instanceof javafx.stage.Stage s) {
-                setDialogIcon(s);
+                IconHelper.setStageIcon(s);
             }
         });
 
@@ -113,13 +114,4 @@ public final class CommentDialog {
         });
     }
 
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        try (var stream = CommentDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置注释对话框图标失败", ignored);
-        }
-    }
 }

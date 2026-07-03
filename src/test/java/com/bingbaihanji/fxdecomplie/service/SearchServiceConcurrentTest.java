@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.ui.search.SearchProvider;
-import com.bingbaihanji.fxdecomplie.ui.search.SearchResult;
+import com.bingbaihanji.fxdecomplie.model.SearchResult;
+import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

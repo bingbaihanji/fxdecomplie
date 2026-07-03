@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.quickopen;
 
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.collections.FXCollections;
@@ -47,7 +48,7 @@ public final class QuickOpenDialog {
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
         dialog.setTitle(I18nUtil.getString("quickopen.title"));
-        setDialogIcon(dialog);
+        IconHelper.setStageIcon(dialog);
 
         TextField input = new TextField();
         input.setPromptText(I18nUtil.getString("quickopen.prompt"));
@@ -87,6 +88,9 @@ public final class QuickOpenDialog {
                 String simple = nameLower.substring(nameLower.lastIndexOf('/') + 1);
                 return simple.startsWith(lower) || nameLower.contains(lower);
             });
+            if (!listView.getItems().isEmpty()) {
+                listView.getSelectionModel().select(0);
+            }
         });
 
         // 键盘导航
@@ -135,13 +139,4 @@ public final class QuickOpenDialog {
         input.requestFocus();
     }
 
-    private static void setDialogIcon(Stage stage) {
-        try (var stream = QuickOpenDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置快速打开对话框图标失败", ignored);
-        }
-    }
 }

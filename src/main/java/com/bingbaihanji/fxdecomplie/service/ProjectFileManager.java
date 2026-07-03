@@ -1,5 +1,6 @@
-package com.bingbaihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.model.DecompilerProject;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;

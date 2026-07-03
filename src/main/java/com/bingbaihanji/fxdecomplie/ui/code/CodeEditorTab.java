@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.util.I18nUtil;
@@ -163,17 +164,6 @@ public class CodeEditorTab extends Tab {
             return javafx.scene.text.Font.font(fontFamily, fontSize);
         }
         return javafx.scene.text.Font.font("Consolas", fontSize);
-    }
-
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        try {
-            var stream = CodeEditorTab.class.getResourceAsStream("/icon/logo.png");
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置弹窗图标失败", ignored);
-        }
     }
 
     /** 获取所属的分屏编辑器 */
@@ -350,7 +340,7 @@ public class CodeEditorTab extends Tab {
             var win = dialog.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(win);
             if (win instanceof javafx.stage.Stage s) {
-                setDialogIcon(s);
+                IconHelper.setStageIcon(s);
             }
         });
 

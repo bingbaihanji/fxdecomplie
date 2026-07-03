@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.graph;
 
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
@@ -131,17 +132,6 @@ public class GraphDialog extends Dialog<Void> {
         });
     }
 
-    /** 设置弹窗图标 */
-    private static void setIcon(javafx.stage.Stage stage) {
-        try (var is = GraphDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (is != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(is));
-            }
-        } catch (Exception ignored) {
-            logger.debug("图标加载失败，不阻塞弹窗", ignored);
-        }
-    }
-
     // ======================== 内部视图切换 ========================
 
     /** 弹窗共享初始化：布局、样式、事件绑定 */
@@ -192,7 +182,7 @@ public class GraphDialog extends Dialog<Void> {
                 DefaultWindowTheme.applyWindowDarkMode(w);
             }
             if (w instanceof javafx.stage.Stage s) {
-                setIcon(s);
+                IconHelper.setStageIcon(s);
             }
         });
     }

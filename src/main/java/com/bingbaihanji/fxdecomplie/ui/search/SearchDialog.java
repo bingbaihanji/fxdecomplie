@@ -1,8 +1,12 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
+import com.bingbaihanji.fxdecomplie.model.SearchResult;
+import com.bingbaihanji.fxdecomplie.model.SearchScope;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import com.bingbaihanji.fxdecomplie.service.SearchService;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.animation.PauseTransition;
@@ -72,7 +76,7 @@ public final class SearchDialog {
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
         dialog.setTitle(I18nUtil.getString("search.title"));
-        setDialogIcon(dialog);
+        IconHelper.setStageIcon(dialog);
 
         TextField input = new TextField();
         input.setPromptText(I18nUtil.getString("search.prompt"));
@@ -343,16 +347,6 @@ public final class SearchDialog {
             }
         }
         return count;
-    }
-
-    private static void setDialogIcon(Stage stage) {
-        try (var stream = SearchDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置搜索对话框图标失败", ignored);
-        }
     }
 
     @FunctionalInterface

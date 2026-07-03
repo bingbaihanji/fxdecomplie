@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
-import com.bingbaihanji.fxdecomplie.utils.CodeLinkHandler;
+import com.bingbaihanji.fxdecomplie.ui.CodeLinkHandler;
 import javafx.scene.Node;
 import javafx.scene.text.Font;
 import jfx.incubator.scene.control.richtext.CodeArea;

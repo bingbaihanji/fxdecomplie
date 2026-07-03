@@ -3,10 +3,21 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
+import com.bingbaihanji.fxdecomplie.ui.code.LineNumberGutter;
+import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
+import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.util.I18nUtil;
@@ -49,8 +60,10 @@ public final class ClassTabOpener {
     private final StatusBar statusBar;
     /** L2 反编译源码缓存,避免重复反编译已打开的类 */
     private final DecompileCache decompileCache = new DecompileCache();
-    /** 主导航反编译请求序号,用于丢弃快速切换产生的过期结果 */
+    /** 主导航（打开新类）请求序号，用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
+    /** 引擎切换/刷新请求序号，独立于主导航，避免切换引擎时误取消其他标签页的反编译 */
+    private final AtomicLong refreshGeneration = new AtomicLong();
     /** 当前运行的反编译任务,用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
     /** 当前由主导航创建的占位标签,用于任务取消时清理 */
@@ -133,6 +146,7 @@ public final class ClassTabOpener {
         try {
             return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
         } catch (Exception e) {
+            logger.debug("UTF-8 解码失败，回退到 ISO-8859-1", e);
             return new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1);
         }
     }
@@ -278,7 +292,17 @@ public final class ClassTabOpener {
         }
 
         Tab loadingTab = createLoadingTab(node, engine);
+        loadingTab.setUserData(node.getFullPath());
         AtomicReference<Future<?>> taskRef = new AtomicReference<>();
+        // 必须在添加到 TabPane 之前注册 onClosed，避免用户快速关闭时
+        // 触发无 handler 的关闭事件导致后台任务泄漏
+        loadingTab.setOnClosed(e -> {
+            Future<?> f = taskRef.get();
+            if (f != null) {
+                BackgroundTasks.cancel(f);
+            }
+            clearCurrentLoadingTab(loadingTab);
+        });
         codeTabPane.getTabs().add(loadingTab);
         codeTabPane.getSelectionModel().select(loadingTab);
         if (cancelPrevious) {
@@ -316,7 +340,8 @@ public final class ClassTabOpener {
                     return;
                 }
 
-                String internalName = node.getFullPath().replace(".class", "");
+                String fullPath = node.getFullPath();
+                String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
                 DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
                 CodeMetadata emptyMetadata = emptyMetadata();
                 Consumer<CodeMetadata.Reference> pendingNavigate = createNavigationHandler(
@@ -422,13 +447,6 @@ public final class ClassTabOpener {
             }
         });
         taskRef.set(task);
-        loadingTab.setOnClosed(e -> {
-            Future<?> f = taskRef.get();
-            if (f != null) {
-                BackgroundTasks.cancel(f);
-            }
-            clearCurrentLoadingTab(loadingTab);
-        });
         if (cancelPrevious) {
             currentDecompileTask = task;
         }
@@ -463,15 +481,15 @@ public final class ClassTabOpener {
                 "status.redecompiling", engine.name(), fullPath));
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
-        long requestId = decompileGeneration.incrementAndGet();
+        long requestId = refreshGeneration.incrementAndGet();
         BackgroundTasks.cancel(currentDecompileTask);
         currentDecompileTask = runOpenTask("Redecompile-" + node.getName(), () -> {
             try {
-                if (!isRequestCurrent(requestId, true)) {
+                if (!isRequestCurrent(requestId, refreshGeneration, true)) {
                     return;
                 }
                 byte[] bytes = readClassBytes(node, workspace);
-                if (!isRequestCurrent(requestId, true)) {
+                if (!isRequestCurrent(requestId, refreshGeneration, true)) {
                     return;
                 }
                 if (bytes == null) {
@@ -481,17 +499,17 @@ public final class ClassTabOpener {
                     return;
                 }
 
-                String internalName = fullPath.replace(".class", "");
+                String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
                 if (bypassCache) {
                     String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
                     decompileCache.invalidate(wsKey, internalName);
                 }
                 DecompileResult result = bypassCache
                         ? decompileFresh(internalName, engine, bytes, node, workspace,
-                        () -> isRequestCurrent(requestId, true))
+                        () -> isRequestCurrent(requestId, refreshGeneration, true))
                         : decompileWithCache(internalName, engine, bytes, node, workspace,
-                        () -> isRequestCurrent(requestId, true));
-                if (!isRequestCurrent(requestId, true)) {
+                        () -> isRequestCurrent(requestId, refreshGeneration, true));
+                if (!isRequestCurrent(requestId, refreshGeneration, true)) {
                     return;
                 }
                 String sourceCode = result.sourceCode();
@@ -500,7 +518,7 @@ public final class ClassTabOpener {
                 OpenFile openFile = new OpenFile(className(node), fullPath, sourceCode, usedEngine);
 
                 Platform.runLater(() -> {
-                    if (!isRequestCurrent(requestId, true)) {
+                    if (!isRequestCurrent(requestId, refreshGeneration, true)) {
                         return;
                     }
                     Consumer<CodeMetadata.Reference> onNavigate = ref -> {
@@ -544,9 +562,10 @@ public final class ClassTabOpener {
         });
     }
 
-    /** 取消当前运行的反编译任务 */
+    /** 取消当前运行的反编译任务（同时使主导航和刷新请求失效） */
     public void cancelCurrentTask() {
         decompileGeneration.incrementAndGet();
+        refreshGeneration.incrementAndGet();
         BackgroundTasks.cancel(currentDecompileTask);
     }
 
@@ -636,7 +655,7 @@ public final class ClassTabOpener {
             return;
         }
         WorkspaceIndex index = workspace.getIndex();
-        String workspaceHash = com.bingbaihanji.fxdecomplie.model.CommentScope.workspaceHash(workspace);
+        String workspaceHash = CommentScope.workspaceHash(workspace);
         String sourceHash = CommentExportDecorator.sourceHash(openFile.sourceCode());
         String optionsHash = DecompilerOptions.hash(DecompilerOptions.forEngine(config, openFile.engine()));
         CodeViewContext ctx = new CodeViewContext(workspace, node, openFile,
@@ -669,15 +688,7 @@ public final class ClassTabOpener {
             // 使用与源 tab 相同的引擎
             DecompilerTypeEnum sameEngine = sourceTab.getOpenFile().engine();
             // 创建分屏 cell
-            sep.splitRight(sourceTab);
-            // 找到新创建的 cell（非主 cell 且非源 cell）
-            TabPane targetPane = null;
-            for (TabPane pane : sep.allTabPanes()) {
-                if (pane != sep.primaryTabPane() && pane != sep.tabPaneFor(sourceTab)) {
-                    targetPane = pane;
-                    break;
-                }
-            }
+            TabPane targetPane = sep.splitRight(sourceTab);
             if (targetPane == null) {
                 targetPane = sep.allTabPanes().get(sep.activeCellCount() - 1);
             }
@@ -857,7 +868,11 @@ public final class ClassTabOpener {
     }
 
     private boolean isRequestCurrent(long requestId, boolean guarded) {
-        return !guarded || decompileGeneration.get() == requestId;
+        return isRequestCurrent(requestId, decompileGeneration, guarded);
+    }
+
+    private boolean isRequestCurrent(long requestId, AtomicLong counter, boolean guarded) {
+        return !guarded || counter.get() == requestId;
     }
 
     /** 查找已打开的同名 class 标签页,移除不同引擎的重复标签页 */
@@ -866,6 +881,7 @@ public final class ClassTabOpener {
                                          boolean removeDifferentEngine) {
         java.util.List<Tab> toRemove = new java.util.ArrayList<>();
         for (Tab tab : codeTabPane.getTabs()) {
+            // CodeEditorTab: 通过 OpenFile.fullPath 匹配
             if (tab instanceof CodeEditorTab codeTab
                     && codeTab.getOpenFile().fullPath().equals(node.getFullPath())) {
                 if (codeTab.getOpenFile().engine() == engine) {
@@ -874,6 +890,9 @@ public final class ClassTabOpener {
                 if (removeDifferentEngine) {
                     toRemove.add(tab);
                 }
+            } else if (node.getFullPath().equals(tab.getUserData())) {
+                // 加载中的占位标签（ProgressIndicator），通过 userData 匹配
+                return tab;
             }
         }
         codeTabPane.getTabs().removeAll(toRemove);
@@ -886,7 +905,8 @@ public final class ClassTabOpener {
         if (bytes != null) {
             return bytes;
         }
-        String internalName = node.getFullPath().replace(".class", "");
+        String fullPath = node.getFullPath();
+        String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
         bytes = workspaceIndexForBackground(workspace).getClassBytes(internalName);
         if (bytes != null) {
             return bytes;

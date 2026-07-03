@@ -33,7 +33,7 @@ public final class DecompilerRunner {
     private static final int MAX_DECOMPILER_THREADS = Math.clamp(
             Runtime.getRuntime().availableProcessors() / 2, 1, 2);
     private static final AtomicInteger THREAD_ID = new AtomicInteger();
-    private static volatile int consecutiveTimeouts;
+    private static final AtomicInteger consecutiveTimeouts = new AtomicInteger();
     private static volatile ThreadPoolExecutor executor = createExecutor();
 
     private DecompilerRunner() {
@@ -109,7 +109,7 @@ public final class DecompilerRunner {
                 throw new CancellationException("反编译请求已被替换");
             }
             // 反编译成功，重置连续超时计数器
-            consecutiveTimeouts = 0;
+            consecutiveTimeouts.set(0);
             return source;
         } catch (RejectedExecutionException e) {
             closeContext(context);
@@ -125,10 +125,10 @@ public final class DecompilerRunner {
             }
             closeContext(context);
             // 连续超时超过阈值时重建线程池，丢弃可能僵死的守护线程
-            int timeouts = ++consecutiveTimeouts;
+            int timeouts = consecutiveTimeouts.incrementAndGet();
             if (timeouts >= CONSECUTIVE_TIMEOUT_THRESHOLD) {
                 rebuildExecutor();
-                consecutiveTimeouts = 0;
+                consecutiveTimeouts.set(0);
                 return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
                         + "\n" + I18nUtil.getString("decompile.timeoutHint")
                         + "\n" + I18nUtil.getString("decompile.busyRecovered");
@@ -278,8 +278,9 @@ public final class DecompilerRunner {
         if (source == null) {
             return false;
         }
-        return source.contains("JD-Core Error:")
-                || source.contains("JD-Core decompile failed");
+        String trimmed = source.trim();
+        return trimmed.startsWith("// JD-Core Error:")
+                || trimmed.startsWith("// JD-Core decompile failed");
     }
 
     private static boolean isDecompilerFailureOutput(String source) {

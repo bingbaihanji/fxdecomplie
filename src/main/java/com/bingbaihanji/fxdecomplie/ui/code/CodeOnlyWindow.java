@@ -9,6 +9,7 @@ import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
@@ -19,7 +20,6 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.image.Image;
 import javafx.scene.input.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
@@ -91,7 +91,7 @@ public final class CodeOnlyWindow {
     public static CodeOnlyWindow openFrom(CodeEditorTab sourceTab, AppConfig config,
                                           Stage owner) {
         Stage stage = new Stage();
-        setAppIcon(stage);
+        IconHelper.setStageIcon(stage);
         if (owner != null) {
             stage.setX(owner.getX() + 56);
             stage.setY(owner.getY() + 56);
@@ -484,15 +484,7 @@ public final class CodeOnlyWindow {
             if (sep == null || sep.activeCellCount() >= 3) {
                 return;
             }
-            TabPane sourcePane = sep.tabPaneFor(sourceTab);
-            sep.splitRight(sourceTab);
-            TabPane targetPane = null;
-            for (TabPane pane : sep.allTabPanes()) {
-                if (pane != sourcePane && pane.getTabs().isEmpty()) {
-                    targetPane = pane;
-                    break;
-                }
-            }
+            TabPane targetPane = sep.splitRight(sourceTab);
             if (targetPane == null) {
                 var panes = sep.allTabPanes();
                 targetPane = panes.get(panes.size() - 1);
@@ -715,19 +707,6 @@ public final class CodeOnlyWindow {
         OpenFile openFile = tab.getOpenFile();
         return new CodeTabPayload(openFile.className(), openFile.fullPath(),
                 openFile.sourceCode(), openFile.engine(), tab.getClassBytes());
-    }
-
-    // ==================== 标签页创建 ====================
-
-    private static void setAppIcon(Stage stage) {
-        try {
-            var stream = CodeOnlyWindow.class.getResourceAsStream("/icon/logo.png");
-            if (stream != null) {
-                stage.getIcons().add(new Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置独立窗口图标失败", ignored);
-        }
     }
 
     public void addTab(CodeEditorTab tab) {

@@ -60,30 +60,37 @@ public final class ExportService {
                                          WorkspaceIndex index,
                                          BiConsumer<String, Integer> onProgress)
             throws IOException {
-        return exportAll(root, config, index, null, onProgress, null);
+        List<FileTreeNode> nodes = collectExportableNodes(root, config.exportResources());
+        return exportAll(nodes, config, index, null, onProgress, null);
     }
 
     public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
                                          WorkspaceIndex index, CommentScope commentScope,
                                          BiConsumer<String, Integer> onProgress)
             throws IOException {
-        return exportAll(root, config, index, commentScope, onProgress, null);
+        List<FileTreeNode> nodes = collectExportableNodes(root, config.exportResources());
+        return exportAll(nodes, config, index, commentScope, onProgress, null);
     }
 
     /**
      * @param canceled 用户取消标志 supplier，非 null 时每轮迭代检查
      */
-    public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
+    public static ExportResult exportAll(List<FileTreeNode> nodes, ExportConfig config,
                                          WorkspaceIndex index, CommentScope commentScope,
                                          BiConsumer<String, Integer> onProgress,
                                          BooleanSupplier canceled)
             throws IOException {
-        Objects.requireNonNull(root, "root");
+        Objects.requireNonNull(nodes, "nodes");
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(index, "index");
 
-        // ---- 步骤 1: 树遍历 — 收集所有可导出的类/资源条目 ----
-        List<TreeItem<FileTreeNode>> items = collectExportableItems(root, config.exportResources());
+        // ---- 步骤 1: 过滤可导出的类/资源条目（调用方已在 FX 线程提取为普通 List）----
+        List<FileTreeNode> items = new ArrayList<>();
+        for (FileTreeNode node : nodes) {
+            if (shouldExport(node, config.exportResources())) {
+                items.add(node);
+            }
+        }
         ExportState state = new ExportState(items.size(), onProgress);
         // ---- 步骤 2: 反编译并写入 — 分发到 ZIP 或目录路径 ----
         if (config.format() == ExportConfig.Format.ZIP) {
@@ -110,7 +117,8 @@ public final class ExportService {
         Objects.requireNonNull(outputDir, "outputDir");
         ExportConfig config = new ExportConfig(outputDir, engine, ExportConfig.Format.DIR,
                 ExportConfig.ConflictPolicy.OVERWRITE, false);
-        exportAll(root, config, WorkspaceIndex.build(root), null);
+        List<FileTreeNode> nodes = collectExportableNodes(root, config.exportResources());
+        exportAll(nodes, config, WorkspaceIndex.build(root), null, null, null);
     }
 
     /**
@@ -147,7 +155,8 @@ public final class ExportService {
         Objects.requireNonNull(zipPath, "zipPath");
         ExportConfig config = new ExportConfig(zipPath, engine, ExportConfig.Format.ZIP,
                 ExportConfig.ConflictPolicy.OVERWRITE, false);
-        exportAll(root, config, WorkspaceIndex.build(root), null);
+        List<FileTreeNode> nodes = collectExportableNodes(root, config.exportResources());
+        exportAll(nodes, config, WorkspaceIndex.build(root), null, null, null);
     }
 
     /** 解析类节点的字节码(优先节点懒加载来源,其次工作区索引上下文) */
@@ -157,25 +166,31 @@ public final class ExportService {
         if (bytes != null) {
             return bytes;
         }
-        String internalName = data.getFullPath().replace(".class", "");
+        String fullPath = data.getFullPath();
+        String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
         return context == null ? null : context.getClassBytes(internalName);
     }
 
-    private static List<TreeItem<FileTreeNode>> collectExportableItems(TreeItem<FileTreeNode> root,
-                                                                       boolean exportResources) {
-        List<TreeItem<FileTreeNode>> items = new ArrayList<>();
-        collectExportableItems(root, exportResources, items);
-        return items;
+    /**
+     * 从 TreeItem 树中提取可导出节点的快照（必须在 FX 线程调用）。
+     * 仅供遗留 API 和测试使用；新代码应在 FX 线程提取 FileTreeNode 列表后直接调用 exportAll。
+     */
+    @Deprecated
+    private static List<FileTreeNode> collectExportableNodes(TreeItem<FileTreeNode> root,
+                                                              boolean exportResources) {
+        List<FileTreeNode> nodes = new ArrayList<>();
+        collectExportableNodes(root, exportResources, nodes);
+        return nodes;
     }
 
-    private static void collectExportableItems(TreeItem<FileTreeNode> item, boolean exportResources,
-                                               List<TreeItem<FileTreeNode>> items) {
+    private static void collectExportableNodes(TreeItem<FileTreeNode> item, boolean exportResources,
+                                               List<FileTreeNode> nodes) {
         FileTreeNode data = item.getValue();
         if (data != null && shouldExport(data, exportResources)) {
-            items.add(item);
+            nodes.add(data);
         }
         for (TreeItem<FileTreeNode> child : item.getChildren()) {
-            collectExportableItems(child, exportResources, items);
+            collectExportableNodes(child, exportResources, nodes);
         }
     }
 
@@ -185,18 +200,17 @@ public final class ExportService {
                 || data.getNodeType() == FileTreeNode.NodeTypeEnum.JAVA_FILE));
     }
 
-    private static void exportAllToDir(List<TreeItem<FileTreeNode>> items, WorkspaceIndex index,
+    private static void exportAllToDir(List<FileTreeNode> items, WorkspaceIndex index,
                                        ExportConfig config, CommentScope commentScope, ExportState state,
                                        BooleanSupplier canceled)
             throws IOException {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
         Files.createDirectories(outputDir);
-        for (TreeItem<FileTreeNode> item : items) {
+        for (FileTreeNode data : items) {
             if (canceled != null && canceled.getAsBoolean()) {
                 state.errors.add("导出已取消");
                 return;
             }
-            FileTreeNode data = item.getValue();
             try {
                 // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
                 ExportContent content = buildExportContent(data, index, config, commentScope);
@@ -227,7 +241,7 @@ public final class ExportService {
         }
     }
 
-    private static void exportAllToZip(List<TreeItem<FileTreeNode>> items, WorkspaceIndex index,
+    private static void exportAllToZip(List<FileTreeNode> items, WorkspaceIndex index,
                                        ExportConfig config, CommentScope commentScope, ExportState state,
                                        BooleanSupplier canceled)
             throws IOException {
@@ -239,7 +253,7 @@ public final class ExportService {
         try (ZipOutputStream zos = new ZipOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
             boolean entryOpen = false;
-            for (TreeItem<FileTreeNode> item : items) {
+            for (FileTreeNode data : items) {
                 if (canceled != null && canceled.getAsBoolean()) {
                     state.errors.add("导出已取消");
                     if (entryOpen) {
@@ -251,7 +265,6 @@ public final class ExportService {
                     }
                     return;
                 }
-                FileTreeNode data = item.getValue();
                 try {
                     ExportContent content = buildExportContent(data, index, config, commentScope);
                     String entryName = sanitizeZipEntryName(content.relativePath());
@@ -262,14 +275,29 @@ public final class ExportService {
                         entryOpen = true;
                         try {
                             zos.write(content.bytes());
-                        } finally {
-                            zos.closeEntry();
+                            state.successCount++;
+                        } catch (IOException e) {
+                            // 写入失败时关闭条目并终止整个 ZIP 导出，
+                            // 避免 closeEntry 写入损坏的 CRC 导致整个归档不可用
+                            try {
+                                zos.closeEntry();
+                            } catch (IOException ignored) {
+                            }
                             entryOpen = false;
+                            throw e;
+                        } finally {
+                            if (entryOpen) {
+                                zos.closeEntry();
+                                entryOpen = false;
+                            }
                         }
-                        state.successCount++;
                     }
                 } catch (Exception e) {
                     state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                    // ZIP 写入失败后整个归档已不可靠，终止导出
+                    if (e instanceof IOException) {
+                        break;
+                    }
                 } finally {
                     state.advance(data.getFullPath());
                 }
@@ -290,13 +318,17 @@ public final class ExportService {
             String source = DecompilerRunner.decompileWithTimeout(
                     data.getFullPath(), bytes, config.engine(), context,
                     () -> !Thread.currentThread().isInterrupted());
-            if (DecompilerRunner.isTransientFailureOutput(source)) {
+            if (DecompilerRunner.isFailureOutput(source)) {
                 throw new IllegalStateException(firstLine(source));
             }
             if (commentScope != null && commentScope.enabled()) {
                 source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
             }
-            return new ExportContent(data.getFullPath().replace(".class", ".java"),
+            String fullPath = data.getFullPath();
+            String javaPath = fullPath.endsWith(".class")
+                    ? fullPath.substring(0, fullPath.length() - 6) + ".java"
+                    : fullPath;
+            return new ExportContent(javaPath,
                     source.getBytes(StandardCharsets.UTF_8));
         }
 

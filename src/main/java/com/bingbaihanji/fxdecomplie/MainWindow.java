@@ -5,9 +5,23 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.CommentData;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.DecompilerProject;
+import com.bingbaihanji.fxdecomplie.model.ExportConfig;
+import com.bingbaihanji.fxdecomplie.model.ExportResult;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.SearchOptions;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.service.ProjectFileManager;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
+import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentDialog;
 import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
@@ -152,7 +166,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()) {
             return -1;
         }
-        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        String simpleToken = tokenSimpleName(token);
+        simpleToken = simpleToken.endsWith(".class") ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
         if (simpleToken.isBlank()) {
             return -1;
         }
@@ -287,13 +302,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 为对话框/Stage 设置应用 Logo 图标 */
     private static void setAlertIcon(javafx.stage.Stage s) {
-        try (var stream = MainWindow.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                s.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置对话框图标失败", ignored);
-        }
+        IconHelper.setStageIcon(s);
     }
 
     /** 判断文件是否为可加载类型（JAR/ZIP/WAR/Class 及目录） */
@@ -558,8 +567,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             showWarning(I18nUtil.getString("dialog.export.title"), I18nUtil.getString("dialog.export.noworkspace"));
             return;
         }
-        withWorkspaceIndex(view.workspace(),
-                index -> doExport(view.workspace().getTreeRoot(), index, view.workspace()));
+        withWorkspaceIndex(view.workspace(), index -> {
+            java.util.List<FileTreeNode> nodes = new java.util.ArrayList<>();
+            collectTreeNodes(view.workspace().getTreeRoot(), nodes);
+            doExport(nodes, index, view.workspace());
+        });
     }
 
     /** 为单个树节点构建临时索引并弹出导出对话框(右键菜单入口) */
@@ -578,7 +590,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 Platform.runLater(() -> {
                     statusBar.clearTask();
                     WorkspaceView view = tabManager.currentWorkspaceView();
-                    doExport(rootItem, index, view == null ? null : view.workspace());
+                    doExport(nodesSnapshot, index, view == null ? null : view.workspace());
                 });
             } catch (Exception ex) {
                 Platform.runLater(() -> {
@@ -593,7 +605,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     // ─── CodeActionHandler 实现 ─────────────────────────────────
 
     /** 弹出导出配置对话框,提交后台导出任务并显示进度 */
-    private void doExport(javafx.scene.control.TreeItem<FileTreeNode> rootItem,
+    private void doExport(java.util.List<FileTreeNode> nodes,
                           WorkspaceIndex index, Workspace workspace) {
         var configOpt = ExportDialog.show(stage, config, currentEngine);
         if (configOpt.isEmpty()) {
@@ -609,17 +621,19 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         exportTask[0] = BackgroundTasks.run("Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(
-                        rootItem, exportConfig, index, commentScope(workspace, exportConfig),
+                        nodes, exportConfig, index, commentScope(workspace, exportConfig),
                         (path, pct) -> Platform.runLater(() -> {
                             statusBar.setFilePath(I18nUtil.getString(
                                     "status.exporting.detail", pct, path));
                             progressHandle.update(path, pct);
                         }),
                         (java.util.function.BooleanSupplier) () -> exportCanceled.get());
+                // 立即快照,避免 Platform.runLater 延迟执行期间被用户点取消覆盖
+                final boolean cancelled = exportCanceled.get();
                 Platform.runLater(() -> {
                     progressHandle.close();
                     statusBar.clearTask();
-                    if (exportCanceled.get()) {
+                    if (cancelled) {
                         statusBar.setFilePath(I18nUtil.getString("dialog.export.canceled"));
                         showWarning(I18nUtil.getString("dialog.export.title"),
                                 I18nUtil.getString("dialog.export.canceled"));
@@ -630,10 +644,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     showExportResult(exportConfig, result);
                 });
             } catch (java.io.IOException ex) {
+                logger.error("导出失败", ex);
+                final boolean cancelled = exportCanceled.get();
                 Platform.runLater(() -> {
                     progressHandle.close();
                     statusBar.clearTask();
-                    if (exportCanceled.get()) {
+                    if (cancelled) {
                         statusBar.setFilePath(I18nUtil.getString("dialog.export.canceled"));
                         showWarning(I18nUtil.getString("dialog.export.title"),
                                 I18nUtil.getString("dialog.export.canceled"));
@@ -643,10 +659,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                             I18nUtil.getString("dialog.export.failed", ex.getMessage()));
                 });
             } catch (Exception ex) {
+                logger.error("导出失败", ex);
+                final boolean cancelled = exportCanceled.get();
                 Platform.runLater(() -> {
                     progressHandle.close();
                     statusBar.clearTask();
-                    if (exportCanceled.get()) {
+                    if (cancelled) {
                         showWarning(I18nUtil.getString("dialog.export.title"),
                                 I18nUtil.getString("dialog.export.canceled"));
                     } else {
@@ -787,6 +805,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         CodeEditorTab currentTab = tabManager.currentCodeTab();
         if (view != null && currentTab != null) {
             TabPane targetPane = view.splitEditorPane().tabPaneFor(currentTab);
+            if (targetPane == null) {
+                targetPane = view.splitEditorPane().primaryTabPane();
+            }
             classTabOpener.cancelCurrentTask();
             classTabOpener.refreshCurrentClassTab(
                     view.workspace(), targetPane, currentTab, engine, lineNumbersEnabled);
@@ -808,6 +829,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return;
         }
         TabPane targetPane = view.splitEditorPane().tabPaneFor(currentTab);
+        if (targetPane == null) {
+            targetPane = view.splitEditorPane().primaryTabPane();
+        }
         classTabOpener.cancelCurrentTask();
         classTabOpener.refreshCurrentClassTab(
                 view.workspace(), targetPane, currentTab, engine, lineNumbersEnabled);
@@ -1220,13 +1244,15 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (index == null || index == WorkspaceIndex.EMPTY) {
             return null;
         }
-        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        String simpleToken = tokenSimpleName(token);
+        simpleToken = simpleToken.endsWith(".class") ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
         FileTreeNode firstMatch = null;
         for (var cls : index.classes()) {
             if (cls.internalName().equals(currentInternal)) {
                 continue;
             }
-            String indexedSimple = cls.simpleName().replace(".class", "");
+            String indexedSimple = cls.simpleName();
+            indexedSimple = indexedSimple.endsWith(".class") ? indexedSimple.substring(0, indexedSimple.length() - 6) : indexedSimple;
             if (cls.internalName().equals(normalized)
                     || cls.fullPath().equals(normalized)
                     || indexedSimple.equals(simpleToken)
@@ -1251,7 +1277,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (workspace == null || token == null || token.isBlank()) {
             return null;
         }
-        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        String simpleToken = tokenSimpleName(token);
+        simpleToken = simpleToken.endsWith(".class") ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
         if (simpleToken.isBlank()) {
             return null;
         }
@@ -1284,7 +1311,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 continue;
             }
 
-            String importedSimple = tokenSimpleName(imported).replace(".class", "");
+            String importedSimple = tokenSimpleName(imported);
+            importedSimple = importedSimple.endsWith(".class") ? importedSimple.substring(0, importedSimple.length() - 6) : importedSimple;
             if (importedSimple.equals(simpleToken) || imported.endsWith("." + token)) {
                 FileTreeNode importedNode = findClassPath(workspace, imported.replace('.', '/'));
                 if (importedNode != null) {
@@ -1304,7 +1332,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (workspace == null || token == null || token.isBlank()) {
             return null;
         }
-        String simpleToken = tokenSimpleName(token).replace(".class", "");
+        String simpleToken = tokenSimpleName(token);
+        simpleToken = simpleToken.endsWith(".class") ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
         if (simpleToken.isBlank()) {
             return null;
         }
@@ -1426,11 +1455,18 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         DecompilerTypeEnum[] engines = DecompilerTypeEnum.values();
         // 第一个引擎在主 panel 打开；其余引擎通过 splitRight 分布到不同分屏
         for (int i = 0; i < engines.length; i++) {
-            TabPane targetPane = view.splitEditorPane().primaryTabPane();
-            if (i > 0) {
-                view.splitEditorPane().splitRight(null);
-                targetPane = view.splitEditorPane().allTabPanes().get(
-                        Math.min(i, view.splitEditorPane().activeCellCount() - 1));
+            final TabPane targetPane;
+            if (i == 0) {
+                targetPane = view.splitEditorPane().primaryTabPane();
+            } else {
+                TabPane newCell = view.splitEditorPane().splitRight(null);
+                if (newCell != null) {
+                    targetPane = newCell;
+                } else {
+                    // 已达最大分屏数，剩余引擎放入最右侧 cell
+                    var panes = view.splitEditorPane().allTabPanes();
+                    targetPane = panes.get(panes.size() - 1);
+                }
             }
             classTabOpener.openClassTab(node, view.workspace(), targetPane,
                     engines[i], lineNumbersEnabled, i == 0, i == 0);
@@ -1713,6 +1749,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
         // 最多约 2 秒
         if (retries > 20) {
+            statusBar.setFilePath(I18nUtil.getString("status.navigateTimeout", fullPath));
             return;
         }
         if (!tabManager.isWorkspaceActive(view)) return; // 工作区已关闭
@@ -1980,7 +2017,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                                 openClassByPath(view, fullPath, lineNumber);
                             }
                         },
-                        node.getFullPath().replace(".class", "")));
+                        (node.getFullPath().endsWith(".class") ? node.getFullPath().substring(0, node.getFullPath().length() - 6) : node.getFullPath())));
     }
 
     /** 提取节点所在的包路径作为搜索关键词并打开搜索对话框 */

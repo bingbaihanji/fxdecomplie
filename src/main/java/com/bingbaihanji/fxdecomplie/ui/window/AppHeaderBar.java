@@ -184,12 +184,9 @@ public final class AppHeaderBar {
         iv.setFitWidth(20);
         iv.setFitHeight(20);
         iv.setPreserveRatio(true);
-        try (var stream = AppHeaderBar.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                iv.setImage(new Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("加载Logo图标失败", ignored);
+        Image logo = com.bingbaihanji.fxdecomplie.ui.IconHelper.getLogoImage();
+        if (logo != null) {
+            iv.setImage(logo);
         }
         iv.getStyleClass().add("app-icon");
         return iv;

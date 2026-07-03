@@ -1,5 +1,6 @@
-package com.bingbaihanji.fxdecomplie.model;
+package com.bingbaihanji.fxdecomplie.ui;
 
+import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import javafx.scene.control.Tab;

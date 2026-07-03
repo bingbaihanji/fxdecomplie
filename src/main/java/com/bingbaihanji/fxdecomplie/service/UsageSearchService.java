@@ -235,7 +235,7 @@ public final class UsageSearchService {
         if (owner == null || owner.isBlank()) {
             return false;
         }
-        String normalizedOwner = owner.toLowerCase(Locale.ROOT);
+        String normalizedOwner = owner.toLowerCase(Locale.ROOT).replace('$', '/');
         String simpleOwner = simpleName(normalizedOwner);
         return normalizedOwner.contains(target.classPart)
                 || simpleOwner.contains(target.raw)
@@ -336,7 +336,7 @@ public final class UsageSearchService {
                     .replaceAll("\\.class$", "")
                     .replace('\\', '/')
                     .toLowerCase(Locale.ROOT);
-            String classQuery = rawQuery.replace('.', '/');
+            String classQuery = rawQuery.replace('.', '/').replace('$', '/');
             String memberQuery = null;
             int hash = classQuery.lastIndexOf('#');
             if (hash >= 0) {
@@ -347,7 +347,7 @@ public final class UsageSearchService {
                     classQuery = "\0"; // 哨兵值,不匹配任何类
                 }
             }
-            return new Target(rawQuery.replace('.', '/'), classQuery, memberQuery);
+            return new Target(rawQuery.replace('.', '/').replace('$', '/'), classQuery, memberQuery);
         }
 
         private boolean isValid() {

@@ -1,6 +1,9 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
+import com.bingbaihanji.fxdecomplie.model.SearchResult;
+import com.bingbaihanji.fxdecomplie.model.SearchScope;
+import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

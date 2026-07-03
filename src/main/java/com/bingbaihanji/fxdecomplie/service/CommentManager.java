@@ -88,19 +88,27 @@ public final class CommentManager {
             logger.error("保存注释失败", e);
         } finally {
             lock.unlock();
-            FILE_LOCKS.remove(lockKey);
+            // 不移除锁条目，防止 unlock→remove 窗口期其他线程创建新锁导致并发写
         }
     }
 
     /**
-     * 加载某个类的全部注释
+     * 加载某个类的全部注释（获取读锁，防止读到并发写入的半截 JSON）
      *
      * @param workspaceHash 工作区 hash
      * @param className     类全限定路径
      * @return 注释列表
      */
     public static List<CommentData> load(String workspaceHash, String className) {
-        return loadAll(workspaceHash, className);
+        String lockKey = workspaceHash + ":" + className;
+        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
+                k -> new java.util.concurrent.locks.ReentrantLock());
+        lock.lock();
+        try {
+            return loadAll(workspaceHash, className);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -131,7 +139,7 @@ public final class CommentManager {
             return false;
         } finally {
             lock.unlock();
-            FILE_LOCKS.remove(lockKey);
+            // 不移除锁条目，防止 unlock→remove 窗口期其他线程创建新锁导致并发写
         }
     }
 
@@ -144,8 +152,8 @@ public final class CommentManager {
             String json = Files.readString(file, StandardCharsets.UTF_8);
             List<CommentData> list = GSON.fromJson(json, COMMENT_LIST_TYPE);
             return list != null ? new ArrayList<>(list) : new ArrayList<>();
-        } catch (IOException e) {
-            logger.debug("读取注释文件失败: {}", file, e);
+        } catch (IOException | com.google.gson.JsonSyntaxException e) {
+            logger.warn("读取注释文件失败，将视为空列表: {}", file, e);
             return new ArrayList<>();
         }
     }

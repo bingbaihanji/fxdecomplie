@@ -83,7 +83,8 @@ public final class WorkspaceIndex {
             return null;
         }
 
-        String internalName = node.getFullPath().replace(".class", "");
+        String fullPath = node.getFullPath();
+        String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
         String simpleName = simpleName(internalName);
         List<MemberIndexEntry> methods = new ArrayList<>();
         List<MemberIndexEntry> fields = new ArrayList<>();
@@ -103,6 +104,8 @@ public final class WorkspaceIndex {
             logger.warn("解析类元数据失败: {}", node.getFullPath());
         }
 
+        // 使用 node::resolveBytes 延迟加载：索引构建时只解析元数据，
+        // 字节码在首次打开 class 时才缓存到节点，避免大型 JAR 预热阶段占用过多内存
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
                 node::resolveBytes, methods, fields);
     }

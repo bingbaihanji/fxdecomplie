@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.export;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
@@ -274,13 +275,7 @@ public final class ExportDialog {
     }
 
     private static void setDialogIcon(javafx.stage.Stage stage) {
-        try (var stream = ExportDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置导出对话框图标失败", ignored);
-        }
+        IconHelper.setStageIcon(stage);
     }
 
     public static final class ProgressHandle {

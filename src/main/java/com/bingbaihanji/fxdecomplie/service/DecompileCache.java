@@ -24,9 +24,13 @@ public class DecompileCache {
                 }
             });
 
+    /** 缓存键分隔符，用于各组件之间的精确匹配，避免前缀碰撞 */
+    private static final char KEY_SEP = '#';
+
     private static String cacheKey(String workspaceKey, String internalName,
                                    DecompilerTypeEnum engine, String optionsHash) {
-        return workspaceKey + "#" + internalName + "#" + engine.name() + "#" + optionsHash;
+        return workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP
+                + engine.name() + KEY_SEP + optionsHash;
     }
 
     public String get(String workspaceKey, String internalName,
@@ -39,8 +43,12 @@ public class DecompileCache {
         cache.put(cacheKey(workspaceKey, internalName, engine, optionsHash), sourceCode);
     }
 
+    /**
+     * 失效指定类的所有缓存条目。
+     * 使用双分隔符避免前缀碰撞（如 "com/Fo" 误匹配 "com/Foo"）。
+     */
     public void invalidate(String workspaceKey, String internalName) {
-        String prefix = workspaceKey + "#" + internalName + "#";
+        String prefix = workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP;
         synchronized (cache) {
             cache.keySet().removeIf(k -> k.startsWith(prefix));
         }

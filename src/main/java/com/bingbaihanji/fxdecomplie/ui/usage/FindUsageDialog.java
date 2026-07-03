@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.usage;
 
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.UsageSearchService;
 import com.bingbaihanji.util.I18nUtil;
@@ -51,7 +52,7 @@ public final class FindUsageDialog {
         dialog.initOwner(owner);
         dialog.initStyle(StageStyle.UTILITY);
         dialog.setTitle(I18nUtil.getString("usage.title"));
-        setDialogIcon(dialog);
+        IconHelper.setStageIcon(dialog);
 
         TextField input = new TextField();
         input.setPromptText(I18nUtil.getString("usage.query.prompt"));
@@ -169,16 +170,6 @@ public final class FindUsageDialog {
             case METHOD_CALL -> I18nUtil.getString("usage.group.method");
             case FIELD_ACCESS -> I18nUtil.getString("usage.group.field");
         };
-    }
-
-    private static void setDialogIcon(Stage stage) {
-        try (var stream = FindUsageDialog.class.getResourceAsStream("/icon/logo.png")) {
-            if (stream != null) {
-                stage.getIcons().add(new javafx.scene.image.Image(stream));
-            }
-        } catch (Exception ignored) {
-            logger.debug("设置查找用法对话框图标失败", ignored);
-        }
     }
 
     @FunctionalInterface
