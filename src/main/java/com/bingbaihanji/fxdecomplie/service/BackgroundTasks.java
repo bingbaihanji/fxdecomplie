@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 /**
  * 后台任务工具类,在守护线程上运行任务
@@ -50,6 +51,11 @@ public final class BackgroundTasks {
      * @return 可通过 {@link #cancel(Future)} 取消的 Future
      */
     public static Future<?> run(String name, Runnable task) {
+        return run(name, task, null);
+    }
+
+    public static Future<?> run(String name, Runnable task,
+                                Consumer<RejectedExecutionException> onRejected) {
         try {
             log.debug("提交后台任务: {} (队列: {}/{})", name,
                     EXECUTOR.getQueue().size(), MAX_QUEUE_SIZE);
@@ -70,6 +76,13 @@ public final class BackgroundTasks {
         } catch (RejectedExecutionException e) {
             log.warn("后台任务被拒绝(队列满): {} (队列: {}/{})", name,
                     EXECUTOR.getQueue().size(), MAX_QUEUE_SIZE);
+            if (onRejected != null) {
+                try {
+                    onRejected.accept(e);
+                } catch (RuntimeException callbackError) {
+                    log.debug("后台任务拒绝回调失败: {}", name, callbackError);
+                }
+            }
             CompletableFuture<Void> failed = new CompletableFuture<>();
             failed.completeExceptionally(e);
             return failed;

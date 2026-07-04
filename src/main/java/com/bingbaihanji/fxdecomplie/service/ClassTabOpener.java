@@ -471,6 +471,13 @@ public final class ClassTabOpener {
     public void refreshCurrentClassTab(Workspace workspace, TabPane codeTabPane, CodeEditorTab currentTab,
                                        DecompilerTypeEnum engine, boolean lineNumbersEnabled,
                                        boolean bypassCache) {
+        refreshCurrentClassTab(workspace, codeTabPane, currentTab, engine, lineNumbersEnabled,
+                bypassCache, true);
+    }
+
+    public void refreshCurrentClassTab(Workspace workspace, TabPane codeTabPane, CodeEditorTab currentTab,
+                                       DecompilerTypeEnum engine, boolean lineNumbersEnabled,
+                                       boolean bypassCache, boolean cancelPrevious) {
         String fullPath = currentTab.getOpenFile().fullPath();
         FileTreeNode node = workspace.findNodeByPath(fullPath);
         if (node == null) {
@@ -483,9 +490,11 @@ public final class ClassTabOpener {
                 "status.redecompiling", engine.name(), fullPath));
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
-        long requestId = refreshGeneration.incrementAndGet();
-        BackgroundTasks.cancel(currentDecompileTask);
-        currentDecompileTask = runOpenTask("Redecompile-" + node.getName(), () -> {
+        long requestId = cancelPrevious ? refreshGeneration.incrementAndGet() : refreshGeneration.get();
+        if (cancelPrevious) {
+            BackgroundTasks.cancel(currentDecompileTask);
+        }
+        Future<?> task = runOpenTask("Redecompile-" + node.getName(), () -> {
             try {
                 if (!isRequestCurrent(requestId, refreshGeneration, true)) {
                     return;
@@ -570,6 +579,9 @@ public final class ClassTabOpener {
                 Platform.runLater(statusBar::clearTask);
             }
         });
+        if (cancelPrevious) {
+            currentDecompileTask = task;
+        }
     }
 
     /** 取消当前运行的反编译任务（同时使主导航和刷新请求失效） */
@@ -903,18 +915,31 @@ public final class ClassTabOpener {
         }
         String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                 .of(workspace, "").workspaceHash();
-        String original = com.bingbaihanji.fxdecomplie.rename.RenameService
-                .originalInternalName(targetClass, wsHash);
-        if (!ClassNameUtil.sameInternalName(original, normalized)) {
-            for (String candidate : ClassNameUtil.classFilePathCandidates(original)) {
-                FileTreeNode originalNode = workspace.findNodeByPath(candidate);
-                if (originalNode != null) {
-                    return originalNode;
-                }
+        java.util.List<String> originals = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .originalInternalNameCandidates(targetClass, wsHash);
+        for (String original : originals) {
+            if (ClassNameUtil.sameInternalName(original, normalized)) {
+                continue;
             }
-            return findNodeByInternalNameSuffix(workspace, original);
+            FileTreeNode originalNode = findNodeByClassName(workspace, original);
+            if (originalNode != null) {
+                return originalNode;
+            }
         }
         return findNodeByInternalNameSuffix(workspace, normalized);
+    }
+
+    private FileTreeNode findNodeByClassName(Workspace workspace, String className) {
+        if (workspace == null || className == null || className.isBlank()) {
+            return null;
+        }
+        for (String candidate : ClassNameUtil.classFilePathCandidates(className)) {
+            FileTreeNode node = workspace.findNodeByPath(candidate);
+            if (node != null) {
+                return node;
+            }
+        }
+        return findNodeByInternalNameSuffix(workspace, className);
     }
 
     private FileTreeNode findNodeByInternalNameSuffix(Workspace workspace, String internalName) {

@@ -205,7 +205,11 @@ public final class SearchDialog {
                                 ? I18nUtil.getString("search.tooMany", resultLimit)
                                 : I18nUtil.getString("search.resultCount", shown));
                     });
-                });
+                }, rejected -> Platform.runLater(() -> {
+                    if (gen == searchGen.get()) {
+                        statusLabel.setText("Search task rejected: background queue is full");
+                    }
+                }));
                 currentSearchTask.set(task);
             });
             debounce.playFromStart();

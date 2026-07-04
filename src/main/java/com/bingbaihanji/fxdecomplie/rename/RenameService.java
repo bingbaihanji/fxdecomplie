@@ -92,6 +92,7 @@ public final class RenameService {
     private static final Pattern PACKAGE_LINE_PATTERN = Pattern.compile(
             "(?m)^\\s*package\\s+([\\w.]+)\\s*;");
     private static final ConcurrentMap<String, List<RenameEntry>> MEMORY_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Map<String, List<String>>> ORIGINAL_BY_DISPLAY_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Object> WORKSPACE_LOCKS = new ConcurrentHashMap<>();
     private static volatile Path rootDir;
 
@@ -148,7 +149,7 @@ public final class RenameService {
                 if (entry == null) {
                     continue;
                 }
-                RenameEntry normalized = normalize(entry);
+                RenameEntry normalized = normalizeForStorage(workspaceHash, entry);
                 if (normalized.oldName().isBlank() || normalized.newName().isBlank()) {
                     continue;
                 }
@@ -184,6 +185,7 @@ public final class RenameService {
                 return 0;
             }
             MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
+            ORIGINAL_BY_DISPLAY_CACHE.remove(workspaceHash);
             return applied;
         }
     }
@@ -246,6 +248,7 @@ public final class RenameService {
             list.removeIf(e -> sameKey(normalize(e), normalized));
             if (writeFile(workspaceHash, list)) {
                 MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
+                ORIGINAL_BY_DISPLAY_CACHE.remove(workspaceHash);
             }
         }
     }
@@ -271,6 +274,7 @@ public final class RenameService {
                 }
                 Files.copy(latest.get(), file, StandardCopyOption.REPLACE_EXISTING);
                 MEMORY_CACHE.remove(workspaceHash);
+                ORIGINAL_BY_DISPLAY_CACHE.remove(workspaceHash);
                 loadAll(workspaceHash);
                 return true;
             } catch (IOException e) {
@@ -311,13 +315,8 @@ public final class RenameService {
         if (internalName.isBlank() || workspaceHash == null || workspaceHash.isBlank()) {
             return internalName;
         }
-        String result = internalName;
-        for (RenameEntry entry : loadAll(workspaceHash)) {
-            if (classEntryTargetsInternalName(entry, result)) {
-                result = renamedClassInternalName(result, entry.oldName(), entry.newName());
-            }
-        }
-        return result;
+        List<RenameEntry> entries = loadAll(workspaceHash);
+        return renamedInternalName(internalName, entries);
     }
 
     /** 将显示出来的反混淆类名反查回真实 class 内部名。 */
@@ -326,21 +325,140 @@ public final class RenameService {
         if (internalName.isBlank() || workspaceHash == null || workspaceHash.isBlank()) {
             return internalName;
         }
-        for (RenameEntry entry : loadAll(workspaceHash)) {
+        List<String> candidates = originalInternalNameCandidates(internalName, workspaceHash);
+        if (!candidates.isEmpty()) {
+            return candidates.getFirst();
+        }
+        return internalName;
+    }
+
+    public static Map<String, String> originalClassNamesByDisplay(String workspaceHash) {
+        if (workspaceHash == null || workspaceHash.isBlank()) {
+            return Map.of();
+        }
+        Map<String, List<String>> candidates = originalClassNameCandidatesByDisplay(workspaceHash);
+        if (candidates.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, String> result = new LinkedHashMap<>();
+        candidates.forEach((display, originals) -> {
+            if (originals != null && !originals.isEmpty()) {
+                result.put(display, originals.getFirst());
+            }
+        });
+        return Collections.unmodifiableMap(new LinkedHashMap<>(result));
+    }
+
+    /** 返回显示类名可能对应的真实 class 内部名，短名冲突时保留所有候选。 */
+    public static List<String> originalInternalNameCandidates(String className, String workspaceHash) {
+        String internalName = normalizeInternalName(className);
+        if (internalName.isBlank() || workspaceHash == null || workspaceHash.isBlank()) {
+            return List.of();
+        }
+        Map<String, List<String>> originalByDisplay = originalClassNameCandidatesByDisplay(workspaceHash);
+        List<String> direct = originalByDisplay.get(internalName);
+        if (direct != null && !direct.isEmpty()) {
+            return direct;
+        }
+        String slashVariant = internalName.replace('$', '/');
+        direct = originalByDisplay.get(slashVariant);
+        if (direct != null && !direct.isEmpty()) {
+            return direct;
+        }
+        if (!internalName.contains("/")) {
+            direct = originalByDisplay.get(visibleClassLeaf(internalName));
+            if (direct != null && !direct.isEmpty()) {
+                return direct;
+            }
+        }
+        return List.of();
+    }
+
+    private static Map<String, List<String>> originalClassNameCandidatesByDisplay(String workspaceHash) {
+        if (workspaceHash == null || workspaceHash.isBlank()) {
+            return Map.of();
+        }
+        return ORIGINAL_BY_DISPLAY_CACHE.computeIfAbsent(
+                workspaceHash, RenameService::buildOriginalByDisplayName);
+    }
+
+    private static Map<String, List<String>> buildOriginalByDisplayName(String workspaceHash) {
+        List<RenameEntry> entries = loadAll(workspaceHash);
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        Set<String> originals = new LinkedHashSet<>();
+        Map<String, List<RenameEntry>> classEntriesByOriginal = new LinkedHashMap<>();
+        for (RenameEntry entry : entries) {
             if (!TYPE_CLASS.equals(entry.type()) || entry.className().isBlank()) {
                 continue;
             }
             String original = normalizeInternalName(entry.className());
-            String renamed = normalizeInternalName(renamedClassInternalName(
-                    original, entry.oldName(), entry.newName()));
-            if (sameInternalClassName(internalName, renamed)
-                    || internalName.equals(renamed.replace('$', '/'))
-                    || (!internalName.contains("/")
-                    && internalName.equals(visibleClassLeaf(renamed)))) {
-                return original;
+            originals.add(original);
+            classEntriesByOriginal.computeIfAbsent(original, key -> new ArrayList<>()).add(entry);
+        }
+        for (String original : originals) {
+            String renamed = normalizeInternalName(renamedInternalName(original, entries));
+            putOriginalAlias(result, renamed, original);
+            putOriginalAlias(result, renamed.replace('$', '/'), original);
+            putOriginalAlias(result, visibleClassLeaf(renamed), original);
+            String pkg = packageName(original);
+            for (RenameEntry entry : classEntriesByOriginal.getOrDefault(original, List.of())) {
+                putOriginalAlias(result, entry.newName(), original);
+                if (!pkg.isBlank()) {
+                    putOriginalAlias(result, pkg + "/" + entry.newName(), original);
+                }
             }
         }
-        return internalName;
+        Map<String, List<String>> immutable = new LinkedHashMap<>();
+        result.forEach((alias, candidates) -> immutable.put(alias, List.copyOf(candidates)));
+        return Collections.unmodifiableMap(immutable);
+    }
+
+    private static void putOriginalAlias(Map<String, List<String>> result, String alias, String original) {
+        String normalizedAlias = normalizeInternalName(alias);
+        String normalizedOriginal = normalizeInternalName(original);
+        if (!normalizedAlias.isBlank() && !normalizedOriginal.isBlank()) {
+            result.computeIfAbsent(normalizedAlias, key -> new ArrayList<>());
+            List<String> originals = result.get(normalizedAlias);
+            if (!originals.contains(normalizedOriginal)) {
+                originals.add(normalizedOriginal);
+            }
+        }
+    }
+
+    private static String renamedInternalName(String internalName, List<RenameEntry> entries) {
+        String result = normalizeInternalName(internalName);
+        if (result.isBlank() || entries == null || entries.isEmpty()) {
+            return result;
+        }
+        Set<String> seen = new HashSet<>();
+        for (int step = 0; step < entries.size(); step++) {
+            String key = normalizeInternalName(result);
+            if (!seen.add(key)) {
+                break;
+            }
+            RenameEntry entry = findLastClassEntryTargeting(entries, result);
+            if (entry == null) {
+                break;
+            }
+            String next = normalizeInternalName(renamedClassInternalName(
+                    result, entry.oldName(), entry.newName()));
+            if (sameInternalClassName(next, result)) {
+                break;
+            }
+            result = next;
+        }
+        return result;
+    }
+
+    private static RenameEntry findLastClassEntryTargeting(List<RenameEntry> entries,
+                                                           String internalName) {
+        for (int i = entries.size() - 1; i >= 0; i--) {
+            RenameEntry entry = entries.get(i);
+            if (TYPE_CLASS.equals(entry.type()) && classEntryTargetsInternalName(entry, internalName)) {
+                return entry;
+            }
+        }
+        return null;
     }
 
     /** 返回编辑器标题使用的类短名。 */
@@ -484,6 +602,15 @@ public final class RenameService {
         }
         return replaceVisibleIdentifiers(sourceCode, List.of(new RenameEntry(
                 TYPE_IDENTIFIER, "", oldName, newName, "")));
+    }
+
+    /** 只替换源码中的 class/interface/enum/record 声明名，跳过注释和字符串。 */
+    public static String replaceVisibleClassDeclaration(String sourceCode, String oldName, String newName) {
+        if (sourceCode == null || oldName == null || oldName.isBlank()
+                || newName == null || newName.isBlank() || oldName.equals(newName)) {
+            return sourceCode;
+        }
+        return replaceDeclaredClassName(sourceCode, oldName, newName);
     }
 
     /** 返回源码 offset 处的 Java 标识符；offset 位于标识符末尾后一位时也能识别。 */
@@ -892,12 +1019,56 @@ public final class RenameService {
                 || oldName.equals(newName)) {
             return sourceCode;
         }
-        String quoted = Pattern.quote(oldName);
-        String classPattern = "(\\b(?:class|interface|enum|record)\\s+)" + quoted + "\\b";
-        String annotationPattern = "(@\\s*interface\\s+)" + quoted + "\\b";
-        return sourceCode
-                .replaceAll(classPattern, "$1" + Matcher.quoteReplacement(newName))
-                .replaceAll(annotationPattern, "$1" + Matcher.quoteReplacement(newName));
+        StringBuilder out = new StringBuilder(sourceCode.length());
+        int i = 0;
+        while (i < sourceCode.length()) {
+            char ch = sourceCode.charAt(i);
+            if (startsWith(sourceCode, i, "//")) {
+                int end = sourceCode.indexOf('\n', i + 2);
+                if (end < 0) {
+                    out.append(sourceCode, i, sourceCode.length());
+                    break;
+                }
+                out.append(sourceCode, i, end + 1);
+                i = end + 1;
+                continue;
+            }
+            if (startsWith(sourceCode, i, "/*")) {
+                int end = sourceCode.indexOf("*/", i + 2);
+                int next = end < 0 ? sourceCode.length() : end + 2;
+                out.append(sourceCode, i, next);
+                i = next;
+                continue;
+            }
+            if (startsWith(sourceCode, i, "\"\"\"")) {
+                int end = sourceCode.indexOf("\"\"\"", i + 3);
+                int next = end < 0 ? sourceCode.length() : end + 3;
+                out.append(sourceCode, i, next);
+                i = next;
+                continue;
+            }
+            if (ch == '"' || ch == '\'') {
+                int next = skipQuoted(sourceCode, i, ch);
+                out.append(sourceCode, i, next);
+                i = next;
+                continue;
+            }
+            if (Character.isJavaIdentifierStart(ch)) {
+                int start = i;
+                i++;
+                while (i < sourceCode.length()
+                        && Character.isJavaIdentifierPart(sourceCode.charAt(i))) {
+                    i++;
+                }
+                String token = sourceCode.substring(start, i);
+                out.append(oldName.equals(token) && isClassDeclarationName(sourceCode, start, i)
+                        ? newName : token);
+                continue;
+            }
+            out.append(ch);
+            i++;
+        }
+        return out.toString();
     }
 
     private static String classReplacementForToken(String source, int start, int end,
@@ -2175,6 +2346,30 @@ public final class RenameService {
         return new RenameEntry(type, className, oldName, newName, desc);
     }
 
+    private static RenameEntry normalizeForStorage(RenameEntry entry) {
+        return normalizeForStorage("", entry);
+    }
+
+    private static RenameEntry normalizeForStorage(String workspaceHash, RenameEntry entry) {
+        RenameEntry normalized = normalize(entry);
+        if (!TYPE_CLASS.equals(normalized.type()) || normalized.className().isBlank()) {
+            return normalized;
+        }
+        String originalClass = normalized.className();
+        if (workspaceHash != null && !workspaceHash.isBlank()) {
+            originalClass = originalInternalName(originalClass, workspaceHash);
+        }
+        originalClass = normalizeInternalName(originalClass);
+        String originalLeaf = visibleClassLeaf(originalClass);
+        if (originalLeaf.isBlank() || originalLeaf.equals(normalized.oldName())) {
+            return originalClass.equals(normalized.className()) ? normalized
+                    : new RenameEntry(normalized.type(), originalClass,
+                    normalized.oldName(), normalized.newName(), normalized.desc());
+        }
+        return new RenameEntry(normalized.type(), originalClass,
+                originalLeaf, normalized.newName(), normalized.desc());
+    }
+
     private static boolean sameKey(RenameEntry left, RenameEntry right) {
         return left.type().equals(right.type())
                 && (left.className().equals(right.className())
@@ -2215,6 +2410,10 @@ public final class RenameService {
 
     private static String simpleClassName(String internalName) {
         return ClassNameUtil.simpleName(internalName);
+    }
+
+    private static String packageName(String internalName) {
+        return ClassNameUtil.packageName(internalName);
     }
 
     private static String renamedClassInternalName(String internalName, String oldName, String newName) {

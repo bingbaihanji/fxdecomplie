@@ -262,6 +262,74 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return token.contains(".") || isRelativeClassToken(simpleToken);
     }
 
+    private static boolean shouldSearchWorkspaceForClassToken(String token) {
+        if (shouldPreferClassNavigation(token)) {
+            return true;
+        }
+        String simpleToken = tokenSimpleName(token);
+        simpleToken = simpleToken.endsWith(".class")
+                ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
+        return isShortObfuscatedClassToken(simpleToken);
+    }
+
+    private static boolean isShortObfuscatedClassToken(String token) {
+        if (token == null || token.isBlank() || token.length() > 2) {
+            return false;
+        }
+        if (com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.isCommonShortName(token)) {
+            return false;
+        }
+        return token.chars().allMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_' || ch == '$');
+    }
+
+    private static boolean looksLikeClassUsageAtLine(String sourceCode, int lineNumber, String token) {
+        if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()
+                || lineNumber <= 0) {
+            return false;
+        }
+        String simpleToken = tokenSimpleName(token);
+        simpleToken = simpleToken.endsWith(".class")
+                ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
+        if (simpleToken.isBlank()) {
+            return false;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        if (lineNumber > lines.length) {
+            return false;
+        }
+        String line = stripLineComment(lines[lineNumber - 1]).strip();
+        if (line.isBlank() || line.startsWith("package ")) {
+            return false;
+        }
+        String quoted = Pattern.quote(simpleToken);
+        if (Pattern.compile("\\b(?:class|interface|enum|record|new|extends|implements|throws|instanceof)\\s+"
+                + quoted + "\\b").matcher(line).find()) {
+            return true;
+        }
+        if (Pattern.compile("^import\\s+(?:static\\s+)?[\\w.$]*\\." + quoted
+                + "\\s*;\\s*$").matcher(line).find()) {
+            return true;
+        }
+        return Pattern.compile("(^|[\\s(<,])" + quoted
+                + "\\s*(?:<[^;{}()]*>)?(?:\\s*\\[\\s*\\])*\\s+"
+                + "[a-zA-Z_$][a-zA-Z0-9_$]*\\b").matcher(line).find();
+    }
+
+    private static boolean allowVisibleIdentifierFallback(
+            com.bingbaihanji.fxdecomplie.rename.RenameEntry entry) {
+        if (entry == null || entry.type() == null) {
+            return false;
+        }
+        return com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS.equals(entry.type())
+                || com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_IDENTIFIER.equals(entry.type());
+    }
+
+    private static boolean isClassRenameEntry(
+            com.bingbaihanji.fxdecomplie.rename.RenameEntry entry) {
+        return entry != null
+                && com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS.equals(entry.type());
+    }
+
     private static boolean samePackage(String leftInternalName, String rightInternalName) {
         return packageName(leftInternalName).equals(packageName(rightInternalName));
     }
@@ -684,7 +752,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     }
                 });
             }
-        }));
+        }, rejected -> Platform.runLater(() -> {
+            exportCanceled.set(true);
+            progressHandle.close();
+            statusBar.clearTask();
+            showError(I18nUtil.getString("dialog.error.title"),
+                    "Export task rejected: background queue is full");
+        })));
     }
 
     /** 退出应用 */
@@ -905,11 +979,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         String sourceCode = context.openFile() == null ? "" : context.openFile().sourceCode();
         statusBar.setFilePath(I18nUtil.getString("status.locating", targetToken));
 
-        boolean preferClassNavigation = shouldPreferClassNavigation(targetToken);
+        boolean preferClassNavigation = shouldPreferClassNavigation(targetToken)
+                || looksLikeClassUsageAtLine(sourceCode, lineNumber, targetToken);
         FileTreeNode node = null;
         if (preferClassNavigation) {
             node = findNodeForToken(workspace, index, targetToken,
-                    context.classInternalName(), sourceCode);
+                    context.classInternalName(), sourceCode, true);
             if (node != null) {
                 openNodeInWorkspace(workspace, node);
                 return;
@@ -921,8 +996,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
 
         if (!preferClassNavigation) {
-            node = findNodeForToken(workspace, index, targetToken,
-                    context.classInternalName(), sourceCode);
+            if (shouldSearchWorkspaceForClassToken(targetToken)) {
+                node = findNodeForToken(workspace, index, targetToken,
+                        context.classInternalName(), sourceCode, true);
+            }
         }
         if (node != null) {
             openNodeInWorkspace(workspace, node);
@@ -1221,9 +1298,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                         com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_IDENTIFIER,
                         context.classInternalName(), caretName, caretName, ""),
                 "identifier", caretName));
-        target = refineClassRenameTarget(context.workspace(), context.classInternalName(), caretName, target);
+        target = refineClassRenameTarget(context.workspace(), context.classInternalName(),
+                caretName, wsHash, target);
+        target = forceCurrentClassRenameTarget(context, text, offset, caretName, wsHash, target);
         var baseEntry = target.entry();
         String oldName = target.currentName();
+        repairCurrentClassDisplayMappingIfNeeded(context, codeTab, wsHash, baseEntry, oldName, text);
 
         // 显示对话框
         String newName = com.bingbaihanji.fxdecomplie.rename.RenameDialog
@@ -1239,15 +1319,22 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                         baseEntry.desc());
         String currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
                 .applySingleRename(text, visibleEntry, codeTab.getOpenFile().fullPath(), wsHash);
-        if (java.util.Objects.equals(currentRenamedSource, text)) {
+        if (java.util.Objects.equals(currentRenamedSource, text)
+                && allowVisibleIdentifierFallback(visibleEntry)) {
             currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
                     .replaceVisibleIdentifier(text, oldName, newName);
         }
+        if (isClassRenameEntry(visibleEntry)) {
+            currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .replaceVisibleClassDeclaration(currentRenamedSource, oldName, newName);
+        }
+        boolean currentTabChanged = false;
         if (!java.util.Objects.equals(currentRenamedSource, text)) {
             String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
                     .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
             codeTab.updateSourceCode(displayClass, currentRenamedSource);
             reinstallCodeContext(codeTab, currentRenamedSource);
+            currentTabChanged = true;
         }
 
         // 保存
@@ -1257,11 +1344,26 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                         newName, baseEntry.desc());
         boolean saved = com.bingbaihanji.fxdecomplie.rename.RenameService.save(wsHash,
                 entry);
-        if (!java.util.Objects.equals(currentRenamedSource, text)) {
-            String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
-                    .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
-            codeTab.updateSourceCode(displayClass, currentRenamedSource);
-            reinstallCodeContext(codeTab, currentRenamedSource);
+        String postSaveSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .applySingleRename(text, visibleEntry, codeTab.getOpenFile().fullPath(), wsHash);
+        if (java.util.Objects.equals(postSaveSource, text)
+                && allowVisibleIdentifierFallback(visibleEntry)) {
+            postSaveSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .replaceVisibleIdentifier(text, oldName, newName);
+        }
+        if (isClassRenameEntry(visibleEntry)) {
+            postSaveSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .replaceVisibleClassDeclaration(postSaveSource, oldName, newName);
+        }
+        String savedDisplayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
+        String currentVisibleSource = codeTab.getCodeArea() == null
+                ? codeTab.getOpenFile().sourceCode() : codeTab.getCodeArea().getText();
+        if (!java.util.Objects.equals(postSaveSource, currentVisibleSource)
+                || !java.util.Objects.equals(savedDisplayClass, codeTab.getOpenFile().className())) {
+            codeTab.updateSourceCode(savedDisplayClass, postSaveSource);
+            reinstallCodeContext(codeTab, postSaveSource);
+            currentTabChanged = true;
         }
 
         if (context.workspace() != null) {
@@ -1269,7 +1371,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         int changedTabs = refreshOpenTabsAfterRename(context.workspace(), wsHash, visibleEntry, codeTab);
         refreshWorkspaceTree(context.workspace());
-        int totalChangedTabs = changedTabs + (java.util.Objects.equals(currentRenamedSource, text) ? 0 : 1);
+        int totalChangedTabs = changedTabs + (currentTabChanged ? 1 : 0);
         log.info("重命名完成: type={}, class={}, old={}, new={}, changedTabs={}",
                 baseEntry.type(), baseEntry.className(), oldName, newName, totalChangedTabs);
         if (totalChangedTabs == 0) {
@@ -1282,8 +1384,127 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    private void repairCurrentClassDisplayMappingIfNeeded(
+            CodeViewContext context, CodeEditorTab codeTab, String workspaceHash,
+            com.bingbaihanji.fxdecomplie.rename.RenameEntry baseEntry,
+            String currentName, String sourceCode) {
+        if (context == null || codeTab == null || baseEntry == null
+                || currentName == null || currentName.isBlank()
+                || !com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS
+                .equals(baseEntry.type())) {
+            return;
+        }
+        String currentClass = normalizeInternalClassName(context.classInternalName());
+        String entryClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .originalInternalName(baseEntry.className(), workspaceHash);
+        if (!ClassNameUtil.sameInternalName(entryClass, currentClass)) {
+            return;
+        }
+        String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .displayClassName(codeTab.getOpenFile().fullPath(), workspaceHash);
+        if (currentName.equals(displayClass)) {
+            return;
+        }
+        com.bingbaihanji.fxdecomplie.rename.RenameEntry repairEntry =
+                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS,
+                        baseEntry.className(), baseEntry.oldName(), currentName, baseEntry.desc());
+        boolean saved = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .save(workspaceHash, repairEntry);
+        if (!saved) {
+            return;
+        }
+        String repairedDisplay = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .displayClassName(codeTab.getOpenFile().fullPath(), workspaceHash);
+        codeTab.updateSourceCode(repairedDisplay, sourceCode);
+        reinstallCodeContext(codeTab, sourceCode);
+        if (context.workspace() != null) {
+            context.workspace().clearSourceSearchCaches();
+            refreshWorkspaceTree(context.workspace());
+        }
+        log.info("修复类显示映射: class={}, visible={}, display={}",
+                baseEntry.className(), currentName, repairedDisplay);
+    }
+
+    private com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget forceCurrentClassRenameTarget(
+            CodeViewContext context, String sourceCode, int offset, String caretName,
+            String workspaceHash,
+            com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget target) {
+        if (context == null || caretName == null || caretName.isBlank()
+                || context.classInternalName() == null || context.classInternalName().isBlank()) {
+            return target;
+        }
+        if (!isCurrentClassRenamePosition(context, sourceCode, offset, caretName, workspaceHash)) {
+            return target;
+        }
+        String owner = normalizeInternalClassName(context.classInternalName());
+        String originalOwner = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .originalInternalName(owner, workspaceHash);
+        String originalLeaf = classLeafName(originalOwner);
+        if (originalLeaf.isBlank()) {
+            originalLeaf = classLeafName(owner);
+        }
+        return new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
+                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS,
+                        originalOwner, originalLeaf, caretName, ""),
+                "class", caretName);
+    }
+
+    private boolean isCurrentClassRenamePosition(CodeViewContext context, String sourceCode,
+                                                 int offset, String caretName, String workspaceHash) {
+        String currentDisplay = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .displayClassName(context.classInternalName(), workspaceHash);
+        String currentOriginal = classLeafName(context.classInternalName());
+        if (caretName.equals(currentDisplay) || caretName.equals(currentOriginal)) {
+            return true;
+        }
+        return isDeclaredTypeNameAt(sourceCode, offset, caretName);
+    }
+
+    private static boolean isDeclaredTypeNameAt(String sourceCode, int offset, String caretName) {
+        if (sourceCode == null || sourceCode.isBlank() || caretName == null || caretName.isBlank()
+                || offset < 0 || offset > sourceCode.length()) {
+            return false;
+        }
+        int probe = Math.min(offset, sourceCode.length() - 1);
+        if (probe > 0 && (probe >= sourceCode.length()
+                || !Character.isJavaIdentifierPart(sourceCode.charAt(probe)))) {
+            probe--;
+        }
+        if (probe < 0 || probe >= sourceCode.length()
+                || !Character.isJavaIdentifierPart(sourceCode.charAt(probe))) {
+            return false;
+        }
+        int start = probe;
+        while (start > 0 && Character.isJavaIdentifierPart(sourceCode.charAt(start - 1))) {
+            start--;
+        }
+        int end = probe + 1;
+        while (end < sourceCode.length() && Character.isJavaIdentifierPart(sourceCode.charAt(end))) {
+            end++;
+        }
+        if (!caretName.equals(sourceCode.substring(start, end))) {
+            return false;
+        }
+        int lineStart = sourceCode.lastIndexOf('\n', start);
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+        String prefix = sourceCode.substring(lineStart, start).stripTrailing();
+        return Pattern.compile("(^|\\s)(class|interface|enum|record)\\s*$")
+                .matcher(prefix).find()
+                || Pattern.compile("(^|\\s)@\\s*interface\\s*$")
+                .matcher(prefix).find();
+    }
+
+    private static String classLeafName(String className) {
+        String simple = tokenSimpleName(normalizeInternalClassName(className));
+        int dollar = simple.lastIndexOf('$');
+        return dollar >= 0 ? simple.substring(dollar + 1) : simple;
+    }
+
     private com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget refineClassRenameTarget(
             Workspace workspace, String currentClassName, String caretName,
+            String workspaceHash,
             com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget target) {
         if (target == null || caretName == null || caretName.isBlank()) {
             return target;
@@ -1296,7 +1517,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         String currentInternal = normalizeInternalClassName(currentClassName);
         String currentSimple = tokenSimpleName(currentInternal);
         FileTreeNode node = null;
-        if (caretName.equals(currentSimple)) {
+        String currentDisplayName = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .displayClassName(currentClassName, workspaceHash);
+        if (caretName.equals(currentSimple) || caretName.equals(currentDisplayName)) {
             node = workspace == null ? null : workspace.findNodeByPath(currentInternal + ".class");
         }
         if (node == null) {
@@ -1377,7 +1600,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
                             .applySingleRename(currentVisibleSource, visibleEntry,
                                     openFile.fullPath(), workspaceHash);
-                    if (java.util.Objects.equals(renamedSource, currentVisibleSource)) {
+                    if (java.util.Objects.equals(renamedSource, currentVisibleSource)
+                            && allowVisibleIdentifierFallback(visibleEntry)) {
                         renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
                                 .replaceVisibleIdentifier(currentVisibleSource,
                                         visibleEntry.oldName(), visibleEntry.newName());
@@ -1447,9 +1671,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                 .of(workspace, "").workspaceHash();
+        List<String> originals = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .originalInternalNameCandidates(reference.targetClass(), wsHash);
+        for (String original : originals) {
+            FileTreeNode node = findClassPathRaw(workspace, original);
+            if (node != null) {
+                return node;
+            }
+        }
         String original = com.bingbaihanji.fxdecomplie.rename.RenameService
                 .originalInternalName(reference.targetClass(), wsHash);
-        return findClassPath(workspace, original);
+        return findClassPathRaw(workspace, original);
     }
 
     private CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs, String token) {
@@ -1564,15 +1796,21 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     private FileTreeNode findNodeForToken(Workspace workspace, WorkspaceIndex index,
                                           String token, String currentClassName,
-                                          String sourceCode) {
+                                          String sourceCode, boolean allowClassLookup) {
         if (workspace == null || token == null || token.isBlank()) {
+            return null;
+        }
+        if (!allowClassLookup && !shouldSearchWorkspaceForClassToken(token)) {
             return null;
         }
 
         String normalized = token.replace('.', '/');
         String currentInternal = normalizeInternalClassName(currentClassName);
-        FileTreeNode direct = findClassPath(workspace, normalized);
-        if (direct != null && !direct.getFullPath().equals(currentClassName)) {
+        boolean qualifiedToken = normalized.contains("/");
+        FileTreeNode direct = qualifiedToken
+                ? findClassPath(workspace, normalized)
+                : findClassPathRaw(workspace, normalized);
+        if (direct != null && !ClassNameUtil.sameInternalName(direct.getFullPath(), currentClassName)) {
             return direct;
         }
 
@@ -1581,7 +1819,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             FileTreeNode samePackageRelative = findClassPath(workspace,
                     currentPackage + "/" + normalized);
             if (samePackageRelative != null
-                    && !samePackageRelative.getFullPath().equals(currentClassName)) {
+                    && !ClassNameUtil.sameInternalName(samePackageRelative.getFullPath(), currentClassName)) {
                 return samePackageRelative;
             }
         }
@@ -1592,14 +1830,30 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return sourceResolved;
         }
 
-        FileTreeNode treeResolved = findNodeBySimpleNameInTree(workspace, token, currentClassName);
-        if (treeResolved != null) {
-            return treeResolved;
+        FileTreeNode renamedResolved = findNodeFromRenameDisplayIndex(
+                workspace, normalized, currentInternal);
+        if (renamedResolved != null
+                && !ClassNameUtil.sameInternalName(renamedResolved.getFullPath(), currentClassName)) {
+            return renamedResolved;
         }
 
-        if (index == null || index == WorkspaceIndex.EMPTY) {
+        FileTreeNode indexResolved = findNodeBySimpleNameInIndex(workspace, index, token, currentInternal);
+        if (indexResolved != null) {
+            return indexResolved;
+        }
+        if (index != null && index != WorkspaceIndex.EMPTY) {
             return null;
         }
+        return findNodeBySimpleNameInTree(workspace, token, currentClassName);
+    }
+
+    private FileTreeNode findNodeBySimpleNameInIndex(Workspace workspace, WorkspaceIndex index,
+                                                     String token, String currentInternal) {
+        if (workspace == null || index == null || index == WorkspaceIndex.EMPTY
+                || token == null || token.isBlank()) {
+            return null;
+        }
+        String normalized = token.replace('.', '/');
         String simpleToken = tokenSimpleName(token);
         simpleToken = simpleToken.endsWith(".class") ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
         FileTreeNode firstMatch = null;
@@ -1628,6 +1882,59 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return firstMatch;
     }
 
+    private FileTreeNode findNodeFromRenameDisplayIndex(Workspace workspace, String token,
+                                                        String currentInternalName) {
+        if (workspace == null || token == null || token.isBlank()) {
+            return null;
+        }
+        String workspaceHash = com.bingbaihanji.fxdecomplie.model.CommentScope
+                .workspaceHash(workspace);
+        String normalized = normalizeInternalClassName(token);
+        String simple = tokenSimpleName(normalized);
+        String currentPackage = packageName(currentInternalName);
+        List<String> candidates = new ArrayList<>();
+        candidates.add(normalized);
+        if (!currentPackage.isBlank() && !simple.isBlank()) {
+            candidates.add(currentPackage + "/" + simple);
+        }
+        candidates.add(simple);
+        for (String candidate : candidates) {
+            if (candidate == null || candidate.isBlank()) {
+                continue;
+            }
+            List<String> originals = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .originalInternalNameCandidates(candidate, workspaceHash);
+            FileTreeNode node = bestNodeForOriginalCandidates(workspace, originals, currentInternalName);
+            if (node != null) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    private FileTreeNode bestNodeForOriginalCandidates(Workspace workspace, List<String> originals,
+                                                       String currentInternalName) {
+        if (workspace == null || originals == null || originals.isEmpty()) {
+            return null;
+        }
+        String current = normalizeInternalClassName(currentInternalName);
+        FileTreeNode best = null;
+        int bestScore = Integer.MAX_VALUE;
+        for (String original : originals) {
+            FileTreeNode node = findClassPathRaw(workspace, original);
+            if (node == null || ClassNameUtil.sameInternalName(node.getFullPath(), current)) {
+                continue;
+            }
+            String normalizedOriginal = normalizeInternalClassName(original);
+            int score = samePackage(current, normalizedOriginal) ? 0 : 1;
+            if (score < bestScore) {
+                bestScore = score;
+                best = node;
+            }
+        }
+        return best;
+    }
+
     private FileTreeNode findNodeFromSourceImports(Workspace workspace, String token,
                                                    String currentClassName, String sourceCode) {
         if (workspace == null || token == null || token.isBlank()) {
@@ -1642,7 +1949,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         String currentPackage = packageName(currentInternal);
         FileTreeNode samePackage = findClassPath(workspace,
                 currentPackage.isBlank() ? simpleToken : currentPackage + "/" + simpleToken);
-        if (samePackage != null && !samePackage.getFullPath().equals(currentClassName)) {
+        if (samePackage != null && !ClassNameUtil.sameInternalName(samePackage.getFullPath(), currentClassName)) {
             return samePackage;
         }
 
@@ -1706,8 +2013,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         while (!queue.isEmpty()) {
             TreeItem<FileTreeNode> item = queue.removeFirst();
             FileTreeNode node = item.getValue();
-            if (node != null && node.isClassFile() && matchesSimpleClassName(node, simpleToken, expectedClassFile)
-                    && !node.getFullPath().equals(currentClassName)) {
+            if (node != null && node.isClassFile()
+                    && !ClassNameUtil.sameInternalName(node.getFullPath(), currentClassName)
+                    && matchesSimpleClassName(node, simpleToken, expectedClassFile)) {
                 matches.add(node);
             }
             queue.addAll(item.getChildren());
@@ -1902,12 +2210,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (workspace != null) {
             workspace.clearSourceSearchCaches();
         }
-        int changedTabs = refreshOpenTabsAfterDeobfuscate(workspace, wsHash, selected);
         int reloadTabs = reloadOpenTabsAfterDeobfuscate(workspace);
         refreshWorkspaceTree(workspace);
         statusBar.setFilePath("Deobfuscated: " + selected.size()
-                + " selected, " + saved + " saved, " + changedTabs
-                + " tabs patched, " + reloadTabs + " tabs reloaded"
+                + " selected, " + saved + " saved, " + reloadTabs + " tabs reload scheduled"
                 + (memberScanComplete ? "" : "; index still building for member names"));
     }
 
@@ -1940,11 +2246,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     .of(workspace, "").workspaceHash();
             int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, entries);
             workspace.clearSourceSearchCaches();
-            int changedTabs = refreshOpenTabsAfterDeobfuscate(workspace, wsHash, entries);
             int reloadTabs = reloadOpenTabsAfterDeobfuscate(workspace);
             refreshWorkspaceTree(workspace);
             statusBar.setFilePath("Imported mapping: " + saved + " saved, "
-                    + changedTabs + " tabs patched, " + reloadTabs + " tabs reloaded");
+                    + reloadTabs + " tabs reload scheduled");
         } catch (java.io.IOException e) {
             log.error("导入 ProGuard mapping 失败", e);
             showError("Import ProGuard Mapping", e.getMessage());
@@ -2012,6 +2317,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (view == null) {
             return 0;
         }
+        classTabOpener.cancelCurrentTask();
         java.util.List<java.util.Map.Entry<TabPane, CodeEditorTab>> tabs = new java.util.ArrayList<>();
         for (TabPane pane : view.splitEditorPane().allTabPanes()) {
             for (Tab tab : pane.getTabs()) {
@@ -2022,45 +2328,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         for (var item : tabs) {
             classTabOpener.refreshCurrentClassTab(workspace, item.getKey(), item.getValue(),
-                    item.getValue().getOpenFile().engine(), lineNumbersEnabled, false);
+                    item.getValue().getOpenFile().engine(), lineNumbersEnabled, false, false);
         }
         return tabs.size();
-    }
-
-    private int refreshOpenTabsAfterDeobfuscate(Workspace workspace, String workspaceHash,
-                                                java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> entries) {
-        WorkspaceView view = workspaceViewFor(workspace);
-        if (view == null || workspaceHash == null || workspaceHash.isBlank()
-                || entries == null || entries.isEmpty()) {
-            return 0;
-        }
-        int changedTabs = 0;
-        for (TabPane pane : view.splitEditorPane().allTabPanes()) {
-            for (Tab tab : pane.getTabs()) {
-                if (!(tab instanceof CodeEditorTab codeTab) || codeTab.getOpenFile() == null) {
-                    continue;
-                }
-                OpenFile openFile = codeTab.getOpenFile();
-                String source = codeTab.getCodeArea() == null
-                        ? openFile.sourceCode() : codeTab.getCodeArea().getText();
-                String renamedSource = source;
-                for (var entry : entries) {
-                    renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
-                            .applySingleRename(renamedSource, entry, openFile.fullPath(), workspaceHash);
-                }
-                renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
-                        .applyRenames(renamedSource, workspaceHash, openFile.fullPath());
-                if (java.util.Objects.equals(source, renamedSource)) {
-                    continue;
-                }
-                String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
-                        .displayClassName(openFile.fullPath(), workspaceHash);
-                codeTab.updateSourceCode(displayClass, renamedSource);
-                reinstallCodeContext(codeTab, renamedSource);
-                changedTabs++;
-            }
-        }
-        return changedTabs;
     }
 
     /** 打开搜索对话框 */
@@ -2439,6 +2709,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 }
                 // 优先查询 L2 内存缓存(复用已打开标签页的解编译结果,避免重复解编)
                 byte[] classBytes = cls.bytes();
+                if (classBytes == null || classBytes.length == 0) {
+                    log.debug("全文搜索跳过不可读类: {}", cls.fullPath());
+                    continue;
+                }
                 String fp = ClassTabOpener.computeClassFingerprint(classBytes);
                 String source = classTabOpener.getDecompileCache().get(
                         workspaceKey(view.workspace()) + "_" + fp, cls.internalName(),

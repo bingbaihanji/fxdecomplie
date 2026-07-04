@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
+import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.control.*;
@@ -25,6 +26,7 @@ import java.util.function.Consumer;
 public class CodeEditorTab extends Tab {
 
     private static final Logger log = LoggerFactory.getLogger(CodeEditorTab.class);
+    private static final int METADATA_SOURCE_THRESHOLD = 500_000;
 
     /** 代码视图面板 */
     private final CodeViewPanel codeViewPanel;
@@ -289,8 +291,13 @@ public class CodeEditorTab extends Tab {
         this.openFile = new OpenFile(className, openFile.fullPath(),
                 newSource == null ? "" : newSource, openFile.engine());
         this.displayTitle = displayTitleFor(openFile);
-        codeViewPanel.refreshWithNewSource(openFile.sourceCode());
-        codeArea = codeViewPanel.getSourceCodeArea();
+        this.metadata = openFile.sourceCode().length() <= METADATA_SOURCE_THRESHOLD
+                ? OutlineParser.extractMetadata(openFile.sourceCode())
+                : new CodeMetadata(java.util.Map.of());
+        SourceContentPanel srcPanel = new SourceContentPanel(openFile.sourceCode(), theme,
+                fontFamily, defaultFontSize, wrapText, lineNumbersEnabled, this.metadata, this.onNavigate);
+        codeViewPanel.replaceSourcePanel(openFile.sourceCode(), srcPanel);
+        codeArea = srcPanel.getCodeArea();
         sourceReady = true;
         updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
     }

@@ -213,6 +213,7 @@ public final class ExportService {
             throws IOException {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
         Files.createDirectories(outputDir);
+        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
         for (FileTreeNode data : items) {
             if (canceled != null && canceled.getAsBoolean()) {
                 state.errors.add("导出已取消");
@@ -220,7 +221,7 @@ public final class ExportService {
             }
             try {
                 // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
-                ExportContent content = buildExportContent(data, index, config, commentScope, canceled);
+                ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
                 // ---- 路径验证: 确保输出保持在目标目录内 ----
                 Path target = resolveSafeOutputPath(outputDir, content.relativePath());
                 // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
@@ -257,6 +258,7 @@ public final class ExportService {
             Files.createDirectories(zipPath.getParent());
         }
         Set<String> writtenEntries = new HashSet<>();
+        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
         try (ZipOutputStream zos = new ZipOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
             boolean entryOpen = false;
@@ -273,7 +275,7 @@ public final class ExportService {
                     return;
                 }
                 try {
-                    ExportContent content = buildExportContent(data, index, config, commentScope, canceled);
+                    ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
                     String entryName = sanitizeZipEntryName(content.relativePath());
                     entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
                     if (entryName != null) {
@@ -312,12 +314,11 @@ public final class ExportService {
         }
     }
 
-    private static ExportContent buildExportContent(FileTreeNode data, WorkspaceIndex index,
+    private static ExportContent buildExportContent(FileTreeNode data, DecompilerContext context,
                                                     ExportConfig config, CommentScope commentScope,
                                                     BooleanSupplier canceled)
             throws IOException {
         if (data.isClassFile()) {
-            DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
             byte[] bytes = resolveClassBytes(data, context);
             if (bytes == null) {
                 throw new IllegalStateException(
