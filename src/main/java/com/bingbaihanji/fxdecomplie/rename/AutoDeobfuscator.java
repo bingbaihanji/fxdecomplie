@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
 import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -225,7 +226,7 @@ public final class AutoDeobfuscator {
         int classAliasIndex = 0;
         for (RenameEntry entry : suggestions) {
             if (RenameService.TYPE_CLASS.equals(entry.type())) {
-                emittedClasses.add(entry.className());
+                emittedClasses.add(ClassNameUtil.stripContainerClassPrefix(entry.className()));
                 classAliasIndex++;
             }
         }
@@ -410,44 +411,19 @@ public final class AutoDeobfuscator {
     }
 
     private static String packageName(String internalName) {
-        int slash = internalName.lastIndexOf('/');
-        return slash < 0 ? "" : internalName.substring(0, slash);
+        return ClassNameUtil.packageName(internalName);
     }
 
     private static String simpleName(String internalName) {
-        int slash = internalName.lastIndexOf('/');
-        return slash < 0 ? internalName : internalName.substring(slash + 1);
+        return ClassNameUtil.simpleName(internalName);
     }
 
     private static String internalNameFromPath(String fullPath) {
-        if (fullPath == null || fullPath.isBlank()) {
-            return "";
-        }
-        String normalized = fullPath.replace('\\', '/');
-        normalized = normalized.endsWith(".class")
-                ? normalized.substring(0, normalized.length() - ".class".length())
-                : normalized;
-        return stripContainerClassPrefix(normalized);
+        return ClassNameUtil.stripContainerClassPrefix(fullPath);
     }
 
     private static String stripContainerClassPrefix(String internalName) {
-        String normalized = internalName == null ? "" : internalName.replace('\\', '/');
-        String[] prefixes = {
-                "BOOT-INF/classes/",
-                "WEB-INF/classes/",
-                "APP-INF/classes/"
-        };
-        for (String prefix : prefixes) {
-            if (normalized.startsWith(prefix)) {
-                return normalized.substring(prefix.length());
-            }
-            String nested = "/" + prefix;
-            int index = normalized.indexOf(nested);
-            if (index >= 0) {
-                return normalized.substring(index + nested.length());
-            }
-        }
-        return normalized;
+        return ClassNameUtil.stripContainerClassPrefix(internalName);
     }
 
     private static String visibleClassName(String simpleName) {

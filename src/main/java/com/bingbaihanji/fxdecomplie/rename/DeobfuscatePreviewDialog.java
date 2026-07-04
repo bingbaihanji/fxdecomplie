@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -143,12 +142,6 @@ public final class DeobfuscatePreviewDialog {
     }
 
     private static void themeDialog(Dialog<?> dialog) {
-        dialog.setOnShown(e -> {
-            DefaultWindowTheme.applyWindowDarkMode(
-                    dialog.getDialogPane().getScene().getWindow());
-            if (dialog.getDialogPane().getScene().getWindow() instanceof Stage s) {
-                IconHelper.setStageIcon(s);
-            }
-        });
+        DialogHelper.applyNativeStyle(dialog);
     }
 }

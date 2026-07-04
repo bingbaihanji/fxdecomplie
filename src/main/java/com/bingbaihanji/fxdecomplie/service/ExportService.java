@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -173,7 +174,7 @@ public final class ExportService {
             return bytes;
         }
         String fullPath = data.getFullPath();
-        String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
+        String internalName = ClassNameUtil.normalizeInternalName(fullPath);
         return context == null ? null : context.getClassBytes(internalName);
     }
 
@@ -219,7 +220,7 @@ public final class ExportService {
             }
             try {
                 // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
-                ExportContent content = buildExportContent(data, index, config, commentScope);
+                ExportContent content = buildExportContent(data, index, config, commentScope, canceled);
                 // ---- 路径验证: 确保输出保持在目标目录内 ----
                 Path target = resolveSafeOutputPath(outputDir, content.relativePath());
                 // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
@@ -272,7 +273,7 @@ public final class ExportService {
                     return;
                 }
                 try {
-                    ExportContent content = buildExportContent(data, index, config, commentScope);
+                    ExportContent content = buildExportContent(data, index, config, commentScope, canceled);
                     String entryName = sanitizeZipEntryName(content.relativePath());
                     entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
                     if (entryName != null) {
@@ -312,7 +313,8 @@ public final class ExportService {
     }
 
     private static ExportContent buildExportContent(FileTreeNode data, WorkspaceIndex index,
-                                                    ExportConfig config, CommentScope commentScope)
+                                                    ExportConfig config, CommentScope commentScope,
+                                                    BooleanSupplier canceled)
             throws IOException {
         if (data.isClassFile()) {
             DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
@@ -321,16 +323,18 @@ public final class ExportService {
                 throw new IllegalStateException(
                         "未找到类字节码: " + data.getFullPath());
             }
+            // 使用外部取消标志而非 Thread.isInterrupted()，避免
+            // 单个中断信号级联导致所有后续文件反编译失败
+            BooleanSupplier active = canceled == null
+                    ? () -> !Thread.currentThread().isInterrupted()
+                    : () -> !canceled.getAsBoolean();
             String source = DecompilerRunner.decompileWithTimeout(
-                    data.getFullPath(), bytes, config.engine(), context,
-                    () -> !Thread.currentThread().isInterrupted());
+                    data.getFullPath(), bytes, config.engine(), context, active);
             if (DecompilerRunner.isFailureOutput(source)) {
                 throw new IllegalStateException(firstLine(source));
             }
             String fullPath = data.getFullPath();
-            String internalName = fullPath.endsWith(".class")
-                    ? fullPath.substring(0, fullPath.length() - 6)
-                    : fullPath;
+            String internalName = ClassNameUtil.normalizeInternalName(fullPath);
             String workspaceHash = commentScope == null ? "" : commentScope.workspaceHash();
             source = com.bingbaihanji.fxdecomplie.rename.RenameService
                     .applyRenames(source, workspaceHash, internalName);
@@ -338,7 +342,7 @@ public final class ExportService {
                 source = CommentExportDecorator.applyForClass(source, data.getFullPath(), commentScope);
             }
             String javaPath = com.bingbaihanji.fxdecomplie.rename.RenameService
-                    .renamedJavaPath(fullPath, workspaceHash);
+                    .renamedJavaPath(internalName, workspaceHash);
             return new ExportContent(javaPath,
                     source.getBytes(StandardCharsets.UTF_8));
         }

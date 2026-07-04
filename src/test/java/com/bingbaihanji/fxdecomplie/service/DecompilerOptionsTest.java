@@ -34,8 +34,12 @@ class DecompilerOptionsTest {
         second.put("a", "1");
         second.put("b", "2");
 
-        assertEquals("a=1,b=2", DecompilerOptions.hash(first));
-        assertEquals(DecompilerOptions.hash(first), DecompilerOptions.hash(second));
+        // 哈希应稳定（相同内容 → 相同哈希），且不受插入顺序影响
+        String hash1 = DecompilerOptions.hash(first);
+        String hash2 = DecompilerOptions.hash(second);
+        assertEquals(hash1, hash2, "相同内容的哈希应不受插入顺序影响");
+        assertEquals(16, hash1.length(), "SHA-256 截断哈希应为 16 字符");
         assertEquals("default", DecompilerOptions.hash(Map.of()));
+        assertEquals("default", DecompilerOptions.hash(null));
     }
 }

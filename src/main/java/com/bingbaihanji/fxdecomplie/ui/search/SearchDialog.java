@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -151,6 +152,7 @@ public final class SearchDialog {
         // 跟踪搜索代数,用于丢弃过时结果
         AtomicInteger searchGen = new AtomicInteger(0);
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
+        AtomicBoolean closed = new AtomicBoolean(false);
 
         // 200ms 防抖
         PauseTransition debounce = new PauseTransition(Duration.millis(200));
@@ -247,10 +249,19 @@ public final class SearchDialog {
         scene.getStylesheets().add(
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
-        dialog.setOnCloseRequest(event -> BackgroundTasks.cancel(currentSearchTask.get()));
+        dialog.setOnCloseRequest(event -> {
+            if (closed.compareAndSet(false, true)) {
+                searchGen.incrementAndGet();
+                debounce.stop();
+                BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+            }
+        });
         dialog.setOnHidden(event -> {
-            debounce.stop();
-            BackgroundTasks.cancel(currentSearchTask.get());
+            if (closed.compareAndSet(false, true)) {
+                searchGen.incrementAndGet();
+                debounce.stop();
+                BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+            }
         });
         dialog.show();
         DefaultWindowTheme.applyWindowDarkMode(dialog);

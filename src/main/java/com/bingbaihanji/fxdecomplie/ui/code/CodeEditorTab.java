@@ -4,10 +4,9 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.util.I18nUtil;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.*;
 import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
@@ -349,13 +348,7 @@ public class CodeEditorTab extends Tab {
         dialog.setHeaderText(null);
         int totalLines = codeViewPanel.getLineCount();
         dialog.setContentText(I18nUtil.getString("editor.gotoLine.prompt", totalLines));
-        dialog.setOnShown(e -> {
-            var win = dialog.getDialogPane().getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) {
-                IconHelper.setStageIcon(s);
-            }
-        });
+        DialogHelper.applyNativeStyle(dialog);
 
         dialog.showAndWait().ifPresent(input -> {
             try {
@@ -372,6 +365,8 @@ public class CodeEditorTab extends Tab {
                 alert.setTitle(I18nUtil.getString("editor.gotoLine.title"));
                 alert.setHeaderText(null);
                 alert.setContentText(I18nUtil.getString("editor.gotoLine.invalid"));
+                alert.initOwner(owner);
+                DialogHelper.applyNativeStyle(alert);
                 alert.showAndWait();
             }
         });

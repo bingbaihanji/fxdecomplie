@@ -1,9 +1,8 @@
 package com.bingbaihanji.fxdecomplie.ui.comment;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.util.I18nUtil;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
@@ -85,13 +84,7 @@ public final class CommentDialog {
         dialogPane.setContent(grid);
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        dialog.setOnShown(e -> {
-            var win = dialogPane.getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) {
-                IconHelper.setStageIcon(s);
-            }
-        });
+        DialogHelper.applyNativeStyle(dialog);
 
         dialog.setResultConverter(button -> {
             if (button != ButtonType.OK) {

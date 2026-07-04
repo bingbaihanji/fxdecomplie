@@ -1,8 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,15 @@ import java.util.List;
 public final class CommentManager {
 
     private static final Logger log = LoggerFactory.getLogger(CommentManager.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    /**
+     * Gson 实例，注册了 CommentData 的自定义反序列化器，
+     * 确保即使 JSON 中字段为 null，反序列化后 CommentData Record 的各字段也不会为 null。
+     * Gson 的 UnsafeAllocator 可能绕过 Record 紧凑构造器，因此需要显式适配。
+     */
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(CommentData.class, new CommentDataDeserializer())
+            .setPrettyPrinting()
+            .create();
     private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {
     }.getType();
     private static final java.util.concurrent.ConcurrentMap<String, java.util.concurrent.locks.ReentrantLock>
@@ -187,5 +194,67 @@ public final class CommentManager {
                 .replace('>', '_')
                 .replace('|', '_')
                 .replace("..", "__");
+    }
+
+    /**
+     * CommentData 的自定义 Gson 反序列化器。
+     *
+     * <p>Gson 可能通过 {@code UnsafeAllocator} 绕过 Record 的紧凑构造器直接创建实例，
+     * 导致反序列化后 {@code text()}、{@code memberSignature()} 等字段为 null，
+     * 调用方（{@code CommentExportDecorator.insert()} 等）会抛出 NPE。</p>
+     *
+     * <p>此反序列化器从 JSON 中逐字段提取值，对缺失或 null 的字段填入默认值，
+     * 再通过规范的紧凑构造器创建 CommentData，确保各字段非 null。</p>
+     */
+    private static final class CommentDataDeserializer implements JsonDeserializer<CommentData> {
+        @Override
+        public CommentData deserialize(JsonElement json, Type typeOfT,
+                                       JsonDeserializationContext context) throws JsonParseException {
+            JsonObject obj = json.getAsJsonObject();
+            String className = getString(obj, "className", "");
+            String memberSignature = getString(obj, "memberSignature", "");
+            int line = getInt(obj, "line", 0);
+            String sourceHash = getString(obj, "sourceHash", "");
+            String optionsHash = getString(obj, "optionsHash", "");
+            CommentData.CommentStyle style = getEnum(obj, "style", CommentData.CommentStyle.LINE);
+            String text = getString(obj, "text", "");
+            String author = getString(obj, "author", "");
+            String time = getString(obj, "time", "");
+            return new CommentData(className, memberSignature, line, sourceHash,
+                    optionsHash, style, text, author, time);
+        }
+
+        private static String getString(JsonObject obj, String name, String defaultValue) {
+            JsonElement el = obj.get(name);
+            if (el == null || el.isJsonNull()) {
+                return defaultValue;
+            }
+            return el.getAsString();
+        }
+
+        private static int getInt(JsonObject obj, String name, int defaultValue) {
+            JsonElement el = obj.get(name);
+            if (el == null || el.isJsonNull()) {
+                return defaultValue;
+            }
+            try {
+                return el.getAsInt();
+            } catch (NumberFormatException e) {
+                return defaultValue;
+            }
+        }
+
+        private static CommentData.CommentStyle getEnum(JsonObject obj, String name,
+                                                        CommentData.CommentStyle defaultValue) {
+            JsonElement el = obj.get(name);
+            if (el == null || el.isJsonNull()) {
+                return defaultValue;
+            }
+            try {
+                return CommentData.CommentStyle.valueOf(el.getAsString());
+            } catch (IllegalArgumentException e) {
+                return defaultValue;
+            }
+        }
     }
 }

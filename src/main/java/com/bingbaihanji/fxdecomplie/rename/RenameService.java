@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
@@ -227,7 +228,7 @@ public final class RenameService {
     public static String findNewName(String workspaceHash, String className, String oldName) {
         String normalizedClass = normalizeInternalName(className);
         for (RenameEntry e : loadAll(workspaceHash)) {
-            if (e.className().equals(normalizedClass) && e.oldName().equals(oldName)) {
+            if (sameInternalClassName(e.className(), normalizedClass) && e.oldName().equals(oldName)) {
                 return e.newName();
             }
         }
@@ -1427,7 +1428,7 @@ public final class RenameService {
 
     private static boolean appliesToClass(RenameEntry entry, String currentClass) {
         return entry.className().isBlank() || currentClass == null || currentClass.isBlank()
-                || entry.className().equals(currentClass);
+                || sameInternalClassName(entry.className(), currentClass);
     }
 
     private static boolean scopeMatches(RenameEntry entry, MethodScope scope,
@@ -1483,7 +1484,7 @@ public final class RenameService {
             return Optional.of(matches.get(0));
         }
         for (RenameEntry entry : matches) {
-            if (entry.className().equals(currentClass)) {
+            if (sameInternalClassName(entry.className(), currentClass)) {
                 return Optional.of(entry);
             }
         }
@@ -1555,7 +1556,7 @@ public final class RenameService {
                 return matches.get(0);
             }
             for (MemberRef match : matches) {
-                if (match.owner().equals(currentClass)) {
+                if (sameInternalClassName(match.owner(), currentClass)) {
                     return match;
                 }
             }
@@ -1582,7 +1583,7 @@ public final class RenameService {
                 return matches.get(0);
             }
             for (MemberRef match : matches) {
-                if (match.owner().equals(currentClass)) {
+                if (sameInternalClassName(match.owner(), currentClass)) {
                     return match;
                 }
             }
@@ -2176,7 +2177,8 @@ public final class RenameService {
 
     private static boolean sameKey(RenameEntry left, RenameEntry right) {
         return left.type().equals(right.type())
-                && left.className().equals(right.className())
+                && (left.className().equals(right.className())
+                || sameInternalClassName(left.className(), right.className()))
                 && left.oldName().equals(right.oldName())
                 && left.desc().equals(right.desc());
     }
@@ -2196,66 +2198,23 @@ public final class RenameService {
         return TYPE_CLASS.equals(left.type())
                 && TYPE_CLASS.equals(right.type())
                 && !left.className().isBlank()
-                && left.className().equals(right.className());
+                && sameInternalClassName(left.className(), right.className());
     }
 
     private static String normalizeInternalName(String className) {
-        if (className == null) {
-            return "";
-        }
-        String normalized = className.replace('\\', '/').strip();
-        if (normalized.endsWith(".class")) {
-            normalized = normalized.substring(0, normalized.length() - ".class".length());
-        }
-        if (normalized.endsWith(".java")) {
-            normalized = normalized.substring(0, normalized.length() - ".java".length());
-        }
-        if (!normalized.contains("/")) {
-            normalized = normalized.replace('.', '/');
-        }
-        return normalized;
+        return ClassNameUtil.normalizeInternalName(className);
     }
 
     private static boolean sameInternalClassName(String left, String right) {
-        String normalizedLeft = normalizeInternalName(left);
-        String normalizedRight = normalizeInternalName(right);
-        if (normalizedLeft.isBlank() || normalizedRight.isBlank()) {
-            return false;
-        }
-        if (normalizedLeft.equals(normalizedRight)) {
-            return true;
-        }
-        return stripContainerClassPrefix(normalizedLeft)
-                .equals(stripContainerClassPrefix(normalizedRight));
+        return ClassNameUtil.sameInternalName(left, right);
     }
 
     private static String stripContainerClassPrefix(String internalName) {
-        String normalized = internalName == null ? "" : internalName.replace('\\', '/');
-        String[] prefixes = {
-                "BOOT-INF/classes/",
-                "WEB-INF/classes/",
-                "APP-INF/classes/"
-        };
-        for (String prefix : prefixes) {
-            if (normalized.startsWith(prefix)) {
-                return normalized.substring(prefix.length());
-            }
-            String nested = "/" + prefix;
-            int index = normalized.indexOf(nested);
-            if (index >= 0) {
-                return normalized.substring(index + nested.length());
-            }
-        }
-        return normalized;
+        return ClassNameUtil.stripContainerClassPrefix(internalName);
     }
 
     private static String simpleClassName(String internalName) {
-        if (internalName == null || internalName.isBlank()) {
-            return "";
-        }
-        String normalized = normalizeInternalName(internalName);
-        int slash = normalized.lastIndexOf('/');
-        return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+        return ClassNameUtil.simpleName(internalName);
     }
 
     private static String renamedClassInternalName(String internalName, String oldName, String newName) {

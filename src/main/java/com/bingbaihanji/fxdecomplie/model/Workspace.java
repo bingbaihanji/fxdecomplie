@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.model;
 
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import javafx.scene.control.TreeItem;
 
 import java.io.File;
@@ -81,7 +82,17 @@ public class Workspace implements AutoCloseable {
             TreeItem<FileTreeNode> item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null && node.getFullPath() != null && !node.getFullPath().isBlank()) {
-                result.putIfAbsent(node.getFullPath().replace('\\', '/'), node);
+                String fullPath = node.getFullPath().replace('\\', '/');
+                result.putIfAbsent(fullPath, node);
+                if (node.isClassFile()) {
+                    for (String candidate : ClassNameUtil.classFilePathCandidates(fullPath)) {
+                        result.putIfAbsent(candidate, node);
+                    }
+                    String stripped = ClassNameUtil.stripContainerClassPrefix(fullPath);
+                    if (!stripped.isBlank()) {
+                        result.putIfAbsent(stripped + ".class", node);
+                    }
+                }
             }
             queue.addAll(item.getChildren());
         }
@@ -179,7 +190,19 @@ public class Workspace implements AutoCloseable {
         if (fullPath == null || fullPath.isBlank()) {
             return null;
         }
-        return pathIndex().get(fullPath.replace('\\', '/'));
+        Map<String, FileTreeNode> index = pathIndex();
+        String normalized = fullPath.replace('\\', '/');
+        FileTreeNode exact = index.get(normalized);
+        if (exact != null) {
+            return exact;
+        }
+        for (String candidate : ClassNameUtil.classFilePathCandidates(normalized)) {
+            FileTreeNode match = index.get(candidate);
+            if (match != null) {
+                return match;
+            }
+        }
+        return null;
     }
 
     private Map<String, FileTreeNode> pathIndex() {

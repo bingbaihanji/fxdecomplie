@@ -17,7 +17,24 @@ import java.util.function.BooleanSupplier;
 import java.util.zip.ZipFile;
 
 /**
- * 共享的带保护的反编译运行器,用于标签页、全文搜索和导出
+ * 共享的带保护的反编译运行器,用于标签页、全文搜索和导出。
+ *
+ * <h3>整体流水线</h3>
+ * <ol>
+ *   <li><b>提交</b> — 调用方通过 {@link #decompileWithTimeout} 提交反编译请求</li>
+ *   <li><b>执行</b> — 在线程池中运行 {@link #decompileWithFallback}：
+ *     <ol type="a">
+ *       <li>首选引擎反编译 → 成功则返回</li>
+ *       <li>引擎抛异常或返回失败文本 → 按 VF→CFR→Procyon→JD 顺序回退</li>
+ *     </ol>
+ *   </li>
+ *   <li><b>超时保护</b> — 30s 超时中断，连续超时 3 次重建线程池丢弃僵死线程</li>
+ *   <li><b>上下文清理</b> — finally 块或异常路径中关闭 DecompilerContext</li>
+ * </ol>
+ *
+ * <h3>线程模型</h3>
+ * 使用独立线程池（1-2 核，队列 2-4），与 BackgroundTasks 主线程池隔离，
+ * 避免反编译任务（CPU/IO 密集）阻塞索引和搜索等短任务。
  */
 public final class DecompilerRunner {
 
@@ -59,12 +76,23 @@ public final class DecompilerRunner {
         return ex;
     }
 
-    /** 重建反编译线程池，丢弃可能僵死（被取消但未退出）的守护线程 */
-    private static synchronized void rebuildExecutor() {
+    /**
+     * 条件性重建线程池。仅在连续超时计数达到阈值时执行，检查和重置均在内
+     * 部锁保护下原子完成，避免多线程竞态导致双重重建或阈值检查被绕过。
+     *
+     * @return true 表示线程池已被重建
+     */
+    private static synchronized boolean maybeRebuildExecutor() {
+        int timeouts = consecutiveTimeouts.incrementAndGet();
+        if (timeouts < CONSECUTIVE_TIMEOUT_THRESHOLD) {
+            return false;
+        }
         ThreadPoolExecutor old = executor;
         executor = createExecutor();
         old.shutdownNow();
+        consecutiveTimeouts.set(0);
         log.info("检测到 {} 次连续超时，已重建反编译线程池", CONSECUTIVE_TIMEOUT_THRESHOLD);
+        return true;
     }
 
     public static String decompileWithTimeout(String classFilePath, byte[] classBytes,
@@ -136,10 +164,8 @@ public final class DecompilerRunner {
             }
             closeContext(context);
             // 连续超时超过阈值时重建线程池，丢弃可能僵死的守护线程
-            int timeouts = consecutiveTimeouts.incrementAndGet();
-            if (timeouts >= CONSECUTIVE_TIMEOUT_THRESHOLD) {
-                rebuildExecutor();
-                consecutiveTimeouts.set(0);
+            boolean rebuilt = maybeRebuildExecutor();
+            if (rebuilt) {
                 return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
                         + "\n" + I18nUtil.getString("decompile.timeoutHint")
                         + "\n" + I18nUtil.getString("decompile.busyRecovered");
@@ -434,7 +460,8 @@ public final class DecompilerRunner {
 
             try {
                 if (workspace.isArchive()) {
-                    return readArchiveEntry(path);
+                    String archivePath = node == null ? path : node.getFullPath();
+                    return readArchiveEntry(archivePath);
                 }
                 if (node != null) {
                     return WorkspaceByteReader.readNodeBytes(workspace, node, false);

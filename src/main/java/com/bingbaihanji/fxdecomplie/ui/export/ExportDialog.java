@@ -3,9 +3,8 @@ package com.bingbaihanji.fxdecomplie.ui.export;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.util.I18nUtil;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -45,13 +44,7 @@ public final class ExportDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("dialog.export.options.title"));
         dialog.setHeaderText(null);
-        dialog.setOnShown(e -> {
-            var window = dialog.getDialogPane().getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(window);
-            if (window instanceof javafx.stage.Stage s) {
-                setDialogIcon(s);
-            }
-        });
+        DialogHelper.applyNativeStyle(dialog);
 
         ButtonType exportButtonType = new ButtonType(
                 I18nUtil.getString("dialog.export.start"), ButtonBar.ButtonData.OK_DONE);
@@ -133,13 +126,7 @@ public final class ExportDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("dialog.export.progress.title"));
         dialog.setHeaderText(null);
-        dialog.setOnShown(e -> {
-            var window = dialog.getDialogPane().getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(window);
-            if (window instanceof javafx.stage.Stage s) {
-                setDialogIcon(s);
-            }
-        });
+        DialogHelper.applyNativeStyle(dialog);
 
         ProgressBar progressBar = new ProgressBar(0);
         progressBar.setMaxWidth(Double.MAX_VALUE);
@@ -247,6 +234,7 @@ public final class ExportDialog {
         alert.initOwner(dialog.getDialogPane().getScene().getWindow());
         alert.setTitle(I18nUtil.getString("dialog.export.title"));
         alert.setHeaderText(null);
+        DialogHelper.applyNativeStyle(alert);
         alert.showAndWait();
     }
 
@@ -272,10 +260,6 @@ public final class ExportDialog {
         } catch (IllegalArgumentException | NullPointerException e) {
             return ExportConfig.ConflictPolicy.OVERWRITE;
         }
-    }
-
-    private static void setDialogIcon(javafx.stage.Stage stage) {
-        IconHelper.setStageIcon(stage);
     }
 
     public static final class ProgressHandle {

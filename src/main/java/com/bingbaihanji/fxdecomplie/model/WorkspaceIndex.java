@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.model;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,7 @@ public final class WorkspaceIndex {
                 ClassIndexEntry entry = indexClass(node);
                 if (entry != null) {
                     classes.add(entry);
-                    classEntries.put(entry.internalName(), entry);
+                    putClassEntry(classEntries, entry);
                 }
             } else if (node.isTextFile() && node.hasByteSource()
                     && shouldIndexResource(node)) {
@@ -84,8 +85,8 @@ public final class WorkspaceIndex {
         }
 
         String fullPath = node.getFullPath();
-        String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
-        String simpleName = simpleName(internalName);
+        String internalName = ClassNameUtil.normalizeInternalName(fullPath);
+        String simpleName = ClassNameUtil.simpleName(internalName);
         List<MemberIndexEntry> methods = new ArrayList<>();
         List<MemberIndexEntry> fields = new ArrayList<>();
 
@@ -93,7 +94,7 @@ public final class WorkspaceIndex {
         if (metadata.isPresent()) {
             ClassFileMetadata meta = metadata.get();
             internalName = meta.internalName();
-            simpleName = simpleName(internalName);
+            simpleName = ClassNameUtil.simpleName(internalName);
             for (ClassFileMetadata.MemberInfo field : meta.fields()) {
                 fields.add(new MemberIndexEntry(node.getFullPath(), field.name(), field.descriptor()));
             }
@@ -133,9 +134,24 @@ public final class WorkspaceIndex {
         }
     }
 
-    private static String simpleName(String internalName) {
-        int idx = internalName.lastIndexOf('/');
-        return idx >= 0 ? internalName.substring(idx + 1) : internalName;
+    private static void putClassEntry(Map<String, ClassIndexEntry> classEntries,
+                                      ClassIndexEntry entry) {
+        putClassEntryAlias(classEntries, entry.internalName(), entry);
+        putClassEntryAlias(classEntries, entry.fullPath(), entry);
+        putClassEntryAlias(classEntries,
+                ClassNameUtil.stripContainerClassPrefix(entry.fullPath()), entry);
+    }
+
+    private static void putClassEntryAlias(Map<String, ClassIndexEntry> classEntries,
+                                           String className, ClassIndexEntry entry) {
+        String normalized = ClassNameUtil.normalizeInternalName(className);
+        if (!normalized.isBlank()) {
+            classEntries.putIfAbsent(normalized, entry);
+            String stripped = ClassNameUtil.stripContainerClassPrefix(normalized);
+            if (!stripped.isBlank()) {
+                classEntries.putIfAbsent(stripped, entry);
+            }
+        }
     }
 
     public List<ClassIndexEntry> classes() {
@@ -147,7 +163,11 @@ public final class WorkspaceIndex {
     }
 
     public byte[] getClassBytes(String internalName) {
-        ClassIndexEntry entry = classesByInternalName.get(internalName);
+        String normalized = ClassNameUtil.normalizeInternalName(internalName);
+        ClassIndexEntry entry = classesByInternalName.get(normalized);
+        if (entry == null) {
+            entry = classesByInternalName.get(ClassNameUtil.stripContainerClassPrefix(normalized));
+        }
         return entry == null ? null : entry.bytes();
     }
 

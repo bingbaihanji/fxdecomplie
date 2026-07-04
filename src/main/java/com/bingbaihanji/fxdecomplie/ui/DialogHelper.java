@@ -2,9 +2,11 @@ package com.bingbaihanji.fxdecomplie.ui;
 
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogEvent;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -88,7 +90,11 @@ public final class DialogHelper {
         } catch (RuntimeException ignored) {
             log.debug("应用暗色样式表失败", ignored);
         }
+        EventHandler<DialogEvent> previousOnShown = dialog.getOnShown();
         dialog.setOnShown(e -> {
+            if (previousOnShown != null) {
+                previousOnShown.handle(e);
+            }
             var scene = dialog.getDialogPane().getScene();
             var window = scene == null ? null : scene.getWindow();
             if (window == null) {

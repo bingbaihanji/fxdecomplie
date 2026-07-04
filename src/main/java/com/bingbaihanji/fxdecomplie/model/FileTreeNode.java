@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.model;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 文件树节点数据模型表示文件树中的单个节点,可以是包、类文件、Java源文件等
@@ -22,8 +23,8 @@ public class FileTreeNode {
     private volatile ByteLoader byteLoader;
     /** 条目原始大小,未知时为 -1 */
     private volatile long size = -1L;
-    /** 可选资源清理回调,例如关闭归档句柄 */
-    private volatile Runnable cleanup;
+    /** 可选资源清理回调,例如关闭归档句柄。通过 AtomicReference 保证单次执行 */
+    private final AtomicReference<Runnable> cleanupRef = new AtomicReference<>();
 
     /**
      * 构造文件树节点
@@ -77,14 +78,22 @@ public class FileTreeNode {
         this.size = size;
     }
 
+    /**
+     * 设置资源清理回调。每个节点仅支持一个清理动作，设置后可通过 {@link #close()} 触发。
+     *
+     * @param cleanup 节点关闭时执行的清理动作（例如关闭共享 ZipFile）
+     */
     public void setCleanup(Runnable cleanup) {
-        this.cleanup = cleanup;
+        cleanupRef.set(cleanup);
     }
 
+    /**
+     * 执行清理回调并原子性置空，保证并发调用时仅执行一次。
+     * 使用 {@link AtomicReference#getAndSet} 原子交换保证线程安全。
+     */
     public void close() {
-        Runnable action = cleanup;
+        Runnable action = cleanupRef.getAndSet(null);
         if (action != null) {
-            cleanup = null;
             action.run();
         }
     }

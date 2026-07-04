@@ -68,6 +68,10 @@ public final class DiskCodeCache {
     public static void save(String workspaceHash, String internalName,
                             DecompilerTypeEnum engine, String optionsHash,
                             String sourceCode) {
+        // 跳过 null/blank 源码，避免写入空文件后被 load() 当作缓存未命中
+        if (sourceCode == null || sourceCode.isBlank()) {
+            return;
+        }
         Path tmp = null;
         try {
             Path file = cachePath(workspaceHash, internalName, engine, optionsHash);

@@ -29,19 +29,26 @@ public interface SearchProvider {
     }
 
     /**
-     * 检查某一行是否匹配查询,考虑所有搜索选项(正则、大小写、全词匹配)
-     * 供子类在逐行遍历源码时调用
+     * 检查某一行是否匹配查询，考虑所有搜索选项。
+     *
+     * <p>正则模式下忽略整词匹配选项（用户自行在正则中包含 {@code \b}），
+     * 避免 {@code \b^foo\b} 等语义矛盾的组合。</p>
+     *
+     * @param line    待匹配的行文本
+     * @param query   搜索字符串或正则
+     * @param options 搜索选项（正则、大小写、整词匹配）
+     * @return 匹配成功返回 true
      */
     default boolean lineMatches(String line, String query, SearchOptions options) {
-        if (line == null || query == null) {
+        if (line == null || query == null || options == null) {
             return false;
         }
 
         if (options.regex()) {
+            // 正则模式下忽略 wholeWord：用户应在正则中自行控制边界
             try {
                 int flags = options.caseSensitive() ? 0 : Pattern.CASE_INSENSITIVE;
-                String pattern = options.wholeWord() ? "\\b" + query + "\\b" : query;
-                return Pattern.compile(pattern, flags).matcher(line).find();
+                return Pattern.compile(query, flags).matcher(line).find();
             } catch (PatternSyntaxException e) {
                 return false;
             }
@@ -51,7 +58,10 @@ public interface SearchProvider {
         String q = options.caseSensitive() ? query : query.toLowerCase();
 
         if (options.wholeWord()) {
-            String pattern = "(?<!\\w)" + Pattern.quote(q) + "(?!\\w)";
+            // 使用 Unicode 感知的 Java 标识符边界替代 \w
+            String pattern = "(?<![\\p{javaJavaIdentifierPart}])"
+                    + Pattern.quote(q)
+                    + "(?![\\p{javaJavaIdentifierPart}])";
             return Pattern.compile(pattern).matcher(content).find();
         }
 

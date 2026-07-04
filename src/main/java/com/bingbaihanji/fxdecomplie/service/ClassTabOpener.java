@@ -9,6 +9,7 @@ import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.control.*;
@@ -893,18 +894,25 @@ public final class ClassTabOpener {
         if (workspace == null || targetClass == null || targetClass.isBlank()) {
             return null;
         }
-        String normalized = targetClass.replace('.', '/').replace('\\', '/');
-        FileTreeNode direct = workspace.findNodeByPath(normalized + ".class");
-        if (direct != null) {
-            return direct;
+        String normalized = ClassNameUtil.normalizeInternalName(targetClass);
+        for (String candidate : ClassNameUtil.classFilePathCandidates(normalized)) {
+            FileTreeNode direct = workspace.findNodeByPath(candidate);
+            if (direct != null) {
+                return direct;
+            }
         }
         String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                 .of(workspace, "").workspaceHash();
         String original = com.bingbaihanji.fxdecomplie.rename.RenameService
                 .originalInternalName(targetClass, wsHash);
-        if (!original.equals(normalized)) {
-            FileTreeNode originalNode = workspace.findNodeByPath(original + ".class");
-            return originalNode != null ? originalNode : findNodeByInternalNameSuffix(workspace, original);
+        if (!ClassNameUtil.sameInternalName(original, normalized)) {
+            for (String candidate : ClassNameUtil.classFilePathCandidates(original)) {
+                FileTreeNode originalNode = workspace.findNodeByPath(candidate);
+                if (originalNode != null) {
+                    return originalNode;
+                }
+            }
+            return findNodeByInternalNameSuffix(workspace, original);
         }
         return findNodeByInternalNameSuffix(workspace, normalized);
     }
@@ -914,11 +922,7 @@ public final class ClassTabOpener {
                 || workspace.getTreeRoot() == null) {
             return null;
         }
-        String suffix = internalName.replace('.', '/').replace('\\', '/');
-        if (suffix.endsWith(".class")) {
-            suffix = suffix.substring(0, suffix.length() - ".class".length());
-        }
-        suffix += ".class";
+        String suffix = ClassNameUtil.classFilePath(internalName);
         ArrayDeque<TreeItem<FileTreeNode>> queue =
                 new ArrayDeque<>();
         queue.add(workspace.getTreeRoot());

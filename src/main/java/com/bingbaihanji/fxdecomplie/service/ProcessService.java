@@ -20,6 +20,14 @@ public final class ProcessService {
         throw new AssertionError("utility class");
     }
 
+    /**
+     * 启动新的应用实例打开指定文件，用于并排对比查看。
+     *
+     * <p>通过 {@link ProcessBuilder} 启动第二个 JVM 进程，子进程的
+     * stdin/stdout/stderr 继承父进程，避免管道缓冲区满导致子进程挂起。</p>
+     *
+     * @param filePath 要在新窗口中打开的文件路径（可为 null）
+     */
     public static void launchNewInstance(String filePath) {
         try {
             // ---- 定位当前 JVM 的 java 可执行文件 ----
@@ -37,7 +45,10 @@ public final class ProcessService {
                 jarPath = jarPath.substring(1);
             }
             // ---- 启动新进程: java -jar <this.jar> --open <filePath> ----
-            new ProcessBuilder(java, "-jar", jarPath, "--open", filePath).start();
+            // inheritIO() 防止子进程 stdout/stderr 管道缓冲区满导致挂起
+            new ProcessBuilder(java, "-jar", jarPath, "--open", filePath)
+                    .inheritIO()
+                    .start();
         } catch (Exception e) {
             log.error("启动新实例失败", e);
         }

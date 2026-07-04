@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -79,12 +78,9 @@ public final class RenameDialog {
         });
 
         dialog.setOnShown(e -> {
-            DefaultWindowTheme.applyWindowDarkMode(pane.getScene().getWindow());
-            if (pane.getScene().getWindow() instanceof Stage s) {
-                IconHelper.setStageIcon(s);
-            }
             field.requestFocus();
         });
+        DialogHelper.applyNativeStyle(dialog);
 
         dialog.setResultConverter(btn -> {
             if (btn != ButtonType.OK) {

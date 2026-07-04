@@ -38,24 +38,29 @@ public class JdDecompiler implements Decompiler {
     @Override
     public String decompileType(String typeName, byte[] classBytes,
                                 DecompilerContext context) {
+        // 规范化内部名，去除可能的 .class 后缀
+        final String normalizedName = DecompilerContext.normalizeInternalName(typeName);
+        if (classBytes == null) {
+            return "// JD-Core Error: null class bytes for " + normalizedName;
+        }
         StringBuilder result = new StringBuilder();
         DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
 
-        final int lastSlash = typeName.lastIndexOf('/');
+        final int lastSlash = normalizedName.lastIndexOf('/');
         final String expectedPackage = lastSlash > 0
-                ? typeName.substring(0, lastSlash).replace('/', '.')
+                ? normalizedName.substring(0, lastSlash).replace('/', '.')
                 : null;
 
         Loader loader = new Loader() {
             @Override
             public boolean canLoad(String internalName) {
-                return internalName.equals(typeName)
+                return internalName.equals(normalizedName)
                         || effectiveContext.resolveClassBytes(internalName) != null;
             }
 
             @Override
             public byte[] load(String internalName) {
-                if (internalName.equals(typeName)) return classBytes;
+                if (internalName.equals(normalizedName)) return classBytes;
                 return effectiveContext.resolveClassBytes(internalName);
             }
         };

@@ -99,11 +99,17 @@ public class RegexHighlighter implements SyntaxDecorator {
 
     /** 检查标识符是否以大写开头(类名/接口名/枚举名) */
     private static boolean isType(String identifier) {
+        if (identifier == null || identifier.isEmpty()) {
+            return false;
+        }
         return Character.isUpperCase(identifier.charAt(0));
     }
 
     /** 检查标识符后是否紧跟 ((方法调用/声明) */
     private static boolean isMethod(String line, int endPos) {
+        if (endPos >= line.length()) {
+            return false;
+        }
         int lineEnd = line.indexOf('\n', endPos);
         if (lineEnd < 0) {
             lineEnd = line.length();
@@ -114,6 +120,9 @@ public class RegexHighlighter implements SyntaxDecorator {
 
     /** 检查标识符后是否紧跟 = 或 ;(字段声明) */
     private static boolean isField(String line, int endPos) {
+        if (endPos >= line.length()) {
+            return false;
+        }
         int lineEnd = line.indexOf('\n', endPos);
         if (lineEnd < 0) {
             lineEnd = line.length();

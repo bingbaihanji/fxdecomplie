@@ -365,7 +365,13 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return info;
     }
 
-    /** 根据方法描述符计算 args_size（参数占用的寄存器字数，long/double 占2，实例方法 +1 给 this） */
+    /**
+     * 根据方法描述符计算 args_size（参数占用的寄存器字数，long/double 占2，实例方法 +1 给 this）。
+     *
+     * <p>注意：methodKey 仅包含方法名和描述符，不含 access_flags，
+     * 因此无法准确判断 static。仅对 {@code <clinit>}（静态初始化器）跳过 this 加算；
+     * 其他方法保守 +1（绝大多数为实例方法）。</p>
+     */
     private static int computeArgsSize(String methodKey) {
         // methodKey = name + desc
         // 从 methodKey 中提取描述符部分
@@ -405,10 +411,11 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 default -> size++; // B, C, D, F, I, S, Z = 1 word
             }
         }
-        // 非 static 方法加 this
         String name = methodKey.substring(0, paren);
-        // <init> has this
-        size++;
+        // <clinit> 是静态方法，没有 this 参数
+        if (!"<clinit>".equals(name)) {
+            size++; // 实例方法/构造器的 this
+        }
         return Math.max(1, size);
     }
 
@@ -574,11 +581,17 @@ final class BytecodeTextBuilder extends ClassVisitor {
      * @return 指令实际占用字节数
      */
     static int actualSize(byte[] raw, int offset) {
+        if (offset < 0 || offset >= raw.length) {
+            return 1;
+        }
         int b = raw[offset] & 0xFF;
         if (b != 0xC4) {
             return sizeOf(b);
         }
-        // WIDE 前缀: WIDE(1) + 实际opcode(1) + 宽操作数
+        // WIDE 前缀：边界检查防止截断字节码
+        if (offset + 1 >= raw.length) {
+            return 1; // 截断的 WIDE，仅消耗前缀字节
+        }
         int next = raw[offset + 1] & 0xFF;
         if (next == Opcodes.IINC) {
             return 6; // WIDE(1) + IINC(1) + index(2) + const(2)
@@ -684,12 +697,14 @@ final class BytecodeTextBuilder extends ClassVisitor {
         // 常量池
         sb.append(formatConstantPool(raw));
 
-        // 字段计数
-        int fieldsCount = readU2(raw, skipToClassBody(raw) + 6 + readU2(raw, skipToClassBody(raw) + 4) * 2);
+        // 字段计数 — 类体布局: access_flags(2) + this_class(2) + super_class(2) + if_count(2) + interfaces[if_count](2*if_count)
+        int bodyOff = skipToClassBody(raw);
+        int ifCount = readU2(raw, bodyOff + 6);
+        int fieldsCount = readU2(raw, bodyOff + 8 + ifCount * 2);
         sb.append("Fields count: ").append(fieldsCount).append('\n');
 
-        // 方法计数
-        int methodsOff = skipToClassBody(raw) + 6 + readU2(raw, skipToClassBody(raw) + 4) * 2 + 2;
+        // 方法计数 — 位于字段之后
+        int methodsOff = bodyOff + 8 + ifCount * 2 + 2; // +2 for fields_count itself
         // 跳过字段
         for (int i = 0; i < fieldsCount; i++) {
             methodsOff = skipAttributes(raw, methodsOff + 6);
@@ -797,6 +812,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
 
         private static int readS2(byte[] b, int off) {
+            if (off < 0 || off + 1 >= b.length) {
+                return 0;
+            }
             return (short) (((b[off] & 0xFF) << 8) | (b[off + 1] & 0xFF));
         }
 
@@ -905,7 +923,13 @@ final class BytecodeTextBuilder extends ClassVisitor {
         public void visitJumpInsn(int opcode, Label label) {
             int size = actualSize(raw, codeOffset + pc);
             appendInsnHex(opcode, size);
-            int offset = readS2(raw, codeOffset + pc + 1);
+            int offset;
+            // GOTO_W(200) 和 JSR_W(201) 使用 4 字节有符号分支偏移量
+            if (opcode == 200 || opcode == 201) {
+                offset = readS4(raw, codeOffset + pc + 1);
+            } else {
+                offset = readS2(raw, codeOffset + pc + 1);
+            }
             int target = pc + offset;
             sb.append(' ').append(opcodeName(opcode))
                     .append(String.format(" %+d → %04x", offset, target)).append('\n');
@@ -920,7 +944,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
             if (cst instanceof Integer || cst instanceof Float) {
                 size = 2;
                 opcode = Opcodes.LDC;
-                idx = raw[codeOffset + pc + 1] & 0xFF;
+                // 边界检查：截断的 class 文件中 codeOffset+pc+1 可能超出数组范围
+                int rawIdx = codeOffset + pc + 1;
+                idx = (rawIdx >= 0 && rawIdx < raw.length) ? (raw[rawIdx] & 0xFF) : 0;
             } else if (cst instanceof Long || cst instanceof Double) {
                 size = 3;
                 opcode = 20; // LDC2_W
@@ -997,8 +1023,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
             int fileOff = codeOffset + pc;
             sb.append(INSN_INDENT)
                     .append(String.format("%08x: ", fileOff));
-            // 原始字节（最多6字节）
-            for (int i = 0; i < size && i < 6; i++) {
+            // 原始字节（最多6字节），防御截断的字节码
+            int safeSize = Math.min(size, raw.length - Math.max(0, fileOff));
+            for (int i = 0; i < safeSize && i < 6; i++) {
                 int b = raw[fileOff + i] & 0xFF;
                 sb.append(String.format("%02x ", b));
             }

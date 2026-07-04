@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.fxdecomplie.ui.CodeLinkHandler;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -71,24 +72,6 @@ public class CodeAreaContextMenu extends ContextMenu {
         );
 
         setOnShowing(e -> refreshState());
-    }
-
-    private static int flatOffset(String text, TextPos pos) {
-        int line = Math.max(0, pos.index());
-        int offset = Math.max(0, pos.offset());
-        int currentLine = 0;
-        int lineStart = 0;
-        for (int i = 0; i < text.length() && currentLine < line; i++) {
-            if (text.charAt(i) == '\n') {
-                currentLine++;
-                lineStart = i + 1;
-            }
-        }
-        return Math.min(text.length(), lineStart + offset);
-    }
-
-    private static boolean isJavaNameChar(char ch) {
-        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$';
     }
 
     public void prepare(ContextMenuEvent event) {
@@ -178,23 +161,7 @@ public class CodeAreaContextMenu extends ContextMenu {
     }
 
     private String tokenAtActionPosition() {
-        String text = codeArea.getText();
         TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
-        if (text == null || text.isEmpty() || pos == null) {
-            return "";
-        }
-        int offset = flatOffset(text, pos);
-        if (offset < 0 || offset > text.length()) {
-            return "";
-        }
-        int start = offset;
-        while (start > 0 && isJavaNameChar(text.charAt(start - 1))) {
-            start--;
-        }
-        int end = offset;
-        while (end < text.length() && isJavaNameChar(text.charAt(end))) {
-            end++;
-        }
-        return start < end ? text.substring(start, end) : "";
+        return CodeLinkHandler.navigationTokenAt(codeArea.getText(), pos);
     }
 }

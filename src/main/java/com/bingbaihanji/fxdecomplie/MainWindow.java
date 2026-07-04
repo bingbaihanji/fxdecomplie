@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
@@ -25,8 +25,8 @@ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
 import com.bingbaihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbaihanji.fxdecomplie.ui.window.AppHeaderBar;
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import com.bingbaihanji.util.I18nUtil;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -44,6 +44,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -250,27 +252,26 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return Character.isUpperCase(first) || first == '_' || first == '$';
     }
 
+    private static boolean shouldPreferClassNavigation(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        String simpleToken = tokenSimpleName(token);
+        simpleToken = simpleToken.endsWith(".class")
+                ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
+        return token.contains(".") || isRelativeClassToken(simpleToken);
+    }
+
     private static boolean samePackage(String leftInternalName, String rightInternalName) {
         return packageName(leftInternalName).equals(packageName(rightInternalName));
     }
 
     private static String normalizeInternalClassName(String className) {
-        if (className == null) {
-            return "";
-        }
-        String normalized = className.replace('\\', '/');
-        if (normalized.endsWith(".class")) {
-            normalized = normalized.substring(0, normalized.length() - ".class".length());
-        }
-        return normalized;
+        return ClassNameUtil.normalizeInternalName(className);
     }
 
     private static String packageName(String internalName) {
-        if (internalName == null) {
-            return "";
-        }
-        int slash = internalName.lastIndexOf('/');
-        return slash >= 0 ? internalName.substring(0, slash) : "";
+        return ClassNameUtil.packageName(internalName);
     }
 
     /** 委托 ClassTabOpener 计算 L2 缓存工作区键,确保跨组件缓存复用 */
@@ -285,11 +286,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         } catch (IllegalArgumentException | NullPointerException e) {
             return fallback == null ? DecompilerTypeEnum.VINEFLOWER : fallback;
         }
-    }
-
-    /** 为对话框/Stage 设置应用 Logo 图标 */
-    private static void setAlertIcon(javafx.stage.Stage s) {
-        IconHelper.setStageIcon(s);
     }
 
     /** 判断文件是否为可加载类型（JAR/ZIP/WAR/Class 及目录） */
@@ -622,10 +618,18 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         persistExportConfig(exportConfig);
 
         ExportDialog.ProgressHandle progressHandle = ExportDialog.showProgress(stage);
-        final Future<?>[] exportTask = new Future<?>[1];
-        java.util.concurrent.atomic.AtomicBoolean exportCanceled = new java.util.concurrent.atomic.AtomicBoolean(false);
+        java.util.concurrent.atomic.AtomicReference<Future<?>> exportTaskRef = new java.util.concurrent.atomic.AtomicReference<>();
+        AtomicBoolean exportCanceled = new AtomicBoolean(false);
+        // 必须在提交任务前注册取消回调，避免用户点击取消时 exportTaskRef 尚未设置
+        progressHandle.setOnCancel(() -> {
+            exportCanceled.set(true);
+            Future<?> f = exportTaskRef.get();
+            if (f != null) {
+                BackgroundTasks.cancel(f);
+            }
+        });
         statusBar.setTask(I18nUtil.getString("task.exporting"));
-        exportTask[0] = BackgroundTasks.run("Export", () -> {
+        exportTaskRef.set(BackgroundTasks.run("Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(
                         nodes, exportConfig, index, commentScope(workspace, exportConfig),
@@ -680,11 +684,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     }
                 });
             }
-        });
-        progressHandle.setOnCancel(() -> {
-            exportCanceled.set(true);
-            BackgroundTasks.cancel(exportTask[0]);
-        });
+        }));
     }
 
     /** 退出应用 */
@@ -900,16 +900,30 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return;
         }
 
+        Workspace workspace = context.workspace();
+        WorkspaceIndex index = workspace.isIndexReady() ? workspace.getIndex() : context.workspaceIndex();
+        String sourceCode = context.openFile() == null ? "" : context.openFile().sourceCode();
         statusBar.setFilePath(I18nUtil.getString("status.locating", targetToken));
+
+        boolean preferClassNavigation = shouldPreferClassNavigation(targetToken);
+        FileTreeNode node = null;
+        if (preferClassNavigation) {
+            node = findNodeForToken(workspace, index, targetToken,
+                    context.classInternalName(), sourceCode);
+            if (node != null) {
+                openNodeInWorkspace(workspace, node);
+                return;
+            }
+        }
+
         if (revealDeclarationInCurrentTab(context, lineNumber, targetToken)) {
             return;
         }
 
-        Workspace workspace = context.workspace();
-        WorkspaceIndex index = workspace.isIndexReady() ? workspace.getIndex() : context.workspaceIndex();
-        String sourceCode = context.openFile() == null ? "" : context.openFile().sourceCode();
-        FileTreeNode node = findNodeForToken(workspace, index, targetToken,
-                context.classInternalName(), sourceCode);
+        if (!preferClassNavigation) {
+            node = findNodeForToken(workspace, index, targetToken,
+                    context.classInternalName(), sourceCode);
+        }
         if (node != null) {
             openNodeInWorkspace(workspace, node);
             return;
@@ -1590,13 +1604,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         simpleToken = simpleToken.endsWith(".class") ? simpleToken.substring(0, simpleToken.length() - 6) : simpleToken;
         FileTreeNode firstMatch = null;
         for (var cls : index.classes()) {
-            if (cls.internalName().equals(currentInternal)) {
+            if (ClassNameUtil.sameInternalName(cls.internalName(), currentInternal)) {
                 continue;
             }
             String indexedSimple = cls.simpleName();
             indexedSimple = indexedSimple.endsWith(".class") ? indexedSimple.substring(0, indexedSimple.length() - 6) : indexedSimple;
-            if (cls.internalName().equals(normalized)
-                    || cls.fullPath().equals(normalized)
+            if (ClassNameUtil.sameInternalName(cls.internalName(), normalized)
+                    || ClassNameUtil.sameInternalName(cls.fullPath(), normalized)
                     || indexedSimple.equals(simpleToken)
                     || indexedSimple.endsWith("$" + simpleToken)) {
                 FileTreeNode node = workspace.findNodeByPath(cls.fullPath());
@@ -1728,26 +1742,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (workspace == null || internalName == null || internalName.isBlank()) {
             return null;
         }
-        String normalized = internalName.replace('.', '/').replace('\\', '/');
-        if (normalized.endsWith(".class")) {
-            FileTreeNode exact = workspace.findNodeByPath(normalized);
-            if (exact != null) {
-                return exact;
+        for (String candidate : ClassNameUtil.classFilePathCandidates(internalName)) {
+            FileTreeNode node = workspace.findNodeByPath(candidate);
+            if (node != null) {
+                return node;
             }
-            normalized = normalized.substring(0, normalized.length() - ".class".length());
-        }
-        FileTreeNode direct = workspace.findNodeByPath(normalized + ".class");
-        if (direct != null) {
-            return direct;
-        }
-        int slash = normalized.lastIndexOf('/');
-        while (slash > 0) {
-            normalized = normalized.substring(0, slash) + "$" + normalized.substring(slash + 1);
-            FileTreeNode inner = workspace.findNodeByPath(normalized + ".class");
-            if (inner != null) {
-                return inner;
-            }
-            slash = normalized.lastIndexOf('/');
         }
         return null;
     }
@@ -2199,13 +2198,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         alert.initOwner(stage);
         alert.setTitle(I18nUtil.getString("about.title"));
         alert.setHeaderText("FxDecompiler");
-        alert.setOnShown(e -> {
-            var win = alert.getDialogPane().getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) {
-                setAlertIcon(s);
-            }
-        });
+        DialogHelper.applyNativeStyle(alert);
 
         javafx.scene.control.Hyperlink link = new javafx.scene.control.Hyperlink("www.bingbaihanji.com");
         link.setOnAction(e -> {
@@ -2343,11 +2336,15 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             statusBar.setFilePath(I18nUtil.getString("status.navigateTimeout", fullPath));
             return;
         }
-        if (!tabManager.isWorkspaceActive(view)) return; // 工作区已关闭
+        if (!tabManager.isWorkspaceActive(view)) {
+            return; // 工作区已关闭
+        }
         javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(
                 javafx.util.Duration.millis(100));
         delay.setOnFinished(e -> {
-            if (!tabManager.isWorkspaceActive(view)) return;
+            if (!tabManager.isWorkspaceActive(view)) {
+                return;
+            }
             for (TabPane pane : view.splitEditorPane().allTabPanes()) {
                 for (javafx.scene.control.Tab tab : pane.getTabs()) {
                     if (tab instanceof CodeEditorTab codeTab
@@ -2506,13 +2503,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
-        alert.setOnShown(e -> {
-            var win = alert.getDialogPane().getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(win);
-            if (win instanceof javafx.stage.Stage s) {
-                setAlertIcon(s);
-            }
-        });
+        DialogHelper.applyNativeStyle(alert);
         ButtonType openOutput = new ButtonType(I18nUtil.getString("dialog.export.openOutput"));
         alert.getButtonTypes().add(openOutput);
         log.info("显示导出完成对话框: {}", message);

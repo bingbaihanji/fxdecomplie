@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 
 import java.util.Map;
 import java.util.Objects;
@@ -94,16 +95,12 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     public static String normalizeInternalName(String internalName) {
-        String normalized = internalName.replace('\\', '/');
-        return normalized.endsWith(".class")
-                ? normalized.substring(0, normalized.length() - 6)
-                : normalized;
+        return ClassNameUtil.normalizeInternalName(internalName);
     }
 
     /** 从内部名称中提取简单类名(例如 "com/example/Foo" → "Foo") */
     public static String simpleName(String internalName) {
-        int idx = internalName.lastIndexOf('/');
-        return idx >= 0 ? internalName.substring(idx + 1) : internalName;
+        return ClassNameUtil.simpleName(internalName);
     }
 
     public byte[] getClassBytes(String internalName) {

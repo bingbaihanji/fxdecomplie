@@ -8,14 +8,12 @@ import com.bingbaihanji.fxdecomplie.decompiler.VineflowerParameters;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
+import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.theme.ThemeManager;
 import com.bingbaihanji.util.I18nUtil;
-import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -46,13 +44,7 @@ public final class SettingsDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("menu.edit.settings"));
         dialog.setHeaderText(null);
-        dialog.setOnShown(e -> Platform.runLater(() -> {
-            var window = dialog.getDialogPane().getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(window);
-            if (window instanceof Stage s) {
-                IconHelper.setStageIcon(s);
-            }
-        }));
+        DialogHelper.applyNativeStyle(dialog);
 
         TabPane tabPane = new TabPane();
 
@@ -229,6 +221,8 @@ public final class SettingsDialog {
                     alert.setHeaderText(null);
                     alert.setContentText(I18nUtil.getString("settings.editorTheme.invalidJson",
                             ex.getMessage()));
+                    alert.initOwner(dialog.getDialogPane().getScene().getWindow());
+                    DialogHelper.applyNativeStyle(alert);
                     alert.showAndWait();
                 }
             }
@@ -265,6 +259,8 @@ public final class SettingsDialog {
             confirm.setHeaderText(null);
             confirm.setContentText(I18nUtil.getString("settings.editorTheme.deleteConfirm",
                     selectedTheme));
+            confirm.initOwner(dialog.getDialogPane().getScene().getWindow());
+            DialogHelper.applyNativeStyle(confirm);
             confirm.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
                     ThemeManager.deleteExternalTheme(selectedTheme);
@@ -654,7 +650,9 @@ public final class SettingsDialog {
 
     private static String getActiveEngineName(TabPane engineTabPane) {
         Tab selected = engineTabPane.getSelectionModel().getSelectedItem();
-        if (selected == null) return "VINEFLOWER";
+        if (selected == null) {
+            return "VINEFLOWER";
+        }
         return switch (selected.getText()) {
             case "CFR" -> "CFR";
             case "Procyon" -> "PROCYON";

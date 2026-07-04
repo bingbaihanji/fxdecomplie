@@ -94,6 +94,14 @@ public final class ClassIndexEntry {
         return fields;
     }
 
+    /**
+     * 懒加载并缓存字节码文本表示。
+     *
+     * <p>使用双重检查锁定保证线程安全。仅缓存成功结果；
+     * 加载失败时不缓存（返回回退摘要），允许后续调用重试。</p>
+     *
+     * @return ASM Textifier 格式的字节码文本，失败时返回 ClassFileParser 摘要
+     */
     public String bytecodeText() {
         String current = bytecodeText;
         if (current != null) {
@@ -102,7 +110,11 @@ public final class ClassIndexEntry {
         synchronized (this) {
             if (bytecodeText == null) {
                 byte[] bytes = bytes();
-                bytecodeText = bytes == null ? "" : toBytecodeText(bytes);
+                if (bytes == null) {
+                    // 不缓存失败结果，后续调用可重试
+                    return ClassFileParser.summary(new byte[0]);
+                }
+                bytecodeText = toBytecodeText(bytes);
             }
             return bytecodeText;
         }

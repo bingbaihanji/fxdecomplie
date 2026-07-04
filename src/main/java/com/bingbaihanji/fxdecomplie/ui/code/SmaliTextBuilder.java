@@ -89,10 +89,10 @@ final class SmaliTextBuilder extends ClassVisitor {
             case Opcodes.LCONST_0 -> "const-wide/16 v0, 0x0";
             case Opcodes.LCONST_1 -> "const-wide/16 v0, 0x1";
             case Opcodes.FCONST_0 -> "const/4 v0, 0x0";
-            case Opcodes.FCONST_1 -> "const/4 v0, 0x1";
+            case Opcodes.FCONST_1 -> "const/high16 v0, 0x3f800000"; // float 1.0f bit pattern
             case Opcodes.FCONST_2 -> "const/high16 v0, 0x40000000";
             case Opcodes.DCONST_0 -> "const-wide/16 v0, 0x0";
-            case Opcodes.DCONST_1 -> "const-wide/16 v0, 0x1";
+            case Opcodes.DCONST_1 -> "const-wide/high16 v0, 0x3ff0000000000000"; // double 1.0 bit pattern
             case Opcodes.IALOAD -> "aget v0, v0, v1";
             case Opcodes.LALOAD -> "aget-wide v0, v0, v1";
             case Opcodes.FALOAD -> "aget v0, v0, v1";

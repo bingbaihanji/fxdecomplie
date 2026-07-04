@@ -121,11 +121,28 @@ public final class BracketHighlighter {
 
     // ---- 核心扫描逻辑 ----
 
-    /** 向前扫描匹配闭括号 */
+    /** 向前扫描匹配闭括号，跳过字符串字面量和注释中的括号 */
     private static int scanForward(String text, int start, char open, char close) {
         int depth = 1;
         for (int i = start + 1; i < text.length(); i++) {
             char c = text.charAt(i);
+            // 跳过字符串和字符字面量中的括号
+            if (c == '"' || c == '\'') {
+                i = skipQuoted(text, i, c) - 1;
+                continue;
+            }
+            // 跳过单行注释
+            if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '/') {
+                int end = text.indexOf('\n', i + 2);
+                i = end < 0 ? text.length() : end;
+                continue;
+            }
+            // 跳过多行注释
+            if (c == '/' && i + 1 < text.length() && text.charAt(i + 1) == '*') {
+                int end = text.indexOf("*/", i + 2);
+                i = end < 0 ? text.length() : end + 1;
+                continue;
+            }
             if (c == open) {
                 depth++;
             } else if (c == close) {
@@ -138,11 +155,31 @@ public final class BracketHighlighter {
         return -1;
     }
 
-    /** 向后扫描匹配开括号 */
+    /** 向后扫描匹配开括号，跳过字符串字面量和注释中的括号 */
     private static int scanBackward(String text, int start, char open, char close) {
         int depth = 1;
         for (int i = start - 1; i >= 0; i--) {
             char c = text.charAt(i);
+            // 向后扫描时检测字符串结束引号
+            if (c == '"' || c == '\'') {
+                i = skipQuotedBackward(text, i, c) + 1;
+                continue;
+            }
+            // 向后跳过多行注释结束标记
+            if (c == '/' && i - 1 >= 0 && text.charAt(i - 1) == '*') {
+                int end = text.lastIndexOf("/*", i - 2);
+                i = end < 0 ? -1 : end;
+                continue;
+            }
+            // 向后跳过单行注释（从行首到当前位置）
+            if (c == '\n') {
+                int lineStart = i + 1;
+                int commentStart = text.indexOf("//", lineStart);
+                if (commentStart >= 0 && commentStart < start) {
+                    i = lineStart;
+                    continue;
+                }
+            }
             if (c == close) {
                 depth++;
             } else if (c == open) {
@@ -153,6 +190,36 @@ public final class BracketHighlighter {
             }
         }
         return -1;
+    }
+
+    /** 向前跳过字符串/字符字面量 */
+    private static int skipQuoted(String text, int start, char quote) {
+        int i = start + 1;
+        while (i < text.length()) {
+            char c = text.charAt(i);
+            if (c == '\\') {
+                i += 2;
+                continue;
+            }
+            i++;
+            if (c == quote) {
+                break;
+            }
+        }
+        return Math.min(i, text.length());
+    }
+
+    /** 向后跳过字符串/字符字面量 */
+    private static int skipQuotedBackward(String text, int end, char quote) {
+        int i = end - 1;
+        while (i >= 0) {
+            char c = text.charAt(i);
+            if (c == quote && (i == 0 || text.charAt(i - 1) != '\\')) {
+                break;
+            }
+            i--;
+        }
+        return Math.max(i, -1);
     }
 
     /** 从闭括号反推开括号字符 */
@@ -215,7 +282,7 @@ public final class BracketHighlighter {
             return;
         }
         int docOffset = textPosToDocOffset(text, pos);
-        if (docOffset < 0 || docOffset >= text.length()) {
+        if (docOffset < 0 || docOffset > text.length()) {
             clearHighlight();
             return;
         }

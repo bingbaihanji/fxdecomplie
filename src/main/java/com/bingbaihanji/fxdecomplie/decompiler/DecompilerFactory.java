@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.decompiler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,6 +29,7 @@ public final class DecompilerFactory {
      * @return 引擎实例
      */
     public static Decompiler getDecompiler(DecompilerTypeEnum type) {
+        Objects.requireNonNull(type, "type");
         return CACHE.computeIfAbsent(type, t -> {
             log.info("创建反编译引擎实例: {}", t);
             Decompiler engine = switch (t) {

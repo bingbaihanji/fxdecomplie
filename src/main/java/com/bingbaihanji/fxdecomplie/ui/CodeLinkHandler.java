@@ -55,7 +55,7 @@ public final class CodeLinkHandler {
             if (event.getButton() == MouseButton.PRIMARY && event.isControlDown()) {
                 var pos = codeArea.getTextPosition(event.getScreenX(), event.getScreenY());
                 int line = pos == null ? codeArea.getCaretPosition().index() + 1 : pos.index() + 1;
-                String token = tokenAt(codeArea.getText(), pos);
+                String token = navigationTokenAt(codeArea.getText(), pos);
                 if (onTokenNavigate != null && !token.isBlank()) {
                     onTokenNavigate.accept(line, token);
                     event.consume();
@@ -88,31 +88,46 @@ public final class CodeLinkHandler {
         }
     }
 
+    /**
+     * 从行引用列表中选择与点击 token 匹配的引用。
+     *
+     * <p>匹配策略（按优先级）：
+     * <ol>
+     *   <li>完全限定名匹配（含内部类 $ 分隔）</li>
+     *   <li>简单类名匹配（仅最后一段）</li>
+     *   <li>无匹配时返回 null，避免导航到无关引用</li>
+     * </ol>
+     *
+     * @param refs  行上的所有类引用
+     * @param token 点击处的标识符（可能为 package.ClassName 形式）
+     * @return 匹配的引用，无匹配时返回 null
+     */
     private static CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs,
                                                           String token) {
         if (refs == null || refs.isEmpty()) {
             return null;
         }
         String cleanToken = sanitizeToken(token);
-        if (!cleanToken.isBlank()) {
-            String simpleToken = simpleName(cleanToken);
-            for (CodeMetadata.Reference ref : refs) {
-                if (ref.targetClass() == null) {
-                    continue;
-                }
-                String normalized = ref.targetClass().replace('.', '/');
-                if (ref.targetClass().equals(cleanToken)
-                        || normalized.equals(cleanToken.replace('.', '/'))
-                        || simpleName(normalized).equals(simpleToken)) {
-                    return ref;
-                }
-            }
-            return refs.getFirst();
+        if (cleanToken.isBlank()) {
+            return null;
         }
+        String simpleToken = simpleName(cleanToken);
+        for (CodeMetadata.Reference ref : refs) {
+            if (ref.targetClass() == null) {
+                continue;
+            }
+            String normalized = ref.targetClass().replace('.', '/');
+            if (ref.targetClass().equals(cleanToken)
+                    || normalized.equals(cleanToken.replace('.', '/'))
+                    || simpleName(normalized).equals(simpleToken)) {
+                return ref;
+            }
+        }
+        // 无精确匹配时不回退到第一个引用，避免导航到错误位置
         return null;
     }
 
-    private static String tokenAt(String text, TextPos pos) {
+    public static String navigationTokenAt(String text, TextPos pos) {
         if (text == null || text.isEmpty() || pos == null) {
             return "";
         }
@@ -120,15 +135,36 @@ public final class CodeLinkHandler {
         if (offset < 0 || offset > text.length()) {
             return "";
         }
-        int start = offset;
-        while (start > 0 && isJavaNameChar(text.charAt(start - 1))) {
-            start--;
+        int probe = offset;
+        if (probe >= text.length() || !isJavaIdentifierSegmentChar(text.charAt(probe))) {
+            if (probe > 0 && isJavaIdentifierSegmentChar(text.charAt(probe - 1))) {
+                probe--;
+            } else {
+                return "";
+            }
         }
-        int end = offset;
-        while (end < text.length() && isJavaNameChar(text.charAt(end))) {
-            end++;
+        int segmentStart = probe;
+        while (segmentStart > 0 && isJavaIdentifierSegmentChar(text.charAt(segmentStart - 1))) {
+            segmentStart--;
         }
-        return start < end ? text.substring(start, end) : "";
+        int segmentEnd = probe + 1;
+        while (segmentEnd < text.length() && isJavaIdentifierSegmentChar(text.charAt(segmentEnd))) {
+            segmentEnd++;
+        }
+
+        int qualifiedStart = segmentStart;
+        while (qualifiedStart > 0 && isJavaNameChar(text.charAt(qualifiedStart - 1))) {
+            qualifiedStart--;
+        }
+        int qualifiedEnd = segmentEnd;
+        while (qualifiedEnd < text.length() && isJavaNameChar(text.charAt(qualifiedEnd))) {
+            qualifiedEnd++;
+        }
+
+        String qualified = text.substring(qualifiedStart, qualifiedEnd);
+        int localSegmentStart = segmentStart - qualifiedStart;
+        int localSegmentEnd = segmentEnd - qualifiedStart;
+        return selectNavigationToken(qualified, localSegmentStart, localSegmentEnd);
     }
 
     private static int flatOffset(String text, TextPos pos) {
@@ -151,6 +187,103 @@ public final class CodeLinkHandler {
 
     private static boolean isJavaNameChar(char ch) {
         return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$';
+    }
+
+    private static boolean isJavaIdentifierSegmentChar(char ch) {
+        return Character.isJavaIdentifierPart(ch) || ch == '$';
+    }
+
+    private static String selectNavigationToken(String qualified, int segmentStart,
+                                                int segmentEnd) {
+        if (qualified == null || segmentStart < 0 || segmentEnd <= segmentStart
+                || segmentEnd > qualified.length()) {
+            return "";
+        }
+        String segment = qualified.substring(segmentStart, segmentEnd);
+        if (qualified.indexOf('.') < 0) {
+            return segment;
+        }
+        String ownerPrefix = qualified.substring(0, segmentStart);
+        if (ownerPrefix.endsWith("this.") || ownerPrefix.endsWith("super.")) {
+            return segment;
+        }
+        if (isClassNameSegment(segment)) {
+            String ownerClass = ownerClassReference(ownerPrefix);
+            if (!ownerClass.isBlank() && isLikelyStaticMemberSegment(segment)) {
+                return ownerClass;
+            }
+            String classRef = qualified.substring(0, segmentEnd);
+            if (looksLikeQualifiedClassReference(classRef)) {
+                return classRef;
+            }
+        }
+        return segment;
+    }
+
+    private static boolean looksLikeQualifiedClassReference(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        String[] parts = token.split("\\.");
+        boolean classSegmentSeen = false;
+        for (String part : parts) {
+            if (part.isBlank()) {
+                return false;
+            }
+            if (!classSegmentSeen) {
+                if (isClassNameSegment(part)) {
+                    classSegmentSeen = true;
+                } else if (!isPackageNameSegment(part)) {
+                    return false;
+                }
+            } else if (!isClassNameSegment(part)) {
+                return false;
+            }
+        }
+        return classSegmentSeen;
+    }
+
+    private static String ownerClassReference(String ownerPrefix) {
+        if (ownerPrefix == null || ownerPrefix.isBlank()) {
+            return "";
+        }
+        String owner = ownerPrefix.endsWith(".")
+                ? ownerPrefix.substring(0, ownerPrefix.length() - 1) : ownerPrefix;
+        return looksLikeQualifiedClassReference(owner) ? owner : "";
+    }
+
+    private static boolean isClassNameSegment(String segment) {
+        if (segment == null || segment.isBlank()) {
+            return false;
+        }
+        char first = segment.charAt(0);
+        return Character.isUpperCase(first) || first == '_' || first == '$';
+    }
+
+    private static boolean isPackageNameSegment(String segment) {
+        return segment != null && !segment.isBlank()
+                && Character.isLowerCase(segment.charAt(0));
+    }
+
+    private static boolean isLikelyStaticMemberSegment(String segment) {
+        if (segment == null || segment.isBlank()) {
+            return false;
+        }
+        boolean hasLetter = false;
+        for (int i = 0; i < segment.length(); i++) {
+            char ch = segment.charAt(i);
+            if (Character.isLetter(ch)) {
+                hasLetter = true;
+                if (Character.isLowerCase(ch)) {
+                    return false;
+                }
+                continue;
+            }
+            if (!Character.isDigit(ch) && ch != '_' && ch != '$') {
+                return false;
+            }
+        }
+        return hasLetter;
     }
 
     private static String sanitizeToken(String token) {
