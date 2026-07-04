@@ -20,7 +20,7 @@ import java.util.*;
  */
 public final class UsageSearchService {
 
-    private static final Logger logger = LoggerFactory.getLogger(UsageSearchService.class);
+    private static final Logger log = LoggerFactory.getLogger(UsageSearchService.class);
 
     private UsageSearchService() {
         throw new AssertionError("utility class");
@@ -155,7 +155,7 @@ public final class UsageSearchService {
                 }
             }, ClassReader.SKIP_FRAMES);
         } catch (Exception e) {
-            logger.debug("ASM 扫描类体失败: {}", cls.fullPath(), e);
+            log.debug("ASM 扫描类体失败: {}", cls.fullPath(), e);
         }
     }
 

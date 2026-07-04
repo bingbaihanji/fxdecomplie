@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  */
 public final class ThemeManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(ThemeManager.class);
+    private static final Logger log = LoggerFactory.getLogger(ThemeManager.class);
 
     /** 内置暗色主题 classpath 资源路径 */
     private static final String DARK_PLUS_RESOURCE =
@@ -49,7 +49,7 @@ public final class ThemeManager {
         try {
             Files.createDirectories(dir);
         } catch (IOException e) {
-            logger.warn("创建 themes 目录失败: {}", dir, e);
+            log.warn("创建 themes 目录失败: {}", dir, e);
         }
         return dir;
     }
@@ -72,7 +72,7 @@ public final class ThemeManager {
                     })
                     .forEach(names::add);
         } catch (IOException e) {
-            logger.warn("扫描外部主题目录失败: {}", dir, e);
+            log.warn("扫描外部主题目录失败: {}", dir, e);
         }
         Collections.sort(names);
         return names;
@@ -98,10 +98,10 @@ public final class ThemeManager {
             try {
                 return VsCodeThemeLoader.load(file);
             } catch (IOException | RuntimeException e) {
-                logger.warn("加载外部主题失败 [{}]，回退到 Dark+", themeName, e);
+                log.warn("加载外部主题失败 [{}]，回退到 Dark+", themeName, e);
             }
         } else {
-            logger.warn("外部主题文件不存在 [{}]，回退到 Dark+", file);
+            log.warn("外部主题文件不存在 [{}]，回退到 Dark+", file);
         }
         return loadBuiltinDarkPlus();
     }
@@ -134,7 +134,7 @@ public final class ThemeManager {
         }
 
         Files.copy(sourceFile, dest, StandardCopyOption.REPLACE_EXISTING);
-        logger.info("已导入外部主题: {} → {}", sourceFile, dest);
+        log.info("已导入外部主题: {} → {}", sourceFile, dest);
         return resolvedName;
     }
 
@@ -157,7 +157,7 @@ public final class ThemeManager {
             }
             Files.copy(source, targetFile, StandardCopyOption.REPLACE_EXISTING);
         }
-        logger.info("已导出主题 [{}] 到: {}", themeName, targetFile);
+        log.info("已导出主题 [{}] 到: {}", themeName, targetFile);
     }
 
     /**
@@ -167,18 +167,18 @@ public final class ThemeManager {
      */
     public static boolean deleteExternalTheme(String themeName) {
         if (themeName == null || themeName.isBlank() || "Dark+".equals(themeName)) {
-            logger.warn("不允许删除内置主题: {}", themeName);
+            log.warn("不允许删除内置主题: {}", themeName);
             return false;
         }
         Path file = themesDir().resolve(themeName + ".json");
         try {
             boolean deleted = Files.deleteIfExists(file);
             if (deleted) {
-                logger.info("已删除外部主题: {}", themeName);
+                log.info("已删除外部主题: {}", themeName);
             }
             return deleted;
         } catch (IOException e) {
-            logger.warn("删除外部主题失败: {}", themeName, e);
+            log.warn("删除外部主题失败: {}", themeName, e);
             return false;
         }
     }
@@ -187,7 +187,7 @@ public final class ThemeManager {
         try {
             return VsCodeThemeLoader.loadResource(DARK_PLUS_RESOURCE);
         } catch (IOException | RuntimeException e) {
-            logger.warn("加载内置 Dark+ 失败，使用硬编码默认值", e);
+            log.warn("加载内置 Dark+ 失败，使用硬编码默认值", e);
             return VsCodeThemeLoader.defaultDark();
         }
     }

@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class CfrDecompiler implements Decompiler {
 
-    private static final Logger logger = LoggerFactory.getLogger(CfrDecompiler.class);
+    private static final Logger log = LoggerFactory.getLogger(CfrDecompiler.class);
 
     /** CFR 默认反编译选项 */
     private static final Map<String, String> DEFAULT_OPTIONS = createDefaultOptions();
@@ -164,17 +164,17 @@ public class CfrDecompiler implements Decompiler {
                 .withOptions(options)
                 .build();
 
-        logger.debug("CFR decompile: class={}, options={}", typeName, options.size());
+        log.debug("CFR decompile: class={}, options={}", typeName, options.size());
         long start = System.currentTimeMillis();
         driver.analyse(Collections.singletonList(typeName + ".class"));
 
         String decompiled = result.toString();
         long elapsed = System.currentTimeMillis() - start;
         if (decompiled.isEmpty()) {
-            logger.warn("CFR decompile returned empty: {} ({}ms)", typeName, elapsed);
+            log.warn("CFR decompile returned empty: {} ({}ms)", typeName, elapsed);
             return "// CFR decompile failed\n// Class: " + typeName;
         }
-        logger.debug("CFR decompile OK: {} ({}ms, {} chars)", typeName, elapsed, decompiled.length());
+        log.debug("CFR decompile OK: {} ({}ms, {} chars)", typeName, elapsed, decompiled.length());
         return decompiled;
     }
 

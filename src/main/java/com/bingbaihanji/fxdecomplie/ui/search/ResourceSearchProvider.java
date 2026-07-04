@@ -21,7 +21,7 @@ import java.util.Objects;
  */
 public class ResourceSearchProvider implements SearchProvider {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResourceSearchProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(ResourceSearchProvider.class);
     private static final int MAX_RESULTS = 500;
 
     private final Map<String, byte[]> resourceCache; // 路径 → 原始字节
@@ -48,7 +48,7 @@ public class ResourceSearchProvider implements SearchProvider {
                     }
                 }
             } catch (Exception ignored) {
-                logger.debug("跳过不可读资源(基本搜索)", ignored);
+                log.debug("跳过不可读资源(基本搜索)", ignored);
             }
         }
         return results;
@@ -80,7 +80,7 @@ public class ResourceSearchProvider implements SearchProvider {
                     }
                 }
             } catch (Exception ignored) {
-                logger.debug("跳过不可读资源(高级搜索)", ignored);
+                log.debug("跳过不可读资源(高级搜索)", ignored);
             }
         }
         return results;

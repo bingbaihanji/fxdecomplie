@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  */
 public final class WorkspaceLoader {
 
-    private static final Logger logger = LoggerFactory.getLogger(WorkspaceLoader.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkspaceLoader.class);
 
     private WorkspaceLoader() {
         throw new AssertionError("utility class");
@@ -43,7 +43,7 @@ public final class WorkspaceLoader {
                                  Consumer<Workspace> onSuccess,
                                  Consumer<String> onError) {
         String name = file.getName();
-        logger.info("开始加载文件: {} ({}), isDir={}", file.getAbsolutePath(),
+        log.info("开始加载文件: {} ({}), isDir={}", file.getAbsolutePath(),
                 file.length(), file.isDirectory());
         long loadStart = System.currentTimeMillis();
         BackgroundTasks.run("FileLoader-" + name, () -> {
@@ -51,7 +51,7 @@ public final class WorkspaceLoader {
                 // ---- 步骤 1: 扫描 JAR/ZIP/目录中的所有 .class 和资源条目 ----
                 long t1 = System.currentTimeMillis();
                 var entries = ClassDiscoverer.discover(file);
-                logger.info("文件扫描完成: {} -> {} 个条目 ({}ms)", name, entries.size(),
+                log.info("文件扫描完成: {} -> {} 个条目 ({}ms)", name, entries.size(),
                         System.currentTimeMillis() - t1);
                 // ---- 步骤 2: 构建带字节码缓存的层级文件树 ----
                 TreeItem<FileTreeNode> treeRoot = FileTreeBuilder.build(name, entries);
@@ -61,7 +61,7 @@ public final class WorkspaceLoader {
                 Workspace workspace = new Workspace(name, file, treeRoot, isArchive,
                         WorkspaceIndex.EMPTY, contentStamp);
                 long totalElapsed = System.currentTimeMillis() - loadStart;
-                logger.info("工作区创建完成: {} (archive={}, {}ms)", name, isArchive, totalElapsed);
+                log.info("工作区创建完成: {} (archive={}, {}ms)", name, isArchive, totalElapsed);
                 // ---- 步骤 4: 在 JavaFX 线程上通知 UI完整索引按需构建 ----
                 Platform.runLater(() -> {
                     if (onSuccess != null) {
@@ -72,7 +72,7 @@ public final class WorkspaceLoader {
             } catch (Exception e) {
                 long totalElapsed = System.currentTimeMillis() - loadStart;
                 String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-                logger.error("文件加载失败: {} ({}ms): {}", file.getAbsolutePath(), totalElapsed, msg, e);
+                log.error("文件加载失败: {} ({}ms): {}", file.getAbsolutePath(), totalElapsed, msg, e);
                 Platform.runLater(() -> {
                     if (onError != null) {
                         onError.accept(msg);
@@ -80,7 +80,7 @@ public final class WorkspaceLoader {
                 });
             } catch (Error e) {
                 // OOM / StackOverflow 等致命错误：通知 UI 后重新抛出以保留原始语义
-                logger.error("文件加载致命错误: {}: {}", file.getAbsolutePath(),
+                log.error("文件加载致命错误: {}: {}", file.getAbsolutePath(),
                         e.getClass().getSimpleName(), e);
                 Platform.runLater(() -> {
                     if (onError != null) {
@@ -123,7 +123,7 @@ public final class WorkspaceLoader {
                     values[1] += attrs.size();
                     values[2]++;
                 } catch (IOException e) {
-                    logger.debug("计算工作区内容指纹时跳过文件: {}", path, e);
+                    log.debug("计算工作区内容指纹时跳过文件: {}", path, e);
                 }
             });
         }

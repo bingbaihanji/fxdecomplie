@@ -8,7 +8,11 @@ import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +46,11 @@ public final class RenameService {
     public static final String TYPE_PARAM = "param";
     public static final String TYPE_IDENTIFIER = "identifier";
 
-    private static final Logger logger = LoggerFactory.getLogger(RenameService.class);
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Logger log = LoggerFactory.getLogger(RenameService.class);
+    private static final Gson GSON = new GsonBuilder()
+            .registerTypeAdapter(RenameEntry.class, new RenameEntryAdapter().nullSafe())
+            .setPrettyPrinting()
+            .create();
     private static final Type LIST_TYPE = new TypeToken<List<RenameEntry>>() {
     }.getType();
     private static final Pattern JAVA_ID = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*");
@@ -145,7 +152,11 @@ public final class RenameService {
                     continue;
                 }
                 if (normalized.oldName().equals(normalized.newName())) {
-                    if (list.removeIf(e -> sameKey(normalize(e), normalized))) {
+                    if (list.removeIf(e -> {
+                        RenameEntry existing = normalize(e);
+                        return sameKey(existing, normalized)
+                                || sameClassRenameTarget(existing, normalized);
+                    })) {
                         applied++;
                     }
                     continue;
@@ -168,8 +179,11 @@ public final class RenameService {
             if (applied == 0) {
                 return 0;
             }
+            if (!writeFile(workspaceHash, list)) {
+                return 0;
+            }
             MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
-            return writeFile(workspaceHash, list) ? applied : 0;
+            return applied;
         }
     }
 
@@ -202,8 +216,8 @@ public final class RenameService {
             result = dedupeClassRenames(result);
             MEMORY_CACHE.put(workspaceHash, List.copyOf(result));
             return result;
-        } catch (IOException | com.google.gson.JsonSyntaxException e) {
-            logger.debug("读取重命名文件失败: {}", file, e);
+        } catch (IOException | RuntimeException e) {
+            log.debug("读取重命名文件失败: {}", file, e);
             List<RenameEntry> cached = MEMORY_CACHE.get(workspaceHash);
             return cached == null ? new ArrayList<>() : new ArrayList<>(cached);
         }
@@ -229,8 +243,9 @@ public final class RenameService {
             RenameEntry normalized = normalize(entry);
             List<RenameEntry> list = loadAll(workspaceHash);
             list.removeIf(e -> sameKey(normalize(e), normalized));
-            MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
-            writeFile(workspaceHash, list);
+            if (writeFile(workspaceHash, list)) {
+                MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
+            }
         }
     }
 
@@ -258,7 +273,7 @@ public final class RenameService {
                 loadAll(workspaceHash);
                 return true;
             } catch (IOException e) {
-                logger.error("恢复重命名快照失败", e);
+                log.error("恢复重命名快照失败", e);
                 return false;
             }
         }
@@ -317,8 +332,10 @@ public final class RenameService {
             String original = normalizeInternalName(entry.className());
             String renamed = normalizeInternalName(renamedClassInternalName(
                     original, entry.oldName(), entry.newName()));
-            if (internalName.equals(renamed)
-                    || internalName.equals(renamed.replace('$', '/'))) {
+            if (sameInternalClassName(internalName, renamed)
+                    || internalName.equals(renamed.replace('$', '/'))
+                    || (!internalName.contains("/")
+                    && internalName.equals(visibleClassLeaf(renamed)))) {
                 return original;
             }
         }
@@ -861,10 +878,12 @@ public final class RenameService {
     private static boolean classEntryBelongsToCurrentSource(RenameEntry entry, String currentClass) {
         String target = normalizeInternalName(entry.className());
         String current = normalizeInternalName(currentClass);
+        String strippedTarget = stripContainerClassPrefix(target);
+        String strippedCurrent = stripContainerClassPrefix(current);
         return !target.isBlank() && !current.isBlank()
-                && (target.equals(current)
-                || target.startsWith(current + "$")
-                || current.startsWith(target + "$"));
+                && (strippedTarget.equals(strippedCurrent)
+                || strippedTarget.startsWith(strippedCurrent + "$")
+                || strippedCurrent.startsWith(strippedTarget + "$"));
     }
 
     private static String replaceDeclaredClassName(String sourceCode, String oldName, String newName) {
@@ -980,7 +999,7 @@ public final class RenameService {
         }
         String candidate = pkg + "/" + token;
         for (RenameEntry entry : classEntries) {
-            if (normalizeInternalName(entry.className()).equals(candidate)) {
+            if (sameInternalClassName(entry.className(), candidate)) {
                 return entry;
             }
         }
@@ -1037,7 +1056,7 @@ public final class RenameService {
         }
         String normalizedPrefix = normalizeInternalName(qualifiedPrefix);
         String target = normalizeInternalName(entry.className());
-        if (normalizedPrefix.equals(target)) {
+        if (sameInternalClassName(normalizedPrefix, target)) {
             return true;
         }
         return target.indexOf('$') >= 0
@@ -1343,7 +1362,7 @@ public final class RenameService {
         }
         String normalized = normalizeInternalName(internalName);
         String entryClass = normalizeInternalName(entry.className());
-        if (!entryClass.isBlank() && entryClass.equals(normalized)) {
+        if (!entryClass.isBlank() && sameInternalClassName(entryClass, normalized)) {
             return true;
         }
         return classEntryMatchesToken(entry, simpleClassName(normalized));
@@ -2197,6 +2216,39 @@ public final class RenameService {
         return normalized;
     }
 
+    private static boolean sameInternalClassName(String left, String right) {
+        String normalizedLeft = normalizeInternalName(left);
+        String normalizedRight = normalizeInternalName(right);
+        if (normalizedLeft.isBlank() || normalizedRight.isBlank()) {
+            return false;
+        }
+        if (normalizedLeft.equals(normalizedRight)) {
+            return true;
+        }
+        return stripContainerClassPrefix(normalizedLeft)
+                .equals(stripContainerClassPrefix(normalizedRight));
+    }
+
+    private static String stripContainerClassPrefix(String internalName) {
+        String normalized = internalName == null ? "" : internalName.replace('\\', '/');
+        String[] prefixes = {
+                "BOOT-INF/classes/",
+                "WEB-INF/classes/",
+                "APP-INF/classes/"
+        };
+        for (String prefix : prefixes) {
+            if (normalized.startsWith(prefix)) {
+                return normalized.substring(prefix.length());
+            }
+            String nested = "/" + prefix;
+            int index = normalized.indexOf(nested);
+            if (index >= 0) {
+                return normalized.substring(index + nested.length());
+            }
+        }
+        return normalized;
+    }
+
     private static String simpleClassName(String internalName) {
         if (internalName == null || internalName.isBlank()) {
             return "";
@@ -2243,12 +2295,12 @@ public final class RenameService {
                 Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
             }
             return true;
-        } catch (IOException e) {
-            logger.error("保存重命名失败", e);
+        } catch (IOException | RuntimeException e) {
+            log.error("保存重命名失败", e);
             try {
                 Files.deleteIfExists(tmp);
             } catch (IOException cleanupError) {
-                logger.debug("清理重命名临时文件失败: {}", tmp, cleanupError);
+                log.debug("清理重命名临时文件失败: {}", tmp, cleanupError);
             }
             return false;
         }
@@ -2262,7 +2314,7 @@ public final class RenameService {
         try {
             Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            logger.debug("创建重命名快照失败: {}", backup, e);
+            log.debug("创建重命名快照失败: {}", backup, e);
         }
     }
 
@@ -2331,6 +2383,50 @@ public final class RenameService {
 
         private int paramCount() {
             return params.size();
+        }
+    }
+
+    private static final class RenameEntryAdapter extends TypeAdapter<RenameEntry> {
+        @Override
+        public void write(JsonWriter out, RenameEntry value) throws IOException {
+            out.beginObject();
+            out.name("type").value(value.type());
+            out.name("className").value(value.className());
+            out.name("oldName").value(value.oldName());
+            out.name("newName").value(value.newName());
+            out.name("desc").value(value.desc());
+            out.endObject();
+        }
+
+        @Override
+        public RenameEntry read(JsonReader in) throws IOException {
+            String type = "";
+            String className = "";
+            String oldName = "";
+            String newName = "";
+            String desc = "";
+            in.beginObject();
+            while (in.hasNext()) {
+                String name = in.nextName();
+                switch (name) {
+                    case "type" -> type = nextString(in);
+                    case "className" -> className = nextString(in);
+                    case "oldName" -> oldName = nextString(in);
+                    case "newName" -> newName = nextString(in);
+                    case "desc" -> desc = nextString(in);
+                    default -> in.skipValue();
+                }
+            }
+            in.endObject();
+            return new RenameEntry(type, className, oldName, newName, desc);
+        }
+
+        private String nextString(JsonReader in) throws IOException {
+            if (in.peek() == JsonToken.NULL) {
+                in.nextNull();
+                return "";
+            }
+            return in.nextString();
         }
     }
 }

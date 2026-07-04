@@ -35,6 +35,9 @@ public final class DeobfuscatePreviewDialog {
      * @return 用户确认的重命名列表（取消返回空列表）
      */
     public static List<RenameEntry> show(Stage owner, List<RenameEntry> suggestions) {
+        if (suggestions == null) {
+            suggestions = List.of();
+        }
         if (suggestions.isEmpty()) {
             Dialog<String> d = new Dialog<>();
             d.initOwner(owner);

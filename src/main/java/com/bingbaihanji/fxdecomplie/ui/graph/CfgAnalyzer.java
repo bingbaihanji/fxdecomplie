@@ -18,7 +18,7 @@ import java.util.*;
  */
 public final class CfgAnalyzer {
 
-    private static final Logger logger = LoggerFactory.getLogger(CfgAnalyzer.class);
+    private static final Logger log = LoggerFactory.getLogger(CfgAnalyzer.class);
     private static final int MAX_BLOCKS = 200;
 
     private CfgAnalyzer() {
@@ -60,7 +60,7 @@ public final class CfgAnalyzer {
             }
             return buildDot(cn.name, target);
         } catch (Exception e) {
-            logger.debug("CFG分析失败: {}", methodName, e);
+            log.debug("CFG分析失败: {}", methodName, e);
             return "digraph G { label=\"CFG error: " + escape(e.getMessage()) + "\" }";
         }
     }

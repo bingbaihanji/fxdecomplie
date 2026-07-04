@@ -26,7 +26,7 @@ import java.util.List;
  */
 public final class CommentManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(CommentManager.class);
+    private static final Logger log = LoggerFactory.getLogger(CommentManager.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {
     }.getType();
@@ -83,9 +83,9 @@ public final class CommentManager {
                 existing.add(comment);
             }
             writeFile(workspaceHash, comment.className(), existing);
-            logger.debug("注释已保存: {}#L{}", comment.className(), comment.line());
+            log.debug("注释已保存: {}#L{}", comment.className(), comment.line());
         } catch (Exception e) {
-            logger.error("保存注释失败", e);
+            log.error("保存注释失败", e);
         } finally {
             lock.unlock();
             // 不移除锁条目，防止 unlock→remove 窗口期其他线程创建新锁导致并发写
@@ -135,7 +135,7 @@ public final class CommentManager {
             }
             return removed;
         } catch (Exception e) {
-            logger.error("删除注释失败", e);
+            log.error("删除注释失败", e);
             return false;
         } finally {
             lock.unlock();
@@ -153,7 +153,7 @@ public final class CommentManager {
             List<CommentData> list = GSON.fromJson(json, COMMENT_LIST_TYPE);
             return list != null ? new ArrayList<>(list) : new ArrayList<>();
         } catch (IOException | com.google.gson.JsonSyntaxException e) {
-            logger.warn("读取注释文件失败，将视为空列表: {}", file, e);
+            log.warn("读取注释文件失败，将视为空列表: {}", file, e);
             return new ArrayList<>();
         }
     }

@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class FindUsageDialog {
 
-    private static final Logger logger = LoggerFactory.getLogger(FindUsageDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(FindUsageDialog.class);
 
     private FindUsageDialog() {
         throw new AssertionError("utility class");

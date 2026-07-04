@@ -19,7 +19,7 @@ import java.io.StringWriter;
  */
 public class ProcyonDecompiler implements Decompiler {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProcyonDecompiler.class);
+    private static final Logger log = LoggerFactory.getLogger(ProcyonDecompiler.class);
 
     private static void applyOptions(DecompilerSettings settings, DecompilerContext context) {
         if (context == null || !context.hasOptions()) {
@@ -104,17 +104,17 @@ public class ProcyonDecompiler implements Decompiler {
         localSettings.setPreviewFeaturesEnabled(true);
         applyOptions(localSettings, effectiveContext);
 
-        logger.debug("Procyon decompile: class={}", internalName);
+        log.debug("Procyon decompile: class={}", internalName);
         long start = System.currentTimeMillis();
         MetadataSystem metadataSystem = new MetadataSystem(localSettings.getTypeLoader());
         TypeReference type = metadataSystem.lookupType(internalName);
         if (type == null) {
-            logger.warn("Procyon lookupType returned null: {}", internalName);
+            log.warn("Procyon lookupType returned null: {}", internalName);
             return "// Procyon decompile failed\n// Class: " + internalName;
         }
         TypeDefinition resolvedType = type.resolve();
         if (resolvedType == null) {
-            logger.warn("Procyon resolve returned null: {}", internalName);
+            log.warn("Procyon resolve returned null: {}", internalName);
             return "// Procyon decompile failed\n// Class: " + internalName;
         }
 
@@ -127,11 +127,11 @@ public class ProcyonDecompiler implements Decompiler {
             localSettings.getLanguage().decompileType(resolvedType, output, options);
             String result = writer.toString();
             long elapsed = System.currentTimeMillis() - start;
-            logger.debug("Procyon decompile OK: {} ({}ms, {} chars)", internalName, elapsed, result.length());
+            log.debug("Procyon decompile OK: {} ({}ms, {} chars)", internalName, elapsed, result.length());
             return result;
         } catch (IOException e) {
             long elapsed = System.currentTimeMillis() - start;
-            logger.error("Procyon decompile failed: {} ({}ms): {}", internalName, elapsed, e.getMessage());
+            log.error("Procyon decompile failed: {} ({}ms): {}", internalName, elapsed, e.getMessage());
             return "// Procyon decompile failed\n// Class: " + internalName + "\n// Error: " + e.getMessage();
         }
     }

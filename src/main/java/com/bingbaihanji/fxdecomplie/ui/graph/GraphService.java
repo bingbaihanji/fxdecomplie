@@ -19,7 +19,7 @@ import java.util.*;
  */
 public final class GraphService {
 
-    private static final Logger logger = LoggerFactory.getLogger(GraphService.class);
+    private static final Logger log = LoggerFactory.getLogger(GraphService.class);
 
     /** 方法图节点数上限 */
     private static final int MAX_METHOD_NODES = 300;
@@ -180,7 +180,7 @@ public final class GraphService {
             reader.accept(collector, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
             return collector.build();
         } catch (Exception e) {
-            logger.debug("解析方法调用失败", e);
+            log.debug("解析方法调用失败", e);
             return new MethodGraph("", List.of(), Set.of());
         }
     }

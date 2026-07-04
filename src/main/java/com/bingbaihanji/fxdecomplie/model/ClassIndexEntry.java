@@ -19,7 +19,7 @@ import java.util.Objects;
  */
 public final class ClassIndexEntry {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClassIndexEntry.class);
+    private static final Logger log = LoggerFactory.getLogger(ClassIndexEntry.class);
 
     private final String fullPath;
     private final String internalName;
@@ -81,7 +81,7 @@ public final class ClassIndexEntry {
         try {
             return byteLoader.load();
         } catch (IOException e) {
-            LOGGER.debug("加载字节失败: {}", fullPath, e);
+            log.debug("加载字节失败: {}", fullPath, e);
             return null;
         }
     }

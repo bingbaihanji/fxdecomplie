@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class IconHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(IconHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(IconHelper.class);
     private static final String LOGO_PATH = "/icon/logo.png";
     private static Image cachedLogo;
 
@@ -40,7 +40,7 @@ public final class IconHelper {
                     cachedLogo = new Image(stream);
                 }
             } catch (Exception ignored) {
-                logger.debug("加载 Logo 图标失败", ignored);
+                log.debug("加载 Logo 图标失败", ignored);
             }
         }
         return cachedLogo;

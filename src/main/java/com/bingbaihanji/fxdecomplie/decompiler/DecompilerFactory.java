@@ -16,7 +16,7 @@ public final class DecompilerFactory {
     /** 引擎单例缓存,按类型索引 */
     private static final ConcurrentHashMap<DecompilerTypeEnum, Decompiler> CACHE = new ConcurrentHashMap<>();
 
-    private static final Logger logger = LoggerFactory.getLogger(DecompilerFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(DecompilerFactory.class);
 
     private DecompilerFactory() {
         throw new AssertionError("utility class");
@@ -29,7 +29,7 @@ public final class DecompilerFactory {
      */
     public static Decompiler getDecompiler(DecompilerTypeEnum type) {
         return CACHE.computeIfAbsent(type, t -> {
-            logger.info("创建反编译引擎实例: {}", t);
+            log.info("创建反编译引擎实例: {}", t);
             Decompiler engine = switch (t) {
                 case PROCYON -> new ProcyonDecompiler();
                 case CFR -> new CfrDecompiler();
@@ -37,7 +37,7 @@ public final class DecompilerFactory {
                 case JD -> new JdDecompiler();
             };
             engine.initialize();
-            logger.info("反编译引擎初始化完成: {} ({})", t, engine.getName());
+            log.info("反编译引擎初始化完成: {} ({})", t, engine.getName());
             return engine;
         });
     }
@@ -48,7 +48,7 @@ public final class DecompilerFactory {
             try {
                 engine.cleanup();
             } catch (Exception e) {
-                logger.warn("清理反编译引擎失败: {}", engine.getType(), e);
+                log.warn("清理反编译引擎失败: {}", engine.getType(), e);
             }
         });
         CACHE.clear();

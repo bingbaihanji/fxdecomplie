@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
@@ -23,7 +25,7 @@ import java.util.List;
  */
 public final class DiskCodeCache {
 
-    private static final Logger logger = LoggerFactory.getLogger(DiskCodeCache.class);
+    private static final Logger log = LoggerFactory.getLogger(DiskCodeCache.class);
 
     private static final Path CACHE_ROOT = AppConfig.appDir().resolve("cache");
 
@@ -53,7 +55,7 @@ public final class DiskCodeCache {
             // 零字节文件（写入时崩溃/断电残留）视为缓存未命中，触发重新反编译
             return content.isEmpty() ? null : content;
         } catch (IOException e) {
-            logger.debug("加载磁盘代码缓存失败: {}", file, e);
+            log.debug("加载磁盘代码缓存失败: {}", file, e);
             return null;
         }
     }
@@ -66,12 +68,27 @@ public final class DiskCodeCache {
     public static void save(String workspaceHash, String internalName,
                             DecompilerTypeEnum engine, String optionsHash,
                             String sourceCode) {
+        Path tmp = null;
         try {
             Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
+            tmp = file.resolveSibling(file.getFileName() + ".tmp");
             Files.createDirectories(file.getParent());
-            Files.writeString(file, sourceCode, StandardCharsets.UTF_8);
+            Files.writeString(tmp, sourceCode == null ? "" : sourceCode, StandardCharsets.UTF_8);
+            try {
+                Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException e) {
-            logger.debug("保存磁盘代码缓存失败: {}/{}", workspaceHash, internalName, e);
+            log.debug("保存磁盘代码缓存失败: {}/{}", workspaceHash, internalName, e);
+            if (tmp != null) {
+                try {
+                    Files.deleteIfExists(tmp);
+                } catch (IOException cleanupError) {
+                    log.debug("清理磁盘代码缓存临时文件失败: {}", tmp, cleanupError);
+                }
+            }
         }
     }
 
@@ -141,11 +158,11 @@ public final class DiskCodeCache {
                         }).sum();
             }
             if (totalSize <= MAX_CACHE_SIZE_BYTES) {
-                logger.debug("磁盘缓存大小: {} MB (阈值 {} MB), 无需清理",
+                log.debug("磁盘缓存大小: {} MB (阈值 {} MB), 无需清理",
                         totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
                 return;
             }
-            logger.info("磁盘缓存超过阈值: {} MB > {} MB, 开始清理",
+            log.info("磁盘缓存超过阈值: {} MB > {} MB, 开始清理",
                     totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
             // 第二遍扫描:收集、按时间排序,删除最旧的直至低于目标大小
             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
@@ -174,7 +191,7 @@ public final class DiskCodeCache {
                 } catch (IOException ignored) {
                 }
             }
-            logger.info("磁盘缓存清理完成: 删除 {} 个文件, 剩余 {} MB",
+            log.info("磁盘缓存清理完成: 删除 {} 个文件, 剩余 {} MB",
                     deleted, totalSize / (1024 * 1024));
         } catch (IOException ignored) {
         }

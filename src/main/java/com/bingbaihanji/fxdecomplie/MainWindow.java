@@ -58,7 +58,7 @@ import java.util.regex.Pattern;
  */
 public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(MainWindow.class);
+    private static final Logger log = LoggerFactory.getLogger(MainWindow.class);
     private static final Pattern IMPORT_PATTERN = Pattern.compile(
             "^\\s*import\\s+(static\\s+)?([\\w.$]+|[\\w.]+\\.\\*)\\s*;\\s*$");
 
@@ -651,7 +651,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     showExportResult(exportConfig, result);
                 });
             } catch (java.io.IOException ex) {
-                logger.error("导出失败", ex);
+                log.error("导出失败", ex);
                 final boolean cancelled = exportCanceled.get();
                 Platform.runLater(() -> {
                     progressHandle.close();
@@ -666,7 +666,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                             I18nUtil.getString("dialog.export.failed", ex.getMessage()));
                 });
             } catch (Exception ex) {
-                logger.error("导出失败", ex);
+                log.error("导出失败", ex);
                 final boolean cancelled = exportCanceled.get();
                 Platform.runLater(() -> {
                     progressHandle.close();
@@ -799,7 +799,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (currentEngine == engine) {
             return;
         }
-        logger.info("切换反编译引擎: {} -> {}", currentEngine, engine);
+        log.info("切换反编译引擎: {} -> {}", currentEngine, engine);
         currentEngine = engine;
         config.decompiler().defaultEngine(engine);
         if (menuBar != null) {
@@ -947,7 +947,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 : context.workspaceIndex();
         statusBar.setTask(I18nUtil.getString("task.loading"));
         statusBar.setFilePath(I18nUtil.getString("graph.building", fullPath));
-        logger.info("请求查看继承图: {}", fullPath);
+        log.info("请求查看继承图: {}", fullPath);
         GraphDialog dialog = new GraphDialog(stage,
                 I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath);
         dialog.show();
@@ -975,7 +975,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     dialog.showDot(dot);
                 });
             } catch (Exception e) {
-                logger.error("查看继承图失败: {}", fullPath, e);
+                log.error("查看继承图失败: {}", fullPath, e);
                 Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
             }
         });
@@ -1021,7 +1021,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 Platform.runLater(() -> dialog.showDot(dot));
                 Platform.runLater(statusBar::clearTask);
             } catch (Exception e) {
-                logger.error("CFG生成失败", e);
+                log.error("CFG生成失败", e);
                 Platform.runLater(() -> {
                     showGraphFailed(dialog, null, e);
                     statusBar.clearTask();
@@ -1042,7 +1042,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         statusBar.setTask(I18nUtil.getString("task.loading"));
         statusBar.setFilePath(I18nUtil.getString("graph.building", fullPath));
-        logger.info("请求查看方法图: {}", fullPath);
+        log.info("请求查看方法图: {}", fullPath);
         GraphDialog dialog = new GraphDialog(stage,
                 I18nUtil.getString("context.methodGraph") + " - " + fullPath);
         dialog.show();
@@ -1064,7 +1064,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                     dialog.showDot(dot);
                 });
             } catch (Exception e) {
-                logger.error("查看方法图失败: {}", fullPath, e);
+                log.error("查看方法图失败: {}", fullPath, e);
                 Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
             }
         });
@@ -1256,7 +1256,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         int changedTabs = refreshOpenTabsAfterRename(context.workspace(), wsHash, visibleEntry, codeTab);
         refreshWorkspaceTree(context.workspace());
         int totalChangedTabs = changedTabs + (java.util.Objects.equals(currentRenamedSource, text) ? 0 : 1);
-        logger.info("重命名完成: type={}, class={}, old={}, new={}, changedTabs={}",
+        log.info("重命名完成: type={}, class={}, old={}, new={}, changedTabs={}",
                 baseEntry.type(), baseEntry.className(), oldName, newName, totalChangedTabs);
         if (totalChangedTabs == 0) {
             statusBar.setFilePath((saved ? "Rename saved" : "Rename memory-only")
@@ -1840,46 +1840,65 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return;
         }
         Workspace workspace = view.workspace();
-        logger.info("deobfuscate: starting, workspace={}", workspace.getName());
+        log.info("deobfuscate: starting, workspace={}", workspace.getName());
+        java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
+        collectTreeNodes(workspace.getTreeRoot(), nodesSnapshot);
+        long classNodeCount = nodesSnapshot.stream().filter(FileTreeNode::isClassFile).count();
         statusBar.setTask("Deobfuscating");
         statusBar.setFilePath("Scanning obfuscated names...");
-        BackgroundTasks.run("Deobfuscate", () -> {
-            try {
-                java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions =
-                        com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.scan(workspace);
-                logger.info("deobfuscate: scan returned {} suggestions", suggestions.size());
-                Platform.runLater(() -> showDeobfuscatePreview(workspace, suggestions));
-            } catch (Exception ex) {
-                logger.error("反混淆扫描失败", ex);
-                Platform.runLater(() -> {
-                    statusBar.clearTask();
-                    showError(I18nUtil.getString("dialog.error.title"),
-                            "Deobfuscate failed: " + ex.getMessage());
-                });
+        try {
+            WorkspaceIndex index = workspace.isIndexReady()
+                    ? workspace.getIndex()
+                    : WorkspaceIndex.EMPTY;
+            java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions =
+                    com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.scan(nodesSnapshot, index);
+            boolean memberScanComplete = index != WorkspaceIndex.EMPTY;
+            log.info("deobfuscate: scan returned {} suggestions (nodes={}, memberScanComplete={})",
+                    suggestions.size(), nodesSnapshot.size(), memberScanComplete);
+            if (!memberScanComplete) {
+                WorkspaceIndexService.ensureIndexingStarted(workspace);
             }
-        });
+            showDeobfuscatePreview(workspace, suggestions, memberScanComplete, classNodeCount);
+        } catch (Exception ex) {
+            log.error("反混淆扫描失败", ex);
+            statusBar.clearTask();
+            showError(I18nUtil.getString("dialog.error.title"),
+                    "Deobfuscate failed: " + ex.getMessage());
+        }
     }
 
     private void showDeobfuscatePreview(Workspace workspace,
-                                        java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions) {
+                                        java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions,
+                                        boolean memberScanComplete,
+                                        long classNodeCount) {
         statusBar.clearTask();
-        logger.info("showDeobfuscatePreview: {} suggestions to show", suggestions.size());
-        for (var s : suggestions) {
-            logger.info("  suggestion: {} {} oldName={} -> newName={} className={}",
-                    s.type(), s.oldName(), s.newName(), s.className());
-        }
         if (suggestions == null || suggestions.isEmpty()) {
             com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog.show(stage, List.of());
+            if (!memberScanComplete) {
+                statusBar.setFilePath("No obfuscated names found in " + classNodeCount
+                        + " class nodes. Indexing continues for fields and methods.");
+            }
             return;
         }
+        log.info("showDeobfuscatePreview: {} suggestions to show", suggestions.size());
         String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                 .of(workspace, "").workspaceHash();
         java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> selected =
                 com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog.show(stage, suggestions);
-        logger.info("showDeobfuscatePreview: dialog returned {} selected entries", selected.size());
+        log.info("showDeobfuscatePreview: dialog returned {} selected entries", selected.size());
+        if (selected.isEmpty()) {
+            statusBar.setFilePath("Deobfuscate cancelled or no entries selected");
+            return;
+        }
         int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, selected);
+        if (saved == 0) {
+            statusBar.setFilePath("Deobfuscate failed: rename mapping was not saved");
+            showError(I18nUtil.getString("dialog.error.title"),
+                    "Deobfuscate failed: rename mapping was not saved.");
+            return;
+        }
         if (saved != selected.size()) {
-            logger.warn("反混淆批量保存未完全成功: selected={}, saved={}", selected.size(), saved);
+            log.warn("反混淆批量保存未完全成功: selected={}, saved={}", selected.size(), saved);
         }
         if (workspace != null) {
             workspace.clearSourceSearchCaches();
@@ -1889,7 +1908,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         refreshWorkspaceTree(workspace);
         statusBar.setFilePath("Deobfuscated: " + selected.size()
                 + " selected, " + saved + " saved, " + changedTabs
-                + " tabs patched, " + reloadTabs + " tabs reloaded");
+                + " tabs patched, " + reloadTabs + " tabs reloaded"
+                + (memberScanComplete ? "" : "; index still building for member names"));
     }
 
     @Override
@@ -1927,7 +1947,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             statusBar.setFilePath("Imported mapping: " + saved + " saved, "
                     + changedTabs + " tabs patched, " + reloadTabs + " tabs reloaded");
         } catch (java.io.IOException e) {
-            logger.error("导入 ProGuard mapping 失败", e);
+            log.error("导入 ProGuard mapping 失败", e);
             showError("Import ProGuard Mapping", e.getMessage());
         }
     }
@@ -1960,7 +1980,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             java.nio.file.Files.writeString(file.toPath(), mapping);
             statusBar.setFilePath("Exported mapping: " + file.getAbsolutePath());
         } catch (java.io.IOException e) {
-            logger.error("导出 ProGuard mapping 失败", e);
+            log.error("导出 ProGuard mapping 失败", e);
             showError("Export ProGuard Mapping", e.getMessage());
         }
     }
@@ -2203,7 +2223,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 new javafx.scene.control.Label(I18nUtil.getString("about.website")),
                 link);
         alert.getDialogPane().setContent(content);
-        logger.info("显示关于对话框");
+        log.info("显示关于对话框");
         alert.showAndWait();
     }
 
@@ -2339,7 +2359,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                                 statusBar.setFilePath(I18nUtil.getString(
                                         "status.navigatedTo", fullPath, lineNumber));
                             } catch (Exception ignored) {
-                                logger.debug("导航跳转行失败", ignored);
+                                log.debug("导航跳转行失败", ignored);
                             }
                             return;
                         }
@@ -2446,7 +2466,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 加载并打开文件 */
     private void loadFile(File file) {
-        logger.info("loadFile: {} (size={}, isDir={})", file.getAbsolutePath(),
+        log.info("loadFile: {} (size={}, isDir={})", file.getAbsolutePath(),
                 file.length(), file.isDirectory());
         statusBar.setFilePath(I18nUtil.getString("status.loading", file.getAbsolutePath()));
         statusBar.setTask(I18nUtil.getString("task.loading"));
@@ -2495,7 +2515,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
         ButtonType openOutput = new ButtonType(I18nUtil.getString("dialog.export.openOutput"));
         alert.getButtonTypes().add(openOutput);
-        logger.info("显示导出完成对话框: {}", message);
+        log.info("显示导出完成对话框: {}", message);
         if (details != null && !details.isEmpty()) {
             ButtonType copyDetails = new ButtonType(I18nUtil.getString("dialog.copyDetails"));
             alert.getButtonTypes().add(copyDetails);
@@ -2570,7 +2590,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         try {
             return workspace.getIndexFuture().get(60, java.util.concurrent.TimeUnit.SECONDS);
         } catch (Exception e) {
-            logger.debug("等待工作区索引超时或失败", e);
+            log.debug("等待工作区索引超时或失败", e);
             return WorkspaceIndex.EMPTY;
         }
     }

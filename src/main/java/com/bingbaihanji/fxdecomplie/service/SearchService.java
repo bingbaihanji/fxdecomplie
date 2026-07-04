@@ -3,6 +3,8 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import com.bingbaihanji.fxdecomplie.model.SearchResult;
 import com.bingbaihanji.fxdecomplie.model.SearchScope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
  * @date 2026-06-17
  */
 public class SearchService {
+
+    private static final Logger log = LoggerFactory.getLogger(SearchService.class);
 
     /** 已注册的搜索策略提供器,按插入顺序调用 */
     private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
@@ -99,7 +103,7 @@ public class SearchService {
         for (SearchProvider provider : providers) {
             if (Thread.currentThread().isInterrupted()) return List.of();
             if (all.size() >= globalSoftLimit) break;
-            List<SearchResult> results = provider.search(query, sourceCache);
+            List<SearchResult> results = searchProvider(provider, query, sourceCache, null);
             int providerAdded = 0;
             for (SearchResult result : results) {
                 if (all.size() >= globalSoftLimit || providerAdded >= perProviderQuota) {
@@ -152,7 +156,7 @@ public class SearchService {
             if (all.size() >= globalSoftLimit) {
                 break;
             }
-            List<SearchResult> results = provider.search(query, sourceCache, options);
+            List<SearchResult> results = searchProvider(provider, query, sourceCache, options);
             int providerAdded = 0;
             for (SearchResult result : results) {
                 if (all.size() >= globalSoftLimit || providerAdded >= perProviderQuota) {
@@ -175,5 +179,19 @@ public class SearchService {
             return Integer.compare(a.lineNumber(), b.lineNumber());
         });
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
+    }
+
+    private List<SearchResult> searchProvider(SearchProvider provider, String query,
+                                              Map<String, String> sourceCache,
+                                              SearchOptions options) {
+        try {
+            List<SearchResult> results = options == null
+                    ? provider.search(query, sourceCache)
+                    : provider.search(query, sourceCache, options);
+            return results == null ? List.of() : results;
+        } catch (RuntimeException e) {
+            log.warn("搜索提供器执行失败: {}", provider.getClass().getSimpleName(), e);
+            return List.of();
+        }
     }
 }

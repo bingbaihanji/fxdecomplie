@@ -18,7 +18,7 @@ import java.util.*;
  */
 public final class AutoDeobfuscator {
 
-    private static final Logger logger = LoggerFactory.getLogger(AutoDeobfuscator.class);
+    private static final Logger log = LoggerFactory.getLogger(AutoDeobfuscator.class);
 
     private static final int MIN_OBFUSCATED_LENGTH = 1;
     private static final int MAX_OBFUSCATED_LENGTH = 3;
@@ -53,12 +53,34 @@ public final class AutoDeobfuscator {
         if (workspace == null) {
             return Collections.emptyList();
         }
-        WorkspaceIndex index = workspace.getOrBuildIndex();
-        logger.info("scan(workspace): index has {} classes", index.classes().size());
-        List<RenameEntry> suggestions = new ArrayList<>(scan(index));
-        logger.info("scan(workspace): after scan(index), {} suggestions", suggestions.size());
-        mergeTreeClassSuggestions(workspace.getTreeRoot(), index, suggestions);
-        logger.info("scan(workspace): after mergeTreeClassSuggestions, {} suggestions total",
+        WorkspaceIndex index = workspace.isIndexReady()
+                ? workspace.getIndex()
+                : WorkspaceIndex.EMPTY;
+        List<FileTreeNode> nodes = new ArrayList<>();
+        collectNodes(workspace.getTreeRoot(), nodes);
+        List<RenameEntry> suggestions = scan(nodes, index);
+        log.info("scan(workspace): indexReady={}, indexClasses={}, treeClassSuggestions={}, totalSuggestions={}",
+                index != WorkspaceIndex.EMPTY,
+                index == WorkspaceIndex.EMPTY ? 0 : index.classes().size(),
+                suggestions.stream().filter(e -> RenameService.TYPE_CLASS.equals(e.type())).count(),
+                suggestions.size());
+        return suggestions;
+    }
+
+    /**
+     * 基于已复制的文件树节点快照扫描。调用方应在 JavaFX 线程复制 TreeItem，
+     * 后台线程只处理普通 FileTreeNode，避免后台访问 UI 树导致空结果或异常。
+     */
+    public static List<RenameEntry> scan(List<FileTreeNode> nodes, WorkspaceIndex index) {
+        WorkspaceIndex safeIndex = index == null ? WorkspaceIndex.EMPTY : index;
+        List<RenameEntry> suggestions = new ArrayList<>(
+                safeIndex == WorkspaceIndex.EMPTY ? List.of() : scan(safeIndex));
+        int beforeTreeMerge = suggestions.size();
+        mergeTreeClassSuggestions(nodes, safeIndex, suggestions);
+        log.info("scan(nodes): indexReady={}, nodes={}, treeClassSuggestions={}, totalSuggestions={}",
+                safeIndex != WorkspaceIndex.EMPTY,
+                nodes == null ? 0 : nodes.size(),
+                suggestions.size() - beforeTreeMerge,
                 suggestions.size());
         return suggestions;
     }
@@ -76,10 +98,10 @@ public final class AutoDeobfuscator {
         List<ClassIndexEntry> classes = index.classes().stream()
                 .sorted(Comparator.comparing(ClassIndexEntry::internalName))
                 .toList();
-        logger.info("AutoDeobfuscator.scan(index): {} classes in index", classes.size());
+        log.debug("AutoDeobfuscator.scan(index): {} classes in index", classes.size());
         for (ClassIndexEntry cls : classes) {
             if (shouldSkipClass(cls)) {
-                logger.debug("  skip class {} (shouldSkipClass)", cls.internalName());
+                log.debug("  skip class {} (shouldSkipClass)", cls.internalName());
                 continue;
             }
             String owner = cls.internalName();
@@ -87,11 +109,11 @@ public final class AutoDeobfuscator {
             if (shouldRenameClass(simple, owner, index)) {
                 String visibleName = visibleClassName(simple);
                 String newName = aliases.forClass(visibleName);
-                logger.info("  rename class: {} -> {} (internal={})", visibleName, newName, owner);
+                log.debug("  rename class: {} -> {} (internal={})", visibleName, newName, owner);
                 add(suggestions, emitted, new RenameEntry(
                         RenameService.TYPE_CLASS, owner, visibleName, newName, ""));
             } else {
-                logger.debug("  skip class {} (shouldRenameClass=false, simple={})", owner, simple);
+                log.debug("  skip class {} (shouldRenameClass=false, simple={})", owner, simple);
             }
 
             Set<String> usedNames = usedByClass.getOrDefault(owner, new HashSet<>());
@@ -157,23 +179,18 @@ public final class AutoDeobfuscator {
         }
         List<FileTreeNode> nodes = new ArrayList<>();
         collectNodes(root, nodes);
-        logger.info("scanFromTree: collected {} total nodes from tree", nodes.size());
+        log.debug("scanFromTree: collected {} total nodes from tree", nodes.size());
         long classNodeCount = nodes.stream().filter(FileTreeNode::isClassFile).count();
-        logger.info("scanFromTree: {} class-file nodes among them", classNodeCount);
+        log.debug("scanFromTree: {} class-file nodes among them", classNodeCount);
         WorkspaceIndex index = WorkspaceIndex.build(nodes);
-        logger.info("scanFromTree: index built with {} classes, {} resources",
+        log.debug("scanFromTree: index built with {} classes, {} resources",
                 index.classes().size(), index.resources().size());
         List<RenameEntry> suggestions = new ArrayList<>(scan(index));
-        logger.info("scanFromTree: index scan produced {} suggestions ({} classes)",
+        log.debug("scanFromTree: index scan produced {} suggestions ({} classes)",
                 suggestions.size(),
                 suggestions.stream().filter(e -> RenameService.TYPE_CLASS.equals(e.type())).count());
         mergeTreeClassSuggestions(root, index, suggestions);
-        logger.info("scanFromTree: after merge, total {} suggestions", suggestions.size());
-        for (RenameEntry e : suggestions) {
-            if (RenameService.TYPE_CLASS.equals(e.type())) {
-                logger.info("  class: {} -> {} (className={})", e.oldName(), e.newName(), e.className());
-            }
-        }
+        log.debug("scanFromTree: after merge, total {} suggestions", suggestions.size());
         return suggestions;
     }
 
@@ -193,6 +210,17 @@ public final class AutoDeobfuscator {
         if (root == null || suggestions == null) {
             return;
         }
+        List<FileTreeNode> nodes = new ArrayList<>();
+        collectNodes(root, nodes);
+        mergeTreeClassSuggestions(nodes, index, suggestions);
+    }
+
+    private static void mergeTreeClassSuggestions(List<FileTreeNode> nodes,
+                                                  WorkspaceIndex index,
+                                                  List<RenameEntry> suggestions) {
+        if (nodes == null || suggestions == null) {
+            return;
+        }
         Set<String> emittedClasses = new HashSet<>();
         int classAliasIndex = 0;
         for (RenameEntry entry : suggestions) {
@@ -202,8 +230,6 @@ public final class AutoDeobfuscator {
             }
         }
 
-        List<FileTreeNode> nodes = new ArrayList<>();
-        collectNodes(root, nodes);
         int[] nextClassAlias = {classAliasIndex};
         nodes.stream()
                 .filter(FileTreeNode::isClassFile)
@@ -212,18 +238,18 @@ public final class AutoDeobfuscator {
                     String internalName = internalNameFromPath(node.getFullPath());
                     if (internalName.isBlank() || emittedClasses.contains(internalName)) {
                         if (!internalName.isBlank() && emittedClasses.contains(internalName)) {
-                            logger.debug("mergeTreeClass: skip already-emitted {}", internalName);
+                            log.debug("mergeTreeClass: skip already-emitted {}", internalName);
                         }
                         return;
                     }
                     if (shouldSkipClassPath(internalName)) {
-                        logger.debug("mergeTreeClass: skip shouldSkipClassPath {}", internalName);
+                        log.debug("mergeTreeClass: skip shouldSkipClassPath {}", internalName);
                         return;
                     }
                     String simple = simpleName(internalName);
                     if (!shouldRenameClass(simple, internalName,
                             index == null ? WorkspaceIndex.EMPTY : index)) {
-                        logger.debug("mergeTreeClass: skip shouldRenameClass=false {} (simple={})",
+                        log.debug("mergeTreeClass: skip shouldRenameClass=false {} (simple={})",
                                 internalName, simple);
                         return;
                     }
@@ -231,7 +257,7 @@ public final class AutoDeobfuscator {
                     RenameEntry entry = new RenameEntry(RenameService.TYPE_CLASS,
                             internalName, visibleName,
                             classAlias(nextClassAlias[0]++, visibleName), "");
-                    logger.info("mergeTreeClass: adding {} -> {} (className={})",
+                    log.debug("mergeTreeClass: adding {} -> {} (className={})",
                             visibleName, entry.newName(), internalName);
                     emittedClasses.add(internalName);
                     suggestions.add(entry);
@@ -398,9 +424,30 @@ public final class AutoDeobfuscator {
             return "";
         }
         String normalized = fullPath.replace('\\', '/');
-        return normalized.endsWith(".class")
+        normalized = normalized.endsWith(".class")
                 ? normalized.substring(0, normalized.length() - ".class".length())
                 : normalized;
+        return stripContainerClassPrefix(normalized);
+    }
+
+    private static String stripContainerClassPrefix(String internalName) {
+        String normalized = internalName == null ? "" : internalName.replace('\\', '/');
+        String[] prefixes = {
+                "BOOT-INF/classes/",
+                "WEB-INF/classes/",
+                "APP-INF/classes/"
+        };
+        for (String prefix : prefixes) {
+            if (normalized.startsWith(prefix)) {
+                return normalized.substring(prefix.length());
+            }
+            String nested = "/" + prefix;
+            int index = normalized.indexOf(nested);
+            if (index >= 0) {
+                return normalized.substring(index + nested.length());
+            }
+        }
+        return normalized;
     }
 
     private static String visibleClassName(String simpleName) {

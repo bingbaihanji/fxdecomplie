@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  */
 public final class ClassDiscoverer {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClassDiscoverer.class);
+    private static final Logger log = LoggerFactory.getLogger(ClassDiscoverer.class);
 
     /** 资源文件扩展名匹配模式 */
     private static final Pattern RESOURCE_PATTERN = Pattern.compile(
@@ -47,21 +47,21 @@ public final class ClassDiscoverer {
      */
     public static List<ClassEntry> discover(File file) throws IOException {
         String name = file.getName().toLowerCase();
-        logger.debug("发现文件条目: {} ({} bytes)", file.getAbsolutePath(), file.length());
+        log.debug("发现文件条目: {} ({} bytes)", file.getAbsolutePath(), file.length());
         if (name.endsWith(".jar") || name.endsWith(".zip")) {
             List<ClassEntry> entries = discoverJar(file);
-            logger.info("JAR/ZIP 发现 {} 个条目: {}", entries.size(), file.getName());
+            log.info("JAR/ZIP 发现 {} 个条目: {}", entries.size(), file.getName());
             return entries;
         } else if (file.isDirectory()) {
             List<ClassEntry> entries = discoverDirectory(file);
-            logger.info("目录发现 {} 个条目: {}", entries.size(), file.getName());
+            log.info("目录发现 {} 个条目: {}", entries.size(), file.getName());
             return entries;
         } else if (name.endsWith(".class")) {
             List<ClassEntry> entries = discoverClassFile(file);
-            logger.debug("发现单个 class 文件: {}", file.getName());
+            log.debug("发现单个 class 文件: {}", file.getName());
             return entries;
         } else {
-            logger.debug("非标准文件类型，按资源处理: {}", file.getName());
+            log.debug("非标准文件类型，按资源处理: {}", file.getName());
             return List.of(new ClassEntry(file.getName(), file.getName(),
                     guessType(file.getName()), null));
         }
@@ -114,7 +114,7 @@ public final class ClassDiscoverer {
                 try {
                     return Files.isRegularFile(p) && !Files.isSymbolicLink(p);
                 } catch (Exception e) {
-                    logger.debug("File walk filter 跳过异常文件: {}", p, e);
+                    log.debug("File walk filter 跳过异常文件: {}", p, e);
                     return false;
                 }
             }).forEach(p -> {
@@ -131,7 +131,7 @@ public final class ClassDiscoverer {
                 try {
                     size = Files.size(p);
                 } catch (IOException ex) {
-                    logger.debug("读取文件大小失败: {}", p, ex);
+                    log.debug("读取文件大小失败: {}", p, ex);
                 }
                 entries.add(new ClassEntry(displayName, relativePath, type, null, loader,
                         size, null));
@@ -209,7 +209,7 @@ public final class ClassDiscoverer {
             int remaining = references.decrementAndGet();
             if (remaining <= 0) {
                 if (remaining < 0) {
-                    logger.debug("共享归档释放次数超过保留次数");
+                    log.debug("共享归档释放次数超过保留次数");
                 }
                 close();
             }
@@ -239,7 +239,7 @@ public final class ClassDiscoverer {
             try {
                 jar.close();
             } catch (IOException e) {
-                logger.debug("关闭归档失败", e);
+                log.debug("关闭归档失败", e);
             }
         }
     }

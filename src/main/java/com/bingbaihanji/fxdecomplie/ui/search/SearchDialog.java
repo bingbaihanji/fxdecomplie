@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class SearchDialog {
 
-    private static final Logger logger = LoggerFactory.getLogger(SearchDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(SearchDialog.class);
 
     private static final int DEFAULT_MAX_RESULTS = 200;
 

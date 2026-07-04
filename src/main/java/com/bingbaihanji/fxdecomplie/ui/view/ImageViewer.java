@@ -23,7 +23,7 @@ import java.io.ByteArrayInputStream;
  */
 public final class ImageViewer extends BorderPane {
 
-    private static final Logger logger = LoggerFactory.getLogger(ImageViewer.class);
+    private static final Logger log = LoggerFactory.getLogger(ImageViewer.class);
     private static final double MIN_ZOOM = 0.1;
     private static final double MAX_ZOOM = 10.0;
     private static final double ZOOM_STEP = 0.15;
@@ -123,7 +123,7 @@ public final class ImageViewer extends BorderPane {
         try {
             Image img = new Image(new ByteArrayInputStream(bytes));
             if (img.isError()) {
-                logger.warn("Image error: {}", img.getException() != null
+                log.warn("Image error: {}", img.getException() != null
                         ? img.getException().getMessage() : "unknown");
                 return;
             }
@@ -133,7 +133,7 @@ public final class ImageViewer extends BorderPane {
             }
             fitWindow();
         } catch (Exception ex) {
-            logger.warn("Image load failed", ex);
+            log.warn("Image load failed", ex);
         }
     }
 

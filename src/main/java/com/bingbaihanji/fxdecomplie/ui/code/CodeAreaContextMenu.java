@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
  */
 public class CodeAreaContextMenu extends ContextMenu {
 
-    private static final Logger logger = LoggerFactory.getLogger(CodeAreaContextMenu.class);
+    private static final Logger log = LoggerFactory.getLogger(CodeAreaContextMenu.class);
 
     private final CodeArea codeArea;
     private final CodeViewContext context;
@@ -127,7 +127,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         if (actionHandler == null || context == null) {
             return;
         }
-        logger.info("代码区右键菜单触发查看继承图: {}", context.classInternalName());
+        log.info("代码区右键菜单触发查看继承图: {}", context.classInternalName());
         actionHandler.showInheritanceGraph(context);
     }
 
@@ -135,7 +135,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         if (actionHandler == null || context == null) {
             return;
         }
-        logger.info("代码区右键菜单触发查看方法图: {}", context.classInternalName());
+        log.info("代码区右键菜单触发查看方法图: {}", context.classInternalName());
         actionHandler.showMethodGraph(context);
     }
 
@@ -143,7 +143,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         if (actionHandler == null || context == null) {
             return;
         }
-        logger.info("代码区右键菜单触发查看CFG: {}", context.classInternalName());
+        log.info("代码区右键菜单触发查看CFG: {}", context.classInternalName());
         actionHandler.showControlFlowGraph(context);
     }
 

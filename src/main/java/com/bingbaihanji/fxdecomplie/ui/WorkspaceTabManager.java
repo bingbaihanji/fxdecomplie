@@ -687,12 +687,10 @@ public final class WorkspaceTabManager {
         alert.setHeaderText(null);
         alert.setContentText(I18nUtil.getString("workspace.close.message"));
         var scene = outerTabPane.getScene();
-        alert.initOwner(scene != null ? scene.getWindow() : null);
-        try {
-            alert.getDialogPane().getStylesheets().add(
-                    com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
-        } catch (RuntimeException ignored) {
+        if (scene != null && scene.getWindow() != null) {
+            alert.initOwner(scene.getWindow());
         }
+        DialogHelper.applyNativeStyle(alert);
         var result = alert.showAndWait();
         return result.isPresent() && result.get() == ButtonType.OK;
     }

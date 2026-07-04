@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractCodeContentPanel extends StackPane {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractCodeContentPanel.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractCodeContentPanel.class);
 
     /** 未加载标记 */
     private static final int STATE_UNLOADED = 0;
@@ -69,7 +69,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
                 area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
             }
         } catch (Exception ignored) {
-            logger.debug("加载自定义字体失败，使用 Consolas 回退", ignored);
+            log.debug("加载自定义字体失败，使用 Consolas 回退", ignored);
             area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
         }
         LineNumberGutter.setEnabled(area, lineNumbersEnabled);
@@ -164,7 +164,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
 
     /** 错误提示 */
     protected void showError(String msg) {
-        logger.error("内容面板加载失败: {}", msg);
+        log.error("内容面板加载失败: {}", msg);
         getChildren().setAll(new Label(msg));
     }
 

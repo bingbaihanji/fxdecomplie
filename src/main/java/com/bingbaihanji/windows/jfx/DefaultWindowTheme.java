@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class DefaultWindowTheme {
 
-    private static final Logger logger = LoggerFactory.getLogger(DefaultWindowTheme.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultWindowTheme.class);
 
     private static volatile WindowAppearance defaultAppearance = WindowAppearance.darkDialog(
             0x00888800,
@@ -64,7 +64,7 @@ public final class DefaultWindowTheme {
     public static CompletableFuture<WindowOperationResult> apply(Window window, WindowAppearance appearance) {
         return WindowToolkit.applyAppearanceAsync(window, appearance, result -> {
             if (result.isFailure()) {
-                logger.debug("应用原生窗口外观失败: {}", result);
+                log.debug("应用原生窗口外观失败: {}", result);
             }
         });
     }

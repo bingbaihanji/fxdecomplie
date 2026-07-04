@@ -24,7 +24,7 @@ import java.util.Objects;
  */
 public class MainToolBar extends ToolBar {
 
-    private static final Logger logger = LoggerFactory.getLogger(MainToolBar.class);
+    private static final Logger log = LoggerFactory.getLogger(MainToolBar.class);
 
     /** 图标基础路径 */
     private static final String ICON_BASE = "/icon/tool/";
@@ -101,7 +101,7 @@ public class MainToolBar extends ToolBar {
                 btn.setGraphic(new ImageView(img));
             }
         } catch (Exception ignored) {
-            logger.debug("加载工具栏按钮图标失败: {}", iconName, ignored);
+            log.debug("加载工具栏按钮图标失败: {}", iconName, ignored);
         }
     }
 }

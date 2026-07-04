@@ -22,7 +22,7 @@ import java.util.Map;
  */
 final class BytecodeTextBuilder extends ClassVisitor {
 
-    private static final Logger logger = LoggerFactory.getLogger(BytecodeTextBuilder.class);
+    private static final Logger log = LoggerFactory.getLogger(BytecodeTextBuilder.class);
 
     private static final String INDENT = "    ";
     private static final String INSN_INDENT = INDENT + INDENT;
@@ -339,7 +339,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 }
             }
         } catch (Exception ignored) {
-            logger.debug("扫描 Code 属性偏移失败", ignored);
+            log.debug("扫描 Code 属性偏移失败", ignored);
         }
         return map;
     }

@@ -33,7 +33,7 @@ import java.util.Optional;
  */
 public final class ExportDialog {
 
-    private static final Logger logger = LoggerFactory.getLogger(ExportDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(ExportDialog.class);
 
     private ExportDialog() {
         throw new AssertionError("utility class");
@@ -213,7 +213,7 @@ public final class ExportDialog {
                 return parent.toFile();
             }
         } catch (Exception ignored) {
-            logger.debug("获取上次导出目录失败", ignored);
+            log.debug("获取上次导出目录失败", ignored);
             return null;
         }
         return null;

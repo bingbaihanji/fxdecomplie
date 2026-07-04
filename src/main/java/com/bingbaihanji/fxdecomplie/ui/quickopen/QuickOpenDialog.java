@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  */
 public final class QuickOpenDialog {
 
-    private static final Logger logger = LoggerFactory.getLogger(QuickOpenDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(QuickOpenDialog.class);
 
     private QuickOpenDialog() {
         throw new AssertionError("utility class");

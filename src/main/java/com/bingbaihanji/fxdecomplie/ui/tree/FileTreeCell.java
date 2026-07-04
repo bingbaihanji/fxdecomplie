@@ -17,7 +17,7 @@ import java.util.function.Function;
  */
 public class FileTreeCell extends TreeCell<FileTreeNode> {
 
-    private static final Logger logger = LoggerFactory.getLogger(FileTreeCell.class);
+    private static final Logger log = LoggerFactory.getLogger(FileTreeCell.class);
 
     /** 树节点图标统一尺寸 */
     private static final double ICON_SIZE = 16.0;
@@ -42,7 +42,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
                 return new Image(stream);
             }
         } catch (Exception ignored) {
-            logger.debug("加载文件树图标失败: {}", path, ignored);
+            log.debug("加载文件树图标失败: {}", path, ignored);
         }
         return null;
     }

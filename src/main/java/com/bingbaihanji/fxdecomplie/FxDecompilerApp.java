@@ -31,7 +31,7 @@ import java.util.Locale;
  */
 public final class FxDecompilerApp {
 
-    private static final Logger logger = LoggerFactory.getLogger(FxDecompilerApp.class);
+    private static final Logger log = LoggerFactory.getLogger(FxDecompilerApp.class);
     /** JavaFX 预览属性名 */
     private static final String JAVAFX_PREVIEW_PROPERTY = "javafx.enablePreview";
     /** 抑制预览警告属性名 */
@@ -63,7 +63,7 @@ public final class FxDecompilerApp {
                 }
             }
         } catch (Exception ignored) {
-            logger.debug("解析应用目录失败，回退到 user.dir", ignored);
+            log.debug("解析应用目录失败，回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
     }
@@ -89,7 +89,7 @@ public final class FxDecompilerApp {
             Thread.setDefaultUncaughtExceptionHandler((thread, error) -> writeStartupFailure(error));
             Application.launch(FxApplication.class, args);
         } catch (Throwable ex) {
-            logger.error("FxDecompiler 启动器失败", ex);
+            log.error("FxDecompiler 启动器失败", ex);
             writeStartupFailure(ex);
             throw ex;
         }
@@ -112,7 +112,7 @@ public final class FxDecompilerApp {
             }
             Files.writeString(STARTUP_ERROR_LOG, buffer.toString());
         } catch (Exception e) {
-            logger.warn("写入启动错误日志失败", e);
+            log.warn("写入启动错误日志失败", e);
         }
     }
 
@@ -155,7 +155,7 @@ public final class FxDecompilerApp {
                 startApplication(stage);
                 initWindows(stage);
             } catch (Throwable ex) {
-                logger.error("FxDecompiler 启动失败", ex);
+                log.error("FxDecompiler 启动失败", ex);
                 writeStartupFailure(ex);
                 throw ex;
             }
@@ -166,7 +166,7 @@ public final class FxDecompilerApp {
         /** 启动 JavaFX 应用 */
         private void startApplication(Stage stage) {
             primaryStage = stage;
-            logger.info("FxDecompiler 启动构建版本: headerBar-2026-06-17");
+            log.info("FxDecompiler 启动构建版本: headerBar-2026-06-17");
             config = AppConfig.load();
             DefaultWindowTheme.configure(windowAppearance(config));
             DiskCodeCache.cleanIfNeeded();
@@ -180,7 +180,7 @@ public final class FxDecompilerApp {
             try {
                 stage.initStyle(StageStyle.EXTENDED);
             } catch (Exception e) {
-                logger.warn("EXTENDED 窗口样式不支持,回退到 DECORATED", e);
+                log.warn("EXTENDED 窗口样式不支持,回退到 DECORATED", e);
                 stage.initStyle(StageStyle.DECORATED);
             }
 

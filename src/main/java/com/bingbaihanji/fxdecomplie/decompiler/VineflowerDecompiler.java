@@ -24,7 +24,7 @@ import java.util.jar.Manifest;
  */
 public class VineflowerDecompiler implements Decompiler {
 
-    private static final Logger logger = LoggerFactory.getLogger(VineflowerDecompiler.class);
+    private static final Logger log = LoggerFactory.getLogger(VineflowerDecompiler.class);
 
     /** Vineflower 默认反编译选项 */
     private static final Map<String, Object> DEFAULT_OPTIONS = createDefaultOptions();
@@ -60,7 +60,7 @@ public class VineflowerDecompiler implements Decompiler {
 
     private static Map<String, Object> mergedOptions(DecompilerContext context) {
         if (context == null || !context.hasOptions()) {
-            logger.debug("mergedOptions: using DEFAULT_OPTIONS only ({} entries)", DEFAULT_OPTIONS.size());
+            log.debug("mergedOptions: using DEFAULT_OPTIONS only ({} entries)", DEFAULT_OPTIONS.size());
             return DEFAULT_OPTIONS;
         }
         Map<String, Object> merged = new HashMap<>(DEFAULT_OPTIONS);
@@ -69,7 +69,7 @@ public class VineflowerDecompiler implements Decompiler {
         if (isEnabled(userOptions.get(IFernflowerPreferences.DUMP_ORIGINAL_LINES))) {
             merged.put(IFernflowerPreferences.SOURCE_FILE_COMMENTS, "1");
         }
-        logger.debug("mergedOptions: DEFAULT + {} user options = {} total",
+        log.debug("mergedOptions: DEFAULT + {} user options = {} total",
                 context.options().size(), merged.size());
         return Collections.unmodifiableMap(merged);
     }
@@ -189,26 +189,26 @@ public class VineflowerDecompiler implements Decompiler {
                 @Override
                 public void writeMessage(String message, Severity severity) {
                     switch (severity) {
-                        case ERROR -> logger.error("[Vineflower] {}", message);
-                        case WARN -> logger.warn("[Vineflower] {}", message);
-                        case INFO -> logger.debug("[Vineflower] {}", message);
-                        case TRACE -> logger.trace("[Vineflower] {}", message);
+                        case ERROR -> log.error("[Vineflower] {}", message);
+                        case WARN -> log.warn("[Vineflower] {}", message);
+                        case INFO -> log.debug("[Vineflower] {}", message);
+                        case TRACE -> log.trace("[Vineflower] {}", message);
                     }
                 }
 
                 @Override
                 public void writeMessage(String message, Severity severity, Throwable t) {
                     switch (severity) {
-                        case ERROR -> logger.error("[Vineflower] {}", message, t);
-                        case WARN -> logger.warn("[Vineflower] {}", message, t);
-                        case INFO -> logger.debug("[Vineflower] {}", message, t);
-                        case TRACE -> logger.trace("[Vineflower] {}", message, t);
+                        case ERROR -> log.error("[Vineflower] {}", message, t);
+                        case WARN -> log.warn("[Vineflower] {}", message, t);
+                        case INFO -> log.debug("[Vineflower] {}", message, t);
+                        case TRACE -> log.trace("[Vineflower] {}", message, t);
                     }
                 }
             };
 
             // 使用非废弃构造器：不需要 IBytecodeProvider
-            logger.debug("Vineflower decompile: class={}, options={}", effectiveTypeName,
+            log.debug("Vineflower decompile: class={}, options={}", effectiveTypeName,
                     effectiveContext.hasOptions() ? effectiveContext.options().size() : 0);
             long start = System.currentTimeMillis();
             BaseDecompiler decompiler = new BaseDecompiler(resultSaver,
@@ -219,14 +219,14 @@ public class VineflowerDecompiler implements Decompiler {
             String decompiled = result.toString();
             long elapsed = System.currentTimeMillis() - start;
             if (decompiled.isEmpty()) {
-                logger.warn("Vineflower decompile returned empty: {} ({}ms)", effectiveTypeName, elapsed);
+                log.warn("Vineflower decompile returned empty: {} ({}ms)", effectiveTypeName, elapsed);
                 return "// Vineflower decompile failed\n// Class: " + effectiveTypeName;
             }
-            logger.debug("Vineflower decompile OK: {} ({}ms, {} chars)", effectiveTypeName, elapsed,
+            log.debug("Vineflower decompile OK: {} ({}ms, {} chars)", effectiveTypeName, elapsed,
                     decompiled.length());
             return decompiled;
         } catch (Exception e) {
-            logger.error("Vineflower decompile exception: {}: {}", effectiveTypeName, e.getMessage());
+            log.error("Vineflower decompile exception: {}: {}", effectiveTypeName, e.getMessage());
             return "// Vineflower Error: " + e.getMessage();
         }
     }
@@ -272,7 +272,7 @@ public class VineflowerDecompiler implements Decompiler {
                     List.of(),
                     List.of()
             );
-            logger.debug("Vineflower getEntries: class={}", typeName);
+            log.debug("Vineflower getEntries: class={}", typeName);
             return entries;
         }
 
@@ -280,10 +280,10 @@ public class VineflowerDecompiler implements Decompiler {
         public InputStream getInputStream(String resource) throws IOException {
             byte[] resolved = resolveClassBytes(resource);
             if (resolved != null) {
-                logger.debug("Vineflower getInputStream [CLASS] resource={} -> hit", resource);
+                log.debug("Vineflower getInputStream [CLASS] resource={} -> hit", resource);
                 return new ByteArrayInputStream(resolved);
             }
-            logger.debug("Vineflower getInputStream [MISS] resource={}", resource);
+            log.debug("Vineflower getInputStream [MISS] resource={}", resource);
             return null;
         }
 

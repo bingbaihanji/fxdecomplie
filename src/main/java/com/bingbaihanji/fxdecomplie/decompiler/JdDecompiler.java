@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class JdDecompiler implements Decompiler {
 
-    private static final Logger logger = LoggerFactory.getLogger(JdDecompiler.class);
+    private static final Logger log = LoggerFactory.getLogger(JdDecompiler.class);
 
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
@@ -62,7 +62,7 @@ public class JdDecompiler implements Decompiler {
 
         Printer printer = new JdPrinter(result);
 
-        logger.debug("JD-Core decompile: class={}", typeName);
+        log.debug("JD-Core decompile: class={}", typeName);
         long start = System.currentTimeMillis();
         try {
             ClassFileToJavaSourceDecompiler decompiler = new ClassFileToJavaSourceDecompiler();
@@ -70,7 +70,7 @@ public class JdDecompiler implements Decompiler {
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - start;
             String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            logger.warn("JD-Core decompile error: {} ({}ms): {}", typeName, elapsed, msg);
+            log.warn("JD-Core decompile error: {} ({}ms): {}", typeName, elapsed, msg);
             if (expectedPackage != null) {
                 return "package " + expectedPackage + ";\n\n// JD-Core Error: " + msg;
             }
@@ -80,13 +80,13 @@ public class JdDecompiler implements Decompiler {
         String decompiled = result.toString();
         long elapsed = System.currentTimeMillis() - start;
         if (decompiled.isEmpty()) {
-            logger.warn("JD-Core decompile returned empty: {} ({}ms)", typeName, elapsed);
+            log.warn("JD-Core decompile returned empty: {} ({}ms)", typeName, elapsed);
             if (expectedPackage != null) {
                 return "package " + expectedPackage + ";\n\n// JD-Core decompile failed\n// Class: " + typeName;
             }
             return "// JD-Core decompile failed\n// Class: " + typeName;
         }
-        logger.debug("JD-Core decompile OK: {} ({}ms, {} chars)", typeName, elapsed, decompiled.length());
+        log.debug("JD-Core decompile OK: {} ({}ms, {} chars)", typeName, elapsed, decompiled.length());
         if (expectedPackage != null && !decompiled.trim().startsWith("package ")) {
             decompiled = "package " + expectedPackage + ";\n\n" + decompiled;
         }

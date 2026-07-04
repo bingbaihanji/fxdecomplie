@@ -30,6 +30,7 @@ public class CodeViewPanel extends VBox {
     private Consumer<Boolean> onSplitToggled;
     /** Ctrl+; 快捷键处理器引用（用于先移除再添加，防止重复注册） */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> commentKeyHandler;
+    private jfx.incubator.scene.control.richtext.CodeArea commentKeyArea;
     /** Ctrl+F 文件内查找处理器引用 */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> findKeyHandler;
     private jfx.incubator.scene.control.richtext.CodeArea findKeyArea;
@@ -68,6 +69,7 @@ public class CodeViewPanel extends VBox {
         getChildren().addAll(searchBar, deck);
         VBox.setVgrow(deck, Priority.ALWAYS);
         getStyleClass().add("code-view-panel");
+        bindSearchBar();
     }
 
     private static String selectedText(jfx.incubator.scene.control.richtext.CodeArea area) {
@@ -127,6 +129,11 @@ public class CodeViewPanel extends VBox {
         if (area == null) {
             return;
         }
+        if (commentKeyArea != null && commentKeyHandler != null) {
+            commentKeyArea.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, commentKeyHandler);
+            commentKeyArea = null;
+            commentKeyHandler = null;
+        }
         if (contextMenuContext == null || contextMenuHandler == null) {
             sourcePanel.setTokenNavigateHandler(null);
             return;
@@ -143,9 +150,7 @@ public class CodeViewPanel extends VBox {
         });
 
         // Ctrl+; 快捷键：先移除旧处理器再添加，防止重复调用时堆积
-        if (commentKeyHandler != null) {
-            area.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, commentKeyHandler);
-        }
+        commentKeyArea = area;
         commentKeyHandler = e -> {
             if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.SEMICOLON) {
                 e.consume();
@@ -242,6 +247,9 @@ public class CodeViewPanel extends VBox {
 
     /** 释放资源 */
     public void dispose() {
+        if (commentKeyArea != null && commentKeyHandler != null) {
+            commentKeyArea.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, commentKeyHandler);
+        }
         if (findKeyArea != null && findKeyHandler != null) {
             findKeyArea.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, findKeyHandler);
         }

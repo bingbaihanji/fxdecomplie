@@ -14,7 +14,7 @@ import java.net.URL;
  */
 public final class AppTheme {
 
-    private static final Logger logger = LoggerFactory.getLogger(AppTheme.class);
+    private static final Logger log = LoggerFactory.getLogger(AppTheme.class);
 
     /** 暗色 CSS 样式表路径 */
     private static final String DARK_STYLESHEET =
@@ -47,7 +47,7 @@ public final class AppTheme {
             }
             return ThemeManager.resolveThemeData("Dark+");
         } catch (RuntimeException e) {
-            logger.warn("加载编辑器主题失败，使用默认暗色主题", e);
+            log.warn("加载编辑器主题失败，使用默认暗色主题", e);
             return VsCodeThemeLoader.defaultDark();
         }
     }

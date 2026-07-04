@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  */
 public final class CodeSyncHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(CodeSyncHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(CodeSyncHelper.class);
 
     /** 匹配方法声明行的模式：可见性 [static] 返回类型 方法名( */
     private static final Pattern METHOD_DECL_PATTERN =
@@ -67,7 +67,7 @@ public final class CodeSyncHelper {
                 }
             }, ClassReader.SKIP_FRAMES);
         } catch (Exception e) {
-            logger.debug("构建方法行号映射失败", e);
+            log.debug("构建方法行号映射失败", e);
         }
         return map;
     }

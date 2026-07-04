@@ -27,7 +27,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class ExportService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ExportService.class);
+    private static final Logger log = LoggerFactory.getLogger(ExportService.class);
 
     private ExportService() {
         throw new AssertionError("utility class");
@@ -91,7 +91,7 @@ public final class ExportService {
                 items.add(node);
             }
         }
-        logger.info("导出开始: {} 个文件, format={}, engine={}, output={}",
+        log.info("导出开始: {} 个文件, format={}, engine={}, output={}",
                 items.size(), config.format(), config.engine(), config.outputPath());
         long exportStart = System.currentTimeMillis();
         ExportState state = new ExportState(items.size(), onProgress);
@@ -103,7 +103,7 @@ public final class ExportService {
         }
 
         long elapsed = System.currentTimeMillis() - exportStart;
-        logger.info("导出完成: {}/{} 成功, {} 错误 ({}ms)",
+        log.info("导出完成: {}/{} 成功, {} 错误 ({}ms)",
                 state.successCount, state.totalFiles, state.errors.size(), elapsed);
         return new ExportResult(state.totalFiles, state.successCount, state.errors);
     }
@@ -233,7 +233,7 @@ public final class ExportService {
                         try {
                             Files.deleteIfExists(target);
                         } catch (IOException ignored) {
-                            logger.debug("清理失败写入残留文件失败: {}", target, ignored);
+                            log.debug("清理失败写入残留文件失败: {}", target, ignored);
                         }
                         throw e;
                     }
@@ -266,7 +266,7 @@ public final class ExportService {
                         try {
                             zos.closeEntry();
                         } catch (IOException e) {
-                            logger.debug("取消导出时关闭 ZIP 条目失败", e);
+                            log.debug("取消导出时关闭 ZIP 条目失败", e);
                         }
                     }
                     return;

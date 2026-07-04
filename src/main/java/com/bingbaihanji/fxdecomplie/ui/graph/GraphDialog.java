@@ -45,7 +45,7 @@ import java.util.Objects;
  */
 public class GraphDialog extends Dialog<Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(GraphDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(GraphDialog.class);
 
     /** 弹窗默认宽度 */
     private static final int DEFAULT_WIDTH = 820;
@@ -226,7 +226,7 @@ public class GraphDialog extends Dialog<Void> {
                 viewToggle.setText("DOT");
                 statusLabel.setText("JavaFX 图形");
             } catch (RuntimeException e) {
-                logger.warn("GraphDialog: 原生图形渲染失败，保留 DOT 源码", e);
+                log.warn("GraphDialog: 原生图形渲染失败，保留 DOT 源码", e);
                 currentGraphView = null;
                 statusLabel.setText("DOT 源码（图形解析失败）");
             }

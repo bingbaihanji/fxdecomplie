@@ -26,7 +26,7 @@ public class AppConfig {
 
     /** JSON 序列化/反序列化器 */
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
     /** 应用根目录(JAR 所在目录,开发期回退到 user.dir) */
     private static final Path APP_DIR = resolveAppDir();
     /** 配置目录 (<appDir>/config) */
@@ -77,7 +77,7 @@ public class AppConfig {
                 }
             }
         } catch (Exception ignored) {
-            logger.debug("解析应用目录失败，回退到 user.dir", ignored);
+            log.debug("解析应用目录失败，回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
     }
@@ -113,7 +113,7 @@ public class AppConfig {
                 }
             }
         } catch (IOException | com.google.gson.JsonSyntaxException | com.google.gson.JsonIOException e) {
-            logger.warn("加载配置失败，将备份损坏文件并使用默认配置", e);
+            log.warn("加载配置失败，将备份损坏文件并使用默认配置", e);
             backupCorruptedConfig();
         }
         return new AppConfig();
@@ -129,10 +129,10 @@ public class AppConfig {
                     backup = Path.of(CONFIG_FILE + ".bak." + i);
                 }
                 Files.move(CONFIG_FILE, backup);
-                logger.info("已备份损坏的配置文件到: {}", backup);
+                log.info("已备份损坏的配置文件到: {}", backup);
             }
         } catch (IOException moveEx) {
-            logger.warn("备份损坏配置文件失败", moveEx);
+            log.warn("备份损坏配置文件失败", moveEx);
         }
     }
 
@@ -246,7 +246,7 @@ public class AppConfig {
                     Files.move(tmp, CONFIG_FILE, StandardCopyOption.REPLACE_EXISTING);
                 }
             } catch (IOException e) {
-                logger.warn("保存配置失败", e);
+                log.warn("保存配置失败", e);
             }
         }
     }

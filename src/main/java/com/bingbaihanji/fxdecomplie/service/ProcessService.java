@@ -14,7 +14,7 @@ import java.io.File;
  */
 public final class ProcessService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProcessService.class);
+    private static final Logger log = LoggerFactory.getLogger(ProcessService.class);
 
     private ProcessService() {
         throw new AssertionError("utility class");
@@ -28,7 +28,7 @@ public final class ProcessService {
             // ---- 从 classloader 解析本应用的 JAR 路径 ----
             var codeSource = ProcessService.class.getProtectionDomain().getCodeSource();
             if (codeSource == null || codeSource.getLocation() == null) {
-                logger.warn("无法确定 JAR 路径,新实例不可用");
+                log.warn("无法确定 JAR 路径,新实例不可用");
                 return;
             }
             String jarPath = codeSource.getLocation().toURI().getPath();
@@ -39,7 +39,7 @@ public final class ProcessService {
             // ---- 启动新进程: java -jar <this.jar> --open <filePath> ----
             new ProcessBuilder(java, "-jar", jarPath, "--open", filePath).start();
         } catch (Exception e) {
-            logger.error("启动新实例失败", e);
+            log.error("启动新实例失败", e);
         }
     }
 }

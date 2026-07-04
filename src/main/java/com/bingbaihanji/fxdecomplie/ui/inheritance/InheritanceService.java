@@ -25,7 +25,7 @@ import java.util.*;
  */
 public final class InheritanceService {
 
-    private static final Logger logger = LoggerFactory.getLogger(InheritanceService.class);
+    private static final Logger log = LoggerFactory.getLogger(InheritanceService.class);
 
     private static final int MAX_DEPTH = 20;
     private static final int MAX_SUBCLASSES = 200;
@@ -96,7 +96,7 @@ public final class InheritanceService {
                 root.getChildren().add(ifNode);
             }
         } else {
-            logger.warn("解析类元数据用于继承树失败: {}", fullPath);
+            log.warn("解析类元数据用于继承树失败: {}", fullPath);
         }
 
         appendSubClassTree(internalName, root, visited, usableIndex);
@@ -126,7 +126,7 @@ public final class InheritanceService {
 
         Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
         if (metadata.isEmpty()) {
-            logger.warn("解析类元数据用于继承树失败: {}", internalName);
+            log.warn("解析类元数据用于继承树失败: {}", internalName);
             return;
         }
 
@@ -219,7 +219,7 @@ public final class InheritanceService {
             int scanned = 0;
             for (var cls : index.classes()) {
                 if (System.currentTimeMillis() > deadline) {
-                    logger.debug("构建子类索引超时，已扫描 {} 个类", scanned);
+                    log.debug("构建子类索引超时，已扫描 {} 个类", scanned);
                     break;
                 }
                 scanned++;

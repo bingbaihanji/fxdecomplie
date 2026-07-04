@@ -18,7 +18,7 @@ public final class WorkspaceIndex {
     public static final WorkspaceIndex EMPTY = new WorkspaceIndex(
             List.of(), List.of(), Map.of());
 
-    private static final Logger logger = LoggerFactory.getLogger(WorkspaceIndex.class);
+    private static final Logger log = LoggerFactory.getLogger(WorkspaceIndex.class);
     private static final long MAX_INDEXED_RESOURCE_BYTES = 5L * 1024 * 1024;
 
     private final List<ClassIndexEntry> classes;
@@ -101,7 +101,7 @@ public final class WorkspaceIndex {
                 methods.add(new MemberIndexEntry(node.getFullPath(), method.name(), method.descriptor()));
             }
         } else {
-            logger.warn("解析类元数据失败: {}", node.getFullPath());
+            log.warn("解析类元数据失败: {}", node.getFullPath());
         }
 
         // 使用 node::resolveBytes 延迟加载：索引构建时只解析元数据，
@@ -113,11 +113,11 @@ public final class WorkspaceIndex {
     private static boolean shouldIndexResource(FileTreeNode node) {
         long size = node.getSize();
         if (size <= 0) {
-            logger.debug("跳过大小未知的资源文件: {}", node.getFullPath());
+            log.debug("跳过大小未知的资源文件: {}", node.getFullPath());
             return false;
         }
         if (size > MAX_INDEXED_RESOURCE_BYTES) {
-            logger.info("跳过过大资源文件，不加入工作区索引: {} ({} 字节)",
+            log.info("跳过过大资源文件，不加入工作区索引: {} ({} 字节)",
                     node.getFullPath(), size);
             return false;
         }
@@ -128,7 +128,7 @@ public final class WorkspaceIndex {
         try {
             return node.readBytes();
         } catch (IOException e) {
-            logger.warn("读取索引文件失败: {}", node.getFullPath(), e);
+            log.warn("读取索引文件失败: {}", node.getFullPath(), e);
             return null;
         }
     }

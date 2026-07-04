@@ -37,7 +37,7 @@ public class CodeContentDeck extends VBox {
     public static final int TAB_HEX = 4;
     /** 标签总数 */
     private static final int TAB_COUNT = 5;
-    private static final Logger logger = LoggerFactory.getLogger(CodeContentDeck.class);
+    private static final Logger log = LoggerFactory.getLogger(CodeContentDeck.class);
     private final AbstractCodeContentPanel[] panels;
     private final ToggleButton[] buttons;
     private final StackPane contentArea;
@@ -217,7 +217,7 @@ public class CodeContentDeck extends VBox {
                 return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
             }
         } catch (Exception ignored) {
-            logger.debug("加载自定义字体失败，回退到系统字体", ignored);
+            log.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
         if (fontFamily != null && !fontFamily.isBlank()) {
             return javafx.scene.text.Font.font(fontFamily, fontSize);

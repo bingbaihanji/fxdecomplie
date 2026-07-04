@@ -35,7 +35,7 @@ import java.util.function.Consumer;
  */
 public final class SettingsDialog {
 
-    private static final Logger logger = LoggerFactory.getLogger(SettingsDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(SettingsDialog.class);
 
     private SettingsDialog() {
         throw new AssertionError("utility class");
@@ -223,7 +223,7 @@ public final class SettingsDialog {
                     String importedName = ThemeManager.importTheme(selected.toPath());
                     refreshThemeCombo(editorThemeCombo, importedName);
                 } catch (Exception ex) {
-                    logger.warn("导入主题失败", ex);
+                    log.warn("导入主题失败", ex);
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle(I18nUtil.getString("dialog.error.title"));
                     alert.setHeaderText(null);
@@ -249,7 +249,7 @@ public final class SettingsDialog {
                 try {
                     ThemeManager.exportTheme(selectedTheme, target.toPath());
                 } catch (Exception ex) {
-                    logger.warn("导出主题失败", ex);
+                    log.warn("导出主题失败", ex);
                 }
             }
         });
@@ -414,10 +414,10 @@ public final class SettingsDialog {
                             engOpts.put(key, val);
                         }
                     }
-                    logger.info("引擎选项已保存 [{}]: {} 项", engName, engOpts.size());
+                    log.info("引擎选项已保存 [{}]: {} 项", engName, engOpts.size());
                 }
             } catch (Exception ex) {
-                logger.warn("保存引擎选项失败", ex);
+                log.warn("保存引擎选项失败", ex);
             }
 
             // 保存编辑器配色
@@ -604,7 +604,7 @@ public final class SettingsDialog {
                     .toJson(config.decompiler().engineOptions());
             jsonArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ignored) {
-            logger.debug("syncJsonFromConfig 序列化失败", ignored);
+            log.debug("syncJsonFromConfig 序列化失败", ignored);
         }
     }
 
@@ -617,7 +617,7 @@ public final class SettingsDialog {
                     new TypeToken<Map<String, Map<String, String>>>() {
                     }.getType());
         } catch (Exception ex) {
-            logger.warn("解析引擎选项 JSON 失败", ex);
+            log.warn("解析引擎选项 JSON 失败", ex);
             return null;
         }
     }
@@ -647,7 +647,7 @@ public final class SettingsDialog {
                     .toJson(config.decompiler().engineOptions());
             jsonArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ex) {
-            logger.warn("序列化引擎选项 JSON 失败", ex);
+            log.warn("序列化引擎选项 JSON 失败", ex);
             jsonArea.setText("");
         }
     }

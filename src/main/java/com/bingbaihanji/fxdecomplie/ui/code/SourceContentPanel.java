@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  */
 public class SourceContentPanel extends AbstractCodeContentPanel {
 
-    private static final Logger logger = LoggerFactory.getLogger(SourceContentPanel.class);
+    private static final Logger log = LoggerFactory.getLogger(SourceContentPanel.class);
 
     /** 超大源码禁用正则高亮和链接扫描 */
     private static final int LARGE_SOURCE_THRESHOLD = 500_000;
@@ -110,7 +110,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
                 return Font.loadFont(fontUrl.toExternalForm(), fontSize);
             }
         } catch (Exception ignored) {
-            logger.debug("加载自定义字体失败，回退到系统字体", ignored);
+            log.debug("加载自定义字体失败，回退到系统字体", ignored);
         }
         if (fontFamily != null && !fontFamily.isBlank()) {
             return Font.font(fontFamily, fontSize);
@@ -152,7 +152,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         try {
             codeArea.setSyntaxDecorator(new RegexHighlighter(newTheme));
         } catch (Exception e) {
-            logger.warn("重新应用编辑器主题失败", e);
+            log.warn("重新应用编辑器主题失败", e);
         }
     }
 

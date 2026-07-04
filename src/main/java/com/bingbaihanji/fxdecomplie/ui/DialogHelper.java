@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -17,7 +18,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class DialogHelper {
 
-    private static final Logger logger = LoggerFactory.getLogger(DialogHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(DialogHelper.class);
 
     private DialogHelper() {
         throw new AssertionError("utility class");
@@ -33,20 +34,12 @@ public final class DialogHelper {
 
     /** 确认对话框（是/否），返回 true 表示用户点击"是" */
     public static boolean showConfirm(Stage owner, String title, String message) {
-        logger.info("{} - {}", title, message);
+        log.info("{} - {}", title, message);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.YES, ButtonType.NO);
         alert.setTitle(title);
         alert.setHeaderText(null);
         if (owner != null) alert.initOwner(owner);
-        try {
-            alert.getDialogPane().getStylesheets().add(AppTheme.darkStylesheet());
-        } catch (RuntimeException ignored) {
-        }
-        alert.setOnShown(e -> {
-            var w = alert.getDialogPane().getScene().getWindow();
-            DefaultWindowTheme.applyWindowDarkMode(w);
-            if (w instanceof Stage s) IconHelper.setStageIcon(s);
-        });
+        applyNativeStyle(alert);
         return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }
 
@@ -66,10 +59,10 @@ public final class DialogHelper {
         // 同步记录到控制台/日志文件，确保报错时有轨迹可查
         String logMsg = title + " - " + message;
         switch (type) {
-            case ERROR -> logger.error(logMsg);
-            case WARNING -> logger.warn(logMsg);
-            case INFORMATION -> logger.info(logMsg);
-            default -> logger.debug(logMsg);
+            case ERROR -> log.error(logMsg);
+            case WARNING -> log.warn(logMsg);
+            case INFORMATION -> log.info(logMsg);
+            default -> log.debug(logMsg);
         }
         Alert alert = new Alert(type, message);
         alert.setTitle(title);
@@ -77,19 +70,34 @@ public final class DialogHelper {
         if (owner != null) {
             alert.initOwner(owner);
         }
-        try {
-            alert.getDialogPane().getStylesheets().add(AppTheme.darkStylesheet());
-        } catch (RuntimeException ignored) {
-            logger.debug("应用暗色样式表失败", ignored);
+        applyNativeStyle(alert);
+        alert.showAndWait();
+    }
+
+    /** 为 JavaFX Dialog/Alert 应用应用暗色 CSS、native 窗口暗色边框和窗口图标。 */
+    public static void applyNativeStyle(Dialog<?> dialog) {
+        if (dialog == null) {
+            return;
         }
-        alert.setOnShown(e -> {
-            var window = alert.getDialogPane().getScene().getWindow();
+        try {
+            var stylesheets = dialog.getDialogPane().getStylesheets();
+            String darkStylesheet = AppTheme.darkStylesheet();
+            if (!stylesheets.contains(darkStylesheet)) {
+                stylesheets.add(darkStylesheet);
+            }
+        } catch (RuntimeException ignored) {
+            log.debug("应用暗色样式表失败", ignored);
+        }
+        dialog.setOnShown(e -> {
+            var scene = dialog.getDialogPane().getScene();
+            var window = scene == null ? null : scene.getWindow();
+            if (window == null) {
+                return;
+            }
             DefaultWindowTheme.applyWindowDarkMode(window);
             if (window instanceof Stage s) {
                 IconHelper.setStageIcon(s);
             }
         });
-        alert.showAndWait();
     }
-
 }

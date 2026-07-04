@@ -13,7 +13,7 @@ import java.util.concurrent.*;
  */
 public final class BackgroundTasks {
 
-    private static final Logger logger = LoggerFactory.getLogger(BackgroundTasks.class);
+    private static final Logger log = LoggerFactory.getLogger(BackgroundTasks.class);
 
     private static final int POOL_SIZE = Math.clamp(Runtime.getRuntime().availableProcessors(), 4, 8);
     private static final int MAX_QUEUE_SIZE = 100;
@@ -40,7 +40,7 @@ public final class BackgroundTasks {
     /** @return 可通过 {@link #cancel(Future)} 取消的 Future */
     public static Future<?> run(String name, Runnable task) {
         try {
-            logger.debug("提交后台任务: {} (队列: {}/{})", name,
+            log.debug("提交后台任务: {} (队列: {}/{})", name,
                     EXECUTOR.getQueue().size(), MAX_QUEUE_SIZE);
             return EXECUTOR.submit(() -> {
                 Thread.currentThread().setName(name);
@@ -50,12 +50,12 @@ public final class BackgroundTasks {
                 try {
                     task.run();
                 } catch (Exception e) {
-                    logger.error("后台任务异常: {}", name, e);
+                    log.error("后台任务异常: {}", name, e);
                     throw e;
                 }
             });
         } catch (RejectedExecutionException e) {
-            logger.warn("后台任务被拒绝(队列满): {} (队列: {}/{})", name,
+            log.warn("后台任务被拒绝(队列满): {} (队列: {}/{})", name,
                     EXECUTOR.getQueue().size(), MAX_QUEUE_SIZE);
             CompletableFuture<Void> failed = new CompletableFuture<>();
             failed.completeExceptionally(e);

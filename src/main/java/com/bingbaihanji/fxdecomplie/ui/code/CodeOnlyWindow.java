@@ -71,7 +71,7 @@ public final class CodeOnlyWindow {
     private static final Map<String, CodeEditorTab> DRAG_SOURCE_TABS =
             new ConcurrentHashMap<>();
     private static final AtomicLong ENGINE_SWITCH_IDS = new AtomicLong();
-    private static final Logger logger = LoggerFactory.getLogger(CodeOnlyWindow.class);
+    private static final Logger log = LoggerFactory.getLogger(CodeOnlyWindow.class);
 
     private final AppConfig config;
     private final VsCodeThemeLoader.ThemeData editorTheme;
@@ -519,7 +519,7 @@ public final class CodeOnlyWindow {
         try {
             preResolvedBytes = resolveBytesForTab(tab);
         } catch (java.io.IOException e) {
-            logger.error("切换引擎前解析字节码失败: {}", previous.fullPath(), e);
+            log.error("切换引擎前解析字节码失败: {}", previous.fullPath(), e);
             return;
         }
         final DecompilerTypeEnum engine = effectiveEngineFor(preResolvedBytes, requestedEngine);
@@ -541,7 +541,7 @@ public final class CodeOnlyWindow {
                     return;
                 }
                 if (DecompilerRunner.isTransientFailureOutput(source)) {
-                    logger.error("副窗口切换反编译引擎失败: {} -> {}\n{}",
+                    log.error("副窗口切换反编译引擎失败: {} -> {}\n{}",
                             previous.fullPath(), engine, source);
                     Platform.runLater(() -> {
                         if (isEngineSwitchCurrent(tab, requestId)) {
@@ -565,7 +565,7 @@ public final class CodeOnlyWindow {
                     installFallbackHandlers(tab, config, editorTheme);
                 });
             } catch (Exception e) {
-                logger.error("副窗口切换反编译引擎异常: {} -> {}",
+                log.error("副窗口切换反编译引擎异常: {} -> {}",
                         previous.fullPath(), requestedEngine, e);
                 Platform.runLater(() -> {
                     if (isEngineSwitchCurrent(tab, requestId)) {

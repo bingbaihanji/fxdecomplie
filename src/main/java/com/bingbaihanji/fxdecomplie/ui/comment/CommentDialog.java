@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  */
 public final class CommentDialog {
 
-    private static final Logger logger = LoggerFactory.getLogger(CommentDialog.class);
+    private static final Logger log = LoggerFactory.getLogger(CommentDialog.class);
 
     private CommentDialog() {
         throw new AssertionError("utility class");

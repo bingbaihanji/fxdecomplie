@@ -24,7 +24,7 @@ import java.net.URL;
  */
 public final class AppHeaderBar {
 
-    private static final Logger logger = LoggerFactory.getLogger(AppHeaderBar.class);
+    private static final Logger log = LoggerFactory.getLogger(AppHeaderBar.class);
 
     /** 标题栏高度 */
     private static final double TITLE_BAR_HEIGHT = 38.0;

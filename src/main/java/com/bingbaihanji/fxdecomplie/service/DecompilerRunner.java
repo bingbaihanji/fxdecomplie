@@ -21,7 +21,7 @@ import java.util.zip.ZipFile;
  */
 public final class DecompilerRunner {
 
-    private static final Logger logger = LoggerFactory.getLogger(DecompilerRunner.class);
+    private static final Logger log = LoggerFactory.getLogger(DecompilerRunner.class);
     private static final DecompilerTypeEnum[] JD_FALLBACK_ENGINES = {
             DecompilerTypeEnum.VINEFLOWER,
             DecompilerTypeEnum.CFR,
@@ -64,7 +64,7 @@ public final class DecompilerRunner {
         ThreadPoolExecutor old = executor;
         executor = createExecutor();
         old.shutdownNow();
-        logger.info("检测到 {} 次连续超时，已重建反编译线程池", CONSECUTIVE_TIMEOUT_THRESHOLD);
+        log.info("检测到 {} 次连续超时，已重建反编译线程池", CONSECUTIVE_TIMEOUT_THRESHOLD);
     }
 
     public static String decompileWithTimeout(String classFilePath, byte[] classBytes,
@@ -96,7 +96,7 @@ public final class DecompilerRunner {
             throw new CancellationException("反编译请求已被替换");
         }
 
-        logger.debug("反编译开始: {} engine={}, timeout={}s", classFilePath, engine, timeoutSeconds);
+        log.debug("反编译开始: {} engine={}, timeout={}s", classFilePath, engine, timeoutSeconds);
         long decompileStart = System.currentTimeMillis();
         Future<String> future = null;
         int timeout = Math.max(1, timeoutSeconds);
@@ -116,15 +116,15 @@ public final class DecompilerRunner {
             consecutiveTimeouts.set(0);
             long elapsed = System.currentTimeMillis() - decompileStart;
             boolean isFailure = isFailureOutput(source);
-            logger.debug("反编译完成: {} engine={} ({}ms) failure={}", classFilePath, engine, elapsed, isFailure);
+            log.debug("反编译完成: {} engine={} ({}ms) failure={}", classFilePath, engine, elapsed, isFailure);
             return source;
         } catch (RejectedExecutionException e) {
             closeContext(context);
-            logger.warn("反编译被拒绝(队列满): {} engine={}", classFilePath, engine);
+            log.warn("反编译被拒绝(队列满): {} engine={}", classFilePath, engine);
             return I18nUtil.getString("decompile.busy", classFilePath);
         } catch (TimeoutException e) {
             long elapsed = System.currentTimeMillis() - decompileStart;
-            logger.warn("反编译超时: {} engine={} ({}ms, timeout={}s)", classFilePath, engine,
+            log.warn("反编译超时: {} engine={} ({}ms, timeout={}s)", classFilePath, engine,
                     elapsed, timeoutSeconds);
             future.cancel(true);
             // 给后台线程一个短暂的窗口退出(其 finally 块会关闭 context),
@@ -223,7 +223,7 @@ public final class DecompilerRunner {
         } catch (RuntimeException e) {
             String message = e.getMessage() == null || e.getMessage().isBlank()
                     ? e.getClass().getSimpleName() : e.getMessage();
-            logger.warn("{} 反编译 {} 抛出异常，尝试回退引擎", selectedEngine, classFilePath, e);
+            log.warn("{} 反编译 {} 抛出异常，尝试回退引擎", selectedEngine, classFilePath, e);
             source = failureOutput(classFilePath, selectedEngine + ": " + message);
         }
 
@@ -233,7 +233,7 @@ public final class DecompilerRunner {
         }
 
         String reason = extractFailureReason(source);
-        logger.warn("{} 反编译 {} 失败，尝试回退引擎，原因: {}", selectedEngine, classFilePath, reason);
+        log.warn("{} 反编译 {} 失败，尝试回退引擎，原因: {}", selectedEngine, classFilePath, reason);
         for (DecompilerTypeEnum fallback : JD_FALLBACK_ENGINES) {
             if (fallback == selectedEngine) {
                 continue;
@@ -243,12 +243,12 @@ public final class DecompilerRunner {
                         fallback, effectiveContext);
                 if (fallbackSource != null && !fallbackSource.isBlank()
                         && !isDecompilerFailureOutput(fallbackSource)) {
-                    logger.warn("{} 反编译 {} 失败;使用 {} 回退引擎原因: {}",
+                    log.warn("{} 反编译 {} 失败;使用 {} 回退引擎原因: {}",
                             selectedEngine, classFilePath, fallback, reason);
                     return withFallbackNotice(fallbackSource, fallback, reason);
                 }
             } catch (RuntimeException e) {
-                logger.warn("回退反编译器 {} 对 {} 反编译失败", fallback, classFilePath, e);
+                log.warn("回退反编译器 {} 对 {} 反编译失败", fallback, classFilePath, e);
             }
         }
         return source;
@@ -285,7 +285,7 @@ public final class DecompilerRunner {
         try {
             context.close();
         } catch (Exception e) {
-            logger.debug("关闭反编译上下文失败", e);
+            log.debug("关闭反编译上下文失败", e);
         }
     }
 
@@ -441,7 +441,7 @@ public final class DecompilerRunner {
                 }
                 return WorkspaceByteReader.readClassBytes(workspace, normalized, false);
             } catch (IOException e) {
-                logger.debug("读取依赖类失败: {}", normalized, e);
+                log.debug("读取依赖类失败: {}", normalized, e);
                 return null;
             }
         }
