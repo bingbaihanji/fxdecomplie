@@ -102,6 +102,20 @@ public final class ImageViewer extends BorderPane {
         setFocusTraversable(true);
     }
 
+    private static Button btn(String text, Runnable action) {
+        Button b = new Button(text);
+        b.setStyle("-fx-background-color: transparent; -fx-text-fill: #ccc; -fx-font-size: 14px; "
+                + "-fx-padding: 2px 8px; -fx-cursor: hand;");
+        b.setOnAction(e -> action.run());
+        return b;
+    }
+
+    // ---- 操作 ----
+
+    private static double clamp(double val, double min, double max) {
+        return Math.max(min, Math.min(max, val));
+    }
+
     public void loadImage(byte[] bytes) {
         if (bytes == null || bytes.length == 0) {
             return;
@@ -122,8 +136,6 @@ public final class ImageViewer extends BorderPane {
             logger.warn("Image load failed", ex);
         }
     }
-
-    // ---- 操作 ----
 
     private void changeZoom(double delta) {
         zoom = clamp(zoom + delta, MIN_ZOOM, MAX_ZOOM);
@@ -158,6 +170,8 @@ public final class ImageViewer extends BorderPane {
         updateInfo();
     }
 
+    // ---- 边界约束 ----
+
     private void rotate(int deg) {
         imageView.setRotate((imageView.getRotate() + deg) % 360);
         applyZoom();
@@ -173,7 +187,7 @@ public final class ImageViewer extends BorderPane {
         }
     }
 
-    // ---- 边界约束 ----
+    // ---- 工具 ----
 
     private void clamp() {
         Image img = imageView.getImage();
@@ -209,20 +223,6 @@ public final class ImageViewer extends BorderPane {
         }
         infoLabel.setText((int) img.getWidth() + "×" + (int) img.getHeight()
                 + "  " + Math.round(zoom * 100) + "%  " + (int) imageView.getRotate() + "°");
-    }
-
-    // ---- 工具 ----
-
-    private static Button btn(String text, Runnable action) {
-        Button b = new Button(text);
-        b.setStyle("-fx-background-color: transparent; -fx-text-fill: #ccc; -fx-font-size: 14px; "
-                + "-fx-padding: 2px 8px; -fx-cursor: hand;");
-        b.setOnAction(e -> action.run());
-        return b;
-    }
-
-    private static double clamp(double val, double min, double max) {
-        return Math.max(min, Math.min(max, val));
     }
 
     @Override

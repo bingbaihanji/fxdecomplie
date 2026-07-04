@@ -13,7 +13,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * L3 磁盘持久化缓存将反编译结果序列化到 {@code <appDir>/cache/} 下
@@ -142,8 +141,12 @@ public final class DiskCodeCache {
                         }).sum();
             }
             if (totalSize <= MAX_CACHE_SIZE_BYTES) {
+                logger.debug("磁盘缓存大小: {} MB (阈值 {} MB), 无需清理",
+                        totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
                 return;
             }
+            logger.info("磁盘缓存超过阈值: {} MB > {} MB, 开始清理",
+                    totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
             // 第二遍扫描:收集、按时间排序,删除最旧的直至低于目标大小
             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
             List<Path> files;
@@ -158,6 +161,7 @@ public final class DiskCodeCache {
                         }))
                         .toList();
             }
+            int deleted = 0;
             for (Path f : files) {
                 if (totalSize <= targetSize) {
                     break;
@@ -166,9 +170,12 @@ public final class DiskCodeCache {
                     long sz = Files.size(f);
                     Files.deleteIfExists(f);
                     totalSize -= sz;
+                    deleted++;
                 } catch (IOException ignored) {
                 }
             }
+            logger.info("磁盘缓存清理完成: 删除 {} 个文件, 剩余 {} MB",
+                    deleted, totalSize / (1024 * 1024));
         } catch (IOException ignored) {
         }
     }

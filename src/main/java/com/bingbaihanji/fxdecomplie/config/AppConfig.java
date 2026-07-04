@@ -8,8 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 /**
@@ -235,7 +237,14 @@ public class AppConfig {
             try {
                 normalize();
                 Files.createDirectories(CONFIG_DIR);
-                Files.writeString(CONFIG_FILE, GSON.toJson(this));
+                Path tmp = CONFIG_FILE.resolveSibling(CONFIG_FILE.getFileName() + ".tmp");
+                Files.writeString(tmp, GSON.toJson(this));
+                try {
+                    Files.move(tmp, CONFIG_FILE, StandardCopyOption.ATOMIC_MOVE,
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(tmp, CONFIG_FILE, StandardCopyOption.REPLACE_EXISTING);
+                }
             } catch (IOException e) {
                 logger.warn("保存配置失败", e);
             }

@@ -29,6 +29,7 @@ public final class DecompilerFactory {
      */
     public static Decompiler getDecompiler(DecompilerTypeEnum type) {
         return CACHE.computeIfAbsent(type, t -> {
+            logger.info("创建反编译引擎实例: {}", t);
             Decompiler engine = switch (t) {
                 case PROCYON -> new ProcyonDecompiler();
                 case CFR -> new CfrDecompiler();
@@ -36,6 +37,7 @@ public final class DecompilerFactory {
                 case JD -> new JdDecompiler();
             };
             engine.initialize();
+            logger.info("反编译引擎初始化完成: {} ({})", t, engine.getName());
             return engine;
         });
     }

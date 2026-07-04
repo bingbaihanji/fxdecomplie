@@ -3,11 +3,7 @@ package com.bingbaihanji.fxdecomplie.rename;
 import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.geometry.Insets;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Dialog;
-import javafx.scene.control.DialogPane;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 

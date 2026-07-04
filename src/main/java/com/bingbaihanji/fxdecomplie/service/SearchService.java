@@ -53,6 +53,7 @@ public class SearchService {
                 ? List.of()
                 : patterns.stream()
                 .filter(pattern -> pattern != null && !pattern.isBlank())
+                .map(pattern -> pattern.replace('\\', '/'))
                 .toList();
         this.compiledExcludePatterns = this.excludePatterns.stream()
                 .map(SearchService::globContainsPattern)
@@ -67,6 +68,7 @@ public class SearchService {
         if (path == null || path.isBlank()) {
             return false;
         }
+        path = path.replace('\\', '/');
         for (Pattern pattern : compiledExcludePatterns) {
             if (pattern.matcher(path).find()) {
                 return true;

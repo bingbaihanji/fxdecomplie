@@ -40,15 +40,23 @@ public final class BackgroundTasks {
     /** @return 可通过 {@link #cancel(Future)} 取消的 Future */
     public static Future<?> run(String name, Runnable task) {
         try {
+            logger.debug("提交后台任务: {} (队列: {}/{})", name,
+                    EXECUTOR.getQueue().size(), MAX_QUEUE_SIZE);
             return EXECUTOR.submit(() -> {
                 Thread.currentThread().setName(name);
                 // 清除线程池复用残留的中断标志,避免反编译器抛出 InterruptedException
                 // 任务内需要通过 isInterrupted() 自行检查取消信号
                 Thread.interrupted();
-                task.run();
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    logger.error("后台任务异常: {}", name, e);
+                    throw e;
+                }
             });
         } catch (RejectedExecutionException e) {
-            logger.warn("后台任务被拒绝: {}", name, e);
+            logger.warn("后台任务被拒绝(队列满): {} (队列: {}/{})", name,
+                    EXECUTOR.getQueue().size(), MAX_QUEUE_SIZE);
             CompletableFuture<Void> failed = new CompletableFuture<>();
             failed.completeExceptionally(e);
             return failed;

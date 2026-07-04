@@ -30,6 +30,9 @@ public class CodeViewPanel extends VBox {
     private Consumer<Boolean> onSplitToggled;
     /** Ctrl+; 快捷键处理器引用（用于先移除再添加，防止重复注册） */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> commentKeyHandler;
+    /** Ctrl+F 文件内查找处理器引用 */
+    private javafx.event.EventHandler<javafx.scene.input.KeyEvent> findKeyHandler;
+    private jfx.incubator.scene.control.richtext.CodeArea findKeyArea;
 
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
         this(sourceCode, classBytes, null, "Consolas", 14, true);
@@ -65,6 +68,22 @@ public class CodeViewPanel extends VBox {
         getChildren().addAll(searchBar, deck);
         VBox.setVgrow(deck, Priority.ALWAYS);
         getStyleClass().add("code-view-panel");
+    }
+
+    private static String selectedText(jfx.incubator.scene.control.richtext.CodeArea area) {
+        if (area == null) {
+            return "";
+        }
+        try {
+            Object value = area.getClass().getMethod("getSelectedText").invoke(area);
+            if (!(value instanceof String text) || text.isBlank()
+                    || text.length() > 200 || text.indexOf('\n') >= 0 || text.indexOf('\r') >= 0) {
+                return "";
+            }
+            return text;
+        } catch (ReflectiveOperationException ignored) {
+            return "";
+        }
     }
 
     /** 设置分屏开关回调 */
@@ -146,6 +165,7 @@ public class CodeViewPanel extends VBox {
         var area = getSourceCodeArea();
         if (area != null && searchBar != null) {
             searchBar.rebind(area);
+            installFindShortcut(area);
         }
     }
 
@@ -222,6 +242,39 @@ public class CodeViewPanel extends VBox {
 
     /** 释放资源 */
     public void dispose() {
+        if (findKeyArea != null && findKeyHandler != null) {
+            findKeyArea.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, findKeyHandler);
+        }
         deck.dispose();
+    }
+
+    private void installFindShortcut(jfx.incubator.scene.control.richtext.CodeArea area) {
+        if (findKeyArea != null && findKeyHandler != null) {
+            findKeyArea.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, findKeyHandler);
+        }
+        findKeyArea = area;
+        findKeyHandler = e -> {
+            if (e.isControlDown() && !e.isAltDown() && !e.isShiftDown()
+                    && e.getCode() == javafx.scene.input.KeyCode.F) {
+                e.consume();
+                searchBar.show(selectedText(area));
+                return;
+            }
+            if (searchBar.isVisible() && e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                e.consume();
+                searchBar.hide();
+                area.requestFocus();
+                return;
+            }
+            if (searchBar.isVisible() && e.getCode() == javafx.scene.input.KeyCode.F3) {
+                e.consume();
+                if (e.isShiftDown()) {
+                    searchBar.navigatePrevious();
+                } else {
+                    searchBar.navigateNext();
+                }
+            }
+        };
+        area.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, findKeyHandler);
     }
 }

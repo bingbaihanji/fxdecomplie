@@ -2,11 +2,11 @@ package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.service.CommentManager;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.bingbaihanji.windows.jfx.WindowToolkit;
 import com.bingbaihanji.windows.platform.WindowAppearance;

@@ -2,9 +2,9 @@ package com.bingbaihanji.fxdecomplie.ui.usage;
 
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.UsageSearchService;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.application.Platform;
@@ -75,7 +75,7 @@ public final class FindUsageDialog {
                     setText(result.sourcePath().isBlank()
                             ? result.displayText()
                             : result.sourcePath() + ":" + result.lineNumber()
-                              + "  " + result.displayText());
+                            + "  " + result.displayText());
                 }
             }
         });

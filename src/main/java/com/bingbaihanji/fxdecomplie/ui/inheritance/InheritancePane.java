@@ -56,7 +56,7 @@ public final class InheritancePane extends VBox {
                     setText(prefix + item.displayName());
                     Color c = item.relation() == InheritanceNode.RelationType.SELF ? Color.web("#dcdcaa")
                             : item.relation() == InheritanceNode.RelationType.SUPER_CLASS ? Color.web("#c586c0")
-                              : Color.web("#9cdcfe");
+                            : Color.web("#9cdcfe");
                     setTextFill(c);
                     setStyle("-fx-background-color: transparent; -fx-font-family: 'Consolas', monospace;");
                 }

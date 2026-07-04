@@ -1,8 +1,8 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
-import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
+import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
@@ -15,23 +15,18 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HexFormat;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * 重命名服务：验证、持久化、查询和应用重命名映射。
@@ -49,7 +44,8 @@ public final class RenameService {
 
     private static final Logger logger = LoggerFactory.getLogger(RenameService.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Type LIST_TYPE = new TypeToken<List<RenameEntry>>() {}.getType();
+    private static final Type LIST_TYPE = new TypeToken<List<RenameEntry>>() {
+    }.getType();
     private static final Pattern JAVA_ID = Pattern.compile("[a-zA-Z_$][a-zA-Z0-9_$]*");
     private static final Set<String> RESERVED_NAMES = Set.of(
             "_", "abstract", "assert", "boolean", "break", "byte", "case", "catch",
@@ -59,26 +55,48 @@ public final class RenameService {
             "native", "new", "null", "package", "private", "protected", "public",
             "return", "short", "static", "strictfp", "super", "switch", "synchronized",
             "this", "throw", "throws", "transient", "true", "try", "void", "volatile",
-            "while", "var", "record", "sealed", "permits", "yield", "module", "requires",
-            "exports", "opens", "to", "uses", "provides", "with");
+            "while");
     private static final Set<String> METHOD_HEADER_KEYWORDS = Set.of(
             "if", "for", "while", "switch", "catch", "try", "return", "throw", "new",
             "synchronized", "do", "else", "assert");
     private static final Set<String> CONSTRUCTOR_PREFIX_WORDS = Set.of(
             "public", "protected", "private", "strictfp");
+    private static final Set<String> LOCAL_DECL_SKIP_WORDS = Set.of(
+            "assert", "break", "case", "continue", "default", "do", "else", "for",
+            "if", "return", "switch", "throw", "try", "while", "yield");
+    private static final Pattern LOCAL_DECL_PATTERN = Pattern.compile(
+            "(?m)(^|[;{}]\\s*)(?:final\\s+)?(?:@[\\w.$]+(?:\\([^)]*\\))?\\s*)*"
+                    + "((?:[a-zA-Z_$][a-zA-Z0-9_$]*(?:\\s*\\.\\s*[a-zA-Z_$][a-zA-Z0-9_$]*)*"
+                    + "(?:\\s*<[^;{}()]*>)?(?:\\s*\\[\\s*\\])?\\s+)+)"
+                    + "([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*(?=[=;,:])");
+    private static final Pattern COMMA_LOCAL_PATTERN = Pattern.compile(
+            ",\\s*([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*(?=[=,;])");
+    private static final Pattern CATCH_PARAM_PATTERN = Pattern.compile(
+            "\\bcatch\\s*\\((?:final\\s+)?[^()]*?\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*\\)");
+    private static final Pattern FOR_PARAM_PATTERN = Pattern.compile(
+            "\\bfor\\s*\\(\\s*(?:final\\s+)?[a-zA-Z_$][a-zA-Z0-9_$.]*(?:\\s*<[^;:()]*>)?"
+                    + "(?:\\s*\\[\\s*\\])?\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*[:=;]");
+    private static final Pattern LAMBDA_GROUP_PATTERN = Pattern.compile("\\(([^()\\n]*)\\)\\s*->");
+    private static final Pattern LAMBDA_SINGLE_PATTERN = Pattern.compile(
+            "(?<![\\w$])([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*->");
+    private static final Pattern IMPORT_LINE_PATTERN = Pattern.compile(
+            "(?m)^\\s*import\\s+(?:static\\s+)?([\\w.$]+(?:\\.\\*)?)\\s*;\\s*$");
+    private static final Pattern PACKAGE_LINE_PATTERN = Pattern.compile(
+            "(?m)^\\s*package\\s+([\\w.]+)\\s*;");
     private static final ConcurrentMap<String, List<RenameEntry>> MEMORY_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Object> WORKSPACE_LOCKS = new ConcurrentHashMap<>();
     private static volatile Path rootDir;
 
     private RenameService() {
         throw new AssertionError("utility class");
     }
 
-    public static void setRootDir(Path dir) {
-        rootDir = dir;
-    }
-
     private static Path getRootDir() {
         return rootDir != null ? rootDir : AppConfig.appDir().resolve("fxdecomplie").resolve("renames");
+    }
+
+    public static void setRootDir(Path dir) {
+        rootDir = dir;
     }
 
     /** 校验 Java 标识符合法性 */
@@ -107,27 +125,52 @@ public final class RenameService {
         if (entry == null || workspaceHash == null || workspaceHash.isBlank()) {
             return false;
         }
-        RenameEntry normalized = normalize(entry);
-        if (normalized.oldName().equals(normalized.newName())) {
-            delete(workspaceHash, normalized);
-            return true;
+        return saveAll(workspaceHash, List.of(entry)) == 1;
+    }
+
+    /** 批量保存重命名，单次加锁和落盘，避免批量反混淆时丢写或重复 I/O。 */
+    public static int saveAll(String workspaceHash, List<RenameEntry> entries) {
+        if (workspaceHash == null || workspaceHash.isBlank() || entries == null || entries.isEmpty()) {
+            return 0;
         }
-        List<RenameEntry> list = loadAll(workspaceHash);
-        // 替换同一符号的旧条目。方法和参数保留 descriptor，避免重载冲突。
-        boolean replaced = false;
-        for (int i = 0; i < list.size(); i++) {
-            RenameEntry e = normalize(list.get(i));
-            if (sameKey(e, normalized)) {
-                list.set(i, normalized);
-                replaced = true;
-                break;
+        synchronized (lockFor(workspaceHash)) {
+            List<RenameEntry> list = loadAll(workspaceHash);
+            int applied = 0;
+            for (RenameEntry entry : entries) {
+                if (entry == null) {
+                    continue;
+                }
+                RenameEntry normalized = normalize(entry);
+                if (normalized.oldName().isBlank() || normalized.newName().isBlank()) {
+                    continue;
+                }
+                if (normalized.oldName().equals(normalized.newName())) {
+                    if (list.removeIf(e -> sameKey(normalize(e), normalized))) {
+                        applied++;
+                    }
+                    continue;
+                }
+                // 替换同一符号的旧条目。方法和参数保留 descriptor，避免重载冲突。
+                boolean replaced = false;
+                for (int i = 0; i < list.size(); i++) {
+                    RenameEntry e = normalize(list.get(i));
+                    if (sameKey(e, normalized) || sameClassRenameTarget(e, normalized)) {
+                        list.set(i, normalized);
+                        replaced = true;
+                        break;
+                    }
+                }
+                if (!replaced) {
+                    list.add(normalized);
+                }
+                applied++;
             }
+            if (applied == 0) {
+                return 0;
+            }
+            MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
+            return writeFile(workspaceHash, list) ? applied : 0;
         }
-        if (!replaced) {
-            list.add(normalized);
-        }
-        MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
-        return writeFile(workspaceHash, list);
     }
 
     /** 加载工作区全部重命名 */
@@ -156,6 +199,7 @@ public final class RenameService {
                     result.add(normalize(entry));
                 }
             }
+            result = dedupeClassRenames(result);
             MEMORY_CACHE.put(workspaceHash, List.copyOf(result));
             return result;
         } catch (IOException | com.google.gson.JsonSyntaxException e) {
@@ -181,11 +225,43 @@ public final class RenameService {
         if (entry == null || workspaceHash == null || workspaceHash.isBlank()) {
             return;
         }
-        RenameEntry normalized = normalize(entry);
-        List<RenameEntry> list = loadAll(workspaceHash);
-        list.removeIf(e -> sameKey(normalize(e), normalized));
-        MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
-        writeFile(workspaceHash, list);
+        synchronized (lockFor(workspaceHash)) {
+            RenameEntry normalized = normalize(entry);
+            List<RenameEntry> list = loadAll(workspaceHash);
+            list.removeIf(e -> sameKey(normalize(e), normalized));
+            MEMORY_CACHE.put(workspaceHash, List.copyOf(list));
+            writeFile(workspaceHash, list);
+        }
+    }
+
+    /** 恢复最近一次保存前快照。 */
+    public static boolean restoreLatestBackup(String workspaceHash) {
+        if (workspaceHash == null || workspaceHash.isBlank()) {
+            return false;
+        }
+        synchronized (lockFor(workspaceHash)) {
+            Path file = resolveFile(workspaceHash);
+            Path parent = file.getParent();
+            if (parent == null || !Files.isDirectory(parent)) {
+                return false;
+            }
+            String prefix = file.getFileName() + ".bak.";
+            try (Stream<Path> stream = Files.list(parent)) {
+                Optional<Path> latest = stream
+                        .filter(path -> path.getFileName().toString().startsWith(prefix))
+                        .max(Comparator.comparing(path -> path.getFileName().toString()));
+                if (latest.isEmpty()) {
+                    return false;
+                }
+                Files.copy(latest.get(), file, StandardCopyOption.REPLACE_EXISTING);
+                MEMORY_CACHE.remove(workspaceHash);
+                loadAll(workspaceHash);
+                return true;
+            } catch (IOException e) {
+                logger.error("恢复重命名快照失败", e);
+                return false;
+            }
+        }
     }
 
     /**
@@ -200,7 +276,10 @@ public final class RenameService {
         if (sourceCode == null || wsHash == null || wsHash.isBlank()) {
             return sourceCode;
         }
-        return applyEntries(sourceCode, loadAll(wsHash), normalizeInternalName(className));
+        String currentClass = normalizeInternalName(className);
+        List<RenameEntry> entries = loadAll(wsHash);
+        String source = applyClassRenames(sourceCode, entries, currentClass);
+        return applyEntries(source, entries, currentClass);
     }
 
     /** 返回应用类重命名后的 .java 导出路径。 */
@@ -223,6 +302,27 @@ public final class RenameService {
             }
         }
         return result;
+    }
+
+    /** 将显示出来的反混淆类名反查回真实 class 内部名。 */
+    public static String originalInternalName(String className, String workspaceHash) {
+        String internalName = normalizeInternalName(className);
+        if (internalName.isBlank() || workspaceHash == null || workspaceHash.isBlank()) {
+            return internalName;
+        }
+        for (RenameEntry entry : loadAll(workspaceHash)) {
+            if (!TYPE_CLASS.equals(entry.type()) || entry.className().isBlank()) {
+                continue;
+            }
+            String original = normalizeInternalName(entry.className());
+            String renamed = normalizeInternalName(renamedClassInternalName(
+                    original, entry.oldName(), entry.newName()));
+            if (internalName.equals(renamed)
+                    || internalName.equals(renamed.replace('$', '/'))) {
+                return original;
+            }
+        }
+        return internalName;
     }
 
     /** 返回编辑器标题使用的类短名。 */
@@ -339,7 +439,10 @@ public final class RenameService {
         if (sourceCode == null || entry == null) {
             return sourceCode;
         }
-        return applyEntries(sourceCode, List.of(normalize(entry)), normalizeInternalName(className));
+        String currentClass = normalizeInternalName(className);
+        List<RenameEntry> entries = List.of(normalize(entry));
+        String source = applyClassRenames(sourceCode, entries, currentClass);
+        return applyEntries(source, entries, currentClass);
     }
 
     /** 对当前已显示的别名源码做一次直接替换，并使用已保存映射辅助方法作用域匹配。 */
@@ -350,7 +453,9 @@ public final class RenameService {
         }
         List<RenameEntry> entries = new ArrayList<>(loadAll(workspaceHash));
         entries.add(normalize(entry));
-        return applyEntries(sourceCode, entries, normalizeInternalName(className));
+        String currentClass = normalizeInternalName(className);
+        String source = applyClassRenames(sourceCode, entries, currentClass);
+        return applyEntries(source, entries, currentClass);
     }
 
     /** 按 Java 标识符边界强制替换源码中的可见名称，跳过注释和字符串。 */
@@ -377,6 +482,231 @@ public final class RenameService {
                     .append(" → ").append(e.newName()).append("\n");
         }
         return sb.toString();
+    }
+
+    /** 解析 ProGuard/R8 mapping.txt，方向转换为当前工具使用的 混淆名 -> 新名。 */
+    public static List<RenameEntry> parseProGuardMapping(String text) {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+        List<RenameEntry> entries = new ArrayList<>();
+        String currentObfuscatedClass = "";
+        for (String rawLine : text.replace("\r\n", "\n").split("\n")) {
+            String line = rawLine.strip();
+            if (line.isBlank() || line.startsWith("#")) {
+                continue;
+            }
+            if (line.endsWith(":") && line.contains(" -> ")) {
+                String header = line.substring(0, line.length() - 1);
+                String[] parts = header.split("\\s+->\\s+", 2);
+                if (parts.length != 2) {
+                    currentObfuscatedClass = "";
+                    continue;
+                }
+                String originalClass = parts[0].strip();
+                currentObfuscatedClass = normalizeInternalName(parts[1].strip());
+                String oldName = visibleClassLeaf(currentObfuscatedClass);
+                String newName = visibleClassLeaf(normalizeInternalName(originalClass));
+                if (!oldName.isBlank() && isValidName(newName)) {
+                    entries.add(new RenameEntry(TYPE_CLASS, currentObfuscatedClass,
+                            oldName, newName, ""));
+                }
+                continue;
+            }
+            if (currentObfuscatedClass.isBlank() || !line.contains(" -> ")) {
+                continue;
+            }
+            RenameEntry member = parseProGuardMemberLine(line, currentObfuscatedClass);
+            if (member != null) {
+                entries.add(member);
+            }
+        }
+        return entries;
+    }
+
+    /** 导出为 ProGuard/R8 mapping.txt 方向：新名 -> 混淆名。 */
+    public static String exportProGuard(String workspaceHash) {
+        List<RenameEntry> entries = loadAll(workspaceHash);
+        if (entries.isEmpty()) {
+            return "";
+        }
+        Map<String, List<RenameEntry>> byClass = new LinkedHashMap<>();
+        for (RenameEntry entry : entries) {
+            RenameEntry normalized = normalize(entry);
+            if (normalized.className().isBlank()) {
+                continue;
+            }
+            byClass.computeIfAbsent(normalized.className(), key -> new ArrayList<>())
+                    .add(normalized);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, List<RenameEntry>> classGroup : byClass.entrySet()) {
+            String obfuscatedClass = classGroup.getKey();
+            Optional<RenameEntry> classRename = classGroup.getValue().stream()
+                    .filter(entry -> TYPE_CLASS.equals(entry.type()))
+                    .findFirst();
+            String originalClass = classRename
+                    .map(entry -> dotted(renamedClassInternalName(obfuscatedClass,
+                            entry.oldName(), entry.newName())))
+                    .orElseGet(() -> dotted(obfuscatedClass));
+            sb.append(originalClass).append(" -> ").append(dotted(obfuscatedClass)).append(":\n");
+            for (RenameEntry entry : classGroup.getValue()) {
+                if (TYPE_FIELD.equals(entry.type())) {
+                    sb.append("    ")
+                            .append(fieldDescriptorToType(entry.desc()))
+                            .append(' ')
+                            .append(entry.newName())
+                            .append(" -> ")
+                            .append(entry.oldName())
+                            .append('\n');
+                } else if (TYPE_METHOD.equals(entry.type())) {
+                    MethodSignature signature = methodDescriptorToSignature(entry.desc(), entry.newName());
+                    sb.append("    ")
+                            .append(signature.returnType())
+                            .append(' ')
+                            .append(entry.newName())
+                            .append('(')
+                            .append(String.join(",", signature.params()))
+                            .append(") -> ")
+                            .append(entry.oldName())
+                            .append('\n');
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    private static RenameEntry parseProGuardMemberLine(String line, String className) {
+        String[] parts = line.split("\\s+->\\s+", 2);
+        if (parts.length != 2) {
+            return null;
+        }
+        String left = stripProGuardLineNumbers(parts[0].strip());
+        String obfuscatedName = parts[1].strip();
+        if (left.isBlank() || obfuscatedName.isBlank()) {
+            return null;
+        }
+        if (left.contains("(")) {
+            int paren = left.indexOf('(');
+            String beforeParen = left.substring(0, paren).strip();
+            String originalName = lastMemberName(beforeParen);
+            if (!isValidName(originalName)) {
+                return null;
+            }
+            return new RenameEntry(TYPE_METHOD, className, obfuscatedName, originalName, "");
+        }
+        String originalName = lastMemberName(left);
+        if (!isValidName(originalName)) {
+            return null;
+        }
+        return new RenameEntry(TYPE_FIELD, className, obfuscatedName, originalName, "");
+    }
+
+    private static String stripProGuardLineNumbers(String text) {
+        String result = text;
+        while (true) {
+            int colon = result.indexOf(':');
+            if (colon <= 0) {
+                return result.strip();
+            }
+            String prefix = result.substring(0, colon);
+            if (!prefix.chars().allMatch(Character::isDigit)) {
+                return result.strip();
+            }
+            result = result.substring(colon + 1).strip();
+        }
+    }
+
+    private static String lastMemberName(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String normalized = text.replace('.', ' ').strip();
+        int space = normalized.lastIndexOf(' ');
+        return space < 0 ? normalized : normalized.substring(space + 1);
+    }
+
+    private static String dotted(String internalName) {
+        return normalizeInternalName(internalName).replace('/', '.');
+    }
+
+    private static String visibleClassLeaf(String internalName) {
+        String simple = simpleClassName(internalName);
+        int dollar = simple.lastIndexOf('$');
+        return dollar >= 0 ? simple.substring(dollar + 1) : simple;
+    }
+
+    private static String fieldDescriptorToType(String desc) {
+        if (desc == null || desc.isBlank()) {
+            return "***";
+        }
+        TypeParse parsed = parseJvmType(desc, 0);
+        return parsed == null ? "***" : parsed.name();
+    }
+
+    private static MethodSignature methodDescriptorToSignature(String desc, String methodName) {
+        if (desc == null || desc.isBlank() || !desc.startsWith("(")) {
+            return new MethodSignature("***", List.of("***"));
+        }
+        List<String> params = new ArrayList<>();
+        int offset = 1;
+        while (offset < desc.length() && desc.charAt(offset) != ')') {
+            TypeParse param = parseJvmType(desc, offset);
+            if (param == null || param.nextOffset() <= offset) {
+                return new MethodSignature("***", List.of("***"));
+            }
+            params.add(param.name());
+            offset = param.nextOffset();
+        }
+        if (offset >= desc.length() || desc.charAt(offset) != ')') {
+            return new MethodSignature("***", List.of("***"));
+        }
+        TypeParse returnType = parseJvmType(desc, offset + 1);
+        return new MethodSignature(returnType == null ? "***" : returnType.name(), params);
+    }
+
+    private static TypeParse parseJvmType(String desc, int offset) {
+        if (desc == null || offset < 0 || offset >= desc.length()) {
+            return null;
+        }
+        int arrayDepth = 0;
+        int i = offset;
+        while (i < desc.length() && desc.charAt(i) == '[') {
+            arrayDepth++;
+            i++;
+        }
+        if (i >= desc.length()) {
+            return null;
+        }
+        String typeName;
+        char ch = desc.charAt(i);
+        switch (ch) {
+            case 'B' -> typeName = "byte";
+            case 'C' -> typeName = "char";
+            case 'D' -> typeName = "double";
+            case 'F' -> typeName = "float";
+            case 'I' -> typeName = "int";
+            case 'J' -> typeName = "long";
+            case 'S' -> typeName = "short";
+            case 'Z' -> typeName = "boolean";
+            case 'V' -> typeName = "void";
+            case 'L' -> {
+                int end = desc.indexOf(';', i);
+                if (end < 0) {
+                    return null;
+                }
+                typeName = desc.substring(i + 1, end).replace('/', '.').replace('$', '.');
+                i = end;
+            }
+            default -> {
+                return null;
+            }
+        }
+        StringBuilder result = new StringBuilder(typeName);
+        for (int depth = 0; depth < arrayDepth; depth++) {
+            result.append("[]");
+        }
+        return new TypeParse(result.toString(), i + 1);
     }
 
     private static String applyEntries(String sourceCode, List<RenameEntry> entries,
@@ -438,6 +768,437 @@ public final class RenameService {
         return out.toString();
     }
 
+    private static String applyClassRenames(String sourceCode, List<RenameEntry> entries,
+                                            String currentClass) {
+        if (sourceCode == null || sourceCode.isEmpty() || entries == null || entries.isEmpty()) {
+            return sourceCode;
+        }
+        List<RenameEntry> classEntries = entries.stream()
+                .map(RenameService::normalize)
+                .filter(entry -> TYPE_CLASS.equals(entry.type()))
+                .toList();
+        if (classEntries.isEmpty()) {
+            return sourceCode;
+        }
+        sourceCode = replaceDeclaredClassNames(sourceCode, classEntries, currentClass);
+        StringBuilder out = new StringBuilder(sourceCode.length());
+        int i = 0;
+        while (i < sourceCode.length()) {
+            char ch = sourceCode.charAt(i);
+            if (startsWith(sourceCode, i, "//")) {
+                int end = sourceCode.indexOf('\n', i + 2);
+                if (end < 0) {
+                    out.append(sourceCode, i, sourceCode.length());
+                    break;
+                }
+                out.append(sourceCode, i, end + 1);
+                i = end + 1;
+                continue;
+            }
+            if (startsWith(sourceCode, i, "/*")) {
+                int end = sourceCode.indexOf("*/", i + 2);
+                int next = end < 0 ? sourceCode.length() : end + 2;
+                out.append(sourceCode, i, next);
+                i = next;
+                continue;
+            }
+            if (startsWith(sourceCode, i, "\"\"\"")) {
+                int end = sourceCode.indexOf("\"\"\"", i + 3);
+                int next = end < 0 ? sourceCode.length() : end + 3;
+                out.append(sourceCode, i, next);
+                i = next;
+                continue;
+            }
+            if (ch == '"' || ch == '\'') {
+                int next = skipQuoted(sourceCode, i, ch);
+                out.append(sourceCode, i, next);
+                i = next;
+                continue;
+            }
+            if (Character.isJavaIdentifierStart(ch)) {
+                int start = i;
+                i++;
+                while (i < sourceCode.length()
+                        && Character.isJavaIdentifierPart(sourceCode.charAt(i))) {
+                    i++;
+                }
+                String token = sourceCode.substring(start, i);
+                String replacement = classReplacementForToken(sourceCode, start, i,
+                        token, classEntries, currentClass);
+                out.append(replacement == null ? token : replacement);
+                continue;
+            }
+            out.append(ch);
+            i++;
+        }
+        return out.toString();
+    }
+
+    private static String replaceDeclaredClassNames(String sourceCode, List<RenameEntry> classEntries,
+                                                    String currentClass) {
+        String result = sourceCode;
+        for (RenameEntry entry : classEntries) {
+            if (!classEntryBelongsToCurrentSource(entry, currentClass)) {
+                continue;
+            }
+            result = replaceDeclaredClassName(result, entry.oldName(), entry.newName());
+            String ownerSimple = simpleClassName(entry.className());
+            if (!ownerSimple.equals(entry.oldName())) {
+                result = replaceDeclaredClassName(result, ownerSimple, entry.newName());
+            }
+            int dollar = ownerSimple.lastIndexOf('$');
+            if (dollar >= 0) {
+                result = replaceDeclaredClassName(result, ownerSimple.substring(dollar + 1), entry.newName());
+            }
+            int oldDollar = entry.oldName().lastIndexOf('$');
+            if (oldDollar >= 0) {
+                result = replaceDeclaredClassName(result, entry.oldName().substring(oldDollar + 1), entry.newName());
+            }
+        }
+        return result;
+    }
+
+    private static boolean classEntryBelongsToCurrentSource(RenameEntry entry, String currentClass) {
+        String target = normalizeInternalName(entry.className());
+        String current = normalizeInternalName(currentClass);
+        return !target.isBlank() && !current.isBlank()
+                && (target.equals(current)
+                || target.startsWith(current + "$")
+                || current.startsWith(target + "$"));
+    }
+
+    private static String replaceDeclaredClassName(String sourceCode, String oldName, String newName) {
+        if (oldName == null || oldName.isBlank() || newName == null || newName.isBlank()
+                || oldName.equals(newName)) {
+            return sourceCode;
+        }
+        String quoted = Pattern.quote(oldName);
+        String classPattern = "(\\b(?:class|interface|enum|record)\\s+)" + quoted + "\\b";
+        String annotationPattern = "(@\\s*interface\\s+)" + quoted + "\\b";
+        return sourceCode
+                .replaceAll(classPattern, "$1" + Matcher.quoteReplacement(newName))
+                .replaceAll(annotationPattern, "$1" + Matcher.quoteReplacement(newName));
+    }
+
+    private static String classReplacementForToken(String source, int start, int end,
+                                                   String token, List<RenameEntry> classEntries,
+                                                   String currentClass) {
+        if (isPackageDeclarationToken(source, start)) {
+            return null;
+        }
+        String qualifiedReplacement = qualifiedClassReplacementForToken(source, start, end,
+                token, classEntries);
+        if (qualifiedReplacement != null) {
+            return qualifiedReplacement;
+        }
+        RenameEntry currentClassEntry = classEntries.stream()
+                .filter(entry -> classEntryTargetsInternalName(entry, currentClass))
+                .findFirst()
+                .orElse(null);
+        if (isClassDeclarationName(source, start, end)) {
+            for (RenameEntry entry : classEntries) {
+                if (entry.oldName().equals(token) || classEntryMatchesToken(entry, token)) {
+                    return entry.newName();
+                }
+            }
+        }
+        if (isConstructorDeclarationToken(source, start, end)) {
+            RenameEntry declarationEntry = classEntryForDeclaredName(classEntries, source);
+            if (declarationEntry != null && classEntryMatchesToken(declarationEntry, token)) {
+                return declarationEntry.newName();
+            }
+        }
+        if (currentClassEntry != null && classEntryMatchesToken(currentClassEntry, token)) {
+            if (isConstructorToken(source, start, end, currentClassEntry)
+                    || isClassContext(source, start, end)
+                    || isLikelyTypeUsage(source, start, end)
+                    || isStaticClassQualifier(source, start, end)) {
+                return currentClassEntry.newName();
+            }
+        }
+        if (!isClassContext(source, start, end)
+                && !isLikelyTypeUsage(source, start, end)
+                && !isStaticClassQualifier(source, start, end)
+                && !isAnnotationUsage(source, start)) {
+            return null;
+        }
+        RenameEntry resolved = classEntryForTokenInSource(source, token, classEntries, currentClass);
+        return resolved == null ? null : resolved.newName();
+    }
+
+    private static RenameEntry classEntryForTokenInSource(String source, String token,
+                                                          List<RenameEntry> classEntries,
+                                                          String currentClass) {
+        RenameEntry imported = importedClassEntryForToken(source, token, classEntries);
+        if (imported != null) {
+            return imported;
+        }
+        RenameEntry samePackage = samePackageClassEntryForToken(source, token, classEntries);
+        if (samePackage != null) {
+            return samePackage;
+        }
+        RenameEntry current = classEntries.stream()
+                .filter(entry -> classEntryTargetsInternalName(entry, currentClass))
+                .filter(entry -> classEntryMatchesToken(entry, token))
+                .findFirst()
+                .orElse(null);
+        if (current != null) {
+            return current;
+        }
+        List<RenameEntry> matches = classEntries.stream()
+                .filter(entry -> classEntryMatchesToken(entry, token))
+                .toList();
+        return matches.size() == 1 ? matches.getFirst() : null;
+    }
+
+    private static RenameEntry importedClassEntryForToken(String source, String token,
+                                                          List<RenameEntry> classEntries) {
+        Matcher matcher = IMPORT_LINE_PATTERN.matcher(source);
+        while (matcher.find()) {
+            String imported = matcher.group(1);
+            if (imported == null || imported.endsWith(".*")) {
+                continue;
+            }
+            String importedSimple = visibleClassLeaf(normalizeInternalName(imported));
+            if (!importedSimple.equals(token)) {
+                continue;
+            }
+            for (RenameEntry entry : classEntries) {
+                if (qualifiedPrefixTargetsClass(imported, entry)) {
+                    return entry;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static RenameEntry samePackageClassEntryForToken(String source, String token,
+                                                             List<RenameEntry> classEntries) {
+        String pkg = sourcePackageInternal(source);
+        if (pkg.isBlank()) {
+            return null;
+        }
+        String candidate = pkg + "/" + token;
+        for (RenameEntry entry : classEntries) {
+            if (normalizeInternalName(entry.className()).equals(candidate)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private static String sourcePackageInternal(String source) {
+        Matcher matcher = PACKAGE_LINE_PATTERN.matcher(source);
+        return matcher.find() ? matcher.group(1).replace('.', '/') : "";
+    }
+
+    private static String qualifiedClassReplacementForToken(String source, int start, int end,
+                                                            String token,
+                                                            List<RenameEntry> classEntries) {
+        String qualifiedPrefix = qualifiedNamePrefixAt(source, start, end);
+        if (qualifiedPrefix.isBlank()) {
+            return null;
+        }
+        for (RenameEntry entry : classEntries) {
+            if ((entry.oldName().equals(token) || classEntryMatchesToken(entry, token))
+                    && qualifiedPrefixTargetsClass(qualifiedPrefix, entry)) {
+                return entry.newName();
+            }
+        }
+        return null;
+    }
+
+    private static String qualifiedNamePrefixAt(String source, int start, int end) {
+        int first = start;
+        while (first >= 2 && source.charAt(first - 1) == '.') {
+            int segmentEnd = first - 1;
+            int segmentStart = segmentEnd - 1;
+            while (segmentStart >= 0
+                    && Character.isJavaIdentifierPart(source.charAt(segmentStart))) {
+                segmentStart--;
+            }
+            segmentStart++;
+            if (segmentStart >= segmentEnd
+                    || !Character.isJavaIdentifierStart(source.charAt(segmentStart))) {
+                break;
+            }
+            first = segmentStart;
+        }
+        if (first == start) {
+            return "";
+        }
+        return source.substring(first, end);
+    }
+
+    private static boolean qualifiedPrefixTargetsClass(String qualifiedPrefix, RenameEntry entry) {
+        if (qualifiedPrefix == null || qualifiedPrefix.isBlank()
+                || entry == null || entry.className().isBlank()) {
+            return false;
+        }
+        String normalizedPrefix = normalizeInternalName(qualifiedPrefix);
+        String target = normalizeInternalName(entry.className());
+        if (normalizedPrefix.equals(target)) {
+            return true;
+        }
+        return target.indexOf('$') >= 0
+                && normalizedPrefix.equals(target.replace('$', '/'));
+    }
+
+    private static RenameEntry classEntryForDeclaredName(List<RenameEntry> classEntries, String source) {
+        Token declared = declaredClassToken(source);
+        if (declared == null) {
+            return null;
+        }
+        for (RenameEntry entry : classEntries) {
+            if (entry.oldName().equals(declared.name()) || classEntryMatchesToken(entry, declared.name())) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    private static Token declaredClassToken(String source) {
+        if (source == null || source.isBlank()) {
+            return null;
+        }
+        String[] keywords = {"class", "interface", "enum", "record"};
+        for (String keyword : keywords) {
+            Matcher matcher = Pattern
+                    .compile("\\b" + keyword + "\\s+([\\p{javaJavaIdentifierStart}][\\p{javaJavaIdentifierPart}]*)")
+                    .matcher(source);
+            if (matcher.find()) {
+                return new Token(matcher.group(1), matcher.start(1), matcher.end(1));
+            }
+        }
+        Matcher annotation = Pattern
+                .compile("@\\s*interface\\s+([\\p{javaJavaIdentifierStart}][\\p{javaJavaIdentifierPart}]*)")
+                .matcher(source);
+        return annotation.find() ? new Token(annotation.group(1), annotation.start(1), annotation.end(1)) : null;
+    }
+
+    private static boolean isLikelyTypeUsage(String source, int start, int end) {
+        if (isQualifiedIdentifier(source, start)) {
+            return false;
+        }
+        int next = nextNonWhitespace(source, end);
+        while (next >= 0 && next + 1 < source.length() && source.charAt(next) == '[') {
+            int close = nextNonWhitespace(source, next + 1);
+            if (close < 0 || close >= source.length() || source.charAt(close) != ']') {
+                break;
+            }
+            next = nextNonWhitespace(source, close + 1);
+        }
+        if (next >= 0 && next < source.length() && Character.isJavaIdentifierStart(source.charAt(next))) {
+            Token nextToken = tokenAt(source, next);
+            if (nextToken == null) {
+                return false;
+            }
+            int afterNext = nextNonWhitespace(source, nextToken.end());
+            if (afterNext >= 0 && afterNext < source.length()
+                    && (source.charAt(afterNext) == '(' || source.charAt(afterNext) == '='
+                    || source.charAt(afterNext) == ';' || source.charAt(afterNext) == ','
+                    || source.charAt(afterNext) == ')' || source.charAt(afterNext) == '[')) {
+                return true;
+            }
+        }
+        int prev = previousNonWhitespace(source, start - 1);
+        next = nextNonWhitespace(source, end);
+        return prev >= 0 && next >= 0 && source.charAt(prev) == '(' && source.charAt(next) == ')';
+    }
+
+    private static boolean isStaticClassQualifier(String source, int start, int end) {
+        if (isQualifiedIdentifier(source, start)) {
+            return false;
+        }
+        int next = nextNonWhitespace(source, end);
+        if (next < 0 || next >= source.length() || source.charAt(next) != '.') {
+            return false;
+        }
+        int afterDot = nextNonWhitespace(source, next + 1);
+        return afterDot >= 0 && afterDot < source.length()
+                && Character.isJavaIdentifierStart(source.charAt(afterDot));
+    }
+
+    private static boolean isAnnotationUsage(String source, int start) {
+        int prev = previousNonWhitespace(source, start - 1);
+        return prev >= 0 && source.charAt(prev) == '@';
+    }
+
+    private static boolean isPackageDeclarationToken(String source, int start) {
+        int lineStart = source.lastIndexOf('\n', start);
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+        String prefix = source.substring(lineStart, start).stripLeading();
+        return prefix.startsWith("package ");
+    }
+
+    private static boolean isClassDeclarationName(String source, int start, int end) {
+        if (isPreviousKeyword(source, start, "interface")) {
+            int prev = previousNonWhitespace(source, start - 1);
+            int at = previousNonWhitespace(source, prev - 1);
+            return at < 0 || source.charAt(at) != '@';
+        }
+        int prev = previousIdentifierStart(source, start);
+        if (prev >= 0 && source.startsWith("interface", prev)) {
+            int at = previousNonWhitespace(source, prev - 1);
+            if (at >= 0 && source.charAt(at) == '@') {
+                return true;
+            }
+        }
+        return isPreviousKeyword(source, start, "class")
+                || isPreviousKeyword(source, start, "interface")
+                || isPreviousKeyword(source, start, "enum")
+                || isPreviousKeyword(source, start, "record");
+    }
+
+    private static int previousIdentifierStart(String source, int beforeOffset) {
+        Token token = previousIdentifier(source, beforeOffset);
+        return token == null ? -1 : token.start();
+    }
+
+    private static boolean isConstructorToken(String source, int start, int end,
+                                              RenameEntry currentClassEntry) {
+        int next = nextNonWhitespace(source, end);
+        if (next < 0 || next >= source.length() || source.charAt(next) != '(') {
+            return false;
+        }
+        if (!classEntryMatchesToken(currentClassEntry, source.substring(start, end))) {
+            return false;
+        }
+        int lineStart = source.lastIndexOf('\n', start);
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+        String prefix = source.substring(lineStart, start).strip();
+        if (prefix.isBlank()) {
+            return true;
+        }
+        String[] words = prefix.split("\\s+");
+        for (String word : words) {
+            if (!CONSTRUCTOR_PREFIX_WORDS.contains(word)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isConstructorDeclarationToken(String source, int start, int end) {
+        int next = nextNonWhitespace(source, end);
+        if (next < 0 || next >= source.length() || source.charAt(next) != '(') {
+            return false;
+        }
+        int lineStart = source.lastIndexOf('\n', start);
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+        String prefix = source.substring(lineStart, start).strip();
+        if (prefix.isBlank()) {
+            return true;
+        }
+        String[] words = prefix.split("\\s+");
+        for (String word : words) {
+            if (!CONSTRUCTOR_PREFIX_WORDS.contains(word)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static String chooseReplacement(String source, int start, int end, String oldName,
                                             List<RenameEntry> entries, String currentClass,
                                             List<MethodScope> scopes) {
@@ -465,21 +1226,19 @@ public final class RenameService {
 
         if (methodContext) {
             for (RenameEntry entry : entries) {
-                if (TYPE_METHOD.equals(entry.type()) && entry.oldName().equals(oldName)) {
+                if (TYPE_METHOD.equals(entry.type()) && entry.oldName().equals(oldName)
+                        && appliesToClass(entry, currentClass)) {
                     return entry.newName();
                 }
             }
         } else {
             for (RenameEntry entry : entries) {
-                if (TYPE_FIELD.equals(entry.type()) && entry.oldName().equals(oldName)) {
+                if (TYPE_FIELD.equals(entry.type()) && entry.oldName().equals(oldName)
+                        && appliesToClass(entry, currentClass)
+                        && !fieldBlockedByMethodLocal(scope, qualified, oldName)) {
                     return entry.newName();
                 }
             }
-        }
-
-        String classReplacement = firstClassReplacement(entries, oldName);
-        if (classReplacement != null) {
-            return classReplacement;
         }
 
         for (RenameEntry entry : entries) {
@@ -490,13 +1249,20 @@ public final class RenameService {
         }
         for (RenameEntry entry : entries) {
             if (entry.oldName().equals(oldName)
-                    && (TYPE_CLASS.equals(entry.type()) || TYPE_METHOD.equals(entry.type())
-                    || TYPE_FIELD.equals(entry.type()) || TYPE_PARAM.equals(entry.type())
-                    || TYPE_IDENTIFIER.equals(entry.type()))) {
+                    && (TYPE_METHOD.equals(entry.type()) || TYPE_FIELD.equals(entry.type())
+                    || TYPE_PARAM.equals(entry.type()) || TYPE_IDENTIFIER.equals(entry.type()))
+                    && appliesToClass(entry, currentClass)
+                    && !(TYPE_FIELD.equals(entry.type())
+                    && fieldBlockedByMethodLocal(scope, qualified, oldName))) {
                 return entry.newName();
             }
         }
         return null;
+    }
+
+    private static boolean fieldBlockedByMethodLocal(MethodScope scope, boolean qualified, String name) {
+        return scope != null && !qualified
+                && (scope.params().contains(name) || scope.locals().contains(name));
     }
 
     private static String replaceVisibleIdentifiers(String sourceCode, List<RenameEntry> entries) {
@@ -587,6 +1353,10 @@ public final class RenameService {
         if (entry.oldName().equals(token)) {
             return true;
         }
+        int oldDollar = entry.oldName().lastIndexOf('$');
+        if (oldDollar >= 0 && entry.oldName().substring(oldDollar + 1).equals(token)) {
+            return true;
+        }
         String ownerSimple = simpleClassName(entry.className());
         if (ownerSimple.equals(token)) {
             return true;
@@ -669,8 +1439,8 @@ public final class RenameService {
     }
 
     private static Optional<RenameEntry> findAliasEntry(List<RenameEntry> entries, String visibleName,
-                                                       String type, String currentClass,
-                                                       MethodScope scope) {
+                                                        String type, String currentClass,
+                                                        MethodScope scope) {
         if (visibleName == null || visibleName.isBlank()) {
             return Optional.empty();
         }
@@ -962,7 +1732,8 @@ public final class RenameService {
                 bodyEnd = source.length() - 1;
             }
             Set<String> params = parseParameterNames(source.substring(openParen + 1, closeParen));
-            scopes.add(new MethodScope(nameToken.name(), lineStart, bodyEnd + 1, params));
+            Set<String> locals = parseLocalVariableNames(source, brace + 1, bodyEnd);
+            scopes.add(new MethodScope(nameToken.name(), lineStart, bodyEnd + 1, params, locals));
         }
         return scopes;
     }
@@ -993,7 +1764,7 @@ public final class RenameService {
                     .replace("final ", " ")
                     .replace("...", " ")
                     .strip();
-            java.util.regex.Matcher matcher = Pattern
+            Matcher matcher = Pattern
                     .compile("([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*(?:\\[\\s*\\])?\\s*$")
                     .matcher(param);
             if (matcher.find()) {
@@ -1004,6 +1775,142 @@ public final class RenameService {
             }
         }
         return names;
+    }
+
+    private static Set<String> parseLocalVariableNames(String source, int bodyStart, int bodyEnd) {
+        if (source == null || source.isEmpty() || bodyStart < 0 || bodyEnd <= bodyStart) {
+            return Set.of();
+        }
+        String body = source.substring(bodyStart, Math.min(bodyEnd, source.length()));
+        String masked = maskCommentsAndStrings(body);
+        Set<String> names = new LinkedHashSet<>();
+        collectLocalDeclarations(masked, names);
+        collectCatchAndForVariables(masked, names);
+        collectLambdaParameters(masked, names);
+        return names;
+    }
+
+    private static void collectLocalDeclarations(String body, Set<String> names) {
+        Matcher matcher = LOCAL_DECL_PATTERN.matcher(body);
+        while (matcher.find()) {
+            String firstTypeWord = firstWord(matcher.group(2));
+            if (LOCAL_DECL_SKIP_WORDS.contains(firstTypeWord)) {
+                continue;
+            }
+            addLocalName(names, matcher.group(3));
+            int statementEnd = findStatementEnd(body, matcher.end(3));
+            Matcher commaMatcher = COMMA_LOCAL_PATTERN.matcher(
+                    body.substring(matcher.end(3), statementEnd));
+            while (commaMatcher.find()) {
+                addLocalName(names, commaMatcher.group(1));
+            }
+        }
+    }
+
+    private static void collectCatchAndForVariables(String body, Set<String> names) {
+        Matcher catchMatcher = CATCH_PARAM_PATTERN.matcher(body);
+        while (catchMatcher.find()) {
+            addLocalName(names, catchMatcher.group(1));
+        }
+        Matcher forMatcher = FOR_PARAM_PATTERN.matcher(body);
+        while (forMatcher.find()) {
+            addLocalName(names, forMatcher.group(1));
+        }
+    }
+
+    private static void collectLambdaParameters(String body, Set<String> names) {
+        Matcher groupMatcher = LAMBDA_GROUP_PATTERN.matcher(body);
+        while (groupMatcher.find()) {
+            for (String raw : splitParams(groupMatcher.group(1))) {
+                String param = raw.strip();
+                if (param.isBlank()) {
+                    continue;
+                }
+                Matcher typed = Pattern
+                        .compile("([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*$")
+                        .matcher(param);
+                if (typed.find()) {
+                    addLocalName(names, typed.group(1));
+                }
+            }
+        }
+        Matcher singleMatcher = LAMBDA_SINGLE_PATTERN.matcher(body);
+        while (singleMatcher.find()) {
+            addLocalName(names, singleMatcher.group(1));
+        }
+    }
+
+    private static String maskCommentsAndStrings(String source) {
+        char[] chars = source.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            if (i + 1 < chars.length && chars[i] == '/' && chars[i + 1] == '/') {
+                int end = source.indexOf('\n', i + 2);
+                int limit = end < 0 ? chars.length : end;
+                for (int j = i; j < limit; j++) {
+                    chars[j] = ' ';
+                }
+                i = limit;
+                continue;
+            }
+            if (i + 1 < chars.length && chars[i] == '/' && chars[i + 1] == '*') {
+                int end = source.indexOf("*/", i + 2);
+                int limit = end < 0 ? chars.length : Math.min(chars.length, end + 2);
+                for (int j = i; j < limit; j++) {
+                    if (chars[j] != '\n' && chars[j] != '\r') {
+                        chars[j] = ' ';
+                    }
+                }
+                i = limit - 1;
+                continue;
+            }
+            if (chars[i] == '"' || chars[i] == '\'') {
+                char quote = chars[i];
+                int end = skipQuoted(source, i, quote);
+                for (int j = i; j < end; j++) {
+                    if (chars[j] != '\n' && chars[j] != '\r') {
+                        chars[j] = ' ';
+                    }
+                }
+                i = end - 1;
+            }
+        }
+        return new String(chars);
+    }
+
+    private static void addLocalName(Set<String> names, String name) {
+        if (name != null && JAVA_ID.matcher(name).matches() && !RESERVED_NAMES.contains(name)) {
+            names.add(name);
+        }
+    }
+
+    private static int findStatementEnd(String text, int start) {
+        int depthParen = 0;
+        int depthAngle = 0;
+        for (int i = Math.max(0, start); i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch == '(') {
+                depthParen++;
+            } else if (ch == ')' && depthParen > 0) {
+                depthParen--;
+            } else if (ch == '<') {
+                depthAngle++;
+            } else if (ch == '>' && depthAngle > 0) {
+                depthAngle--;
+            } else if ((ch == ';' || ch == '\n') && depthParen == 0 && depthAngle == 0) {
+                return i;
+            }
+        }
+        return text.length();
+    }
+
+    private static String firstWord(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        Matcher matcher = Pattern
+                .compile("([a-zA-Z_$][a-zA-Z0-9_$]*)")
+                .matcher(text);
+        return matcher.find() ? matcher.group(1) : "";
     }
 
     private static List<String> splitParams(String paramsText) {
@@ -1228,7 +2135,7 @@ public final class RenameService {
         if (text == null || text.isBlank()) {
             return "";
         }
-        java.util.regex.Matcher matcher = Pattern
+        Matcher matcher = Pattern
                 .compile("([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*$")
                 .matcher(text);
         return matcher.find() ? matcher.group(1) : "";
@@ -1253,6 +2160,24 @@ public final class RenameService {
                 && left.className().equals(right.className())
                 && left.oldName().equals(right.oldName())
                 && left.desc().equals(right.desc());
+    }
+
+    private static List<RenameEntry> dedupeClassRenames(List<RenameEntry> entries) {
+        List<RenameEntry> result = new ArrayList<>();
+        for (RenameEntry entry : entries) {
+            if (TYPE_CLASS.equals(entry.type()) && !entry.className().isBlank()) {
+                result.removeIf(existing -> sameClassRenameTarget(existing, entry));
+            }
+            result.add(entry);
+        }
+        return result;
+    }
+
+    private static boolean sameClassRenameTarget(RenameEntry left, RenameEntry right) {
+        return TYPE_CLASS.equals(left.type())
+                && TYPE_CLASS.equals(right.type())
+                && !left.className().isBlank()
+                && left.className().equals(right.className());
     }
 
     private static String normalizeInternalName(String className) {
@@ -1287,7 +2212,8 @@ public final class RenameService {
         String simple = slash >= 0 ? internalName.substring(slash + 1) : internalName;
         String renamedSimple;
         if (simple.equals(oldName)) {
-            renamedSimple = newName;
+            int dollar = oldName.lastIndexOf('$');
+            renamedSimple = dollar >= 0 ? oldName.substring(0, dollar + 1) + newName : newName;
         } else {
             int dollar = simple.lastIndexOf('$');
             if (dollar >= 0 && simple.substring(dollar + 1).equals(oldName)) {
@@ -1304,15 +2230,44 @@ public final class RenameService {
     }
 
     private static boolean writeFile(String workspaceHash, List<RenameEntry> list) {
+        Path file = resolveFile(workspaceHash);
+        Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
         try {
-            Path file = resolveFile(workspaceHash);
             Files.createDirectories(file.getParent());
-            Files.writeString(file, GSON.toJson(list), StandardCharsets.UTF_8);
+            snapshotRenameFile(file);
+            Files.writeString(tmp, GSON.toJson(list), StandardCharsets.UTF_8);
+            try {
+                Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+            }
             return true;
         } catch (IOException e) {
             logger.error("保存重命名失败", e);
+            try {
+                Files.deleteIfExists(tmp);
+            } catch (IOException cleanupError) {
+                logger.debug("清理重命名临时文件失败: {}", tmp, cleanupError);
+            }
             return false;
         }
+    }
+
+    private static void snapshotRenameFile(Path file) {
+        if (!Files.isRegularFile(file)) {
+            return;
+        }
+        Path backup = file.resolveSibling(file.getFileName() + ".bak." + System.currentTimeMillis());
+        try {
+            Files.copy(file, backup, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            logger.debug("创建重命名快照失败: {}", backup, e);
+        }
+    }
+
+    private static Object lockFor(String workspaceHash) {
+        return WORKSPACE_LOCKS.computeIfAbsent(safe(workspaceHash), key -> new Object());
     }
 
     private static Path resolveFile(String workspaceHash) {
@@ -1357,9 +2312,17 @@ public final class RenameService {
         }
     }
 
-    private record MethodScope(String name, int start, int end, Set<String> params) {
+    private record TypeParse(String name, int nextOffset) {
+    }
+
+    private record MethodSignature(String returnType, List<String> params) {
+    }
+
+    private record MethodScope(String name, int start, int end,
+                               Set<String> params, Set<String> locals) {
         private MethodScope {
             params = Collections.unmodifiableSet(new HashSet<>(params == null ? Set.of() : params));
+            locals = Collections.unmodifiableSet(new HashSet<>(locals == null ? Set.of() : locals));
         }
 
         private boolean contains(int offset) {

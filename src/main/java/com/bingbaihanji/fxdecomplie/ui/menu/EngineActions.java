@@ -17,4 +17,13 @@ public interface EngineActions {
 
     /** 自动反混淆 */
     void deobfuscate();
+
+    /** 导入 ProGuard/R8 mapping.txt */
+    void importProGuardMapping();
+
+    /** 导出 ProGuard/R8 mapping.txt */
+    void exportProGuardMapping();
+
+    /** 恢复最近一次重命名快照 */
+    void restoreLastRenameSnapshot();
 }

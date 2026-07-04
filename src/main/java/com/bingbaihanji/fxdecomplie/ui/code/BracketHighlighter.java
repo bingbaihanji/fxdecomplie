@@ -79,6 +79,114 @@ public final class BracketHighlighter {
         this.debounce.setOnFinished(e -> scan());
     }
 
+    /**
+     * 在光标附近查找括号字符。依次检查光标前一个字符、光标所在字符。
+     *
+     * @param text     完整文本
+     * @param docOff   光标文档偏移量
+     * @return 括号字符的文档偏移量，未找到返回 -1
+     */
+    private static int findBracketNearCaret(String text, int docOff) {
+        // 优先检查光标前一个字符（光标通常在括号之后）
+        if (docOff > 0 && BRACKETS.contains(text.charAt(docOff - 1))) {
+            return docOff - 1;
+        }
+        // 其次检查光标所在字符
+        if (docOff < text.length() && BRACKETS.contains(text.charAt(docOff))) {
+            return docOff;
+        }
+        return -1;
+    }
+
+    /**
+     * 查找与给定位置括号匹配的另一半位置。
+     *
+     * @param text   完整文本
+     * @param start  括号字符位置
+     * @param isOpen 是否为开括号
+     * @param ch     括号字符
+     * @return 匹配位置，未找到返回 -1
+     */
+    private static int findMatchingBracket(String text, int start, boolean isOpen, char ch) {
+        if (isOpen) {
+            char close = PAIRS.get(ch);
+            return scanForward(text, start, ch, close);
+        }
+        char open = findOpenForClose(ch);
+        if (open == '\0') {
+            return -1;
+        }
+        return scanBackward(text, start, open, ch);
+    }
+
+    // ---- 核心扫描逻辑 ----
+
+    /** 向前扫描匹配闭括号 */
+    private static int scanForward(String text, int start, char open, char close) {
+        int depth = 1;
+        for (int i = start + 1; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == open) {
+                depth++;
+            } else if (c == close) {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /** 向后扫描匹配开括号 */
+    private static int scanBackward(String text, int start, char open, char close) {
+        int depth = 1;
+        for (int i = start - 1; i >= 0; i--) {
+            char c = text.charAt(i);
+            if (c == close) {
+                depth++;
+            } else if (c == open) {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /** 从闭括号反推开括号字符 */
+    private static char findOpenForClose(char close) {
+        for (Map.Entry<Character, Character> entry : PAIRS.entrySet()) {
+            if (entry.getValue() == close) {
+                return entry.getKey();
+            }
+        }
+        return '\0';
+    }
+
+    // ---- 括号匹配算法 ----
+
+    /** 将 TextPos（段落索引 + 列偏移）转换为文档绝对字符偏移 */
+    private static int textPosToDocOffset(String text, TextPos pos) {
+        int paragraphIndex = pos.index();
+        int columnOffset = pos.offset();
+        if (paragraphIndex < 0 || columnOffset < 0) {
+            return -1;
+        }
+        int offset = 0;
+        int lineStart = 0;
+        for (int i = 0; i < paragraphIndex && lineStart < text.length(); i++) {
+            int newline = text.indexOf('\n', lineStart);
+            if (newline < 0) {
+                break;
+            }
+            offset += (newline - lineStart) + 1;
+            lineStart = newline + 1;
+        }
+        return offset + columnOffset;
+    }
+
     /** 安装光标监听器 */
     public void install() {
         codeArea.caretPositionProperty().addListener((obs, oldVal, newVal) -> {
@@ -93,8 +201,6 @@ public final class BracketHighlighter {
         debounce.stop();
         clearHighlight();
     }
-
-    // ---- 核心扫描逻辑 ----
 
     /** 扫描光标位置，查找并高亮匹配括号 */
     private void scan() {
@@ -178,112 +284,6 @@ public final class BracketHighlighter {
         Platform.runLater(() -> codeArea.setSyntaxDecorator(decorator));
     }
 
-    // ---- 括号匹配算法 ----
-
-    /**
-     * 在光标附近查找括号字符。依次检查光标前一个字符、光标所在字符。
-     *
-     * @param text     完整文本
-     * @param docOff   光标文档偏移量
-     * @return 括号字符的文档偏移量，未找到返回 -1
-     */
-    private static int findBracketNearCaret(String text, int docOff) {
-        // 优先检查光标前一个字符（光标通常在括号之后）
-        if (docOff > 0 && BRACKETS.contains(text.charAt(docOff - 1))) {
-            return docOff - 1;
-        }
-        // 其次检查光标所在字符
-        if (docOff < text.length() && BRACKETS.contains(text.charAt(docOff))) {
-            return docOff;
-        }
-        return -1;
-    }
-
-    /**
-     * 查找与给定位置括号匹配的另一半位置。
-     *
-     * @param text   完整文本
-     * @param start  括号字符位置
-     * @param isOpen 是否为开括号
-     * @param ch     括号字符
-     * @return 匹配位置，未找到返回 -1
-     */
-    private static int findMatchingBracket(String text, int start, boolean isOpen, char ch) {
-        if (isOpen) {
-            char close = PAIRS.get(ch);
-            return scanForward(text, start, ch, close);
-        }
-        char open = findOpenForClose(ch);
-        if (open == '\0') {
-            return -1;
-        }
-        return scanBackward(text, start, open, ch);
-    }
-
-    /** 向前扫描匹配闭括号 */
-    private static int scanForward(String text, int start, char open, char close) {
-        int depth = 1;
-        for (int i = start + 1; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == open) {
-                depth++;
-            } else if (c == close) {
-                depth--;
-                if (depth == 0) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    /** 向后扫描匹配开括号 */
-    private static int scanBackward(String text, int start, char open, char close) {
-        int depth = 1;
-        for (int i = start - 1; i >= 0; i--) {
-            char c = text.charAt(i);
-            if (c == close) {
-                depth++;
-            } else if (c == open) {
-                depth--;
-                if (depth == 0) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    /** 从闭括号反推开括号字符 */
-    private static char findOpenForClose(char close) {
-        for (Map.Entry<Character, Character> entry : PAIRS.entrySet()) {
-            if (entry.getValue() == close) {
-                return entry.getKey();
-            }
-        }
-        return '\0';
-    }
-
-    /** 将 TextPos（段落索引 + 列偏移）转换为文档绝对字符偏移 */
-    private static int textPosToDocOffset(String text, TextPos pos) {
-        int paragraphIndex = pos.index();
-        int columnOffset = pos.offset();
-        if (paragraphIndex < 0 || columnOffset < 0) {
-            return -1;
-        }
-        int offset = 0;
-        int lineStart = 0;
-        for (int i = 0; i < paragraphIndex && lineStart < text.length(); i++) {
-            int newline = text.indexOf('\n', lineStart);
-            if (newline < 0) {
-                break;
-            }
-            offset += (newline - lineStart) + 1;
-            lineStart = newline + 1;
-        }
-        return offset + columnOffset;
-    }
-
     // ---- 内部 SyntaxDecorator：在 RegexHighlighter 样式上叠加括号高亮 ----
 
     /**
@@ -309,72 +309,15 @@ public final class BracketHighlighter {
             this.bracketStyle = bracketStyle;
         }
 
-        @Override
-        public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
-            int paragraphOffset = computeParagraphOffset(model, paragraphIndex);
-            String text = model.getPlainText(paragraphIndex);
-            if (text == null || text.isEmpty()) {
-                return RichParagraph.builder().build();
-            }
-            int paragraphEnd = paragraphOffset + text.length();
-            int localPos1 = toLocal(bracketPos1, paragraphOffset, paragraphEnd);
-            int localPos2 = toLocal(bracketPos2, paragraphOffset, paragraphEnd);
-
-            // 本段落不含括号 → 完整委托
-            if (localPos1 < 0 && localPos2 < 0) {
-                return highlighter.createRichParagraph(model, paragraphIndex);
-            }
-
-            // 本段落含括号 → 重新分词，正确应用 token 样式 + 括号高亮
-            return buildParagraphWithBrackets(text, localPos1, localPos2, bracketStyle);
-        }
-
-        /** 分词并构建带括号高亮的段落 */
-        private RichParagraph buildParagraphWithBrackets(String text, int local1, int local2,
-                                                          StyleAttributeMap bracketStyle) {
-            RichParagraph.Builder builder = RichParagraph.builder();
-            Matcher matcher = TOKEN_PATTERN.matcher(text);
-            int lastEnd = 0;
-
-            while (matcher.find()) {
-                if (matcher.start() > lastEnd) {
-                    String before = text.substring(lastEnd, matcher.start());
-                    StyleAttributeMap tokenStyle = highlighter.classifyToken(
-                            before, null, text, matcher.start(), lastEnd);
-                    appendWithBracketOverride(builder, before, lastEnd,
-                            local1, local2, bracketStyle, tokenStyle);
-                }
-
-                String token = matcher.group();
-                String groupName = extractGroupName(matcher);
-                int tokenStart = matcher.start();
-                StyleAttributeMap tokenStyle = highlighter.classifyToken(
-                        token, groupName, text, matcher.end(), tokenStart);
-                appendWithBracketOverride(builder, token, tokenStart,
-                        local1, local2, bracketStyle, tokenStyle);
-                lastEnd = matcher.end();
-            }
-
-            if (lastEnd < text.length()) {
-                String remaining = text.substring(lastEnd);
-                StyleAttributeMap tokenStyle = highlighter.classifyToken(
-                        remaining, null, text, text.length(), lastEnd);
-                appendWithBracketOverride(builder, remaining, lastEnd,
-                        local1, local2, bracketStyle, tokenStyle);
-            }
-
-            return builder.build();
-        }
-
         /**
          * 将一段文本追加到 builder。若该段包含括号位置，则拆分为
          * [前缀(tokenStyle)] [括号(bracketStyle)] [后缀(tokenStyle)] 三段。
          */
         private static void appendWithBracketOverride(RichParagraph.Builder builder,
-                                                       String segment, int segmentStart,
-                                                       int local1, int local2,
-                                                       StyleAttributeMap bracketStyle,
-                                                       StyleAttributeMap tokenStyle) {
+                                                      String segment, int segmentStart,
+                                                      int local1, int local2,
+                                                      StyleAttributeMap bracketStyle,
+                                                      StyleAttributeMap tokenStyle) {
             int segmentEnd = segmentStart + segment.length();
             int bracket1 = toLocal(local1, segmentStart, segmentEnd);
             int bracket2 = toLocal(local2, segmentStart, segmentEnd);
@@ -434,6 +377,63 @@ public final class BracketHighlighter {
                 return p - rangeStart;
             }
             return -1;
+        }
+
+        @Override
+        public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
+            int paragraphOffset = computeParagraphOffset(model, paragraphIndex);
+            String text = model.getPlainText(paragraphIndex);
+            if (text == null || text.isEmpty()) {
+                return RichParagraph.builder().build();
+            }
+            int paragraphEnd = paragraphOffset + text.length();
+            int localPos1 = toLocal(bracketPos1, paragraphOffset, paragraphEnd);
+            int localPos2 = toLocal(bracketPos2, paragraphOffset, paragraphEnd);
+
+            // 本段落不含括号 → 完整委托
+            if (localPos1 < 0 && localPos2 < 0) {
+                return highlighter.createRichParagraph(model, paragraphIndex);
+            }
+
+            // 本段落含括号 → 重新分词，正确应用 token 样式 + 括号高亮
+            return buildParagraphWithBrackets(text, localPos1, localPos2, bracketStyle);
+        }
+
+        /** 分词并构建带括号高亮的段落 */
+        private RichParagraph buildParagraphWithBrackets(String text, int local1, int local2,
+                                                         StyleAttributeMap bracketStyle) {
+            RichParagraph.Builder builder = RichParagraph.builder();
+            Matcher matcher = TOKEN_PATTERN.matcher(text);
+            int lastEnd = 0;
+
+            while (matcher.find()) {
+                if (matcher.start() > lastEnd) {
+                    String before = text.substring(lastEnd, matcher.start());
+                    StyleAttributeMap tokenStyle = highlighter.classifyToken(
+                            before, null, text, matcher.start(), lastEnd);
+                    appendWithBracketOverride(builder, before, lastEnd,
+                            local1, local2, bracketStyle, tokenStyle);
+                }
+
+                String token = matcher.group();
+                String groupName = extractGroupName(matcher);
+                int tokenStart = matcher.start();
+                StyleAttributeMap tokenStyle = highlighter.classifyToken(
+                        token, groupName, text, matcher.end(), tokenStart);
+                appendWithBracketOverride(builder, token, tokenStart,
+                        local1, local2, bracketStyle, tokenStyle);
+                lastEnd = matcher.end();
+            }
+
+            if (lastEnd < text.length()) {
+                String remaining = text.substring(lastEnd);
+                StyleAttributeMap tokenStyle = highlighter.classifyToken(
+                        remaining, null, text, text.length(), lastEnd);
+                appendWithBracketOverride(builder, remaining, lastEnd,
+                        local1, local2, bracketStyle, tokenStyle);
+            }
+
+            return builder.build();
         }
 
         @Override

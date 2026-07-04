@@ -3,21 +3,10 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
-import com.bingbaihanji.fxdecomplie.model.CommentScope;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbaihanji.fxdecomplie.model.OpenFile;
-import com.bingbaihanji.fxdecomplie.model.Workspace;
-import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
-import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
-import com.bingbaihanji.fxdecomplie.ui.code.LineNumberGutter;
-import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
-import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
+import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.util.I18nUtil;
@@ -52,10 +41,10 @@ public final class ClassTabOpener {
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
     /** 交互打开 class 的反编译超时，避免坏类/混淆类长时间占住首屏 */
     private static final int INTERACTIVE_TIMEOUT_SECONDS = 15;
+    /** Java 21 class major version. JD-Core is unstable on this version and newer. */
+    private static final int MIN_UNSUPPORTED_JD_CLASS_VERSION = 65;
     /** 应用配置 */
     private final AppConfig config;
-    /** 编辑器主题数据 */
-    private volatile VsCodeThemeLoader.ThemeData editorTheme;
     /** 状态栏引用 */
     private final StatusBar statusBar;
     /** L2 反编译源码缓存,避免重复反编译已打开的类 */
@@ -64,6 +53,8 @@ public final class ClassTabOpener {
     private final AtomicLong decompileGeneration = new AtomicLong();
     /** 引擎切换/刷新请求序号，独立于主导航，避免切换引擎时误取消其他标签页的反编译 */
     private final AtomicLong refreshGeneration = new AtomicLong();
+    /** 编辑器主题数据 */
+    private volatile VsCodeThemeLoader.ThemeData editorTheme;
     /** 当前运行的反编译任务,用于在切换时取消 */
     private volatile Future<?> currentDecompileTask;
     /** 当前由主导航创建的占位标签,用于任务取消时清理 */
@@ -81,11 +72,6 @@ public final class ClassTabOpener {
         this.statusBar = statusBar;
     }
 
-    /** 更新编辑器主题，后续新打开的标签页将使用新主题 */
-    public void setEditorTheme(VsCodeThemeLoader.ThemeData newTheme) {
-        this.editorTheme = newTheme;
-    }
-
     /** 提取简短类名(去 .class 后缀) */
     private static String className(FileTreeNode node) {
         String name = node.getName();
@@ -95,9 +81,7 @@ public final class ClassTabOpener {
     /** 计算工作区缓存键：使用完整路径 + mtime + size,消除路径碰撞和同路径替换误命中 */
     public static String computeWorkspaceKey(Workspace workspace) {
         File source = workspace.getSourceFile();
-        long mtime = source.lastModified();
-        long size = source.isFile() ? source.length() : 0L;
-        return (source.getAbsolutePath() + "_" + mtime + "_" + size)
+        return (source.getAbsolutePath() + "_" + workspace.getContentStamp())
                 .replace(':', '_').replace('\\', '_').replace('/', '_');
     }
 
@@ -222,6 +206,11 @@ public final class ClassTabOpener {
         return javafx.stage.Window.getWindows().stream()
                 .filter(javafx.stage.Window::isShowing)
                 .findFirst().orElse(null);
+    }
+
+    /** 更新编辑器主题，后续新打开的标签页将使用新主题 */
+    public void setEditorTheme(VsCodeThemeLoader.ThemeData newTheme) {
+        this.editorTheme = newTheme;
     }
 
     /** 创建代码编辑器标签页 */
@@ -372,7 +361,9 @@ public final class ClassTabOpener {
                         .of(workspace, "").workspaceHash();
                 sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
-                CodeMetadata metadata = result.metadata();
+                CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
+                        ? OutlineParser.extractMetadata(sourceCode)
+                        : result.metadata();
                 DecompilerTypeEnum usedEngine = result.engine();
                 Consumer<CodeMetadata.Reference> completedNavigate = createNavigationHandler(
                         workspace, codeTabPane, usedEngine, lineNumbersEnabled);
@@ -525,7 +516,9 @@ public final class ClassTabOpener {
                         .of(workspace, "").workspaceHash();
                 sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
-                CodeMetadata metadata = result.metadata();
+                CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
+                        ? OutlineParser.extractMetadata(sourceCode)
+                        : result.metadata();
                 DecompilerTypeEnum usedEngine = result.engine();
                 String displayName = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .displayClassName(internalName, wsHash);
@@ -537,8 +530,7 @@ public final class ClassTabOpener {
                     }
                     Consumer<CodeMetadata.Reference> onNavigate = ref -> {
                         if (ref.type() == CodeMetadata.RefType.CLASS_REF && ref.targetClass() != null) {
-                            String targetPath = ref.targetClass().replace('.', '/') + ".class";
-                            FileTreeNode targetNode = workspace.findNodeByPath(targetPath);
+                            FileTreeNode targetNode = findNodeForClassRef(workspace, ref.targetClass());
                             if (targetNode != null) {
                                 openClassTab(targetNode, workspace, codeTabPane, usedEngine, lineNumbersEnabled);
                             }
@@ -866,7 +858,7 @@ public final class ClassTabOpener {
             }
         });
         try {
-            return created.get(5, TimeUnit.SECONDS);
+            return created.get(15, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw e;
@@ -877,7 +869,7 @@ public final class ClassTabOpener {
             }
             throw new RuntimeException(cause);
         } catch (TimeoutException e) {
-            throw new RuntimeException("创建代码标签页超时", e);
+            throw new RuntimeException("UI 线程繁忙，创建代码标签页超时，请稍后重试", e);
         }
     }
 
@@ -886,13 +878,31 @@ public final class ClassTabOpener {
                                                                      boolean lineNumbersEnabled) {
         return ref -> {
             if (ref.type() == CodeMetadata.RefType.CLASS_REF && ref.targetClass() != null) {
-                String targetPath = ref.targetClass().replace('.', '/') + ".class";
-                FileTreeNode targetNode = workspace.findNodeByPath(targetPath);
+                FileTreeNode targetNode = findNodeForClassRef(workspace, ref.targetClass());
                 if (targetNode != null) {
                     openClassTab(targetNode, workspace, codeTabPane, engine, lineNumbersEnabled);
                 }
             }
         };
+    }
+
+    private FileTreeNode findNodeForClassRef(Workspace workspace, String targetClass) {
+        if (workspace == null || targetClass == null || targetClass.isBlank()) {
+            return null;
+        }
+        String normalized = targetClass.replace('.', '/').replace('\\', '/');
+        FileTreeNode direct = workspace.findNodeByPath(normalized + ".class");
+        if (direct != null) {
+            return direct;
+        }
+        String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
+                .of(workspace, "").workspaceHash();
+        String original = com.bingbaihanji.fxdecomplie.rename.RenameService
+                .originalInternalName(targetClass, wsHash);
+        if (!original.equals(normalized)) {
+            return workspace.findNodeByPath(original + ".class");
+        }
+        return null;
     }
 
     private Tab createLoadingTab(FileTreeNode node, DecompilerTypeEnum engine) {
@@ -1047,11 +1057,15 @@ public final class ClassTabOpener {
 
         // ---- L2: 内存反编译缓存(最快路径) ----
         String sourceCode = decompileCache.get(wsKey, internalName, effectiveEngine, optionsHash);
+        if (sourceCode != null) {
+            logger.debug("缓存 L2 命中: {} engine={}", internalName, effectiveEngine);
+        }
 
         // ---- L2 未命中:尝试 L3 磁盘持久化缓存 ----
         if (sourceCode == null) {
             sourceCode = DiskCodeCache.load(wsKey, internalName, effectiveEngine, optionsHash);
             if (sourceCode != null) {
+                logger.debug("缓存 L3 命中(回填L2): {} engine={}", internalName, effectiveEngine);
                 // ---- L3 命中:回填 L2,使下次查询即时完成 ----
                 decompileCache.put(wsKey, internalName, effectiveEngine, optionsHash, sourceCode);
             }
@@ -1059,6 +1073,7 @@ public final class ClassTabOpener {
 
         // ---- L2+L3 均未命中:执行实际反编译 ----
         if (sourceCode == null) {
+            logger.debug("缓存未命中，执行反编译: {} engine={}", internalName, effectiveEngine);
             if (!active.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
@@ -1132,8 +1147,11 @@ public final class ClassTabOpener {
             return requestedEngine;
         }
         int major = classMajorVersion(bytes);
-        // JD-Core 对 Java 21+/class major 65+ 的支持不稳定，JavaFX 25 项目应优先走 Vineflower。
-        return major >= 65 ? DecompilerTypeEnum.VINEFLOWER : requestedEngine;
+        if (major >= MIN_UNSUPPORTED_JD_CLASS_VERSION) {
+            logger.debug("类版本 {} (Java 21+), JD-Core 不支持, 切换为 Vineflower", major);
+            return DecompilerTypeEnum.VINEFLOWER;
+        }
+        return requestedEngine;
     }
 
     /** 显示错误弹窗，优先以焦点窗口为 owner */

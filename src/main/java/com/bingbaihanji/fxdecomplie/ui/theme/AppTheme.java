@@ -1,11 +1,9 @@
 package com.bingbaihanji.fxdecomplie.ui.theme;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.URL;
 
 /**
@@ -21,6 +19,7 @@ public final class AppTheme {
     /** 暗色 CSS 样式表路径 */
     private static final String DARK_STYLESHEET =
             "/com/bingbaihanji/fxdecomplie/themes/dark.css";
+
     private AppTheme() {
         throw new AssertionError("utility class");
     }

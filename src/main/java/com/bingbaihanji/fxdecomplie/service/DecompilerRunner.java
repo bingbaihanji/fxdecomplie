@@ -25,7 +25,9 @@ public final class DecompilerRunner {
     private static final DecompilerTypeEnum[] JD_FALLBACK_ENGINES = {
             DecompilerTypeEnum.VINEFLOWER,
             DecompilerTypeEnum.CFR,
-            DecompilerTypeEnum.PROCYON
+            DecompilerTypeEnum.PROCYON,
+            // JD-Core 对新语法支持较弱，只作为其他引擎失败后的最后兜底。
+            DecompilerTypeEnum.JD
     };
     private static final int TIMEOUT_SECONDS = 30;
     /** 连续超时阈值：超过后重建线程池以丢弃可能僵死的线程 */
@@ -94,6 +96,8 @@ public final class DecompilerRunner {
             throw new CancellationException("反编译请求已被替换");
         }
 
+        logger.debug("反编译开始: {} engine={}, timeout={}s", classFilePath, engine, timeoutSeconds);
+        long decompileStart = System.currentTimeMillis();
         Future<String> future = null;
         int timeout = Math.max(1, timeoutSeconds);
         try {
@@ -110,11 +114,18 @@ public final class DecompilerRunner {
             }
             // 反编译成功，重置连续超时计数器
             consecutiveTimeouts.set(0);
+            long elapsed = System.currentTimeMillis() - decompileStart;
+            boolean isFailure = isFailureOutput(source);
+            logger.debug("反编译完成: {} engine={} ({}ms) failure={}", classFilePath, engine, elapsed, isFailure);
             return source;
         } catch (RejectedExecutionException e) {
             closeContext(context);
+            logger.warn("反编译被拒绝(队列满): {} engine={}", classFilePath, engine);
             return I18nUtil.getString("decompile.busy", classFilePath);
         } catch (TimeoutException e) {
+            long elapsed = System.currentTimeMillis() - decompileStart;
+            logger.warn("反编译超时: {} engine={} ({}ms, timeout={}s)", classFilePath, engine,
+                    elapsed, timeoutSeconds);
             future.cancel(true);
             // 给后台线程一个短暂的窗口退出(其 finally 块会关闭 context),
             // 然后作为安全兜底再尝试关闭(close 是幂等的)
@@ -205,8 +216,16 @@ public final class DecompilerRunner {
                 ? DecompilerTypeEnum.VINEFLOWER : engine;
         DecompilerContext effectiveContext = context == null
                 ? DecompilerContext.EMPTY : context;
-        String source = decompileWithEngine(classFilePath, classBytes,
-                selectedEngine, effectiveContext);
+        String source;
+        try {
+            source = decompileWithEngine(classFilePath, classBytes,
+                    selectedEngine, effectiveContext);
+        } catch (RuntimeException e) {
+            String message = e.getMessage() == null || e.getMessage().isBlank()
+                    ? e.getClass().getSimpleName() : e.getMessage();
+            logger.warn("{} 反编译 {} 抛出异常，尝试回退引擎", selectedEngine, classFilePath, e);
+            source = failureOutput(classFilePath, selectedEngine + ": " + message);
+        }
 
         // 仅 JD-Core 失败时走回退（Vineflower/CFR/Procyon 的 "Error:" 输出也视为失败）
         if (!isEngineFailureOutput(source, selectedEngine)) {
@@ -214,6 +233,7 @@ public final class DecompilerRunner {
         }
 
         String reason = extractFailureReason(source);
+        logger.warn("{} 反编译 {} 失败，尝试回退引擎，原因: {}", selectedEngine, classFilePath, reason);
         for (DecompilerTypeEnum fallback : JD_FALLBACK_ENGINES) {
             if (fallback == selectedEngine) {
                 continue;
@@ -291,7 +311,11 @@ public final class DecompilerRunner {
         return trimmed.startsWith("// CFR decompile failed")
                 || trimmed.startsWith("// Procyon decompile failed")
                 || trimmed.startsWith("// Vineflower decompile failed")
+                || trimmed.startsWith("// Vineflower Error:")
+                || trimmed.startsWith("// CFR Error:")
+                || trimmed.startsWith("// Procyon Error:")
                 || trimmed.startsWith("// Decompile failed")
+                || trimmed.startsWith("// 反编译失败")
                 || isJdFailureOutput(source);
     }
 
@@ -304,7 +328,7 @@ public final class DecompilerRunner {
                 "Vineflower Error:", "CFR Error:", "Procyon Error:",
                 "JD-Core Error:", "JD-Core decompile failed",
                 "CFR decompile failed", "Procyon decompile failed",
-                "Vineflower decompile failed", "Decompile failed");
+                "Vineflower decompile failed", "Decompile failed", "反编译失败");
         String reason = errorIndex >= 0 ? normalized.substring(errorIndex) : normalized;
         int lineEnd = reason.indexOf('\n');
         if (lineEnd >= 0) {

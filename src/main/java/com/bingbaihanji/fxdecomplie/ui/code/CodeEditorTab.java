@@ -3,8 +3,8 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
-import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
+import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.util.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
@@ -33,7 +33,6 @@ public class CodeEditorTab extends Tab {
     private final Label titleLabel;
     /** 默认字号 */
     private final int defaultFontSize;
-    private VsCodeThemeLoader.ThemeData theme;
     private final String fontFamily;
     private final boolean wrapText;
     private final boolean lineNumbersEnabled;
@@ -41,6 +40,7 @@ public class CodeEditorTab extends Tab {
     private final byte[] classBytes;
     /** 编辑器内搜索栏 */
     private final EditorSearchBar editorSearchBar;
+    private VsCodeThemeLoader.ThemeData theme;
     /** 标签页显示标题 */
     private String displayTitle;
     /** Java 源码编辑器（兼容引用） */

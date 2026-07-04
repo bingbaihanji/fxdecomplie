@@ -47,13 +47,21 @@ public final class ClassDiscoverer {
      */
     public static List<ClassEntry> discover(File file) throws IOException {
         String name = file.getName().toLowerCase();
+        logger.debug("发现文件条目: {} ({} bytes)", file.getAbsolutePath(), file.length());
         if (name.endsWith(".jar") || name.endsWith(".zip")) {
-            return discoverJar(file);
+            List<ClassEntry> entries = discoverJar(file);
+            logger.info("JAR/ZIP 发现 {} 个条目: {}", entries.size(), file.getName());
+            return entries;
         } else if (file.isDirectory()) {
-            return discoverDirectory(file);
+            List<ClassEntry> entries = discoverDirectory(file);
+            logger.info("目录发现 {} 个条目: {}", entries.size(), file.getName());
+            return entries;
         } else if (name.endsWith(".class")) {
-            return discoverClassFile(file);
+            List<ClassEntry> entries = discoverClassFile(file);
+            logger.debug("发现单个 class 文件: {}", file.getName());
+            return entries;
         } else {
+            logger.debug("非标准文件类型，按资源处理: {}", file.getName());
             return List.of(new ClassEntry(file.getName(), file.getName(),
                     guessType(file.getName()), null));
         }

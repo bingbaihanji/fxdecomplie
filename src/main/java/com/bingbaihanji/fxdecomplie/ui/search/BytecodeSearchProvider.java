@@ -1,10 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.search;
 
-import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
-import com.bingbaihanji.fxdecomplie.model.SearchOptions;
-import com.bingbaihanji.fxdecomplie.model.SearchResult;
-import com.bingbaihanji.fxdecomplie.model.SearchScope;
-import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 
 import java.util.ArrayList;

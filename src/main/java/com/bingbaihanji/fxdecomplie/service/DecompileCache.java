@@ -16,6 +16,8 @@ import java.util.Map;
 public class DecompileCache {
 
     private static final int MAX_CACHE_SIZE = 1_000;
+    /** 缓存键分隔符，用于各组件之间的精确匹配，避免前缀碰撞 */
+    private static final char KEY_SEP = '#';
     private final Map<String, String> cache = Collections.synchronizedMap(
             new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
@@ -23,9 +25,6 @@ public class DecompileCache {
                     return size() > MAX_CACHE_SIZE;
                 }
             });
-
-    /** 缓存键分隔符，用于各组件之间的精确匹配，避免前缀碰撞 */
-    private static final char KEY_SEP = '#';
 
     private static String cacheKey(String workspaceKey, String internalName,
                                    DecompilerTypeEnum engine, String optionsHash) {

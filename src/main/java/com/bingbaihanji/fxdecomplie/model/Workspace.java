@@ -25,6 +25,8 @@ public class Workspace implements AutoCloseable {
     private final TreeItem<FileTreeNode> treeRoot;
     /** 是否为归档文件(JAR/ZIP) */
     private final boolean isArchive;
+    /** 工作区加载时的内容指纹,用于反编译缓存键 */
+    private final String contentStamp;
     /** 完整索引是否已经被显式请求构建 */
     private final AtomicBoolean indexBuildStarted = new AtomicBoolean();
     /** 工作区级源码搜索缓存,按引擎和选项分组 */
@@ -45,15 +47,23 @@ public class Workspace implements AutoCloseable {
      * @param isArchive  是否为归档文件
      */
     public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot, boolean isArchive) {
-        this(name, sourceFile, treeRoot, isArchive, WorkspaceIndex.EMPTY);
+        this(name, sourceFile, treeRoot, isArchive, WorkspaceIndex.EMPTY, "");
     }
 
     public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot,
                      boolean isArchive, WorkspaceIndex index) {
+        this(name, sourceFile, treeRoot, isArchive, index, "");
+    }
+
+    public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot,
+                     boolean isArchive, WorkspaceIndex index, String contentStamp) {
         this.name = Objects.requireNonNull(name, "name");
         this.sourceFile = Objects.requireNonNull(sourceFile, "sourceFile");
         this.treeRoot = Objects.requireNonNull(treeRoot, "treeRoot");
         this.isArchive = isArchive;
+        this.contentStamp = contentStamp == null || contentStamp.isBlank()
+                ? sourceFile.lastModified() + "_" + (sourceFile.isFile() ? sourceFile.length() : 0L)
+                : contentStamp;
         this.index = index == null ? WorkspaceIndex.EMPTY : index;
         if (this.index != WorkspaceIndex.EMPTY) {
             indexFuture.complete(this.index);
@@ -114,6 +124,10 @@ public class Workspace implements AutoCloseable {
     /** @return 是否为归档文件 */
     public boolean isArchive() {
         return isArchive;
+    }
+
+    public String getContentStamp() {
+        return contentStamp;
     }
 
     /** @return 工作区索引 */

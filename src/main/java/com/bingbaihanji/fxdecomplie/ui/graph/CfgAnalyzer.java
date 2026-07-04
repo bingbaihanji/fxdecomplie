@@ -1,27 +1,12 @@
 package com.bingbaihanji.fxdecomplie.ui.graph;
 
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.JumpInsnNode;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.LookupSwitchInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.TableSwitchInsnNode;
-import org.objectweb.asm.tree.TryCatchBlockNode;
+import org.objectweb.asm.tree.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 方法级控制流图（CFG）分析器，基于 ASM Tree API 划分基本块并生成 DOT 格式。
@@ -160,7 +145,8 @@ public final class CfgAnalyzer {
         }
 
         // 3. 构建边
-        record Edge(int from, int to, String label, String style) {}
+        record Edge(int from, int to, String label, String style) {
+        }
         List<Edge> edges = new ArrayList<>();
         for (BasicBlock bb : blocks) {
             if (bb.endIdx < 0 || bb.endIdx >= size) {

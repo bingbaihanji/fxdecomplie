@@ -2,6 +2,8 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import javafx.scene.control.TreeItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +16,8 @@ import java.util.Map;
  * @date 2026-06-17
  */
 public final class FileTreeBuilder {
+
+    private static final Logger logger = LoggerFactory.getLogger(FileTreeBuilder.class);
 
     private FileTreeBuilder() {
         throw new AssertionError("utility class");
@@ -53,7 +57,17 @@ public final class FileTreeBuilder {
         }
 
         sortTree(root);
+        logger.debug("文件树构建完成: {} (根节点={}, 条目={})", rootName,
+                countNodes(root), entries.size());
         return root;
+    }
+
+    private static int countNodes(TreeItem<FileTreeNode> node) {
+        int count = 1;
+        for (TreeItem<FileTreeNode> child : node.getChildren()) {
+            count += countNodes(child);
+        }
+        return count;
     }
 
     /** 获取或创建父节点链,返回目标条目的直接父节点 */

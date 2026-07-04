@@ -151,7 +151,7 @@ public class RegexHighlighter implements SyntaxDecorator {
      * @return 对应样式属性
      */
     public StyleAttributeMap classifyToken(String matched, String groupName,
-                                            String fullLine, int endPos, int startPos) {
+                                           String fullLine, int endPos, int startPos) {
         if (groupName == null) {
             return styleDefault;
         }

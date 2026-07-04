@@ -4,7 +4,6 @@ import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import com.bingbaihanji.fxdecomplie.model.SearchResult;
 import com.bingbaihanji.fxdecomplie.model.SearchScope;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
-import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import com.bingbaihanji.fxdecomplie.service.SearchService;
 import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.util.I18nUtil;

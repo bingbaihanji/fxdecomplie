@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
@@ -23,6 +24,7 @@ import java.util.List;
 public final class EditorSearchBar extends HBox {
 
     private final TextField input;
+    private final Label statusLabel;
     private final Button prevBtn;
     private final Button nextBtn;
     private final Button closeBtn;
@@ -42,6 +44,10 @@ public final class EditorSearchBar extends HBox {
         input.setStyle("-fx-background-color: #3c3c3c; -fx-text-fill: #cccccc;");
         HBox.setHgrow(input, Priority.ALWAYS);
 
+        statusLabel = new Label();
+        statusLabel.setMinWidth(96);
+        statusLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
+
         prevBtn = new Button("▲");
         prevBtn.setStyle("-fx-font-size: 11px; -fx-padding: 2 6;");
         prevBtn.setOnAction(e -> navigateMatch(-1));
@@ -54,23 +60,32 @@ public final class EditorSearchBar extends HBox {
         closeBtn.setStyle("-fx-font-size: 11px; -fx-padding: 2 6;");
         closeBtn.setOnAction(e -> hide());
 
-        getChildren().addAll(input, prevBtn, nextBtn, closeBtn);
+        getChildren().addAll(input, statusLabel, prevBtn, nextBtn, closeBtn);
 
         input.textProperty().addListener((obs, old, text) -> performSearch());
         input.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 hide();
+                focusCodeArea();
             } else if (e.getCode() == KeyCode.ENTER) {
-                navigateMatch(1);
+                navigateMatch(e.isShiftDown() ? -1 : 1);
+                input.requestFocus();
             }
         });
     }
 
     public void show() {
+        show(null);
+    }
+
+    public void show(String initialQuery) {
         setVisible(true);
         setManaged(true);
+        if (initialQuery != null && !initialQuery.isBlank()) {
+            input.setText(initialQuery);
+        }
         input.requestFocus();
-        if (!input.getText().isEmpty()) {
+        if (!input.getText().isBlank()) {
             input.selectAll();
             performSearch();
         }
@@ -89,15 +104,25 @@ public final class EditorSearchBar extends HBox {
         setManaged(false);
         matchPositions.clear();
         currentMatch = -1;
+        updateStatus();
+    }
+
+    public void navigateNext() {
+        navigateMatch(1);
+    }
+
+    public void navigatePrevious() {
+        navigateMatch(-1);
     }
 
     private void performSearch() {
         matchPositions.clear();
         currentMatch = -1;
         String text = input.getText();
-        String content = codeArea.getText();
+        String content = codeArea == null ? null : codeArea.getText();
         if (text == null || text.isEmpty() || content == null) {
             input.setStyle("-fx-background-color: #3c3c3c; -fx-text-fill: #cccccc;");
+            updateStatus();
             return;
         }
 
@@ -116,13 +141,18 @@ public final class EditorSearchBar extends HBox {
         if (!matchPositions.isEmpty()) {
             input.setStyle("-fx-background-color: #3c3c3c; -fx-text-fill: #cccccc;");
             navigateMatch(1);
+            input.requestFocus();
         } else {
             input.setStyle("-fx-background-color: #5c2020; -fx-text-fill: #cccccc;");
+            updateStatus();
         }
     }
 
     private void navigateMatch(int direction) {
-        if (matchPositions.isEmpty()) return;
+        if (matchPositions.isEmpty() || codeArea == null) {
+            updateStatus();
+            return;
+        }
         if (direction > 0) {
             currentMatch = (currentMatch + 1) % matchPositions.size();
         } else {
@@ -133,7 +163,29 @@ public final class EditorSearchBar extends HBox {
         TextPos startTp = offsetToTextPos(pos);
         TextPos endTp = offsetToTextPos(endPos);
         codeArea.select(startTp, endTp);
-        codeArea.requestFocus();
+        updateStatus();
+    }
+
+    private void updateStatus() {
+        if (statusLabel == null) {
+            return;
+        }
+        if (input.getText() == null || input.getText().isEmpty()) {
+            statusLabel.setText("");
+            return;
+        }
+        if (matchPositions.isEmpty()) {
+            statusLabel.setText(I18nUtil.getString("editor.find.noResults"));
+            return;
+        }
+        statusLabel.setText(I18nUtil.getString("editor.find.matchCount",
+                currentMatch + 1, matchPositions.size()));
+    }
+
+    private void focusCodeArea() {
+        if (codeArea != null) {
+            codeArea.requestFocus();
+        }
     }
 
     /** 将平坦字符偏移转换为 TextPos(行列坐标) */

@@ -118,31 +118,6 @@ public class HexTabView extends StackPane {
         load(null);
     }
 
-    public void setTheme(ThemeData newTheme) {
-        if (newTheme == null) {
-            return;
-        }
-        this.theme = newTheme;
-        if (currentData != null) {
-            render();
-        }
-    }
-
-    public void load(byte[] data) {
-        this.currentData = data;
-        render();
-    }
-
-    private void render() {
-        if (currentData == null || currentData.length == 0) {
-            engine.loadContent("<html><body></body></html>");
-            return;
-        }
-        engine.loadContent(formatHtml(currentData, theme));
-    }
-
-    // === 颜色 ===
-
     static String toHex(Color c) {
         return String.format("#%02X%02X%02X", (int) (c.getRed() * 255), (int) (c.getGreen() * 255), (int) (c.getBlue() * 255));
     }
@@ -154,6 +129,8 @@ public class HexTabView extends StackPane {
     static String darken(Color c, double f) {
         return String.format("#%02X%02X%02X", (int) (c.getRed() * (1 - f) * 255), (int) (c.getGreen() * (1 - f) * 255), (int) (c.getBlue() * (1 - f) * 255));
     }
+
+    // === 颜色 ===
 
     static HexColors deriveColors(ThemeData theme) {
         Color bg = theme.editorBackground();
@@ -168,8 +145,6 @@ public class HexTabView extends StackPane {
     private static boolean isDark(Color c) {
         return 0.2126 * c.getRed() + 0.7152 * c.getGreen() + 0.0722 * c.getBlue() < 0.5;
     }
-
-    // === HTML ===
 
     static String formatHtml(byte[] data, ThemeData theme) {
         HexColors c = deriveColors(theme);
@@ -219,6 +194,31 @@ public class HexTabView extends StackPane {
                 c.bodyBg, c.text, c.border, c.headerBg,
                 c.secondaryText, c.gridLine, c.altRowBg,
                 rows.toString(), data.length, statusText);
+    }
+
+    public void setTheme(ThemeData newTheme) {
+        if (newTheme == null) {
+            return;
+        }
+        this.theme = newTheme;
+        if (currentData != null) {
+            render();
+        }
+    }
+
+    public void load(byte[] data) {
+        this.currentData = data;
+        render();
+    }
+
+    // === HTML ===
+
+    private void render() {
+        if (currentData == null || currentData.length == 0) {
+            engine.loadContent("<html><body></body></html>");
+            return;
+        }
+        engine.loadContent(formatHtml(currentData, theme));
     }
 
     public record HexColors(String bodyBg, String text, String border, String headerBg,

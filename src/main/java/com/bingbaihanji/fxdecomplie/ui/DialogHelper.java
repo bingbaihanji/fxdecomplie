@@ -38,7 +38,10 @@ public final class DialogHelper {
         alert.setTitle(title);
         alert.setHeaderText(null);
         if (owner != null) alert.initOwner(owner);
-        try { alert.getDialogPane().getStylesheets().add(AppTheme.darkStylesheet()); } catch (RuntimeException ignored) {}
+        try {
+            alert.getDialogPane().getStylesheets().add(AppTheme.darkStylesheet());
+        } catch (RuntimeException ignored) {
+        }
         alert.setOnShown(e -> {
             var w = alert.getDialogPane().getScene().getWindow();
             DefaultWindowTheme.applyWindowDarkMode(w);

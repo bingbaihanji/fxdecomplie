@@ -2,25 +2,18 @@ package com.bingbaihanji.fxdecomplie.decompiler;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
-
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.extern.IContextSource;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.Manifest;
 
 /**
@@ -215,20 +208,27 @@ public class VineflowerDecompiler implements Decompiler {
             };
 
             // 使用非废弃构造器：不需要 IBytecodeProvider
+            logger.debug("Vineflower decompile: class={}, options={}", effectiveTypeName,
+                    effectiveContext.hasOptions() ? effectiveContext.options().size() : 0);
+            long start = System.currentTimeMillis();
             BaseDecompiler decompiler = new BaseDecompiler(resultSaver,
                     mergedOptions(effectiveContext), fernflowerLogger);
             decompiler.addSource(source);
             decompiler.decompileContext();
 
+            String decompiled = result.toString();
+            long elapsed = System.currentTimeMillis() - start;
+            if (decompiled.isEmpty()) {
+                logger.warn("Vineflower decompile returned empty: {} ({}ms)", effectiveTypeName, elapsed);
+                return "// Vineflower decompile failed\n// Class: " + effectiveTypeName;
+            }
+            logger.debug("Vineflower decompile OK: {} ({}ms, {} chars)", effectiveTypeName, elapsed,
+                    decompiled.length());
+            return decompiled;
         } catch (Exception e) {
+            logger.error("Vineflower decompile exception: {}: {}", effectiveTypeName, e.getMessage());
             return "// Vineflower Error: " + e.getMessage();
         }
-
-        String decompiled = result.toString();
-        if (decompiled.isEmpty()) {
-            return "// Vineflower decompile failed\n// Class: " + effectiveTypeName;
-        }
-        return decompiled;
     }
 
     @Override
@@ -256,7 +256,7 @@ public class VineflowerDecompiler implements Decompiler {
 
         SingleClassContextSource(String typeName, byte[] bytes, DecompilerContext context) {
             this.typeName = typeName;
-            this.bytes = bytes.clone();
+            this.bytes = bytes;
             this.context = context;
         }
 

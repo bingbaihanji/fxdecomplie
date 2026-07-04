@@ -44,13 +44,16 @@ public interface CodeActionHandler {
     void addOrUpdateComment(CodeViewContext context, TextPos caretPosition);
 
     /** 删除光标所在行的注释 */
-    default void deleteComment(CodeViewContext context, int line) {}
+    default void deleteComment(CodeViewContext context, int line) {
+    }
 
     /** 显示当前方法的控制流图 */
-    default void showControlFlowGraph(CodeViewContext context) {}
+    default void showControlFlowGraph(CodeViewContext context) {
+    }
 
     /** 重命名光标处的标识符 */
-    default void renameAtCaret(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caret) {}
+    default void renameAtCaret(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caret) {
+    }
 
     /** 在 workspace 内搜索选中文本 */
     void searchInWorkspace(String selectedText);

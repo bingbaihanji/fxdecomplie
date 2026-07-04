@@ -17,4 +17,5 @@ public record RenameEntry(
         String oldName,
         String newName,
         String desc
-) {}
+) {
+}

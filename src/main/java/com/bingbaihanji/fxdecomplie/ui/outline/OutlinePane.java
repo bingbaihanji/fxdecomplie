@@ -68,7 +68,7 @@ public final class OutlinePane extends VBox {
                     setText(icon + item.name() + "  —  " + item.modifiers());
                     Color c = item.type() == OutlineMember.MemberType.METHOD ? Color.web("#dcdcaa")
                             : item.type() == OutlineMember.MemberType.FIELD ? Color.web("#9cdcfe")
-                              : Color.web("#4ec9b0");
+                            : Color.web("#4ec9b0");
                     setTextFill(c);
                     setStyle("-fx-background-color: transparent; -fx-font-family: 'Consolas', monospace;");
                 }

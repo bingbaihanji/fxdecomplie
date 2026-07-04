@@ -5,6 +5,8 @@ import org.benf.cfr.reader.api.ClassFileSource;
 import org.benf.cfr.reader.api.OutputSinkFactory;
 import org.benf.cfr.reader.api.SinkReturns;
 import org.benf.cfr.reader.bytecode.analysis.parse.utils.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -17,6 +19,8 @@ import java.util.*;
  * @date 2026-06-17
  */
 public class CfrDecompiler implements Decompiler {
+
+    private static final Logger logger = LoggerFactory.getLogger(CfrDecompiler.class);
 
     /** CFR 默认反编译选项 */
     private static final Map<String, String> DEFAULT_OPTIONS = createDefaultOptions();
@@ -160,12 +164,17 @@ public class CfrDecompiler implements Decompiler {
                 .withOptions(options)
                 .build();
 
+        logger.debug("CFR decompile: class={}, options={}", typeName, options.size());
+        long start = System.currentTimeMillis();
         driver.analyse(Collections.singletonList(typeName + ".class"));
 
         String decompiled = result.toString();
+        long elapsed = System.currentTimeMillis() - start;
         if (decompiled.isEmpty()) {
+            logger.warn("CFR decompile returned empty: {} ({}ms)", typeName, elapsed);
             return "// CFR decompile failed\n// Class: " + typeName;
         }
+        logger.debug("CFR decompile OK: {} ({}ms, {} chars)", typeName, elapsed, decompiled.length());
         return decompiled;
     }
 

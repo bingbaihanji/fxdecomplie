@@ -131,9 +131,17 @@ public class MainMenuBar extends MenuBar {
 
         MenuItem deobfuscateItem = new MenuItem("Deobfuscate");
         deobfuscateItem.setOnAction(e -> actions.deobfuscate());
+        MenuItem importMappingItem = new MenuItem("Import ProGuard Mapping");
+        importMappingItem.setOnAction(e -> actions.importProGuardMapping());
+        MenuItem exportMappingItem = new MenuItem("Export ProGuard Mapping");
+        exportMappingItem.setOnAction(e -> actions.exportProGuardMapping());
+        MenuItem restoreRenameSnapshotItem = new MenuItem("Restore Rename Snapshot");
+        restoreRenameSnapshotItem.setOnAction(e -> actions.restoreLastRenameSnapshot());
 
         engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem,
-                new SeparatorMenuItem(), compareAllItem, deobfuscateItem);
+                new SeparatorMenuItem(), compareAllItem, deobfuscateItem,
+                importMappingItem, exportMappingItem,
+                restoreRenameSnapshotItem);
         return engineMenu;
     }
 

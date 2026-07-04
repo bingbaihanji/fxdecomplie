@@ -1,16 +1,15 @@
 package com.bingbaihanji.fxdecomplie.ui;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
-
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
-import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentListPane;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;

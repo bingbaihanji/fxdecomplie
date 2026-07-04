@@ -91,6 +91,9 @@ public final class ExportService {
                 items.add(node);
             }
         }
+        logger.info("导出开始: {} 个文件, format={}, engine={}, output={}",
+                items.size(), config.format(), config.engine(), config.outputPath());
+        long exportStart = System.currentTimeMillis();
         ExportState state = new ExportState(items.size(), onProgress);
         // ---- 步骤 2: 反编译并写入 — 分发到 ZIP 或目录路径 ----
         if (config.format() == ExportConfig.Format.ZIP) {
@@ -99,6 +102,9 @@ public final class ExportService {
             exportAllToDir(items, index, config, commentScope, state, canceled);
         }
 
+        long elapsed = System.currentTimeMillis() - exportStart;
+        logger.info("导出完成: {}/{} 成功, {} 错误 ({}ms)",
+                state.successCount, state.totalFiles, state.errors.size(), elapsed);
         return new ExportResult(state.totalFiles, state.successCount, state.errors);
     }
 
@@ -177,7 +183,7 @@ public final class ExportService {
      */
     @Deprecated
     private static List<FileTreeNode> collectExportableNodes(TreeItem<FileTreeNode> root,
-                                                              boolean exportResources) {
+                                                             boolean exportResources) {
         List<FileTreeNode> nodes = new ArrayList<>();
         collectExportableNodes(root, exportResources, nodes);
         return nodes;

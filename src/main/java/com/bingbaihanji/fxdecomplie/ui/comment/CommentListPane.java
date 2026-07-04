@@ -106,18 +106,38 @@ public final class CommentListPane extends VBox {
     }
 
     public void refresh() {
-        if (workspaceHash == null || className == null) { allRows.clear(); return; }
+        if (workspaceHash == null || className == null) {
+            allRows.clear();
+            return;
+        }
         List<CommentData> list = CommentManager.load(workspaceHash, className);
-        Platform.runLater(() -> { allRows.setAll(list); applyFilter(); });
+        Platform.runLater(() -> {
+            allRows.setAll(list);
+            applyFilter();
+        });
     }
 
-    public void clear() { workspaceHash = null; className = null; allRows.clear(); filterField.clear(); }
-    public void setOnJumpToLine(Consumer<Integer> h) { this.onJumpToLine = h; }
-    public void setOnDelete(Runnable r) { this.onDelete = r; }
+    public void clear() {
+        workspaceHash = null;
+        className = null;
+        allRows.clear();
+        filterField.clear();
+    }
+
+    public void setOnJumpToLine(Consumer<Integer> h) {
+        this.onJumpToLine = h;
+    }
+
+    public void setOnDelete(Runnable r) {
+        this.onDelete = r;
+    }
 
     private void applyFilter() {
         String f = filterField.getText();
-        if (f == null || f.isBlank()) { table.setItems(allRows); return; }
+        if (f == null || f.isBlank()) {
+            table.setItems(allRows);
+            return;
+        }
         String lo = f.toLowerCase();
         var filtered = allRows.filtered(c -> c.text().toLowerCase().contains(lo));
         table.setItems(filtered);
