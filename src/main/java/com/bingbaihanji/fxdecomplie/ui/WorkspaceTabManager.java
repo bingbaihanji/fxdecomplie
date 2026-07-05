@@ -131,10 +131,12 @@ public final class WorkspaceTabManager {
                                                java.util.function.Consumer<FileTreeNode> onFindUsage,
                                                java.util.function.Consumer<FileTreeNode> onSearchPackage,
                                                BiConsumer<FileTreeNode, TabPane> onHexClick) {
+        // 预计算 workspaceHash 避免每次 cell 更新时重复字符串拼接
+        String workspaceHash = CommentScope.workspaceHash(workspace);
         treeView.setCellFactory(tv -> {
             com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell cell =
                     new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell(
-                            node -> displayTreeNodeName(workspace, node));
+                            node -> displayTreeNodeName(workspaceHash, node));
             cell.setOnContextMenuRequested(event -> {
                 TreeItem<FileTreeNode> item = cell.getTreeItem();
                 if (cell.isEmpty() || item == null || item.getValue() == null) {
@@ -151,11 +153,14 @@ public final class WorkspaceTabManager {
         });
     }
 
-    private static String displayTreeNodeName(Workspace workspace, FileTreeNode node) {
-        if (workspace == null || node == null || !node.isClassFile()) {
-            return node == null ? "" : node.getName();
+    /** 获取树节点显示名称，优先使用反混淆别名，回退到原始名称 */
+    private static String displayTreeNodeName(String workspaceHash, FileTreeNode node) {
+        if (node == null) {
+            return "";
         }
-        String workspaceHash = CommentScope.workspaceHash(workspace);
+        if (!node.isClassFile() || workspaceHash.isBlank()) {
+            return node.getName();
+        }
         String displayName = RenameService.displayClassName(node.getFullPath(), workspaceHash);
         return displayName == null || displayName.isBlank() ? node.getName() : displayName + ".class";
     }
@@ -779,6 +784,10 @@ public final class WorkspaceTabManager {
                 return;
             }
             var caret = codeArea.getCaretPosition();
+            // caret 可能在 CodeArea 初始布局完成前为 null
+            if (caret == null) {
+                return;
+            }
             statusBar.setCursorPosition(caret.index() + 1, caret.offset() + 1);
         }
     }

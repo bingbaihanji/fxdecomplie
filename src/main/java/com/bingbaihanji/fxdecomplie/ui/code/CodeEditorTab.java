@@ -235,6 +235,8 @@ public class CodeEditorTab extends Tab {
     public void updatePinnedDisplay(boolean pinned) {
         String title = pinned ? "📌 " + displayTitle : displayTitle;
         titleLabel.setText(title);
+        setGraphic(null);
+        setGraphic(titleLabel);
     }
 
     /** @return Java 源码编辑器 */
@@ -281,7 +283,10 @@ public class CodeEditorTab extends Tab {
             codeViewPanel.getDeck().setSelected(CodeContentDeck.TAB_BYTECODE);
         }
 
-        updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
+        boolean pinned = Boolean.TRUE.equals(getProperties().get("pinned"));
+        titleLabel.setText(pinned ? "📌 " + displayTitle : displayTitle);
+        setGraphic(null);
+        setGraphic(titleLabel);
     }
 
     /** 更新源码模型和可见 Code 面板，用于重命名等不需要重新反编译的场景。 */
@@ -299,7 +304,10 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.replaceSourcePanel(openFile.sourceCode(), srcPanel);
         codeArea = srcPanel.getCodeArea();
         sourceReady = true;
-        updatePinnedDisplay(Boolean.TRUE.equals(getProperties().get("pinned")));
+        boolean pinned = Boolean.TRUE.equals(getProperties().get("pinned"));
+        titleLabel.setText(pinned ? "📌 " + displayTitle : displayTitle);
+        setGraphic(null);
+        setGraphic(titleLabel);
     }
 
     /**

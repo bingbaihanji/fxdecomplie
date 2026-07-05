@@ -2,14 +2,17 @@
 <configuration>
     <property name="APP_DIR" value="${fxdecomplie.appDir:-${user.dir}/fxdecomplie}"/>
 
-    <!-- 控制台输出(带颜色) -->
+    <!-- 控制台输出（带颜色 + 堆栈） -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan([%thread]) %yellow(%logger{36}) - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan([%thread]) %yellow(%logger{36}) - %msg%n%ex{full}
+            </pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-
     <!-- 文件输出 -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${APP_DIR}/logs/application.log</file>

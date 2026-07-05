@@ -1636,10 +1636,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /**
+     * 刷新工作区文件树，确保所有可见 cell 的显示名与当前重命名状态一致。
+     *
+     * <p>JavaFX {@code Node.refresh()} 仅重新应用 CSS，不会触发 TreeCell 的
+     * {@code updateItem}。FileTreeView.refreshVisibleCells() 通过重建 cell factory
+     * 强制 VirtualFlow 重建所有可见 cell，从而触发 updateItem 获取最新显示名。</p>
+     */
     private void refreshWorkspaceTree(Workspace workspace) {
         WorkspaceView view = workspaceViewFor(workspace);
         if (view != null && view.treeView() != null) {
-            view.treeView().refresh();
+            view.treeView().refreshVisibleCells();
         }
     }
 
@@ -2196,7 +2203,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             statusBar.setFilePath("Deobfuscate cancelled or no entries selected");
             return;
         }
-        int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, selected);
+        int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, selected, true);
         if (saved == 0) {
             statusBar.setFilePath("Deobfuscate failed: rename mapping was not saved");
             showError(I18nUtil.getString("dialog.error.title"),
@@ -2243,7 +2250,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             Workspace workspace = view.workspace();
             String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                     .of(workspace, "").workspaceHash();
-            int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, entries);
+            int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, entries, true);
             workspace.clearSourceSearchCaches();
             int reloadTabs = reloadOpenTabsAfterDeobfuscate(workspace);
             refreshWorkspaceTree(workspace);
@@ -2364,10 +2371,29 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             }
         }
 
+        // 构建 classPath → displayName 映射（支持搜索反混淆/重命名后的名称）
+        String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
+                .of(view.workspace(), "").workspaceHash();
+        java.util.Map<String, String> displayNamesByPath = new java.util.HashMap<>();
+        for (String classPath : index.classPaths()) {
+            String display = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    .displayClassName(classPath, wsHash);
+            if (display != null && !display.isBlank()) {
+                String pathWithoutExt = classPath.endsWith(".class")
+                        ? classPath.substring(0, classPath.length() - 6) : classPath;
+                String simpleOriginal = pathWithoutExt.substring(
+                        pathWithoutExt.lastIndexOf('/') + 1);
+                // 仅当 display 与原始简单名不同时才加入映射（有重命名/反混淆）
+                if (!display.equals(simpleOriginal)) {
+                    displayNamesByPath.put(classPath, display + ".class");
+                }
+            }
+        }
+
         // 创建包含所有 Provider 的 SearchService
         SearchService searchService = new SearchService();
         searchService.setExcludePatterns(config.search().excludePatterns());
-        searchService.addProvider(new ClassSearchProvider(index.classPaths()));
+        searchService.addProvider(new ClassSearchProvider(index.classPaths(), displayNamesByPath));
         searchService.addProvider(new IndexedMemberSearchProvider(index));
         searchService.addProvider(new MethodSearchProvider());
         searchService.addProvider(new CodeSearchProvider());

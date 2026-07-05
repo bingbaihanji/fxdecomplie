@@ -139,6 +139,17 @@ public final class RenameService {
 
     /** 批量保存重命名，单次加锁和落盘，避免批量反混淆时丢写或重复 I/O。 */
     public static int saveAll(String workspaceHash, List<RenameEntry> entries) {
+        return saveAll(workspaceHash, entries, false);
+    }
+
+    /**
+     * 批量保存重命名。
+     *
+     * @param skipExisting 若为 true，已有 sameKey 条目保留不覆盖（用于反混淆等自动批量场景，
+     *                     保护用户手动重命名不被反混淆建议覆盖）
+     */
+    public static int saveAll(String workspaceHash, List<RenameEntry> entries,
+                              boolean skipExisting) {
         if (workspaceHash == null || workspaceHash.isBlank() || entries == null || entries.isEmpty()) {
             return 0;
         }
@@ -163,11 +174,23 @@ public final class RenameService {
                     }
                     continue;
                 }
-                // 替换同一符号的旧条目。方法和参数保留 descriptor，避免重载冲突。
                 boolean replaced = false;
                 for (int i = 0; i < list.size(); i++) {
                     RenameEntry e = normalize(list.get(i));
-                    if (sameKey(e, normalized) || sameClassRenameTarget(e, normalized)) {
+                    if (sameKey(e, normalized)) {
+                        if (skipExisting) {
+                            // 反混淆批量场景：已有条目可能是用户手动重命名，保留不覆盖
+                            log.debug("saveAll: skipExisting=true, 保留已有条目 class={} old={} new={}",
+                                    e.className(), e.oldName(), e.newName());
+                            replaced = true;
+                            break;
+                        }
+                        // 手动重命名场景：允许覆盖
+                        list.set(i, normalized);
+                        replaced = true;
+                        break;
+                    }
+                    if (sameClassRenameTarget(e, normalized)) {
                         list.set(i, normalized);
                         replaced = true;
                         break;
@@ -190,17 +213,28 @@ public final class RenameService {
         }
     }
 
-    /** 加载工作区全部重命名 */
+    /**
+     * 加载工作区全部重命名条目。
+     *
+     * <p>优先从内存缓存返回（避免滚动文件树时高频触发磁盘 I/O 导致卡顿），
+     * 缓存未命中时才读取磁盘文件。</p>
+     */
     public static List<RenameEntry> loadAll(String workspaceHash) {
         if (workspaceHash == null || workspaceHash.isBlank()) {
             return new ArrayList<>();
+        }
+        // 先查内存缓存，避免文件树滚动时 displayClassName() 触发的每条 cell 更新都走磁盘 I/O
+        {
+            List<RenameEntry> cached = MEMORY_CACHE.get(workspaceHash);
+            if (cached != null) {
+                return new ArrayList<>(cached);
+            }
         }
         Path file = resolveFile(workspaceHash);
         if (!Files.isRegularFile(file)) {
             Path legacyFile = resolveLegacyFile(workspaceHash);
             if (!Files.isRegularFile(legacyFile)) {
-                List<RenameEntry> cached = MEMORY_CACHE.get(workspaceHash);
-                return cached == null ? new ArrayList<>() : new ArrayList<>(cached);
+                return new ArrayList<>();
             }
             file = legacyFile;
         }
@@ -221,8 +255,7 @@ public final class RenameService {
             return result;
         } catch (IOException | RuntimeException e) {
             log.debug("读取重命名文件失败: {}", file, e);
-            List<RenameEntry> cached = MEMORY_CACHE.get(workspaceHash);
-            return cached == null ? new ArrayList<>() : new ArrayList<>(cached);
+            return new ArrayList<>();
         }
     }
 
@@ -1528,16 +1561,19 @@ public final class RenameService {
         return null;
     }
 
+    /**
+     * 判断 class rename 条目是否针对给定的内部类名。
+     *
+     * <p>仅按 className 字段精确匹配。不按 oldName（简单名）回退匹配，
+     * 因为混淆代码中大量类共享相同简单名（如 a、b），会导致跨包误匹配。</p>
+     */
     private static boolean classEntryTargetsInternalName(RenameEntry entry, String internalName) {
         if (entry == null || !TYPE_CLASS.equals(entry.type())) {
             return false;
         }
         String normalized = normalizeInternalName(internalName);
         String entryClass = normalizeInternalName(entry.className());
-        if (!entryClass.isBlank() && sameInternalClassName(entryClass, normalized)) {
-            return true;
-        }
-        return classEntryMatchesToken(entry, simpleClassName(normalized));
+        return !entryClass.isBlank() && sameInternalClassName(entryClass, normalized);
     }
 
     private static boolean classEntryMatchesToken(RenameEntry entry, String token) {

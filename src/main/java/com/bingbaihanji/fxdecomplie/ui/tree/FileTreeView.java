@@ -12,14 +12,39 @@ import javafx.scene.control.TreeView;
  */
 public class FileTreeView extends TreeView<FileTreeNode> {
 
-    /**
-     * @param root 文件树根节点
-     */
+    private static final double FIXED_CELL_SIZE = 24.0;
+
     public FileTreeView(TreeItem<FileTreeNode> root) {
         super(root);
         setShowRoot(true);
         getStyleClass().add("file-tree-view");
+        setFixedCellSize(FIXED_CELL_SIZE);
         setCellFactory(tv -> new FileTreeCell());
-        // Cell factory 可在外部由 WorkspaceTabManager.installTreeContextMenu 覆盖(含右键菜单绑定)
+    }
+
+    /**
+     * 刷新所有 TreeCell 的显示文本。
+     * 延迟到下一 pulse（此时 cells 已在 scene graph 中），然后调用每个
+     * FileTreeCell.refreshDisplay() 触发 updateItem 获取最新显示名。
+     * 若 lookUp 未找到 cells，回退到 setRoot 重建方案。
+     */
+    public void refreshVisibleCells() {
+        javafx.application.Platform.runLater(() -> {
+            boolean any = false;
+            for (var node : lookupAll(".tree-cell")) {
+                if (node instanceof FileTreeCell cell) {
+                    cell.refreshDisplay();
+                    any = true;
+                }
+            }
+            if (!any) {
+                // cells 不在 scene graph 中，使用 setRoot 强制重建
+                TreeItem<FileTreeNode> r = getRoot();
+                if (r != null) {
+                    setRoot(null);
+                    setRoot(r);
+                }
+            }
+        });
     }
 }

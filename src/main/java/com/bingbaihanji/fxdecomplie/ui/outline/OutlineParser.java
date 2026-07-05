@@ -34,8 +34,9 @@ public final class OutlineParser {
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|\\s)*)\\b(class|interface|enum|record)\\s+(\\w+)");
 
+    /** 匹配全限定类引用：包路径（小写段）+ 类名/内部类（大小写均可，混淆后类名常为小写单字母） */
     private static final Pattern CLASS_REF_PATTERN = Pattern.compile(
-            "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+(?:\\.[A-Z][a-zA-Z0-9_]*)*)\\b");
+            "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+\\.[A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)\\b");
 
     private OutlineParser() {
         throw new AssertionError("utility class");
@@ -206,8 +207,9 @@ public final class OutlineParser {
             Matcher m = CLASS_REF_PATTERN.matcher(line);
             while (m.find()) {
                 String match = m.group(1);
-                // 仅当匹配片段看似包路径时才视为类引用
-                if (match.contains(".") && Character.isUpperCase(match.charAt(match.lastIndexOf('.') + 1))) {
+                // 包含 '.' 且最后一段是有效 Java 标识符则视为类引用
+                // 混淆后的类名通常为小写单字母（如 a, b, c），不能再依赖首字母大写判断
+                if (match.contains(".") && looksLikeClassReference(match)) {
                     refs.add(new CodeMetadata.Reference(
                             CodeMetadata.RefType.CLASS_REF, match, null, lineNum));
                 }
@@ -219,6 +221,35 @@ public final class OutlineParser {
         }
 
         return new CodeMetadata(refsByLine);
+    }
+
+    /**
+     * 判断匹配片段是否为有效的类引用。
+     *
+     * <p>混淆后的类名通常为小写单字母（如 a/b/c），若只按首字母大写过滤
+     * 会漏掉所有混淆类引用，导致 Ctrl+Click 导航失效。</p>
+     *
+     * <p>简单规则：最后一个 '.' 后面的简单类名必须是有效 Java 标识符，
+     * 且至少包含两个 '.' 段（至少一级包 + 类名），避免误匹配单个变量。</p>
+     */
+    private static boolean looksLikeClassReference(String match) {
+        if (match == null || match.isBlank()) {
+            return false;
+        }
+        int lastDot = match.lastIndexOf('.');
+        if (lastDot < 0) {
+            return false;
+        }
+        String simpleName = match.substring(lastDot + 1);
+        if (simpleName.isEmpty() || !Character.isJavaIdentifierStart(simpleName.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < simpleName.length(); i++) {
+            if (!Character.isJavaIdentifierPart(simpleName.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String extractModifiers(String raw) {

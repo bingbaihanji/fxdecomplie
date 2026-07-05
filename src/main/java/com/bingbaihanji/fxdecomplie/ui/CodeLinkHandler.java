@@ -217,7 +217,59 @@ public final class CodeLinkHandler {
                 return classRef;
             }
         }
+        // 混淆后的类名可能为小写单字母（如 com.pig4cloud.service.a），
+        // isClassNameSegment 会因首字母小写而拒绝。此时若该段是 qualified 最后一段
+        // 且其前的所有段都是包名风格（全小写/数字），则将整个 qualified 作为类引用。
+        if (isLastSegment(qualified, segmentEnd) && isPackagePrefix(ownerPrefix)) {
+            String classRef = qualified.substring(0, segmentEnd);
+            if (isValidJavaIdentifier(segment)) {
+                return classRef;
+            }
+        }
         return segment;
+    }
+
+    /** @return true 若 segmentEnd 已到达 qualified 末尾（该段之后无更多字符） */
+    private static boolean isLastSegment(String qualified, int segmentEnd) {
+        return segmentEnd >= qualified.length();
+    }
+
+    /** @return true 若所有点分隔的段都是包名风格（小写开头），即没有明显的类名段 */
+    private static boolean isPackagePrefix(String prefix) {
+        if (prefix == null || prefix.isBlank()) {
+            return false;
+        }
+        // 去除末尾的 '.'
+        String trimmed = prefix.endsWith(".") ? prefix.substring(0, prefix.length() - 1) : prefix;
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        for (String part : trimmed.split("\\.")) {
+            if (part.isEmpty()) {
+                return false;
+            }
+            // 包名段全小写或纯数字开头（如 com、pig4cloud、service）
+            if (!isPackageNameSegment(part) && !part.chars().allMatch(c -> Character.isDigit(c) || c == '_')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** @return true 若名称为有效 Java 标识符 */
+    private static boolean isValidJavaIdentifier(String name) {
+        if (name == null || name.isEmpty()) {
+            return false;
+        }
+        if (!Character.isJavaIdentifierStart(name.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < name.length(); i++) {
+            if (!Character.isJavaIdentifierPart(name.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean looksLikeQualifiedClassReference(String token) {

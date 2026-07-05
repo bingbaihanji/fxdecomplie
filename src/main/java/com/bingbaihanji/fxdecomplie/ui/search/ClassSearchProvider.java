@@ -10,25 +10,34 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 按类名搜索(匹配 sourceCache 的 key 即全路径中的类名部分,以及独立的类名列表)
+ * 按类名搜索 — 同时匹配原始类全路径和重命名/反混淆后的显示名。
  *
  * @author bingbaihanji
  * @date 2026-06-18
  */
 public class ClassSearchProvider implements SearchProvider {
 
-    /** 返回的类名结果上限 */
     private static final int MAX_RESULTS = 500;
 
-    /** 预索引的类全路径列表(来自工作区索引) */
     private final List<String> classNames;
+    /** 原始 fullPath → 显示名（含 .class 后缀），用于搜索反混淆/重命名后的名称 */
+    private final Map<String, String> displayNamesByPath;
 
     public ClassSearchProvider() {
         this.classNames = List.of();
+        this.displayNamesByPath = Map.of();
     }
 
     public ClassSearchProvider(List<String> classNames) {
         this.classNames = classNames != null ? List.copyOf(classNames) : List.of();
+        this.displayNamesByPath = Map.of();
+    }
+
+    public ClassSearchProvider(List<String> classNames,
+                               Map<String, String> displayNamesByPath) {
+        this.classNames = classNames != null ? List.copyOf(classNames) : List.of();
+        this.displayNamesByPath = displayNamesByPath != null
+                ? Map.copyOf(displayNamesByPath) : Map.of();
     }
 
     @Override
@@ -38,20 +47,24 @@ public class ClassSearchProvider implements SearchProvider {
 
         String lowerQuery = query.toLowerCase();
 
-        // 先搜索显式传入的类名列表(可能包含尚未在 sourceCache 中打开的类)
         for (String name : classNames) {
             if (results.size() >= MAX_RESULTS) break;
-            if (name.toLowerCase().contains(lowerQuery)) {
-                results.add(new SearchResult(name, name, 1, SearchResult.MatchType.CLASS_NAME));
+            String displayName = displayNamesByPath.getOrDefault(name, name);
+            if (name.toLowerCase().contains(lowerQuery)
+                    || displayName.toLowerCase().contains(lowerQuery)) {
+                results.add(new SearchResult(name, displayName, 1,
+                        SearchResult.MatchType.CLASS_NAME));
             }
         }
 
-        // 再搜索 sourceCache 中的路径
         if (results.size() < MAX_RESULTS) {
             for (String path : sourceCache.keySet()) {
                 if (results.size() >= MAX_RESULTS) break;
-                if (path.toLowerCase().contains(lowerQuery)) {
-                    results.add(new SearchResult(path, path, 1, SearchResult.MatchType.CLASS_NAME));
+                String displayName = displayNamesByPath.getOrDefault(path, path);
+                if (path.toLowerCase().contains(lowerQuery)
+                        || displayName.toLowerCase().contains(lowerQuery)) {
+                    results.add(new SearchResult(path, displayName, 1,
+                            SearchResult.MatchType.CLASS_NAME));
                 }
             }
         }
@@ -72,20 +85,24 @@ public class ClassSearchProvider implements SearchProvider {
         List<SearchResult> results = new ArrayList<>();
         if (query == null || query.isBlank()) return results;
 
-        // 先搜索显式传入的类名列表
         for (String name : classNames) {
             if (results.size() >= MAX_RESULTS) break;
-            if (lineMatches(name, query, options)) {
-                results.add(new SearchResult(name, name, 1, SearchResult.MatchType.CLASS_NAME));
+            String displayName = displayNamesByPath.getOrDefault(name, name);
+            if (lineMatches(name, query, options)
+                    || lineMatches(displayName, query, options)) {
+                results.add(new SearchResult(name, displayName, 1,
+                        SearchResult.MatchType.CLASS_NAME));
             }
         }
 
-        // 再搜索 sourceCache 中的路径
         if (results.size() < MAX_RESULTS) {
             for (String path : sourceCache.keySet()) {
                 if (results.size() >= MAX_RESULTS) break;
-                if (lineMatches(path, query, options)) {
-                    results.add(new SearchResult(path, path, 1, SearchResult.MatchType.CLASS_NAME));
+                String displayName = displayNamesByPath.getOrDefault(path, path);
+                if (lineMatches(path, query, options)
+                        || lineMatches(displayName, query, options)) {
+                    results.add(new SearchResult(path, displayName, 1,
+                            SearchResult.MatchType.CLASS_NAME));
                 }
             }
         }

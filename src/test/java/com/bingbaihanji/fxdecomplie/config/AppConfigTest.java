@@ -18,7 +18,7 @@ class AppConfigTest {
     @Test
     void addRecentFileDeduplicates() {
         AppConfig config = new AppConfig();
-        config.addRecentFile("/test/a.jar");
+        config.addRecentFile("D:/datangyun/ccx_politics/pigx/pcs/target/pcs.jar");
         config.addRecentFile("/test/b.jar");
         config.addRecentFile("/test/a.jar"); // should move to front
         assertEquals(2, config.recentFiles().size());
