@@ -9,43 +9,84 @@
   "tokenColors": [
     {
       "scope": "keyword",
-      "settings": { "foreground": "#ad7abe", "fontStyle": "bold" }
+      "settings": {
+        "foreground": "#ad7abe",
+        "fontStyle": "bold"
+      }
     },
     {
-      "scope": ["string", "string.quoted"],
-      "settings": { "foreground": "#96be78" }
+      "scope": [
+        "string",
+        "string.quoted"
+      ],
+      "settings": {
+        "foreground": "#96be78"
+      }
     },
     {
       "scope": "comment",
-      "settings": { "foreground": "#6a9955", "fontStyle": "italic" }
+      "settings": {
+        "foreground": "#6a9955",
+        "fontStyle": "italic"
+      }
     },
     {
-      "scope": ["keyword.other.annotation", "storage.type.annotation"],
-      "settings": { "foreground": "#ba9e22" }
+      "scope": [
+        "keyword.other.annotation",
+        "storage.type.annotation"
+      ],
+      "settings": {
+        "foreground": "#ba9e22"
+      }
     },
     {
       "scope": "constant.numeric",
-      "settings": { "foreground": "#33a8a0" }
+      "settings": {
+        "foreground": "#33a8a0"
+      }
     },
     {
-      "scope": ["variable.other.object", "entity.name.field"],
-      "settings": { "foreground": "#ff9696" }
+      "scope": [
+        "variable.other.object",
+        "entity.name.field"
+      ],
+      "settings": {
+        "foreground": "#ff9696"
+      }
     },
     {
-      "scope": ["variable.parameter", "entity.name.parameter"],
-      "settings": { "foreground": "#3e98c3" }
+      "scope": [
+        "variable.parameter",
+        "entity.name.parameter"
+      ],
+      "settings": {
+        "foreground": "#3e98c3"
+      }
     },
     {
-      "scope": ["entity.name.function", "support.function"],
-      "settings": { "foreground": "#dd9438" }
+      "scope": [
+        "entity.name.function",
+        "support.function"
+      ],
+      "settings": {
+        "foreground": "#dd9438"
+      }
     },
     {
-      "scope": ["entity.name.type", "storage.type.class", "support.class"],
-      "settings": { "foreground": "#4ec9b0" }
+      "scope": [
+        "entity.name.type",
+        "storage.type.class",
+        "support.class"
+      ],
+      "settings": {
+        "foreground": "#4ec9b0"
+      }
     },
     {
       "scope": "variable",
-      "settings": { "foreground": "#9aa7b0" }
+      "settings": {
+        "foreground": "#9aa7b0"
+      }
     }
   ]
 }

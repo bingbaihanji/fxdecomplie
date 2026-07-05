@@ -2,12 +2,13 @@ package com.bingbaihanji.fxdecomplie.decompiler;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class DecompilerBaselineTest {
 

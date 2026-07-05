@@ -1,14 +1,14 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.SearchResult;
-import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class SearchServiceConcurrentTest {
 
@@ -16,7 +16,11 @@ class SearchServiceConcurrentTest {
     void concurrentAddProviderAndSearch() throws Exception {
         SearchService service = new SearchService();
         SearchProvider slowProvider = (query, cache) -> {
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
             return List.of(new SearchResult("/test/Foo.class", "line with " + query, 1,
                     SearchResult.MatchType.CODE_TEXT));
         };

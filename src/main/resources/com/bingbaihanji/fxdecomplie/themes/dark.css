@@ -104,10 +104,10 @@
 /*上下文菜单样式*/
 .context-menu {
     -fx-background-color: #252526;
-    -fx-border-color: #008888;   /* 描边颜色 */
-    -fx-border-width: 1px;       /* 描边粗细 */
-    -fx-border-style: solid;     /* 实线 */
-    -fx-padding: 5px;            /* 内边距，让内容不贴边 */
+    -fx-border-color: #008888; /* 描边颜色 */
+    -fx-border-width: 1px; /* 描边粗细 */
+    -fx-border-style: solid; /* 实线 */
+    -fx-padding: 5px; /* 内边距，让内容不贴边 */
 }
 
 .menu-item {

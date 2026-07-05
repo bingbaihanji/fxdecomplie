@@ -21,6 +21,13 @@ class UsageSearchServiceTest {
     @TempDir
     Path tempDir;
 
+    private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {
+        String name = path.substring(path.lastIndexOf('/') + 1);
+        FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        node.setCachedBytes(Files.readAllBytes(classFile));
+        return new TreeItem<>(node);
+    }
+
     @Test
     void findsClassMethodAndFieldUsagesFromBytecode() throws Exception {
         Path sourceDir = tempDir.resolve("src/com/example");
@@ -91,12 +98,5 @@ class UsageSearchServiceTest {
         assertTrue(classResults.stream().anyMatch(r ->
                 r.sourcePath().equals("com/example/Holder.class")
                         && r.displayText().contains("field target Lcom/example/Target;")));
-    }
-
-    private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {
-        String name = path.substring(path.lastIndexOf('/') + 1);
-        FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.CLASS_FILE);
-        node.setCachedBytes(Files.readAllBytes(classFile));
-        return new TreeItem<>(node);
     }
 }

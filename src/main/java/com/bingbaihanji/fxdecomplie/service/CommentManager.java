@@ -207,23 +207,6 @@ public final class CommentManager {
      * 再通过规范的紧凑构造器创建 CommentData，确保各字段非 null。</p>
      */
     private static final class CommentDataDeserializer implements JsonDeserializer<CommentData> {
-        @Override
-        public CommentData deserialize(JsonElement json, Type typeOfT,
-                                       JsonDeserializationContext context) throws JsonParseException {
-            JsonObject obj = json.getAsJsonObject();
-            String className = getString(obj, "className", "");
-            String memberSignature = getString(obj, "memberSignature", "");
-            int line = getInt(obj, "line", 0);
-            String sourceHash = getString(obj, "sourceHash", "");
-            String optionsHash = getString(obj, "optionsHash", "");
-            CommentData.CommentStyle style = getEnum(obj, "style", CommentData.CommentStyle.LINE);
-            String text = getString(obj, "text", "");
-            String author = getString(obj, "author", "");
-            String time = getString(obj, "time", "");
-            return new CommentData(className, memberSignature, line, sourceHash,
-                    optionsHash, style, text, author, time);
-        }
-
         private static String getString(JsonObject obj, String name, String defaultValue) {
             JsonElement el = obj.get(name);
             if (el == null || el.isJsonNull()) {
@@ -255,6 +238,23 @@ public final class CommentManager {
             } catch (IllegalArgumentException e) {
                 return defaultValue;
             }
+        }
+
+        @Override
+        public CommentData deserialize(JsonElement json, Type typeOfT,
+                                       JsonDeserializationContext context) throws JsonParseException {
+            JsonObject obj = json.getAsJsonObject();
+            String className = getString(obj, "className", "");
+            String memberSignature = getString(obj, "memberSignature", "");
+            int line = getInt(obj, "line", 0);
+            String sourceHash = getString(obj, "sourceHash", "");
+            String optionsHash = getString(obj, "optionsHash", "");
+            CommentData.CommentStyle style = getEnum(obj, "style", CommentData.CommentStyle.LINE);
+            String text = getString(obj, "text", "");
+            String author = getString(obj, "author", "");
+            String time = getString(obj, "time", "");
+            return new CommentData(className, memberSignature, line, sourceHash,
+                    optionsHash, style, text, author, time);
         }
     }
 }

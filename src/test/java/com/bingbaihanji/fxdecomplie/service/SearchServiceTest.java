@@ -1,9 +1,8 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import com.bingbaihanji.fxdecomplie.model.SearchResult;
 import com.bingbaihanji.fxdecomplie.model.SearchScope;
-import com.bingbaihanji.fxdecomplie.service.SearchProvider;
-import com.bingbaihanji.fxdecomplie.model.SearchOptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

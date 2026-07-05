@@ -1,14 +1,12 @@
 package com.bingbaihanji.fxdecomplie.io;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-//import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.model.ExportResult;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.ExportService;
 import javafx.scene.control.TreeItem;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -17,10 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.ZipFile;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
+//import com.bingbaihanji.fxdecomplie.decompiler.BytecodeCache;
 
 class ExportServiceTest {
 
@@ -31,6 +28,29 @@ class ExportServiceTest {
 //    void clearGlobalBytecodeCache() {
 //        BytecodeCache.clear();
 //    }
+
+    private static ExportConfig config(Path outputPath, ExportConfig.Format format,
+                                       ExportConfig.ConflictPolicy conflictPolicy,
+                                       boolean exportResources) {
+        return new ExportConfig(outputPath, DecompilerTypeEnum.VINEFLOWER, format,
+                conflictPolicy, exportResources);
+    }
+
+    @SafeVarargs
+    private static TreeItem<FileTreeNode> root(TreeItem<FileTreeNode>... children) {
+        TreeItem<FileTreeNode> root = new TreeItem<>(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().addAll(children);
+        return root;
+    }
+
+    private static TreeItem<FileTreeNode> resource(String path, String content) {
+        int slash = path.lastIndexOf('/');
+        String name = slash >= 0 ? path.substring(slash + 1) : path;
+        FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.RESOURCE);
+        node.setCachedBytes(content.getBytes(StandardCharsets.UTF_8));
+        return new TreeItem<>(node);
+    }
 
     @Test
     void exportsResourcesToDirectoryWhenEnabled() throws Exception {
@@ -104,40 +124,6 @@ class ExportServiceTest {
         assertFalse(Files.exists(tempDir.resolve("evil.properties")));
     }
 
-    private static ExportConfig config(Path outputPath, ExportConfig.Format format,
-                                       ExportConfig.ConflictPolicy conflictPolicy,
-                                       boolean exportResources) {
-        return new ExportConfig(outputPath, DecompilerTypeEnum.VINEFLOWER, format,
-                conflictPolicy, exportResources);
-    }
-
-    @SafeVarargs
-    private static TreeItem<FileTreeNode> root(TreeItem<FileTreeNode>... children) {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
-                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        root.getChildren().addAll(children);
-        return root;
-    }
-
-    @Test
-    void exportHandlesSkipConflictPolicy() throws Exception {
-        // Pre-create a file to simulate a conflict
-        Path outputDir = tempDir.resolve("out");
-        Files.createDirectories(outputDir.resolve("config"));
-        Files.writeString(outputDir.resolve("config/app.properties"), "original");
-
-        TreeItem<FileTreeNode> root = root(resource("config/app.properties", "new-content"));
-
-        ExportResult result = ExportService.exportAll(root, config(outputDir,
-                ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.SKIP, true),
-                WorkspaceIndex.build(root), null);
-
-        assertEquals(1, result.totalFiles());
-        assertEquals(0, result.successCount());
-        assertFalse(result.hasErrors());
-        assertEquals("original", Files.readString(outputDir.resolve("config/app.properties")));
-    }
-
 //    @Test
 //    void exportDoesNotReadClassBytesFromGlobalCache() throws Exception {
 //        BytecodeCache.put("com/example/Missing", new byte[]{1, 2, 3});
@@ -155,11 +141,22 @@ class ExportServiceTest {
 //        assertFalse(Files.exists(tempDir.resolve("out/com/example/Missing.java")));
 //    }
 
-    private static TreeItem<FileTreeNode> resource(String path, String content) {
-        int slash = path.lastIndexOf('/');
-        String name = slash >= 0 ? path.substring(slash + 1) : path;
-        FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.RESOURCE);
-        node.setCachedBytes(content.getBytes(StandardCharsets.UTF_8));
-        return new TreeItem<>(node);
+    @Test
+    void exportHandlesSkipConflictPolicy() throws Exception {
+        // Pre-create a file to simulate a conflict
+        Path outputDir = tempDir.resolve("out");
+        Files.createDirectories(outputDir.resolve("config"));
+        Files.writeString(outputDir.resolve("config/app.properties"), "original");
+
+        TreeItem<FileTreeNode> root = root(resource("config/app.properties", "new-content"));
+
+        ExportResult result = ExportService.exportAll(root, config(outputDir,
+                        ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.SKIP, true),
+                WorkspaceIndex.build(root), null);
+
+        assertEquals(1, result.totalFiles());
+        assertEquals(0, result.successCount());
+        assertFalse(result.hasErrors());
+        assertEquals("original", Files.readString(outputDir.resolve("config/app.properties")));
     }
 }

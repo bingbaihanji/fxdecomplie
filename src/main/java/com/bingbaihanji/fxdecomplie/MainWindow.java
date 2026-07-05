@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -383,6 +382,46 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return Math.min(text.length(), off + col);
     }
 
+    private static boolean isDeclaredTypeNameAt(String sourceCode, int offset, String caretName) {
+        if (sourceCode == null || sourceCode.isBlank() || caretName == null || caretName.isBlank()
+                || offset < 0 || offset > sourceCode.length()) {
+            return false;
+        }
+        int probe = Math.min(offset, sourceCode.length() - 1);
+        if (probe > 0 && (probe >= sourceCode.length()
+                || !Character.isJavaIdentifierPart(sourceCode.charAt(probe)))) {
+            probe--;
+        }
+        if (probe < 0 || probe >= sourceCode.length()
+                || !Character.isJavaIdentifierPart(sourceCode.charAt(probe))) {
+            return false;
+        }
+        int start = probe;
+        while (start > 0 && Character.isJavaIdentifierPart(sourceCode.charAt(start - 1))) {
+            start--;
+        }
+        int end = probe + 1;
+        while (end < sourceCode.length() && Character.isJavaIdentifierPart(sourceCode.charAt(end))) {
+            end++;
+        }
+        if (!caretName.equals(sourceCode.substring(start, end))) {
+            return false;
+        }
+        int lineStart = sourceCode.lastIndexOf('\n', start);
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+        String prefix = sourceCode.substring(lineStart, start).stripTrailing();
+        return Pattern.compile("(^|\\s)(class|interface|enum|record)\\s*$")
+                .matcher(prefix).find()
+                || Pattern.compile("(^|\\s)@\\s*interface\\s*$")
+                .matcher(prefix).find();
+    }
+
+    private static String classLeafName(String className) {
+        String simple = tokenSimpleName(normalizeInternalClassName(className));
+        int dollar = simple.lastIndexOf('$');
+        return dollar >= 0 ? simple.substring(dollar + 1) : simple;
+    }
+
     /** 显示主窗口 */
     public void show(Stage stage) {
         this.stage = stage;
@@ -596,6 +635,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         tabManager.closeOtherWorkspaces(selected);
     }
 
+    // ─── CodeActionHandler 实现 ─────────────────────────────────
+
     /** 保存当前代码标签页为 .java 文件 */
     @Override
     public void saveCurrentFile() {
@@ -641,8 +682,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             doExport(nodes, index, view.workspace());
         });
     }
-
-    // ─── CodeActionHandler 实现 ─────────────────────────────────
 
     /** 为单个树节点构建临时索引并弹出导出对话框(右键菜单入口) */
     private void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
@@ -1460,46 +1499,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return true;
         }
         return isDeclaredTypeNameAt(sourceCode, offset, caretName);
-    }
-
-    private static boolean isDeclaredTypeNameAt(String sourceCode, int offset, String caretName) {
-        if (sourceCode == null || sourceCode.isBlank() || caretName == null || caretName.isBlank()
-                || offset < 0 || offset > sourceCode.length()) {
-            return false;
-        }
-        int probe = Math.min(offset, sourceCode.length() - 1);
-        if (probe > 0 && (probe >= sourceCode.length()
-                || !Character.isJavaIdentifierPart(sourceCode.charAt(probe)))) {
-            probe--;
-        }
-        if (probe < 0 || probe >= sourceCode.length()
-                || !Character.isJavaIdentifierPart(sourceCode.charAt(probe))) {
-            return false;
-        }
-        int start = probe;
-        while (start > 0 && Character.isJavaIdentifierPart(sourceCode.charAt(start - 1))) {
-            start--;
-        }
-        int end = probe + 1;
-        while (end < sourceCode.length() && Character.isJavaIdentifierPart(sourceCode.charAt(end))) {
-            end++;
-        }
-        if (!caretName.equals(sourceCode.substring(start, end))) {
-            return false;
-        }
-        int lineStart = sourceCode.lastIndexOf('\n', start);
-        lineStart = lineStart < 0 ? 0 : lineStart + 1;
-        String prefix = sourceCode.substring(lineStart, start).stripTrailing();
-        return Pattern.compile("(^|\\s)(class|interface|enum|record)\\s*$")
-                .matcher(prefix).find()
-                || Pattern.compile("(^|\\s)@\\s*interface\\s*$")
-                .matcher(prefix).find();
-    }
-
-    private static String classLeafName(String className) {
-        String simple = tokenSimpleName(normalizeInternalClassName(className));
-        int dollar = simple.lastIndexOf('$');
-        return dollar >= 0 ? simple.substring(dollar + 1) : simple;
     }
 
     private com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget refineClassRenameTarget(

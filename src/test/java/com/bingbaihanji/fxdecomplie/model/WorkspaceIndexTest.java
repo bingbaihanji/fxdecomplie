@@ -17,6 +17,13 @@ class WorkspaceIndexTest {
     @TempDir
     Path tempDir;
 
+    private static byte[] withMajorVersion(byte[] bytes, int majorVersion) {
+        byte[] copy = bytes.clone();
+        copy[6] = (byte) ((majorVersion >>> 8) & 0xff);
+        copy[7] = (byte) (majorVersion & 0xff);
+        return copy;
+    }
+
     @Test
     void emptyTreeProducesEmptyIndex() {
         TreeItem<FileTreeNode> root = new TreeItem<>(
@@ -172,12 +179,5 @@ class WorkspaceIndexTest {
 
         Path classFile = outputDir.resolve(packageName.replace('.', '/')).resolve(className + ".class");
         return Files.readAllBytes(classFile);
-    }
-
-    private static byte[] withMajorVersion(byte[] bytes, int majorVersion) {
-        byte[] copy = bytes.clone();
-        copy[6] = (byte) ((majorVersion >>> 8) & 0xff);
-        copy[7] = (byte) (majorVersion & 0xff);
-        return copy;
     }
 }

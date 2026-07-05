@@ -19,6 +19,20 @@ class InheritanceServiceTest {
     @TempDir
     Path tempDir;
 
+    private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {
+        String name = path.substring(path.lastIndexOf('/') + 1);
+        FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        node.setCachedBytes(withMajorVersion(Files.readAllBytes(classFile), 69));
+        return new TreeItem<>(node);
+    }
+
+    private static byte[] withMajorVersion(byte[] bytes, int majorVersion) {
+        byte[] copy = bytes.clone();
+        copy[6] = (byte) ((majorVersion >>> 8) & 0xff);
+        copy[7] = (byte) (majorVersion & 0xff);
+        return copy;
+    }
+
     @Test
     void buildsTreeForJava25ClassFile() throws Exception {
         Path sourceDir = tempDir.resolve("src/com/example");
@@ -99,19 +113,5 @@ class InheritanceServiceTest {
                 .orElseThrow();
         assertTrue(child.getChildren().stream()
                 .anyMatch(item -> "com/example/GrandChild".equals(item.getValue().className())));
-    }
-
-    private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {
-        String name = path.substring(path.lastIndexOf('/') + 1);
-        FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.CLASS_FILE);
-        node.setCachedBytes(withMajorVersion(Files.readAllBytes(classFile), 69));
-        return new TreeItem<>(node);
-    }
-
-    private static byte[] withMajorVersion(byte[] bytes, int majorVersion) {
-        byte[] copy = bytes.clone();
-        copy[6] = (byte) ((majorVersion >>> 8) & 0xff);
-        copy[7] = (byte) (majorVersion & 0xff);
-        return copy;
     }
 }

@@ -17,14 +17,14 @@ public class FileTreeNode {
     private final String fullPath;
     /** 节点类型 */
     private final NodeTypeEnum nodeType;
+    /** 可选资源清理回调,例如关闭归档句柄。通过 AtomicReference 保证单次执行 */
+    private final AtomicReference<Runnable> cleanupRef = new AtomicReference<>();
     /** 缓存的文件字节,按需加载后保留,避免重复读取同一打开文件 */
     private volatile byte[] cachedBytes;
     /** 懒加载字节来源,用于 JAR/ZIP/目录条目 */
     private volatile ByteLoader byteLoader;
     /** 条目原始大小,未知时为 -1 */
     private volatile long size = -1L;
-    /** 可选资源清理回调,例如关闭归档句柄。通过 AtomicReference 保证单次执行 */
-    private final AtomicReference<Runnable> cleanupRef = new AtomicReference<>();
 
     /**
      * 构造文件树节点

@@ -27,6 +27,20 @@ public class WindowsTest {
             launch();
         }
 
+        public static void setWindowsSty(Stage stage) {
+            WinDef.HWND windowHandle = FxTools.getWindowHandle(stage);
+            if (windowHandle == null) {
+                return;
+            }
+
+            NativeWindowsTools.extendFrameIntoClientArea(windowHandle);
+//            NativeWindowsTools.setClickThrough(windowHandle,true);
+            NativeWindowsTools.setWindowAlpha(windowHandle, 0.5f);
+            NativeWindowsTools.bringToFront(windowHandle);
+            NativeWindowsTools.flashWindow(windowHandle, 10, 700);
+
+        }
+
         @Override
         public void start(Stage primaryStage) throws Exception {
 
@@ -39,20 +53,6 @@ public class WindowsTest {
             primaryStage.show();
             DefaultWindowTheme.applyWindowDarkMode(primaryStage);
             setWindowsSty(primaryStage);
-        }
-
-        public static void setWindowsSty(Stage stage) {
-            WinDef.HWND windowHandle = FxTools.getWindowHandle(stage);
-            if (windowHandle == null) {
-                return;
-            }
-
-            NativeWindowsTools.extendFrameIntoClientArea(windowHandle);
-//            NativeWindowsTools.setClickThrough(windowHandle,true);
-            NativeWindowsTools. setWindowAlpha(windowHandle,0.5f);
-            NativeWindowsTools. bringToFront(windowHandle );
-            NativeWindowsTools. flashWindow(windowHandle ,10,700);
-
         }
 
     }

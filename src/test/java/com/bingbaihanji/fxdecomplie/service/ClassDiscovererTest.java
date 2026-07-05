@@ -2,7 +2,6 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,6 +9,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class ClassDiscovererTest {
 
