@@ -54,7 +54,9 @@ public final class OutlineParser {
      * @return 大纲成员列表，按源码行号排序
      */
     public static List<OutlineMember> parse(String sourceCode) {
-        if (sourceCode == null || sourceCode.isEmpty()) return List.of();
+        if (sourceCode == null || sourceCode.isEmpty()) {
+            return List.of();
+        }
         List<OutlineMember> members = new ArrayList<>();
         String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
         int depth = 0;
@@ -176,7 +178,9 @@ public final class OutlineParser {
             if (ch == '/' && i + 1 < s.length() && s.charAt(i + 1) == '/') {
                 break; // 注释到行尾，本行后续不再有代码级括号
             }
-            if (ch == c) n++;
+            if (ch == c) {
+                n++;
+            }
         }
         return n;
     }

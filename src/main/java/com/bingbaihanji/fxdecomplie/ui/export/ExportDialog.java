@@ -208,7 +208,9 @@ public final class ExportDialog {
 
     /** 格式切换时自动调整路径：ZIP→DIR 去掉 .zip 后缀，DIR→ZIP 加上 .zip */
     private static String switchPathFormat(String currentPath, ExportConfig.Format newFormat) {
-        if (currentPath == null || currentPath.isBlank()) return currentPath;
+        if (currentPath == null || currentPath.isBlank()) {
+            return currentPath;
+        }
         if (newFormat == ExportConfig.Format.ZIP) {
             return currentPath.endsWith(".zip") ? currentPath : currentPath + ".zip";
         } else {

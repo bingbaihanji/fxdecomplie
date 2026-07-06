@@ -86,7 +86,9 @@ public final class FileTreeBuilder {
         StringBuilder pathBuilder = new StringBuilder();
 
         for (String part : parts) {
-            if (!pathBuilder.isEmpty()) pathBuilder.append('/');
+            if (!pathBuilder.isEmpty()) {
+                pathBuilder.append('/');
+            }
             pathBuilder.append(part);
             String currentPath = pathBuilder.toString();
 

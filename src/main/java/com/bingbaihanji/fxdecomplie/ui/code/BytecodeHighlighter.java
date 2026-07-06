@@ -139,7 +139,9 @@ final class BytecodeHighlighter implements SyntaxDecorator {
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
         String line = model.getPlainText(paragraphIndex);
-        if (line == null || line.isEmpty()) return RichParagraph.builder().build();
+        if (line == null || line.isEmpty()) {
+            return RichParagraph.builder().build();
+        }
 
         List<Token> tokens = tokenize(line);
         if (tokens.isEmpty()) {
@@ -188,7 +190,9 @@ final class BytecodeHighlighter implements SyntaxDecorator {
             // 空白
             if (Character.isWhitespace(line.charAt(pos))) {
                 int end = pos + 1;
-                while (end < len && Character.isWhitespace(line.charAt(end))) end++;
+                while (end < len && Character.isWhitespace(line.charAt(end))) {
+                    end++;
+                }
                 tokens.add(new Token(Kind.DEFAULT, line.substring(pos, end)));
                 pos = end;
                 continue;
@@ -266,7 +270,9 @@ final class BytecodeHighlighter implements SyntaxDecorator {
             if (line.charAt(pos) == '"') {
                 int end = pos + 1;
                 while (end < len && line.charAt(end) != '"') {
-                    if (line.charAt(end) == '\\') end++;
+                    if (line.charAt(end) == '\\') {
+                        end++;
+                    }
                     end++;
                 }
                 if (end < len) {
@@ -286,7 +292,9 @@ final class BytecodeHighlighter implements SyntaxDecorator {
             // 标签引用
             if (line.charAt(pos) == '→') {
                 int end = pos + 1;
-                while (end < len && !Character.isWhitespace(line.charAt(end))) end++;
+                while (end < len && !Character.isWhitespace(line.charAt(end))) {
+                    end++;
+                }
                 tokens.add(new Token(Kind.LABEL, line.substring(pos, end)));
                 pos = end;
                 continue;
@@ -305,7 +313,9 @@ final class BytecodeHighlighter implements SyntaxDecorator {
     }
 
     private boolean isSpecial(String line, int pos) {
-        if (pos >= line.length()) return false;
+        if (pos >= line.length()) {
+            return false;
+        }
         char c = line.charAt(pos);
         return c == '#' || c == '"' || c == '.' || c == ';' || c == '|'
                 || c == '→' || Character.isWhitespace(c)

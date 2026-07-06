@@ -61,12 +61,14 @@ public final class Win32Api {
         User32Api INSTANCE = Native.load("user32", User32Api.class, W32APIOptions.DEFAULT_OPTIONS);
 
         /** 设置分层窗口透明度属性 */
+        @Override
         boolean SetLayeredWindowAttributes(HWND hwnd, int crKey, byte bAlpha, int dwFlags);
 
         /** 释放鼠标捕获 */
         boolean ReleaseCapture();
 
         /** 发送窗口消息 */
+        @Override
         LRESULT SendMessage(HWND hwnd, int msg, WPARAM wParam, LPARAM lParam);
 
         /** 客户区坐标转屏幕坐标 */
@@ -76,9 +78,11 @@ public final class Win32Api {
         boolean ScreenToClient(HWND hwnd, POINT lpPoint);
 
         /** 设置窗口位置和 Z 序 */
+        @Override
         boolean SetWindowPos(HWND hwnd, HWND hWndInsertAfter, int X, int Y, int cx, int cy, int uFlags);
 
         /** 显示/隐藏窗口 */
+        @Override
         boolean ShowWindow(HWND hwnd, int nCmdShow);
 
         /** 判断窗口是否最大化 */
@@ -91,38 +95,49 @@ public final class Win32Api {
         boolean SetWindowText(HWND hwnd, String lpString);
 
         /** 获取窗口标题文本 */
+        @Override
         int GetWindowText(HWND hwnd, char[] lpString, int nMaxCount);
 
         /** 获取窗口标题文本长度 */
+        @Override
         int GetWindowTextLength(HWND hwnd);
 
         /** 获取窗口矩形(屏幕坐标) */
+        @Override
         boolean GetWindowRect(HWND hwnd, WinDef.RECT rect);
 
         /** 获取窗口客户区矩形 */
+        @Override
         boolean GetClientRect(HWND hwnd, WinDef.RECT rect);
 
         /** 移动/调整窗口位置和尺寸 */
+        @Override
         boolean MoveWindow(HWND hwnd, int X, int Y, int nWidth, int nHeight, boolean bRepaint);
 
         // -- 前台/焦点/可见性 --
 
         /** 将窗口设为前台窗口并激活 */
+        @Override
         boolean SetForegroundWindow(HWND hwnd);
 
         /** 获取当前前台窗口 */
+        @Override
         HWND GetForegroundWindow();
 
         /** 将窗口提升到 Z 序顶部 */
+        @Override
         boolean BringWindowToTop(HWND hwnd);
 
         /** 判断句柄是否对应有效窗口 */
+        @Override
         boolean IsWindow(HWND hwnd);
 
         /** 判断窗口是否可见 */
+        @Override
         boolean IsWindowVisible(HWND hwnd);
 
         /** 判断窗口是否可接收输入 */
+        @Override
         boolean IsWindowEnabled(HWND hwnd);
 
         /** 启用/禁用窗口输入 */
@@ -145,6 +160,7 @@ public final class Win32Api {
         int GetDpiForWindow(HWND hwnd);
 
         /** 获取系统指标(屏幕尺寸等) */
+        @Override
         int GetSystemMetrics(int nIndex);
 
         // -- DPI --
@@ -194,6 +210,7 @@ public final class Win32Api {
         Kernel32Api INSTANCE = Native.load("kernel32", Kernel32Api.class, W32APIOptions.DEFAULT_OPTIONS);
 
         /** 获取当前进程 ID */
+        @Override
         int GetCurrentProcessId();
     }
 }

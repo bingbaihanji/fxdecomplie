@@ -93,7 +93,9 @@ public class SearchService {
     }
 
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache, int limit) {
-        if (query == null || query.isBlank()) return List.of();
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
         int resultLimit = Math.max(1, limit);
         int globalSoftLimit = resultLimit * 2;
         int providerCount = Math.max(1, providers.size());
@@ -101,8 +103,12 @@ public class SearchService {
         List<SearchResult> all = new ArrayList<>();
         Set<String> addedKeys = new HashSet<>();
         for (SearchProvider provider : providers) {
-            if (Thread.currentThread().isInterrupted()) return List.of();
-            if (all.size() >= globalSoftLimit) break;
+            if (Thread.currentThread().isInterrupted()) {
+                return List.of();
+            }
+            if (all.size() >= globalSoftLimit) {
+                break;
+            }
             List<SearchResult> results = searchProvider(provider, query, sourceCache, null);
             int providerAdded = 0;
             for (SearchResult result : results) {
@@ -135,7 +141,9 @@ public class SearchService {
 
     public List<SearchResult> searchAll(String query, Map<String, String> sourceCache,
                                         SearchOptions options, int limit, SearchScope scope) {
-        if (query == null || query.isBlank()) return List.of();
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
         int resultLimit = Math.max(1, limit);
         List<SearchResult> all = new ArrayList<>();
         SearchScope effectiveScope = scope == null ? SearchScope.ALL : scope;
@@ -149,7 +157,9 @@ public class SearchService {
         int perProviderQuota = Math.max(1, globalSoftLimit / Math.max(1, activeProviderCount));
         Set<String> addedKeys = new HashSet<>();
         for (SearchProvider provider : providers) {
-            if (Thread.currentThread().isInterrupted()) return List.of();
+            if (Thread.currentThread().isInterrupted()) {
+                return List.of();
+            }
             if (!provider.supports(effectiveScope)) {
                 continue;
             }

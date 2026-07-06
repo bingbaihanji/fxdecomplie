@@ -212,7 +212,9 @@ public class AppConfig {
 
     /** 添加最近文件(去重,最新在前,异步保存) */
     public void addRecentFile(String path) {
-        if (path == null || path.isBlank()) return;
+        if (path == null || path.isBlank()) {
+            return;
+        }
         synchronized (this) {
             recentFiles.remove(path);
             recentFiles.addFirst(path);
@@ -293,7 +295,9 @@ public class AppConfig {
         if (theme.editorTheme == null || theme.editorTheme.isBlank()) {
             theme.editorTheme = "Dark+";
         }
-        if (theme.fontFamily == null || theme.fontFamily.isBlank()) theme.fontFamily = "Consolas";
+        if (theme.fontFamily == null || theme.fontFamily.isBlank()) {
+            theme.fontFamily = "Consolas";
+        }
         theme.fontSize = Math.clamp(theme.fontSize, 8, 48);
         window.width = Math.max(640, window.width);
         window.height = Math.max(480, window.height);

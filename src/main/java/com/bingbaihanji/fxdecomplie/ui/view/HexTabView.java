@@ -162,7 +162,9 @@ public class HexTabView extends StackPane {
 
             rows.append("<td class='roff'>");
             for (int i = 0; i < BYTES_PER_ROW; i++) {
-                if (i == 8) rows.append(' ');
+                if (i == 8) {
+                    rows.append(' ');
+                }
                 int pos = offset + i;
                 if (pos < limit) {
                     rows.append(String.format("%02X ", data[pos] & 0xFF));

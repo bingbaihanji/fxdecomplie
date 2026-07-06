@@ -1152,8 +1152,10 @@ public final class NativeWindowsTools {
      * @return DPI 值(96 = 100%)，非 Windows 10 1607+ 回退到主显示器 DPI
      */
     public static int getWindowDpi(WinDef.HWND hwnd) {
-        if (hwnd == null) return Win32Api.User32Api.INSTANCE
-                .GetDpiForWindow(Win32Api.User32Api.INSTANCE.GetDesktopWindow());
+        if (hwnd == null) {
+            return Win32Api.User32Api.INSTANCE
+                    .GetDpiForWindow(Win32Api.User32Api.INSTANCE.GetDesktopWindow());
+        }
         return Win32Api.User32Api.INSTANCE.GetDpiForWindow(hwnd);
     }
 
@@ -1429,7 +1431,9 @@ public final class NativeWindowsTools {
     /** 打印当前进程所有窗口信息(仅在 DEBUG 日志级别时输出) */
     public static void printAllWindowsInfo() {
         org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(NativeWindowsTools.class);
-        if (!logger.isDebugEnabled()) return;
+        if (!logger.isDebugEnabled()) {
+            return;
+        }
         int currentPid = Win32Api.Kernel32Api.INSTANCE.GetCurrentProcessId();
         final int[] windowCount = {0};
 

@@ -110,17 +110,39 @@ public final class ClassInfoView {
 
     private static String formatAccess(int access) {
         List<String> flags = new ArrayList<>();
-        if ((access & 0x0001) != 0) flags.add("public");
-        if ((access & 0x0002) != 0) flags.add("private");
-        if ((access & 0x0004) != 0) flags.add("protected");
-        if ((access & 0x0008) != 0) flags.add("static"); // valid for nested/inner classes
-        if ((access & 0x0010) != 0) flags.add("final");
-        if ((access & 0x0020) != 0) flags.add("super");
-        if ((access & 0x0200) != 0) flags.add("interface");
-        if ((access & 0x0400) != 0) flags.add("abstract");
-        if ((access & 0x1000) != 0) flags.add("synthetic");
-        if ((access & 0x2000) != 0) flags.add("annotation");
-        if ((access & 0x4000) != 0) flags.add("enum");
+        if ((access & 0x0001) != 0) {
+            flags.add("public");
+        }
+        if ((access & 0x0002) != 0) {
+            flags.add("private");
+        }
+        if ((access & 0x0004) != 0) {
+            flags.add("protected");
+        }
+        if ((access & 0x0008) != 0) {
+            flags.add("static"); // valid for nested/inner classes
+        }
+        if ((access & 0x0010) != 0) {
+            flags.add("final");
+        }
+        if ((access & 0x0020) != 0) {
+            flags.add("super");
+        }
+        if ((access & 0x0200) != 0) {
+            flags.add("interface");
+        }
+        if ((access & 0x0400) != 0) {
+            flags.add("abstract");
+        }
+        if ((access & 0x1000) != 0) {
+            flags.add("synthetic");
+        }
+        if ((access & 0x2000) != 0) {
+            flags.add("annotation");
+        }
+        if ((access & 0x4000) != 0) {
+            flags.add("enum");
+        }
         return flags.isEmpty() ? String.valueOf(access) : String.join(", ", flags);
     }
 
@@ -138,12 +160,22 @@ public final class ClassInfoView {
 
     private static String formatMemberAccess(int access) {
         StringBuilder sb = new StringBuilder();
-        if ((access & 0x0001) != 0) sb.append("public ");
-        else if ((access & 0x0002) != 0) sb.append("private ");
-        else if ((access & 0x0004) != 0) sb.append("protected ");
-        if ((access & 0x0008) != 0) sb.append("static ");
-        if ((access & 0x0010) != 0) sb.append("final ");
-        if ((access & 0x0400) != 0) sb.append("abstract ");
+        if ((access & 0x0001) != 0) {
+            sb.append("public ");
+        } else if ((access & 0x0002) != 0) {
+            sb.append("private ");
+        } else if ((access & 0x0004) != 0) {
+            sb.append("protected ");
+        }
+        if ((access & 0x0008) != 0) {
+            sb.append("static ");
+        }
+        if ((access & 0x0010) != 0) {
+            sb.append("final ");
+        }
+        if ((access & 0x0400) != 0) {
+            sb.append("abstract ");
+        }
         return sb.toString();
     }
 
@@ -153,7 +185,9 @@ public final class ClassInfoView {
 
     private static String extractReturnType(String descriptor) {
         int paren = descriptor.lastIndexOf(')');
-        if (paren < 0 || paren + 1 >= descriptor.length()) return "void";
+        if (paren < 0 || paren + 1 >= descriptor.length()) {
+            return "void";
+        }
         String ret = descriptor.substring(paren + 1);
         switch (ret) {
             case "V" -> {
@@ -184,8 +218,12 @@ public final class ClassInfoView {
                 return "short";
             }
         }
-        if (ret.startsWith("L")) return ret.substring(1, ret.length() - 1).replace('/', '.');
-        if (ret.startsWith("[")) return ret.replace('/', '.');
+        if (ret.startsWith("L")) {
+            return ret.substring(1, ret.length() - 1).replace('/', '.');
+        }
+        if (ret.startsWith("[")) {
+            return ret.replace('/', '.');
+        }
         return ret;
     }
 
@@ -196,7 +234,9 @@ public final class ClassInfoView {
             return "";
         }
         String params = descriptor.substring(paren + 1, endParen);
-        if (params.isEmpty()) return "";
+        if (params.isEmpty()) {
+            return "";
+        }
         // Simplify: just show the raw descriptor for params
         return params;
     }

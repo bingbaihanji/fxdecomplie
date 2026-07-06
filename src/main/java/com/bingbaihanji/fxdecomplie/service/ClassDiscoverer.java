@@ -76,7 +76,9 @@ public final class ClassDiscoverer {
             Enumeration<JarEntry> e = archive.entries();
             while (e.hasMoreElements()) {
                 JarEntry entry = e.nextElement();
-                if (entry.isDirectory()) continue;
+                if (entry.isDirectory()) {
+                    continue;
+                }
                 String path = entry.getName();
                 FileTreeNode.NodeTypeEnum type = guessType(path);
                 FileTreeNode.ByteLoader loader = null;
@@ -150,8 +152,12 @@ public final class ClassDiscoverer {
     /** 根据文件扩展名判断节点类型 */
     private static FileTreeNode.NodeTypeEnum guessType(String fileName) {
         String lower = fileName.toLowerCase();
-        if (lower.endsWith(".class")) return FileTreeNode.NodeTypeEnum.CLASS_FILE;
-        if (lower.endsWith(".java")) return FileTreeNode.NodeTypeEnum.JAVA_FILE;
+        if (lower.endsWith(".class")) {
+            return FileTreeNode.NodeTypeEnum.CLASS_FILE;
+        }
+        if (lower.endsWith(".java")) {
+            return FileTreeNode.NodeTypeEnum.JAVA_FILE;
+        }
         if (RESOURCE_PATTERN.matcher(lower).matches()) {
             return FileTreeNode.NodeTypeEnum.RESOURCE;
         }

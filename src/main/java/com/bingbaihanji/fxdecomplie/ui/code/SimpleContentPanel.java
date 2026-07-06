@@ -75,7 +75,9 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
 
             // 行注释 //
             if (c == '/' && i + 1 < len && source.charAt(i + 1) == '/') {
-                while (i < len && source.charAt(i) != '\n') i++;
+                while (i < len && source.charAt(i) != '\n') {
+                    i++;
+                }
                 continue;
             }
 

@@ -84,7 +84,9 @@ public final class OutlinePane extends VBox {
 
         filterField.textProperty().addListener((obs, old, text) -> {
             filteredList.setPredicate(member -> {
-                if (text == null || text.isEmpty()) return true;
+                if (text == null || text.isEmpty()) {
+                    return true;
+                }
                 return member.name().toLowerCase().contains(text.toLowerCase());
             });
         });

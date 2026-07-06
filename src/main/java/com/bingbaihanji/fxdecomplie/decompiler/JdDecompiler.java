@@ -60,7 +60,9 @@ public class JdDecompiler implements Decompiler {
 
             @Override
             public byte[] load(String internalName) {
-                if (internalName.equals(normalizedName)) return classBytes;
+                if (internalName.equals(normalizedName)) {
+                    return classBytes;
+                }
                 return effectiveContext.resolveClassBytes(internalName);
             }
         };
@@ -145,7 +147,9 @@ public class JdDecompiler implements Decompiler {
 
         @Override
         public void extraLine(int count) {
-            while (count-- > 0) builder.append('\n');
+            while (count-- > 0) {
+                builder.append('\n');
+            }
         }
 
         @Override

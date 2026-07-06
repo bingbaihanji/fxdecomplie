@@ -55,7 +55,9 @@ public final class GraphService {
             return;
         }
         InheritanceNode node = item.getValue();
-        if (node == null || seen.contains(node.className())) return;
+        if (node == null || seen.contains(node.className())) {
+            return;
+        }
         seen.add(node.className());
 
         String color = switch (node.relation()) {
@@ -279,8 +281,12 @@ public final class GraphService {
                 @Override
                 public void visitMethodInsn(int opcode, String ownerName, String mName,
                                             String mDesc, boolean itf) {
-                    if (!owner.equals(ownerName)) return; // 仅类内部调用
-                    if (nodeMap.size() >= MAX_METHOD_NODES) return;
+                    if (!owner.equals(ownerName)) {
+                        return; // 仅类内部调用
+                    }
+                    if (nodeMap.size() >= MAX_METHOD_NODES) {
+                        return;
+                    }
 
                     String display = mName + descToDisplay(mDesc);
                     MethodNode target = new MethodNode(mName, mDesc, display);

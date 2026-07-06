@@ -263,7 +263,9 @@ public class Workspace implements AutoCloseable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Workspace other)) return false;
+        if (!(o instanceof Workspace other)) {
+            return false;
+        }
         return Objects.equals(sourceFile, other.sourceFile);
     }
 

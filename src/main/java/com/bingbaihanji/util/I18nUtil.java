@@ -114,7 +114,9 @@ public final class I18nUtil {
      */
     public static String getStringOrDefault(String key, String defaultValue) {
         Objects.requireNonNull(key, "key");
-        if (containsKey(key)) return getString(key);
+        if (containsKey(key)) {
+            return getString(key);
+        }
         return defaultValue;
     }
 
@@ -128,8 +130,12 @@ public final class I18nUtil {
      */
     public static String getStringOrDefault(String key, String defaultValue, Object... params) {
         Objects.requireNonNull(key, "key");
-        if (containsKey(key)) return getString(key, params);
-        if (params == null || params.length == 0) return defaultValue;
+        if (containsKey(key)) {
+            return getString(key, params);
+        }
+        if (params == null || params.length == 0) {
+            return defaultValue;
+        }
         try {
             return MessageFormat.format(defaultValue, params);
         } catch (Exception e) {
@@ -161,7 +167,9 @@ public final class I18nUtil {
      */
     public static boolean getBoolean(String key, boolean defaultValue) {
         Objects.requireNonNull(key, "key");
-        if (!containsKey(key)) return defaultValue;
+        if (!containsKey(key)) {
+            return defaultValue;
+        }
         String value = getString(key);
         return "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value)
                 || "1".equals(value) || "on".equalsIgnoreCase(value);
@@ -175,7 +183,9 @@ public final class I18nUtil {
      */
     public static int getInt(String key, int defaultValue) {
         Objects.requireNonNull(key, "key");
-        if (!containsKey(key)) return defaultValue;
+        if (!containsKey(key)) {
+            return defaultValue;
+        }
         try {
             return Integer.parseInt(getString(key));
         } catch (NumberFormatException e) {
@@ -189,7 +199,9 @@ public final class I18nUtil {
      */
     public static long getLong(String key, long defaultValue) {
         Objects.requireNonNull(key, "key");
-        if (!containsKey(key)) return defaultValue;
+        if (!containsKey(key)) {
+            return defaultValue;
+        }
         try {
             return Long.parseLong(getString(key));
         } catch (NumberFormatException e) {
@@ -203,7 +215,9 @@ public final class I18nUtil {
      */
     public static double getDouble(String key, double defaultValue) {
         Objects.requireNonNull(key, "key");
-        if (!containsKey(key)) return defaultValue;
+        if (!containsKey(key)) {
+            return defaultValue;
+        }
         try {
             return Double.parseDouble(getString(key));
         } catch (NumberFormatException e) {
@@ -249,9 +263,13 @@ public final class I18nUtil {
      */
     public static List<String> getStringList(String key) {
         Objects.requireNonNull(key, "key");
-        if (!containsKey(key)) return Collections.emptyList();
+        if (!containsKey(key)) {
+            return Collections.emptyList();
+        }
         String value = getString(key).trim();
-        if (value.isEmpty()) return Collections.emptyList();
+        if (value.isEmpty()) {
+            return Collections.emptyList();
+        }
         return Arrays.stream(value.split("\\s*,\\s*"))
                 .filter(s -> !s.isEmpty())
                 .toList();
@@ -265,8 +283,12 @@ public final class I18nUtil {
      * @return 格式化后的字符串，pattern 为 null 时返回空字符串
      */
     public static String format(String pattern, Object... params) {
-        if (pattern == null) return "";
-        if (params == null || params.length == 0) return pattern;
+        if (pattern == null) {
+            return "";
+        }
+        if (params == null || params.length == 0) {
+            return pattern;
+        }
         try {
             return MessageFormat.format(pattern, params);
         } catch (Exception e) {
@@ -408,15 +430,21 @@ public final class I18nUtil {
         /** 获取文本，key 不存在时返回指定默认值 */
         default String getOrDefault(String key, String defaultValue) {
             Objects.requireNonNull(key, "key");
-            if (containsKey(key)) return get(key);
+            if (containsKey(key)) {
+                return get(key);
+            }
             return defaultValue;
         }
 
         /** 获取带参数的文本，key 不存在时以默认值作为模板格式化 */
         default String getOrDefault(String key, String defaultValue, Object... params) {
             Objects.requireNonNull(key, "key");
-            if (containsKey(key)) return get(key, params);
-            if (params == null || params.length == 0) return defaultValue;
+            if (containsKey(key)) {
+                return get(key, params);
+            }
+            if (params == null || params.length == 0) {
+                return defaultValue;
+            }
             try {
                 return MessageFormat.format(defaultValue, params);
             } catch (Exception e) {
@@ -426,7 +454,9 @@ public final class I18nUtil {
 
         /** 获取布尔值，key 不存在时返回默认值 */
         default boolean getBoolean(String key, boolean defaultValue) {
-            if (!containsKey(key)) return defaultValue;
+            if (!containsKey(key)) {
+                return defaultValue;
+            }
             String value = get(key);
             return "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase(value)
                     || "1".equals(value) || "on".equalsIgnoreCase(value);
@@ -434,7 +464,9 @@ public final class I18nUtil {
 
         /** 获取 int 值，key 不存在或解析失败时返回默认值 */
         default int getInt(String key, int defaultValue) {
-            if (!containsKey(key)) return defaultValue;
+            if (!containsKey(key)) {
+                return defaultValue;
+            }
             try {
                 return Integer.parseInt(get(key));
             } catch (NumberFormatException e) {
@@ -444,7 +476,9 @@ public final class I18nUtil {
 
         /** 获取 long 值 */
         default long getLong(String key, long defaultValue) {
-            if (!containsKey(key)) return defaultValue;
+            if (!containsKey(key)) {
+                return defaultValue;
+            }
             try {
                 return Long.parseLong(get(key));
             } catch (NumberFormatException e) {
@@ -454,7 +488,9 @@ public final class I18nUtil {
 
         /** 获取 double 值 */
         default double getDouble(String key, double defaultValue) {
-            if (!containsKey(key)) return defaultValue;
+            if (!containsKey(key)) {
+                return defaultValue;
+            }
             try {
                 return Double.parseDouble(get(key));
             } catch (NumberFormatException e) {
@@ -464,9 +500,13 @@ public final class I18nUtil {
 
         /** 获取逗号分隔的字符串列表 */
         default List<String> getStringList(String key) {
-            if (!containsKey(key)) return Collections.emptyList();
+            if (!containsKey(key)) {
+                return Collections.emptyList();
+            }
             String value = get(key).trim();
-            if (value.isEmpty()) return Collections.emptyList();
+            if (value.isEmpty()) {
+                return Collections.emptyList();
+            }
             return Arrays.stream(value.split("\\s*,\\s*"))
                     .filter(s -> !s.isEmpty())
                     .toList();
@@ -496,7 +536,9 @@ public final class I18nUtil {
             Objects.requireNonNull(key, "key");
             try {
                 String pattern = context.getBundle().getString(key);
-                if (params == null || params.length == 0) return pattern;
+                if (params == null || params.length == 0) {
+                    return pattern;
+                }
                 return MessageFormat.format(pattern, params);
             } catch (Exception e) {
                 return key;

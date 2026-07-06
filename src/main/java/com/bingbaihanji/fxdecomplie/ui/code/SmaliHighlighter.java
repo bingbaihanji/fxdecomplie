@@ -145,7 +145,9 @@ final class SmaliHighlighter implements SyntaxDecorator {
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
         String line = model.getPlainText(paragraphIndex);
-        if (line == null || line.isEmpty()) return RichParagraph.builder().build();
+        if (line == null || line.isEmpty()) {
+            return RichParagraph.builder().build();
+        }
 
         // 标题行（######）
         if (line.startsWith("######")) {
@@ -181,7 +183,9 @@ final class SmaliHighlighter implements SyntaxDecorator {
             if (line.charAt(pos) == '"') {
                 int end = pos + 1;
                 while (end < len && line.charAt(end) != '"') {
-                    if (line.charAt(end) == '\\') end++;
+                    if (line.charAt(end) == '\\') {
+                        end++;
+                    }
                     end++;
                 }
                 if (end < len) {
@@ -210,7 +214,9 @@ final class SmaliHighlighter implements SyntaxDecorator {
                 }
                 // 未识别的 .xxx 仍作为指令高亮
                 int end = pos + 1;
-                while (end < len && Character.isLetter(line.charAt(end))) end++;
+                while (end < len && Character.isLetter(line.charAt(end))) {
+                    end++;
+                }
                 tokens.add(new Token(Kind.DIRECTIVE, line.substring(pos, end)));
                 pos = end;
                 continue;
@@ -253,7 +259,9 @@ final class SmaliHighlighter implements SyntaxDecorator {
     }
 
     private boolean isTokenStart(String line, int pos) {
-        if (pos >= line.length()) return false;
+        if (pos >= line.length()) {
+            return false;
+        }
         char c = line.charAt(pos);
         return c == '#' || c == '"' || c == '.' || c == ':'
                 || c == 'v' || c == 'p' || c == 'L'

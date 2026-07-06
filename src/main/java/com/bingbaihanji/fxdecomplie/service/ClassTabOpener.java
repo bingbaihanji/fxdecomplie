@@ -792,7 +792,9 @@ public final class ClassTabOpener {
         // 设置分屏请求回调：在右侧新 cell 中打开同 class 的不同引擎
         tab.setOnSplitRequested(sourceTab -> {
             SplitEditorPane sep = sourceTab.getSplitEditorPane();
-            if (sep == null || sep.activeCellCount() >= 3) return;
+            if (sep == null || sep.activeCellCount() >= 3) {
+                return;
+            }
             Workspace ws = (Workspace) sourceTab.getProperties().get("workspace");
             FileTreeNode node = (FileTreeNode) sourceTab.getProperties().get("fileTreeNode");
             if (ws == null || node == null) {

@@ -38,28 +38,68 @@ final class SmaliTextBuilder extends ClassVisitor {
     /** 格式化 smali 访问标志 */
     static String formatAccess(int access, boolean isClass) {
         StringBuilder a = new StringBuilder();
-        if ((access & Opcodes.ACC_PUBLIC) != 0) a.append("public ");
-        if ((access & Opcodes.ACC_PRIVATE) != 0) a.append("private ");
-        if ((access & Opcodes.ACC_PROTECTED) != 0) a.append("protected ");
-        if ((access & Opcodes.ACC_STATIC) != 0) a.append("static ");
-        if ((access & Opcodes.ACC_FINAL) != 0) a.append("final ");
+        if ((access & Opcodes.ACC_PUBLIC) != 0) {
+            a.append("public ");
+        }
+        if ((access & Opcodes.ACC_PRIVATE) != 0) {
+            a.append("private ");
+        }
+        if ((access & Opcodes.ACC_PROTECTED) != 0) {
+            a.append("protected ");
+        }
+        if ((access & Opcodes.ACC_STATIC) != 0) {
+            a.append("static ");
+        }
+        if ((access & Opcodes.ACC_FINAL) != 0) {
+            a.append("final ");
+        }
         if (isClass) {
-            if ((access & Opcodes.ACC_ABSTRACT) != 0) a.append("abstract ");
-            if ((access & Opcodes.ACC_ANNOTATION) != 0) a.append("annotation ");
-            if ((access & Opcodes.ACC_INTERFACE) != 0) a.append("interface ");
-            if ((access & Opcodes.ACC_ENUM) != 0) a.append("enum ");
-            if ((access & Opcodes.ACC_SYNTHETIC) != 0) a.append("synthetic ");
+            if ((access & Opcodes.ACC_ABSTRACT) != 0) {
+                a.append("abstract ");
+            }
+            if ((access & Opcodes.ACC_ANNOTATION) != 0) {
+                a.append("annotation ");
+            }
+            if ((access & Opcodes.ACC_INTERFACE) != 0) {
+                a.append("interface ");
+            }
+            if ((access & Opcodes.ACC_ENUM) != 0) {
+                a.append("enum ");
+            }
+            if ((access & Opcodes.ACC_SYNTHETIC) != 0) {
+                a.append("synthetic ");
+            }
         } else {
-            if ((access & Opcodes.ACC_VOLATILE) != 0) a.append("volatile ");
-            if ((access & Opcodes.ACC_TRANSIENT) != 0) a.append("transient ");
-            if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) a.append("synchronized ");
-            if ((access & Opcodes.ACC_BRIDGE) != 0) a.append("bridge ");
-            if ((access & Opcodes.ACC_VARARGS) != 0) a.append("varargs ");
-            if ((access & Opcodes.ACC_NATIVE) != 0) a.append("native ");
-            if ((access & Opcodes.ACC_ABSTRACT) != 0) a.append("abstract ");
-            if ((access & Opcodes.ACC_STRICT) != 0) a.append("strict ");
-            if ((access & Opcodes.ACC_SYNTHETIC) != 0) a.append("synthetic ");
-            if ((access & Opcodes.ACC_ENUM) != 0) a.append("enum ");
+            if ((access & Opcodes.ACC_VOLATILE) != 0) {
+                a.append("volatile ");
+            }
+            if ((access & Opcodes.ACC_TRANSIENT) != 0) {
+                a.append("transient ");
+            }
+            if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
+                a.append("synchronized ");
+            }
+            if ((access & Opcodes.ACC_BRIDGE) != 0) {
+                a.append("bridge ");
+            }
+            if ((access & Opcodes.ACC_VARARGS) != 0) {
+                a.append("varargs ");
+            }
+            if ((access & Opcodes.ACC_NATIVE) != 0) {
+                a.append("native ");
+            }
+            if ((access & Opcodes.ACC_ABSTRACT) != 0) {
+                a.append("abstract ");
+            }
+            if ((access & Opcodes.ACC_STRICT) != 0) {
+                a.append("strict ");
+            }
+            if ((access & Opcodes.ACC_SYNTHETIC) != 0) {
+                a.append("synthetic ");
+            }
+            if ((access & Opcodes.ACC_ENUM) != 0) {
+                a.append("enum ");
+            }
         }
         return a.toString().trim();
     }
@@ -507,7 +547,9 @@ final class SmaliTextBuilder extends ClassVisitor {
         @Override
         public void visitLocalVariable(String name, String descriptor, String signature,
                                        Label start, Label end, int index) {
-            if (name == null || name.isEmpty()) return;
+            if (name == null || name.isEmpty()) {
+                return;
+            }
             String typeName = formatTypeReadable(Type.getType(descriptor));
             mb.append(METHOD_INDENT).append(METHOD_INDENT)
                     .append(".local v").append(index)

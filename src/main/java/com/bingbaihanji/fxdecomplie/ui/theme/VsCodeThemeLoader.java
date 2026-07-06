@@ -131,7 +131,9 @@ public final class VsCodeThemeLoader {
         if (scopeElem == null) {
             return null;
         }
-        if (scopeElem.isJsonPrimitive()) return scopeElem.getAsString();
+        if (scopeElem.isJsonPrimitive()) {
+            return scopeElem.getAsString();
+        }
         if (scopeElem.isJsonArray()) {
             JsonArray arr = scopeElem.getAsJsonArray();
             return arr.isEmpty() ? null : arr.get(0).getAsString();
@@ -145,7 +147,9 @@ public final class VsCodeThemeLoader {
             return Color.web(defaultHex);
         }
         JsonElement e = colors.get(key);
-        if (e == null || e.isJsonNull()) return Color.web(defaultHex);
+        if (e == null || e.isJsonNull()) {
+            return Color.web(defaultHex);
+        }
         return Color.web(e.getAsString());
     }
 

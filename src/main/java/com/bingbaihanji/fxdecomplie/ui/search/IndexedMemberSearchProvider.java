@@ -57,7 +57,9 @@ public class IndexedMemberSearchProvider implements SearchProvider {
         }
         String lowerQuery = query.toLowerCase();
         for (ClassIndexEntry cls : index.classes()) {
-            if (Thread.currentThread().isInterrupted()) break;
+            if (Thread.currentThread().isInterrupted()) {
+                break;
+            }
             addMatches(results, cls.methods(), lowerQuery, SearchResult.MatchType.METHOD_NAME);
             addMatches(results, cls.fields(), lowerQuery, SearchResult.MatchType.FIELD_NAME);
             if (results.size() >= MAX_RESULTS) {

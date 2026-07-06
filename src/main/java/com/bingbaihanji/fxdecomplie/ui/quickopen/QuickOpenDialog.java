@@ -83,7 +83,9 @@ public final class QuickOpenDialog {
         input.textProperty().addListener((obs, old, text) -> {
             String lower = text.toLowerCase();
             filtered.setPredicate(name -> {
-                if (text.isEmpty()) return true;
+                if (text.isEmpty()) {
+                    return true;
+                }
                 String nameLower = name.toLowerCase();
                 String simple = nameLower.substring(nameLower.lastIndexOf('/') + 1);
                 return simple.startsWith(lower) || nameLower.contains(lower);

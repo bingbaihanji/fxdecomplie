@@ -102,7 +102,9 @@ public final class CommentDialog {
         });
 
         dialog.showAndWait().ifPresent(comment -> {
-            if (comment.text().isEmpty() && existing == null) return; // 新增空注释不保存
+            if (comment.text().isEmpty() && existing == null) {
+                return; // 新增空注释不保存
+            }
             onSave.accept(comment);
         });
     }

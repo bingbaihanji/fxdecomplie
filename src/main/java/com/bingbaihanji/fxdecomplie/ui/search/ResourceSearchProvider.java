@@ -33,11 +33,15 @@ public class ResourceSearchProvider implements SearchProvider {
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         String lowerQuery = query.toLowerCase();
         for (var entry : resourceCache.entrySet()) {
-            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) break;
+            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) {
+                break;
+            }
             try {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
                 String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
@@ -66,10 +70,14 @@ public class ResourceSearchProvider implements SearchProvider {
             return search(query, sourceCache);
         }
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         for (var entry : resourceCache.entrySet()) {
-            if (results.size() >= MAX_RESULTS) break;
+            if (results.size() >= MAX_RESULTS) {
+                break;
+            }
             try {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
                 String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");

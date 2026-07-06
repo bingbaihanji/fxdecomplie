@@ -173,14 +173,16 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
 
     /** 放大字号 */
     public void zoomIn() {
-        if (codeArea != null)
+        if (codeArea != null) {
             codeArea.setFont(Font.font(codeArea.getFont().getFamily(), codeArea.getFont().getSize() + 1));
+        }
     }
 
     /** 缩小字号 */
     public void zoomOut() {
-        if (codeArea != null)
+        if (codeArea != null) {
             codeArea.setFont(Font.font(codeArea.getFont().getFamily(), Math.max(8, codeArea.getFont().getSize() - 1)));
+        }
     }
 
     /** 重置字号 */

@@ -40,7 +40,9 @@ public record OpenFile(String className, String fullPath, String sourceCode, Dec
         if (this == o) {
             return true;
         }
-        if (!(o instanceof OpenFile other)) return false;
+        if (!(o instanceof OpenFile other)) {
+            return false;
+        }
         return Objects.equals(fullPath, other.fullPath) && engine == other.engine;
     }
 

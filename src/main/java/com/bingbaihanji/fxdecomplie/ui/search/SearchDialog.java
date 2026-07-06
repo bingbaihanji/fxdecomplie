@@ -193,7 +193,9 @@ public final class SearchDialog {
                         return;
                     }
                     Platform.runLater(() -> {
-                        if (gen != searchGen.get()) return; // 过时搜索,丢弃
+                        if (gen != searchGen.get()) {
+                            return; // 过时搜索,丢弃
+                        }
                         TreeItem<SearchResult> rootNode = buildResultTree(results, resultLimit);
                         resultTree.setRoot(rootNode);
                         if (rootNode != null) {
@@ -246,7 +248,9 @@ public final class SearchDialog {
         });
 
         input.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) dialog.close();
+            if (e.getCode() == KeyCode.ESCAPE) {
+                dialog.close();
+            }
         });
 
         Scene scene = new Scene(rootPane, 700, 520);

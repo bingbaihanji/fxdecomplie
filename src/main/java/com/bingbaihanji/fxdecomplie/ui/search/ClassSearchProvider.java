@@ -43,12 +43,16 @@ public class ClassSearchProvider implements SearchProvider {
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         String lowerQuery = query.toLowerCase();
 
         for (String name : classNames) {
-            if (results.size() >= MAX_RESULTS) break;
+            if (results.size() >= MAX_RESULTS) {
+                break;
+            }
             String displayName = displayNamesByPath.getOrDefault(name, name);
             if (name.toLowerCase().contains(lowerQuery)
                     || displayName.toLowerCase().contains(lowerQuery)) {
@@ -59,7 +63,9 @@ public class ClassSearchProvider implements SearchProvider {
 
         if (results.size() < MAX_RESULTS) {
             for (String path : sourceCache.keySet()) {
-                if (results.size() >= MAX_RESULTS) break;
+                if (results.size() >= MAX_RESULTS) {
+                    break;
+                }
                 String displayName = displayNamesByPath.getOrDefault(path, path);
                 if (path.toLowerCase().contains(lowerQuery)
                         || displayName.toLowerCase().contains(lowerQuery)) {
@@ -83,10 +89,14 @@ public class ClassSearchProvider implements SearchProvider {
             return search(query, sourceCache);
         }
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         for (String name : classNames) {
-            if (results.size() >= MAX_RESULTS) break;
+            if (results.size() >= MAX_RESULTS) {
+                break;
+            }
             String displayName = displayNamesByPath.getOrDefault(name, name);
             if (lineMatches(name, query, options)
                     || lineMatches(displayName, query, options)) {
@@ -97,7 +107,9 @@ public class ClassSearchProvider implements SearchProvider {
 
         if (results.size() < MAX_RESULTS) {
             for (String path : sourceCache.keySet()) {
-                if (results.size() >= MAX_RESULTS) break;
+                if (results.size() >= MAX_RESULTS) {
+                    break;
+                }
                 String displayName = displayNamesByPath.getOrDefault(path, path);
                 if (lineMatches(path, query, options)
                         || lineMatches(displayName, query, options)) {

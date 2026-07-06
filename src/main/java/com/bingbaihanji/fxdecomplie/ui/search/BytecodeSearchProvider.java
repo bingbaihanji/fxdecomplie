@@ -37,11 +37,15 @@ public class BytecodeSearchProvider implements SearchProvider {
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         String lowerQuery = query.toLowerCase();
         forEachBytecodeText((path, text) -> {
-            if (results.size() >= MAX_RESULTS) return;
+            if (results.size() >= MAX_RESULTS) {
+                return;
+            }
             String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lines[i].toLowerCase().contains(lowerQuery)) {
@@ -65,10 +69,14 @@ public class BytecodeSearchProvider implements SearchProvider {
             return search(query, sourceCache);
         }
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         forEachBytecodeText((path, text) -> {
-            if (results.size() >= MAX_RESULTS) return;
+            if (results.size() >= MAX_RESULTS) {
+                return;
+            }
             String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lineMatches(lines[i], query, options)) {

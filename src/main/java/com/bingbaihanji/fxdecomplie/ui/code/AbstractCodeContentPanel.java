@@ -122,9 +122,13 @@ public abstract class AbstractCodeContentPanel extends StackPane {
         this.cancelToken = token;
         Thread.startVirtualThread(() -> {
             try {
-                if (isCancelled(token)) return;
+                if (isCancelled(token)) {
+                    return;
+                }
                 Object contentData = buildContentAsync(token);
-                if (isCancelled(token)) return;
+                if (isCancelled(token)) {
+                    return;
+                }
                 Platform.runLater(() -> {
                     if (!isCancelled(token) && state.get() == STATE_LOADING) {
                         getChildren().clear();
@@ -139,7 +143,9 @@ public abstract class AbstractCodeContentPanel extends StackPane {
                     }
                 });
             } catch (Exception e) {
-                if (isCancelled(token)) return;
+                if (isCancelled(token)) {
+                    return;
+                }
                 Platform.runLater(() -> {
                     if (!isCancelled(token) && state.get() == STATE_LOADING) {
                         showError("加载失败: " + e.getMessage());

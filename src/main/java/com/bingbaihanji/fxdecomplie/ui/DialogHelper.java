@@ -40,7 +40,9 @@ public final class DialogHelper {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.YES, ButtonType.NO);
         alert.setTitle(title);
         alert.setHeaderText(null);
-        if (owner != null) alert.initOwner(owner);
+        if (owner != null) {
+            alert.initOwner(owner);
+        }
         applyNativeStyle(alert);
         return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }

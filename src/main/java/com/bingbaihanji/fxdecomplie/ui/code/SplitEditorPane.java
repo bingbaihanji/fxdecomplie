@@ -222,8 +222,12 @@ public final class SplitEditorPane extends StackPane {
 
     /** 关闭指定 cell（折叠），将其 tab 移到主 cell */
     public void closeSplit(TabPane cell) {
-        if (cell == primaryTabPane() || cell == null) return;
-        if (!splitPane.getItems().contains(cell)) return; // 已关闭，防止递归重入
+        if (cell == primaryTabPane() || cell == null) {
+            return;
+        }
+        if (!splitPane.getItems().contains(cell)) {
+            return; // 已关闭，防止递归重入
+        }
 
         // 将 cell 中的 tab 移到主 cell
         List<Tab> tabs = new ArrayList<>(cell.getTabs());
@@ -252,7 +256,9 @@ public final class SplitEditorPane extends StackPane {
 
     /** tab 关闭后检查 cell 是否为空，为空时右侧 cell 左移替代 */
     private void checkCollapseCell(TabPane cell) {
-        if (!cell.getTabs().isEmpty()) return;
+        if (!cell.getTabs().isEmpty()) {
+            return;
+        }
         if (cell == primaryTabPane()) {
             // 主 cell 为空 → 右侧第一个有内容的 cell 左移替代
             promoteRightToPrimary();

@@ -537,7 +537,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
     private static String cpRef(byte[] raw, int classIdx, int natIdx) {
         String cls = cpUtf8(raw, classIdx);
         String nat = cpUtf8(raw, natIdx);
-        if ("?".equals(nat)) return cls + ".?";
+        if ("?".equals(nat)) {
+            return cls + ".?";
+        }
         int colon = nat.indexOf(':');
         String namePart = colon >= 0 ? nat.substring(0, colon) : nat;
         String descPart = colon >= 0 ? nat.substring(colon + 1) : "";
@@ -621,26 +623,66 @@ final class BytecodeTextBuilder extends ClassVisitor {
     /** 展开访问标志为 ACC_XXX | ... 格式 */
     static String formatAccessFlags(int access) {
         StringBuilder a = new StringBuilder();
-        if ((access & Opcodes.ACC_PUBLIC) != 0) a.append("ACC_PUBLIC | ");
-        if ((access & Opcodes.ACC_PRIVATE) != 0) a.append("ACC_PRIVATE | ");
-        if ((access & Opcodes.ACC_PROTECTED) != 0) a.append("ACC_PROTECTED | ");
-        if ((access & Opcodes.ACC_STATIC) != 0) a.append("ACC_STATIC | ");
-        if ((access & Opcodes.ACC_FINAL) != 0) a.append("ACC_FINAL | ");
-        if ((access & Opcodes.ACC_SUPER) != 0) a.append("ACC_SUPER | ");
-        if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) a.append("ACC_SYNCHRONIZED | ");
-        if ((access & Opcodes.ACC_VOLATILE) != 0) a.append("ACC_VOLATILE | ");
-        if ((access & Opcodes.ACC_BRIDGE) != 0) a.append("ACC_BRIDGE | ");
-        if ((access & Opcodes.ACC_VARARGS) != 0) a.append("ACC_VARARGS | ");
-        if ((access & Opcodes.ACC_TRANSIENT) != 0) a.append("ACC_TRANSIENT | ");
-        if ((access & Opcodes.ACC_NATIVE) != 0) a.append("ACC_NATIVE | ");
-        if ((access & Opcodes.ACC_INTERFACE) != 0) a.append("ACC_INTERFACE | ");
-        if ((access & Opcodes.ACC_ABSTRACT) != 0) a.append("ACC_ABSTRACT | ");
-        if ((access & Opcodes.ACC_STRICT) != 0) a.append("ACC_STRICT | ");
-        if ((access & Opcodes.ACC_SYNTHETIC) != 0) a.append("ACC_SYNTHETIC | ");
-        if ((access & Opcodes.ACC_ANNOTATION) != 0) a.append("ACC_ANNOTATION | ");
-        if ((access & Opcodes.ACC_ENUM) != 0) a.append("ACC_ENUM | ");
-        if ((access & Opcodes.ACC_MODULE) != 0) a.append("ACC_MODULE | ");
-        if (!a.isEmpty()) a.setLength(a.length() - 3); // 去掉末尾 " | "
+        if ((access & Opcodes.ACC_PUBLIC) != 0) {
+            a.append("ACC_PUBLIC | ");
+        }
+        if ((access & Opcodes.ACC_PRIVATE) != 0) {
+            a.append("ACC_PRIVATE | ");
+        }
+        if ((access & Opcodes.ACC_PROTECTED) != 0) {
+            a.append("ACC_PROTECTED | ");
+        }
+        if ((access & Opcodes.ACC_STATIC) != 0) {
+            a.append("ACC_STATIC | ");
+        }
+        if ((access & Opcodes.ACC_FINAL) != 0) {
+            a.append("ACC_FINAL | ");
+        }
+        if ((access & Opcodes.ACC_SUPER) != 0) {
+            a.append("ACC_SUPER | ");
+        }
+        if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
+            a.append("ACC_SYNCHRONIZED | ");
+        }
+        if ((access & Opcodes.ACC_VOLATILE) != 0) {
+            a.append("ACC_VOLATILE | ");
+        }
+        if ((access & Opcodes.ACC_BRIDGE) != 0) {
+            a.append("ACC_BRIDGE | ");
+        }
+        if ((access & Opcodes.ACC_VARARGS) != 0) {
+            a.append("ACC_VARARGS | ");
+        }
+        if ((access & Opcodes.ACC_TRANSIENT) != 0) {
+            a.append("ACC_TRANSIENT | ");
+        }
+        if ((access & Opcodes.ACC_NATIVE) != 0) {
+            a.append("ACC_NATIVE | ");
+        }
+        if ((access & Opcodes.ACC_INTERFACE) != 0) {
+            a.append("ACC_INTERFACE | ");
+        }
+        if ((access & Opcodes.ACC_ABSTRACT) != 0) {
+            a.append("ACC_ABSTRACT | ");
+        }
+        if ((access & Opcodes.ACC_STRICT) != 0) {
+            a.append("ACC_STRICT | ");
+        }
+        if ((access & Opcodes.ACC_SYNTHETIC) != 0) {
+            a.append("ACC_SYNTHETIC | ");
+        }
+        if ((access & Opcodes.ACC_ANNOTATION) != 0) {
+            a.append("ACC_ANNOTATION | ");
+        }
+        if ((access & Opcodes.ACC_ENUM) != 0) {
+            a.append("ACC_ENUM | ");
+        }
+        if ((access & Opcodes.ACC_MODULE) != 0) {
+            a.append("ACC_MODULE | ");
+        }
+        if (!a.isEmpty()) {
+            a.setLength(a.length() - 3); // 去掉末尾 " | "
+        }
         return a.toString();
     }
 
@@ -746,7 +788,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
         // 方法签名
         String accessStr = SmaliTextBuilder.formatAccess(access, false);
         sb.append(INDENT).append(".method");
-        if (!accessStr.isEmpty()) sb.append(' ').append(accessStr);
+        if (!accessStr.isEmpty()) {
+            sb.append(' ').append(accessStr);
+        }
         sb.append(' ').append(name).append('(');
         Type[] argTypes = Type.getArgumentTypes(descriptor);
         for (int i = 0; i < argTypes.length; i++) {
@@ -965,7 +1009,9 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 sb.append('"').append(escape(s)).append('"');
             } else if (cst instanceof Type t) {
                 sb.append("class ").append(t.getInternalName());
-            } else sb.append(cst);
+            } else {
+                sb.append(cst);
+            }
             sb.append('\n');
             pc += size;
         }

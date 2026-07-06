@@ -121,7 +121,9 @@ public final class SettingsDialog {
         engineOptionsArea.focusedProperty().addListener((obs, old, focused) -> {
             if (!focused) {
                 String jsonText = engineOptionsArea.getText();
-                if (jsonText == null || jsonText.isBlank()) return;
+                if (jsonText == null || jsonText.isBlank()) {
+                    return;
+                }
                 try {
                     Map<String, Map<String, String>> allOpts = new Gson().fromJson(jsonText,
                             new TypeToken<Map<String, Map<String, String>>>() {
@@ -152,7 +154,9 @@ public final class SettingsDialog {
         fontSizeSpinner.getEditor().setTextFormatter(
                 new javafx.scene.control.TextFormatter<>(change -> {
                     String newText = change.getControlNewText();
-                    if (newText.matches("\\d{1,2}")) return change;
+                    if (newText.matches("\\d{1,2}")) {
+                        return change;
+                    }
                     return null;
                 }));
         fontSizeSpinner.setPrefWidth(80);

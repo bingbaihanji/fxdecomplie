@@ -23,11 +23,15 @@ public class CodeSearchProvider implements SearchProvider {
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         String lowerQuery = query.toLowerCase();
         for (var entry : sourceCache.entrySet()) {
-            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) break;
+            if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) {
+                break;
+            }
             String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lines[i].toLowerCase().contains(lowerQuery)) {
@@ -51,10 +55,14 @@ public class CodeSearchProvider implements SearchProvider {
             return search(query, sourceCache);
         }
         List<SearchResult> results = new ArrayList<>();
-        if (query == null || query.isBlank()) return results;
+        if (query == null || query.isBlank()) {
+            return results;
+        }
 
         for (var entry : sourceCache.entrySet()) {
-            if (results.size() >= MAX_RESULTS) break;
+            if (results.size() >= MAX_RESULTS) {
+                break;
+            }
             String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 if (lineMatches(lines[i], query, options)) {

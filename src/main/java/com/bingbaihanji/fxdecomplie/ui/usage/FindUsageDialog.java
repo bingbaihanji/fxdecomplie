@@ -104,7 +104,9 @@ public final class FindUsageDialog {
             Future<?> task = BackgroundTasks.run("FindUsages", () -> {
                 List<UsageResult> results = UsageSearchService.findUsages(index, query);
                 Platform.runLater(() -> {
-                    if (searchGeneration.get() != gen) return; // 已过期，丢弃
+                    if (searchGeneration.get() != gen) {
+                        return; // 已过期，丢弃
+                    }
                     resultTree.setRoot(buildTree(results));
                     status.setText(I18nUtil.getString("usage.resultCount", results.size()));
                 });
