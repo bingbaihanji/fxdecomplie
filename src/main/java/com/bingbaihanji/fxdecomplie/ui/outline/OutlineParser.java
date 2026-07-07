@@ -63,10 +63,13 @@ public final class OutlineParser {
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
+            // 先用上一轮的 depth 做成员检查（避免当前行自身的 { 干扰判断），
+            // 再统计本行大括号更新 depth 供后续行使用
+            int prevDepth = depth;
             depth += count(line, '{') - count(line, '}');
 
             Matcher m;
-            if (depth == 1 && !line.contains(" class ") && !line.contains(" interface ")
+            if (prevDepth == 1 && !line.contains(" class ") && !line.contains(" interface ")
                     && !line.contains(" enum ") && !line.contains(" record ")) {
                 if ((m = METHOD_PATTERN.matcher(line)).find()) {
                     // 从开括号位置扫描匹配闭括号,处理深层嵌套泛型参数
@@ -81,7 +84,7 @@ public final class OutlineParser {
                 }
             }
             if ((m = INNER_CLASS_PATTERN.matcher(line)).find()
-                    && !line.contains("new ") && depth >= 1 && depth <= 2) {
+                    && !line.contains("new ") && prevDepth >= 1 && prevDepth <= 2) {
                 members.add(new OutlineMember(m.group(3), OutlineMember.MemberType.INNER_CLASS,
                         extractModifiers(m.group(1)), i + 1));
             }

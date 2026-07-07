@@ -176,6 +176,19 @@ public class CodeViewPanel extends VBox {
             if (e.getCode() == javafx.scene.input.KeyCode.F6 && e.isShiftDown()) {
                 e.consume();
                 contextMenuHandler.renameAtCaret(contextMenuContext, area.getCaretPosition());
+                return;
+            }
+            // Alt+Ctrl+Shift+C: 复制引用（类全限定名 / 字段引用 / 方法签名 / 路径:行号）
+            if (e.isAltDown() && e.isControlDown() && e.isShiftDown()
+                    && e.getCode() == javafx.scene.input.KeyCode.C) {
+                e.consume();
+                String ref = com.bingbaihanji.fxdecomplie.util.CopyReferenceHelper
+                        .getReferenceString(contextMenuContext.openFile(), area);
+                if (!ref.isEmpty()) {
+                    javafx.scene.input.Clipboard.getSystemClipboard().setContent(
+                            new javafx.scene.input.ClipboardContent() {{ putString(ref); }});
+                    contextMenuHandler.copyReference(ref);
+                }
             }
         };
         area.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, commentKeyHandler);

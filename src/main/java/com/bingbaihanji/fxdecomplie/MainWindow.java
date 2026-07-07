@@ -1690,6 +1690,14 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         openSearch(selectedText);
     }
 
+    /** 复制引用到剪贴板后在状态栏显示提示 */
+    @Override
+    public void copyReference(String referenceText) {
+        if (referenceText != null && !referenceText.isEmpty()) {
+            statusBar.setFilePath(I18nUtil.getString("status.copied") + ": " + referenceText);
+        }
+    }
+
     /** 根据引用信息在工作区中定位并打开目标类 */
     private boolean openReferenceInWorkspace(Workspace workspace, CodeMetadata.Reference reference) {
         FileTreeNode node = findNodeForReference(workspace, reference);
