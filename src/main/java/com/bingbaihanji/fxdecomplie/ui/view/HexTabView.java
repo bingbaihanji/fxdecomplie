@@ -211,6 +211,13 @@ public class HexTabView extends StackPane {
                 rows.toString(), data.length, statusText);
     }
 
+    private static char safeAscii(int v) {
+        if (v >= 32 && v < 127 && v != '<' && v != '>' && v != '&') {
+            return (char) v;
+        }
+        return '.';
+    }
+
     /** 更新主题配色,如果已有数据显示则重新渲染 */
     public void setTheme(ThemeData newTheme) {
         if (newTheme == null) {
@@ -235,13 +242,6 @@ public class HexTabView extends StackPane {
             return;
         }
         engine.loadContent(formatHtml(currentData, theme));
-    }
-
-    private static char safeAscii(int v) {
-        if (v >= 32 && v < 127 && v != '<' && v != '>' && v != '&') {
-            return (char) v;
-        }
-        return '.';
     }
 
     /** Hex 视图的配色方案,包含背景、文字、边框等颜色值 */

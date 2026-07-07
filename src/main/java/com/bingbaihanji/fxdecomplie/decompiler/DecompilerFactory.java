@@ -41,7 +41,10 @@ public final class DecompilerFactory {
             try {
                 engine.initialize();
             } catch (Exception e) {
-                try { engine.cleanup(); } catch (Exception ignored) {}
+                try {
+                    engine.cleanup();
+                } catch (Exception ignored) {
+                }
                 throw e;
             }
             log.info("反编译引擎初始化完成: {} ({})", t, engine.getName());

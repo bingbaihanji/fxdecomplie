@@ -1,7 +1,5 @@
 package com.bingbaihanji.fxdecomplie.util;
 
-import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
-import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;

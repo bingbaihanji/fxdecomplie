@@ -244,41 +244,44 @@ public final class ExportService {
         Files.createDirectories(outputDir);
         DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
         try {
-        for (FileTreeNode data : items) {
-            if (canceled != null && canceled.getAsBoolean()) {
-                state.errors.add("导出已取消");
-                return;
-            }
-            try {
-                // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
-                ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
-                // ---- 路径验证: 确保输出保持在目标目录内 ----
-                Path target = resolveSafeOutputPath(outputDir, content.relativePath());
-                // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
-                target = applyDirConflictPolicy(target, config.conflictPolicy());
-                if (target != null) {
-                    // ---- 写入: 创建父目录并写入内容 ----
-                    Files.createDirectories(target.getParent());
-                    try {
-                        Files.write(target, content.bytes());
-                    } catch (Exception e) {
-                        try {
-                            Files.deleteIfExists(target);
-                        } catch (IOException ignored) {
-                            log.debug("清理失败写入残留文件失败: {}", target, ignored);
-                        }
-                        throw e;
-                    }
-                    state.successCount++;
+            for (FileTreeNode data : items) {
+                if (canceled != null && canceled.getAsBoolean()) {
+                    state.errors.add("导出已取消");
+                    return;
                 }
-            } catch (Exception e) {
-                state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-            } finally {
-                state.advance(data.getFullPath());
+                try {
+                    // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
+                    ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
+                    // ---- 路径验证: 确保输出保持在目标目录内 ----
+                    Path target = resolveSafeOutputPath(outputDir, content.relativePath());
+                    // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
+                    target = applyDirConflictPolicy(target, config.conflictPolicy());
+                    if (target != null) {
+                        // ---- 写入: 创建父目录并写入内容 ----
+                        Files.createDirectories(target.getParent());
+                        try {
+                            Files.write(target, content.bytes());
+                        } catch (Exception e) {
+                            try {
+                                Files.deleteIfExists(target);
+                            } catch (IOException ignored) {
+                                log.debug("清理失败写入残留文件失败: {}", target, ignored);
+                            }
+                            throw e;
+                        }
+                        state.successCount++;
+                    }
+                } catch (Exception e) {
+                    state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                } finally {
+                    state.advance(data.getFullPath());
+                }
             }
-        }
         } finally {
-            try { context.close(); } catch (Exception ignored) { }
+            try {
+                context.close();
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -293,61 +296,64 @@ public final class ExportService {
         Set<String> writtenEntries = new HashSet<>();
         DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
         try {
-        try (ZipOutputStream zos = new ZipOutputStream(
-                new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
-            boolean entryOpen = false;
-            for (FileTreeNode data : items) {
-                if (canceled != null && canceled.getAsBoolean()) {
-                    state.errors.add("导出已取消");
-                    if (entryOpen) {
-                        try {
-                            zos.closeEntry();
-                        } catch (IOException e) {
-                            log.debug("取消导出时关闭 ZIP 条目失败", e);
-                        }
-                    }
-                    return;
-                }
-                try {
-                    ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
-                    String entryName = sanitizeZipEntryName(content.relativePath());
-                    entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
-                    if (entryName != null) {
-                        writtenEntries.add(entryName);
-                        zos.putNextEntry(new ZipEntry(entryName));
-                        entryOpen = true;
-                        try {
-                            zos.write(content.bytes());
-                            state.successCount++;
-                        } catch (IOException e) {
-                            // 写入失败时关闭条目并终止整个 ZIP 导出,
-                            // 避免 closeEntry 写入损坏的 CRC 导致整个归档不可用
+            try (ZipOutputStream zos = new ZipOutputStream(
+                    new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
+                boolean entryOpen = false;
+                for (FileTreeNode data : items) {
+                    if (canceled != null && canceled.getAsBoolean()) {
+                        state.errors.add("导出已取消");
+                        if (entryOpen) {
                             try {
                                 zos.closeEntry();
-                            } catch (IOException ignored) {
-                            }
-                            entryOpen = false;
-                            throw e;
-                        } finally {
-                            if (entryOpen) {
-                                zos.closeEntry();
-                                entryOpen = false;
+                            } catch (IOException e) {
+                                log.debug("取消导出时关闭 ZIP 条目失败", e);
                             }
                         }
+                        return;
                     }
-                } catch (Exception e) {
-                    state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-                    // ZIP 写入失败后整个归档已不可靠,终止导出
-                    if (e instanceof IOException) {
-                        break;
+                    try {
+                        ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
+                        String entryName = sanitizeZipEntryName(content.relativePath());
+                        entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
+                        if (entryName != null) {
+                            writtenEntries.add(entryName);
+                            zos.putNextEntry(new ZipEntry(entryName));
+                            entryOpen = true;
+                            try {
+                                zos.write(content.bytes());
+                                state.successCount++;
+                            } catch (IOException e) {
+                                // 写入失败时关闭条目并终止整个 ZIP 导出,
+                                // 避免 closeEntry 写入损坏的 CRC 导致整个归档不可用
+                                try {
+                                    zos.closeEntry();
+                                } catch (IOException ignored) {
+                                }
+                                entryOpen = false;
+                                throw e;
+                            } finally {
+                                if (entryOpen) {
+                                    zos.closeEntry();
+                                    entryOpen = false;
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                        // ZIP 写入失败后整个归档已不可靠,终止导出
+                        if (e instanceof IOException) {
+                            break;
+                        }
+                    } finally {
+                        state.advance(data.getFullPath());
                     }
-                } finally {
-                    state.advance(data.getFullPath());
                 }
             }
-        }
         } finally {
-            try { context.close(); } catch (Exception ignored) { }
+            try {
+                context.close();
+            } catch (Exception ignored) {
+            }
         }
     }
 

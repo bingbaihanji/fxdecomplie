@@ -337,7 +337,7 @@ final class DotGraphRenderer {
      * @param style 边样式（"dashed"/"dotted"/"solid"）,可为空字符串
      */
     private static void drawEdge(Pane pane, LayoutNode from, LayoutNode to,
-                                  String label, String style) {
+                                 String label, String style) {
         Point2D fromCenter = from.center();
         Point2D toCenter = to.center();
         Point2D start = borderPoint(from, toCenter);

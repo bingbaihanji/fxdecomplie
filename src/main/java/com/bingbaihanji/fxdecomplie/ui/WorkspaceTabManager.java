@@ -220,15 +220,15 @@ public final class WorkspaceTabManager {
 
     /** 重建缓存的文件树右键菜单项（在 onShowing 时调用） */
     private static void rebuildTreeContextMenuItems(ContextMenu menu,
-                                                     TreeItem<FileTreeNode> item, Workspace workspace,
-                                                     TabPane codeTabPane,
-                                                     NavigationService navigationService,
-                                                     BiConsumer<FileTreeNode, TabPane> onClassClick,
-                                                     BiConsumer<FileTreeNode, TabPane> onTextFileClick,
-                                                     TreeItemAction onExportNode,
-                                                     java.util.function.Consumer<FileTreeNode> onFindUsage,
-                                                     java.util.function.Consumer<FileTreeNode> onSearchPackage,
-                                                     BiConsumer<FileTreeNode, TabPane> onHexClick) {
+                                                    TreeItem<FileTreeNode> item, Workspace workspace,
+                                                    TabPane codeTabPane,
+                                                    NavigationService navigationService,
+                                                    BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                                    BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                                    TreeItemAction onExportNode,
+                                                    java.util.function.Consumer<FileTreeNode> onFindUsage,
+                                                    java.util.function.Consumer<FileTreeNode> onSearchPackage,
+                                                    BiConsumer<FileTreeNode, TabPane> onHexClick) {
         menu.getItems().clear();
         FileTreeNode node = item.getValue();
 

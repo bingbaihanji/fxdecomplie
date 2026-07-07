@@ -193,7 +193,9 @@ public class CodeViewPanel extends VBox {
                         .getReferenceString(contextMenuContext.openFile(), area);
                 if (!ref.isEmpty()) {
                     javafx.scene.input.Clipboard.getSystemClipboard().setContent(
-                            new javafx.scene.input.ClipboardContent() {{ putString(ref); }});
+                            new javafx.scene.input.ClipboardContent() {{
+                                putString(ref);
+                            }});
                     contextMenuHandler.copyReference(ref);
                 }
             }

@@ -75,17 +75,11 @@ public final class CodeOnlyWindow {
     /** 拖拽负载存活时间阈值（毫秒）,超过此时间的条目在 trim 时被清理 */
     private static final long DRAG_PAYLOAD_TTL_MS = 60_000L;
     private static final Logger log = LoggerFactory.getLogger(CodeOnlyWindow.class);
-
-    /** 带时间戳的拖拽负载包装 */
-    private record TimestampedPayload(CodeTabPayload payload, long createdAtMs) {}
-
-
     private final AppConfig config;
     private final VsCodeThemeLoader.ThemeData editorTheme;
     private final SplitEditorPane splitEditorPane;
     private final TabPane tabPane;
     private final Stage stage;
-
     private CodeOnlyWindow(AppConfig config, Stage stage) {
         this.config = config;
         this.editorTheme = AppTheme.loadEditorTheme(config);
@@ -180,8 +174,6 @@ public final class CodeOnlyWindow {
         enableTabDragListener(tabPane);
     }
 
-    // ==================== 拖拽源 ====================
-
     /**
      * 添加一个监听器,每当 CodeEditorTab 添加到 TabPane 时调用 enableTabDrag,
      * 并在标签页移除时清理 ACTIVE_ENGINE_REQUESTS 防止内存泄漏
@@ -208,11 +200,11 @@ public final class CodeOnlyWindow {
                 });
     }
 
+    // ==================== 拖拽源 ====================
+
     private static boolean hasPayload(Dragboard dragboard) {
         return resolvePayload(dragboard, false) != null;
     }
-
-    // ==================== 拖拽目标(共享,任意 TabPane 均可使用) ====================
 
     private static CodeTabPayload resolvePayload(Dragboard dragboard, boolean remove) {
         CodeTabPayload payload = resolvePayload(
@@ -227,6 +219,8 @@ public final class CodeOnlyWindow {
         return null;
     }
 
+    // ==================== 拖拽目标(共享,任意 TabPane 均可使用) ====================
+
     private static CodeTabPayload resolvePayload(String token, boolean remove) {
         if (token == null) {
             return null;
@@ -234,8 +228,6 @@ public final class CodeOnlyWindow {
         TimestampedPayload tp = remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
         return tp == null ? null : tp.payload();
     }
-
-    // ==================== 负载辅助方法 ====================
 
     private static CodeTabPayload resolvePayload(Object content, boolean remove) {
         if (content instanceof CodeTabPayload payload) {
@@ -247,6 +239,8 @@ public final class CodeOnlyWindow {
         }
         return null;
     }
+
+    // ==================== 负载辅助方法 ====================
 
     private static String getDragToken(Dragboard dragboard) {
         Object content = dragboard.getContent(CODE_TAB_FORMAT);
@@ -783,8 +777,6 @@ public final class CodeOnlyWindow {
         splitEditorPane.forEachTab(CodeOnlyWindow::cancelEngineSwitch);
     }
 
-    // ==================== 应用图标 ====================
-
     private void updateTitle() {
         Tab selected = tabPane.getSelectionModel().getSelectedItem();
         if (selected instanceof CodeEditorTab codeTab) {
@@ -792,6 +784,12 @@ public final class CodeOnlyWindow {
         } else {
             stage.setTitle(selected == null ? "FxDecompiler" : "FxDecompiler - " + selected.getText());
         }
+    }
+
+    // ==================== 应用图标 ====================
+
+    /** 带时间戳的拖拽负载包装 */
+    private record TimestampedPayload(CodeTabPayload payload, long createdAtMs) {
     }
 
     public record CodeTabPayload(

@@ -23,9 +23,6 @@ public class SearchService {
 
     /** 已注册的搜索策略提供器,按插入顺序调用 */
     private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
-
-    /** 排除模式配置（原始模式 + 预编译模式打包为不可变记录,保证原子更新） */
-    private record ExcludeConfig(List<String> patterns, List<Pattern> compiled) {}
     private volatile ExcludeConfig excludeConfig = new ExcludeConfig(List.of(), List.of());
 
     private static Pattern globContainsPattern(String glob) {
@@ -204,5 +201,9 @@ public class SearchService {
             log.warn("搜索提供器执行失败: {}", provider.getClass().getSimpleName(), e);
             return List.of();
         }
+    }
+
+    /** 排除模式配置（原始模式 + 预编译模式打包为不可变记录,保证原子更新） */
+    private record ExcludeConfig(List<String> patterns, List<Pattern> compiled) {
     }
 }
