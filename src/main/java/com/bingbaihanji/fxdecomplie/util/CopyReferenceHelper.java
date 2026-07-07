@@ -353,12 +353,19 @@ public final class CopyReferenceHelper {
     }
 
     /** 判断光标列位置是否在指定 token 上 */
-    private static boolean isCursorOnToken(String line, int column, String token) {
+    static boolean isCursorOnToken(String line, int column, String token) {
         if (line == null || token == null || token.isEmpty()) {
             return false;
         }
-        int idx = line.indexOf(token);
-        return idx >= 0 && column >= idx && column <= idx + token.length();
+        int idx = 0;
+        while ((idx = line.indexOf(token, idx)) != -1) {
+            int end = idx + token.length();
+            if (column >= idx && column <= end) {
+                return true;
+            }
+            idx = end;
+        }
+        return false;
     }
 
     /**

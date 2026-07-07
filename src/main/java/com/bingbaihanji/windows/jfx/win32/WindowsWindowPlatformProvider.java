@@ -158,7 +158,12 @@ public final class WindowsWindowPlatformProvider implements WindowPlatformProvid
                                              Duration timeout,
                                              Function<WinDef.HWND, WindowOperationResult> action) {
         return hwnd(stage, timeout)
-                .map(action)
+                .map(hwnd -> {
+                    if (!NativeWindowsTools.isWindow(hwnd)) {
+                        return WindowOperationResult.skipped(operation, "Window handle is no longer valid");
+                    }
+                    return action.apply(hwnd);
+                })
                 .orElseGet(() -> WindowOperationResult.skipped(operation, "原生窗口句柄不可用"));
     }
 }

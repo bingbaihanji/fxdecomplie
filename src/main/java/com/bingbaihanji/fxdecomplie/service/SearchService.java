@@ -24,10 +24,9 @@ public class SearchService {
     /** 已注册的搜索策略提供器,按插入顺序调用 */
     private final List<SearchProvider> providers = new CopyOnWriteArrayList<>();
 
-    /** 搜索结果中要排除的模式(简单通配符匹配) */
-    private volatile List<String> excludePatterns = List.of();
-    /** 预编译的排除模式,用于性能优化 */
-    private volatile List<Pattern> compiledExcludePatterns = List.of();
+    /** 排除模式配置（原始模式 + 预编译模式打包为不可变记录,保证原子更新） */
+    private record ExcludeConfig(List<String> patterns, List<Pattern> compiled) {}
+    private volatile ExcludeConfig excludeConfig = new ExcludeConfig(List.of(), List.of());
 
     private static Pattern globContainsPattern(String glob) {
         StringBuilder regex = new StringBuilder();
@@ -53,19 +52,21 @@ public class SearchService {
     }
 
     public void setExcludePatterns(List<String> patterns) {
-        this.excludePatterns = patterns == null
+        List<String> cleaned = patterns == null
                 ? List.of()
                 : patterns.stream()
                 .filter(pattern -> pattern != null && !pattern.isBlank())
                 .map(pattern -> pattern.replace('\\', '/'))
                 .toList();
-        this.compiledExcludePatterns = this.excludePatterns.stream()
+        List<Pattern> compiled = cleaned.stream()
                 .map(SearchService::globContainsPattern)
                 .collect(Collectors.toList());
+        this.excludeConfig = new ExcludeConfig(cleaned, compiled);
     }
 
     private boolean isExcluded(SearchResult result) {
-        if (result == null || compiledExcludePatterns.isEmpty()) {
+        ExcludeConfig config = this.excludeConfig;
+        if (result == null || config.compiled().isEmpty()) {
             return false;
         }
         String path = result.fullPath();
@@ -73,7 +74,7 @@ public class SearchService {
             return false;
         }
         path = path.replace('\\', '/');
-        for (Pattern pattern : compiledExcludePatterns) {
+        for (Pattern pattern : config.compiled()) {
             if (pattern.matcher(path).find()) {
                 return true;
             }

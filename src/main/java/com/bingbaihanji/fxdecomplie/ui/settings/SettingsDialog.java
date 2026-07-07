@@ -154,7 +154,7 @@ public final class SettingsDialog {
         fontSizeSpinner.getEditor().setTextFormatter(
                 new javafx.scene.control.TextFormatter<>(change -> {
                     String newText = change.getControlNewText();
-                    if (newText.matches("\\d{1,2}")) {
+                    if (newText.isEmpty() || newText.matches("\\d{1,2}")) {
                         return change;
                     }
                     return null;

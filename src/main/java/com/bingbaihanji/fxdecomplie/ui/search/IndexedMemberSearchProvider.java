@@ -6,6 +6,7 @@ import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 从工作区字节码索引中搜索方法和字段名
@@ -56,10 +57,11 @@ public class IndexedMemberSearchProvider implements SearchProvider {
      * 高级匹配辅助方法：使用 SearchOptions 进行正则/大小写/全词匹配
      */
     private void addMatchesOptions(List<SearchResult> results, List<MemberIndexEntry> members,
-                                   String query, SearchOptions options, SearchResult.MatchType type) {
+                                   String query, SearchOptions options,
+                                   Pattern precompiled, SearchResult.MatchType type) {
         for (MemberIndexEntry member : members) {
-            if (lineMatches(member.name(), query, options)
-                    || lineMatches(member.displayName(), query, options)) {
+            if (lineMatches(member.name(), query, options, precompiled)
+                    || lineMatches(member.displayName(), query, options, precompiled)) {
                 results.add(new SearchResult(member.ownerPath(), member.displayName(), 1, type));
             }
             if (results.size() >= MAX_RESULTS) {
@@ -106,10 +108,11 @@ public class IndexedMemberSearchProvider implements SearchProvider {
         if (query == null || query.isBlank() || index == null) {
             return results;
         }
+        Pattern precompiled = compileSearchPattern(options, query);
         for (ClassIndexEntry cls : index.classes()) {
-            addMatchesOptions(results, cls.methods(), query, options,
+            addMatchesOptions(results, cls.methods(), query, options, precompiled,
                     SearchResult.MatchType.METHOD_NAME);
-            addMatchesOptions(results, cls.fields(), query, options,
+            addMatchesOptions(results, cls.fields(), query, options, precompiled,
                     SearchResult.MatchType.FIELD_NAME);
             if (results.size() >= MAX_RESULTS) {
                 break;

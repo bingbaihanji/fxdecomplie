@@ -345,7 +345,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
     }
 
     /** 获取方法的 Code 属性信息（stack、locals、code_length） */
-    static String formatCodeHeader(byte[] raw, String methodKey) {
+    static String formatCodeHeader(byte[] raw, String methodKey, boolean isStatic) {
         Map<String, Integer> offsets = scanCodeOffsets(raw);
         Integer codeOff = offsets.get(methodKey);
         if (codeOff == null) {
@@ -358,7 +358,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         int maxStack = readU2(raw, attrOff + 6);
         int maxLocals = readU2(raw, attrOff + 8);
         int codeLen = readS4(raw, attrOff + 10);
-        int argsSize = computeArgsSize(methodKey);
+        int argsSize = computeArgsSize(methodKey, isStatic);
         String info = String.format("      stack=%d, locals=%d, args_size=%d\n",
                 maxStack, maxLocals, argsSize) +
                 String.format("      code_length=%d (0x%x)\n", codeLen, codeLen);
@@ -368,16 +368,15 @@ final class BytecodeTextBuilder extends ClassVisitor {
     /**
      * 根据方法描述符计算 args_size（参数占用的寄存器字数,long/double 占2,实例方法 +1 给 this）
      *
-     * <p>注意：methodKey 仅包含方法名和描述符,不含 access_flags,
-     * 因此无法准确判断 static仅对 {@code <clinit>}（静态初始化器）跳过 this 加算；
-     * 其他方法保守 +1（绝大多数为实例方法）</p>
+     * @param methodKey 方法名 + 描述符（如 "foo(I)V"）
+     * @param isStatic  方法是否为 static（ACC_STATIC 标志）
      */
-    private static int computeArgsSize(String methodKey) {
+    private static int computeArgsSize(String methodKey, boolean isStatic) {
         // methodKey = name + desc
         // 从 methodKey 中提取描述符部分
         int paren = methodKey.indexOf('(');
         if (paren < 0) {
-            return 1;
+            return isStatic ? 0 : 1;
         }
         String desc = methodKey.substring(paren);
         int size = 0;
@@ -411,12 +410,11 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 default -> size++; // B, C, D, F, I, S, Z = 1 word
             }
         }
-        String name = methodKey.substring(0, paren);
-        // <clinit> 是静态方法,没有 this 参数
-        if (!"<clinit>".equals(name)) {
+        // 静态方法没有 this 参数
+        if (!isStatic) {
             size++; // 实例方法/构造器的 this
         }
-        return Math.max(1, size);
+        return Math.max(isStatic ? 0 : 1, size);
     }
 
     // -- 字节操作工具 --
@@ -840,7 +838,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
         // Code 属性
         sb.append(INDENT).append(INDENT).append("Code:\n");
-        sb.append(formatCodeHeader(raw, key));
+        sb.append(formatCodeHeader(raw, key, (access & Opcodes.ACC_STATIC) != 0));
         sb.append(INDENT).append(INDENT).append("  bytecode:\n");
 
         return new BytecodeMethodWriter(access, name, descriptor, raw, codeOff);

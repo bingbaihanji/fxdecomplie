@@ -22,6 +22,8 @@ public class CodeViewPanel extends VBox {
     private final EditorSearchBar searchBar;
     private final CheckBox splitToggle;
     private int defaultFontSize = 14;
+    /** 用户配置的原始字号（用于 resetZoom 恢复） */
+    private int originalFontSize = 14;
     private String fontFamily = "Consolas";
     private boolean lineNumbersEnabled = true;
     private CodeViewContext contextMenuContext;
@@ -58,6 +60,7 @@ public class CodeViewPanel extends VBox {
     public CodeViewPanel(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel,
                          String fontFamily, int fontSize, boolean lineNumbersEnabled) {
         this.defaultFontSize = fontSize;
+        this.originalFontSize = fontSize;
         this.fontFamily = fontFamily;
         this.lineNumbersEnabled = lineNumbersEnabled;
         this.deck = new CodeContentDeck(sourceCode, classBytes, sourcePanel,
@@ -84,7 +87,11 @@ public class CodeViewPanel extends VBox {
         bindSearchBar();
     }
 
-    /** 通过反射获取 CodeArea 的选中文本,过滤空/过长/多行文本后返回 */
+    /**
+     * 获取 CodeArea 的选中文本,过滤空/过长/多行文本后返回
+     * 使用反射调用:jfx.incubator CodeArea 暴露 getSelectedText() 但未在公共 API 中声明,
+     * 升级 jfx-incubator-richtext 版本后应改为直接调用 area.getSelectedText()
+     */
     private static String selectedText(jfx.incubator.scene.control.richtext.CodeArea area) {
         if (area == null) {
             return "";
@@ -256,8 +263,9 @@ public class CodeViewPanel extends VBox {
         deck.applyFontSettings(defaultFontSize, fontFamily);
     }
 
-    /** 重置字号 */
+    /** 重置字号到用户配置的原始值 */
     public void resetZoom() {
+        defaultFontSize = originalFontSize;
         deck.applyFontSettings(defaultFontSize, fontFamily);
     }
 
@@ -280,6 +288,7 @@ public class CodeViewPanel extends VBox {
      */
     public void applyFontSettings(int fontSize, String fontFamily) {
         this.defaultFontSize = fontSize;
+        this.originalFontSize = fontSize;
         this.fontFamily = fontFamily;
         deck.applyFontSettings(fontSize, fontFamily);
     }

@@ -152,16 +152,24 @@ public final class WorkspaceTabManager {
             com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell cell =
                     new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell(
                             node -> displayTreeNodeName(workspaceHash, node));
+            ContextMenu cachedMenu = new ContextMenu();
+            cachedMenu.setOnShowing(e -> {
+                TreeItem<FileTreeNode> item = cell.getTreeItem();
+                if (cell.isEmpty() || item == null || item.getValue() == null) {
+                    e.consume();
+                    return;
+                }
+                rebuildTreeContextMenuItems(cachedMenu, item, workspace, codeTabPane,
+                        navigationService, onClassClick, onTextFileClick, onExportNode,
+                        onFindUsage, onSearchPackage, onHexClick);
+            });
             cell.setOnContextMenuRequested(event -> {
                 TreeItem<FileTreeNode> item = cell.getTreeItem();
                 if (cell.isEmpty() || item == null || item.getValue() == null) {
                     return;
                 }
                 treeView.getSelectionModel().select(item);
-                ContextMenu menu = buildTreeContextMenu(item, workspace, codeTabPane,
-                        navigationService, onClassClick, onTextFileClick, onExportNode,
-                        onFindUsage, onSearchPackage, onHexClick);
-                menu.show(cell, event.getScreenX(), event.getScreenY());
+                cachedMenu.show(cell, event.getScreenX(), event.getScreenY());
                 event.consume();
             });
             return cell;
@@ -204,8 +212,25 @@ public final class WorkspaceTabManager {
                                                     java.util.function.Consumer<FileTreeNode> onFindUsage,
                                                     java.util.function.Consumer<FileTreeNode> onSearchPackage,
                                                     BiConsumer<FileTreeNode, TabPane> onHexClick) {
-        FileTreeNode node = item.getValue();
         ContextMenu menu = new ContextMenu();
+        rebuildTreeContextMenuItems(menu, item, workspace, codeTabPane, navigationService,
+                onClassClick, onTextFileClick, onExportNode, onFindUsage, onSearchPackage, onHexClick);
+        return menu;
+    }
+
+    /** 重建缓存的文件树右键菜单项（在 onShowing 时调用） */
+    private static void rebuildTreeContextMenuItems(ContextMenu menu,
+                                                     TreeItem<FileTreeNode> item, Workspace workspace,
+                                                     TabPane codeTabPane,
+                                                     NavigationService navigationService,
+                                                     BiConsumer<FileTreeNode, TabPane> onClassClick,
+                                                     BiConsumer<FileTreeNode, TabPane> onTextFileClick,
+                                                     TreeItemAction onExportNode,
+                                                     java.util.function.Consumer<FileTreeNode> onFindUsage,
+                                                     java.util.function.Consumer<FileTreeNode> onSearchPackage,
+                                                     BiConsumer<FileTreeNode, TabPane> onHexClick) {
+        menu.getItems().clear();
+        FileTreeNode node = item.getValue();
 
         MenuItem open = new MenuItem(I18nUtil.getString("context.open"));
         open.setDisable(!node.isClassFile() && !node.isTextFile());
@@ -262,7 +287,6 @@ public final class WorkspaceTabManager {
 
         menu.getItems().addAll(open, openHex, back, forward, export, findUsage, searchPackage, new SeparatorMenuItem(),
                 copyPath, copyClassName, new SeparatorMenuItem(), expand, collapse);
-        return menu;
     }
 
     /** 根据树节点类型（类文件/文本文件）打开对应的标签页 */

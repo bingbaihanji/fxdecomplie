@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
@@ -29,12 +30,12 @@ public final class RenameDialog {
     public static String show(Stage owner, String oldName, String kind) {
         Dialog<String> dialog = new Dialog<>();
         dialog.initOwner(owner);
-        dialog.setTitle("Rename " + kind);
+        dialog.setTitle(I18nUtil.getString("rename.title") + " " + kind);
         dialog.setResizable(false);
 
         VBox content = new VBox(8);
         content.setPadding(new Insets(16));
-        content.getChildren().add(new Label("Rename " + kind + ": " + oldName));
+        content.getChildren().add(new Label(I18nUtil.getString("rename.title") + " " + kind + ": " + oldName));
 
         TextField field = new TextField(oldName);
         field.setPrefWidth(300);
@@ -56,7 +57,7 @@ public final class RenameDialog {
             String name = field.getText() == null ? "" : field.getText().trim();
             // 校验1：名称不能为空
             if (name.isEmpty()) {
-                errorLabel.setText("Name is required.");
+                errorLabel.setText(I18nUtil.getString("rename.name.required"));
                 errorLabel.setVisible(true);
                 errorLabel.setManaged(true);
                 field.requestFocus();
@@ -65,7 +66,7 @@ public final class RenameDialog {
             }
             // 校验2：新名称不能与旧名称相同
             if (name.equals(oldName)) {
-                errorLabel.setText("New name is the same as the old name.");
+                errorLabel.setText(I18nUtil.getString("rename.same.name"));
                 errorLabel.setVisible(true);
                 errorLabel.setManaged(true);
                 field.requestFocus();
@@ -74,11 +75,12 @@ public final class RenameDialog {
             }
             // 校验3：必须是合法的 Java 标识符
             if (!RenameService.isValidName(name)) {
-                errorLabel.setText("Invalid Java identifier.");
+                errorLabel.setText(I18nUtil.getString("rename.invalid.identifier"));
                 errorLabel.setVisible(true);
                 errorLabel.setManaged(true);
                 field.requestFocus();
                 event.consume();
+                return;
             }
         });
 

@@ -71,6 +71,8 @@ public class ProcyonDecompiler implements Decompiler {
                 case "languageTarget" -> {
                     if (value != null && !value.isBlank()) {
                         settings.setLanguage(com.strobel.decompiler.languages.Languages.java());
+                    } else {
+                        log.warn("未知的 languageTarget 值: {}", value);
                     }
                 }
                 default -> {

@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 搜索反编译源码中的注释行(以 // , /* , * 开头的行)
@@ -26,7 +27,7 @@ public class CommentSearchProvider implements SearchProvider {
      */
     private static boolean isCommentLine(String trimmed) {
         return trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("* ")
-                || trimmed.startsWith("*\t") || trimmed.equals("*") || trimmed.startsWith("*/");
+                || trimmed.startsWith("*\t") || "*".equals(trimmed) || trimmed.startsWith("*/");
     }
 
     /**
@@ -75,6 +76,8 @@ public class CommentSearchProvider implements SearchProvider {
             return results;
         }
 
+        Pattern precompiled = compileSearchPattern(options, query);
+
         for (var entry : sourceCache.entrySet()) {
             if (Thread.currentThread().isInterrupted() || results.size() >= MAX_RESULTS) {
                 break;
@@ -82,7 +85,7 @@ public class CommentSearchProvider implements SearchProvider {
             String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
                 String trimmed = lines[i].trim();
-                if (isCommentLine(trimmed) && lineMatches(trimmed, query, options)) {
+                if (isCommentLine(trimmed) && lineMatches(trimmed, query, options, precompiled)) {
                     results.add(new SearchResult(entry.getKey(), trimmed, i + 1,
                             SearchResult.MatchType.COMMENT_TEXT));
                 }

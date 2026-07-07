@@ -242,10 +242,11 @@ public class Workspace implements AutoCloseable {
 
     @Override
     public void close() {
+        indexFuture.cancel(true);
+        sourceSearchCaches.clear();
         if (treeRoot == null) {
             return;
         }
-        sourceSearchCaches.clear();
         ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
         queue.add(treeRoot);
         while (!queue.isEmpty()) {

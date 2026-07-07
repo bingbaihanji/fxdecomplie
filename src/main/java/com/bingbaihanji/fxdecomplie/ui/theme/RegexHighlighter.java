@@ -78,6 +78,8 @@ public class RegexHighlighter implements SyntaxDecorator {
     private final StyleAttributeMap styleMethod;
     /** 类型/类名样式 */
     private final StyleAttributeMap styleType;
+    /** 跨段落块注释状态：true 表示当前处于 /* ... * / 块注释中 */
+    private volatile boolean inBlockComment;
 
     /** 使用内置默认暗色主题构造高亮器 */
     public RegexHighlighter() {
@@ -137,7 +139,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         return rest.startsWith("=") || rest.startsWith(";");
     }
 
-    /** 检查标识符是否在方法参数列表中(同一行内的括号之间) */
+    /** 检查标识符是否在方法参数列表中(同一行内的匹配括号之间) */
     private static boolean isParameter(String line, int startPos, int endPos) {
         int lineStart = line.lastIndexOf('\n', startPos);
         lineStart = lineStart < 0 ? 0 : lineStart + 1;
@@ -147,8 +149,25 @@ public class RegexHighlighter implements SyntaxDecorator {
         }
         String currentLine = line.substring(lineStart, lineEnd);
         int openParen = currentLine.indexOf('(');
-        int closeParen = currentLine.indexOf(')');
-        if (openParen < 0 || closeParen < 0 || openParen >= closeParen) {
+        if (openParen < 0) {
+            return false;
+        }
+        // 使用括号计数找到匹配的右括号
+        int depth = 0;
+        int closeParen = -1;
+        for (int i = openParen; i < currentLine.length(); i++) {
+            char ch = currentLine.charAt(i);
+            if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                depth--;
+                if (depth == 0) {
+                    closeParen = i;
+                    break;
+                }
+            }
+        }
+        if (closeParen < 0 || openParen >= closeParen) {
             return false;
         }
         int posInLine = startPos - lineStart;
@@ -216,7 +235,8 @@ public class RegexHighlighter implements SyntaxDecorator {
 
     /**
      * 为正则分词后的段落创建带样式片段的 RichParagraph
-     * <p>逐个匹配 token,token 之间的文本应用默认样式,其余文本根据正则组名分类着色</p>
+     * <p>逐个匹配 token,token 之间的文本应用默认样式,其余文本根据正则组名分类着色。
+     * 支持跨段落块注释状态追踪（/* ... * / 跨行时中间行保持注释高亮）</p>
      */
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
@@ -228,6 +248,22 @@ public class RegexHighlighter implements SyntaxDecorator {
         RichParagraph.Builder builder = RichParagraph.builder();
         Matcher matcher = TOKEN_PATTERN.matcher(text);
         int lastEnd = 0;
+
+        // 如果上一行进入了块注释状态,先从行首查找 */ 结束
+        if (inBlockComment) {
+            int closeIdx = text.indexOf("*/");
+            if (closeIdx >= 0) {
+                // 块注释在本行结束：从行首到 */ 后（含 */）为注释
+                int closeEnd = closeIdx + 2;
+                builder.addSegment(text.substring(0, closeEnd), styleComment);
+                lastEnd = closeEnd;
+                inBlockComment = false;
+            } else {
+                // 整行都是块注释
+                builder.addSegment(text, styleComment);
+                return builder.build();
+            }
+        }
 
         while (matcher.find()) {
             // ---- 此 token 之前的普通文本: 应用默认样式 ----
@@ -281,6 +317,19 @@ public class RegexHighlighter implements SyntaxDecorator {
 
         if (lastEnd < text.length()) {
             builder.addSegment(text.substring(lastEnd), styleDefault);
+        }
+
+        // 检测本行是否进入了未闭合的块注释 /* ...（无对应 */）
+        // 扫描未被 STRING/MULTICOMMENT token 消费的尾部文本,查找未闭合的 /*
+        if (!inBlockComment) {
+            String tail = lastEnd < text.length() ? text.substring(lastEnd) : "";
+            int openIdx = tail.lastIndexOf("/*");
+            if (openIdx >= 0) {
+                int closeIdx = tail.indexOf("*/", openIdx + 2);
+                if (closeIdx < 0) {
+                    inBlockComment = true;
+                }
+            }
         }
 
         return builder.build();

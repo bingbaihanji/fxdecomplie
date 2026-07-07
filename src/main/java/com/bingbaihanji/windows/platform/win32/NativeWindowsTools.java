@@ -517,7 +517,7 @@ public final class NativeWindowsTools {
         if (value <= 0 || value > 1) {
             throw new IllegalArgumentException("Alpha 值必须在 (0, 1] 范围内,实际收到: " + value);
         }
-        byte alpha = (byte) (value * 255);
+        byte alpha = (byte) (Math.round(value * 255) & 0xFF);
 
         BaseTSD.LONG_PTR exStyle = Win32Api.User32Api.INSTANCE.GetWindowLongPtr(
                 hwnd, Win32Constants.WindowLongIndex.GWL_EXSTYLE);
@@ -743,7 +743,8 @@ public final class NativeWindowsTools {
             api.ShowWindow(hwnd, Win32Constants.ShowWindowCmd.SW_RESTORE);
         }
         // 模拟 Alt 键释放前台锁定(AllowSetForegroundWindow 等效方案)
-        api.SendMessage(hwnd, Win32Constants.WindowMessage.WM_SYSCOMMAND,
+        // 使用 PostMessage 避免阻塞调用线程(SendMessage 会等待窗口处理完毕)
+        api.PostMessage(hwnd, Win32Constants.WindowMessage.WM_SYSCOMMAND,
                 new WinDef.WPARAM(Win32Constants.WindowMessage.SC_RESTORE),
                 new WinDef.LPARAM(0));
         boolean foreground = api.SetForegroundWindow(hwnd);

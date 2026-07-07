@@ -31,6 +31,25 @@ public interface SearchProvider {
     }
 
     /**
+     * 预编译搜索模式，避免在循环中重复编译 Pattern
+     *
+     * @param options 搜索选项
+     * @param query   搜索查询字符串
+     * @return 正则模式下返回编译后的 Pattern，否则返回 null
+     */
+    default Pattern compileSearchPattern(SearchOptions options, String query) {
+        if (options == null || !options.regex()) {
+            return null;
+        }
+        try {
+            int flags = options.caseSensitive() ? 0 : Pattern.CASE_INSENSITIVE;
+            return Pattern.compile(query, flags);
+        } catch (PatternSyntaxException e) {
+            return null;
+        }
+    }
+
+    /**
      * 检查某一行是否匹配查询,考虑所有搜索选项
      *
      * <p>正则模式下忽略整词匹配选项（用户自行在正则中包含 {@code \b}）,
@@ -42,12 +61,32 @@ public interface SearchProvider {
      * @return 匹配成功返回 true
      */
     default boolean lineMatches(String line, String query, SearchOptions options) {
+        return lineMatches(line, query, options, null);
+    }
+
+    /**
+     * 检查某一行是否匹配查询,使用预编译的 Pattern 避免重复编译
+     *
+     * <p>正则模式下忽略整词匹配选项（用户自行在正则中包含 {@code \b}）,
+     * 避免 {@code \b^foo\b} 等语义矛盾的组合</p>
+     *
+     * @param line         待匹配的行文本
+     * @param query        搜索字符串或正则
+     * @param options      搜索选项（正则、大小写、整词匹配）
+     * @param precompiled  预编译的 Pattern（由 {@link #compileSearchPattern} 生成），
+     *                     非正则模式时为 null
+     * @return 匹配成功返回 true
+     */
+    default boolean lineMatches(String line, String query, SearchOptions options,
+                                Pattern precompiled) {
         if (line == null || query == null || options == null) {
             return false;
         }
 
         if (options.regex()) {
-            // 正则模式下忽略 wholeWord：用户应在正则中自行控制边界
+            if (precompiled != null) {
+                return precompiled.matcher(line).find();
+            }
             try {
                 int flags = options.caseSensitive() ? 0 : Pattern.CASE_INSENSITIVE;
                 return Pattern.compile(query, flags).matcher(line).find();
@@ -56,8 +95,8 @@ public interface SearchProvider {
             }
         }
 
-        String content = options.caseSensitive() ? line : line.toLowerCase();
-        String q = options.caseSensitive() ? query : query.toLowerCase();
+        String content = options.caseSensitive() ? line : line.toLowerCase(java.util.Locale.ROOT);
+        String q = options.caseSensitive() ? query : query.toLowerCase(java.util.Locale.ROOT);
 
         if (options.wholeWord()) {
             // 使用 Unicode 感知的 Java 标识符边界替代 \w

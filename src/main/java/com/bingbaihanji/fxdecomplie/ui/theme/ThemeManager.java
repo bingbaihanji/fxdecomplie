@@ -93,7 +93,11 @@ public final class ThemeManager {
         if (themeName == null || themeName.isBlank() || "Dark+".equals(themeName)) {
             return loadBuiltinDarkPlus();
         }
-        Path file = themesDir().resolve(themeName + ".json");
+        Path file = themesDir().resolve(themeName + ".json").normalize();
+        if (!file.startsWith(themesDir().normalize())) {
+            log.warn("非法主题名称（路径穿越）: {}", themeName);
+            return loadBuiltinDarkPlus();
+        }
         if (Files.isRegularFile(file)) {
             try {
                 return VsCodeThemeLoader.load(file);
@@ -125,7 +129,10 @@ public final class ThemeManager {
         }
 
         String resolvedName = baseName;
-        Path dest = themesDir().resolve(resolvedName + ".json");
+        Path dest = themesDir().resolve(resolvedName + ".json").normalize();
+        if (!dest.startsWith(themesDir().normalize())) {
+            throw new IOException("Invalid theme name: " + resolvedName);
+        }
         int seq = 2;
         while (Files.exists(dest)) {
             resolvedName = baseName + " (" + seq + ")";
@@ -155,7 +162,10 @@ public final class ThemeManager {
                 Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
             }
         } else {
-            Path source = themesDir().resolve(themeName + ".json");
+            Path source = themesDir().resolve(themeName + ".json").normalize();
+            if (!source.startsWith(themesDir().normalize())) {
+                throw new IOException("非法主题名称（路径穿越）: " + themeName);
+            }
             if (!Files.isRegularFile(source)) {
                 throw new IOException("主题文件不存在: " + source);
             }
@@ -175,7 +185,11 @@ public final class ThemeManager {
             log.warn("不允许删除内置主题: {}", themeName);
             return false;
         }
-        Path file = themesDir().resolve(themeName + ".json");
+        Path file = themesDir().resolve(themeName + ".json").normalize();
+        if (!file.startsWith(themesDir().normalize())) {
+            log.warn("非法主题名称（路径穿越）: {}", themeName);
+            return false;
+        }
         try {
             boolean deleted = Files.deleteIfExists(file);
             if (deleted) {

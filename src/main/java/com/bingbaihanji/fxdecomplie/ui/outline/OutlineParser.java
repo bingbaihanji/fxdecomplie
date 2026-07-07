@@ -130,7 +130,7 @@ public final class OutlineParser {
                         }
                         // 检查 throws 子句
                         if (after + 5 < line.length()
-                                && line.substring(after, after + 6).equals("throws")) {
+                                && "throws".equals(line.substring(after, after + 6))) {
                             // 继续扫描到 { 或 ;
                             for (int k = after + 6; k < line.length(); k++) {
                                 if (line.charAt(k) == '{' || line.charAt(k) == ';') {
@@ -200,14 +200,30 @@ public final class OutlineParser {
 
         String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
 
+        boolean inBlockComment = false;
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             int lineNum = i + 1;
             List<CodeMetadata.Reference> refs = new ArrayList<>();
 
-            // 跳过纯注释行
+            // 跳过注释行（跟踪多行块注释状态）
             String trimmed = line.trim();
-            if (trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("* ")) {
+            if (inBlockComment) {
+                if (trimmed.contains("*/")) {
+                    inBlockComment = false;
+                }
+                continue;
+            }
+            if (trimmed.startsWith("//")) {
+                continue;
+            }
+            if (trimmed.startsWith("/*")) {
+                if (!trimmed.contains("*/")) {
+                    inBlockComment = true;
+                }
+                continue;
+            }
+            if (trimmed.startsWith("* ")) {
                 continue;
             }
 

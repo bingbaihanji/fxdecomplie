@@ -18,6 +18,8 @@ import java.util.List;
 /**
  * 编辑器内搜索栏在 CodeArea 中提供 Ctrl+F 查找功能
  *
+ * <p>TODO: 颜色值（#333333, #3c3c3c, #cccccc, #5c2020）硬编码,应改为使用主题系统（AppTheme / VsCodeThemeLoader）</p>
+ *
  * @author bingbaihanji
  * @date 2026-06-18
  */

@@ -109,7 +109,7 @@ final class Win32WindowHandles {
             return null;
         }
         try {
-            long waitMillis = Math.clamp(timeout.toMillis(), 50L, 500L);
+            long waitMillis = Math.max(50L, timeout.toMillis());
             return future.get(waitMillis, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

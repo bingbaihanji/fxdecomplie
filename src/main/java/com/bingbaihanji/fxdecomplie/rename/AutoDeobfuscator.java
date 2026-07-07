@@ -289,7 +289,7 @@ public final class AutoDeobfuscator {
             }
         }
         String simple = simpleName(internalName);
-        return simple.equals("R") || simple.startsWith("R$") || simple.equals("BuildConfig");
+        return "R".equals(simple) || simple.startsWith("R$") || "BuildConfig".equals(simple);
     }
 
     private static boolean shouldSkipClass(ClassIndexEntry cls) {
@@ -303,7 +303,7 @@ public final class AutoDeobfuscator {
             }
         }
         String simple = simpleName(cls.internalName());
-        return simple.equals("R") || simple.startsWith("R$") || simple.equals("BuildConfig");
+        return "R".equals(simple) || simple.startsWith("R$") || "BuildConfig".equals(simple);
     }
 
     /**

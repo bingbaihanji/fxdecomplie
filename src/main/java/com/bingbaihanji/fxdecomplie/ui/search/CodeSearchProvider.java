@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 跨所有已反编译源码全文搜索(逐行匹配)
@@ -65,13 +66,15 @@ public class CodeSearchProvider implements SearchProvider {
             return results;
         }
 
+        Pattern precompiled = compileSearchPattern(options, query);
+
         for (var entry : sourceCache.entrySet()) {
             if (results.size() >= MAX_RESULTS) {
                 break;
             }
             String[] lines = entry.getValue().replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
-                if (lineMatches(lines[i], query, options)) {
+                if (lineMatches(lines[i], query, options, precompiled)) {
                     results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                             SearchResult.MatchType.CODE_TEXT));
                 }

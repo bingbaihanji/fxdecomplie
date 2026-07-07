@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * 搜索非 class 资源文件内容(XML/JSON/YML/properties/.java 等文本资源)
@@ -87,6 +88,8 @@ public class ResourceSearchProvider implements SearchProvider {
             return results;
         }
 
+        Pattern precompiled = compileSearchPattern(options, query);
+
         for (var entry : resourceCache.entrySet()) {
             if (results.size() >= MAX_RESULTS) {
                 break;
@@ -95,7 +98,7 @@ public class ResourceSearchProvider implements SearchProvider {
                 String text = new String(entry.getValue(), StandardCharsets.UTF_8);
                 String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
                 for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
-                    if (lineMatches(lines[i], query, options)) {
+                    if (lineMatches(lines[i], query, options, precompiled)) {
                         results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                                 SearchResult.MatchType.RESOURCE_TEXT));
                     }

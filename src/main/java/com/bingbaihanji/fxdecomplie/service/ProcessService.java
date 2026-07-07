@@ -4,6 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 新实例启动服务通过 ProcessBuilder 启动第二个 JVM 进程,
@@ -39,14 +42,14 @@ public final class ProcessService {
                 log.warn("无法确定 JAR 路径,新实例不可用");
                 return;
             }
-            String jarPath = codeSource.getLocation().toURI().getPath();
-            // ---- 修正 Windows 路径前缀(如 "/C:/..." → "C:/...") ----
-            if (jarPath.startsWith("/") && jarPath.contains(":")) {
-                jarPath = jarPath.substring(1);
+            String jarPath = Paths.get(codeSource.getLocation().toURI()).toString();
+            // ---- 启动新进程: java -jar <this.jar> [--open <filePath>] ----
+            List<String> cmd = new ArrayList<>(List.of(java, "-jar", jarPath));
+            if (filePath != null) {
+                cmd.addAll(List.of("--open", filePath));
             }
-            // ---- 启动新进程: java -jar <this.jar> --open <filePath> ----
             // inheritIO() 防止子进程 stdout/stderr 管道缓冲区满导致挂起
-            new ProcessBuilder(java, "-jar", jarPath, "--open", filePath)
+            new ProcessBuilder(cmd)
                     .inheritIO()
                     .start();
         } catch (Exception e) {

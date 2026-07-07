@@ -139,11 +139,11 @@ public class CfrDecompiler implements Decompiler {
                 String normalizedPath = path.replace("\\", "/");
                 String normalizedTypeName = typeName.replace("\\", "/");
 
-                // 检查是否为主类请求（多种路径形式匹配）
+                // 检查是否为主类请求（精确路径匹配）
                 if (normalizedPath.equals(normalizedTypeName)
                         || normalizedPath.equals(normalizedTypeName + ".class")
-                        || normalizedPath.endsWith("/" + DecompilerContext.simpleName(normalizedTypeName) + ".class")
-                        || normalizedPath.endsWith("/" + DecompilerContext.simpleName(normalizedTypeName))) {
+                        || normalizedPath.equals("/" + normalizedTypeName)
+                        || normalizedPath.equals("/" + normalizedTypeName + ".class")) {
                     return Pair.make(classBytes, normalizedPath);
                 }
 

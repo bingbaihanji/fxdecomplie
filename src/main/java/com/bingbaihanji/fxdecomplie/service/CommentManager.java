@@ -169,8 +169,15 @@ public final class CommentManager {
                                   List<CommentData> comments) throws IOException {
         Path file = resolveFile(workspaceHash, className);
         Files.createDirectories(file.getParent());
+        Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
         String json = GSON.toJson(comments);
-        Files.writeString(file, json, StandardCharsets.UTF_8);
+        Files.writeString(tmp, json, StandardCharsets.UTF_8);
+        try {
+            Files.move(tmp, file, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+            Files.move(tmp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private static Path resolveFile(String workspaceHash, String className) {

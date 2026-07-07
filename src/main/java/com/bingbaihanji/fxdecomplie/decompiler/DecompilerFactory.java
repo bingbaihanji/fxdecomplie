@@ -38,7 +38,12 @@ public final class DecompilerFactory {
                 case VINEFLOWER -> new VineflowerDecompiler();
                 case JD -> new JdDecompiler();
             };
-            engine.initialize();
+            try {
+                engine.initialize();
+            } catch (Exception e) {
+                try { engine.cleanup(); } catch (Exception ignored) {}
+                throw e;
+            }
             log.info("反编译引擎初始化完成: {} ({})", t, engine.getName());
             return engine;
         });

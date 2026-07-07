@@ -192,8 +192,7 @@ public class HexTabView extends StackPane {
             for (int i = 0; i < BYTES_PER_ROW; i++) {
                 int pos = offset + i;
                 if (pos < limit) {
-                    int v = data[pos] & 0xFF;
-                    rows.append(v >= 0x20 && v < 0x7F ? (char) v : '.');
+                    rows.append(safeAscii(data[pos] & 0xFF));
                 } else {
                     rows.append(' ');
                 }
@@ -236,6 +235,13 @@ public class HexTabView extends StackPane {
             return;
         }
         engine.loadContent(formatHtml(currentData, theme));
+    }
+
+    private static char safeAscii(int v) {
+        if (v >= 32 && v < 127 && v != '<' && v != '>' && v != '&') {
+            return (char) v;
+        }
+        return '.';
     }
 
     /** Hex 视图的配色方案,包含背景、文字、边框等颜色值 */

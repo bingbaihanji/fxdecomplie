@@ -88,12 +88,12 @@ public final class QuickOpenDialog {
 
         // 实时过滤
         input.textProperty().addListener((obs, old, text) -> {
-            String lower = text.toLowerCase();
+            String lower = text.toLowerCase(java.util.Locale.ROOT);
             filtered.setPredicate(name -> {
                 if (text.isEmpty()) {
                     return true;
                 }
-                String nameLower = name.toLowerCase();
+                String nameLower = name.toLowerCase(java.util.Locale.ROOT);
                 String simple = nameLower.substring(nameLower.lastIndexOf('/') + 1);
                 return simple.startsWith(lower) || nameLower.contains(lower);
             });

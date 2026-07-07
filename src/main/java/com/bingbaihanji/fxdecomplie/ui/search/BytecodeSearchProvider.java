@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
 
 /**
  * 搜索字节码/汇编文本视图(如 javap 输出)
@@ -87,13 +88,15 @@ public class BytecodeSearchProvider implements SearchProvider {
             return results;
         }
 
+        Pattern precompiled = compileSearchPattern(options, query);
+
         forEachBytecodeText((path, text) -> {
             if (results.size() >= MAX_RESULTS) {
                 return;
             }
             String[] lines = text.replace("\r\n", "\n").replace("\r", "\n").split("\n");
             for (int i = 0; i < lines.length && results.size() < MAX_RESULTS; i++) {
-                if (lineMatches(lines[i], query, options)) {
+                if (lineMatches(lines[i], query, options, precompiled)) {
                     results.add(new SearchResult(path, lines[i].trim(), i + 1,
                             SearchResult.MatchType.BYTECODE_TEXT));
                 }

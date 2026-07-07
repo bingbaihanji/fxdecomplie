@@ -210,10 +210,22 @@ public final class FxDecompilerApp {
                 stage.initStyle(StageStyle.DECORATED);
             }
 
-            stage.setX(config.window().x());
-            stage.setY(config.window().y());
-            stage.setWidth(config.window().width());
-            stage.setHeight(config.window().height());
+            // 验证保存的窗口位置是否在可见屏幕范围内
+            double savedX = config.window().x();
+            double savedY = config.window().y();
+            boolean onScreen = !javafx.stage.Screen.getScreensForRectangle(
+                    savedX, savedY, 1, 1).isEmpty();
+            if (onScreen) {
+                stage.setX(savedX);
+                stage.setY(savedY);
+            } else {
+                javafx.geometry.Rectangle2D bounds =
+                        javafx.stage.Screen.getPrimary().getVisualBounds();
+                stage.setX(bounds.getMinX() + 100);
+                stage.setY(bounds.getMinY() + 100);
+            }
+            stage.setWidth(Math.max(config.window().width(), 400));
+            stage.setHeight(Math.max(config.window().height(), 300));
             stage.setMaximized(config.window().maximized());
 
             window = new MainWindow(config, true, getHostServices());
@@ -229,9 +241,13 @@ public final class FxDecompilerApp {
             for (int i = 0; i < args.size(); i++) {
                 String arg = args.get(i);
                 if ("--open".equals(arg) && i + 1 < args.size()) {
-                    Path path = Path.of(args.get(++i));
-                    if (Files.exists(path)) {
-                        window.openInitialFile(path.toFile());
+                    try {
+                        Path path = Path.of(args.get(++i));
+                        if (Files.exists(path)) {
+                            window.openInitialFile(path.toFile());
+                        }
+                    } catch (java.nio.file.InvalidPathException e) {
+                        log.warn("无效的 --open 路径参数: {}", args.get(i), e);
                     }
                 }
             }
@@ -247,10 +263,17 @@ public final class FxDecompilerApp {
         }
 
         /**
-         * 应用关闭时释放资源:停止后台任务、关闭反编译缓存、保存窗口状态与配置
+         * 应用关闭时释放资源:保存窗口状态与配置、停止后台任务、关闭反编译缓存
          */
         @Override
         public void stop() {
+            // 先保存配置,确保异步任务中的变更不会丢失
+            if (config != null) {
+                if (primaryStage != null) {
+                    saveWindowState(primaryStage);
+                }
+                config.save();
+            }
             BackgroundTasks.shutdown();
             ClassTabOpener.shutdown();
             if (window != null) {
@@ -258,12 +281,6 @@ public final class FxDecompilerApp {
             }
             WindowToolkit.shutdown();
             DecompilerFactory.cleanup();
-            if (config != null) {
-                if (primaryStage != null) {
-                    saveWindowState(primaryStage);
-                }
-                config.save();
-            }
         }
 
         /**

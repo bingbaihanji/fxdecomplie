@@ -318,8 +318,7 @@ final class BytecodeHighlighter implements SyntaxDecorator {
         }
         char c = line.charAt(pos);
         return c == '#' || c == '"' || c == '.' || c == ';' || c == '|'
-                || c == '→' || Character.isWhitespace(c)
-                || Character.isDigit(c) || Character.isLetter(c);
+                || c == '→' || Character.isWhitespace(c);
     }
 
     @Override

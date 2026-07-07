@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
+import com.bingbaihanji.util.I18nUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -40,8 +41,8 @@ public final class DeobfuscatePreviewDialog {
         if (suggestions.isEmpty()) {
             Dialog<String> d = new Dialog<>();
             d.initOwner(owner);
-            d.setTitle("Deobfuscate");
-            d.getDialogPane().setContent(new Label("No obfuscated names found."));
+            d.setTitle(I18nUtil.getString("deobfuscate.title"));
+            d.getDialogPane().setContent(new Label(I18nUtil.getString("deobfuscate.no.obfuscated")));
             d.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
             themeDialog(d);
             d.showAndWait();
@@ -50,7 +51,7 @@ public final class DeobfuscatePreviewDialog {
 
         Dialog<List<RenameEntry>> dialog = new Dialog<>();
         dialog.initOwner(owner);
-        dialog.setTitle("Deobfuscate — " + suggestions.size() + " renames");
+        dialog.setTitle(I18nUtil.getString("deobfuscate.title") + " — " + suggestions.size() + " renames");
         dialog.setResizable(true);
 
         // 构建可观察列表和可过滤列表,支持用户通过关键词筛选
@@ -87,27 +88,27 @@ public final class DeobfuscatePreviewDialog {
 
         // 搜索过滤输入框,实时过滤列表中的条目
         TextField filterField = new TextField();
-        filterField.setPromptText("Filter");
+        filterField.setPromptText(I18nUtil.getString("deobfuscate.filter"));
         filterField.textProperty().addListener((obs, oldValue, newValue) ->
                 filteredItems.setPredicate(entry -> matchesFilter(entry, newValue)));
 
         // 工具栏按钮：全选、全不选、选择/清除可见、清除常见短名
-        Button selectAll = new Button("All");
+        Button selectAll = new Button(I18nUtil.getString("deobfuscate.all"));
         selectAll.setOnAction(e -> items.forEach(item -> selected.get(item).set(true)));
-        Button selectNone = new Button("None");
+        Button selectNone = new Button(I18nUtil.getString("deobfuscate.none"));
         selectNone.setOnAction(e -> items.forEach(item -> selected.get(item).set(false)));
-        Button selectVisible = new Button("Select visible");
+        Button selectVisible = new Button(I18nUtil.getString("deobfuscate.select.visible"));
         selectVisible.setOnAction(e -> filteredItems.forEach(item -> selected.get(item).set(true)));
-        Button clearVisible = new Button("Clear visible");
+        Button clearVisible = new Button(I18nUtil.getString("deobfuscate.clear.visible"));
         clearVisible.setOnAction(e -> filteredItems.forEach(item -> selected.get(item).set(false)));
-        Button clearCommon = new Button("Clear common");
+        Button clearCommon = new Button(I18nUtil.getString("deobfuscate.clear.common"));
         clearCommon.setOnAction(e -> items.stream()
                 .filter(item -> AutoDeobfuscator.isCommonShortName(item.oldName()))
                 .forEach(item -> selected.get(item).set(false)));
         HBox toolbar = new HBox(8, filterField, selectAll, selectNone,
                 selectVisible, clearVisible, clearCommon);
 
-        VBox content = new VBox(8, new Label("Select names to rename:"), toolbar, listView);
+        VBox content = new VBox(8, new Label(I18nUtil.getString("deobfuscate.select.names")), toolbar, listView);
         content.setPadding(new Insets(12));
 
         DialogPane pane = dialog.getDialogPane();

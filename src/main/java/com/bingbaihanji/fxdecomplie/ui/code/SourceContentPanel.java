@@ -38,6 +38,8 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private BracketHighlighter bracketHighlighter;
     private String sourceCode;
     private BiConsumer<Integer, String> onTokenNavigate;
+    /** CodeArea 重建后的回调,用于父组件重新安装事件处理器 */
+    private Runnable onCodeAreaRebuilt;
     private boolean linkNavigationEnabled;
     private int cachedLineCount = -1;
 
@@ -140,8 +142,21 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     /** 更新源码内容并重建 CodeArea */
     public void setSourceCode(String newSource) {
         this.sourceCode = newSource;
+        // 先释放旧的括号高亮器,避免动画定时器持有旧 CodeArea 引用
+        if (bracketHighlighter != null) {
+            bracketHighlighter.dispose();
+            bracketHighlighter = null;
+        }
         getChildren().clear();
         buildCodeArea();
+        if (onCodeAreaRebuilt != null) {
+            onCodeAreaRebuilt.run();
+        }
+    }
+
+    /** 设置 CodeArea 重建后的回调 */
+    public void setOnCodeAreaRebuilt(Runnable callback) {
+        this.onCodeAreaRebuilt = callback;
     }
 
     /** 仅替换当前 CodeArea 文本,保留右键菜单、光标监听和搜索栏绑定 */
@@ -169,7 +184,14 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
             return;
         }
         try {
-            codeArea.setSyntaxDecorator(new RegexHighlighter(newTheme));
+            RegexHighlighter newHighlighter = new RegexHighlighter(newTheme);
+            codeArea.setSyntaxDecorator(newHighlighter);
+            // 重建括号高亮器,使其引用新的高亮器实例
+            if (bracketHighlighter != null) {
+                bracketHighlighter.dispose();
+            }
+            bracketHighlighter = new BracketHighlighter(codeArea, newHighlighter);
+            bracketHighlighter.install();
         } catch (Exception e) {
             log.warn("重新应用编辑器主题失败", e);
         }

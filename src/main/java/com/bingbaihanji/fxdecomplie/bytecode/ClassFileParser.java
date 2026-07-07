@@ -1,5 +1,8 @@
 package com.bingbaihanji.fxdecomplie.bytecode;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -18,6 +21,8 @@ import java.util.Optional;
  * @author bingbaihanji
  */
 public final class ClassFileParser {
+
+    private static final Logger log = LoggerFactory.getLogger(ClassFileParser.class);
 
     /** class 文件的魔数标识：0xCAFEBABE */
     private static final int CLASS_MAGIC = 0xCAFEBABE;
@@ -182,7 +187,10 @@ public final class ClassFileParser {
                 case 9, 10, 11, 12, 17, 18 -> skipFully(in, 4);
                 // CONSTANT_MethodHandle(15): 3 字节（1 字节引用类型 + 2 字节索引）,跳过
                 case 15 -> skipFully(in, 3);
-                default -> throw new ClassFormatException("不支持的常量池标签: " + tag);
+                default -> {
+                    // 未知常量池标签,记录警告并跳过,保持向前兼容性
+                    log.warn("跳过未知常量池标签: {} (索引 {})", tag, i);
+                }
             }
         }
         return cp;

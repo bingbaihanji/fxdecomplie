@@ -109,18 +109,48 @@ public final class DecompilerRunner {
                 active, TIMEOUT_SECONDS);
     }
 
+    /**
+     * 批量反编译专用：不关闭 context,由调用方管理生命周期
+     */
+    public static String decompileWithTimeoutNoClose(String classFilePath, byte[] classBytes,
+                                                      DecompilerTypeEnum engine,
+                                                      DecompilerContext context,
+                                                      BooleanSupplier active) {
+        return decompileWithTimeout(classFilePath, classBytes, engine, context,
+                active, TIMEOUT_SECONDS, false);
+    }
+
     public static String decompileWithTimeout(String classFilePath, byte[] classBytes,
                                               DecompilerTypeEnum engine,
                                               DecompilerContext context,
                                               BooleanSupplier active,
                                               int timeoutSeconds) {
+        return decompileWithTimeout(classFilePath, classBytes, engine, context,
+                active, timeoutSeconds, true);
+    }
+
+    /**
+     * 带上下文生命周期控制的反编译方法
+     *
+     * @param closeContext 若为 false,调用方负责关闭 context（用于导出等批量场景）
+     */
+    public static String decompileWithTimeout(String classFilePath, byte[] classBytes,
+                                              DecompilerTypeEnum engine,
+                                              DecompilerContext context,
+                                              BooleanSupplier active,
+                                              int timeoutSeconds,
+                                              boolean closeContext) {
         if (classBytes == null) {
-            closeContext(context);
+            if (closeContext) {
+                closeContext(context);
+            }
             return failureOutput(classFilePath, "类字节码未找到");
         }
         BooleanSupplier requestActive = active == null ? () -> true : active;
         if (!requestActive.getAsBoolean()) {
-            closeContext(context);
+            if (closeContext) {
+                closeContext(context);
+            }
             throw new CancellationException("反编译请求已被替换");
         }
 
@@ -133,7 +163,9 @@ public final class DecompilerRunner {
                 try {
                     return decompileWithFallback(classFilePath, classBytes, engine, context);
                 } finally {
-                    closeContext(context);
+                    if (closeContext) {
+                        closeContext(context);
+                    }
                 }
             });
             String source = future.get(timeout, TimeUnit.SECONDS);
@@ -147,7 +179,9 @@ public final class DecompilerRunner {
             log.debug("反编译完成: {} engine={} ({}ms) failure={}", classFilePath, engine, elapsed, isFailure);
             return source;
         } catch (RejectedExecutionException e) {
-            closeContext(context);
+            if (closeContext) {
+                closeContext(context);
+            }
             log.warn("反编译被拒绝(队列满): {} engine={}", classFilePath, engine);
             return I18nUtil.getString("decompile.busy", classFilePath);
         } catch (TimeoutException e) {
@@ -162,7 +196,9 @@ public final class DecompilerRunner {
             } catch (Exception ignored) {
                 // 任务可能尚未退出,忽略
             }
-            closeContext(context);
+            if (closeContext) {
+                closeContext(context);
+            }
             // 连续超时超过阈值时重建线程池,丢弃可能僵死的守护线程
             boolean rebuilt = maybeRebuildExecutor();
             if (rebuilt) {
@@ -174,7 +210,9 @@ public final class DecompilerRunner {
                     + "\n" + I18nUtil.getString("decompile.timeoutHint");
         } catch (InterruptedException e) {
             future.cancel(true);
-            closeContext(context);
+            if (closeContext) {
+                closeContext(context);
+            }
             Thread.currentThread().interrupt();
             throw new RuntimeException("反编译被中断: " + classFilePath, e);
         } catch (java.util.concurrent.ExecutionException e) {

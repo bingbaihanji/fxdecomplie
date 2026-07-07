@@ -121,6 +121,9 @@ public final class VsCodeThemeLoader {
                 }
 
                 JsonObject settings = tc.getAsJsonObject("settings");
+                if (settings == null) {
+                    continue;
+                }
                 String fgHex = getString(settings, "foreground", "#d4d4d4");
                 String fontStyle = getString(settings, "fontStyle", "");
                 boolean bold = fontStyle.contains("bold");
@@ -168,7 +171,11 @@ public final class VsCodeThemeLoader {
         if (e == null || e.isJsonNull()) {
             return Color.web(defaultHex);
         }
-        return Color.web(e.getAsString());
+        try {
+            return Color.web(e.getAsString());
+        } catch (RuntimeException ex) {
+            return Color.web(defaultHex);
+        }
     }
 
     /** 安全获取 JSON 字符串属性 */

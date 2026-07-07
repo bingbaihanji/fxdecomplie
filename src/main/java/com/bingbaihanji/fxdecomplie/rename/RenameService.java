@@ -200,6 +200,7 @@ public final class RenameService {
                     continue;
                 }
                 boolean replaced = false;
+                boolean skipped = false;
                 for (int i = 0; i < list.size(); i++) {
                     RenameEntry e = normalize(list.get(i));
                     if (sameKey(e, normalized)) {
@@ -208,6 +209,7 @@ public final class RenameService {
                             log.debug("saveAll: skipExisting=true, 保留已有条目 class={} old={} new={}",
                                     e.className(), e.oldName(), e.newName());
                             replaced = true;
+                            skipped = true;
                             break;
                         }
                         // 手动重命名场景：允许覆盖
@@ -224,7 +226,9 @@ public final class RenameService {
                 if (!replaced) {
                     list.add(normalized);
                 }
-                applied++;
+                if (!skipped) {
+                    applied++;
+                }
             }
             if (applied == 0) {
                 return 0;
@@ -1182,13 +1186,14 @@ public final class RenameService {
                 .orElse(null);
         if (isClassDeclarationName(source, start, end)) {
             for (RenameEntry entry : classEntries) {
-                if (entry.oldName().equals(token) || classEntryMatchesToken(entry, token)) {
+                if (classEntryTargetsInternalName(entry, currentClass)
+                        && (entry.oldName().equals(token) || classEntryMatchesToken(entry, token))) {
                     return entry.newName();
                 }
             }
         }
         if (isConstructorDeclarationToken(source, start, end)) {
-            RenameEntry declarationEntry = classEntryForDeclaredName(classEntries, source);
+            RenameEntry declarationEntry = classEntryForDeclaredName(classEntries, source, currentClass);
             if (declarationEntry != null && classEntryMatchesToken(declarationEntry, token)) {
                 return declarationEntry.newName();
             }
@@ -1230,10 +1235,10 @@ public final class RenameService {
         if (current != null) {
             return current;
         }
-        List<RenameEntry> matches = classEntries.stream()
-                .filter(entry -> classEntryMatchesToken(entry, token))
-                .toList();
-        return matches.size() == 1 ? matches.getFirst() : null;
+        // 不再按简单名称全局回退匹配
+        // 混淆代码中大量类共享相同简单名（如 a、b）,全局匹配会导致跨包误重命名
+        // 仅当 import 或同包能精确解析到目标类时才应用重命名
+        return null;
     }
 
     private static RenameEntry importedClassEntryForToken(String source, String token,
@@ -1329,13 +1334,15 @@ public final class RenameService {
                 && normalizedPrefix.equals(target.replace('$', '/'));
     }
 
-    private static RenameEntry classEntryForDeclaredName(List<RenameEntry> classEntries, String source) {
+    private static RenameEntry classEntryForDeclaredName(List<RenameEntry> classEntries,
+                                                         String source, String currentClass) {
         Token declared = declaredClassToken(source);
         if (declared == null) {
             return null;
         }
         for (RenameEntry entry : classEntries) {
-            if (entry.oldName().equals(declared.name()) || classEntryMatchesToken(entry, declared.name())) {
+            if (classEntryTargetsInternalName(entry, currentClass)
+                    && (entry.oldName().equals(declared.name()) || classEntryMatchesToken(entry, declared.name()))) {
                 return entry;
             }
         }
@@ -1504,12 +1511,17 @@ public final class RenameService {
         boolean classContext = isClassContext(source, start, end);
         boolean qualified = isQualifiedIdentifier(source, start);
 
-        // 1. 类上下文：优先使用类重命名
-        if (classContext) {
-            String classReplacement = firstClassReplacement(entries, oldName);
+        // 1. 类上下文：优先使用类重命名（需通过 import/同包/当前类上下文验证）
+        // 限定名中的标识符（如 com.pig4cloud.domain.a 中的 a）不在此处处理,
+        // 由 applyClassRenames 的 qualifiedClassReplacementForToken 精确匹配全限定路径
+        if (classContext && !qualified) {
+            String classReplacement = firstClassReplacement(source, entries, oldName, currentClass);
             if (classReplacement != null) {
                 return classReplacement;
             }
+            // 类上下文但无法解析到目标类时,不应回退到成员匹配
+            // 避免将类引用误替换为字段/方法名
+            return null;
         }
 
         // 2. 方法作用域内的非限定名 → 参数重命名
@@ -1631,13 +1643,35 @@ public final class RenameService {
         return out.toString();
     }
 
-    private static String firstClassReplacement(List<RenameEntry> entries, String oldName) {
-        for (RenameEntry entry : entries) {
-            if (TYPE_CLASS.equals(entry.type())
-                    && classEntryMatchesToken(entry, oldName)) {
+    /**
+     * 在类上下文中查找匹配的类重命名条目
+     * 必须通过 import、同包或当前类上下文验证,避免跨包误匹配
+     */
+    private static String firstClassReplacement(String source, List<RenameEntry> entries,
+                                                String oldName, String currentClass) {
+        List<RenameEntry> classEntries = entries.stream()
+                .filter(e -> TYPE_CLASS.equals(e.type()) && classEntryMatchesToken(e, oldName))
+                .toList();
+        if (classEntries.isEmpty()) {
+            return null;
+        }
+        // 1. 检查 import 语句
+        RenameEntry imported = importedClassEntryForToken(source, oldName, classEntries);
+        if (imported != null) {
+            return imported.newName();
+        }
+        // 2. 检查同包
+        RenameEntry samePkg = samePackageClassEntryForToken(source, oldName, classEntries);
+        if (samePkg != null) {
+            return samePkg.newName();
+        }
+        // 3. 检查当前类自身
+        for (RenameEntry entry : classEntries) {
+            if (classEntryTargetsInternalName(entry, currentClass)) {
                 return entry.newName();
             }
         }
+        // 无明确上下文匹配时不应用重命名
         return null;
     }
 

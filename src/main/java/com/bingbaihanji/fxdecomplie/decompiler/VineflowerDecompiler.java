@@ -357,7 +357,7 @@ public class VineflowerDecompiler implements Decompiler {
             }
 
             String internalName = normalized;
-            while (internalName.endsWith(IContextSource.CLASS_SUFFIX)) {
+            if (internalName.endsWith(IContextSource.CLASS_SUFFIX)) {
                 internalName = internalName.substring(0,
                         internalName.length() - IContextSource.CLASS_SUFFIX.length());
             }
@@ -374,18 +374,11 @@ public class VineflowerDecompiler implements Decompiler {
 
         /** 检查请求的路径是否匹配当前反编译的主类 */
         private boolean isMainClass(String resource) {
-            String simpleName = DecompilerContext.simpleName(typeName);
-            String dottedName = typeName.replace('/', '.');
             String entryPath = typeName + IContextSource.CLASS_SUFFIX;
-            String dottedPath = dottedName + IContextSource.CLASS_SUFFIX;
-            return resource.equals(entryPath)
-                    || resource.equals("/" + entryPath)
-                    || resource.equals(typeName)
+            return resource.equals(typeName)
                     || resource.equals("/" + typeName)
-                    || resource.equals(simpleName)
-                    || resource.equals(simpleName + IContextSource.CLASS_SUFFIX)
-                    || resource.equals(dottedName)
-                    || resource.equals(dottedPath);
+                    || resource.equals(entryPath)
+                    || resource.equals("/" + entryPath);
         }
 
         /** 创建输出接收器,将 Vineflower 输出委托给外部的 {@link IResultSaver} */

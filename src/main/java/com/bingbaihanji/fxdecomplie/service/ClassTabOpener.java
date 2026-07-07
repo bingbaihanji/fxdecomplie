@@ -41,6 +41,9 @@ public final class ClassTabOpener {
     /** class 打开属于交互任务,使用专用虚拟线程,避免被索引/搜索任务队列拖慢 */
     private static final ExecutorService OPEN_EXECUTOR = Executors.newThreadPerTaskExecutor(
             Thread.ofVirtual().name("class-open-", 0).factory());
+    /** 限制并发反编译操作数量,防止虚拟线程无限制创建 */
+    private static final java.util.concurrent.Semaphore OPEN_SEMAPHORE =
+            new java.util.concurrent.Semaphore(4);
     /** 超过该大小时跳过源码 metadata 提取,避免打开大类时延迟首屏显示 */
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
     /** 交互打开 class 的反编译超时,避免坏类/混淆类长时间占住首屏 */
@@ -145,9 +148,19 @@ public final class ClassTabOpener {
 
     private static Future<?> runOpenTask(String name, Runnable task) {
         return OPEN_EXECUTOR.submit(() -> {
-            Thread.currentThread().setName(name);
-            Thread.interrupted();
-            task.run();
+            try {
+                OPEN_SEMAPHORE.acquire();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            try {
+                Thread.currentThread().setName(name);
+                Thread.interrupted();
+                task.run();
+            } finally {
+                OPEN_SEMAPHORE.release();
+            }
         });
     }
 
@@ -486,8 +499,9 @@ public final class ClassTabOpener {
         }
 
         int tabIndex = codeTabPane.getTabs().indexOf(currentTab);
+        DecompilerTypeEnum safeEngine = engine == null ? DecompilerTypeEnum.VINEFLOWER : engine;
         statusBar.setFilePath(I18nUtil.getString(
-                "status.redecompiling", engine.name(), fullPath));
+                "status.redecompiling", safeEngine.name(), fullPath));
         statusBar.setTask(I18nUtil.getString("task.decompiling"));
 
         long requestId = cancelPrevious ? refreshGeneration.incrementAndGet() : refreshGeneration.get();
@@ -1095,13 +1109,22 @@ public final class ClassTabOpener {
         return null;
     }
 
-    /** 绑定光标位置到状态栏 */
+    /** 绑定光标位置到状态栏（先移除旧监听器避免累积） */
     private void bindCaretPosition(CodeEditorTab codeTab) {
-        codeTab.getCodeArea().caretPositionProperty().addListener((obs, oldPos, newPos) -> {
-            if (newPos != null) {
-                statusBar.setCursorPosition(newPos.index() + 1, newPos.offset() + 1);
-            }
-        });
+        // 移除旧的光标监听器（存储在 tab 的 userData 中）
+        Object oldListener = codeTab.getUserData();
+        if (oldListener instanceof javafx.beans.value.ChangeListener<?> cl) {
+            codeTab.getCodeArea().caretPositionProperty().removeListener(
+                    (javafx.beans.value.ChangeListener) cl);
+        }
+        javafx.beans.value.ChangeListener<jfx.incubator.scene.control.richtext.TextPos> listener =
+                (obs, oldPos, newPos) -> {
+                    if (newPos != null) {
+                        statusBar.setCursorPosition(newPos.index() + 1, newPos.offset() + 1);
+                    }
+                };
+        codeTab.setUserData(listener);
+        codeTab.getCodeArea().caretPositionProperty().addListener(listener);
     }
 
     /**

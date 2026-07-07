@@ -226,18 +226,17 @@ public final class CfgAnalyzer {
         // 4. 异常边
         if (mn.tryCatchBlocks != null) {
             for (TryCatchBlockNode tcb : mn.tryCatchBlocks) {
-                int handlerIdx = insns.indexOf(tcb.handler);
+                int tStart = insns.indexOf(tcb.start);
+                int tEnd = insns.indexOf(tcb.end);
+                Integer to = labelToBlock.get(tcb.handler);
+                if (to == null) {
+                    continue;
+                }
                 for (BasicBlock bb : blocks) {
-                    if (bb.startIdx <= insns.indexOf(tcb.start)
-                            && bb.endIdx >= insns.indexOf(tcb.end)
-                            || bb.startIdx <= insns.indexOf(tcb.end)
-                            && bb.endIdx >= insns.indexOf(tcb.end)) {
-                        Integer to = labelToBlock.get(tcb.handler);
-                        if (to != null) {
-                            String type = tcb.type != null
-                                    ? tcb.type.substring(tcb.type.lastIndexOf('/') + 1) : "any";
-                            edges.add(new Edge(bb.id, to, type, "dotted"));
-                        }
+                    if (bb.startIdx <= tEnd && bb.endIdx >= tStart) {
+                        String type = tcb.type != null
+                                ? tcb.type.substring(tcb.type.lastIndexOf('/') + 1) : "any";
+                        edges.add(new Edge(bb.id, to, type, "dotted"));
                     }
                 }
             }

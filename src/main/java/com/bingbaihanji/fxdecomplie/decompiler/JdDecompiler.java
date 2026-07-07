@@ -186,13 +186,13 @@ public class JdDecompiler implements Decompiler {
 
         @Override
         public void printDeclaration(int type, String internalTypeName, String name, String descriptor) {
-            builder.append(name);
+            builder.append(name != null ? name : "");
         }
 
         @Override
         public void printReference(int type, String internalTypeName, String name,
                                    String descriptor, String ownerInternalName) {
-            builder.append(name);
+            builder.append(name != null ? name : "");
         }
     }
 }

@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.service.SearchProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * 按类名搜索 — 同时匹配原始类全路径和重命名/反混淆后的显示名
@@ -106,13 +107,15 @@ public class ClassSearchProvider implements SearchProvider {
             return results;
         }
 
+        Pattern precompiled = compileSearchPattern(options, query);
+
         for (String name : classNames) {
             if (results.size() >= MAX_RESULTS) {
                 break;
             }
             String displayName = displayNamesByPath.getOrDefault(name, name);
-            if (lineMatches(name, query, options)
-                    || lineMatches(displayName, query, options)) {
+            if (lineMatches(name, query, options, precompiled)
+                    || lineMatches(displayName, query, options, precompiled)) {
                 results.add(new SearchResult(name, displayName, 1,
                         SearchResult.MatchType.CLASS_NAME));
             }
@@ -124,8 +127,8 @@ public class ClassSearchProvider implements SearchProvider {
                     break;
                 }
                 String displayName = displayNamesByPath.getOrDefault(path, path);
-                if (lineMatches(path, query, options)
-                        || lineMatches(displayName, query, options)) {
+                if (lineMatches(path, query, options, precompiled)
+                        || lineMatches(displayName, query, options, precompiled)) {
                     results.add(new SearchResult(path, displayName, 1,
                             SearchResult.MatchType.CLASS_NAME));
                 }

@@ -77,7 +77,7 @@ public final class DiskCodeCache {
             Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
             tmp = file.resolveSibling(file.getFileName() + ".tmp");
             Files.createDirectories(file.getParent());
-            Files.writeString(tmp, sourceCode == null ? "" : sourceCode, StandardCharsets.UTF_8);
+            Files.writeString(tmp, sourceCode, StandardCharsets.UTF_8);
             try {
                 Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
@@ -179,7 +179,7 @@ public final class DiskCodeCache {
                             try {
                                 return Files.getLastModifiedTime(p).toMillis();
                             } catch (IOException e) {
-                                return 0L;
+                                return Long.MAX_VALUE;
                             }
                         }))
                         .toList();

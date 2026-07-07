@@ -131,7 +131,7 @@ final class DotGraphRenderer {
             if (from == null || to == null || from == to) {
                 continue;
             }
-            drawEdge(edgeLayer, from, to);
+            drawEdge(edgeLayer, from, to, edge.label(), edge.style());
         }
 
         for (LayoutNode ln : layout.values()) {
@@ -332,8 +332,12 @@ final class DotGraphRenderer {
     /**
      * 绘制从 from 到 to 的有向边：直线 + 终点箭头三角形
      * 两端点自动截断到节点矩形边框上,避免线条穿过节点内部
+     *
+     * @param label 边标签文本,可为空字符串
+     * @param style 边样式（"dashed"/"dotted"/"solid"）,可为空字符串
      */
-    private static void drawEdge(Pane pane, LayoutNode from, LayoutNode to) {
+    private static void drawEdge(Pane pane, LayoutNode from, LayoutNode to,
+                                  String label, String style) {
         Point2D fromCenter = from.center();
         Point2D toCenter = to.center();
         Point2D start = borderPoint(from, toCenter);
@@ -342,6 +346,12 @@ final class DotGraphRenderer {
         Line line = new Line(start.getX(), start.getY(), end.getX(), end.getY());
         line.setStroke(Color.web(EDGE_COLOR));
         line.setStrokeWidth(1.2);
+        // 应用边样式
+        if ("dashed".equals(style)) {
+            line.getStrokeDashArray().addAll(8.0, 4.0);
+        } else if ("dotted".equals(style)) {
+            line.getStrokeDashArray().addAll(3.0, 3.0);
+        }
         pane.getChildren().add(line);
 
         // 终点箭头（等腰三角形,底边朝外）
@@ -357,6 +367,18 @@ final class DotGraphRenderer {
         );
         arrow.setFill(Color.web(EDGE_COLOR));
         pane.getChildren().add(arrow);
+
+        // 边标签
+        if (label != null && !label.isBlank()) {
+            double midX = (start.getX() + end.getX()) / 2.0;
+            double midY = (start.getY() + end.getY()) / 2.0;
+            Label edgeLabel = new Label(label);
+            edgeLabel.setFont(Font.font("Consolas", 10));
+            edgeLabel.setStyle("-fx-text-fill:" + EDGE_COLOR + ";");
+            edgeLabel.setLayoutX(midX + 3);
+            edgeLabel.setLayoutY(midY - 7);
+            pane.getChildren().add(edgeLabel);
+        }
     }
 
     /**

@@ -124,17 +124,21 @@ public final class CommentListPane extends VBox {
     }
 
     /**
-     * 刷新当前注释列表,从 CommentManager 重新加载数据
+     * 刷新当前注释列表,从 CommentManager 后台线程重新加载数据
      */
     public void refresh() {
         if (workspaceHash == null || className == null) {
             allRows.clear();
             return;
         }
-        List<CommentData> list = CommentManager.load(workspaceHash, className);
-        Platform.runLater(() -> {
-            allRows.setAll(list);
-            applyFilter();
+        String ws = workspaceHash;
+        String cn = className;
+        BackgroundTasks.run("CommentLoad", () -> {
+            List<CommentData> list = CommentManager.load(ws, cn);
+            Platform.runLater(() -> {
+                allRows.setAll(list);
+                applyFilter();
+            });
         });
     }
 

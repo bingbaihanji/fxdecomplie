@@ -24,8 +24,9 @@ public final class CommentExportDecorator {
         if (sourceCode == null) {
             return "";
         }
-        return "len=" + sourceCode.length() + ":"
-                + Integer.toHexString(sourceCode.hashCode());
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+        crc.update(sourceCode.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return "crc=" + Long.toHexString(crc.getValue());
     }
 
     public static String applyForClass(String sourceCode, String className,
@@ -80,14 +81,21 @@ public final class CommentExportDecorator {
             return c.line();
         }
 
-        // 策略2: 成员签名匹配
+        // 策略2: 成员签名匹配（使用标识符边界精确匹配,避免子串误匹配）
         if (c.memberSignature() != null && !c.memberSignature().isBlank()) {
             int nameIdx = c.memberSignature().indexOf('(');
             String methodName = nameIdx > 0 ? c.memberSignature().substring(0, nameIdx) : c.memberSignature();
-            for (int i = 0; i < lines.length; i++) {
-                if (lines[i].contains(methodName)) {
-                    // 将注释放在找到的方法声明行之后（源码变更时行号会偏移）
-                    return Math.max(1, i + 2);
+            // 只取最后一段作为简单名称（去掉包名/类名前缀）
+            int dotIdx = methodName.lastIndexOf('.');
+            String simpleName = dotIdx >= 0 ? methodName.substring(dotIdx + 1) : methodName;
+            if (!simpleName.isBlank()) {
+                java.util.regex.Pattern namePattern = java.util.regex.Pattern.compile(
+                        "(?<![\\p{javaJavaIdentifierPart}])" + java.util.regex.Pattern.quote(simpleName)
+                                + "(?![\\p{javaJavaIdentifierPart}])");
+                for (int i = 0; i < lines.length; i++) {
+                    if (namePattern.matcher(lines[i]).find()) {
+                        return Math.max(1, i + 2);
+                    }
                 }
             }
         }
@@ -108,7 +116,11 @@ public final class CommentExportDecorator {
 
         return switch (c.style()) {
             case LINE -> sourceLine + " // FXD: " + safeText;
-            case BLOCK -> "/* FXD: " + safeText + " */\n" + sourceLine;
+            case BLOCK -> {
+                String indent = sourceLine.substring(0,
+                        sourceLine.length() - sourceLine.stripLeading().length());
+                yield indent + "/* FXD: " + safeText + " */\n" + sourceLine;
+            }
         };
     }
 }

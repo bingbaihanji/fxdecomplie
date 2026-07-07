@@ -88,7 +88,21 @@ final class DotGraphParser {
                 // 边引用的节点若未声明,用默认样式补一个隐式节点
                 nodes.putIfAbsent(from, DotNode.defaultNode(from));
                 nodes.putIfAbsent(to, DotNode.defaultNode(to));
-                edges.add(new DotEdge(from, to));
+                // 提取边属性（label、style）
+                String edgeLabel = "";
+                String edgeStyle = "";
+                int bracketStart = line.indexOf('[');
+                if (bracketStart >= 0) {
+                    int bracketEnd = line.indexOf(']', bracketStart);
+                    if (bracketEnd < 0) {
+                        bracketEnd = line.length();
+                    }
+                    String attrText = line.substring(bracketStart + 1, bracketEnd);
+                    Map<String, String> edgeAttrs = parseAttrs(attrText);
+                    edgeLabel = edgeAttrs.getOrDefault("label", "");
+                    edgeStyle = edgeAttrs.getOrDefault("style", "");
+                }
+                edges.add(new DotEdge(from, to, edgeLabel, edgeStyle));
                 continue;
             }
 
@@ -230,9 +244,11 @@ final class DotGraphParser {
     /**
      * 有向边
      *
-     * @param from 起始节点 id
-     * @param to   目标节点 id
+     * @param from  起始节点 id
+     * @param to    目标节点 id
+     * @param label 边标签（如 "true"/"false"/"default"）,可为空字符串
+     * @param style 边样式（如 "dashed"/"dotted"/"solid"）,可为空字符串
      */
-    record DotEdge(String from, String to) {
+    record DotEdge(String from, String to, String label, String style) {
     }
 }

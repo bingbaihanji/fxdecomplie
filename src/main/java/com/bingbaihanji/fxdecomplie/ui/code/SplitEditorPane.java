@@ -344,103 +344,114 @@ public final class SplitEditorPane extends StackPane {
 
     // ==================== 辅助方法 ====================
 
-    /** 为指定 TabPane 安装右键上下文菜单（固定、切换引擎、分屏、关闭等操作） */
+    /** 为指定 TabPane 安装右键上下文菜单（固定、切换引擎、分屏、关闭等操作）,缓存菜单实例避免每次右键重建 */
     private void installContextMenu(TabPane pane) {
+        ContextMenu cachedMenu = new ContextMenu();
+        cachedMenu.setOnShowing(e -> rebuildContextMenuItems(cachedMenu, pane));
+        pane.getProperties().put("fxdecomplie.splitEditor.cachedMenu", cachedMenu);
         pane.setOnContextMenuRequested(event -> {
-            ContextMenu menu = new ContextMenu();
-            Tab current = pane.getSelectionModel().getSelectedItem();
-
-            // 固定标签页
-            CheckMenuItem pin = new CheckMenuItem(I18nUtil.getString("context.pinTab"));
-            pin.setDisable(current == null);
-            pin.setSelected(current != null && Boolean.TRUE.equals(current.getProperties().get("pinned")));
-            pin.setOnAction(e -> {
-                if (current != null) {
-                    current.getProperties().put("pinned", pin.isSelected());
-                    if (current instanceof CodeEditorTab ct) {
-                        ct.updatePinnedDisplay(pin.isSelected());
-                    }
-                }
-            });
-
-            // 切换引擎
-            Menu engineMenu = new Menu(I18nUtil.getString("context.switchEngine"));
-            if (current instanceof CodeEditorTab ct) {
-                ToggleGroup eg = new ToggleGroup();
-                DecompilerTypeEnum curEngine = ct.getOpenFile().engine();
-                for (DecompilerTypeEnum eng : DecompilerTypeEnum.values()) {
-                    RadioMenuItem ri = new RadioMenuItem(eng.name());
-                    ri.setToggleGroup(eg);
-                    ri.setSelected(eng == curEngine);
-                    ri.setOnAction(ev -> ct.switchEngine(eng));
-                    engineMenu.getItems().add(ri);
-                }
-            }
-
-            // 向右拆分（委托给 tab 的 requestSplit,统一处理 cell 创建 + 内容打开）
-            MenuItem splitRight = new MenuItem(I18nUtil.getString("context.splitRight"));
-            splitRight.setDisable(current == null || activeCount >= MAX_CELLS);
-            splitRight.setOnAction(e -> {
-                if (current instanceof CodeEditorTab ct) {
-                    ct.requestSplit();
-                }
-            });
-
-            // 关闭分屏（仅非主 cell 可用）
-            MenuItem closeSplitItem = new MenuItem(I18nUtil.getString("context.closeSplit"));
-            closeSplitItem.setDisable(pane == primaryTabPane());
-            closeSplitItem.setOnAction(e -> closeSplit(pane));
-
-            // 在新窗口打开
-            MenuItem openInNewWindow = new MenuItem(I18nUtil.getString("context.openInNewWindow"));
-            openInNewWindow.setDisable(!(current instanceof CodeEditorTab));
-            openInNewWindow.setOnAction(e -> {
-                if (current instanceof CodeEditorTab codeTab) {
-                    javafx.stage.Window window = pane.getScene().getWindow();
-                    javafx.stage.Stage owner = window instanceof javafx.stage.Stage s ? s : null;
-                    CodeOnlyWindow.openFrom(codeTab, dragDropConfig, owner);
-                }
-            });
-
-            // 关闭其他
-            MenuItem closeOthers = new MenuItem(I18nUtil.getString("context.closeOthers"));
-            closeOthers.setOnAction(e -> {
-                if (current != null) {
-                    pane.getTabs().removeIf(t -> t != current);
-                }
-            });
-
-            // 关闭右侧
-            MenuItem closeRight = new MenuItem(I18nUtil.getString("context.closeRight"));
-            closeRight.setDisable(current == null);
-            closeRight.setOnAction(e -> {
-                if (current == null) {
-                    return;
-                }
-                int index = pane.getTabs().indexOf(current);
-                var toClose = pane.getTabs().stream()
-                        .skip(index + 1L)
-                        .filter(t -> !Boolean.TRUE.equals(t.getProperties().get("pinned")))
-                        .toList();
-                pane.getTabs().removeAll(toClose);
-            });
-
-            // 关闭未固定
-            MenuItem closeUnpinned = new MenuItem(I18nUtil.getString("context.closeUnpinned"));
-            closeUnpinned.setOnAction(e -> pane.getTabs().removeIf(t ->
-                    !Boolean.TRUE.equals(t.getProperties().get("pinned"))));
-
-            // 关闭全部
-            MenuItem closeAll = new MenuItem(I18nUtil.getString("context.closeAll"));
-            closeAll.setOnAction(e -> pane.getTabs().clear());
-
-            menu.getItems().addAll(pin, new SeparatorMenuItem(),
-                    engineMenu, new SeparatorMenuItem(),
-                    splitRight, closeSplitItem, new SeparatorMenuItem(),
-                    openInNewWindow, new SeparatorMenuItem(),
-                    closeOthers, closeRight, closeUnpinned, closeAll);
-            menu.show(pane, event.getScreenX(), event.getScreenY());
+            cachedMenu.show(pane, event.getScreenX(), event.getScreenY());
             event.consume();
         });
+    }
+
+    /** 根据当前选中标签页重建缓存菜单的菜单项 */
+    private void rebuildContextMenuItems(ContextMenu menu, TabPane pane) {
+        menu.getItems().clear();
+        Tab current = pane.getSelectionModel().getSelectedItem();
+
+        // 固定标签页
+        CheckMenuItem pin = new CheckMenuItem(I18nUtil.getString("context.pinTab"));
+        pin.setDisable(current == null);
+        pin.setSelected(current != null && Boolean.TRUE.equals(current.getProperties().get("pinned")));
+        Tab pinnedRef = current;
+        pin.setOnAction(e -> {
+            if (pinnedRef != null) {
+                pinnedRef.getProperties().put("pinned", pin.isSelected());
+                if (pinnedRef instanceof CodeEditorTab ct) {
+                    ct.updatePinnedDisplay(pin.isSelected());
+                }
+            }
+        });
+
+        // 切换引擎
+        Menu engineMenu = new Menu(I18nUtil.getString("context.switchEngine"));
+        if (current instanceof CodeEditorTab ct) {
+            ToggleGroup eg = new ToggleGroup();
+            DecompilerTypeEnum curEngine = ct.getOpenFile().engine();
+            for (DecompilerTypeEnum eng : DecompilerTypeEnum.values()) {
+                RadioMenuItem ri = new RadioMenuItem(eng.name());
+                ri.setToggleGroup(eg);
+                ri.setSelected(eng == curEngine);
+                ri.setOnAction(ev -> ct.switchEngine(eng));
+                engineMenu.getItems().add(ri);
+            }
+        }
+
+        // 向右拆分（委托给 tab 的 requestSplit,统一处理 cell 创建 + 内容打开）
+        MenuItem splitRight = new MenuItem(I18nUtil.getString("context.splitRight"));
+        splitRight.setDisable(current == null || activeCount >= MAX_CELLS);
+        Tab splitRef = current;
+        splitRight.setOnAction(e -> {
+            if (splitRef instanceof CodeEditorTab ct) {
+                ct.requestSplit();
+            }
+        });
+
+        // 关闭分屏（仅非主 cell 可用）
+        MenuItem closeSplitItem = new MenuItem(I18nUtil.getString("context.closeSplit"));
+        closeSplitItem.setDisable(pane == primaryTabPane());
+        closeSplitItem.setOnAction(e -> closeSplit(pane));
+
+        // 在新窗口打开
+        MenuItem openInNewWindow = new MenuItem(I18nUtil.getString("context.openInNewWindow"));
+        openInNewWindow.setDisable(!(current instanceof CodeEditorTab));
+        openInNewWindow.setOnAction(e -> {
+            if (pane.getSelectionModel().getSelectedItem() instanceof CodeEditorTab codeTab) {
+                javafx.stage.Window window = pane.getScene().getWindow();
+                javafx.stage.Stage owner = window instanceof javafx.stage.Stage s ? s : null;
+                CodeOnlyWindow.openFrom(codeTab, dragDropConfig, owner);
+            }
+        });
+
+        // 关闭其他
+        MenuItem closeOthers = new MenuItem(I18nUtil.getString("context.closeOthers"));
+        closeOthers.setOnAction(e -> {
+            Tab sel = pane.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                pane.getTabs().removeIf(t -> t != sel);
+            }
+        });
+
+        // 关闭右侧
+        MenuItem closeRight = new MenuItem(I18nUtil.getString("context.closeRight"));
+        closeRight.setDisable(current == null);
+        closeRight.setOnAction(e -> {
+            Tab sel = pane.getSelectionModel().getSelectedItem();
+            if (sel == null) {
+                return;
+            }
+            int index = pane.getTabs().indexOf(sel);
+            var toClose = pane.getTabs().stream()
+                    .skip(index + 1L)
+                    .filter(t -> !Boolean.TRUE.equals(t.getProperties().get("pinned")))
+                    .toList();
+            pane.getTabs().removeAll(toClose);
+        });
+
+        // 关闭未固定
+        MenuItem closeUnpinned = new MenuItem(I18nUtil.getString("context.closeUnpinned"));
+        closeUnpinned.setOnAction(e -> pane.getTabs().removeIf(t ->
+                !Boolean.TRUE.equals(t.getProperties().get("pinned"))));
+
+        // 关闭全部
+        MenuItem closeAll = new MenuItem(I18nUtil.getString("context.closeAll"));
+        closeAll.setOnAction(e -> pane.getTabs().clear());
+
+        menu.getItems().addAll(pin, new SeparatorMenuItem(),
+                engineMenu, new SeparatorMenuItem(),
+                splitRight, closeSplitItem, new SeparatorMenuItem(),
+                openInNewWindow, new SeparatorMenuItem(),
+                closeOthers, closeRight, closeUnpinned, closeAll);
     }
 }

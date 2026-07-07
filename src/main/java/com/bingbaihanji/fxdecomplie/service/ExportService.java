@@ -243,6 +243,7 @@ public final class ExportService {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
         Files.createDirectories(outputDir);
         DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
+        try {
         for (FileTreeNode data : items) {
             if (canceled != null && canceled.getAsBoolean()) {
                 state.errors.add("导出已取消");
@@ -276,6 +277,9 @@ public final class ExportService {
                 state.advance(data.getFullPath());
             }
         }
+        } finally {
+            try { context.close(); } catch (Exception ignored) { }
+        }
     }
 
     private static void exportAllToZip(List<FileTreeNode> items, WorkspaceIndex index,
@@ -288,6 +292,7 @@ public final class ExportService {
         }
         Set<String> writtenEntries = new HashSet<>();
         DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
+        try {
         try (ZipOutputStream zos = new ZipOutputStream(
                 new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
             boolean entryOpen = false;
@@ -341,6 +346,9 @@ public final class ExportService {
                 }
             }
         }
+        } finally {
+            try { context.close(); } catch (Exception ignored) { }
+        }
     }
 
     private static ExportContent buildExportContent(FileTreeNode data, DecompilerContext context,
@@ -358,7 +366,7 @@ public final class ExportService {
             BooleanSupplier active = canceled == null
                     ? () -> !Thread.currentThread().isInterrupted()
                     : () -> !canceled.getAsBoolean();
-            String source = DecompilerRunner.decompileWithTimeout(
+            String source = DecompilerRunner.decompileWithTimeoutNoClose(
                     data.getFullPath(), bytes, config.engine(), context, active);
             if (DecompilerRunner.isFailureOutput(source)) {
                 throw new IllegalStateException(firstLine(source));

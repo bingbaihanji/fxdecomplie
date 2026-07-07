@@ -61,12 +61,4 @@ public class MethodSignatureUtils {
         return joiner.toString();
     }
 
-    public static void main(String[] args) throws NoSuchMethodException {
-        Method parseMethod = ClassFileParser.class.getMethod("summary", ClassFileMetadata.class);
-
-        System.out.println("类全限定名：" + MethodSignatureUtils.getDeclaringClassName(parseMethod));
-        System.out.println("方法名：" + MethodSignatureUtils.getMethodName(parseMethod));
-        System.out.println("完整方法标识：" + MethodSignatureUtils.buildFullMethodSignature(parseMethod));
-        System.out.println("JVM方法描述符：" + MethodSignatureUtils.getJvmMethodDescriptor(parseMethod));
-    }
 }

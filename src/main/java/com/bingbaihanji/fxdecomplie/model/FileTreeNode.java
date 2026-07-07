@@ -1,5 +1,8 @@
 package com.bingbaihanji.fxdecomplie.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -10,6 +13,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @date 2026-06-17
  */
 public class FileTreeNode {
+
+    private static final Logger log = LoggerFactory.getLogger(FileTreeNode.class);
 
     /** 节点显示名称 */
     private final String name;
@@ -92,6 +97,7 @@ public class FileTreeNode {
      * 使用 {@link AtomicReference#getAndSet} 原子交换保证线程安全
      */
     public void close() {
+        this.byteLoader = null;
         Runnable action = cleanupRef.getAndSet(null);
         if (action != null) {
             action.run();
@@ -110,23 +116,32 @@ public class FileTreeNode {
         if (cachedBytes != null) {
             return cachedBytes;
         }
-        return byteLoader == null ? null : byteLoader.load();
+        ByteLoader loader = this.byteLoader;
+        return loader == null ? null : loader.load();
     }
 
     /**
      * 读取并缓存字节适合打开单个文件、导出当前节点等用户显式操作
      */
-    public byte[] resolveBytes() throws IOException {
-        byte[] current = cachedBytes;
-        if (current != null) {
-            return current;
-        }
-        synchronized (this) {
-            if (cachedBytes == null && byteLoader != null) {
-                cachedBytes = byteLoader.load();
-            }
+    public synchronized byte[] resolveBytes() throws IOException {
+        if (cachedBytes != null) {
             return cachedBytes;
         }
+        ByteLoader loader = this.byteLoader;
+        if (loader != null) {
+            try {
+                cachedBytes = loader.load();
+                if (cachedBytes != null) {
+                    this.size = cachedBytes.length;
+                }
+            } catch (IOException e) {
+                log.debug("加载字节失败 [{}]: {}", fullPath, e.getMessage());
+                throw e;
+            } catch (Exception e) {
+                log.warn("加载字节时发生未知异常 [{}]", fullPath, e);
+            }
+        }
+        return cachedBytes;
     }
 
     /** @return 是否为 class 文件 */

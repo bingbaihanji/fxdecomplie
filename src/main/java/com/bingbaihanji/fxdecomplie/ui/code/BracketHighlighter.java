@@ -67,6 +67,8 @@ public final class BracketHighlighter {
     private volatile int matchedOpenPos = -1;
     private volatile int matchedClosePos = -1;
     private volatile boolean isMatched;
+    /** 已销毁标志：dispose 后不再恢复旧装饰器 */
+    private volatile boolean disposed;
 
     /**
      * @param codeArea         目标 CodeArea
@@ -214,8 +216,15 @@ public final class BracketHighlighter {
         int i = end - 1;
         while (i >= 0) {
             char c = text.charAt(i);
-            if (c == quote && (i == 0 || text.charAt(i - 1) != '\\')) {
-                break;
+            if (c == quote) {
+                // 统计引号前连续反斜杠数量,偶数个表示引号未被转义
+                int bs = 0;
+                for (int j = i - 1; j >= 0 && text.charAt(j) == '\\'; j--) {
+                    bs++;
+                }
+                if (bs % 2 == 0) {
+                    break;
+                }
             }
             i--;
         }
@@ -270,8 +279,11 @@ public final class BracketHighlighter {
 
     /** 停止监听并清除高亮 */
     public void dispose() {
+        disposed = true;
         debounce.stop();
-        clearHighlight();
+        matchedOpenPos = -1;
+        matchedClosePos = -1;
+        isMatched = false;
     }
 
     /** 扫描光标位置,查找并高亮匹配括号 */
@@ -337,7 +349,9 @@ public final class BracketHighlighter {
         matchedOpenPos = -1;
         matchedClosePos = -1;
         isMatched = false;
-        Platform.runLater(() -> codeArea.setSyntaxDecorator(regexHighlighter));
+        if (!disposed) {
+            Platform.runLater(() -> codeArea.setSyntaxDecorator(regexHighlighter));
+        }
     }
 
     /** 应用括号高亮 */

@@ -139,6 +139,7 @@ public final class AppHeaderBar {
             update.run();
         });
         I18nUtil.addLocaleChangeListener(update);
+        stage.setOnHidden(e -> I18nUtil.removeLocaleChangeListener(update));
         return button;
     }
 

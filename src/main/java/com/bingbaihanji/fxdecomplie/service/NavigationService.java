@@ -76,17 +76,18 @@ public final class NavigationService {
     }
 
     /** @return 如果后退栈中存在上一个路径则返回 true */
-    public boolean canGoBack() {
+    public synchronized boolean canGoBack() {
         return !backStack.isEmpty();
     }
 
     /** @return 如果前进栈中存在下一个路径则返回 true */
-    public boolean canGoForward() {
+    public synchronized boolean canGoForward() {
         return !forwardStack.isEmpty();
     }
 
     /**
      * 核心导航方法：解析路径节点并打开对应的类/资源文件
+     * 在锁内更新状态,在锁外调用回调,避免回调重入导致死锁或状态不一致
      *
      * @param path           目标路径节点
      * @param workspace      当前工作区
@@ -99,22 +100,28 @@ public final class NavigationService {
                           BiConsumer<FileTreeNode, TabPane> classOpener,
                           BiConsumer<FileTreeNode, TabPane> resourceOpener,
                           boolean recordHistory) {
-        // ---- 路径解析: 从路径链中提取 FileTreeNode ----
-        FileTreeNode node = path.getValueOfType(FileTreeNode.class);
-        if (node == null) {
-            return;
-        }
-        // ---- 历史记录: 将当前位置推入 backStack,清空 forward ----
-        if (recordHistory && currentPath != null) {
-            backStack.push(currentPath);
-            forwardStack.clear();
-            // 限制历史记录防止无限内存增长
-            while (backStack.size() > 100) {
-                backStack.removeLast();
+        FileTreeNode node;
+        synchronized (this) {
+            // ---- 路径解析: 从路径链中提取 FileTreeNode ----
+            node = path.getValueOfType(FileTreeNode.class);
+            if (node == null) {
+                return;
             }
+            // ---- 历史记录: 将当前位置推入 backStack,清空 forward ----
+            if (recordHistory && currentPath != null) {
+                backStack.push(currentPath);
+                forwardStack.clear();
+                // 限制历史记录防止无限内存增长
+                while (backStack.size() > 100) {
+                    backStack.removeLast();
+                }
+                while (forwardStack.size() > 100) {
+                    forwardStack.removeLast();
+                }
+            }
+            currentPath = path;
         }
-        currentPath = path;
-        // ---- 分发: 根据节点类型路由到类打开器或资源打开器 ----
+        // ---- 分发: 在锁外调用回调,避免回调重入 ----
         if (node.isClassFile()) {
             classOpener.accept(node, codeTabPane);
         } else if (node.isTextFile() || node.isBinaryFile()) {

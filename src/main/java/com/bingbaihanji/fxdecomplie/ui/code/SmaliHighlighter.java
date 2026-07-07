@@ -272,7 +272,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
         char c = line.charAt(pos);
         return c == '#' || c == '"' || c == '.' || c == ':'
                 || c == 'v' || c == 'p' || c == 'L'
-                || Character.isDigit(c) || Character.isLetter(c);
+                || Character.isWhitespace(c);
     }
 
     /** 文本变更回调（Smali 视图不追踪增量变更,留空） */

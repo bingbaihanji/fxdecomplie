@@ -113,6 +113,7 @@ public class MethodSearchProvider implements SearchProvider {
         // 根据搜索选项选择合适的方法声明正则（区分/不区分大小写）
         Pattern methodDecl = options.caseSensitive()
                 ? METHOD_DECL : METHOD_DECL_CASE_INSENSITIVE;
+        Pattern precompiled = compileSearchPattern(options, query);
 
         for (var entry : sourceCache.entrySet()) {
             if (results.size() >= MAX_RESULTS) {
@@ -126,7 +127,7 @@ public class MethodSearchProvider implements SearchProvider {
                     if (NON_METHOD_KEYWORDS.contains(methodName)) {
                         continue;
                     }
-                    if (lineMatches(methodName, query, options)) {
+                    if (lineMatches(methodName, query, options, precompiled)) {
                         results.add(new SearchResult(entry.getKey(), lines[i].trim(), i + 1,
                                 SearchResult.MatchType.METHOD_NAME));
                     }

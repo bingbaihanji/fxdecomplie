@@ -151,6 +151,9 @@ public final class WindowToolkit {
 
     /**
      * 设置窗口置顶,使用 JavaFX Stage API 实现
+     *
+     * <p>Note: the returned result indicates the operation was <em>dispatched</em> to the FX thread,
+     * not that it has completed. The actual state change happens asynchronously.</p>
      */
     public static WindowOperationResult setAlwaysOnTop(Stage stage, boolean alwaysOnTop) {
         if (stage == null) {
@@ -162,6 +165,9 @@ public final class WindowToolkit {
 
     /**
      * 最小化窗口,使用 JavaFX Stage API 实现
+     *
+     * <p>Note: the returned result indicates the operation was <em>dispatched</em> to the FX thread,
+     * not that it has completed.</p>
      */
     public static WindowOperationResult minimize(Stage stage) {
         if (stage == null) {
@@ -173,6 +179,9 @@ public final class WindowToolkit {
 
     /**
      * 最大化窗口,使用 JavaFX Stage API 实现
+     *
+     * <p>Note: the returned result indicates the operation was <em>dispatched</em> to the FX thread,
+     * not that it has completed.</p>
      */
     public static WindowOperationResult maximize(Stage stage) {
         if (stage == null) {
@@ -184,6 +193,9 @@ public final class WindowToolkit {
 
     /**
      * 还原窗口(取消最小化和最大化),使用 JavaFX Stage API 实现
+     *
+     * <p>Note: the returned result indicates the operation was <em>dispatched</em> to the FX thread,
+     * not that it has completed.</p>
      */
     public static WindowOperationResult restore(Stage stage) {
         if (stage == null) {
@@ -198,6 +210,9 @@ public final class WindowToolkit {
 
     /**
      * 将窗口带到最前,使用 JavaFX Stage API 实现
+     *
+     * <p>Note: the returned result indicates the operation was <em>dispatched</em> to the FX thread,
+     * not that it has completed.</p>
      */
     public static WindowOperationResult bringToFront(Stage stage) {
         if (stage == null) {
@@ -352,7 +367,7 @@ public final class WindowToolkit {
 
     private static ExecutorService newExecutor() {
         return new ThreadPoolExecutor(
-                0, Integer.MAX_VALUE,
+                0, Runtime.getRuntime().availableProcessors() * 2,
                 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
                 new ThreadFactory() {

@@ -64,14 +64,21 @@ public final class CodeOnlyWindow {
     private static final String TOKEN_PREFIX = "fxdecomplie-code-tab:";
     private static final int MAX_DRAG_PAYLOADS = 128;
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
-    private static final Map<String, CodeTabPayload> DRAG_PAYLOADS =
+    /** 拖拽负载及其创建时间戳（毫秒）,用于定期清理过期条目 */
+    private static final Map<String, TimestampedPayload> DRAG_PAYLOADS =
             new ConcurrentHashMap<>();
     private static final Map<String, TabPane> DRAG_SOURCES =
             new ConcurrentHashMap<>();
     private static final Map<String, CodeEditorTab> DRAG_SOURCE_TABS =
             new ConcurrentHashMap<>();
     private static final AtomicLong ENGINE_SWITCH_IDS = new AtomicLong();
+    /** 拖拽负载存活时间阈值（毫秒）,超过此时间的条目在 trim 时被清理 */
+    private static final long DRAG_PAYLOAD_TTL_MS = 60_000L;
     private static final Logger log = LoggerFactory.getLogger(CodeOnlyWindow.class);
+
+    /** 带时间戳的拖拽负载包装 */
+    private record TimestampedPayload(CodeTabPayload payload, long createdAtMs) {}
+
 
     private final AppConfig config;
     private final VsCodeThemeLoader.ThemeData editorTheme;
@@ -133,7 +140,7 @@ public final class CodeOnlyWindow {
         }
         var dragboard = source.startDragAndDrop(TransferMode.MOVE);
         String token = UUID.randomUUID().toString();
-        DRAG_PAYLOADS.put(token, toPayload(tab));
+        DRAG_PAYLOADS.put(token, new TimestampedPayload(toPayload(tab), System.currentTimeMillis()));
         DRAG_SOURCE_TABS.put(token, tab);
         TabPane sourcePane = tab.getTabPane();
         if (sourcePane != null) {
@@ -176,7 +183,8 @@ public final class CodeOnlyWindow {
     // ==================== 拖拽源 ====================
 
     /**
-     * 添加一个监听器,每当 CodeEditorTab 添加到 TabPane 时调用 enableTabDrag
+     * 添加一个监听器,每当 CodeEditorTab 添加到 TabPane 时调用 enableTabDrag,
+     * 并在标签页移除时清理 ACTIVE_ENGINE_REQUESTS 防止内存泄漏
      */
     public static void enableTabDragListener(TabPane tabPane) {
         tabPane.getTabs().addListener(
@@ -186,6 +194,13 @@ public final class CodeOnlyWindow {
                             for (Tab tab : change.getAddedSubList()) {
                                 if (tab instanceof CodeEditorTab codeTab) {
                                     enableTabDrag(codeTab);
+                                }
+                            }
+                        }
+                        if (change.wasRemoved()) {
+                            for (Tab tab : change.getRemoved()) {
+                                if (tab instanceof CodeEditorTab codeTab) {
+                                    ACTIVE_ENGINE_REQUESTS.remove(codeTab);
                                 }
                             }
                         }
@@ -216,7 +231,8 @@ public final class CodeOnlyWindow {
         if (token == null) {
             return null;
         }
-        return remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
+        TimestampedPayload tp = remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
+        return tp == null ? null : tp.payload();
     }
 
     // ==================== 负载辅助方法 ====================
@@ -226,7 +242,8 @@ public final class CodeOnlyWindow {
             return payload;
         }
         if (content instanceof String token) {
-            return remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
+            TimestampedPayload tp = remove ? DRAG_PAYLOADS.remove(token) : DRAG_PAYLOADS.get(token);
+            return tp == null ? null : tp.payload();
         }
         return null;
     }
@@ -278,6 +295,19 @@ public final class CodeOnlyWindow {
     }
 
     private static void trimDragPayloads() {
+        // 清理超过 TTL 的过期条目
+        long now = System.currentTimeMillis();
+        var staleIterator = DRAG_PAYLOADS.entrySet().iterator();
+        while (staleIterator.hasNext()) {
+            var entry = staleIterator.next();
+            if (now - entry.getValue().createdAtMs() > DRAG_PAYLOAD_TTL_MS) {
+                String key = entry.getKey();
+                staleIterator.remove();
+                DRAG_SOURCES.remove(key);
+                DRAG_SOURCE_TABS.remove(key);
+            }
+        }
+        // 超过容量上限时移除最早条目
         while (DRAG_PAYLOADS.size() > MAX_DRAG_PAYLOADS) {
             var iterator = DRAG_PAYLOADS.keySet().iterator();
             if (!iterator.hasNext()) {

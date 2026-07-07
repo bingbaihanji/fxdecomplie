@@ -63,6 +63,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 用于解析 Java 源码中 import 语句的正则 */
     private static final Pattern IMPORT_PATTERN = Pattern.compile(
             "^\\s*import\\s+(static\\s+)?([\\w.$]+|[\\w.]+\\.\\*)\\s*;\\s*$");
+    /** 预编译: 判断前缀是否以类/接口/枚举/record 关键字结尾 */
+    private static final Pattern DECL_KEYWORD_END_PATTERN =
+            Pattern.compile("(^|\\s)(class|interface|enum|record)\\s*$");
+    /** 预编译: 判断前缀是否以 @interface 结尾 */
+    private static final Pattern ANN_INTERFACE_PATTERN =
+            Pattern.compile("(^|\\s)@\\s*interface\\s*$");
 
     /** 应用全局配置（窗口、主题、引擎偏好等） */
     private final AppConfig config;
@@ -193,33 +199,119 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 判断源码行是否看起来是声明行（类/接口/枚举/方法/字段声明） */
     private static boolean looksLikeDeclarationLine(String line, String simpleToken) {
         String trimmed = line == null ? "" : line.strip();
-        if (trimmed.isEmpty() || trimmed.startsWith("@")) {
+        if (trimmed.isEmpty()) {
             return false;
         }
+        // 跳过行首注解（如 @Override、@Deprecated）
+        while (trimmed.startsWith("@")) {
+            int end = trimmed.indexOf(' ');
+            if (end < 0) {
+                end = trimmed.indexOf('(');
+            }
+            if (end < 0) {
+                break;
+            }
+            if (trimmed.charAt(end) == '(') {
+                int depth = 1;
+                int k = end + 1;
+                while (k < trimmed.length() && depth > 0) {
+                    if (trimmed.charAt(k) == '(') {
+                        depth++;
+                    } else if (trimmed.charAt(k) == ')') {
+                        depth--;
+                    }
+                    k++;
+                }
+                trimmed = trimmed.substring(k).strip();
+            } else {
+                trimmed = trimmed.substring(end + 1).strip();
+            }
+        }
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        // 快速路径: 使用 indexOf 检查声明关键字,避免正则编译
+        if (containsKeywordBeforeToken(trimmed, simpleToken,
+                "class ", "interface ", "enum ", "record ")) {
+            return true;
+        }
         String quoted = Pattern.quote(simpleToken);
-        if (Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + quoted + "\\b")
-                .matcher(trimmed).find()) {
+        Pattern methodPattern = Pattern.compile(
+                "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
+                        + "\\s*\\([^;]*\\)\\s*(?:throws\\s+[\\w.$,\\s]+)?\\s*(?:\\{|;)?\\s*$");
+        if (methodPattern.matcher(trimmed).find()) {
             return true;
         }
-        if (Pattern.compile(
-                        "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
-                                + "\\s*\\([^;]*\\)\\s*(?:throws\\s+[\\w.$,\\s]+)?\\s*(?:\\{|;)?\\s*$")
-                .matcher(trimmed).find()) {
-            return true;
-        }
-        return Pattern.compile(
-                        "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
-                                + "\\s*(?:=|;|,).*$")
-                .matcher(trimmed).find();
+        Pattern fieldPattern = Pattern.compile(
+                "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
+                        + "\\s*(?:=|;|,).*$");
+        return fieldPattern.matcher(trimmed).find();
     }
 
-    /** 去除行尾的 // 注释部分,返回纯代码 */
+    /** 去除行尾的 // 注释部分,返回纯代码（正确处理字符串字面量内的 // ） */
     private static String stripLineComment(String line) {
         if (line == null) {
             return "";
         }
-        int comment = line.indexOf("//");
-        return comment >= 0 ? line.substring(0, comment) : line;
+        boolean inString = false;
+        for (int i = 0; i < line.length() - 1; i++) {
+            char c = line.charAt(i);
+            if (c == '\'' && !inString) {
+                // 跳过字符字面量（如 '"'、'\''、'\\'）
+                i++;
+                if (i < line.length() && line.charAt(i) == '\\') {
+                    i++; // 跳过转义字符
+                }
+                if (i < line.length()) {
+                    i++; // 跳过字符内容到关闭引号
+                }
+                continue;
+            }
+            if (c == '"') {
+                // 统计引号前连续反斜杠数量,偶数个表示引号未被转义
+                int bs = 0;
+                for (int j = i - 1; j >= 0 && line.charAt(j) == '\\'; j--) {
+                    bs++;
+                }
+                if (bs % 2 == 0) {
+                    inString = !inString;
+                }
+            } else if (c == '/' && line.charAt(i + 1) == '/' && !inString) {
+                return line.substring(0, i);
+            }
+        }
+        return line;
+    }
+
+    /**
+     * 使用 indexOf 快速检查行中是否包含指定关键字后跟 token (替代正则编译)
+     *
+     * @param line     被检查的行
+     * @param token    要匹配的标识符
+     * @param keywords 关键字数组(含尾部空格,如 "class ")
+     * @return true 若行中某关键字后(经空白分隔)紧跟 token 且两侧满足词边界
+     */
+    private static boolean containsKeywordBeforeToken(String line, String token, String... keywords) {
+        for (String kw : keywords) {
+            int idx = line.indexOf(kw);
+            while (idx >= 0) {
+                if (idx > 0 && Character.isJavaIdentifierPart(line.charAt(idx - 1))) {
+                    idx = line.indexOf(kw, idx + 1);
+                    continue;
+                }
+                int afterKw = idx + kw.length();
+                String rest = line.substring(afterKw).stripLeading();
+                if (rest.startsWith(token)) {
+                    int afterToken = token.length();
+                    if (afterToken >= rest.length()
+                            || !Character.isJavaIdentifierPart(rest.charAt(afterToken))) {
+                        return true;
+                    }
+                }
+                idx = line.indexOf(kw, idx + 1);
+            }
+        }
+        return false;
     }
 
     /** 清理声明 token,去除首尾非 Java 名称/路径字符 */
@@ -318,11 +410,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (line.isBlank() || line.startsWith("package ")) {
             return false;
         }
-        String quoted = Pattern.quote(simpleToken);
-        if (Pattern.compile("\\b(?:class|interface|enum|record|new|extends|implements|throws|instanceof)\\s+"
-                + quoted + "\\b").matcher(line).find()) {
+        // 快速路径: 使用 indexOf 替代正则编译检查关键字+token 模式
+        if (containsKeywordBeforeToken(line, simpleToken,
+                "class ", "interface ", "enum ", "record ",
+                "new ", "extends ", "implements ", "throws ", "instanceof ")) {
             return true;
         }
+        String quoted = Pattern.quote(simpleToken);
         if (Pattern.compile("^import\\s+(?:static\\s+)?[\\w.$]*\\." + quoted
                 + "\\s*;\\s*$").matcher(line).find()) {
             return true;
@@ -435,10 +529,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         int lineStart = sourceCode.lastIndexOf('\n', start);
         lineStart = lineStart < 0 ? 0 : lineStart + 1;
         String prefix = sourceCode.substring(lineStart, start).stripTrailing();
-        return Pattern.compile("(^|\\s)(class|interface|enum|record)\\s*$")
-                .matcher(prefix).find()
-                || Pattern.compile("(^|\\s)@\\s*interface\\s*$")
-                .matcher(prefix).find();
+        return DECL_KEYWORD_END_PATTERN.matcher(prefix).find()
+                || ANN_INTERFACE_PATTERN.matcher(prefix).find();
     }
 
     /** 获取类的叶子名（去除包名后的最后一段,跳过内部类 $ 前缀） */
@@ -703,9 +795,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return;
         }
         withWorkspaceIndex(view.workspace(), index -> {
-            java.util.List<FileTreeNode> nodes = new java.util.ArrayList<>();
-            collectTreeNodes(view.workspace().getTreeRoot(), nodes);
-            doExport(nodes, index, view.workspace());
+            // 将树遍历移至后台线程,避免阻塞 FX 线程
+            BackgroundTasks.run("Export-CollectNodes", () -> {
+                java.util.List<FileTreeNode> nodes = new java.util.ArrayList<>();
+                collectTreeNodes(view.workspace().getTreeRoot(), nodes);
+                Platform.runLater(() -> doExport(nodes, index, view.workspace()));
+            });
         });
     }
 
@@ -716,13 +811,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         statusBar.setTask(I18nUtil.getString("task.indexing"));
         statusBar.setFilePath(I18nUtil.getString("status.indexing", rootItem.getValue().getName()));
-        // 在 FX 线程预提取 FileTreeNode 数据快照,避免后台线程访问 TreeItem
-        java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
-        collectTreeNodes(rootItem, nodesSnapshot);
         WorkspaceView exportView = tabManager.currentWorkspaceView();
         Workspace exportWorkspace = exportView == null ? null : exportView.workspace();
+        // 将树遍历移至后台线程,避免阻塞 FX 线程
         BackgroundTasks.run("Index-ExportNode", () -> {
             try {
+                java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
+                collectTreeNodes(rootItem, nodesSnapshot);
                 WorkspaceIndex index = exportWorkspace == null
                         ? WorkspaceIndex.build(nodesSnapshot)
                         : exportWorkspace.getOrBuildIndex();
@@ -1024,6 +1119,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return;
         }
         String targetToken = sanitizeDeclarationToken(token);
+
+        // 当点击的是当前类声明名时,不跳转（避免同名类跨包误导航）
+        if (isCurrentClassDeclaration(context, lineNumber, targetToken)) {
+            return;
+        }
         if (context.metadata() != null) {
             var refs = context.metadata().getRefsAtLine(lineNumber);
             if (!refs.isEmpty()) {
@@ -1072,6 +1172,32 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
 
         statusBar.setFilePath(I18nUtil.getString("status.locateFailed", targetToken));
+    }
+
+    /**
+     * 判断点击处是否为当前类的声明名
+     * 防止同名类跨包误导航（如 com.pig4cloud.service.a 和 com.pig4cloud.domain.a）
+     */
+    private boolean isCurrentClassDeclaration(CodeViewContext context, int lineNumber, String token) {
+        if (token == null || token.isBlank() || context.classInternalName() == null) {
+            return false;
+        }
+        String currentSimpleName = classLeafName(context.classInternalName());
+        if (!token.equals(currentSimpleName)) {
+            return false;
+        }
+        String sourceCode = context.openFile() == null ? "" : context.openFile().sourceCode();
+        if (sourceCode.isBlank()) {
+            return false;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        if (lineNumber < 1 || lineNumber > lines.length) {
+            return false;
+        }
+        String line = stripLineComment(lines[lineNumber - 1]).strip();
+        return line.contains("class " + token) || line.contains("interface " + token)
+                || line.contains("enum " + token) || line.contains("record " + token)
+                || line.contains("@interface " + token);
     }
 
     @Override
@@ -1618,14 +1744,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                             .applyRenames(currentVisibleSource, workspaceHash, openFile.fullPath());
                 } else if (com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS
                         .equals(visibleEntry.type())) {
+                    // 类重命名：仅通过 applySingleRename 应用（有包上下文检查）
+                    // 不使用 replaceVisibleIdentifier（会按简单名全局替换导致跨包误匹配）
                     renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
-                            .replaceVisibleIdentifier(currentVisibleSource,
-                                    visibleEntry.oldName(), visibleEntry.newName());
-                    if (java.util.Objects.equals(renamedSource, currentVisibleSource)) {
-                        renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
-                                .applySingleRename(currentVisibleSource, visibleEntry,
-                                        openFile.fullPath(), workspaceHash);
-                    }
+                            .applySingleRename(currentVisibleSource, visibleEntry,
+                                    openFile.fullPath(), workspaceHash);
                 } else {
                     renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
                             .applySingleRename(currentVisibleSource, visibleEntry,
@@ -2153,6 +2276,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         for (TabPane pane : view.splitEditorPane().allTabPanes()) {
             for (Tab tab : pane.getTabs()) {
                 if (tab instanceof CodeEditorTab codeTab
+                        && codeTab.getOpenFile() != null
                         && context.openFile().fullPath().equals(codeTab.getOpenFile().fullPath())
                         && context.openFile().engine() == codeTab.getOpenFile().engine()) {
                     String decorated = CommentExportDecorator.applyForClass(
@@ -2214,30 +2338,36 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         Workspace workspace = view.workspace();
         log.info("deobfuscate: starting, workspace={}", workspace.getName());
-        java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
-        collectTreeNodes(workspace.getTreeRoot(), nodesSnapshot);
-        long classNodeCount = nodesSnapshot.stream().filter(FileTreeNode::isClassFile).count();
         statusBar.setTask("Deobfuscating");
         statusBar.setFilePath("Scanning obfuscated names...");
-        try {
-            WorkspaceIndex index = workspace.isIndexReady()
-                    ? workspace.getIndex()
-                    : WorkspaceIndex.EMPTY;
-            java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions =
-                    com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.scan(nodesSnapshot, index);
-            boolean memberScanComplete = index != WorkspaceIndex.EMPTY;
-            log.info("deobfuscate: scan returned {} suggestions (nodes={}, memberScanComplete={})",
-                    suggestions.size(), nodesSnapshot.size(), memberScanComplete);
-            if (!memberScanComplete) {
-                WorkspaceIndexService.ensureIndexingStarted(workspace);
+        // 将树遍历和扫描移至后台线程,避免阻塞 FX 线程
+        BackgroundTasks.run("Deobfuscate-Scan", () -> {
+            try {
+                java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
+                collectTreeNodes(workspace.getTreeRoot(), nodesSnapshot);
+                long classNodeCount = nodesSnapshot.stream().filter(FileTreeNode::isClassFile).count();
+                WorkspaceIndex index = workspace.isIndexReady()
+                        ? workspace.getIndex()
+                        : WorkspaceIndex.EMPTY;
+                java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions =
+                        com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.scan(nodesSnapshot, index);
+                boolean memberScanComplete = index != WorkspaceIndex.EMPTY;
+                log.info("deobfuscate: scan returned {} suggestions (nodes={}, memberScanComplete={})",
+                        suggestions.size(), nodesSnapshot.size(), memberScanComplete);
+                if (!memberScanComplete) {
+                    WorkspaceIndexService.ensureIndexingStarted(workspace);
+                }
+                Platform.runLater(() ->
+                        showDeobfuscatePreview(workspace, suggestions, memberScanComplete, classNodeCount));
+            } catch (Exception ex) {
+                log.error("反混淆扫描失败", ex);
+                Platform.runLater(() -> {
+                    statusBar.clearTask();
+                    showError(I18nUtil.getString("dialog.error.title"),
+                            "Deobfuscate failed: " + ex.getMessage());
+                });
             }
-            showDeobfuscatePreview(workspace, suggestions, memberScanComplete, classNodeCount);
-        } catch (Exception ex) {
-            log.error("反混淆扫描失败", ex);
-            statusBar.clearTask();
-            showError(I18nUtil.getString("dialog.error.title"),
-                    "Deobfuscate failed: " + ex.getMessage());
-        }
+        });
     }
 
     /** 显示反混淆预览对话框,提交用户选择的重命名条目并刷新所有相关标签页 */
@@ -2312,6 +2442,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                     .of(workspace, "").workspaceHash();
             int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, entries, true);
+            if (saved == 0) {
+                showError("Import ProGuard Mapping", "No mapping entries could be saved.");
+                return;
+            }
             workspace.clearSourceSearchCaches();
             int reloadTabs = reloadOpenTabsAfterDeobfuscate(workspace);
             refreshWorkspaceTree(workspace);
@@ -2494,16 +2628,14 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         java.util.List<String> classNames = new java.util.ArrayList<>();
         collectClassNames(view.workspace().getTreeRoot(), classNames);
-        BackgroundTasks.run("QuickOpen-" + view.workspace().getName(), () -> {
-            Platform.runLater(() -> QuickOpenDialog.show(stage, classNames, fullPath -> {
-                FileTreeNode node = view.workspace().findNodeByPath(fullPath);
-                if (node != null) {
-                    classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
-                            currentEngine, lineNumbersEnabled);
-                } else {
-                    statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
-                }
-            }));
+        QuickOpenDialog.show(stage, classNames, fullPath -> {
+            FileTreeNode node = view.workspace().findNodeByPath(fullPath);
+            if (node != null) {
+                classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
+                        currentEngine, lineNumbersEnabled);
+            } else {
+                statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
+            }
         });
     }
 
@@ -2704,6 +2836,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             for (TabPane pane : view.splitEditorPane().allTabPanes()) {
                 for (javafx.scene.control.Tab tab : pane.getTabs()) {
                     if (tab instanceof CodeEditorTab codeTab
+                            && codeTab.getOpenFile() != null
                             && codeTab.getOpenFile().fullPath().equals(fullPath)) {
                         var area = codeTab.getCodeArea();
                         if (area.getText() != null && !area.getText().isEmpty()) {

@@ -269,9 +269,8 @@ public final class FxTools {
                 T result = background.call();
                 Platform.runLater(() -> onSuccess.accept(result));
             } catch (Exception e) {
-                Platform.runLater(() -> {
-                    throw new RuntimeException(e);
-                });
+                log.error("Background task failed", e);
+                // Don't re-throw on FX thread - just log
             }
         }, "fx-async");
         t.setDaemon(true);
