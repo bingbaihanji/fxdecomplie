@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
  * 可复用的 JavaFX 窗口默认原生主题
  *
  * <p>此类故意仅依赖平台包中的类型项目可以将自己的配置格式映射为
- * {@link WindowAppearance}，并在启动时调用 {@link #configure(WindowAppearance)}</p>
+ * {@link WindowAppearance},并在启动时调用 {@link #configure(WindowAppearance)}</p>
  */
 public final class DefaultWindowTheme {
 
@@ -25,13 +25,13 @@ public final class DefaultWindowTheme {
             WindowCornerPreference.DO_NOT_ROUND);
 
     private DefaultWindowTheme() {
-        throw new AssertionError("工具类，不可实例化");
+        throw new AssertionError("工具类,不可实例化");
     }
 
     /**
-     * 更新包级别的默认外观配置，供 {@link #applyWindowDarkMode(Window)} 使用
+     * 更新包级别的默认外观配置,供 {@link #applyWindowDarkMode(Window)} 使用
      *
-     * @param appearance 新的默认外观配置，不能为 null
+     * @param appearance 新的默认外观配置,不能为 null
      */
     public static void configure(WindowAppearance appearance) {
         defaultAppearance = Objects.requireNonNull(appearance, "appearance");
@@ -47,8 +47,8 @@ public final class DefaultWindowTheme {
     /**
      * 异步应用已配置的原生外观到窗口
      *
-     * <p>不支持的平台将被忽略失败时以 debug 级别记录日志，
-     * 因为原生主题属性属于渐进增强，而非必需的应用行为</p>
+     * <p>不支持的平台将被忽略失败时以 debug 级别记录日志,
+     * 因为原生主题属性属于渐进增强,而非必需的应用行为</p>
      */
     public static CompletableFuture<WindowOperationResult> applyWindowDarkMode(Window window) {
         return apply(window, defaultAppearance);

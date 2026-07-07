@@ -26,13 +26,20 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class OutlinePane extends VBox {
 
+    /** 搜索过滤文本框 */
     private final TextField filterField;
+    /** 大纲列表视图 */
     private final ListView<OutlineMember> listView;
+    /** 原始数据列表（未过滤） */
     private final ObservableList<OutlineMember> sourceList;
+    /** 过滤后的数据列表 */
     private final FilteredList<OutlineMember> filteredList;
+    /** 更新代数计数器,用于过滤过期的大纲解析结果 */
     private final AtomicLong updateGeneration = new AtomicLong();
+    /** 跳转处理器,点击大纲项时触发 */
     private JumpHandler jumpHandler;
 
+    /** 创建大纲面板 */
     public OutlinePane() {
         setPadding(new Insets(4));
         setSpacing(4);
@@ -97,7 +104,7 @@ public final class OutlinePane extends VBox {
     /** 更新大纲内容 */
     public void update(String sourceCode) {
         long generation = updateGeneration.incrementAndGet();
-        // 快照当前过滤字段文本，避免覆盖用户在解析期间手动输入的内容
+        // 快照当前过滤字段文本,避免覆盖用户在解析期间手动输入的内容
         String filterBefore = filterField.getText();
         BackgroundTasks.run("OutlineParse", () -> {
             if (Thread.currentThread().isInterrupted()) {
@@ -123,12 +130,15 @@ public final class OutlinePane extends VBox {
         filterField.clear();
     }
 
+    /** 设置跳转处理器,点击大纲成员时调用 handler.jump(lineNumber) */
     public void setJumpHandler(JumpHandler handler) {
         this.jumpHandler = handler;
     }
 
+    /** 大纲项点击跳转处理器 */
     @FunctionalInterface
     public interface JumpHandler {
+        /** 跳转到指定行号 */
         void jump(int lineNumber);
     }
 }

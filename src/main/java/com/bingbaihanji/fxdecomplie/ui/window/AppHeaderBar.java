@@ -154,6 +154,7 @@ public final class AppHeaderBar {
         button.setSelected(alwaysOnTop);
     }
 
+    /** 从 classpath 加载标题栏图标,失败时返回 null */
     private static Image loadIcon(String path) {
         URL url = AppHeaderBar.class.getResource(path);
         if (url == null) {
@@ -170,7 +171,7 @@ public final class AppHeaderBar {
         return titleLabel;
     }
 
-    /** 创建品牌图标区域(标题栏左侧 logo) */
+    /** 创建品牌图标区域（标题栏左侧 logo） */
     private static HBox createBrand(String title) {
         ImageView logoView = logoIcon();
         HBox brand = new HBox(logoView);
@@ -179,6 +180,7 @@ public final class AppHeaderBar {
         return brand;
     }
 
+    /** 加载应用 Logo 图标（20x20） */
     private static ImageView logoIcon() {
         ImageView iv = new ImageView();
         iv.setFitWidth(20);

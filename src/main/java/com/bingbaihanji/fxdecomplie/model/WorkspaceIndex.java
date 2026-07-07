@@ -12,6 +12,9 @@ import java.util.*;
 
 /**
  * 基于文件树构建的工作区全局索引
+ *
+ * @author bingbaihanji
+ * @date 2026-06-18
  */
 public final class WorkspaceIndex {
 
@@ -34,6 +37,12 @@ public final class WorkspaceIndex {
         this.classesByInternalName = Collections.unmodifiableMap(new LinkedHashMap<>(classesByInternalName));
     }
 
+    /**
+     * 从文件树的根节点出发遍历并构建工作区索引
+     *
+     * @param root 文件树的根 TreeItem
+     * @return 构建完成的工作区索引
+     */
     public static WorkspaceIndex build(TreeItem<FileTreeNode> root) {
         List<FileTreeNode> nodes = new ArrayList<>();
         ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
@@ -105,8 +114,8 @@ public final class WorkspaceIndex {
             log.warn("解析类元数据失败: {}", node.getFullPath());
         }
 
-        // 使用 node::resolveBytes 延迟加载：索引构建时只解析元数据，
-        // 字节码在首次打开 class 时才缓存到节点，避免大型 JAR 预热阶段占用过多内存
+        // 使用 node::resolveBytes 延迟加载：索引构建时只解析元数据,
+        // 字节码在首次打开 class 时才缓存到节点,避免大型 JAR 预热阶段占用过多内存
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
                 node::resolveBytes, methods, fields);
     }
@@ -118,7 +127,7 @@ public final class WorkspaceIndex {
             return false;
         }
         if (size > MAX_INDEXED_RESOURCE_BYTES) {
-            log.info("跳过过大资源文件，不加入工作区索引: {} ({} 字节)",
+            log.info("跳过过大资源文件,不加入工作区索引: {} ({} 字节)",
                     node.getFullPath(), size);
             return false;
         }
@@ -154,14 +163,22 @@ public final class WorkspaceIndex {
         }
     }
 
+    /** @return 该工作区中所有类的索引条目（不可变列表） */
     public List<ClassIndexEntry> classes() {
         return classes;
     }
 
+    /** @return 该工作区中所有资源的索引条目（不可变列表） */
     public List<ResourceIndexEntry> resources() {
         return resources;
     }
 
+    /**
+     * 根据内部名称获取类的字节码数据
+     *
+     * @param internalName 类的内部名称
+     * @return 该类对应的字节码字节数组,若未找到则返回 null
+     */
     public byte[] getClassBytes(String internalName) {
         String normalized = ClassNameUtil.normalizeInternalName(internalName);
         ClassIndexEntry entry = classesByInternalName.get(normalized);
@@ -171,10 +188,17 @@ public final class WorkspaceIndex {
         return entry == null ? null : entry.bytes();
     }
 
+    /** @return 该工作区中所有类的完整路径列表 */
     public List<String> classPaths() {
         return classes.stream().map(ClassIndexEntry::fullPath).toList();
     }
 
+    /**
+     * 延迟懒加载并返回按路径索引的资源字节数据
+     * 首次调用时构建缓存,后续调用直接返回不可变缓存
+     *
+     * @return 资源路径到字节数组的不可变映射
+     */
     public Map<String, byte[]> resourceBytesByPath() {
         Map<String, byte[]> cached = resourceBytesByPathCache;
         if (cached != null) {
@@ -192,6 +216,12 @@ public final class WorkspaceIndex {
         }
     }
 
+    /**
+     * 构建并返回按路径索引的字节码文本
+     * 每次调用都会重新生成（不缓存）,因为在反编译视图与字节码视图间切换时需要最新数据
+     *
+     * @return 类路径到字节码文本字符串的映射
+     */
     public Map<String, String> bytecodeTextByPath() {
         Map<String, String> map = new LinkedHashMap<>();
         for (ClassIndexEntry cls : classes) {

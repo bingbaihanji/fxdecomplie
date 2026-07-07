@@ -121,6 +121,7 @@ public final class ExportDialog {
         return dialog.showAndWait();
     }
 
+    /** 显示导出进度对话框,返回 ProgressHandle 用于更新进度和取消 */
     public static ProgressHandle showProgress(Window owner) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.initOwner(owner);
@@ -152,7 +153,7 @@ public final class ExportDialog {
         dialog.setOnCloseRequest(event -> {
             if (handle.closing) {
                 return;
-            } // 正常完成关闭，直接放行
+            } // 正常完成关闭,直接放行
             event.consume();
             cancelButton.setDisable(true);
             currentFileLabel.setText(I18nUtil.getString("dialog.export.progress.canceling"));
@@ -206,7 +207,7 @@ public final class ExportDialog {
         return null;
     }
 
-    /** 格式切换时自动调整路径：ZIP→DIR 去掉 .zip 后缀，DIR→ZIP 加上 .zip */
+    /** 格式切换时自动调整路径：ZIP→DIR 去掉 .zip 后缀,DIR→ZIP 加上 .zip */
     private static String switchPathFormat(String currentPath, ExportConfig.Format newFormat) {
         if (currentPath == null || currentPath.isBlank()) {
             return currentPath;
@@ -264,15 +265,17 @@ public final class ExportDialog {
         }
     }
 
+    /** 导出进度控制器,封装对话框的进度更新和取消逻辑 */
     public static final class ProgressHandle {
         private final Dialog<Void> dialog;
         private final ProgressBar progressBar;
         private final Label currentFileLabel;
         private Runnable onCancel = () -> {
         };
-        /** 正常完成关闭标记，防止 setOnCloseRequest 误触发取消 UI */
+        /** 正常完成关闭标记,防止 setOnCloseRequest 误触发取消 UI */
         private boolean closing;
 
+        /** 私有构造函数,通过 showProgress 工厂方法创建 */
         private ProgressHandle(Dialog<Void> dialog, ProgressBar progressBar,
                                Label currentFileLabel) {
             this.dialog = dialog;
@@ -280,17 +283,20 @@ public final class ExportDialog {
             this.currentFileLabel = currentFileLabel;
         }
 
+        /** 设置取消回调,用户点击取消按钮时触发 */
         public void setOnCancel(Runnable onCancel) {
             this.onCancel = onCancel != null ? onCancel : () -> {
             };
         }
 
+        /** 更新进度条和当前文件显示 */
         public void update(String currentPath, int percent) {
             progressBar.setProgress(Math.max(0, Math.min(100, percent)) / 100.0);
             currentFileLabel.setText(I18nUtil.getString(
                     "dialog.export.progress.current", percent, currentPath));
         }
 
+        /** 正常完成导出后关闭进度对话框 */
         public void close() {
             closing = true;
             onCancel = () -> {
@@ -298,6 +304,7 @@ public final class ExportDialog {
             dialog.close();
         }
 
+        /** 取消导出（跳过已关闭状态） */
         private void cancel() {
             if (closing) {
                 return;

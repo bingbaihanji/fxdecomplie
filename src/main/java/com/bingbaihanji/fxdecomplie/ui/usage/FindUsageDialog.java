@@ -42,10 +42,19 @@ public final class FindUsageDialog {
         throw new AssertionError("utility class");
     }
 
+    /** 显示查找使用对话框（无初始查询） */
     public static void show(Window owner, WorkspaceIndex index, JumpCallback onJump) {
         show(owner, index, onJump, "");
     }
 
+    /**
+     * 显示查找使用对话框
+     *
+     * @param owner        父窗口
+     * @param index        工作区索引
+     * @param onJump       跳转回调,双击结果时导航
+     * @param initialQuery 初始查询文本,可为空
+     */
     public static void show(Window owner, WorkspaceIndex index, JumpCallback onJump,
                             String initialQuery) {
         Stage dialog = new Stage();
@@ -105,7 +114,7 @@ public final class FindUsageDialog {
                 List<UsageResult> results = UsageSearchService.findUsages(index, query);
                 Platform.runLater(() -> {
                     if (searchGeneration.get() != gen) {
-                        return; // 已过期，丢弃
+                        return; // 已过期,丢弃
                     }
                     resultTree.setRoot(buildTree(results));
                     status.setText(I18nUtil.getString("usage.resultCount", results.size()));
@@ -148,6 +157,7 @@ public final class FindUsageDialog {
         }
     }
 
+    /** 将搜索结果按使用类型分组,构建 TreeView 层级结构 */
     private static TreeItem<UsageResult> buildTree(List<UsageResult> results) {
         TreeItem<UsageResult> root = new TreeItem<>();
         Map<UsageResult.UsageType, List<UsageResult>> groups = new LinkedHashMap<>();
@@ -166,6 +176,7 @@ public final class FindUsageDialog {
         return root;
     }
 
+    /** 根据使用类型返回对应的国际化分组标签 */
     private static String groupLabel(UsageResult.UsageType type) {
         return switch (type) {
             case CLASS_REFERENCE -> I18nUtil.getString("usage.group.class");
@@ -174,8 +185,10 @@ public final class FindUsageDialog {
         };
     }
 
+    /** 跳转回调接口,双击搜索结果时导航到对应文件和行号 */
     @FunctionalInterface
     public interface JumpCallback {
+        /** 跳转到指定文件的指定行 */
         void jump(String fullPath, int lineNumber);
     }
 }

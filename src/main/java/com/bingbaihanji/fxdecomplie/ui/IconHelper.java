@@ -17,11 +17,12 @@ public final class IconHelper {
     private static final String LOGO_PATH = "/icon/logo.png";
     private static Image cachedLogo;
 
+    /** 私有构造函数,防止实例化工具类 */
     private IconHelper() {
         throw new AssertionError("utility class");
     }
 
-    /** 为 Stage 设置应用 Logo 图标 */
+    /** 为 Stage 设置应用 Logo 图标,stage 为 null 时静默跳过 */
     public static void setStageIcon(Stage stage) {
         if (stage == null) {
             return;
@@ -32,7 +33,7 @@ public final class IconHelper {
         }
     }
 
-    /** @return 缓存的 Logo 图像，可用于 ImageView 等组件 */
+    /** @return 缓存的 Logo 图像,可用于 ImageView 等组件 */
     public static Image getLogoImage() {
         if (cachedLogo == null) {
             try (var stream = IconHelper.class.getResourceAsStream(LOGO_PATH)) {

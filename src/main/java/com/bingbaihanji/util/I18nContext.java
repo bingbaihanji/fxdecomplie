@@ -12,9 +12,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 /**
  * 国际化语言环境上下文（单例、线程安全）
  * <p>
- * 负责管理当前语言环境、资源包加载以及语言变化通知。
- * 加载优先级：外部文件（JAR 同级目录）→ classpath。
- * 语言回退链：zh_CN_Variant → zh_CN → zh → root。
+ * 负责管理当前语言环境、资源包加载以及语言变化通知
+ * 加载优先级：外部文件（JAR 同级目录）→ classpath
+ * 语言回退链：zh_CN_Variant → zh_CN → zh → root
  * </p>
  *
  * <h3>使用方式</h3>
@@ -86,11 +86,11 @@ public final class I18nContext {
     }
 
     /**
-     * 获取全局单例（双重检查锁定，首次调用时延迟初始化）
+     * 获取全局单例（双重检查锁定,首次调用时延迟初始化）
      * <p>
-     * 通过系统属性 {@value #SYS_PROP_BASE_NAME} 可自定义资源文件基名，
-     * 否则使用默认值 {@value #DEFAULT_BASE_NAME}。
-     * 初始化失败时依次回退到简体中文 → 英语 → 抛异常。
+     * 通过系统属性 {@value #SYS_PROP_BASE_NAME} 可自定义资源文件基名,
+     * 否则使用默认值 {@value #DEFAULT_BASE_NAME}
+     * 初始化失败时依次回退到简体中文 → 英语 → 抛异常
      * </p>
      *
      * @return 全局 I18nContext 实例
@@ -121,7 +121,7 @@ public final class I18nContext {
     /**
      * 创建使用自定义基名的独立 I18nContext 实例
      *
-     * @param baseName 资源文件基名，如 "i18n/messages"
+     * @param baseName 资源文件基名,如 "i18n/messages"
      * @param locale   目标语言环境
      * @return 独立的 I18nContext
      * @throws MissingResourceException 如果资源包不可用
@@ -139,12 +139,12 @@ public final class I18nContext {
         try {
             return new I18nContext(bn, Locale.getDefault());
         } catch (MissingResourceException e) {
-            log.warn("系统默认语言资源不可用 [{}]，尝试简体中文", bn);
+            log.warn("系统默认语言资源不可用 [{}],尝试简体中文", bn);
         }
         try {
             return new I18nContext(bn, Locale.SIMPLIFIED_CHINESE);
         } catch (MissingResourceException e) {
-            log.warn("简体中文资源不可用，尝试英语");
+            log.warn("简体中文资源不可用,尝试英语");
         }
         try {
             return new I18nContext(bn, Locale.US);
@@ -219,7 +219,7 @@ public final class I18nContext {
     }
 
     /**
-     * 检查指定语言环境是否有可用资源（仅检查文件/资源是否存在，不加载完整 bundle）
+     * 检查指定语言环境是否有可用资源（仅检查文件/资源是否存在,不加载完整 bundle）
      *
      * @param locale 目标语言环境
      * @return true 表示存在至少一个候选语言的资源文件
@@ -238,7 +238,7 @@ public final class I18nContext {
     // ======================== 资源加载 ========================
 
     /**
-     * 获取已安装的语言环境列表（扫描常用语言，通过 classpath 检测）
+     * 获取已安装的语言环境列表（扫描常用语言,通过 classpath 检测）
      */
     public List<Locale> getAvailableLocales() {
         List<Locale> result = new ArrayList<>();
@@ -254,7 +254,7 @@ public final class I18nContext {
      * 加载资源包（含语言回退链）
      * <p>
      * 回退顺序示例（locale=zh_CN_xxx）：zh_CN_xxx → zh_CN → zh → root
-     * 每个候选语言：先查外部文件，再查 classpath。
+     * 每个候选语言：先查外部文件,再查 classpath
      * </p>
      */
     private ResourceBundle loadResourceBundle(String baseName, Locale locale) {

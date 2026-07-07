@@ -10,10 +10,17 @@ import java.util.Map;
 
 /**
  * 解析反编译器特定选项和缓存键的共享辅助方法
+ *
+ * @author bingbaihanji
+ * @date 2026-07-07
  */
 public final class DecompilerOptions {
 
-    /** Vineflower 选项别名映射（缩写 → 规范名称），同时供 VineflowerDecompiler 和本类使用 */
+    /**
+     * Vineflower 选项别名映射（缩写 → 规范名称）,同时供 VineflowerDecompiler 和本类使用
+     * 允许用户在配置中使用简短别名（如 {@code rbr}）代替完整的选项键名（如 {@code deobfuscate-bridge-methods}）,
+     * 在 normalize 阶段统一转换为规范名称以确保选项识别一致
+     */
     public static final Map<String, String> VINEFLOWER_OPTION_ALIASES = Map.ofEntries(
             Map.entry("rbr", IFernflowerPreferences.REMOVE_BRIDGE),
             Map.entry("rsy", IFernflowerPreferences.REMOVE_SYNTHETIC),
@@ -72,6 +79,13 @@ public final class DecompilerOptions {
         throw new AssertionError("utility class");
     }
 
+    /**
+     * 从应用配置中提取指定引擎的选项,并做大小写不敏感查找和 Vineflower 别名归一化
+     *
+     * @param appConfig 应用配置
+     * @param engine    目标反编译引擎
+     * @return 归一化后的引擎选项,未找到则返回空 Map
+     */
     public static Map<String, String> forEngine(AppConfig appConfig,
                                                 DecompilerTypeEnum engine) {
         if (appConfig == null || appConfig.decompiler().engineOptions() == null || engine == null) {
@@ -81,6 +95,7 @@ public final class DecompilerOptions {
         return options == null ? Map.of() : normalize(engine, options);
     }
 
+    /** 大小写不敏感地从所有引擎选项中查找指定引擎的配置 */
     private static Map<String, String> findEngineOptions(Map<String, Map<String, String>> allOptions,
                                                          DecompilerTypeEnum engine) {
         Map<String, String> exact = allOptions.get(engine.name());
@@ -97,6 +112,10 @@ public final class DecompilerOptions {
         return null;
     }
 
+    /**
+     * 对选项键名进行归一化：Vineflower 引擎将缩写别名替换为规范名称,其他引擎直接复制
+     * 跳过 null 和空白键名的条目
+     */
     private static Map<String, String> normalize(DecompilerTypeEnum engine,
                                                  Map<String, String> options) {
         if (options == null || options.isEmpty()) {
@@ -119,11 +138,11 @@ public final class DecompilerOptions {
     }
 
     /**
-     * 为选项 Map 生成稳定的内容哈希。
-     * 使用 SHA-256 避免特殊字符（=、,）导致的键值碰撞。
+     * 为选项 Map 生成稳定的内容哈希
+     * 使用 SHA-256 避免特殊字符（=、,）导致的键值碰撞
      *
      * @param options 引擎选项键值对
-     * @return 选项哈希，空选项返回 "default"
+     * @return 选项哈希,空选项返回 "default"
      */
     public static String hash(Map<String, String> options) {
         if (options == null || options.isEmpty()) {

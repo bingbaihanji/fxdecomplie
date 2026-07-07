@@ -17,13 +17,22 @@ import java.util.Map;
  */
 public class CommentSearchProvider implements SearchProvider {
 
+    /** 结果上限,防止搜索耗时过长和内存溢出 */
     private static final int MAX_RESULTS = 500;
 
+    /**
+     * 判断给定行是否为注释行
+     * 支持 // 单行注释、&#47;* 和 * 多行注释、*&#47; 结束注释
+     */
     private static boolean isCommentLine(String trimmed) {
         return trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("* ")
                 || trimmed.startsWith("*\t") || trimmed.equals("*") || trimmed.startsWith("*/");
     }
 
+    /**
+     * 基本搜索：遍历所有已反编译源码文件,仅搜索注释行中的关键字（不区分大小写）
+     * 支持中断检测,以便搜索任务取消后立即停止
+     */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
@@ -48,11 +57,13 @@ public class CommentSearchProvider implements SearchProvider {
         return results;
     }
 
+    /** 支持 ALL 和 COMMENT 两种搜索范围 */
     @Override
     public boolean supports(SearchScope scope) {
         return scope == SearchScope.ALL || scope == SearchScope.COMMENT;
     }
 
+    /** 高级搜索：支持正则、大小写、全词匹配等选项的注释搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

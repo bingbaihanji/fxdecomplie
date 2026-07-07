@@ -92,13 +92,13 @@ public final class WorkspaceLoader {
         });
     }
 
-    /** 判断文件是否为归档文件(JAR/ZIP)，验证扩展名 + 文件头 ZIP 魔数 */
+    /** 判断文件是否为归档文件(JAR/ZIP),验证扩展名 + 文件头 ZIP 魔数 */
     private static boolean isArchiveFile(File file) {
         String name = file.getName().toLowerCase();
         if (!name.endsWith(".jar") && !name.endsWith(".zip")) {
             return false;
         }
-        // 验证文件头是否为 ZIP 格式（PK\x03\x04），避免把伪装成 .jar 的普通文件当作归档
+        // 验证文件头是否为 ZIP 格式（PK\x03\x04）,避免把伪装成 .jar 的普通文件当作归档
         try (var in = new java.io.FileInputStream(file)) {
             byte[] header = new byte[4];
             return in.read(header) == 4
@@ -109,6 +109,10 @@ public final class WorkspaceLoader {
         }
     }
 
+    /**
+     * 计算文件/目录的内容指纹,用于检测工作区内容是否变更
+     * 文件：基于 lastModified + 文件大小；目录：遍历所有文件取最大修改时间、总大小、文件计数
+     */
     private static String computeContentStamp(File file) throws IOException {
         if (!file.isDirectory()) {
             return file.lastModified() + "_" + file.length();

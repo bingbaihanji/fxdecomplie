@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
  * 原生窗口操作的结果对象
  *
  * <p>原生 API 常因平台或操作系统版本不支持特定功能而失败
- * 返回结果对象使上层 API 保持可观测性，同时不强制每个调用方捕获平台特定异常</p>
+ * 返回结果对象使上层 API 保持可观测性,同时不强制每个调用方捕获平台特定异常</p>
  */
 public record WindowOperationResult(
         WindowOperationStatus status,

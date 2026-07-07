@@ -65,6 +65,17 @@ public final class ExportService {
         return exportAll(nodes, config, index, null, onProgress, null);
     }
 
+    /**
+     * 根据用户选择的选项导出所有支持的工作区文件（带注释范围支持）
+     *
+     * @param root        工作区树根节点
+     * @param config      导出配置
+     * @param index       工作区索引（预构建）
+     * @param commentScope 注释导出范围,null 表示不导出注释
+     * @param onProgress  进度回调,接收当前路径和百分比
+     * @return 导出摘要
+     * @throws IOException 无法创建输出容器时抛出
+     */
     public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
                                          WorkspaceIndex index, CommentScope commentScope,
                                          BiConsumer<String, Integer> onProgress)
@@ -74,7 +85,16 @@ public final class ExportService {
     }
 
     /**
-     * @param canceled 用户取消标志 supplier，非 null 时每轮迭代检查
+     * 执行完整的导出流水线：过滤、反编译、写入目标（目录或 ZIP）
+     *
+     * @param nodes         可导出的文件节点列表（须在 FX 线程提取）
+     * @param config        导出配置（格式、引擎、路径、冲突策略等）
+     * @param index         工作区索引,用于字节码解析上下文
+     * @param commentScope  注释导出范围,null 表示不导出注释
+     * @param onProgress    进度回调,接收当前路径和百分比
+     * @param canceled      用户取消标志 supplier,非 null 时每轮迭代检查
+     * @return 导出结果摘要（总数、成功数、错误列表）
+     * @throws IOException 输出目录或 ZIP 创建失败时抛出
      */
     public static ExportResult exportAll(List<FileTreeNode> nodes, ExportConfig config,
                                          WorkspaceIndex index, CommentScope commentScope,
@@ -166,7 +186,14 @@ public final class ExportService {
         exportAll(nodes, config, WorkspaceIndex.build(root), null, null, null);
     }
 
-    /** 解析类节点的字节码(优先节点懒加载来源,其次工作区索引上下文) */
+    /**
+     * 解析类节点的字节码
+     * 优先从节点自身的懒加载缓存获取,其次通过工作区索引上下文按内部名查找
+     *
+     * @param data    类文件节点
+     * @param context 工作区索引上下文
+     * @throws IOException 读取字节码失败时抛出
+     */
     private static byte[] resolveClassBytes(FileTreeNode data, DecompilerContext context)
             throws IOException {
         byte[] bytes = data.resolveBytes();
@@ -179,8 +206,8 @@ public final class ExportService {
     }
 
     /**
-     * 从 TreeItem 树中提取可导出节点的快照（必须在 FX 线程调用）。
-     * 仅供遗留 API 和测试使用；新代码应在 FX 线程提取 FileTreeNode 列表后直接调用 exportAll。
+     * 从 TreeItem 树中提取可导出节点的快照（必须在 FX 线程调用）
+     * 仅供遗留 API 和测试使用；新代码应在 FX 线程提取 FileTreeNode 列表后直接调用 exportAll
      */
     @Deprecated
     private static List<FileTreeNode> collectExportableNodes(TreeItem<FileTreeNode> root,
@@ -190,6 +217,7 @@ public final class ExportService {
         return nodes;
     }
 
+    /** 递归遍历文件树,将可导出的节点收集到列表中 */
     private static void collectExportableNodes(TreeItem<FileTreeNode> item, boolean exportResources,
                                                List<FileTreeNode> nodes) {
         FileTreeNode data = item.getValue();
@@ -201,6 +229,7 @@ public final class ExportService {
         }
     }
 
+    /** 判断节点是否应被导出：class 文件总是导出,资源文件仅在启用时导出 */
     private static boolean shouldExport(FileTreeNode data, boolean exportResources) {
         return data.isClassFile()
                 || (exportResources && (data.getNodeType() == FileTreeNode.NodeTypeEnum.RESOURCE
@@ -286,7 +315,7 @@ public final class ExportService {
                             zos.write(content.bytes());
                             state.successCount++;
                         } catch (IOException e) {
-                            // 写入失败时关闭条目并终止整个 ZIP 导出，
+                            // 写入失败时关闭条目并终止整个 ZIP 导出,
                             // 避免 closeEntry 写入损坏的 CRC 导致整个归档不可用
                             try {
                                 zos.closeEntry();
@@ -303,7 +332,7 @@ public final class ExportService {
                     }
                 } catch (Exception e) {
                     state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-                    // ZIP 写入失败后整个归档已不可靠，终止导出
+                    // ZIP 写入失败后整个归档已不可靠,终止导出
                     if (e instanceof IOException) {
                         break;
                     }
@@ -324,7 +353,7 @@ public final class ExportService {
                 throw new IllegalStateException(
                         "未找到类字节码: " + data.getFullPath());
             }
-            // 使用外部取消标志而非 Thread.isInterrupted()，避免
+            // 使用外部取消标志而非 Thread.isInterrupted(),避免
             // 单个中断信号级联导致所有后续文件反编译失败
             BooleanSupplier active = canceled == null
                     ? () -> !Thread.currentThread().isInterrupted()
@@ -494,9 +523,11 @@ public final class ExportService {
         return dot > 0 ? fileName.substring(dot) : "";
     }
 
+    /** 导出内容载体：包含相对路径和要写入的字节数据 */
     private record ExportContent(String relativePath, byte[] bytes) {
     }
 
+    /** 导出进度状态跟踪器：记录总数、完成数、成功数和错误列表 */
     private static final class ExportState {
         private final int totalFiles;
         private final BiConsumer<String, Integer> onProgress;

@@ -17,7 +17,7 @@ import java.util.function.BooleanSupplier;
 import java.util.zip.ZipFile;
 
 /**
- * 共享的带保护的反编译运行器,用于标签页、全文搜索和导出。
+ * 共享的带保护的反编译运行器,用于标签页、全文搜索和导出
  *
  * <h3>整体流水线</h3>
  * <ol>
@@ -28,13 +28,13 @@ import java.util.zip.ZipFile;
  *       <li>引擎抛异常或返回失败文本 → 按 VF→CFR→Procyon→JD 顺序回退</li>
  *     </ol>
  *   </li>
- *   <li><b>超时保护</b> — 30s 超时中断，连续超时 3 次重建线程池丢弃僵死线程</li>
+ *   <li><b>超时保护</b> — 30s 超时中断,连续超时 3 次重建线程池丢弃僵死线程</li>
  *   <li><b>上下文清理</b> — finally 块或异常路径中关闭 DecompilerContext</li>
  * </ol>
  *
  * <h3>线程模型</h3>
- * 使用独立线程池（1-2 核，队列 2-4），与 BackgroundTasks 主线程池隔离，
- * 避免反编译任务（CPU/IO 密集）阻塞索引和搜索等短任务。
+ * 使用独立线程池（1-2 核,队列 2-4）,与 BackgroundTasks 主线程池隔离,
+ * 避免反编译任务（CPU/IO 密集）阻塞索引和搜索等短任务
  */
 public final class DecompilerRunner {
 
@@ -43,7 +43,7 @@ public final class DecompilerRunner {
             DecompilerTypeEnum.VINEFLOWER,
             DecompilerTypeEnum.CFR,
             DecompilerTypeEnum.PROCYON,
-            // JD-Core 对新语法支持较弱，只作为其他引擎失败后的最后兜底。
+            // JD-Core 对新语法支持较弱,只作为其他引擎失败后的最后兜底
             DecompilerTypeEnum.JD
     };
     private static final int TIMEOUT_SECONDS = 30;
@@ -77,8 +77,8 @@ public final class DecompilerRunner {
     }
 
     /**
-     * 条件性重建线程池。仅在连续超时计数达到阈值时执行，检查和重置均在内
-     * 部锁保护下原子完成，避免多线程竞态导致双重重建或阈值检查被绕过。
+     * 条件性重建线程池仅在连续超时计数达到阈值时执行,检查和重置均在内
+     * 部锁保护下原子完成,避免多线程竞态导致双重重建或阈值检查被绕过
      *
      * @return true 表示线程池已被重建
      */
@@ -91,7 +91,7 @@ public final class DecompilerRunner {
         executor = createExecutor();
         old.shutdownNow();
         consecutiveTimeouts.set(0);
-        log.info("检测到 {} 次连续超时，已重建反编译线程池", CONSECUTIVE_TIMEOUT_THRESHOLD);
+        log.info("检测到 {} 次连续超时,已重建反编译线程池", CONSECUTIVE_TIMEOUT_THRESHOLD);
         return true;
     }
 
@@ -140,7 +140,7 @@ public final class DecompilerRunner {
             if (!requestActive.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
-            // 反编译成功，重置连续超时计数器
+            // 反编译成功,重置连续超时计数器
             consecutiveTimeouts.set(0);
             long elapsed = System.currentTimeMillis() - decompileStart;
             boolean isFailure = isFailureOutput(source);
@@ -160,10 +160,10 @@ public final class DecompilerRunner {
             try {
                 future.get(200, java.util.concurrent.TimeUnit.MILLISECONDS);
             } catch (Exception ignored) {
-                // 任务可能尚未退出，忽略
+                // 任务可能尚未退出,忽略
             }
             closeContext(context);
-            // 连续超时超过阈值时重建线程池，丢弃可能僵死的守护线程
+            // 连续超时超过阈值时重建线程池,丢弃可能僵死的守护线程
             boolean rebuilt = maybeRebuildExecutor();
             if (rebuilt) {
                 return I18nUtil.getString("decompile.timeout", classFilePath, timeout)
@@ -194,7 +194,7 @@ public final class DecompilerRunner {
     }
 
     /**
-     * 瞬时失败（繁忙/超时），此类输出不应缓存，但提示用户可重试。
+     * 瞬时失败（繁忙/超时）,此类输出不应缓存,但提示用户可重试
      */
     public static boolean isTransientFailureOutput(String source) {
         if (source == null || source.isBlank()) {
@@ -208,8 +208,8 @@ public final class DecompilerRunner {
     }
 
     /**
-     * 任意失败输出（瞬时 + 永久），统一判定入口。
-     * 缓存写入前调用此方法可以避免把错误文本当作源码持久化。
+     * 任意失败输出（瞬时 + 永久）,统一判定入口
+     * 缓存写入前调用此方法可以避免把错误文本当作源码持久化
      */
     public static boolean isFailureOutput(String source) {
         if (source == null || source.isBlank()) {
@@ -249,7 +249,7 @@ public final class DecompilerRunner {
         } catch (RuntimeException e) {
             String message = e.getMessage() == null || e.getMessage().isBlank()
                     ? e.getClass().getSimpleName() : e.getMessage();
-            log.warn("{} 反编译 {} 抛出异常，尝试回退引擎", selectedEngine, classFilePath, e);
+            log.warn("{} 反编译 {} 抛出异常,尝试回退引擎", selectedEngine, classFilePath, e);
             source = failureOutput(classFilePath, selectedEngine + ": " + message);
         }
 
@@ -259,7 +259,7 @@ public final class DecompilerRunner {
         }
 
         String reason = extractFailureReason(source);
-        log.warn("{} 反编译 {} 失败，尝试回退引擎，原因: {}", selectedEngine, classFilePath, reason);
+        log.warn("{} 反编译 {} 失败,尝试回退引擎,原因: {}", selectedEngine, classFilePath, reason);
         for (DecompilerTypeEnum fallback : JD_FALLBACK_ENGINES) {
             if (fallback == selectedEngine) {
                 continue;
@@ -403,8 +403,8 @@ public final class DecompilerRunner {
     }
 
     /**
-     * 单次反编译使用的工作区 classpath。归档输入复用同一个 ZipFile，避免大 JAR
-     * 依赖解析时为每个引用类重复打开归档导致交互打开变慢。
+     * 单次反编译使用的工作区 classpath归档输入复用同一个 ZipFile,避免大 JAR
+     * 依赖解析时为每个引用类重复打开归档导致交互打开变慢
      */
     private static final class WorkspaceClassPath implements AutoCloseable {
         private static final int MAX_HIT_CACHE = 256;

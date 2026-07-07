@@ -40,7 +40,7 @@ public final class FxTools {
     private static final Logger log = LoggerFactory.getLogger(FxTools.class);
 
     private FxTools() {
-        throw new AssertionError("工具类，不可实例化");
+        throw new AssertionError("工具类,不可实例化");
     }
 
     // ==================== 窗口句柄 ====================
@@ -48,11 +48,11 @@ public final class FxTools {
     /**
      * 获取指定 Stage 的 Win32 原生窗口句柄(HWND)
      *
-     * <p>通过 {@link WindowToolkit} 获取原生句柄， 转换为 JNA HWND 对象
+     * <p>通过 {@link WindowToolkit} 获取原生句柄, 转换为 JNA HWND 对象
      * 非 Windows 平台或获取失败返回 null</p>
      *
      * @param stage JavaFX Stage
-     * @return 原生 HWND，获取失败返回 null
+     * @return 原生 HWND,获取失败返回 null
      */
     public static WinDef.HWND getWindowHandle(Stage stage) {
         return WindowToolkit.nativeHandle(stage)
@@ -89,9 +89,9 @@ public final class FxTools {
     }
 
     /**
-     * 将未显示的 Stage 居中于父窗口后，注册一次性的尺寸监听来完成微调居中
+     * 将未显示的 Stage 居中于父窗口后,注册一次性的尺寸监听来完成微调居中
      *
-     * <p>适用场景：窗口在 {@code show()} 前未设置 size，
+     * <p>适用场景：窗口在 {@code show()} 前未设置 size,
      * 或 size 由场景内容动态决定时首次布局完成后自动居中一次</p>
      *
      * @param stage  目标 Stage
@@ -130,7 +130,7 @@ public final class FxTools {
     // ==================== 同步居中 ====================
 
     /**
-     * 同步居中 Stage 到屏幕中央 — 先调用 {@code sizeToScene()}，
+     * 同步居中 Stage 到屏幕中央 — 先调用 {@code sizeToScene()},
      * 然后居中到主屏幕的视觉边界中央
      *
      * @param stage 目标 Stage
@@ -167,7 +167,7 @@ public final class FxTools {
     }
 
     /**
-     * 返回包含指定点的屏幕，找不到则返回主屏幕
+     * 返回包含指定点的屏幕,找不到则返回主屏幕
      *
      * @param x 屏幕坐标 x
      * @param y 屏幕坐标 y
@@ -182,10 +182,10 @@ public final class FxTools {
     }
 
     /**
-     * 获取包含指定窗口大部分区域的屏幕，用于多显示器场景恢复窗口位置
+     * 获取包含指定窗口大部分区域的屏幕,用于多显示器场景恢复窗口位置
      *
      * @param window 目标窗口
-     * @return 包含窗口中心点的屏幕，找不到返回主屏幕
+     * @return 包含窗口中心点的屏幕,找不到返回主屏幕
      */
     public static Screen getScreenForWindow(Window window) {
         if (window == null) {
@@ -203,7 +203,7 @@ public final class FxTools {
      * 加载失败时静默跳过(不抛异常)
      *
      * @param stage     目标 Stage
-     * @param classpath classpath 路径，如 {@code "icons/app.png"}
+     * @param classpath classpath 路径,如 {@code "icons/app.png"}
      */
     public static void setStageIcon(Stage stage, String classpath) {
         try (InputStream is = FxTools.class.getClassLoader().getResourceAsStream(classpath)) {
@@ -239,7 +239,7 @@ public final class FxTools {
 
     /**
      * 在 JavaFX 线程安全地关闭 Stage
-     * 当前已在 FX 线程则直接关闭，否则通过 {@code Platform.runLater} 调度
+     * 当前已在 FX 线程则直接关闭,否则通过 {@code Platform.runLater} 调度
      */
     public static void closeStage(Stage stage) {
         if (stage == null) {
@@ -253,7 +253,7 @@ public final class FxTools {
     }
 
     /**
-     * 在后台线程执行操作，完成后在 FX 线程执行回调
+     * 在后台线程执行操作,完成后在 FX 线程执行回调
      *
      * <pre>{@code
      * FxTools.runAsync(() -> computeResult(), result -> updateUI(result));
@@ -280,7 +280,7 @@ public final class FxTools {
 
     /**
      * 确保代码在 JavaFX Application Thread 上执行
-     * 如果已在 FX 线程则同步执行，否则通过 {@code Platform.runLater} 调度
+     * 如果已在 FX 线程则同步执行,否则通过 {@code Platform.runLater} 调度
      *
      * @param action 需要在 FX 线程执行的操作
      */
@@ -295,10 +295,10 @@ public final class FxTools {
     // ==================== 窗口可见性 ====================
 
     /**
-     * 切换 Stage 的显示/隐藏状态，避免 null 检查
+     * 切换 Stage 的显示/隐藏状态,避免 null 检查
      *
      * @param stage 目标 Stage
-     * @param show  true=显示(如已最小化则还原)，false=隐藏
+     * @param show  true=显示(如已最小化则还原),false=隐藏
      */
     public static void toggleStage(Stage stage, boolean show) {
         if (stage == null) {

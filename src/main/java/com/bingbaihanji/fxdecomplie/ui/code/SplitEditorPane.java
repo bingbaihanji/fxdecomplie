@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 多分屏编辑器容器，按需管理 1-3 个并排 TabPane（cells）。
+ * 多分屏编辑器容器,按需管理 1-3 个并排 TabPane（cells）
  *
- * <p>类似 IDEA 的 Split Editor：默认仅一个主 panel，右键标签选择 "向右拆分"
- * 时动态创建右侧 panel。每个 cell 独立持有 CodeEditorTab，
- * 同 class 可用不同反编译引擎在各分屏中对比。关闭分屏时 tab 移回主 panel。</p>
+ * <p>类似 IDEA 的 Split Editor：默认仅一个主 panel,右键标签选择 "向右拆分"
+ * 时动态创建右侧 panel每个 cell 独立持有 CodeEditorTab,
+ * 同 class 可用不同反编译引擎在各分屏中对比关闭分屏时 tab 移回主 panel</p>
  *
  * @author bingbaihanji
  * @date 2026-06-23
@@ -30,23 +30,30 @@ public final class SplitEditorPane extends StackPane {
     private static final double MIN_CELL_WIDTH = 200.0;
 
     private final SplitPane splitPane;
-    /** 所有 cell（cells[0] 始终存在，其余按需创建；关闭中间 cell 后自动压缩数组） */
+    /** 所有 cell（cells[0] 始终存在,其余按需创建；关闭中间 cell 后自动压缩数组） */
     private final TabPane[] cells = new TabPane[MAX_CELLS];
     /** 外部拖放配置（来自 WorkspaceTabManager） */
     private final AppConfig dragDropConfig;
     /** 编辑器主题（用于外部拖放） */
     private final com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader.ThemeData dragDropTheme;
-    /** 最近获得焦点的 cell（基于引用而非索引，避免压缩后索引错位） */
+    /** 最近获得焦点的 cell（基于引用而非索引,避免压缩后索引错位） */
     private TabPane focusedCell;
     /** 当前活跃 cell 数 (= splitPane.getItems().size()) */
     private int activeCount = 1;
     /** 分屏状态变化回调（用于同步主 panel 的勾选框） */
     private Runnable onSplitStateChanged;
 
+    /** 创建不带拖放功能的默认分屏编辑器 */
     public SplitEditorPane() {
         this(null, null);
     }
 
+    /**
+     * 创建支持跨窗口拖放的分屏编辑器
+     *
+     * @param dragDropConfig 拖放配置
+     * @param dragDropTheme  编辑器主题数据
+     */
     public SplitEditorPane(AppConfig dragDropConfig,
                            com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader.ThemeData dragDropTheme) {
         this.dragDropConfig = dragDropConfig;
@@ -63,7 +70,12 @@ public final class SplitEditorPane extends StackPane {
         splitPane.setDividerPositions(1.0);
     }
 
-    /** 选择一个与 exclude 不同的引擎 */
+    /**
+     * 选择一个与指定引擎不同的反编译引擎
+     *
+     * @param exclude 要排除的引擎
+     * @return 第一个与 exclude 不同的引擎,若无则返回 VINEFLOWER
+     */
     public static DecompilerTypeEnum chooseDifferentEngine(DecompilerTypeEnum exclude) {
         for (DecompilerTypeEnum e : DecompilerTypeEnum.values()) {
             if (e != exclude) {
@@ -73,7 +85,7 @@ public final class SplitEditorPane extends StackPane {
         return DecompilerTypeEnum.VINEFLOWER;
     }
 
-    /** 创建新 cell 并插入到 SplitPane 指定位置 */
+    /** 创建新 cell 并插入到 SplitPane 指定位置,同时同步内部 cells 数组 */
     private TabPane createCellAt(int posInSplitPane) {
         TabPane newCell = createCell();
         splitPane.getItems().add(posInSplitPane, newCell);
@@ -91,7 +103,7 @@ public final class SplitEditorPane extends StackPane {
         pane.setMinWidth(MIN_CELL_WIDTH);
         pane.getStyleClass().add("code-tab-pane");
 
-        // 选中变化 → 更新焦点跟踪（基于 cell 引用，避免压缩后索引错位）
+        // 选中变化 → 更新焦点跟踪（基于 cell 引用,避免压缩后索引错位）
         pane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             focusedCell = pane;
             if (newTab instanceof CodeEditorTab ct) {
@@ -119,12 +131,12 @@ public final class SplitEditorPane extends StackPane {
         return pane;
     }
 
-    /** @return 主 TabPane（始终存在，cell 0） */
+    /** @return 主 TabPane（始终存在,cell 0） */
     public TabPane primaryTabPane() {
         return cells[0];
     }
 
-    /** @return 所有已创建的 TabPane，按 splitPane 左→右顺序排列 */
+    /** @return 所有已创建的 TabPane,按 splitPane 左→右顺序排列 */
     public List<TabPane> allTabPanes() {
         List<TabPane> result = new ArrayList<>(MAX_CELLS);
         for (Node node : splitPane.getItems()) {
@@ -140,7 +152,7 @@ public final class SplitEditorPane extends StackPane {
         return activeCount;
     }
 
-    /** @return 给定 tab 所在的 TabPane，未找到时返回 {@code null} */
+    /** @return 给定 tab 所在的 TabPane,未找到时返回 {@code null} */
     public TabPane tabPaneFor(Tab tab) {
         for (Node node : splitPane.getItems()) {
             if (node instanceof TabPane cell && cell.getTabs().contains(tab)) {
@@ -175,9 +187,9 @@ public final class SplitEditorPane extends StackPane {
     }
 
     /**
-     * 在 sourceTab 右侧创建新分屏。已达上限 3 则返回 {@code null}。
+     * 在 sourceTab 右侧创建新分屏已达上限 3 则返回 {@code null}
      *
-     * @return 新创建的 cell，已达上限时返回 {@code null}
+     * @return 新创建的 cell,已达上限时返回 {@code null}
      */
     public TabPane splitRight(CodeEditorTab sourceTab) {
         if (activeCount >= MAX_CELLS) {
@@ -209,7 +221,7 @@ public final class SplitEditorPane extends StackPane {
         this.onSplitStateChanged = callback;
     }
 
-    /** 关闭所有非主 cell，回到单 panel 状态 */
+    /** 关闭所有非主 cell,回到单 panel 状态 */
     public void closeAllSplits() {
         for (int i = MAX_CELLS - 1; i > 0; i--) {
             if (cells[i] != null && splitPane.getItems().contains(cells[i])) {
@@ -220,13 +232,13 @@ public final class SplitEditorPane extends StackPane {
 
     // ==================== 内部方法 ====================
 
-    /** 关闭指定 cell（折叠），将其 tab 移到主 cell */
+    /** 关闭指定 cell（折叠）,将其 tab 移到主 cell */
     public void closeSplit(TabPane cell) {
         if (cell == primaryTabPane() || cell == null) {
             return;
         }
         if (!splitPane.getItems().contains(cell)) {
-            return; // 已关闭，防止递归重入
+            return; // 已关闭,防止递归重入
         }
 
         // 将 cell 中的 tab 移到主 cell
@@ -245,6 +257,7 @@ public final class SplitEditorPane extends StackPane {
         rebalanceDividers(); // 内部调用 syncCellsArray 自动压缩
     }
 
+    /** 在内部 cells 数组中查找指定 cell 的索引,未找到返回 -1 */
     private int findCellIndex(TabPane cell) {
         for (int i = 0; i < MAX_CELLS; i++) {
             if (cells[i] == cell) {
@@ -254,7 +267,7 @@ public final class SplitEditorPane extends StackPane {
         return -1;
     }
 
-    /** tab 关闭后检查 cell 是否为空，为空时右侧 cell 左移替代 */
+    /** tab 关闭后检查 cell 是否为空,为空时右侧 cell 左移替代 */
     private void checkCollapseCell(TabPane cell) {
         if (!cell.getTabs().isEmpty()) {
             return;
@@ -267,7 +280,7 @@ public final class SplitEditorPane extends StackPane {
         }
     }
 
-    /** 主 cell 为空时，将右侧第一个 cell 的内容移入，并折叠右侧 cell */
+    /** 主 cell 为空时,将右侧第一个 cell 的内容移入,并折叠右侧 cell */
     private void promoteRightToPrimary() {
         // 找右侧第一个有 tab 的 cell
         TabPane donor = null;
@@ -280,7 +293,7 @@ public final class SplitEditorPane extends StackPane {
         }
         if (donor == null) {
             return;
-        } // 右侧也没有内容，保持 cell0 空着
+        } // 右侧也没有内容,保持 cell0 空着
 
         // 将 donor 的 tab 移到 cell0
         List<Tab> tabs = new ArrayList<>(donor.getTabs());
@@ -305,7 +318,7 @@ public final class SplitEditorPane extends StackPane {
 
     /** 按活跃 cell 数量重新均分分隔线 */
     private void rebalanceDividers() {
-        // 使用 splitPane.getItems().size() 而非 activeCount 作为权威来源，
+        // 使用 splitPane.getItems().size() 而非 activeCount 作为权威来源,
         // 避免手动维护的 activeCount 与实际不符时设置错误的分隔线位置
         int count = splitPane.getItems().size();
         activeCount = count;
@@ -322,6 +335,7 @@ public final class SplitEditorPane extends StackPane {
 
     // ==================== 右键菜单 ====================
 
+    /** 通过 Platform.runLater 通知外部回调分屏状态已变化 */
     private void notifySplitStateChanged() {
         if (onSplitStateChanged != null) {
             Platform.runLater(onSplitStateChanged);
@@ -330,6 +344,7 @@ public final class SplitEditorPane extends StackPane {
 
     // ==================== 辅助方法 ====================
 
+    /** 为指定 TabPane 安装右键上下文菜单（固定、切换引擎、分屏、关闭等操作） */
     private void installContextMenu(TabPane pane) {
         pane.setOnContextMenuRequested(event -> {
             ContextMenu menu = new ContextMenu();
@@ -362,7 +377,7 @@ public final class SplitEditorPane extends StackPane {
                 }
             }
 
-            // 向右拆分（委托给 tab 的 requestSplit，统一处理 cell 创建 + 内容打开）
+            // 向右拆分（委托给 tab 的 requestSplit,统一处理 cell 创建 + 内容打开）
             MenuItem splitRight = new MenuItem(I18nUtil.getString("context.splitRight"));
             splitRight.setDisable(current == null || activeCount >= MAX_CELLS);
             splitRight.setOnAction(e -> {

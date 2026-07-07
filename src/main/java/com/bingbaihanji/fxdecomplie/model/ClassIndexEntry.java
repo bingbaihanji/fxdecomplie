@@ -15,7 +15,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 索引化的类元数据，用于工作区范围的搜索和分析
+ * 索引化的类元数据,用于工作区范围的搜索和分析
+ *
+ * @author bingbaihanji
+ * @date 2026-06-21
  */
 public final class ClassIndexEntry {
 
@@ -62,18 +65,26 @@ public final class ClassIndexEntry {
         }
     }
 
+    /** @return 类的完全限定路径（内部形式,如 com/example/Foo.class） */
     public String fullPath() {
         return fullPath;
     }
 
+    /** @return 类的内部名称（如 com/example/Foo） */
     public String internalName() {
         return internalName;
     }
 
+    /** @return 类的简单名称（如 Foo） */
     public String simpleName() {
         return simpleName;
     }
 
+    /**
+     * 懒加载类字节码
+     *
+     * @return 类文件的原始字节数组,加载失败时返回 null
+     */
     public byte[] bytes() {
         if (byteLoader == null) {
             return null;
@@ -86,21 +97,23 @@ public final class ClassIndexEntry {
         }
     }
 
+    /** @return 已索引的方法成员列表（不可变） */
     public List<MemberIndexEntry> methods() {
         return methods;
     }
 
+    /** @return 已索引的字段成员列表（不可变） */
     public List<MemberIndexEntry> fields() {
         return fields;
     }
 
     /**
-     * 懒加载并缓存字节码文本表示。
+     * 懒加载并缓存字节码文本表示
      *
-     * <p>使用双重检查锁定保证线程安全。仅缓存成功结果；
-     * 加载失败时不缓存（返回回退摘要），允许后续调用重试。</p>
+     * <p>使用双重检查锁定保证线程安全仅缓存成功结果；
+     * 加载失败时不缓存（返回回退摘要）,允许后续调用重试</p>
      *
-     * @return ASM Textifier 格式的字节码文本，失败时返回 ClassFileParser 摘要
+     * @return ASM Textifier 格式的字节码文本,失败时返回 ClassFileParser 摘要
      */
     public String bytecodeText() {
         String current = bytecodeText;
@@ -111,7 +124,7 @@ public final class ClassIndexEntry {
             if (bytecodeText == null) {
                 byte[] bytes = bytes();
                 if (bytes == null) {
-                    // 不缓存失败结果，后续调用可重试
+                    // 不缓存失败结果,后续调用可重试
                     return ClassFileParser.summary(new byte[0]);
                 }
                 bytecodeText = toBytecodeText(bytes);

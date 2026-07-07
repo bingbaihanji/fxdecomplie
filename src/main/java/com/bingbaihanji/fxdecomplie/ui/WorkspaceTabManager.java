@@ -62,9 +62,10 @@ public final class WorkspaceTabManager {
     /** 拖放配置(用于主窗口安装代码标签拖拽处理器) */
     private AppConfig dragDropConfig;
     private VsCodeThemeLoader.ThemeData dragDropTheme;
-    /** 内层代码标签切换回调(工具栏刷新等) */
+    /** 内层代码标签切换回调（工具栏刷新等） */
     private Runnable onActiveTabChange;
 
+    /** 构造工作区标签页管理器 */
     public WorkspaceTabManager(TabPane outerTabPane, StatusBar statusBar) {
         this.outerTabPane = outerTabPane;
         this.statusBar = statusBar;
@@ -123,6 +124,20 @@ public final class WorkspaceTabManager {
                 : display;
     }
 
+    /**
+     * 为文件树视图安装右键上下文菜单
+     *
+     * @param treeView          目标文件树视图
+     * @param workspace         当前工作区
+     * @param codeTabPane       代码标签页面板
+     * @param navigationService 导航服务（前进/后退支持）
+     * @param onClassClick      点击类节点时的回调
+     * @param onTextFileClick   点击文本文件节点时的回调
+     * @param onExportNode      导出节点回调
+     * @param onFindUsage       查找使用回调
+     * @param onSearchPackage   搜索包回调
+     * @param onHexClick        十六进制查看回调
+     */
     private static void installTreeContextMenu(FileTreeView treeView, Workspace workspace,
                                                TabPane codeTabPane, NavigationService navigationService,
                                                BiConsumer<FileTreeNode, TabPane> onClassClick,
@@ -153,7 +168,7 @@ public final class WorkspaceTabManager {
         });
     }
 
-    /** 获取树节点显示名称，优先使用反混淆别名，回退到原始名称 */
+    /** 获取树节点显示名称,优先使用反混淆别名,回退到原始名称 */
     private static String displayTreeNodeName(String workspaceHash, FileTreeNode node) {
         if (node == null) {
             return "";
@@ -165,6 +180,21 @@ public final class WorkspaceTabManager {
         return displayName == null || displayName.isBlank() ? node.getName() : displayName + ".class";
     }
 
+    /**
+     * 构建文件树节点的右键上下文菜单
+     *
+     * @param item              当前右键点击的树节点
+     * @param workspace         当前工作区
+     * @param codeTabPane       代码标签页面板
+     * @param navigationService 导航服务
+     * @param onClassClick      类节点点击回调
+     * @param onTextFileClick   文本文件节点点击回调
+     * @param onExportNode      导出节点回调
+     * @param onFindUsage       查找使用回调
+     * @param onSearchPackage   搜索包回调
+     * @param onHexClick        十六进制查看回调
+     * @return 包含打开/导览/导出/复制/展开等菜单项的上下文菜单
+     */
     private static ContextMenu buildTreeContextMenu(TreeItem<FileTreeNode> item, Workspace workspace,
                                                     TabPane codeTabPane,
                                                     NavigationService navigationService,
@@ -235,6 +265,7 @@ public final class WorkspaceTabManager {
         return menu;
     }
 
+    /** 根据树节点类型（类文件/文本文件）打开对应的标签页 */
     private static void openTreeItem(TreeItem<FileTreeNode> item, Workspace workspace,
                                      TabPane codeTabPane, NavigationService navigationService,
                                      BiConsumer<FileTreeNode, TabPane> onClassClick,
@@ -256,22 +287,26 @@ public final class WorkspaceTabManager {
         }
     }
 
+    /** 复制字符串到系统剪贴板 */
     private static void copyToClipboard(String value) {
         ClipboardContent content = new ClipboardContent();
         content.putString(value == null ? "" : value);
         Clipboard.getSystemClipboard().setContent(content);
     }
 
+    /** 递归展开树节点及其所有子节点 */
     private static void expand(TreeItem<FileTreeNode> item) {
         item.setExpanded(true);
         item.getChildren().forEach(WorkspaceTabManager::expand);
     }
 
+    /** 递归折叠树节点及其所有子节点 */
     private static void collapseStatic(TreeItem<FileTreeNode> item) {
         item.setExpanded(false);
         item.getChildren().forEach(WorkspaceTabManager::collapseStatic);
     }
 
+    /** 格式化最近文件路径显示（文件名 + 完整路径） */
     private static String recentDisplay(String path) {
         if (path == null || path.isBlank()) {
             return "";
@@ -280,6 +315,7 @@ public final class WorkspaceTabManager {
         return name.isBlank() ? path : name + "    " + path;
     }
 
+    /** 更新标签页的固定（pin）指示器文本,在已固定标签前加圆形标记 */
     private static void updatePinnedTabText(Tab tab) {
         if (tab == null) {
             return;
@@ -297,6 +333,7 @@ public final class WorkspaceTabManager {
         }
     }
 
+    /** 根据代码标签页当前选中的类刷新继承面板 */
     private static void refreshInheritanceForCurrentSelection(Workspace workspace, TabPane codeTabPane,
                                                               InheritancePane inheritancePane,
                                                               boolean startIndexIfNeeded) {
@@ -309,6 +346,7 @@ public final class WorkspaceTabManager {
         }
     }
 
+    /** 加载指定类的继承信息到继承面板,索引未就绪时显示等待状态 */
     private static void refreshInheritancePane(Workspace workspace, TabPane codeTabPane,
                                                InheritancePane inheritancePane,
                                                String selectedPath,
@@ -361,7 +399,7 @@ public final class WorkspaceTabManager {
         return null;
     }
 
-    /** 设置内层代码标签页切换回调 */
+    /** 设置内层代码标签页切换回调（用于工具栏状态刷新等） */
     public void setOnActiveTabChange(Runnable callback) {
         this.onActiveTabChange = callback;
     }
@@ -372,25 +410,25 @@ public final class WorkspaceTabManager {
         this.dragDropTheme = theme;
     }
 
-    /** 获取所有工作区视图 */
+    /** 获取所有工作区视图映射（标签页到 WorkspaceView） */
     public Map<Tab, WorkspaceView> getWorkspaceViews() {
         return workspaceViews;
     }
 
-    /** 设置欢迎页动作回调 */
+    /** 设置欢迎页动作回调并刷新欢迎页内容 */
     public void setWelcomeActions(WelcomeActions welcomeActions) {
         this.welcomeActions = welcomeActions == null ? WelcomeActions.empty() : welcomeActions;
         refreshWelcomeTab();
     }
 
-    /** 更新当前引擎状态栏显示 */
+    /** 更新当前反编译引擎名称并同步到状态栏 */
     public void setCurrentEngineName(String currentEngineName) {
         this.currentEngineName = currentEngineName == null ? "" : currentEngineName;
         statusBar.setEngine(this.currentEngineName);
     }
 
     /**
-     * 添加工作区标签页
+     * 添加工作区标签页（简化版,不含查找使用/搜索包/十六进制查看回调）
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -404,7 +442,7 @@ public final class WorkspaceTabManager {
     }
 
     /**
-     * 添加工作区标签页
+     * 添加工作区标签页（含导出回调,不含查找使用/搜索包/十六进制查看回调）
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -423,7 +461,7 @@ public final class WorkspaceTabManager {
     }
 
     /**
-     * 添加工作区标签页
+     * 添加工作区标签页（完整版,包含所有回调）
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -431,6 +469,7 @@ public final class WorkspaceTabManager {
      * @param onExportNode    导出当前树节点的回调
      * @param onFindUsage     查找使用回调
      * @param onSearchPackage 搜索当前包回调
+     * @param onHexClick      十六进制查看回调
      */
     public void addWorkspaceTab(Workspace workspace,
                                 BiConsumer<FileTreeNode, TabPane> onClassClick,
@@ -585,13 +624,13 @@ public final class WorkspaceTabManager {
         statusBar.setEngine(currentEngineName);
     }
 
-    /** 关闭指定标签页 */
+    /** 关闭指定工作区标签页并释放相关资源 */
     public void closeWorkspaceTab(Tab tab) {
         cleanupClosedWorkspace(tab);
         outerTabPane.getTabs().remove(tab);
     }
 
-    /** 关闭除 keepTab 外的所有标签页 */
+    /** 关闭除 keepTab 外的所有工作区标签页 */
     public void closeOtherWorkspaces(Tab keepTab) {
         outerTabPane.getTabs().stream()
                 .filter(tab -> tab != keepTab)
@@ -599,18 +638,18 @@ public final class WorkspaceTabManager {
                 .forEach(this::closeWorkspaceTab);
     }
 
-    /** 获取当前选中的工作区视图 */
+    /** 获取当前选中标签页对应的工作区视图,无选中时返回 null */
     public WorkspaceView currentWorkspaceView() {
         Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
         return selected == null ? null : workspaceViews.get(selected);
     }
 
-    /** 检查工作区视图是否仍然活跃(未被用户关闭) */
+    /** 检查工作区视图是否仍然活跃（未被用户关闭）,用于防止对已释放 UI 的操作 */
     public boolean isWorkspaceActive(WorkspaceView view) {
         return view != null && workspaceViews.containsKey(view.workspaceTab());
     }
 
-    /** 获取当前选中的代码标签页 */
+    /** 获取当前工作区中选中的代码编辑标签页,无选中时返回 null */
     public CodeEditorTab currentCodeTab() {
         WorkspaceView view = currentWorkspaceView();
         if (view == null) {
@@ -619,7 +658,7 @@ public final class WorkspaceTabManager {
         return view.splitEditorPane().currentCodeTab();
     }
 
-    /** 更新状态栏以反映当前工作区 */
+    /** 根据指定标签页的工作区状态更新状态栏（文件路径、编码、引擎、光标位置） */
     public void updateStatusForWorkspace(Tab tab) {
         WorkspaceView view = tab == null ? null : workspaceViews.get(tab);
         if (view == null) {
@@ -641,6 +680,7 @@ public final class WorkspaceTabManager {
         }
     }
 
+    /** 当没有工作区标签页时显示欢迎页 */
     public void showWelcomeTabIfEmpty() {
         if (outerTabPane.getTabs().isEmpty()) {
             outerTabPane.getTabs().add(createWelcomeTab());
@@ -676,7 +716,7 @@ public final class WorkspaceTabManager {
         showToolWindow(ToolTab.INHERITANCE);
     }
 
-    /** 隐藏当前工作区底部工具窗口,但保留其中的标签页状态 */
+    /** 隐藏当前工作区底部工具窗口,但保留其中的标签页状态不关闭 */
     public void hideBottomToolWindow() {
         Tab tab = outerTabPane.getSelectionModel().getSelectedItem();
         WorkspaceTools tools = tab == null ? null : workspaceTools.get(tab);
@@ -892,7 +932,7 @@ public final class WorkspaceTabManager {
      * 在文件树中递归查找并选中有指定完整路径的节点
      *
      * @param fullPath 目标文件完整内部路径
-     * @return 找到并选中返回 true，否则 false
+     * @return 找到并选中返回 true,否则 false
      */
     public boolean selectTreeNodeByPath(String fullPath) {
         if (fullPath == null || fullPath.isBlank()) {
@@ -940,6 +980,7 @@ public final class WorkspaceTabManager {
         void accept(TreeItem<FileTreeNode> item);
     }
 
+    /** 欢迎页动作回调集合,封装打开文件/目录/项目及最近文件列表的操作 */
     public record WelcomeActions(
             Runnable openFile,
             Runnable openDirectory,
@@ -959,6 +1000,7 @@ public final class WorkspaceTabManager {
             } : openRecent;
         }
 
+        /** 返回一个所有回调均为空操作的默认实例 */
         public static WelcomeActions empty() {
             return new WelcomeActions(null, null, null, List.of(), null);
         }

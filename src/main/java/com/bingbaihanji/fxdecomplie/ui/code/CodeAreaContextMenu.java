@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 代码区右键上下文菜单，提供跳转声明、查看继承图、查看方法图、添加注释四个功能
+ * 代码区右键上下文菜单,提供跳转声明、查看继承图、查看方法图、添加注释四个功能
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -31,8 +31,16 @@ public class CodeAreaContextMenu extends ContextMenu {
     private final MenuItem controlFlowGraphItem;
     private final MenuItem addCommentItem;
     private final MenuItem deleteCommentItem;
+    /** 右键点击位置,用于确定操作目标 */
     private TextPos actionPosition;
 
+    /**
+     * 构造右键上下文菜单
+     *
+     * @param codeArea      代码编辑器区域
+     * @param context       代码视图上下文
+     * @param actionHandler 菜单动作处理器
+     */
     public CodeAreaContextMenu(CodeArea codeArea, CodeViewContext context, CodeActionHandler actionHandler) {
         this.codeArea = codeArea;
         this.context = context;
@@ -74,6 +82,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         setOnShowing(e -> refreshState());
     }
 
+    /** 根据右键事件计算点击位置并选中对应文本,为后续操作做准备 */
     public void prepare(ContextMenuEvent event) {
         actionPosition = null;
         if (codeArea == null || event == null) {
@@ -98,6 +107,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         addCommentItem.setDisable(codeArea == null);
     }
 
+    /** 跳转到光标处符号的声明位置 */
     private void onGotoDeclaration() {
         if (actionHandler == null || context == null || codeArea == null) {
             return;
@@ -106,6 +116,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.goToDeclaration(context, line, tokenAtActionPosition());
     }
 
+    /** 显示当前类的继承关系图 */
     private void onShowInheritanceGraph() {
         if (actionHandler == null || context == null) {
             return;
@@ -114,6 +125,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.showInheritanceGraph(context);
     }
 
+    /** 显示当前类的方法调用关系图 */
     private void onShowMethodGraph() {
         if (actionHandler == null || context == null) {
             return;
@@ -122,6 +134,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.showMethodGraph(context);
     }
 
+    /** 显示当前方法的控制流图（CFG） */
     private void onShowControlFlowGraph() {
         if (actionHandler == null || context == null) {
             return;
@@ -130,6 +143,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.showControlFlowGraph(context);
     }
 
+    /** 在当前光标位置添加或更新注释 */
     private void onAddComment() {
         if (actionHandler == null || context == null) {
             return;
@@ -138,6 +152,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.addOrUpdateComment(context, caret);
     }
 
+    /** 对光标处的符号执行重命名操作 */
     private void onRename() {
         if (actionHandler == null || context == null) {
             return;
@@ -146,6 +161,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.renameAtCaret(context, caret);
     }
 
+    /** 删除光标所在行的注释 */
     private void onDeleteComment() {
         if (actionHandler == null || context == null) {
             return;
@@ -155,11 +171,13 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.deleteComment(context, line);
     }
 
+    /** @return 当前操作位置所在行号（1-based）,优先使用右键位置,其次使用光标位置 */
     private int currentLine() {
         TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         return pos == null ? 1 : Math.max(1, pos.index() + 1);
     }
 
+    /** @return 当前操作位置处的代码符号（用于导航跳转） */
     private String tokenAtActionPosition() {
         TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         return CodeLinkHandler.navigationTokenAt(codeArea.getText(), pos);

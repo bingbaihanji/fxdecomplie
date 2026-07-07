@@ -10,6 +10,9 @@ import java.util.concurrent.Future;
 /**
  * 按需构建工作区完整索引打开 JAR 时不自动读取/解析全部 class,
  * 只有搜索、用法、导出等功能真正需要时才启动
+ *
+ * @author bingbaihanji
+ * @date 2026-07-07
  */
 public final class WorkspaceIndexService {
 
@@ -19,6 +22,10 @@ public final class WorkspaceIndexService {
         throw new AssertionError("utility class");
     }
 
+    /**
+     * 确保工作区索引已启动构建（幂等操作）
+     * 若索引已就绪或已在构建中则直接返回,否则以低优先级后台线程启动索引构建
+     */
     public static void ensureIndexingStarted(Workspace workspace) {
         if (workspace == null || workspace.isIndexReady()) {
             return;

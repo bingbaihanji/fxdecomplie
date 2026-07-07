@@ -14,8 +14,11 @@ import java.util.Arrays;
  * CodeArea 左侧行号栏工具类
  * <p>
  * JavaFX 25 incubator RichText 的内置行号由 {@code LineNumberDecorator} 生成,
- * 在当前暗色主题下不容易通过外部 CSS 稳定覆盖颜色因此这里使用自定义
+ * 在当前暗色主题下不容易通过外部 CSS 稳定覆盖颜色,因此这里使用自定义
  * {@link SideDecorator} 创建行号节点,并直接给 {@link Label} 设置灰色前景色
+ *
+ * @author bingbaihanji
+ * @date 2026-07-05
  */
 public final class LineNumberGutter {
 
@@ -54,16 +57,23 @@ public final class LineNumberGutter {
         /** 行号格式化器,保持和 JavaFX 内置行号类似的分组显示 */
         private final DecimalFormat format = new DecimalFormat("#,##0");
 
+        /** 绑定目标 CodeArea,使行号字体跟随编辑器字体 */
         private DarkLineNumberDecorator(CodeArea area) {
             this.area = area;
         }
 
+        /** @return 0,表示宽度由 {@link #getMeasurementNode} 动态测量决定 */
         @Override
         public double getPrefWidth(double viewWidth) {
             // 返回 0 表示宽度由 measurement node 动态测量
             return 0;
         }
 
+        /**
+         * 返回用于测量行号栏宽度的节点
+         * <p>用 '8' 填充所有数位作为测量文本,因为 '8' 通常是等宽字体中最宽的字符,
+         * 确保无论实际行号大小如何,行号栏宽度始终能容纳最大行号而不发生抖动</p>
+         */
         @Override
         public Node getMeasurementNode(int index) {
             // 用一组较宽的数字预估当前视图所需宽度,避免滚动时行号栏抖动
@@ -73,13 +83,19 @@ public final class LineNumberGutter {
             return createNode(new String(digits));
         }
 
+        /**
+         * 返回第 index 行的行号 Label
+         * <p>SideDecorator 的 index 从 0 开始,界面行号从 1 开始显示,故 +1</p>
+         */
         @Override
         public Node getNode(int index) {
-            // SideDecorator 的 index 从 0 开始,界面行号从 1 开始显示
             return createNode(format.format(index + 1));
         }
 
-        /** 创建单个行号 Label,并强制应用暗色主题样式 */
+        /**
+         * 创建单个行号 Label 并绑定到 CodeArea 字体属性
+         * <p>强制应用暗色主题样式,确保行号颜色与编辑器背景协调</p>
+         */
         private Label createNode(String text) {
             Label label = new Label(text);
             label.getStyleClass().addAll("line-number-decorator", "app-line-number-decorator");

@@ -19,7 +19,7 @@ import javafx.scene.text.TextAlignment;
 import java.util.*;
 
 /**
- * 用 JavaFX 原生控件渲染 {@link DotGraphParser} 解析后的图形。
+ * 用 JavaFX 原生控件渲染 {@link DotGraphParser} 解析后的图形
  *
  * <p>布局算法：</p>
  * <ol>
@@ -29,7 +29,7 @@ import java.util.*;
  *   <li>箭头使用小三角形 Polygon</li>
  * </ol>
  *
- * <p>交互：Ctrl+滚轮缩放（0.35x–2.5x），ScrollPane 原生拖拽平移。</p>
+ * <p>交互：Ctrl+滚轮缩放（0.35x–2.5x）,ScrollPane 原生拖拽平移</p>
  *
  * @author bingbaihanji
  * @date 2026-06-22
@@ -53,7 +53,7 @@ final class DotGraphRenderer {
     private static final double MIN_NODE_H = 42;
     /** 节点最大高度（避免超高） */
     private static final double MAX_NODE_H = 120;
-    /** 单字符近似宽度（px），用于根据标签长度估算节点宽 */
+    /** 单字符近似宽度（px）,用于根据标签长度估算节点宽 */
     private static final double CHAR_W = 7.0;
     /** 节点内边距 + 边框宽度（宽度方向） */
     private static final double NODE_PAD_W = 34;
@@ -61,11 +61,11 @@ final class DotGraphRenderer {
     private static final double LINE_H = 18.0;
     /** 节点内边距 + 边框宽度（高度方向） */
     private static final double NODE_PAD_H = 20;
-    /** 标签换行阈值（字符数），超过则节点内折行 */
+    /** 标签换行阈值（字符数）,超过则节点内折行 */
     private static final int WRAP_THRESHOLD = 30;
     /**
-     * 拓扑排序后未分层节点（环内节点）按声明顺序补层级时，每组的节点数。
-     * 将相邻未分层节点分成小组，避免全部挤在同一层级造成重叠。
+     * 拓扑排序后未分层节点（环内节点）按声明顺序补层级时,每组的节点数
+     * 将相邻未分层节点分成小组,避免全部挤在同一层级造成重叠
      */
     private static final int FALLBACK_PER_LEVEL = 8;
 
@@ -85,13 +85,13 @@ final class DotGraphRenderer {
 
     // ---- 文本颜色常量 ----
     /**
-     * 相对亮度阈值（BT.601 公式）。
-     * 背景亮度 > 阈值时用深色文字，否则用浅色文字。
+     * 相对亮度阈值（BT.601 公式）
+     * 背景亮度 > 阈值时用深色文字,否则用浅色文字
      */
     private static final double LUMINANCE_THRESHOLD = 0.58;
     /** 深色文字（用于浅色背景） */
     private static final String DARK_TEXT = "#1e1e1e";
-    /** 浅色文字（用于深色背景，缺省） */
+    /** 浅色文字（用于深色背景,缺省） */
     private static final String LIGHT_TEXT = "#e0e0e0";
     /** 缺省填充色 */
     private static final String DEFAULT_FILL = "#3c3c3c";
@@ -103,10 +103,10 @@ final class DotGraphRenderer {
     }
 
     /**
-     * 渲染图形为可交互的 ScrollPane。
+     * 渲染图形为可交互的 ScrollPane
      *
-     * @param graph 解析后的 DOT 图形，不可为 null
-     * @return 包含图形画布的 ScrollPane，空图形返回提示文本
+     * @param graph 解析后的 DOT 图形,不可为 null
+     * @return 包含图形画布的 ScrollPane,空图形返回提示文本
      */
     static Node create(DotGraphParser.DotGraph graph) {
         if (graph == null || graph.nodes().isEmpty()) {
@@ -116,7 +116,7 @@ final class DotGraphRenderer {
         Map<String, LayoutNode> layout = layout(graph);
         Bounds bounds = computeBounds(layout);
 
-        // 连线层（置于节点层下方，鼠标穿透避免遮挡节点交互）
+        // 连线层（置于节点层下方,鼠标穿透避免遮挡节点交互）
         Pane edgeLayer = new Pane();
         edgeLayer.setMouseTransparent(true);
         edgeLayer.setPickOnBounds(false);
@@ -153,7 +153,12 @@ final class DotGraphRenderer {
         return scroll;
     }
 
-    /** 空图形或错误时的占位面板 */
+    /**
+     * 空图形或错误时的占位面板
+     *
+     * @param text 提示文本,为空时显示"无图形数据"
+     * @return 居中显示提示文本的 StackPane
+     */
     private static Node messagePanel(String text) {
         String display = text == null || text.isBlank() ? "无图形数据" : text;
         Label label = new Label(display);
@@ -167,12 +172,12 @@ final class DotGraphRenderer {
     // ======================== 布局算法 ========================
 
     /**
-     * 计算每个节点的屏幕坐标。
+     * 计算每个节点的屏幕坐标
      *
      * <p>步骤：</p>
      * <ol>
      *   <li>{@link #computeLevels} — 拓扑排序确定各节点层级</li>
-     *   <li>按层级分组，同层级节点纵向排列</li>
+     *   <li>按层级分组,同层级节点纵向排列</li>
      *   <li>根据 rankdir 决定主轴方向（LR=水平, BT=垂直倒序）</li>
      * </ol>
      */
@@ -186,7 +191,7 @@ final class DotGraphRenderer {
                     key -> new ArrayList<>()).add(node);
         }
 
-        // BT 表示自底向上，主轴为垂直；其余按 LR 水平处理
+        // BT 表示自底向上,主轴为垂直；其余按 LR 水平处理
         boolean leftToRight = !"BT".equalsIgnoreCase(graph.rankDir());
 
         double maxWidth = graph.nodes().stream()
@@ -210,7 +215,7 @@ final class DotGraphRenderer {
                     x = MARGIN + level * levelStep;
                     y = MARGIN + i * rowStep;
                 } else {
-                    // BT 模式：层级倒序（高层在上），节点水平排列
+                    // BT 模式：层级倒序（高层在上）,节点水平排列
                     x = MARGIN + i * (maxWidth + ROW_GAP);
                     y = MARGIN + (maxLevel - level) * (maxHeight + LEVEL_GAP);
                 }
@@ -221,13 +226,13 @@ final class DotGraphRenderer {
     }
 
     /**
-     * 拓扑排序 + BFS 计算节点层级。
+     * 拓扑排序 + BFS 计算节点层级
      *
-     * <p>入度为 0 的节点为第 0 层。每处理一个节点，其后继的入度减 1；
-     * 入度归零时加入队列，层级 = 前驱层级 + 1。若有环则环内节点按 BFS
-     * 实际遍历顺序确定层级。</p>
+     * <p>入度为 0 的节点为第 0 层每处理一个节点,其后继的入度减 1；
+     * 入度归零时加入队列,层级 = 前驱层级 + 1若有环则环内节点按 BFS
+     * 实际遍历顺序确定层级</p>
      *
-     * <p>若所有节点都有入度（图内无根节点），取第一个节点为第 0 层起手。</p>
+     * <p>若所有节点都有入度（图内无根节点）,取第一个节点为第 0 层起手</p>
      */
     private static Map<String, Integer> computeLevels(DotGraphParser.DotGraph graph) {
         Map<String, Integer> indegree = new HashMap<>();
@@ -279,7 +284,7 @@ final class DotGraphRenderer {
                 if (nextLevel > levels.getOrDefault(next, -1)) {
                     levels.put(next, nextLevel);
                 }
-                // 入度减 1，归零时入队
+                // 入度减 1,归零时入队
                 int degree = indegree.computeIfPresent(next,
                         (key, value) -> Math.max(0, value - 1));
                 if (degree == 0 && queued.add(next)) {
@@ -288,7 +293,7 @@ final class DotGraphRenderer {
             }
         }
 
-        // 因环而未分配层级的节点：按声明顺序补层级，每 FALLBACK_PER_LEVEL 个一组
+        // 因环而未分配层级的节点：按声明顺序补层级,每 FALLBACK_PER_LEVEL 个一组
         int fallback = 0;
         for (DotGraphParser.DotNode node : graph.nodes()) {
             levels.putIfAbsent(node.id(), fallback++ / FALLBACK_PER_LEVEL);
@@ -325,8 +330,8 @@ final class DotGraphRenderer {
     // ======================== 连线渲染 ========================
 
     /**
-     * 绘制从 from 到 to 的有向边：直线 + 终点箭头三角形。
-     * 两端点自动截断到节点矩形边框上，避免线条穿过节点内部。
+     * 绘制从 from 到 to 的有向边：直线 + 终点箭头三角形
+     * 两端点自动截断到节点矩形边框上,避免线条穿过节点内部
      */
     private static void drawEdge(Pane pane, LayoutNode from, LayoutNode to) {
         Point2D fromCenter = from.center();
@@ -339,7 +344,7 @@ final class DotGraphRenderer {
         line.setStrokeWidth(1.2);
         pane.getChildren().add(line);
 
-        // 终点箭头（等腰三角形，底边朝外）
+        // 终点箭头（等腰三角形,底边朝外）
         double angle = Math.atan2(end.getY() - start.getY(), end.getX() - start.getX());
         double sin = Math.sin(angle);
         double cos = Math.cos(angle);
@@ -355,10 +360,10 @@ final class DotGraphRenderer {
     }
 
     /**
-     * 计算从 node 中心到 target 的连线与 node 矩形边框的交点。
+     * 计算从 node 中心到 target 的连线与 node 矩形边框的交点
      *
-     * <p>原理：以 node 中心为原点，向 target 方向做射线，取射线与矩形
-     * 的交点中距离中心最近的那个（即先碰到哪条边就在哪里截断）。</p>
+     * <p>原理：以 node 中心为原点,向 target 方向做射线,取射线与矩形
+     * 的交点中距离中心最近的那个（即先碰到哪条边就在哪里截断）</p>
      */
     private static Point2D borderPoint(LayoutNode node, Point2D target) {
         Point2D center = node.center();
@@ -367,7 +372,7 @@ final class DotGraphRenderer {
         if (Math.abs(dx) < 0.0001 && Math.abs(dy) < 0.0001) {
             return center;
         }
-        // 分别计算射线打到左右/上下边框所需的缩放因子，取较小值
+        // 分别计算射线打到左右/上下边框所需的缩放因子,取较小值
         double scaleX = Math.abs(dx) < 0.0001
                 ? Double.POSITIVE_INFINITY : (node.width() / 2.0) / Math.abs(dx);
         double scaleY = Math.abs(dy) < 0.0001
@@ -379,17 +384,17 @@ final class DotGraphRenderer {
     // ======================== 交互 ========================
 
     /**
-     * 安装 Ctrl+滚轮缩放。
+     * 安装 Ctrl+滚轮缩放
      *
-     * <p>缩放以 Group 的 scaleX/scaleY 实现，同时调整 canvas 的 prefSize
-     * 以保持 ScrollPane 滚动条范围与缩放后实际尺寸一致。</p>
+     * <p>缩放以 Group 的 scaleX/scaleY 实现,同时调整 canvas 的 prefSize
+     * 以保持 ScrollPane 滚动条范围与缩放后实际尺寸一致</p>
      */
     private static void installZoom(ScrollPane scroll, Group group,
                                     Pane canvas, Bounds bounds) {
         final double[] zoom = {1.0};
         scroll.addEventFilter(ScrollEvent.SCROLL, event -> {
             if (!event.isControlDown() && !event.isMetaDown()) {
-                return; // 不拦截普通滚轮，让 ScrollPane 正常滚动
+                return; // 不拦截普通滚轮,让 ScrollPane 正常滚动
             }
             double next = Math.clamp(
                     zoom[0] + (event.getDeltaY() > 0 ? ZOOM_STEP : -ZOOM_STEP),
@@ -401,7 +406,7 @@ final class DotGraphRenderer {
             zoom[0] = next;
             group.setScaleX(next);
             group.setScaleY(next);
-            // 同步 canvas 尺寸，避免缩放后内容被裁剪
+            // 同步 canvas 尺寸,避免缩放后内容被裁剪
             canvas.setPrefSize(bounds.width() * next, bounds.height() * next);
             canvas.setMinSize(bounds.width() * next, bounds.height() * next);
             event.consume();
@@ -411,10 +416,10 @@ final class DotGraphRenderer {
     // ======================== 尺寸计算 ========================
 
     /**
-     * 根据标签文本估算节点宽度。
+     * 根据标签文本估算节点宽度
      *
-     * <p>取最长行字符数 × 单字符宽度 + 内边距，限制在 [{@link #MIN_NODE_W},
-     * {@link #MAX_NODE_W}] 范围内。label 中的 \\n 导致多行。</p>
+     * <p>取最长行字符数 × 单字符宽度 + 内边距,限制在 [{@link #MIN_NODE_W},
+     * {@link #MAX_NODE_W}] 范围内label 中的 \\n 导致多行</p>
      */
     private static double nodeWidth(DotGraphParser.DotNode node) {
         String label = node.label() == null ? "" : node.label();
@@ -426,10 +431,10 @@ final class DotGraphRenderer {
     }
 
     /**
-     * 根据标签文本估算节点高度。
+     * 根据标签文本估算节点高度
      *
-     * <p>行数 × 行高 + 内边距，超过 {@link #WRAP_THRESHOLD} 字符的行
-     * 按其倍数折算为多行（节点内 wrapText 自动折行）。</p>
+     * <p>行数 × 行高 + 内边距,超过 {@link #WRAP_THRESHOLD} 字符的行
+     * 按其倍数折算为多行（节点内 wrapText 自动折行）</p>
      */
     private static double nodeHeight(DotGraphParser.DotNode node) {
         String label = node.label() == null ? "" : node.label();
@@ -443,10 +448,10 @@ final class DotGraphRenderer {
     // ======================== 颜色工具 ========================
 
     /**
-     * 根据背景色智能选择文字颜色。
+     * 根据背景色智能选择文字颜色
      *
-     * <p>若用户指定了 fontColor 且为合法 CSS 颜色，直接使用；否则根据填充色的
-     * BT.601 相对亮度自动选择：亮底黑字 / 暗底白字。</p>
+     * <p>若用户指定了 fontColor 且为合法 CSS 颜色,直接使用；否则根据填充色的
+     * BT.601 相对亮度自动选择：亮底黑字 / 暗底白字</p>
      */
     private static String chooseTextColor(String fill, String configured) {
         if (configured != null && !configured.isBlank()) {
@@ -460,12 +465,23 @@ final class DotGraphRenderer {
         return luminance > LUMINANCE_THRESHOLD ? DARK_TEXT : LIGHT_TEXT;
     }
 
-    /** 若值为合法 CSS 颜色则返回原值，否则返回缺省值 */
+    /**
+     * 若值为合法 CSS 颜色则返回原值,否则返回缺省值
+     *
+     * @param value    待检查的颜色字符串
+     * @param fallback 非法颜色时的回退值
+     * @return 合法的颜色值或回退值
+     */
     private static String colorOrDefault(String value, String fallback) {
         return isValidColor(value) ? value : fallback;
     }
 
-    /** 检查字符串是否为合法 CSS 颜色（#rrggbb、命名颜色等） */
+    /**
+     * 检查字符串是否为合法 CSS 颜色（#rrggbb、命名颜色等）
+     *
+     * @param value 待检查的颜色字符串
+     * @return true 表示可被 {@link Color#web(String)} 解析
+     */
     private static boolean isValidColor(String value) {
         if (value == null || value.isBlank()) {
             return false;
@@ -478,7 +494,13 @@ final class DotGraphRenderer {
         }
     }
 
-    /** 安全解析 CSS 颜色，失败返回缺省值 */
+    /**
+     * 安全解析 CSS 颜色,失败返回缺省值
+     *
+     * @param value    颜色字符串（#rrggbb、命名颜色等）,可为 null
+     * @param fallback 解析失败时的回退颜色
+     * @return 解析成功的 Color 对象或回退值
+     */
     private static Color parseColor(String value, Color fallback) {
         try {
             return value == null || value.isBlank() ? fallback : Color.web(value);
@@ -489,7 +511,12 @@ final class DotGraphRenderer {
 
     // ======================== 辅助类型 ========================
 
-    /** 计算所有节点布局后的最大画布尺寸 */
+    /**
+     * 计算所有节点布局后的最大画布尺寸（含四周留白）
+     *
+     * @param layout 已布局的节点映射（id → LayoutNode）
+     * @return 画布边界（宽度 × 高度）
+     */
     private static Bounds computeBounds(Map<String, LayoutNode> layout) {
         double maxX = MARGIN * 2;
         double maxY = MARGIN * 2;
@@ -501,7 +528,7 @@ final class DotGraphRenderer {
     }
 
     /**
-     * 布局后的节点坐标和尺寸。
+     * 布局后的节点坐标和尺寸
      *
      * @param node   原始节点数据
      * @param x      左上角 X 坐标
@@ -511,13 +538,18 @@ final class DotGraphRenderer {
      */
     private record LayoutNode(DotGraphParser.DotNode node, double x, double y,
                               double width, double height) {
-        /** 节点矩形中心坐标，用于连线端点计算 */
+        /** 节点矩形中心坐标,用于连线端点计算 */
         Point2D center() {
             return new Point2D(x + width / 2.0, y + height / 2.0);
         }
     }
 
-    /** 画布尺寸（宽度 × 高度） */
+    /**
+     * 画布尺寸（宽度 × 高度）,用于设置 ScrollPane 内容区域大小
+     *
+     * @param width  画布总宽度（含留白）
+     * @param height 画布总高度（含留白）
+     */
     private record Bounds(double width, double height) {
     }
 }

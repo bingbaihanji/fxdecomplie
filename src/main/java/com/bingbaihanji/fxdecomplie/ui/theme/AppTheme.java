@@ -34,20 +34,22 @@ public final class AppTheme {
     }
 
     /**
-     * 加载编辑器主题。
+     * 加载编辑器主题
      *
      * @param config 应用配置
-     * @return 主题数据（通过 ThemeManager 按名称加载，失败时回退到硬编码默认值）
+     * @return 主题数据（通过 ThemeManager 按名称加载,失败时回退到硬编码默认值）
      */
     public static VsCodeThemeLoader.ThemeData loadEditorTheme(AppConfig config) {
         String themeName = config.theme().editorTheme();
         try {
+            // 优先加载用户配置的主题名,空白/空值时回退到内置 Dark+ 主题
             if (themeName != null && !themeName.isBlank()) {
                 return ThemeManager.resolveThemeData(themeName);
             }
             return ThemeManager.resolveThemeData("Dark+");
         } catch (RuntimeException e) {
-            log.warn("加载编辑器主题失败，使用默认暗色主题", e);
+            // 最外层兜底：主题加载异常时使用硬编码默认暗色主题,确保编辑器始终可渲染
+            log.warn("加载编辑器主题失败,使用默认暗色主题", e);
             return VsCodeThemeLoader.defaultDark();
         }
     }

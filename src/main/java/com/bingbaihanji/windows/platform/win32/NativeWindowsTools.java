@@ -13,7 +13,7 @@ import com.sun.jna.ptr.IntByReference;
 /**
  * Windows 原生窗口操作工具类
  *
- * <p>封装基于 JNA 的 Win32 / DWM API，提供窗口样式、透明度、状态控制等常用操作</p>
+ * <p>封装基于 JNA 的 Win32 / DWM API,提供窗口样式、透明度、状态控制等常用操作</p>
  *
  * @author bingbaihanji
  */
@@ -26,7 +26,7 @@ public final class NativeWindowsTools {
      * 根据长整型句柄值重建 Win32 HWND
      *
      * @param headId 原生句柄长整型值(来自 {@code com.bingbaihanji.javafx.jna.NativeWindowHandle#value()})
-     * @return 重建的 HWND，值为 0 时返回 null
+     * @return 重建的 HWND,值为 0 时返回 null
      */
     public static WinDef.HWND getHWndByEnumeration(Long headId) {
         if (headId == null || headId == 0L) {
@@ -39,7 +39,7 @@ public final class NativeWindowsTools {
      * 从长整型指针值创建 HWND
      *
      * @param value 原生指针值
-     * @return HWND，值为 0 返回 null
+     * @return HWND,值为 0 返回 null
      */
     public static WinDef.HWND hwndFromNativeValue(long value) {
         return value == 0L ? null : new WinDef.HWND(Pointer.createConstant(value));
@@ -49,7 +49,7 @@ public final class NativeWindowsTools {
      * 获取 HWND 的原始指针值(64 位无符号)
      *
      * @param hwnd 窗口句柄
-     * @return 指针值，hwnd 为 null 返回 0
+     * @return 指针值,hwnd 为 null 返回 0
      */
     public static long nativeHandleValue(WinDef.HWND hwnd) {
         return hwnd == null ? 0L : Pointer.nativeValue(hwnd.getPointer());
@@ -58,10 +58,10 @@ public final class NativeWindowsTools {
     // ==================== 句柄工具 ====================
 
     /**
-     * 获取 HWND 的十六进制字符串表示，用于调试和日志输出
+     * 获取 HWND 的十六进制字符串表示,用于调试和日志输出
      *
      * @param hwnd 窗口句柄
-     * @return 如 "0xABCD1234"，hwnd 为空返回空串
+     * @return 如 "0xABCD1234",hwnd 为空返回空串
      */
     public static String nativeHandleHex(WinDef.HWND hwnd) {
         long value = nativeHandleValue(hwnd);
@@ -92,7 +92,7 @@ public final class NativeWindowsTools {
      * 设置窗口系统背景样式(Acrylic / Mica)
      *
      * @param hwnd         窗口句柄
-     * @param backdropType 背景类型(平台无关枚举，内部转换为 DWM 常量)
+     * @param backdropType 背景类型(平台无关枚举,内部转换为 DWM 常量)
      * @implNote 需要 Windows 11+
      */
     public static WindowOperationResult setSystemStageStyle(WinDef.HWND hwnd, WindowBackdropType backdropType) {
@@ -116,7 +116,7 @@ public final class NativeWindowsTools {
     /**
      * 获取窗口系统背景样式
      *
-     * @return 当前背景类型(平台无关枚举)，获取失败返回 null
+     * @return 当前背景类型(平台无关枚举),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static WindowBackdropType getSystemStageStyle(WinDef.HWND hwnd) {
@@ -131,7 +131,7 @@ public final class NativeWindowsTools {
      * 设置窗口圆角偏好
      *
      * @param hwnd             窗口句柄
-     * @param cornerPreference 圆角偏好(平台无关枚举，内部转换为 DWM 常量)
+     * @param cornerPreference 圆角偏好(平台无关枚举,内部转换为 DWM 常量)
      * @implNote 需要 Windows 11+
      */
     public static WindowOperationResult setWindowCornerPreference(WinDef.HWND hwnd,
@@ -158,7 +158,7 @@ public final class NativeWindowsTools {
     /**
      * 获取窗口圆角偏好
      *
-     * @return 当前圆角偏好(平台无关枚举)，获取失败返回 null
+     * @return 当前圆角偏好(平台无关枚举),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static WindowCornerPreference getWindowCornerPreference(WinDef.HWND hwnd) {
@@ -182,7 +182,7 @@ public final class NativeWindowsTools {
      * 设置窗口暗色模式
      *
      * @param hwnd        窗口句柄
-     * @param useDarkMode true=启用暗色模式，false=使用亮色模式
+     * @param useDarkMode true=启用暗色模式,false=使用亮色模式
      * @implNote 需要 Windows 10 1809+
      */
     public static WindowOperationResult setWindowDarkMode(WinDef.HWND hwnd, boolean useDarkMode) {
@@ -202,7 +202,7 @@ public final class NativeWindowsTools {
     /**
      * 获取窗口暗色模式状态
      *
-     * @return true=暗色模式，false=亮色模式，获取失败返回 null
+     * @return true=暗色模式,false=亮色模式,获取失败返回 null
      */
     public static Boolean getWindowDarkMode(WinDef.HWND hwnd) {
         if (hwnd == null) {
@@ -238,7 +238,7 @@ public final class NativeWindowsTools {
      * 获取窗口标题栏颜色
      *
      * @param hwnd 窗口句柄
-     * @return 标题栏颜色值(COLORREF 格式：0x00BBGGRR)，获取失败返回 null
+     * @return 标题栏颜色值(COLORREF 格式：0x00BBGGRR),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static Integer getWindowCaptionColor(WinDef.HWND hwnd) {
@@ -262,7 +262,7 @@ public final class NativeWindowsTools {
      * 获取窗口标题栏文本颜色
      *
      * @param hwnd 窗口句柄
-     * @return 文本颜色值(COLORREF 格式：0x00BBGGRR)，获取失败返回 null
+     * @return 文本颜色值(COLORREF 格式：0x00BBGGRR),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static Integer getWindowTextColor(WinDef.HWND hwnd) {
@@ -294,7 +294,7 @@ public final class NativeWindowsTools {
      * 获取窗口边框颜色
      *
      * @param hwnd 窗口句柄
-     * @return 边框颜色值(COLORREF 格式：0x00BBGGRR)，获取失败返回 null
+     * @return 边框颜色值(COLORREF 格式：0x00BBGGRR),获取失败返回 null
      * @implNote 需要 Windows 11+
      */
     public static Integer getWindowBorderColor(WinDef.HWND hwnd) {
@@ -313,7 +313,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 禁用窗口边框颜色(设为透明，不绘制边框)
+     * 禁用窗口边框颜色(设为透明,不绘制边框)
      *
      * @param hwnd 窗口句柄
      * @return 操作结果
@@ -327,7 +327,7 @@ public final class NativeWindowsTools {
      * 获取窗口可见边框厚度
      *
      * @param hwnd 窗口句柄
-     * @return 边框厚度(像素)，获取失败返回 null
+     * @return 边框厚度(像素),获取失败返回 null
      * @implNote 需要 Windows 10+
      */
     public static Integer getVisibleFrameBorderThickness(WinDef.HWND hwnd) {
@@ -338,7 +338,7 @@ public final class NativeWindowsTools {
      * 获取窗口扩展框架边界矩形(包含 DWM 渲染的阴影和边框区域)
      *
      * @param hwnd 窗口句柄
-     * @return 扩展框架边界矩形，获取失败返回 null
+     * @return 扩展框架边界矩形,获取失败返回 null
      * @implNote 需要 Windows Vista+
      */
     public static WinDef.RECT getExtendedFrameBounds(WinDef.HWND hwnd) {
@@ -359,7 +359,7 @@ public final class NativeWindowsTools {
      * 判断窗口是否启用了 DWM 非客户区渲染
      *
      * @param hwnd 窗口句柄
-     * @return true=启用非客户区渲染，false=禁用，获取失败返回 null
+     * @return true=启用非客户区渲染,false=禁用,获取失败返回 null
      * @implNote 需要 Windows Vista+
      */
     public static Boolean isNonClientRenderingEnabled(WinDef.HWND hwnd) {
@@ -394,7 +394,7 @@ public final class NativeWindowsTools {
      *
      * @param hwnd      窗口句柄
      * @param attribute DWM 属性 ID(如 {@code DWMWA_CAPTION_COLOR})
-     * @return 属性值，获取失败返回 null
+     * @return 属性值,获取失败返回 null
      * @implNote 需要 Windows Vista+
      */
     public static Integer getDwmIntAttribute(WinDef.HWND hwnd, int attribute) {
@@ -453,7 +453,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 扩展窗口框架到客户区，使 DWM 渲染窗口阴影和边框
+     * 扩展窗口框架到客户区,使 DWM 渲染窗口阴影和边框
      *
      * @param hwnd   窗口句柄
      * @param left   左侧扩展像素
@@ -479,7 +479,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 扩展窗口框架到整个客户区(-1, -1, -1, -1)，启用 DWM 阴影和玻璃效果
+     * 扩展窗口框架到整个客户区(-1, -1, -1, -1),启用 DWM 阴影和玻璃效果
      */
     public static WindowOperationResult extendFrameIntoClientArea(WinDef.HWND hwnd) {
         return extendFrameIntoClientArea(hwnd, -1, -1, -1, -1);
@@ -489,7 +489,7 @@ public final class NativeWindowsTools {
      * 设置窗口阴影
      *
      * @param hwnd    窗口句柄
-     * @param enabled true=启用阴影，false=禁用阴影
+     * @param enabled true=启用阴影,false=禁用阴影
      */
     public static WindowOperationResult enableWindowShadow(WinDef.HWND hwnd, boolean enabled) {
         if (hwnd == null) {
@@ -508,14 +508,14 @@ public final class NativeWindowsTools {
      * 设置窗口透明度
      *
      * @param hwnd  窗口句柄
-     * @param value 透明度值(0.0 = 完全透明，1.0 = 完全不透明)
+     * @param value 透明度值(0.0 = 完全透明,1.0 = 完全不透明)
      */
     public static WindowOperationResult setWindowAlpha(WinDef.HWND hwnd, float value) {
         if (hwnd == null) {
             return skippedNullHandle("setWindowAlpha");
         }
         if (value <= 0 || value > 1) {
-            throw new IllegalArgumentException("Alpha 值必须在 (0, 1] 范围内，实际收到: " + value);
+            throw new IllegalArgumentException("Alpha 值必须在 (0, 1] 范围内,实际收到: " + value);
         }
         byte alpha = (byte) (value * 255);
 
@@ -534,7 +534,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 清除窗口分层属性，恢复窗口为完全不透明状态
+     * 清除窗口分层属性,恢复窗口为完全不透明状态
      *
      * @param hwnd 窗口句柄
      * @return 操作结果
@@ -555,7 +555,7 @@ public final class NativeWindowsTools {
      * 设置窗口鼠标穿透模式启用后鼠标点击将穿透窗口到达下层窗口
      *
      * @param hwnd         窗口句柄
-     * @param clickThrough true=启用鼠标穿透，false=禁用
+     * @param clickThrough true=启用鼠标穿透,false=禁用
      * @return 操作结果
      */
     public static WindowOperationResult setClickThrough(WinDef.HWND hwnd, boolean clickThrough) {
@@ -574,7 +574,7 @@ public final class NativeWindowsTools {
      * 判断窗口是否处于鼠标穿透模式
      *
      * @param hwnd 窗口句柄
-     * @return true=鼠标穿透，鼠标点击会穿过窗口
+     * @return true=鼠标穿透,鼠标点击会穿过窗口
      */
     public static boolean isClickThrough(WinDef.HWND hwnd) {
         long style = getExtendedWindowStyle(hwnd);
@@ -657,7 +657,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 向窗口发送关闭消息(WM_CLOSE)，请求窗口关闭
+     * 向窗口发送关闭消息(WM_CLOSE),请求窗口关闭
      *
      * @param hwnd 窗口句柄
      * @return 操作结果
@@ -672,7 +672,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 向窗口发送系统命令(WM_SYSCOMMAND)，如最大化、最小化、关闭等
+     * 向窗口发送系统命令(WM_SYSCOMMAND),如最大化、最小化、关闭等
      *
      * @param hwnd    窗口句柄
      * @param command 系统命令常量(如 {@code SC_MAXIMIZE}、{@code SC_MINIMIZE} 等)
@@ -701,7 +701,7 @@ public final class NativeWindowsTools {
      * 判断窗口是否处于置顶状态
      *
      * @param hwnd 窗口句柄
-     * @return true=窗口置顶，false=非置顶
+     * @return true=窗口置顶,false=非置顶
      */
     public static boolean isAlwaysOnTop(WinDef.HWND hwnd) {
         return (getExtendedWindowStyle(hwnd) & Win32Constants.WindowStyleEx.WS_EX_TOPMOST) != 0;
@@ -721,7 +721,7 @@ public final class NativeWindowsTools {
     /**
      * 获取当前前台窗口句柄
      *
-     * @return 前台窗口 HWND，无前台窗口时返回值可能无效
+     * @return 前台窗口 HWND,无前台窗口时返回值可能无效
      */
     public static WinDef.HWND getForegroundWindow() {
         return Win32Api.User32Api.INSTANCE.GetForegroundWindow();
@@ -730,7 +730,7 @@ public final class NativeWindowsTools {
     /**
      * 将窗口强制带到前台(即使当前进程不在前台也可将窗口弹到最前)
      *
-     * <p>某些 Windows 版本会限制 {@code SetForegroundWindow}，
+     * <p>某些 Windows 版本会限制 {@code SetForegroundWindow},
      * 此时使用 Alt+Tab 模拟 + SetWindowPos 作为补充手段</p>
      */
     public static WindowOperationResult bringToFront(WinDef.HWND hwnd) {
@@ -804,7 +804,7 @@ public final class NativeWindowsTools {
     // ==================== 窗口可见性 ====================
 
     /**
-     * 闪烁窗口任务栏图标，持续闪烁直到用户点击窗口
+     * 闪烁窗口任务栏图标,持续闪烁直到用户点击窗口
      */
     public static WindowOperationResult flashWindowUntilForeground(WinDef.HWND hwnd) {
         return flashWindow(hwnd, 0, 0);
@@ -836,7 +836,7 @@ public final class NativeWindowsTools {
 
     /**
      * 启用或禁用窗口的鼠标/键盘输入
-     * 禁用后窗口无法接收点击和按键，适合在长时间任务期间防止用户误操作
+     * 禁用后窗口无法接收点击和按键,适合在长时间任务期间防止用户误操作
      */
     public static WindowOperationResult enableWindow(WinDef.HWND hwnd, boolean enabled) {
         if (hwnd == null) {
@@ -850,7 +850,7 @@ public final class NativeWindowsTools {
      * 获取窗口基本样式标志位
      *
      * @param hwnd 窗口句柄
-     * @return 样式标志位组合(如 {@code WS_CAPTION | WS_SYSMENU} 等)，hwnd 为 null 返回 0
+     * @return 样式标志位组合(如 {@code WS_CAPTION | WS_SYSMENU} 等),hwnd 为 null 返回 0
      */
     public static long getWindowStyle(WinDef.HWND hwnd) {
         if (hwnd == null) {
@@ -867,7 +867,7 @@ public final class NativeWindowsTools {
      * 获取窗口扩展样式标志位
      *
      * @param hwnd 窗口句柄
-     * @return 扩展样式标志位组合(如 {@code WS_EX_LAYERED | WS_EX_TOPMOST} 等)，hwnd 为 null 返回 0
+     * @return 扩展样式标志位组合(如 {@code WS_EX_LAYERED | WS_EX_TOPMOST} 等),hwnd 为 null 返回 0
      */
     public static long getExtendedWindowStyle(WinDef.HWND hwnd) {
         if (hwnd == null) {
@@ -903,7 +903,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 设置窗口基本样式标志位(直接替换，非叠加)
+     * 设置窗口基本样式标志位(直接替换,非叠加)
      *
      * @param hwnd  窗口句柄
      * @param style 新的样式标志位组合
@@ -914,7 +914,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 设置窗口扩展样式标志位(直接替换，非叠加)
+     * 设置窗口扩展样式标志位(直接替换,非叠加)
      *
      * @param hwnd  窗口句柄
      * @param style 新的扩展样式标志位组合
@@ -972,7 +972,7 @@ public final class NativeWindowsTools {
      * 控制窗口最小化按钮的可见性
      *
      * @param hwnd    窗口句柄
-     * @param visible true=显示最小化按钮，false=隐藏
+     * @param visible true=显示最小化按钮,false=隐藏
      * @return 操作结果
      */
     public static WindowOperationResult setMinimizeBoxVisible(WinDef.HWND hwnd, boolean visible) {
@@ -1017,11 +1017,11 @@ public final class NativeWindowsTools {
     /**
      * 控制窗口是否在 Alt+Tab 任务切换列表中显示
      *
-     * <p>隐藏后窗口不在 Alt+Tab 和任务栏中出现，适合浮动工具栏等辅助窗口
+     * <p>隐藏后窗口不在 Alt+Tab 和任务栏中出现,适合浮动工具栏等辅助窗口
      * 本质是添加/移除 {@code WS_EX_TOOLWINDOW} 扩展样式</p>
      *
      * @param hwnd 窗口句柄
-     * @param hide true=隐藏，false=恢复显示
+     * @param hide true=隐藏,false=恢复显示
      */
     public static WindowOperationResult hideFromAltTab(WinDef.HWND hwnd, boolean hide) {
         if (hwnd == null) {
@@ -1040,7 +1040,7 @@ public final class NativeWindowsTools {
      * 控制窗口是否在任务栏中显示
      *
      * @param hwnd 窗口句柄
-     * @param show true=显示在任务栏，false=从任务栏移除
+     * @param show true=显示在任务栏,false=从任务栏移除
      * @return 操作结果
      */
     public static WindowOperationResult showInTaskbar(WinDef.HWND hwnd, boolean show) {
@@ -1059,10 +1059,10 @@ public final class NativeWindowsTools {
     /**
      * 获取窗口完整位置信息(含正常/最大化/最小化状态和各状态下的矩形)
      *
-     * <p>与 {@link #getWindowRect} 不同，此方法能获取恢复状态下的矩形，
+     * <p>与 {@link #getWindowRect} 不同,此方法能获取恢复状态下的矩形,
      * 即使窗口当前处于最大化或最小化状态适合用于持久化窗口状态</p>
      *
-     * @return 窗口位置信息，获取失败返回 null
+     * @return 窗口位置信息,获取失败返回 null
      */
     private static Win32Api.User32Api.WINDOWPLACEMENT getNativeWindowPlacement(WinDef.HWND hwnd) {
         if (hwnd == null) {
@@ -1081,11 +1081,11 @@ public final class NativeWindowsTools {
     /**
      * 获取窗口完整位置信息(含正常/最大化/最小化状态和各状态下的矩形)
      *
-     * <p>即使窗口当前处于最大化或最小化状态，也能获取恢复状态下的矩形，
+     * <p>即使窗口当前处于最大化或最小化状态,也能获取恢复状态下的矩形,
      * 适合用于持久化窗口位置</p>
      *
      * @param hwnd 窗口句柄
-     * @return 窗口位置信息，获取失败返回 null
+     * @return 窗口位置信息,获取失败返回 null
      */
     public static WindowPlacement getWindowPlacement(WinDef.HWND hwnd) {
         Win32Api.User32Api.WINDOWPLACEMENT placement = getNativeWindowPlacement(hwnd);
@@ -1118,7 +1118,7 @@ public final class NativeWindowsTools {
 
     /**
      * 将窗口恢复到正常(非最大化/最小化)状态下的位置和大小
-     * 即使当前最大化，也仅恢复位置矩形而不改变最大化状态
+     * 即使当前最大化,也仅恢复位置矩形而不改变最大化状态
      *
      * @param hwnd 窗口句柄
      * @param x    正常状态左上角 x
@@ -1149,7 +1149,7 @@ public final class NativeWindowsTools {
      * 获取窗口所在显示器的 DPI
      *
      * @param hwnd 窗口句柄
-     * @return DPI 值(96 = 100%)，非 Windows 10 1607+ 回退到主显示器 DPI
+     * @return DPI 值(96 = 100%),非 Windows 10 1607+ 回退到主显示器 DPI
      */
     public static int getWindowDpi(WinDef.HWND hwnd) {
         if (hwnd == null) {
@@ -1163,7 +1163,7 @@ public final class NativeWindowsTools {
      * 获取窗口缩放比例(相对于 96 DPI)
      *
      * @param hwnd 窗口句柄
-     * @return 缩放比例，如 1.25 表示 125%
+     * @return 缩放比例,如 1.25 表示 125%
      */
     public static double getWindowScaleFactor(WinDef.HWND hwnd) {
         return getWindowDpi(hwnd) / 96.0;
@@ -1259,7 +1259,7 @@ public final class NativeWindowsTools {
      * 获取窗口在屏幕坐标下的边界矩形
      *
      * @param hwnd 窗口句柄
-     * @return 窗口边界矩形(屏幕坐标)，hwnd 为 null 返回 (0,0,0,0)
+     * @return 窗口边界矩形(屏幕坐标),hwnd 为 null 返回 (0,0,0,0)
      */
     public static WindowRect getWindowBounds(WinDef.HWND hwnd) {
         return toWindowRect(getWindowRect(hwnd));
@@ -1278,7 +1278,7 @@ public final class NativeWindowsTools {
      * 获取窗口客户区在客户坐标下的边界矩形
      *
      * @param hwnd 窗口句柄
-     * @return 客户区矩形(客户坐标)，hwnd 为 null 返回 (0,0,0,0)
+     * @return 客户区矩形(客户坐标),hwnd 为 null 返回 (0,0,0,0)
      */
     public static WindowRect getClientBounds(WinDef.HWND hwnd) {
         return toWindowRect(getClientRect(hwnd));
@@ -1288,7 +1288,7 @@ public final class NativeWindowsTools {
      * 获取窗口宽度
      *
      * @param hwnd 窗口句柄
-     * @return 窗口宽度(像素)，hwnd 为 null 返回 0
+     * @return 窗口宽度(像素),hwnd 为 null 返回 0
      */
     public static int getWindowWidth(WinDef.HWND hwnd) {
         return getWindowBounds(hwnd).width();
@@ -1298,7 +1298,7 @@ public final class NativeWindowsTools {
      * 获取窗口高度
      *
      * @param hwnd 窗口句柄
-     * @return 窗口高度(像素)，hwnd 为 null 返回 0
+     * @return 窗口高度(像素),hwnd 为 null 返回 0
      */
     public static int getWindowHeight(WinDef.HWND hwnd) {
         return getWindowBounds(hwnd).height();
@@ -1396,7 +1396,7 @@ public final class NativeWindowsTools {
      * @param hwnd 窗口句柄
      * @param x    客户区 x 坐标
      * @param y    客户区 y 坐标
-     * @return 屏幕坐标点，转换失败返回 null
+     * @return 屏幕坐标点,转换失败返回 null
      */
     public static WindowPoint clientToScreen(WinDef.HWND hwnd, int x, int y) {
         if (hwnd == null) {
@@ -1415,7 +1415,7 @@ public final class NativeWindowsTools {
      * @param hwnd 窗口句柄
      * @param x    屏幕 x 坐标
      * @param y    屏幕 y 坐标
-     * @return 客户区坐标点，转换失败返回 null
+     * @return 客户区坐标点,转换失败返回 null
      */
     public static WindowPoint screenToClient(WinDef.HWND hwnd, int x, int y) {
         if (hwnd == null) {
@@ -1554,7 +1554,7 @@ public final class NativeWindowsTools {
         return hresult == 0
                 ? WindowOperationResult.success(operation)
                 : WindowOperationResult.failed(operation, hresult,
-                "原生调用失败，HRESULT 0x" + Integer.toHexString(hresult).toUpperCase());
+                "原生调用失败,HRESULT 0x" + Integer.toHexString(hresult).toUpperCase());
     }
 
     private static WindowOperationResult boolResult(String operation, boolean success) {
@@ -1619,7 +1619,7 @@ public final class NativeWindowsTools {
         };
     }
 
-    /** 窗口坐标点，对应 Win32 POINT 结构体 */
+    /** 窗口坐标点,对应 Win32 POINT 结构体 */
     public record WindowPoint(int x, int y) {
         private WinDef.POINT toNativePoint() {
             WinDef.POINT point = new WinDef.POINT();
@@ -1629,7 +1629,7 @@ public final class NativeWindowsTools {
         }
     }
 
-    /** 窗口矩形信息，对应 Win32 RECT 结构体 */
+    /** 窗口矩形信息,对应 Win32 RECT 结构体 */
     public record WindowRect(int left, int top, int right, int bottom) {
         public int width() {
             return right - left;
@@ -1653,7 +1653,7 @@ public final class NativeWindowsTools {
         }
     }
 
-    /** 窗口位置信息，对应 Win32 WINDOWPLACEMENT 结构体，包含正常/最大化/最小化状态下的位置和矩形 */
+    /** 窗口位置信息,对应 Win32 WINDOWPLACEMENT 结构体,包含正常/最大化/最小化状态下的位置和矩形 */
     public record WindowPlacement(
             int flags,
             int showCommand,

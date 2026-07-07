@@ -4,7 +4,7 @@ import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import jfx.incubator.scene.control.richtext.TextPos;
 
 /**
- * 代码视图操作回调接口，定义 CodeViewPanel 需要调用的外部操作
+ * 代码视图操作回调接口,定义 CodeViewPanel 需要调用的外部操作
  *
  * <p>实现方（如 MainWindow）负责具体逻辑：导航、图形展示、注释管理等</p>
  *
@@ -17,9 +17,9 @@ public interface CodeActionHandler {
     void goToDeclaration(CodeMetadata.Reference reference);
 
     /**
-     * 跳转到声明（右键菜单）。
+     * 跳转到声明（右键菜单）
      *
-     * <p>默认仍按行级 metadata 跳转；实现方可以结合当前 token 和工作区索引做兜底解析。</p>
+     * <p>默认仍按行级 metadata 跳转；实现方可以结合当前 token 和工作区索引做兜底解析</p>
      */
     default void goToDeclaration(CodeViewContext context, int lineNumber, String token) {
         if (context == null || context.metadata() == null) {

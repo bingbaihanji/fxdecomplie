@@ -54,7 +54,7 @@ public final class CommentExportDecorator {
 
         String[] lines = sourceCode.split("\n", -1);
 
-        // 按行号倒序排列，从后往前插入避免行号偏移
+        // 按行号倒序排列,从后往前插入避免行号偏移
         List<CommentData> sorted = comments.stream()
                 .sorted(Comparator.comparingInt(CommentData::line).reversed())
                 .toList();
@@ -74,7 +74,7 @@ public final class CommentExportDecorator {
      */
     public static int resolveTargetLine(CommentData c, String[] lines,
                                         String currentSourceHash, String currentOptionsHash) {
-        // 策略1: hash 匹配，直接使用保存时的行号
+        // 策略1: hash 匹配,直接使用保存时的行号
         if (c.sourceHash() != null && c.sourceHash().equals(currentSourceHash)
                 && c.optionsHash() != null && c.optionsHash().equals(currentOptionsHash)) {
             return c.line();

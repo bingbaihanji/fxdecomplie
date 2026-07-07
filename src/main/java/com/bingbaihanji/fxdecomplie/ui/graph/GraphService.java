@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * 图形服务工具类，负责 DOT 字符串生成和类内方法调用解析
+ * 图形服务工具类,负责 DOT 字符串生成和类内方法调用解析
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -49,6 +49,16 @@ public final class GraphService {
         return sb.toString();
     }
 
+    /**
+     * 递归遍历继承树,向 StringBuilder 追加节点声明
+     *
+     * <p>深度超过 20 层的子树会被截断,防止异常深度树导致 DOT 过大</p>
+     *
+     * @param sb    DOT 输出缓冲区
+     * @param item  当前树节点
+     * @param seen  已输出节点集合（防重）
+     * @param depth 当前递归深度
+     */
     private static void appendInheritanceNodes(StringBuilder sb, TreeItem<InheritanceNode> item,
                                                Set<String> seen, int depth) {
         if (item == null || depth > 20) {
@@ -77,11 +87,11 @@ public final class GraphService {
     }
 
     /**
-     * 递归为继承树生成边。
+     * 递归为继承树生成边
      *
      * <p>边的方向总是指向父节点（配合 rankdir=BT 实现"自底向上"的继承层次）：
-     * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口，边 parent→child（指向更上层）；
-     * SUBCLASS → child 是 parent 的子类，边 child→parent（指向被分析的类）。</p>
+     * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口,边 parent→child（指向更上层）；
+     * SUBCLASS → child 是 parent 的子类,边 child→parent（指向被分析的类）</p>
      */
     private static void appendInheritanceEdges(StringBuilder sb, TreeItem<InheritanceNode> item,
                                                Set<String> seen) {
@@ -110,6 +120,13 @@ public final class GraphService {
         }
     }
 
+    /**
+     * 向 DOT 缓冲区追加一条继承边
+     *
+     * @param sb   DOT 输出缓冲区
+     * @param from 起始节点标识（类全限定名）
+     * @param to   目标节点标识（类全限定名）
+     */
     private static void appendInheritanceEdge(StringBuilder sb, String from, String to) {
         sb.append("    \"").append(escapeDot(from))
                 .append("\" -> \"")
@@ -159,7 +176,7 @@ public final class GraphService {
         }
 
         if (graph.methods().size() > MAX_METHOD_NODES) {
-            sb.append("    label=\"方法过多，已截断（显示前 ")
+            sb.append("    label=\"方法过多,已截断（显示前 ")
                     .append(MAX_METHOD_NODES).append(" 个）\";\n");
         }
         sb.append("}\n");
@@ -170,7 +187,7 @@ public final class GraphService {
      * 从 classBytes 解析类内方法调用关系
      *
      * @param classBytes 类文件字节码
-     * @return 方法调用图，失败返回空图
+     * @return 方法调用图,失败返回空图
      */
     public static MethodGraph parseMethodCalls(byte[] classBytes) {
         if (classBytes == null || classBytes.length == 0) {
@@ -201,6 +218,12 @@ public final class GraphService {
                 .replace("}", "\\}");
     }
 
+    /**
+     * 从全限定类名中提取简短类名（去除包名前缀）
+     *
+     * @param fullName 全限定类名,如 "java.util.ArrayList"
+     * @return 简短类名,如 "ArrayList"；null 输入返回空串
+     */
     private static String shortName(String fullName) {
         if (fullName == null) {
             return "";
@@ -209,6 +232,12 @@ public final class GraphService {
         return dot >= 0 ? fullName.substring(dot + 1) : fullName;
     }
 
+    /**
+     * 生成方法节点的唯一键（方法名 + 描述符）,用于去重和查找
+     *
+     * @param n 方法节点
+     * @return 唯一键字符串
+     */
     private static String nodeKey(MethodNode n) {
         return n.name() + n.descriptor();
     }
@@ -235,10 +264,18 @@ public final class GraphService {
     public record MethodEdge(MethodNode from, MethodNode to) {
     }
 
-    /** ASM ClassVisitor，扫描方法体中的类内部方法调用 */
+    /**
+     * ASM ClassVisitor,扫描方法体中的类内部方法调用,构建方法调用图
+     *
+     * <p>遍历每个方法的字节码指令,收集 INVOKEVIRTUAL/INVOKESTATIC 等调用指令,
+     * 仅记录目标类与当前类相同的方法调用（类内部调用）</p>
+     */
     private static final class MethodCallCollector extends ClassVisitor {
+        /** 方法节点映射（键 = 方法名+描述符） */
         private final Map<String, MethodNode> nodeMap = new LinkedHashMap<>();
+        /** 方法调用边集合（已去重） */
         private final Set<MethodEdge> edges = new LinkedHashSet<>();
+        /** 当前正在解析的类内部名称 */
         private String owner;
 
         MethodCallCollector() {
@@ -246,11 +283,11 @@ public final class GraphService {
         }
 
         /**
-         * 将 JVM 方法描述符转为可读形式。
+         * 将 JVM 方法描述符转为可读形式
          * 例: "(IJ)Ljava/lang/String;" → "(IJ)"
          *
-         * @param desc JVM 方法描述符，不可为 null
-         * @return 参数部分的可读表示，异常输入返回 "(?)"
+         * @param desc JVM 方法描述符,不可为 null
+         * @return 参数部分的可读表示,异常输入返回 "(?)"
          */
         private static String descToDisplay(String desc) {
             if (desc == null || desc.length() < 3) {

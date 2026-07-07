@@ -8,10 +8,10 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
 /**
- * Hex 表格视图 — WebView + &lt;table&gt; + CSS 变量列宽 + sticky 表头 + 拖拽分隔线。
+ * Hex 表格视图 — WebView + &lt;table&gt; + CSS 变量列宽 + sticky 表头 + 拖拽分隔线
  *
- * <p>列宽由三个 CSS 自定义属性控制（--col-off/--col-hex/--col-asc），
- * 拖拽表头右侧手柄时 JS 更新对应变量，所有行同步变化。</p>
+ * <p>列宽由三个 CSS 自定义属性控制（--col-off/--col-hex/--col-asc）,
+ * 拖拽表头右侧手柄时 JS 更新对应变量,所有行同步变化</p>
  *
  * @author bingbaihanji
  */
@@ -43,7 +43,7 @@ public class HexTabView extends StackPane {
             td:nth-child(2),th:nth-child(2){width:var(--c-hex);text-align:center;}
             td:nth-child(3),th:nth-child(3){width:var(--c-asc);text-align:center;
                 user-select:none;-webkit-user-select:none;}
-            /* 整个 thead sticky，双行表头同步固定无间隙 */
+            /* 整个 thead sticky,双行表头同步固定无间隙 */
             thead{position:sticky;top:0;z-index:5;}
             thead th{border:1px solid %3$s;background:%4$s;
                      font-weight:bold;color:%5$s;text-align:center;}
@@ -56,7 +56,7 @@ public class HexTabView extends StackPane {
             /* 奇偶行 */
             .ev td{border-bottom:1px solid %6$s;}
             .od td{border-bottom:1px solid %6$s;background:%7$s;}
-            /* 拖拽手柄 — 8px 宽，中心对齐 th 右边框线 */
+            /* 拖拽手柄 — 8px 宽,中心对齐 th 右边框线 */
             .rhandle{position:absolute;right:-5px;top:0;width:8px;height:100%%;
                      cursor:col-resize;z-index:10;}
             .rhandle:hover,.rhandle.active{background:rgba(255,255,255,0.1);}
@@ -104,10 +104,18 @@ public class HexTabView extends StackPane {
             </body></html>
             """;
 
+    /** WebView 的 WebEngine,用于加载 HTML 内容 */
     private final WebEngine engine;
+    /** 当前主题配色数据 */
     private ThemeData theme;
+    /** 当前显示的字节数据 */
     private byte[] currentData;
 
+    /**
+     * 创建 Hex 表格视图
+     *
+     * @param theme 主题配色数据,为 null 时使用默认暗色主题
+     */
     public HexTabView(ThemeData theme) {
         this.theme = theme != null ? theme : VsCodeThemeLoader.defaultDark();
         WebView webView = new WebView();
@@ -118,20 +126,24 @@ public class HexTabView extends StackPane {
         load(null);
     }
 
+    /** 将 JavaFX Color 转换为十六进制颜色字符串（#RRGGBB） */
     static String toHex(Color c) {
         return String.format("#%02X%02X%02X", (int) (c.getRed() * 255), (int) (c.getGreen() * 255), (int) (c.getBlue() * 255));
     }
 
+    /** 将颜色调亮（混合白色）,f 为混合因子（0-1） */
     static String lighten(Color c, double f) {
         return String.format("#%02X%02X%02X", (int) ((c.getRed() + (1 - c.getRed()) * f) * 255), (int) ((c.getGreen() + (1 - c.getGreen()) * f) * 255), (int) ((c.getBlue() + (1 - c.getBlue()) * f) * 255));
     }
 
+    /** 将颜色调暗,f 为衰减因子（0-1,值越大越暗） */
     static String darken(Color c, double f) {
         return String.format("#%02X%02X%02X", (int) (c.getRed() * (1 - f) * 255), (int) (c.getGreen() * (1 - f) * 255), (int) (c.getBlue() * (1 - f) * 255));
     }
 
     // === 颜色 ===
 
+    /** 从主题数据派生出 Hex 视图所需的配色方案（自动判断明暗主题） */
     static HexColors deriveColors(ThemeData theme) {
         Color bg = theme.editorBackground();
         Color fg = theme.editorForeground();
@@ -142,10 +154,12 @@ public class HexTabView extends StackPane {
         }
     }
 
+    /** 使用亮度感知系数判断是否为暗色（相对亮度 < 0.5） */
     private static boolean isDark(Color c) {
         return 0.2126 * c.getRed() + 0.7152 * c.getGreen() + 0.0722 * c.getBlue() < 0.5;
     }
 
+    /** 将字节数据格式化为完整的 HTML 页面（表格 + CSS + 拖拽脚本） */
     static String formatHtml(byte[] data, ThemeData theme) {
         HexColors c = deriveColors(theme);
         int limit = Math.min(data.length, MAX_BYTES);
@@ -198,6 +212,7 @@ public class HexTabView extends StackPane {
                 rows.toString(), data.length, statusText);
     }
 
+    /** 更新主题配色,如果已有数据显示则重新渲染 */
     public void setTheme(ThemeData newTheme) {
         if (newTheme == null) {
             return;
@@ -208,13 +223,13 @@ public class HexTabView extends StackPane {
         }
     }
 
+    /** 加载并显示字节数据（null 或空时显示空白页） */
     public void load(byte[] data) {
         this.currentData = data;
         render();
     }
 
-    // === HTML ===
-
+    /** 使用当前数据和主题配色渲染 HTML 表格 */
     private void render() {
         if (currentData == null || currentData.length == 0) {
             engine.loadContent("<html><body></body></html>");
@@ -223,6 +238,7 @@ public class HexTabView extends StackPane {
         engine.loadContent(formatHtml(currentData, theme));
     }
 
+    /** Hex 视图的配色方案,包含背景、文字、边框等颜色值 */
     public record HexColors(String bodyBg, String text, String border, String headerBg,
                             String secondaryText, String gridLine, String altRowBg) {
     }

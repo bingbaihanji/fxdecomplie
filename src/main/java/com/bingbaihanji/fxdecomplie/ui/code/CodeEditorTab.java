@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * 单个代码标签页，内部委托给 CodeViewPanel 管理底部标签切换和 Split View
+ * 单个代码标签页,内部委托给 CodeViewPanel 管理底部标签切换和 Split View
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -54,12 +54,12 @@ public class CodeEditorTab extends Tab {
     private Consumer<CodeMetadata.Reference> onNavigate;
     /** 反编译源码是否已就绪 */
     private boolean sourceReady = true;
-    /** 分屏请求回调（由外部设置，传入本 tab 以便在右侧分屏打开同 class 不同引擎） */
+    /** 分屏请求回调（由外部设置,传入本 tab 以便在右侧分屏打开同 class 不同引擎） */
     private Consumer<CodeEditorTab> onSplitRequested;
-    /** 切换引擎回调（由外部设置，传入目标引擎进行原地重反编译） */
+    /** 切换引擎回调（由外部设置,传入目标引擎进行原地重反编译） */
     private Consumer<DecompilerTypeEnum> onSwitchEngine;
 
-    /** 简化构造器(使用默认主题和字体配置) */
+    /** 简化构造器,使用默认暗色主题和 Consolas 14pt 字体配置 */
     public CodeEditorTab(OpenFile openFile) {
         this(openFile, VsCodeThemeLoader.defaultDark(), "Consolas", 14, true, true, null, null, null);
     }
@@ -124,6 +124,7 @@ public class CodeEditorTab extends Tab {
         setContent(viewPanel);
     }
 
+    /** 创建带省略号截断的标签页标题节点 */
     private static Label createTitleLabel(String title) {
         Label label = new Label(title);
         label.getStyleClass().add("code-tab-title");
@@ -133,6 +134,7 @@ public class CodeEditorTab extends Tab {
         return label;
     }
 
+    /** 根据打开的文件生成标签页显示标题：类名 [引擎名] */
     private static String displayTitleFor(OpenFile openFile) {
         return openFile.className() + " [" + openFile.engine().name() + "]";
     }
@@ -152,6 +154,7 @@ public class CodeEditorTab extends Tab {
         return engineMenu;
     }
 
+    /** 加载字体,优先级：内置 FiraCode → 指定字体族 → Consolas 回退 */
     private static javafx.scene.text.Font loadFont(String fontFamily, int fontSize) {
         try {
             java.net.URL url = CodeEditorTab.class.getResource("/ttf/FiraCode-Light.ttf");
@@ -159,7 +162,7 @@ public class CodeEditorTab extends Tab {
                 return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
             }
         } catch (Exception ignored) {
-            log.debug("加载自定义字体失败，回退到系统字体", ignored);
+            log.debug("加载自定义字体失败,回退到系统字体", ignored);
         }
         if (fontFamily != null && !fontFamily.isBlank()) {
             return javafx.scene.text.Font.font(fontFamily, fontSize);
@@ -167,7 +170,7 @@ public class CodeEditorTab extends Tab {
         return javafx.scene.text.Font.font("Consolas", fontSize);
     }
 
-    /** 获取所属的分屏编辑器 */
+    /** @return 所属的分屏编辑器,未设置时返回 null */
     public SplitEditorPane getSplitEditorPane() {
         return (SplitEditorPane) getProperties().get("splitEditorPane");
     }
@@ -186,12 +189,13 @@ public class CodeEditorTab extends Tab {
         });
     }
 
-    /** 清除所属分屏编辑器引用，用于移动到纯代码窗口等非分屏容器 */
+    /** 清除所属分屏编辑器引用,用于移动到纯代码窗口等非分屏容器 */
     public void clearSplitEditorPane() {
         getProperties().remove("splitEditorPane");
         codeViewPanel.setSplitToggleSelected(false);
     }
 
+    /** @return 分屏请求回调（包级可见,供外部读取） */
     Consumer<CodeEditorTab> getOnSplitRequested() {
         return onSplitRequested;
     }
@@ -201,6 +205,7 @@ public class CodeEditorTab extends Tab {
         this.onSplitRequested = callback;
     }
 
+    /** @return 切换引擎回调（包级可见,供外部读取） */
     Consumer<DecompilerTypeEnum> getOnSwitchEngine() {
         return onSwitchEngine;
     }
@@ -264,7 +269,7 @@ public class CodeEditorTab extends Tab {
         this.sourceReady = sourceReady;
     }
 
-    /** 原地更新为真实反编译源码，保留当前代码标签和底部视图容器 */
+    /** 原地更新为真实反编译源码,保留当前代码标签和底部视图容器 */
     public void updateDecompiledContent(OpenFile updatedOpenFile, CodeMetadata updatedMetadata,
                                         Consumer<CodeMetadata.Reference> updatedOnNavigate) {
         this.openFile = Objects.requireNonNull(updatedOpenFile, "updatedOpenFile");
@@ -278,7 +283,7 @@ public class CodeEditorTab extends Tab {
         codeArea = srcPanel.getCodeArea();
         sourceReady = true;
 
-        // 反编译失败/超时时自动切换到字节码视图，避免用户面对纯错误文本
+        // 反编译失败/超时时自动切换到字节码视图,避免用户面对纯错误文本
         if (DecompilerRunner.isFailureOutput(source)) {
             codeViewPanel.getDeck().setSelected(CodeContentDeck.TAB_BYTECODE);
         }
@@ -289,7 +294,7 @@ public class CodeEditorTab extends Tab {
         setGraphic(titleLabel);
     }
 
-    /** 更新源码模型和可见 Code 面板，用于重命名等不需要重新反编译的场景。 */
+    /** 更新源码模型和可见 Code 面板,用于重命名等不需要重新反编译的场景 */
     public void updateSourceCode(String newClassName, String newSource) {
         String className = newClassName == null || newClassName.isBlank()
                 ? openFile.className() : newClassName;
@@ -311,8 +316,8 @@ public class CodeEditorTab extends Tab {
     }
 
     /**
-     * 只更新当前编辑器可见源码，不改变 OpenFile 中保存的原始反编译源码。
-     * 用于显示用户注释等装饰内容，导出仍可基于原始源码重新计算。
+     * 只更新当前编辑器可见源码,不改变 OpenFile 中保存的原始反编译源码
+     * 用于显示用户注释等装饰内容,导出仍可基于原始源码重新计算
      */
     public void updateVisibleSource(String displaySource) {
         codeViewPanel.refreshDisplayedSource(displaySource == null ? "" : displaySource);
@@ -387,6 +392,7 @@ public class CodeEditorTab extends Tab {
         });
     }
 
+    /** 滚动编辑器到指定行号并选中该行 */
     public void revealLine(int lineNumber) {
         String text = codeArea.getText();
         if (text == null || text.isEmpty()) {
@@ -419,7 +425,7 @@ public class CodeEditorTab extends Tab {
         if (srcPanel != null) {
             srcPanel.reapplyTheme(newTheme);
         }
-        // 同步主题到 CodeContentDeck，以便 HEX 面板配色跟随
+        // 同步主题到 CodeContentDeck,以便 HEX 面板配色跟随
         if (codeViewPanel != null && codeViewPanel.getDeck() != null) {
             codeViewPanel.getDeck().setTheme(newTheme);
         }

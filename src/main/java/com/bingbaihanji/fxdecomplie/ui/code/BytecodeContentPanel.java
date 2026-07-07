@@ -5,7 +5,7 @@ import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
 
 /**
- * 字节码内容面板，使用自定义 BytecodeTextBuilder 生成含常量池、hex 偏移、完整结构信息的字节码文本
+ * 字节码内容面板,使用自定义 BytecodeTextBuilder 生成含常量池、hex 偏移、完整结构信息的字节码文本
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -15,15 +15,20 @@ public class BytecodeContentPanel extends AbstractCodeContentPanel {
     private final byte[] classBytes;
     private CodeArea codeArea;
 
+    /**
+     * @param classBytes 类文件的原始字节码,为 null 时显示无数据提示
+     */
     public BytecodeContentPanel(byte[] classBytes) {
         this.classBytes = classBytes == null ? null : classBytes.clone();
     }
 
+    /** @return 内容类型标识 "bytecode" */
     @Override
     public String getContentType() {
         return "bytecode";
     }
 
+    /** 在后台线程中使用 BytecodeTextBuilder + ASM 构建字节码文本 */
     @Override
     protected Object buildContentAsync(Object cancelToken) throws Exception {
         if (classBytes == null || classBytes.length == 0) {
@@ -42,6 +47,7 @@ public class BytecodeContentPanel extends AbstractCodeContentPanel {
         }
     }
 
+    /** 创建字节码展示用的只读 CodeArea,应用 BytecodeHighlighter 语法高亮 */
     @Override
     protected javafx.scene.Node createContent(Object contentData) {
         CodeArea area = new CodeArea();
@@ -59,6 +65,7 @@ public class BytecodeContentPanel extends AbstractCodeContentPanel {
         return codeArea;
     }
 
+    /** 释放资源,清除 CodeArea 引用 */
     @Override
     public void dispose() {
         super.dispose();

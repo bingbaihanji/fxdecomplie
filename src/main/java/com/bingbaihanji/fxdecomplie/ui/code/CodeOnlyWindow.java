@@ -33,7 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 轻量级纯代码窗口，用于分离的编辑器标签页
+ * 轻量级纯代码窗口,用于分离的编辑器标签页
  * 支持与主窗口之间的跨窗口标签拖放
  */
 public final class CodeOnlyWindow {
@@ -46,7 +46,7 @@ public final class CodeOnlyWindow {
             "fxdecomplie.codeOnly.engineSwitchTask";
     private static final String ENGINE_SWITCH_REQUEST =
             "fxdecomplie.codeOnly.engineSwitchRequest";
-    /** 每个标签页当前有效的引擎切换请求 ID，支持跨线程安全读取 */
+    /** 每个标签页当前有效的引擎切换请求 ID,支持跨线程安全读取 */
     private static final java.util.concurrent.ConcurrentMap<CodeEditorTab, AtomicLong>
             ACTIVE_ENGINE_REQUESTS = new java.util.concurrent.ConcurrentHashMap<>();
     private static final String CODE_ONLY_TARGET =
@@ -88,6 +88,7 @@ public final class CodeOnlyWindow {
         this.stage = stage;
     }
 
+    /** 从源标签页打开一个新的纯代码窗口,位置相对主窗口偏移 */
     public static CodeOnlyWindow openFrom(CodeEditorTab sourceTab, AppConfig config,
                                           Stage owner) {
         Stage stage = new Stage();
@@ -125,6 +126,7 @@ public final class CodeOnlyWindow {
         });
     }
 
+    /** 启动标签页拖拽,将标签序列化为负载并通过剪贴板传递 */
     private static void startCodeTabDrag(Node source, CodeEditorTab tab) {
         if (!tab.isSourceReady()) {
             return;
@@ -174,7 +176,7 @@ public final class CodeOnlyWindow {
     // ==================== 拖拽源 ====================
 
     /**
-     * 添加一个监听器，每当 CodeEditorTab 添加到 TabPane 时调用 enableTabDrag
+     * 添加一个监听器,每当 CodeEditorTab 添加到 TabPane 时调用 enableTabDrag
      */
     public static void enableTabDragListener(TabPane tabPane) {
         tabPane.getTabs().addListener(
@@ -195,7 +197,7 @@ public final class CodeOnlyWindow {
         return resolvePayload(dragboard, false) != null;
     }
 
-    // ==================== 拖拽目标(共享，任意 TabPane 均可使用) ====================
+    // ==================== 拖拽目标(共享,任意 TabPane 均可使用) ====================
 
     private static CodeTabPayload resolvePayload(Dragboard dragboard, boolean remove) {
         CodeTabPayload payload = resolvePayload(
@@ -295,6 +297,7 @@ public final class CodeOnlyWindow {
         DRAG_SOURCE_TABS.remove(token);
     }
 
+    /** 将拖拽的标签页投放到目标 TabPane 中,完成跨窗口标签迁移 */
     private static boolean dropTabInto(TabPane targetPane, String token, AppConfig config,
                                        VsCodeThemeLoader.ThemeData editorTheme,
                                        boolean clearSplitContext) {
@@ -498,23 +501,26 @@ public final class CodeOnlyWindow {
         });
     }
 
+    /** 在纯代码窗口中切换反编译引擎,后台异步反编译并更新显示 */
     private static void switchEngineInCodeOnlyWindow(CodeEditorTab tab, AppConfig config,
                                                      VsCodeThemeLoader.ThemeData editorTheme,
                                                      DecompilerTypeEnum requestedEngine) {
         if (tab == null || requestedEngine == null || tab.getOpenFile() == null) {
             return;
         }
+        // 取消该标签上已有的切换任务,避免并发重复反编译
         Object oldTask = tab.getProperties().get(ENGINE_SWITCH_TASK);
         if (oldTask instanceof Future<?> future) {
             BackgroundTasks.cancel(future);
         }
 
+        // 生成唯一请求 ID,用于判断任务过期（用户连续快速切换时忽略旧结果）
         long requestId = ENGINE_SWITCH_IDS.incrementAndGet();
         ACTIVE_ENGINE_REQUESTS.put(tab, new AtomicLong(requestId));
         tab.getProperties().put(ENGINE_SWITCH_REQUEST, requestId);
         OpenFile previous = tab.getOpenFile();
 
-        // 在 FX 线程预解析字节码和工作区，避免后台线程访问 tab.getProperties()
+        // 在 FX 线程预解析字节码和工作区,避免后台线程访问 tab.getProperties()
         final byte[] preResolvedBytes;
         try {
             preResolvedBytes = resolveBytesForTab(tab);
@@ -526,6 +532,7 @@ public final class CodeOnlyWindow {
         final Map<String, String> options = DecompilerOptions.forEngine(config, engine);
         final Workspace workspace = resolveWorkspaceForTab(tab);
 
+        // 立即显示"反编译中"提示,提升用户反馈速度
         tab.setSourceReady(false);
         tab.updateVisibleSource("// " + I18nUtil.getString("task.decompiling")
                 + ": " + previous.fullPath() + " [" + requestedEngine.name() + "]");
@@ -537,9 +544,11 @@ public final class CodeOnlyWindow {
                         previous.fullPath(), preResolvedBytes, engine, context,
                         () -> !Thread.currentThread().isInterrupted()
                                 && isEngineSwitchCurrent(tab, requestId));
+                // 任务已过期（用户切换到其他引擎）,放弃本次结果
                 if (!isEngineSwitchCurrent(tab, requestId)) {
                     return;
                 }
+                // 反编译返回错误输出（超时/进程崩溃）,恢复之前源码并弹窗提示
                 if (DecompilerRunner.isTransientFailureOutput(source)) {
                     log.error("副窗口切换反编译引擎失败: {} -> {}\n{}",
                             previous.fullPath(), engine, source);
@@ -557,6 +566,7 @@ public final class CodeOnlyWindow {
                         ? OutlineParser.extractMetadata(source)
                         : new CodeMetadata(Map.of());
                 OpenFile updated = new OpenFile(previous.className(), previous.fullPath(), source, engine);
+                // 回到 FX 线程更新 UI：替换源码面板内容
                 Platform.runLater(() -> {
                     if (!isEngineSwitchCurrent(tab, requestId)) {
                         return;
@@ -709,6 +719,7 @@ public final class CodeOnlyWindow {
                 openFile.sourceCode(), openFile.engine(), tab.getClassBytes());
     }
 
+    /** 向窗口中添加一个代码标签页并选中它 */
     public void addTab(CodeEditorTab tab) {
         tab.setSplitEditorPane(splitEditorPane);
         tabPane.getTabs().add(tab);

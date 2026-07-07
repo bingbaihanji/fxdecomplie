@@ -16,8 +16,10 @@ import java.util.regex.PatternSyntaxException;
  * @date 2026-06-17
  */
 public interface SearchProvider {
+    /** 在给定的源码缓存中搜索匹配 {@code query} 的结果 */
     List<SearchResult> search(String query, Map<String, String> sourceCache);
 
+    /** @return 当前 provider 是否支持指定搜索范围（默认支持 ALL 和 null） */
     default boolean supports(SearchScope scope) {
         return scope == null || scope == SearchScope.ALL;
     }
@@ -29,10 +31,10 @@ public interface SearchProvider {
     }
 
     /**
-     * 检查某一行是否匹配查询，考虑所有搜索选项。
+     * 检查某一行是否匹配查询,考虑所有搜索选项
      *
-     * <p>正则模式下忽略整词匹配选项（用户自行在正则中包含 {@code \b}），
-     * 避免 {@code \b^foo\b} 等语义矛盾的组合。</p>
+     * <p>正则模式下忽略整词匹配选项（用户自行在正则中包含 {@code \b}）,
+     * 避免 {@code \b^foo\b} 等语义矛盾的组合</p>
      *
      * @param line    待匹配的行文本
      * @param query   搜索字符串或正则

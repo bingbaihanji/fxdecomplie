@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 字节码视图语法高亮器，用于 jadx 风格的字节码输出。
+ * 字节码视图语法高亮器,用于 jadx 风格的字节码输出
  *
  * <p>高亮元素：标题行、结构头（magic/flags/this_class/Constant pool 等）、
  * hex 地址、hex 字节、指令偏移（|xxxx:）、操作码、常量池引用（#N）、

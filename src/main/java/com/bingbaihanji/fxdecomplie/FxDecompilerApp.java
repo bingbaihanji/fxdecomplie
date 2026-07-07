@@ -44,9 +44,11 @@ public final class FxDecompilerApp {
         System.setProperty("fxdecomplie.appDir", resolveAppDirForLogging().toString());
     }
 
+    /** 工具类私有构造,防止实例化 */
     private FxDecompilerApp() {
     }
 
+    /** 在 static 初始化块中解析应用根目录,用于配置 logback 日志路径 */
     private static Path resolveAppDirForLogging() {
         try {
             var codeSource = FxDecompilerApp.class.getProtectionDomain().getCodeSource();
@@ -63,12 +65,17 @@ public final class FxDecompilerApp {
                 }
             }
         } catch (Exception ignored) {
-            log.debug("解析应用目录失败，回退到 user.dir", ignored);
+            log.debug("解析应用目录失败,回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
     }
 
-    /** IDE 开发期 classpath 在 target/classes/，返回项目根目录避免 mvn clean 删除数据 */
+    /**
+     * IDE 开发期 classpath 在 target/classes/,返回项目根目录避免 mvn clean 删除数据
+     *
+     * @param codeSourceDir 代码源目录(classpath 中的 classes 目录)
+     * @return 项目根目录或原始 codeSourceDir
+     */
     private static Path appRoot(Path codeSourceDir) {
         Path normalized = codeSourceDir.toAbsolutePath().normalize();
         Path name = normalized.getFileName();
@@ -83,6 +90,11 @@ public final class FxDecompilerApp {
         return normalized;
     }
 
+    /**
+     * 程序主入口:启用 JavaFX 预览特性后启动 JavaFX Application
+     *
+     * @param args 命令行参数,支持 --open &lt;path&gt; 在启动时自动打开文件
+     */
     public static void main(String[] args) {
         try {
             enableJavaFxPreview();
@@ -101,7 +113,11 @@ public final class FxDecompilerApp {
         System.setProperty(JAVAFX_SUPPRESS_PREVIEW_WARNING_PROPERTY, "true");
     }
 
-    /** 写入启动失败日志 */
+    /**
+     * 将启动失败的异常堆栈写入启动错误日志文件
+     *
+     * @param ex 启动过程中抛出的异常
+     */
     private static void writeStartupFailure(Throwable ex) {
         try {
             Files.createDirectories(STARTUP_ERROR_LOG.getParent());
@@ -116,6 +132,9 @@ public final class FxDecompilerApp {
         }
     }
 
+    /**
+     * JavaFX Application 实现,负责窗口创建、配置加载、启动参数处理与应用生命周期管理
+     */
     public static final class FxApplication extends Application {
 
         /** 应用配置引用 */
@@ -125,6 +144,7 @@ public final class FxDecompilerApp {
         /** 主 Stage,用于在所有退出路径上持久化窗口状态 */
         private Stage primaryStage;
 
+        /** 根据应用配置构建 Windows 原生窗口外观(DWM 暗色对话框、边框颜色、圆角偏好) */
         private static WindowAppearance windowAppearance(AppConfig config) {
             AppConfig.Platform platform = config == null ? null : config.platform();
             int borderColor = platform == null ? 0x00888800 : platform.windowBorderColor();
@@ -133,6 +153,7 @@ public final class FxDecompilerApp {
             return WindowAppearance.darkDialog(borderColor, cornerPreference);
         }
 
+        /** 解析圆角偏好字符串为枚举值,解析失败默认不圆角 */
         private static WindowCornerPreference parseCornerPreference(String value) {
             if (value == null || value.isBlank()) {
                 return WindowCornerPreference.DO_NOT_ROUND;
@@ -149,6 +170,7 @@ public final class FxDecompilerApp {
             DefaultWindowTheme.applyWindowDarkMode(primaryStage);
         }
 
+        /** JavaFX Application 启动入口:执行应用启动并配置原生窗口外观 */
         @Override
         public void start(Stage stage) {
             try {
@@ -161,9 +183,13 @@ public final class FxDecompilerApp {
             }
         }
 
-        // initStyle(EXTENDED) 在 JavaFX 中被标记为 deprecated,当前配合 AppHeaderBar 提供完整窗口交互,功能正常,暂时保留
+        /**
+         * 启动 JavaFX 应用主流程:加载配置、初始化缓存与重命名服务、设置国际化、创建主窗口
+         *
+         * <p>initStyle(EXTENDED) 在 JavaFX 中被标记为 deprecated,
+         * 当前配合 AppHeaderBar 提供完整窗口交互,功能正常,暂时保留</p>
+         */
         @SuppressWarnings("deprecation")
-        /** 启动 JavaFX 应用 */
         private void startApplication(Stage stage) {
             primaryStage = stage;
             log.info("FxDecompiler 启动构建版本: headerBar-2026-06-17");
@@ -211,6 +237,7 @@ public final class FxDecompilerApp {
             }
         }
 
+        /** 根据配置的语言设置切换应用的国际化语言 */
         private void applyConfiguredLocale() {
             if ("en".equalsIgnoreCase(config.language())) {
                 com.bingbaihanji.util.I18nUtil.switchLocale(Locale.ENGLISH);
@@ -219,6 +246,9 @@ public final class FxDecompilerApp {
             }
         }
 
+        /**
+         * 应用关闭时释放资源:停止后台任务、关闭反编译缓存、保存窗口状态与配置
+         */
         @Override
         public void stop() {
             BackgroundTasks.shutdown();
@@ -236,7 +266,11 @@ public final class FxDecompilerApp {
             }
         }
 
-        /** 保存窗口状态到配置 */
+        /**
+         * 将当前窗口的位置、大小和最大化状态保存到配置对象
+         *
+         * @param stage 主窗口 Stage
+         */
         private void saveWindowState(Stage stage) {
             if (!stage.isMaximized()) {
                 config.window().x((int) stage.getX());

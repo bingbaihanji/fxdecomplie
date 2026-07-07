@@ -43,15 +43,18 @@ public final class SearchDialog {
 
     private static final int DEFAULT_MAX_RESULTS = 200;
 
+    /** 工具类,禁止实例化 */
     private SearchDialog() {
         throw new AssertionError("utility class");
     }
 
+    /** 简单调用：使用默认参数打开搜索对话框 */
     public static void show(javafx.stage.Window owner, SearchService searchService,
                             Map<String, String> sourceCache, JumpCallback onJump) {
         show(owner, searchService, sourceCache, null, false, DEFAULT_MAX_RESULTS, onJump);
     }
 
+    /** 使用自定义 SourceCacheLoader 打开搜索对话框 */
     public static void show(javafx.stage.Window owner, SearchService searchService,
                             Map<String, String> sourceCache, SourceCacheLoader fullSourceLoader,
                             JumpCallback onJump) {
@@ -59,6 +62,7 @@ public final class SearchDialog {
                 DEFAULT_MAX_RESULTS, onJump);
     }
 
+    /** 使用自定义结果上限打开搜索对话框 */
     public static void show(javafx.stage.Window owner, SearchService searchService,
                             Map<String, String> sourceCache, SourceCacheLoader fullSourceLoader,
                             boolean defaultFullSourceSearch, int maxResults,
@@ -67,6 +71,19 @@ public final class SearchDialog {
                 maxResults, "", onJump);
     }
 
+    /**
+     * 打开全文搜索对话框（完整参数版本）
+     * 200ms 防抖输入,按类型分组在 TreeView 中展示结果,双击结果项跳转
+     *
+     * @param owner                   父窗口
+     * @param searchService           搜索服务（聚合多个 SearchProvider）
+     * @param sourceCache             已反编译的源码缓存（类路径 → 源码文本）
+     * @param fullSourceLoader        全量源码加载器（用于搜索所有类）；为 null 则禁用全量搜索选项
+     * @param defaultFullSourceSearch 是否默认选中全量源码搜索
+     * @param maxResults              最大返回结果数（限制在 50~2000 之间）
+     * @param initialQuery            初始搜索关键词（可为空字符串）
+     * @param onJump                  双击结果项时的跳转回调
+     */
     public static void show(javafx.stage.Window owner, SearchService searchService,
                             Map<String, String> sourceCache, SourceCacheLoader fullSourceLoader,
                             boolean defaultFullSourceSearch, int maxResults,
@@ -149,58 +166,75 @@ public final class SearchDialog {
         rootPane.setPadding(new Insets(8));
         rootPane.setStyle("-fx-background-color: #2d2d2d;");
 
-        // 跟踪搜索代数,用于丢弃过时结果
+        // 搜索代数计数器：每次输入变化递增,用于丢弃过时的搜索结果
         AtomicInteger searchGen = new AtomicInteger(0);
+        // 当前正在执行的搜索任务引用,用于取消旧任务
         AtomicReference<Future<?>> currentSearchTask = new AtomicReference<>();
+        // 对话框关闭标志,防止重复清理
         AtomicBoolean closed = new AtomicBoolean(false);
 
-        // 200ms 防抖
+        // 200ms 输入防抖：用户在输入框中快速打字时,每次变化等待 200ms 无新输入后再触发搜索
         PauseTransition debounce = new PauseTransition(Duration.millis(200));
         Runnable scheduleSearch = () -> {
             String text = input.getText();
+            // 停止之前的防抖计时,清空旧结果,显示"搜索中"状态
             debounce.stop();
             resultTree.setRoot(null);
             statusLabel.setText(text == null || text.isEmpty() ? "" : I18nUtil.getString("search.searching"));
+            // 递增代数并取消之前的搜索任务,确保旧任务结果被丢弃
             int gen = searchGen.incrementAndGet();
             BackgroundTasks.cancel(currentSearchTask.getAndSet(null));
+            // 防抖计时结束后执行实际搜索
             debounce.setOnFinished(e -> {
                 String query = input.getText();
                 if (query == null || query.isEmpty()) {
                     statusLabel.setText("");
                     return;
                 }
+                // 解析搜索范围：根据下拉框选择的类型确定 SearchScope
                 SearchScope scope = scopeFromLabel(searchTypeCombo.getValue());
+                // 全量源码搜索仅在范围与源码相关时启用
                 boolean includeFullSource = fullSourceLoader != null
                         && fullSourceSearch.isSelected()
                         && scope.sourceCacheRelevant();
+                // 构建搜索选项：正则、大小写、全词匹配
                 SearchOptions options = new SearchOptions(
                         regexToggle.isSelected(),
                         caseToggle.isSelected(),
                         wordToggle.isSelected());
+                // 提交搜索任务到后台线程池
                 Future<?> task = BackgroundTasks.run("search-worker", () -> {
                     Map<String, String> effectiveSourceCache = sourceCache;
+                    // 如果启用了全量源码搜索,加载全量源码缓存（可能耗时较长）
                     if (includeFullSource && fullSourceLoader != null) {
                         Platform.runLater(() -> statusLabel.setText(
                                 I18nUtil.getString("search.preparingFullSource")));
                         effectiveSourceCache = fullSourceLoader.load();
+                        // 加载完成后检查是否已被取消
                         if (Thread.currentThread().isInterrupted()) {
                             return;
                         }
                     }
+                    // 聚合所有 Provider 执行搜索
                     List<SearchResult> results = searchService.searchAll(
                             query, effectiveSourceCache, options, resultLimit, scope);
+                    // 搜索完成后再次检查是否已被取消
                     if (Thread.currentThread().isInterrupted()) {
                         return;
                     }
+                    // 回到 FX 线程渲染结果
                     Platform.runLater(() -> {
+                        // 代数不匹配说明期间有新输入,丢弃过期结果
                         if (gen != searchGen.get()) {
-                            return; // 过时搜索,丢弃
+                            return;
                         }
+                        // 构建分组结果树
                         TreeItem<SearchResult> rootNode = buildResultTree(results, resultLimit);
                         resultTree.setRoot(rootNode);
                         if (rootNode != null) {
                             rootNode.setExpanded(true);
                         }
+                        // 统计实际显示的叶子节点数量
                         int shown = rootNode != null
                                 ? countLeaves(rootNode) : 0;
                         statusLabel.setText(shown >= resultLimit
@@ -217,6 +251,7 @@ public final class SearchDialog {
             debounce.playFromStart();
         };
 
+        // 当搜索范围切换时,更新"全量源码搜索"复选框的可用状态
         Runnable updateFullSourceState = () -> {
             SearchScope scope = scopeFromLabel(searchTypeCombo.getValue());
             fullSourceSearch.setDisable(fullSourceLoader == null || !scope.sourceCacheRelevant());
@@ -233,7 +268,7 @@ public final class SearchDialog {
         wordToggle.selectedProperty().addListener((obs, old, val) -> scheduleSearch.run());
         updateFullSourceState.run();
 
-        // 双击跳转
+        // 双击搜索结果项 → 跳转到对应文件位置
         resultTree.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
                 TreeItem<SearchResult> selected = resultTree.getSelectionModel().getSelectedItem();
@@ -247,6 +282,7 @@ public final class SearchDialog {
             }
         });
 
+        // ESC 键关闭对话框
         input.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 dialog.close();
@@ -257,6 +293,7 @@ public final class SearchDialog {
         scene.getStylesheets().add(
                 com.bingbaihanji.fxdecomplie.ui.theme.AppTheme.darkStylesheet());
         dialog.setScene(scene);
+        // 对话框关闭时清理：递增代数使进行中的任务结果被丢弃,停止防抖定时器,取消后台任务
         dialog.setOnCloseRequest(event -> {
             if (closed.compareAndSet(false, true)) {
                 searchGen.incrementAndGet();
@@ -280,6 +317,7 @@ public final class SearchDialog {
         }
     }
 
+    /** 将下拉框显示标签（国际化文本）映射为对应的 SearchScope 枚举值 */
     private static SearchScope scopeFromLabel(String label) {
         if (label == null || label.equals(I18nUtil.getString("search.type.all"))) {
             return SearchScope.ALL;
@@ -305,7 +343,14 @@ public final class SearchDialog {
         return SearchScope.ALL;
     }
 
-    /** 构建 TreeView 结构,按匹配类型分组,限制最多 maxResults 个叶子节点 */
+    /**
+     * 构建搜索结果树：按匹配类型（类名/方法/代码/资源/注释/字节码）分组,
+     * 每组显示为可展开的 TreeItem,限制总叶子节点不超过 maxResults
+     *
+     * @param results    扁平搜索结果列表
+     * @param maxResults 最大叶子节点数量
+     * @return 根节点（类型为"搜索结果"）
+     */
     private static TreeItem<SearchResult> buildResultTree(List<SearchResult> results,
                                                           int maxResults) {
         TreeItem<SearchResult> rootNode = new TreeItem<>(new SearchResult("",
@@ -341,7 +386,10 @@ public final class SearchDialog {
         return rootNode;
     }
 
-    /** 将匹配类型映射为显示标签 */
+    /**
+     * 将匹配类型映射为对应的国际化显示标签（用于分组标题）
+     * 方法名和字段名共用"方法/成员"分组
+     */
     private static String groupLabel(SearchResult.MatchType type) {
         return switch (type) {
             case CLASS_NAME -> I18nUtil.getString("search.group.class");
@@ -354,7 +402,12 @@ public final class SearchDialog {
         };
     }
 
-    /** 统计树节点下的叶子节点数量(递归) */
+    /**
+     * 递归统计树节点下的叶子节点数量
+     *
+     * @param root 结果树根节点
+     * @return 叶子节点总数
+     */
     private static int countLeaves(TreeItem<SearchResult> root) {
         int count = 0;
         for (TreeItem<SearchResult> child : root.getChildren()) {
@@ -367,11 +420,13 @@ public final class SearchDialog {
         return count;
     }
 
+    /** 搜索结果双击跳转回调：传入文件全路径和行号 */
     @FunctionalInterface
     public interface JumpCallback {
         void jump(String fullPath, int lineNumber);
     }
 
+    /** 全量源码缓存加载器：供后台线程调用以获取完整反编译源码 */
     @FunctionalInterface
     public interface SourceCacheLoader {
         Map<String, String> load();

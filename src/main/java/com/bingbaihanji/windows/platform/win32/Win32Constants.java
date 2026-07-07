@@ -380,9 +380,9 @@ public final class Win32Constants {
         public static final int SM_MOUSEHORIZONTALWHEELPRESENT = 91;
         public static final int SM_CXPADDEDBORDER = 92;
         public static final int SM_DIGITIZER = 94;
-        /** 最大触摸点数，0 表示无触摸设备 */
+        /** 最大触摸点数,0 表示无触摸设备 */
         public static final int SM_MAXIMUMTOUCHES = 95;
-        /** 是否远程桌面会话，非零表示远程会话 */
+        /** 是否远程桌面会话,非零表示远程会话 */
         public static final int SM_REMOTESESSION = 0x1000;
         public static final int SM_SHUTTINGDOWN = 0x2000;
         public static final int SM_REMOTECONTROL = 0x2001;
@@ -444,11 +444,11 @@ public final class Win32Constants {
          * 取值见 {@link DwmCornerPreference}
          */
         public static final int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
-        /** 窗口边框颜色(Windows 11 22000+)，COLORREF 格式 */
+        /** 窗口边框颜色(Windows 11 22000+),COLORREF 格式 */
         public static final int DWMWA_BORDER_COLOR = 34;
-        /** 标题栏颜色(Windows 11 22000+)，COLORREF 格式 */
+        /** 标题栏颜色(Windows 11 22000+),COLORREF 格式 */
         public static final int DWMWA_CAPTION_COLOR = 35;
-        /** 标题栏文字颜色(Windows 11 22000+)，COLORREF 格式 */
+        /** 标题栏文字颜色(Windows 11 22000+),COLORREF 格式 */
         public static final int DWMWA_TEXT_COLOR = 36;
         /** 可见框架边框宽度(Windows 11 22000+) */
         public static final int DWMWA_VISIBLE_FRAME_BORDER_THICKNESS = 37;
@@ -502,11 +502,11 @@ public final class Win32Constants {
         public static final int AUTO = 0;
         /** 不使用任何背景效果 */
         public static final int NONE = 1;
-        /** Mica 云母材质(适用于主窗口背景，Windows 11 Build 22000+) */
+        /** Mica 云母材质(适用于主窗口背景,Windows 11 Build 22000+) */
         public static final int MAINWINDOW = 2;
-        /** Acrylic 亚克力材质(适用于临时窗口/弹出窗口背景，Windows 11 Build 22621+) */
+        /** Acrylic 亚克力材质(适用于临时窗口/弹出窗口背景,Windows 11 Build 22621+) */
         public static final int TRANSIENTWINDOW = 3;
-        /** Mica 标签页变体(适用于标签页式 MDI 窗口背景，Windows 11 Build 22621+) */
+        /** Mica 标签页变体(适用于标签页式 MDI 窗口背景,Windows 11 Build 22621+) */
         public static final int TABBEDWINDOW = 4;
 
         private DwmBackdropType() {

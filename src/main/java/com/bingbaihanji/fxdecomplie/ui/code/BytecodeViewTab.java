@@ -17,6 +17,7 @@ import java.io.StringWriter;
  */
 public final class BytecodeViewTab {
 
+    /** 工具类私有构造器,禁止实例化 */
     private BytecodeViewTab() {
         throw new AssertionError("utility class");
     }

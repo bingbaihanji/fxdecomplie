@@ -19,12 +19,12 @@ public class CodeMetadata {
     }
 
     /** @param lineNumber 从1开始的行号
-     *  @return 该行上所有引用，无引用时返回空列表 */
+     *  @return 该行上所有引用,无引用时返回空列表 */
     public List<Reference> getRefsAtLine(int lineNumber) {
         return refsByLine.getOrDefault(lineNumber, List.of());
     }
 
-    /** @return 如果没有提取到任何引用，返回 true */
+    /** @return 如果没有提取到任何引用,返回 true */
     public boolean isEmpty() {
         return refsByLine.isEmpty();
     }
@@ -36,9 +36,11 @@ public class CodeMetadata {
      * 反编译源码中的单个可导航引用
      *
      * @param type         引用类型
-     * @param targetClass  完全限定目标类名(例如 "com.example.Foo")
-     * @param targetMember 目标成员名，纯类引用时为 null
-     * @param lineNumber   源码中从1开始的行号
+     * @param targetClass  完全限定目标类名（例如 "com.example.Foo"）
+     * @param targetMember 目标成员名,纯类引用时为 null
+     * @param lineNumber   源码中从 1 开始的行号
+     * @author bingbaihanji
+     * @date 2026-06-18
      */
     public record Reference(RefType type, String targetClass, String targetMember, int lineNumber) {
     }

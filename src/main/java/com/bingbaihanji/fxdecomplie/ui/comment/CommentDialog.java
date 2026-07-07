@@ -37,12 +37,13 @@ public final class CommentDialog {
      * @param line            行号
      * @param sourceHash      源码 hash
      * @param optionsHash     选项 hash
-     * @param existing        已有注释（更新模式），null 为新增模式
+     * @param existing        已有注释（更新模式）,null 为新增模式
      * @param onSave          保存回调
      */
     public static void show(Window owner, String className, String memberSignature,
                             int line, String sourceHash, String optionsHash,
                             CommentData existing, Consumer<CommentData> onSave) {
+        // 创建弹窗,根据是否为更新模式设置标题
         Dialog<CommentData> dialog = new Dialog<>();
         dialog.initOwner(owner);
         dialog.setTitle(existing != null
@@ -50,6 +51,7 @@ public final class CommentDialog {
                 : I18nUtil.getString("comment.title"));
         dialog.setResizable(true);
 
+        // 构建表单布局
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(8);
@@ -84,13 +86,16 @@ public final class CommentDialog {
         dialogPane.setContent(grid);
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
+        // 应用原生窗口样式
         DialogHelper.applyNativeStyle(dialog);
 
+        // 结果转换器：点击确定时构建 CommentData,取消时返回 null
         dialog.setResultConverter(button -> {
             if (button != ButtonType.OK) {
                 return null;
             }
             String text = textArea.getText();
+            // 空文本处理：编辑模式允许清空（删除注释）,新增模式拒绝空输入
             if (text == null || text.isBlank()) {
                 return existing != null ? new CommentData(className, memberSignature, line,
                         sourceHash, optionsHash, styleCombo.getValue(),
@@ -101,6 +106,7 @@ public final class CommentDialog {
                     text, "bingbaihanji", Instant.now().toString());
         });
 
+        // 显示弹窗并等待用户操作,保存时跳过新增的空注释
         dialog.showAndWait().ifPresent(comment -> {
             if (comment.text().isEmpty() && existing == null) {
                 return; // 新增空注释不保存

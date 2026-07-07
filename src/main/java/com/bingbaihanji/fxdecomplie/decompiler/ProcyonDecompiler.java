@@ -21,6 +21,14 @@ public class ProcyonDecompiler implements Decompiler {
 
     private static final Logger log = LoggerFactory.getLogger(ProcyonDecompiler.class);
 
+    /**
+     * 将上下文中携带的参数应用到 Procyon 反编译设置中
+     * <p>遍历 context 中的所有选项键值对,根据 key 名称匹配对应的 setter 方法进行设置
+     * 未知的 key 会被安全忽略</p>
+     *
+     * @param settings Procyon 反编译器设置对象
+     * @param context  反编译上下文,可能包含额外参数；为 null 或无参数时直接返回
+     */
     private static void applyOptions(DecompilerSettings settings, DecompilerContext context) {
         if (context == null || !context.hasOptions()) {
             return;
@@ -57,7 +65,7 @@ public class ProcyonDecompiler implements Decompiler {
                     try {
                         settings.setTextBlockLineMinimum(Integer.parseInt(value));
                     } catch (NumberFormatException ignored) {
-                        // 非数字值安全忽略，使用 Procyon 默认值
+                        // 非数字值安全忽略,使用 Procyon 默认值
                     }
                 }
                 case "languageTarget" -> {
@@ -85,6 +93,14 @@ public class ProcyonDecompiler implements Decompiler {
         return decompileType(typeName, classBytes, DecompilerContext.EMPTY);
     }
 
+    /**
+     * 使用指定上下文反编译类文件
+     *
+     * @param classFilePath 类文件路径（可以是文件系统路径或内部名）
+     * @param classBytes    类字节码
+     * @param context       反编译上下文,用于传递依赖解析器和额外参数
+     * @return 反编译后的 Java 源码字符串
+     */
     @Override
     public String decompile(String classFilePath, byte[] classBytes,
                             DecompilerContext context) {
@@ -92,6 +108,22 @@ public class ProcyonDecompiler implements Decompiler {
         return decompileType(internalName, classBytes, context);
     }
 
+    /**
+     * 使用指定上下文反编译指定类型
+     * <p>这是 Procyon 引擎的核心反编译方法,执行以下步骤：
+     * <ol>
+     *   <li>规范化类型内部名</li>
+     *   <li>创建类型加载器 {@link CachedTypeLoader} 以支持依赖类解析</li>
+     *   <li>通过 {@link MetadataSystem} 查找并解析目标类型</li>
+     *   <li>执行完整反编译并输出为字符串</li>
+     * </ol>
+     * 查找或解析失败时返回带错误信息的注释文本,而非抛出异常</p>
+     *
+     * @param typeName   类型全限定名（内部格式,如 com/example/Foo）
+     * @param classBytes 目标类字节码
+     * @param context    反编译上下文,可为 null（使用空上下文）
+     * @return 反编译后的 Java 源码；失败时返回以 {@code //} 开头的注释文本
+     */
     @Override
     public String decompileType(String typeName, byte[] classBytes,
                                 DecompilerContext context) {
@@ -159,16 +191,27 @@ public class ProcyonDecompiler implements Decompiler {
             this.context = context;
         }
 
+        /**
+         * 尝试加载指定内部名的类型字节码
+         * <p>加载优先级：目标类本身 → 上下文依赖解析这样 Procyon 在反编译时
+         * 可以获取到依赖类的字节码信息,从而生成更准确的代码（如泛型参数、方法签名等）</p>
+         *
+         * @param internalName 类型内部名（如 com/example/Foo）
+         * @param buffer       输出缓冲区,成功时写入字节码
+         * @return 加载成功返回 true,否则返回 false
+         */
         @Override
         public boolean tryLoadType(String internalName, Buffer buffer) {
             String normalized = internalName.replace('\\', '/');
             byte[] bytes = null;
+            // 优先匹配目标类本身
             if (normalized.equals(targetName) || normalized.equals(targetName + ".class")) {
                 if (targetBytes == null) {
                     return false;
                 }
                 bytes = targetBytes;
             }
+            // 非目标类时从上下文依赖解析获取字节码
             if (bytes == null) {
                 bytes = context.resolveClassBytes(DecompilerContext.normalizeInternalName(normalized));
             }

@@ -3,8 +3,8 @@ package com.bingbaihanji.util;
 /**
  * 国际化可刷新接口
  * <p>
- * 实现此接口的组件在语言环境切换时会自动收到 {@link #refreshI18n()} 回调，
- * 用于更新 UI 文本，无需重建整个界面。
+ * 实现此接口的组件在语言环境切换时会自动收到 {@link #refreshI18n()} 回调,
+ * 用于更新 UI 文本,无需重建整个界面
  * </p>
  *
  * <h3>使用方式</h3>
@@ -26,7 +26,7 @@ package com.bingbaihanji.util;
 public interface I18nRefreshable {
 
     /**
-     * 语言切换后调用，组件应在此方法中刷新所有依赖 i18n 的文本
+     * 语言切换后调用,组件应在此方法中刷新所有依赖 i18n 的文本
      */
     void refreshI18n();
 }

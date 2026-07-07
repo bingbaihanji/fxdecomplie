@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.model.DecompilerParameter.ParamType;
 import java.util.List;
 
 /**
- * CFR 反编译引擎全部可配置参数定义（与 Recaf CfrConfig 对齐）。
+ * CFR 反编译引擎全部可配置参数定义（与 Recaf CfrConfig 对齐）
  *
  * @author bingbaihanji
  * @date 2026-06-26
@@ -15,7 +15,7 @@ import java.util.List;
 public final class CfrParameters {
 
     public static final List<DecompilerParameter> PARAMETERS = List.of(
-            // -- 常用 20 项 --
+            // ===== 常用参数 20 项 =====
             of("decodeenumswitch", "true"),
             of("sugarenums", "true"),
             of("decodestringswitch", "true"),
@@ -37,7 +37,7 @@ public final class CfrParameters {
             of("override", "true"),
             of("eclipse", "true"),
 
-            // -- 高级 62 项 --
+            // ===== 高级参数 62 项 =====
             adv("showversion", "false"),
             adv("hideutf", "false"),
             adv("hidelongstrings", "false"),
@@ -99,25 +99,30 @@ public final class CfrParameters {
             advStr("forceclassfilever", "")
     );
 
+    /** 私有构造器,防止实例化常量类 */
     private CfrParameters() {
         throw new AssertionError("constants");
     }
 
+    /** 创建一个分类为 {@link Category#COMMON} 的布尔型参数 */
     private static DecompilerParameter of(String key, String defaultValue) {
         return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
                 "engine.cfr." + key, "engine.cfr." + key + ".help", Category.COMMON, null);
     }
 
+    /** 创建一个分类为 {@link Category#ADVANCED} 的布尔型参数 */
     private static DecompilerParameter adv(String key, String defaultValue) {
         return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
                 "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
     }
 
+    /** 创建一个分类为 {@link Category#ADVANCED} 的整数型参数 */
     private static DecompilerParameter advInt(String key, String defaultValue) {
         return new DecompilerParameter(key, ParamType.INTEGER, defaultValue,
                 "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);
     }
 
+    /** 创建一个分类为 {@link Category#ADVANCED} 的字符串型参数 */
     private static DecompilerParameter advStr(String key, String defaultValue) {
         return new DecompilerParameter(key, ParamType.STRING, defaultValue,
                 "engine.cfr." + key, "engine.cfr." + key + ".help", Category.ADVANCED, null);

@@ -22,9 +22,13 @@ public record UsageResult(
         lineNumber = Math.max(1, lineNumber);
     }
 
+    /** 用法的类型 */
     public enum UsageType {
+        /** 类引用 */
         CLASS_REFERENCE,
+        /** 方法调用 */
         METHOD_CALL,
+        /** 字段访问 */
         FIELD_ACCESS
     }
 }

@@ -7,11 +7,11 @@ import java.text.MessageFormat;
 import java.util.*;
 
 /**
- * 国际化工具类（纯静态方法，线程安全）
+ * 国际化工具类（纯静态方法,线程安全）
  * <p>
- * 对 {@link I18nContext} 的便捷封装，涵盖常见使用场景。
- * 适合直接移植到其他 Java 项目，仅依赖 SLF4J（日志）和
- * {@link I18nContext}（资源加载）。
+ * 对 {@link I18nContext} 的便捷封装,涵盖常见使用场景
+ * 适合直接移植到其他 Java 项目,仅依赖 SLF4J（日志）和
+ * {@link I18nContext}（资源加载）
  * </p>
  *
  * <h3>常见场景</h3>
@@ -44,7 +44,7 @@ import java.util.*;
  *
  * @author bingbaihanji
  * @date 2025-12-20
- * @updated 2026-06-23 重构为纯工具类，状态管理移交至 I18nContext
+ * @updated 2026-06-23 重构为纯工具类,状态管理移交至 I18nContext
  */
 public final class I18nUtil {
 
@@ -60,7 +60,7 @@ public final class I18nUtil {
      * 获取当前语言环境下的国际化文本
      *
      * @param key 资源文件中的 key
-     * @return 对应文本，若 key 不存在则返回 key 本身
+     * @return 对应文本,若 key 不存在则返回 key 本身
      */
     public static String getString(String key) {
         Objects.requireNonNull(key, "key");
@@ -77,13 +77,13 @@ public final class I18nUtil {
     /**
      * 获取带参数格式化的国际化文本
      * <p>
-     * 使用 {@link MessageFormat} 语法，如 {@code getString("welcome", userName)}
-     * 匹配模板 {@code "欢迎, {0}！"}。
+     * 使用 {@link MessageFormat} 语法,如 {@code getString("welcome", userName)}
+     * 匹配模板 {@code "欢迎, {0}！"}
      * </p>
      *
      * @param key    资源文件中的 key
      * @param params 格式化参数
-     * @return 格式化后的文本，若 key 不存在则返回 key 本身
+     * @return 格式化后的文本,若 key 不存在则返回 key 本身
      */
     public static String getString(String key, Object... params) {
         Objects.requireNonNull(key, "key");
@@ -106,7 +106,7 @@ public final class I18nUtil {
     }
 
     /**
-     * 获取国际化文本，key 不存在时返回默认值
+     * 获取国际化文本,key 不存在时返回默认值
      *
      * @param key          资源文件中的 key
      * @param defaultValue key 不存在时的返回值
@@ -121,7 +121,7 @@ public final class I18nUtil {
     }
 
     /**
-     * 获取带参数的国际化文本，key 不存在时以默认值作为模板格式化
+     * 获取带参数的国际化文本,key 不存在时以默认值作为模板格式化
      *
      * @param key          资源文件中的 key
      * @param defaultValue 默认值模板（使用 {0}, {1} 占位符）
@@ -229,9 +229,9 @@ public final class I18nUtil {
     /**
      * 获取枚举常量的国际化显示名
      * <p>
-     * 拼接规则：枚举类全名（不含包名）+ "." + 常量名 → key。
+     * 拼接规则：枚举类全名（不含包名）+ "." + 常量名 → key
      * 例：{@code I18nUtil.getEnum(GridType.POLAR)} 生成 key
-     * {@code "GridType.POLAR"}。若未定义则返回常量名本身。
+     * {@code "GridType.POLAR"}若未定义则返回常量名本身
      * </p>
      *
      * @param enumValue 枚举常量
@@ -253,9 +253,9 @@ public final class I18nUtil {
     /**
      * 获取逗号分隔的字符串列表
      * <p>
-     * 如资源文件定义 {@code menu.recent=文件1, 文件2, 文件3}，
-     * 调用 {@code getStringList("menu.recent")} 返回 {@code ["文件1", "文件2", "文件3"]}。
-     * key 不存在或值为空时返回空列表。
+     * 如资源文件定义 {@code menu.recent=文件1, 文件2, 文件3},
+     * 调用 {@code getStringList("menu.recent")} 返回 {@code ["文件1", "文件2", "文件3"]}
+     * key 不存在或值为空时返回空列表
      * </p>
      *
      * @param key 资源文件中的 key
@@ -278,9 +278,9 @@ public final class I18nUtil {
     /**
      * 直接格式化模板字符串（不走资源文件查找）
      *
-     * @param pattern {@link MessageFormat} 模板，如 {@code "第{0}页, 共{1}页"}
+     * @param pattern {@link MessageFormat} 模板,如 {@code "第{0}页, 共{1}页"}
      * @param params  格式化参数
-     * @return 格式化后的字符串，pattern 为 null 时返回空字符串
+     * @return 格式化后的字符串,pattern 为 null 时返回空字符串
      */
     public static String format(String pattern, Object... params) {
         if (pattern == null) {
@@ -358,8 +358,8 @@ public final class I18nUtil {
     /**
      * 创建独立于全局语言环境的国际化消息提供者
      * <p>
-     * 返回的提供者持有指定语言的资源包，不受 {@link #switchLocale} 影响。
-     * 适用于测试、多租户或临时使用不同语言的场景。
+     * 返回的提供者持有指定语言的资源包,不受 {@link #switchLocale} 影响
+     * 适用于测试、多租户或临时使用不同语言的场景
      * </p>
      * <pre>{@code
      * I18nMessageProvider en = I18nUtil.createInstance(Locale.US);
@@ -382,8 +382,8 @@ public final class I18nUtil {
     /**
      * 创建使用自定义资源基名的独立提供者
      * <p>
-     * 当一个项目需要多套独立的国际化资源时使用。
-     * 例：主应用使用 "language/language"，插件使用 "plugin/i18n/strings"。
+     * 当一个项目需要多套独立的国际化资源时使用
+     * 例：主应用使用 "language/language",插件使用 "plugin/i18n/strings"
      * </p>
      *
      * @param baseName 资源文件基名
@@ -412,7 +412,7 @@ public final class I18nUtil {
      */
     public interface I18nMessageProvider {
 
-        /** 获取国际化文本，key 不存在时返回 key 本身 */
+        /** 获取国际化文本,key 不存在时返回 key 本身 */
         String get(String key);
 
         /** 获取带参数格式化的国际化文本 */
@@ -427,7 +427,7 @@ public final class I18nUtil {
             }
         }
 
-        /** 获取文本，key 不存在时返回指定默认值 */
+        /** 获取文本,key 不存在时返回指定默认值 */
         default String getOrDefault(String key, String defaultValue) {
             Objects.requireNonNull(key, "key");
             if (containsKey(key)) {
@@ -436,7 +436,7 @@ public final class I18nUtil {
             return defaultValue;
         }
 
-        /** 获取带参数的文本，key 不存在时以默认值作为模板格式化 */
+        /** 获取带参数的文本,key 不存在时以默认值作为模板格式化 */
         default String getOrDefault(String key, String defaultValue, Object... params) {
             Objects.requireNonNull(key, "key");
             if (containsKey(key)) {
@@ -452,7 +452,7 @@ public final class I18nUtil {
             }
         }
 
-        /** 获取布尔值，key 不存在时返回默认值 */
+        /** 获取布尔值,key 不存在时返回默认值 */
         default boolean getBoolean(String key, boolean defaultValue) {
             if (!containsKey(key)) {
                 return defaultValue;
@@ -462,7 +462,7 @@ public final class I18nUtil {
                     || "1".equals(value) || "on".equalsIgnoreCase(value);
         }
 
-        /** 获取 int 值，key 不存在或解析失败时返回默认值 */
+        /** 获取 int 值,key 不存在或解析失败时返回默认值 */
         default int getInt(String key, int defaultValue) {
             if (!containsKey(key)) {
                 return defaultValue;
@@ -516,7 +516,7 @@ public final class I18nUtil {
     /**
      * 独立的国际化消息提供者实现
      * <p>
-     * 持有一个独立的 I18nContext 引用，不随全局语言切换而变化。
+     * 持有一个独立的 I18nContext 引用,不随全局语言切换而变化
      * </p>
      */
     private record LocalizedMessageProvider(I18nContext context) implements I18nMessageProvider {

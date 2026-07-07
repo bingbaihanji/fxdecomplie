@@ -23,14 +23,16 @@ public final class TextFileDecorator implements SyntaxDecorator {
 
     private static final TextFileDecorator INSTANCE = new TextFileDecorator();
 
+    /** 私有构造函数,单例模式 */
     private TextFileDecorator() {
     }
 
-    /** 获取单例 */
+    /** @return 获取单例 */
     public static TextFileDecorator instance() {
         return INSTANCE;
     }
 
+    /** 为指定段落创建应用默认浅色样式的富文本段落 */
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
         String text = model.getPlainText(paragraphIndex);
@@ -40,6 +42,16 @@ public final class TextFileDecorator implements SyntaxDecorator {
         return RichParagraph.builder().addSegment(text, DEFAULT_STYLE).build();
     }
 
+    /**
+     * 处理文本变更事件（文本文件无需增量更新,空实现）
+     *
+     * @param model        代码文本模型
+     * @param start        变更起始位置
+     * @param end          变更结束位置
+     * @param linesRemoved 移除的行数
+     * @param linesAdded   新增的行数
+     * @param charIndex    变更字符索引
+     */
     @Override
     public void handleChange(CodeTextModel model, TextPos start, TextPos end,
                              int linesRemoved, int linesAdded, int charIndex) {

@@ -11,9 +11,9 @@ import java.util.Map;
 public interface Decompiler {
 
     /**
-     * 反编译字节码为 Java 源码（无上下文，不提供依赖解析能力）
+     * 反编译字节码为 Java 源码（无上下文,不提供依赖解析能力）
      *
-     * @deprecated 请使用 {@link #decompile(String, byte[], DecompilerContext)}，
+     * @deprecated 请使用 {@link #decompile(String, byte[], DecompilerContext)},
      *             携带 DecompilerContext 以支持依赖类字节码解析
      */
     @Deprecated
@@ -23,8 +23,8 @@ public interface Decompiler {
      * 反编译字节码为 Java 源码（带工作区隔离的依赖解析上下文）
      *
      * @param classFilePath 类文件路径(如 "com/example/Main.class")
-     * @param classBytes    类文件字节码。调用方必须把该数组视为只读，反编译期间不得修改或复用为写缓冲。
-     * @param context       反编译上下文，用于按工作区解析依赖类字节码
+     * @param classBytes    类文件字节码调用方必须把该数组视为只读,反编译期间不得修改或复用为写缓冲
+     * @param context       反编译上下文,用于按工作区解析依赖类字节码
      * @return 反编译后的 Java 源码
      */
     default String decompile(String classFilePath, byte[] classBytes,
@@ -33,9 +33,9 @@ public interface Decompiler {
     }
 
     /**
-     * 按内部类型名反编译（无上下文，不提供依赖解析能力）
+     * 按内部类型名反编译（无上下文,不提供依赖解析能力）
      *
-     * @deprecated 请使用 {@link #decompileType(String, byte[], DecompilerContext)}，
+     * @deprecated 请使用 {@link #decompileType(String, byte[], DecompilerContext)},
      *             携带 DecompilerContext 以支持依赖类字节码解析
      */
     @Deprecated
@@ -45,8 +45,8 @@ public interface Decompiler {
      * 按内部类型名反编译（带工作区隔离的依赖解析上下文）
      *
      * @param typeName   内部类型名(如 "com.example.Main")
-     * @param classBytes 类文件字节码。调用方必须把该数组视为只读，反编译期间不得修改或复用为写缓冲。
-     * @param context    反编译上下文，用于按工作区解析依赖类字节码
+     * @param classBytes 类文件字节码调用方必须把该数组视为只读,反编译期间不得修改或复用为写缓冲
+     * @param context    反编译上下文,用于按工作区解析依赖类字节码
      * @return 反编译后的 Java 源码
      */
     default String decompileType(String typeName, byte[] classBytes,

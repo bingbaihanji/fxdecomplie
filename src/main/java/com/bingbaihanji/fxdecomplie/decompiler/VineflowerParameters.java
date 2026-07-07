@@ -8,14 +8,16 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Vineflower 反编译引擎全部可配置参数定义（与 Recaf VineflowerConfig 对齐）。
+ * Vineflower 反编译引擎全部可配置参数定义（与 Recaf VineflowerConfig 对齐）
  *
  * @author bingbaihanji
  * @date 2026-06-26
  */
 public final class VineflowerParameters {
 
+    /** Vineflower 全部可配置参数列表,包含常用和高级分类 */
     public static final List<DecompilerParameter> PARAMETERS = List.of(
+            // ===== 常用参数 20 项 =====
             of("din", "1"),
             of("dgs", "1"),
             of("das", "1"),
@@ -37,6 +39,7 @@ public final class VineflowerParameters {
             of("hdc", "1"),
             of("den", "1"),
 
+            // ===== 高级参数 =====
             adv("asc", "0"),
             adv("sns", "0"),
             adv("uto", "0"),
@@ -78,6 +81,7 @@ public final class VineflowerParameters {
                     "engine.vineflower.ind", "engine.vineflower.ind.help",
                     Category.ADVANCED, null)
     );
+    /** Vineflower 参数短键到英文可读标签的映射,供 UI 设置面板显示 */
     public static final Map<String, String> KEY_LABELS = Map.ofEntries(
             Map.entry("din", "Decompile Inner"),
             Map.entry("dgs", "Decompile Generic Signatures"),
@@ -132,16 +136,19 @@ public final class VineflowerParameters {
             Map.entry("ind", "Indent String")
     );
 
+    /** 私有构造器,防止实例化常量类 */
     private VineflowerParameters() {
         throw new AssertionError("constants");
     }
 
+    /** 创建一个分类为 {@link Category#COMMON} 的布尔型参数 */
     private static DecompilerParameter of(String vfKey, String defaultValue) {
         return new DecompilerParameter(vfKey, ParamType.BOOLEAN, defaultValue,
                 "engine.vineflower." + vfKey, "engine.vineflower." + vfKey + ".help",
                 Category.COMMON, null);
     }
 
+    /** 创建一个分类为 {@link Category#ADVANCED} 的布尔型参数 */
     private static DecompilerParameter adv(String vfKey, String defaultValue) {
         return new DecompilerParameter(vfKey, ParamType.BOOLEAN, defaultValue,
                 "engine.vineflower." + vfKey, "engine.vineflower." + vfKey + ".help",

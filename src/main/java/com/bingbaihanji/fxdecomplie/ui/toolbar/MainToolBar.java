@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.util.Objects;
 
 /**
- * 主工具栏组件，位于菜单栏下方，提供常用操作快捷按钮
+ * 主工具栏组件,位于菜单栏下方,提供常用操作快捷按钮
  *
  * <p>按钮：打开文件 / 重新加载 / 导出当前文件 / 定位文件 / 搜索</p>
  *
@@ -34,10 +34,15 @@ public class MainToolBar extends ToolBar {
     private final FileActions fileActions;
     private final EditActions editActions;
 
+    /** 打开文件按钮 */
     private final Button openBtn;
+    /** 重新反编译按钮 */
     private final Button reloadBtn;
+    /** 保存当前文件按钮 */
     private final Button saveBtn;
+    /** 在文件树中定位按钮 */
     private final Button localizerBtn;
+    /** 搜索按钮 */
     private final Button searchBtn;
 
     /** 当前是否有打开的工作区 */
@@ -45,6 +50,12 @@ public class MainToolBar extends ToolBar {
     /** 当前是否有代码标签打开 */
     private boolean hasCodeTab;
 
+    /**
+     * 创建主工具栏
+     *
+     * @param fileActions 文件操作回调
+     * @param editActions 编辑操作回调
+     */
     public MainToolBar(FileActions fileActions, EditActions editActions) {
         this.fileActions = Objects.requireNonNull(fileActions, "fileActions");
         this.editActions = Objects.requireNonNull(editActions, "editActions");

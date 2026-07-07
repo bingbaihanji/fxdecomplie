@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * 带父节点链接的路径节点基类
- * 存储父节点引用、值及其运行时类型，用于类型安全的检索
+ * 存储父节点引用、值及其运行时类型,用于类型安全的检索
  *
  * @param <T> 包装的值类型
  * @author bingbaihanji
@@ -22,16 +22,19 @@ abstract class AbstractPathNode<T> implements PathNode<T> {
         this.valueType = Objects.requireNonNull(valueType, "valueType");
     }
 
+    /** @return 父节点引用,根节点时可能为 null */
     @Override
     public PathNode<?> getParent() {
         return parent;
     }
 
+    /** @return 当前节点包装的值,保证非 null */
     @Override
     public T getValue() {
         return value;
     }
 
+    /** @return 值的运行时类型,用于类型安全检索 */
     @Override
     public Class<T> getValueType() {
         return valueType;

@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 管理五种代码内容视图（Code/Smali/Bytecode/Simple/HEX）的懒加载、切换和销毁
  *
- * <p>底部使用 HBox + ToggleButton ToggleGroup 而非嵌套 TabPane，
+ * <p>底部使用 HBox + ToggleButton ToggleGroup 而非嵌套 TabPane,
  * 避免与主代码标签、Split view、拖拽之间互相干扰</p>
  *
  * @author bingbaihanji
@@ -45,13 +45,13 @@ public class CodeContentDeck extends VBox {
     private final ToggleGroup toggleGroup;
     private final AtomicInteger cancelGen = new AtomicInteger();
     private final AtomicInteger activeIndex = new AtomicInteger(TAB_CODE);
-    /** 类文件字节码，Smali/Bytecode 按需读取 */
+    /** 类文件字节码,Smali/Bytecode 按需读取 */
     private final byte[] classBytes;
     /** 防止 setSelected→action→selectTab 死循环 */
     private boolean suppressAction;
-    /** 源码内容提供回调，Simple 面板按需读取 */
+    /** 源码内容提供回调,Simple 面板按需读取 */
     private volatile String sourceCode;
-    /** 编辑器主题，用于 HEX 面板配色 */
+    /** 编辑器主题,用于 HEX 面板配色 */
     private volatile VsCodeThemeLoader.ThemeData theme;
     /** 字体族 */
     private volatile String fontFamily = "Consolas";
@@ -60,14 +60,26 @@ public class CodeContentDeck extends VBox {
     /** 是否显示行号 */
     private volatile boolean lineNumbersEnabled = true;
 
+    /** 使用默认字体参数构造 */
     public CodeContentDeck(String sourceCode, byte[] classBytes) {
         this(sourceCode, classBytes, null);
     }
 
+    /** 使用默认字体参数构造,可传入外部创建的源码面板 */
     public CodeContentDeck(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel) {
         this(sourceCode, classBytes, sourcePanel, "Consolas", 14, true);
     }
 
+    /**
+     * 完整构造器,指定字体族、字号和行号开关
+     *
+     * @param sourceCode          反编译源码内容
+     * @param classBytes          类文件字节码
+     * @param sourcePanel         外部创建的源码面板（可为 null,由内部懒创建）
+     * @param fontFamily          字体族名称
+     * @param fontSize            字号
+     * @param lineNumbersEnabled  是否显示行号
+     */
     public CodeContentDeck(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel,
                            String fontFamily, int fontSize, boolean lineNumbersEnabled) {
         this.sourceCode = sourceCode;
@@ -89,7 +101,7 @@ public class CodeContentDeck extends VBox {
         selectTab(TAB_CODE);
     }
 
-    /** 获取任意面板的 CodeArea */
+    /** 从任意面板中提取 CodeArea 编辑器引用（用于统一操作字体、行号等） */
     private static jfx.incubator.scene.control.richtext.CodeArea getCodeArea(AbstractCodeContentPanel panel) {
         return switch (panel) {
             case SourceContentPanel p -> p.getCodeArea();
@@ -120,6 +132,7 @@ public class CodeContentDeck extends VBox {
         return bar;
     }
 
+    /** 向底部栏添加一个切换按钮,使用国际化 key 作为按钮文本 */
     private void addToggle(HBox bar, int index, String i18nKey) {
         ToggleButton btn = new ToggleButton(I18nUtil.getString(i18nKey));
         btn.getStyleClass().add("code-deck-toggle");
@@ -139,7 +152,7 @@ public class CodeContentDeck extends VBox {
     }
 
     /**
-     * 切换到指定索引的标签页，首次切换时触发懒加载
+     * 切换到指定索引的标签页,首次切换时触发懒加载
      */
     private void selectTab(int index) {
         if (index < 0 || index >= TAB_COUNT) {
@@ -154,7 +167,7 @@ public class CodeContentDeck extends VBox {
         AbstractCodeContentPanel panel = panels[index];
         contentArea.getChildren().setAll(panel);
 
-        // Code 面板由外部 setSourcePanel 填充，不在此触发异步加载
+        // Code 面板由外部 setSourcePanel 填充,不在此触发异步加载
         if (index != TAB_CODE && !panel.isLoaded() && !panel.isError()) {
             Object token = new Object();
             panel.loadAsync(token);
@@ -165,7 +178,7 @@ public class CodeContentDeck extends VBox {
         suppressAction = false;
     }
 
-    /** 按索引创建对应面板，注入字体参数供 createContent() 使用 */
+    /** 按索引创建对应面板,注入字体参数供 createContent() 使用 */
     private AbstractCodeContentPanel createPanel(int index) {
         AbstractCodeContentPanel panel = switch (index) {
             case TAB_CODE -> new SourceContentPanel(sourceCode);
@@ -179,7 +192,7 @@ public class CodeContentDeck extends VBox {
         return panel;
     }
 
-    /** 更新所有面板的字体设置 */
+    /** 更新所有已加载面板的字体族和字号设置 */
     public void applyFontSettings(int newFontSize, String newFontFamily) {
         this.fontSize = newFontSize;
         this.fontFamily = newFontFamily != null && !newFontFamily.isBlank() ? newFontFamily : "Consolas";
@@ -196,7 +209,7 @@ public class CodeContentDeck extends VBox {
         }
     }
 
-    /** 更新所有面板的行号开关 */
+    /** 切换所有面板的行号显示状态 */
     public void setLineNumbersEnabled(boolean enabled) {
         this.lineNumbersEnabled = enabled;
         for (AbstractCodeContentPanel panel : panels) {
@@ -210,6 +223,7 @@ public class CodeContentDeck extends VBox {
         }
     }
 
+    /** 加载字体,优先级：内置 FiraCode → 指定字体族 → Consolas 回退 */
     private javafx.scene.text.Font loadFont() {
         try {
             java.net.URL url = getClass().getResource("/ttf/FiraCode-Light.ttf");
@@ -217,7 +231,7 @@ public class CodeContentDeck extends VBox {
                 return javafx.scene.text.Font.loadFont(url.toExternalForm(), fontSize);
             }
         } catch (Exception ignored) {
-            log.debug("加载自定义字体失败，回退到系统字体", ignored);
+            log.debug("加载自定义字体失败,回退到系统字体", ignored);
         }
         if (fontFamily != null && !fontFamily.isBlank()) {
             return javafx.scene.text.Font.font(fontFamily, fontSize);
@@ -231,7 +245,7 @@ public class CodeContentDeck extends VBox {
     }
 
     /**
-     * 替换源码面板并同步源码缓存。
+     * 替换源码面板并同步源码缓存
      *
      * @param newSource 新源码
      * @param panel     已按当前主题和导航元数据创建好的源码面板
@@ -288,13 +302,14 @@ public class CodeContentDeck extends VBox {
         resetSimplePanel();
     }
 
-    /** 只更新 Code 面板显示文本，不改变 Simple 面板基于的原始源码缓存 */
+    /** 更新 Code 面板显示文本（如注释装饰后）,不改变 Simple 面板所基于的原始源码缓存 */
     public void updateDisplayedSource(String displaySource) {
         if (panels[TAB_CODE] instanceof SourceContentPanel sp) {
             sp.setDisplayedSourceCode(displaySource);
         }
     }
 
+    /** 销毁并重置 Simple 面板,下次切换时用新源码重建 */
     private void resetSimplePanel() {
         boolean simpleActive = activeIndex.get() == TAB_SIMPLE;
         if (panels[TAB_SIMPLE] != null) {
@@ -306,7 +321,7 @@ public class CodeContentDeck extends VBox {
         }
     }
 
-    /** @return 当前取消分代号，用于外部判断任务是否过期 */
+    /** @return 当前取消分代号,用于外部判断任务是否过期 */
     public int cancelGeneration() {
         return cancelGen.get();
     }
@@ -321,6 +336,7 @@ public class CodeContentDeck extends VBox {
         return bottomBar;
     }
 
+    /** @return 指定索引的底部切换按钮 */
     public ToggleButton getButton(int index) {
         return buttons[index];
     }

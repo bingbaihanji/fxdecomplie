@@ -41,6 +41,13 @@ public final class QuickOpenDialog {
      * @param classNames workspace 中所有类的全路径列表
      * @param onSelect   选中回调
      */
+    /**
+     * 显示快速打开对话框
+     *
+     * @param owner      父窗口
+     * @param classNames workspace 中所有类的全路径列表
+     * @param onSelect   选中回调,传入选中类的全路径
+     */
     public static void show(javafx.stage.Window owner,
                             List<String> classNames,
                             Consumer<String> onSelect) {

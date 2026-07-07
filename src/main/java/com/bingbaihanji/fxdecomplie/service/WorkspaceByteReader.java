@@ -9,10 +9,13 @@ import java.nio.file.Files;
 import java.util.zip.ZipFile;
 
 /**
- * 单文件字节读取工具。
+ * 单文件字节读取工具
  *
- * <p>用户打开当前 class 时不应排队等待完整索引读取共享 JarFile。归档输入使用独立
- * ZipFile 读取目标 entry，保证交互路径优先。</p>
+ * <p>用户打开当前 class 时不应排队等待完整索引读取共享 JarFile归档输入使用独立
+ * ZipFile 读取目标 entry,保证交互路径优先</p>
+ *
+ * @author bingbaihanji
+ * @date 2026-07-07
  */
 final class WorkspaceByteReader {
 
@@ -20,6 +23,11 @@ final class WorkspaceByteReader {
         throw new AssertionError("utility class");
     }
 
+    /**
+     * 读取节点的原始字节,优先使用节点缓存,其次按工作区类型（归档/目录）解析
+     *
+     * @param cacheNode 读取成功后是否回存到节点缓存
+     */
     static byte[] readNodeBytes(Workspace workspace, FileTreeNode node, boolean cacheNode)
             throws IOException {
         if (node == null) {
@@ -45,6 +53,11 @@ final class WorkspaceByteReader {
         return bytes;
     }
 
+    /**
+     * 按内部名查找类的字节码,顺序尝试：节点树查找、归档 entry、磁盘文件
+     *
+     * @param cacheNode 读取成功后是否回存到节点缓存
+     */
     static byte[] readClassBytes(Workspace workspace, String internalName, boolean cacheNode)
             throws IOException {
         if (workspace == null || internalName == null || internalName.isBlank()) {
@@ -71,6 +84,7 @@ final class WorkspaceByteReader {
         return null;
     }
 
+    /** 从 JAR/ZIP 归档中读取指定 entry 的字节,使用独立 ZipFile 以避免线程竞争 */
     private static byte[] readArchiveEntry(File archive, String entryPath) throws IOException {
         if (archive == null || entryPath == null || entryPath.isBlank()) {
             return null;
@@ -87,6 +101,7 @@ final class WorkspaceByteReader {
         }
     }
 
+    /** 将内部名统一为以 .class 结尾的标准路径格式 */
     private static String normalizeClassPath(String internalName) {
         String normalized = internalName.replace('\\', '/');
         return normalized.endsWith(".class") ? normalized : normalized + ".class";

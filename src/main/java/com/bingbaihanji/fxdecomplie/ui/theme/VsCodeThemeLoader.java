@@ -23,13 +23,14 @@ import java.util.Map;
  */
 public final class VsCodeThemeLoader {
 
-    /** 内置默认暗色主题(懒加载) */
+    /** 内置默认暗色主题（懒加载） */
     private static final ThemeData DEFAULT_DARK = buildDefaultDark();
 
     private VsCodeThemeLoader() {
         throw new AssertionError("utility class");
     }
 
+    /** @return 内置默认暗色主题数据 */
     public static ThemeData defaultDark() {
         return DEFAULT_DARK;
     }
@@ -65,13 +66,25 @@ public final class VsCodeThemeLoader {
         return b.build();
     }
 
-    /** 从文件路径加载主题 */
+    /**
+     * 从文件系统路径加载 VS Code 主题 JSON 文件
+     *
+     * @param jsonPath JSON 文件路径
+     * @return 解析后的主题数据
+     * @throws IOException 读取或 JSON 解析失败
+     */
     public static ThemeData load(Path jsonPath) throws IOException {
         String json = Files.readString(jsonPath);
         return parse(json);
     }
 
-    /** 从 classpath 资源加载主题 */
+    /**
+     * 从 classpath 资源路径加载 VS Code 主题 JSON 文件
+     *
+     * @param resourcePath classpath 资源路径（如 "/com/.../themes/dark-plus.json"）
+     * @return 解析后的主题数据
+     * @throws IOException 资源未找到或 JSON 解析失败
+     */
     public static ThemeData loadResource(String resourcePath) throws IOException {
         try (InputStream in = VsCodeThemeLoader.class.getResourceAsStream(resourcePath)) {
             if (in == null) {
@@ -85,19 +98,23 @@ public final class VsCodeThemeLoader {
     /** 解析主题 JSON */
     private static ThemeData parse(String json) {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        // 读取主题名称和类型（dark/light）
         String name = getString(root, "name", "Unknown");
         String type = getString(root, "type", "dark");
 
+        // 解析编辑器颜色配置
         JsonObject colors = root.getAsJsonObject("colors");
         Color bg = parseColor(colors, "editor.background", "#1e1e1e");
         Color fg = parseColor(colors, "editor.foreground", "#d4d4d4");
         Color ln = parseColor(colors, "editorLineNumber.foreground", "#858585");
 
+        // 解析 tokenColors 数组,建立 scope → 样式映射
         Map<String, StyleAttributeMap> tokenStyles = new LinkedHashMap<>();
         JsonArray tokenColors = root.getAsJsonArray("tokenColors");
         if (tokenColors != null) {
             for (JsonElement e : tokenColors) {
                 JsonObject tc = e.getAsJsonObject();
+                // 提取 scope（可能是字符串或数组,取第一个 scope 名）
                 String scope = extractScope(tc.get("scope"));
                 if (scope == null) {
                     continue;
@@ -109,10 +126,11 @@ public final class VsCodeThemeLoader {
                 boolean bold = fontStyle.contains("bold");
                 boolean italic = fontStyle.contains("italic");
 
+                // 多 scope 逗号分隔时取第一个作为映射键
                 String key = scope.contains(",") ? scope.split(",")[0].trim() : scope;
                 if (key.startsWith(".")) {
+                    // 以点开头的 scope（如 ".entity.name.function"）：同时注册去点和带点两种键
                     String strippedKey = key.substring(1);
-                    // 双向查找:去点优先,没命中再用原点
                     if (!tokenStyles.containsKey(strippedKey)) {
                         tokenStyles.putIfAbsent(strippedKey, style(fgHex, bold, italic));
                     }

@@ -5,10 +5,10 @@ import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
 
 /**
- * JVM 指令视图面板，使用自定义 SmaliTextBuilder 生成 smali 风格输出
+ * JVM 指令视图面板,使用自定义 SmaliTextBuilder 生成 smali 风格输出
  *
  * <p>输出格式类似 jadx smali 视图：以 .class/.method/.field/.line/.end method 等
- * 指令组织，操作码使用小写助记符，保留行号和局部变量调试信息</p>
+ * 指令组织,操作码使用小写助记符,保留行号和局部变量调试信息</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -18,15 +18,22 @@ public class SmaliContentPanel extends AbstractCodeContentPanel {
     private final byte[] classBytes;
     private CodeArea codeArea;
 
+    /**
+     * 使用类字节码构造 Smali 视图面板
+     *
+     * @param classBytes 类文件字节码
+     */
     public SmaliContentPanel(byte[] classBytes) {
         this.classBytes = classBytes == null ? null : classBytes.clone();
     }
 
+    /** @return 内容类型标识 */
     @Override
     public String getContentType() {
         return "smali";
     }
 
+    /** 异步构建 Smali 文本,解析失败时返回摘要信息 */
     @Override
     protected Object buildContentAsync(Object cancelToken) throws Exception {
         if (classBytes == null || classBytes.length == 0) {
@@ -45,6 +52,7 @@ public class SmaliContentPanel extends AbstractCodeContentPanel {
         }
     }
 
+    /** 创建 Smali 代码展示区域,注册 SmaliHighlighter */
     @Override
     protected javafx.scene.Node createContent(Object contentData) {
         CodeArea area = new CodeArea();

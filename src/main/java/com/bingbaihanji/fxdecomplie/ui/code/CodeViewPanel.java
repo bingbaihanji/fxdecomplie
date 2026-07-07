@@ -8,10 +8,10 @@ import javafx.scene.layout.VBox;
 import java.util.function.Consumer;
 
 /**
- * 代码视图顶层容器，管理底部标签切换与分屏勾选框。
+ * 代码视图顶层容器,管理底部标签切换与分屏勾选框
  *
- * <p>内部组件：EditorSearchBar（Ctrl+F 激活）→ 内容区（CodeContentDeck）。
- * 分屏由外部 SplitEditorPane 管理，本类仅提供勾选框并回调外部。</p>
+ * <p>内部组件：EditorSearchBar（Ctrl+F 激活）→ 内容区（CodeContentDeck）
+ * 分屏由外部 SplitEditorPane 管理,本类仅提供勾选框并回调外部</p>
  *
  * @author bingbaihanji
  * @date 2026-06-23
@@ -28,21 +28,33 @@ public class CodeViewPanel extends VBox {
     private CodeActionHandler contextMenuHandler;
     /** 分屏开关回调（true=开启, false=关闭） */
     private Consumer<Boolean> onSplitToggled;
-    /** Ctrl+; 快捷键处理器引用（用于先移除再添加，防止重复注册） */
+    /** Ctrl+; 快捷键处理器引用（用于先移除再添加,防止重复注册） */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> commentKeyHandler;
     private jfx.incubator.scene.control.richtext.CodeArea commentKeyArea;
     /** Ctrl+F 文件内查找处理器引用 */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> findKeyHandler;
     private jfx.incubator.scene.control.richtext.CodeArea findKeyArea;
 
+    /** 便捷构造器：使用默认 SourcePanel、字体和行号 */
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
         this(sourceCode, classBytes, null, "Consolas", 14, true);
     }
 
+    /** 便捷构造器：指定 SourcePanel,字体和行号使用默认值 */
     public CodeViewPanel(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel) {
         this(sourceCode, classBytes, sourcePanel, "Consolas", 14, true);
     }
 
+    /**
+     * 完整参数构造器：指定源码、字节码、SourcePanel、字体族、字号和行号开关
+     *
+     * @param sourceCode          反编译源码文本
+     * @param classBytes          类文件原始字节码
+     * @param sourcePanel         已构建的源码面板（可为 null,内部自动创建）
+     * @param fontFamily          字体族名（如 "Consolas"）
+     * @param fontSize            初始字号
+     * @param lineNumbersEnabled  是否显示行号
+     */
     public CodeViewPanel(String sourceCode, byte[] classBytes, SourceContentPanel sourcePanel,
                          String fontFamily, int fontSize, boolean lineNumbersEnabled) {
         this.defaultFontSize = fontSize;
@@ -72,6 +84,7 @@ public class CodeViewPanel extends VBox {
         bindSearchBar();
     }
 
+    /** 通过反射获取 CodeArea 的选中文本,过滤空/过长/多行文本后返回 */
     private static String selectedText(jfx.incubator.scene.control.richtext.CodeArea area) {
         if (area == null) {
             return "";
@@ -105,7 +118,10 @@ public class CodeViewPanel extends VBox {
     }
 
     /**
-     * 在源码 CodeArea 上安装右键上下文菜单
+     * 在源码 CodeArea 上安装右键上下文菜单和快捷键（Ctrl+; 注释、Shift+F6 重命名）
+     *
+     * @param ctx     代码视图上下文
+     * @param handler 右键菜单和快捷键的操作处理器
      */
     public void installContextMenu(CodeViewContext ctx, CodeActionHandler handler) {
         contextMenuContext = ctx;
@@ -113,12 +129,12 @@ public class CodeViewPanel extends VBox {
         installContextMenuOnCurrentSource();
     }
 
-    /** @return 当前源码右键菜单上下文，供标签复制/迁移时复用 */
+    /** @return 当前源码右键菜单上下文,供标签复制/迁移时复用 */
     public CodeViewContext getContextMenuContext() {
         return contextMenuContext;
     }
 
-    /** @return 当前源码右键菜单处理器，供标签复制/迁移时复用 */
+    /** @return 当前源码右键菜单处理器,供标签复制/迁移时复用 */
     public CodeActionHandler getContextMenuHandler() {
         return contextMenuHandler;
     }
@@ -149,7 +165,7 @@ public class CodeViewPanel extends VBox {
             e.consume();
         });
 
-        // Ctrl+; 快捷键：先移除旧处理器再添加，防止重复调用时堆积
+        // Ctrl+; 快捷键：先移除旧处理器再添加,防止重复调用时堆积
         commentKeyArea = area;
         commentKeyHandler = e -> {
             if (e.isControlDown() && e.getCode() == javafx.scene.input.KeyCode.SEMICOLON) {
@@ -179,14 +195,23 @@ public class CodeViewPanel extends VBox {
         return searchBar;
     }
 
-    /** 用带完整主题的新源码面板替换 Code 视图 */
+    /**
+     * 用带完整主题的新源码面板替换 Code 视图（用于代码 Tab 间切换复用面板）
+     *
+     * @param newSource   新的反编译源码文本
+     * @param sourcePanel 已应用主题的新 SourcePanel
+     */
     public void replaceSourcePanel(String newSource, SourceContentPanel sourcePanel) {
         deck.replaceSourcePanel(newSource, sourcePanel);
         bindSearchBar();
         installContextMenuOnCurrentSource();
     }
 
-    /** 用新反编译源码更新视图 */
+    /**
+     * 用新反编译源码更新视图（替换 CodeArea 文本并刷新搜索栏绑定和上下文菜单）
+     *
+     * @param newSource 新的反编译源码文本
+     */
     public void refreshWithNewSource(String newSource) {
         deck.updateSource(newSource);
         bindSearchBar();
@@ -223,6 +248,7 @@ public class CodeViewPanel extends VBox {
         deck.applyFontSettings(defaultFontSize, fontFamily);
     }
 
+    /** 设置默认字号（不立即生效,仅更新内部记录） */
     public void setDefaultFontSize(int size) {
         this.defaultFontSize = size;
     }
@@ -233,7 +259,12 @@ public class CodeViewPanel extends VBox {
         deck.setLineNumbersEnabled(enabled);
     }
 
-    /** 统一应用字体设置 */
+    /**
+     * 统一应用字体设置到所有代码视图面板
+     *
+     * @param fontSize   字号
+     * @param fontFamily 字体族名
+     */
     public void applyFontSettings(int fontSize, String fontFamily) {
         this.defaultFontSize = fontSize;
         this.fontFamily = fontFamily;
@@ -256,6 +287,10 @@ public class CodeViewPanel extends VBox {
         deck.dispose();
     }
 
+    /**
+     * 在 CodeArea 上安装 Ctrl+F / F3 / Escape 快捷键绑定
+     * <p>先移除旧处理器再注册新的,防止源码刷新时重复累积事件处理器</p>
+     */
     private void installFindShortcut(jfx.incubator.scene.control.richtext.CodeArea area) {
         if (findKeyArea != null && findKeyHandler != null) {
             findKeyArea.removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, findKeyHandler);

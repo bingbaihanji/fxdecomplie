@@ -11,7 +11,7 @@ import com.sun.jna.win32.W32APIOptions;
 import java.util.List;
 
 /**
- * JNA 本地 API 接口定义，仅供 {@link NativeWindowsTools} 内部使用
+ * JNA 本地 API 接口定义,仅供 {@link NativeWindowsTools} 内部使用
  *
  * <h3>职责</h3>
  * <ul>
@@ -39,7 +39,7 @@ public final class Win32Api {
         /** 获取 DWM RECT 类型窗口属性 */
         int DwmGetWindowAttribute(WinDef.HWND hwnd, int dwAttribute, WinDef.RECT pvAttribute, int cbAttribute);
 
-        /** 扩展窗口框架到客户区，用于启用 DWM 玻璃/阴影效果 */
+        /** 扩展窗口框架到客户区,用于启用 DWM 玻璃/阴影效果 */
         int DwmExtendFrameIntoClientArea(WinDef.HWND hwnd, MARGINS pMarInset);
 
         /** DWM MARGINS 结构体：定义窗口非客户区扩展边距 */
@@ -170,9 +170,9 @@ public final class Win32Api {
             public int cbSize;
             public HWND hwnd;
             public int dwFlags;
-            /** 闪烁次数，0 表示持续直到窗口获得焦点 */
+            /** 闪烁次数,0 表示持续直到窗口获得焦点 */
             public int uCount;
-            /** 闪烁间隔(毫秒)，0 为默认 */
+            /** 闪烁间隔(毫秒),0 为默认 */
             public int dwTimeout;
 
             @Override

@@ -20,15 +20,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 括号匹配高亮协调器。监听 CodeArea 光标位置，查找匹配括号并应用高亮样式。
+ * 括号匹配高亮协调器监听 CodeArea 光标位置,查找匹配括号并应用高亮样式
  *
  * <p>实现策略：
  * <ol>
- *   <li>通过 {@code caretPositionProperty} 监听光标变化，150ms 防抖</li>
- *   <li>光标位于括号字符上时，向前/后扫描查找匹配括号</li>
- *   <li>匹配结果变化时创建新的 {@link BracketSyntaxDecorator} 实例，
+ *   <li>通过 {@code caretPositionProperty} 监听光标变化,150ms 防抖</li>
+ *   <li>光标位于括号字符上时,向前/后扫描查找匹配括号</li>
+ *   <li>匹配结果变化时创建新的 {@link BracketSyntaxDecorator} 实例,
  *       通过 {@code setSyntaxDecorator} 触发 CodeArea 全量重渲染</li>
- *   <li>包含括号的段落使用 {@link RegexHighlighter#classifyToken} 正确分词，
+ *   <li>包含括号的段落使用 {@link RegexHighlighter#classifyToken} 正确分词,
  *       仅在括号字符位置覆盖高亮样式</li>
  * </ol>
  *
@@ -80,11 +80,11 @@ public final class BracketHighlighter {
     }
 
     /**
-     * 在光标附近查找括号字符。依次检查光标前一个字符、光标所在字符。
+     * 在光标附近查找括号字符依次检查光标前一个字符、光标所在字符
      *
      * @param text     完整文本
      * @param docOff   光标文档偏移量
-     * @return 括号字符的文档偏移量，未找到返回 -1
+     * @return 括号字符的文档偏移量,未找到返回 -1
      */
     private static int findBracketNearCaret(String text, int docOff) {
         // 优先检查光标前一个字符（光标通常在括号之后）
@@ -99,13 +99,13 @@ public final class BracketHighlighter {
     }
 
     /**
-     * 查找与给定位置括号匹配的另一半位置。
+     * 查找与给定位置括号匹配的另一半位置
      *
      * @param text   完整文本
      * @param start  括号字符位置
      * @param isOpen 是否为开括号
      * @param ch     括号字符
-     * @return 匹配位置，未找到返回 -1
+     * @return 匹配位置,未找到返回 -1
      */
     private static int findMatchingBracket(String text, int start, boolean isOpen, char ch) {
         if (isOpen) {
@@ -121,7 +121,7 @@ public final class BracketHighlighter {
 
     // ---- 核心扫描逻辑 ----
 
-    /** 向前扫描匹配闭括号，跳过字符串字面量和注释中的括号 */
+    /** 向前扫描匹配闭括号,跳过字符串字面量和注释中的括号 */
     private static int scanForward(String text, int start, char open, char close) {
         int depth = 1;
         for (int i = start + 1; i < text.length(); i++) {
@@ -155,7 +155,7 @@ public final class BracketHighlighter {
         return -1;
     }
 
-    /** 向后扫描匹配开括号，跳过字符串字面量和注释中的括号 */
+    /** 向后扫描匹配开括号,跳过字符串字面量和注释中的括号 */
     private static int scanBackward(String text, int start, char open, char close) {
         int depth = 1;
         for (int i = start - 1; i >= 0; i--) {
@@ -222,7 +222,12 @@ public final class BracketHighlighter {
         return Math.max(i, -1);
     }
 
-    /** 从闭括号反推开括号字符 */
+    /**
+     * 从闭括号反推开括号字符
+     *
+     * @param close 闭括号字符（如 ')'、'}'、']'、'>'）
+     * @return 对应的开括号字符,未找到返回 '\0'
+     */
     private static char findOpenForClose(char close) {
         for (Map.Entry<Character, Character> entry : PAIRS.entrySet()) {
             if (entry.getValue() == close) {
@@ -269,7 +274,7 @@ public final class BracketHighlighter {
         clearHighlight();
     }
 
-    /** 扫描光标位置，查找并高亮匹配括号 */
+    /** 扫描光标位置,查找并高亮匹配括号 */
     private void scan() {
         String text = codeArea.getText();
         if (text == null || text.length() > SKIP_LENGTH_THRESHOLD) {
@@ -324,7 +329,7 @@ public final class BracketHighlighter {
         applyHighlight(newOpenPos, newClosePos, newMatched);
     }
 
-    /** 清除高亮，恢复为原始 RegexHighlighter */
+    /** 清除高亮,恢复为原始 RegexHighlighter */
     private void clearHighlight() {
         if (matchedOpenPos < 0 && matchedClosePos < 0) {
             return;
@@ -354,12 +359,12 @@ public final class BracketHighlighter {
     // ---- 内部 SyntaxDecorator：在 RegexHighlighter 样式上叠加括号高亮 ----
 
     /**
-     * 组合括号高亮的 {@link SyntaxDecorator} 实现。
+     * 组合括号高亮的 {@link SyntaxDecorator} 实现
      *
      * <p>对于不包含括号的段落完整委托给 {@link RegexHighlighter}；
-     * 对于包含括号的段落，使用相同的分词策略重新构建 RichParagraph，
-     * 通过 {@link RegexHighlighter#classifyToken} 获取每个 token 的正确样式，
-     * 仅在括号字符位置覆盖为高亮样式。</p>
+     * 对于包含括号的段落,使用相同的分词策略重新构建 RichParagraph,
+     * 通过 {@link RegexHighlighter#classifyToken} 获取每个 token 的正确样式,
+     * 仅在括号字符位置覆盖为高亮样式</p>
      */
     private static final class BracketSyntaxDecorator implements SyntaxDecorator {
 
@@ -377,8 +382,8 @@ public final class BracketHighlighter {
         }
 
         /**
-         * 将一段文本追加到 builder。若该段包含括号位置，则拆分为
-         * [前缀(tokenStyle)] [括号(bracketStyle)] [后缀(tokenStyle)] 三段。
+         * 将一段文本追加到 builder若该段包含括号位置,则拆分为
+         * [前缀(tokenStyle)] [括号(bracketStyle)] [后缀(tokenStyle)] 三段
          */
         private static void appendWithBracketOverride(RichParagraph.Builder builder,
                                                       String segment, int segmentStart,
@@ -438,7 +443,7 @@ public final class BracketHighlighter {
             return offset;
         }
 
-        /** 若文档偏移 p 在 [rangeStart, rangeEnd) 内，返回局部偏移；否则返回 -1 */
+        /** 若文档偏移 p 在 [rangeStart, rangeEnd) 内,返回局部偏移；否则返回 -1 */
         private static int toLocal(int p, int rangeStart, int rangeEnd) {
             if (p >= rangeStart && p < rangeEnd) {
                 return p - rangeStart;
@@ -446,6 +451,10 @@ public final class BracketHighlighter {
             return -1;
         }
 
+        /**
+         * 创建段落的高亮样式若当前段落包含括号位置,则重新分词并叠加括号高亮；
+         * 否则完整委托给底层 {@link RegexHighlighter}
+         */
         @Override
         public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
             int paragraphOffset = computeParagraphOffset(model, paragraphIndex);
@@ -462,7 +471,7 @@ public final class BracketHighlighter {
                 return highlighter.createRichParagraph(model, paragraphIndex);
             }
 
-            // 本段落含括号 → 重新分词，正确应用 token 样式 + 括号高亮
+            // 本段落含括号 → 重新分词,正确应用 token 样式 + 括号高亮
             return buildParagraphWithBrackets(text, localPos1, localPos2, bracketStyle);
         }
 
@@ -506,7 +515,7 @@ public final class BracketHighlighter {
         @Override
         public void handleChange(CodeTextModel model, TextPos start, TextPos end,
                                  int linesRemoved, int linesAdded, int charIndex) {
-            // 只读编辑器，不处理变更
+            // 只读编辑器,不处理变更
         }
     }
 }

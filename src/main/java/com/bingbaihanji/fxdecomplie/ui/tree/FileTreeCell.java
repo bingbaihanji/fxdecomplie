@@ -29,18 +29,24 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
     private final Function<FileTreeNode, String> displayNameProvider;
 
     /**
-     * 复用的 ImageView，避免滚动回收时频繁创建/销毁 JavaFX 节点。
-     * 滚动时 updateItem() 调用频率极高，每次 new ImageView() 会产生大量 GC 压力导致卡顿。
+     * 复用的 ImageView,避免滚动回收时频繁创建/销毁 JavaFX 节点
+     * 滚动时 updateItem() 调用频率极高,每次 new ImageView() 会产生大量 GC 压力导致卡顿
      */
     private final ImageView iconView;
 
-    /** 当前图标对应的样式类名，用于增量更新避免不必要的 removeAll+add 操作 */
+    /** 当前图标对应的样式类名,用于增量更新避免不必要的 removeAll+add 操作 */
     private String currentIconStyleClass;
 
+    /** 默认构造函数,不提供 displayNameProvider */
     public FileTreeCell() {
         this(null);
     }
 
+    /**
+     * 创建支持自定义显示名的文件树单元格
+     *
+     * @param displayNameProvider 显示名提供函数,为 null 时使用节点默认名称
+     */
     public FileTreeCell(Function<FileTreeNode, String> displayNameProvider) {
         this.displayNameProvider = displayNameProvider;
         this.iconView = new ImageView();
@@ -48,7 +54,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
         this.iconView.setFitHeight(ICON_SIZE);
         this.iconView.setPreserveRatio(true);
         this.iconView.setSmooth(true);
-        // 开启位图缓存：滚动时复用已渲染的像素快照，减少重绘开销
+        // 开启位图缓存：滚动时复用已渲染的像素快照,减少重绘开销
         setCache(true);
     }
 
@@ -93,11 +99,11 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
             return;
         }
 
-        // 复用 ImageView，只切换 Image 引用和样式类（避免每次 new ImageView()）
+        // 复用 ImageView,只切换 Image 引用和样式类（避免每次 new ImageView()）
         Image image = resolveImage(item);
         iconView.setImage(image);
 
-        // 增量更新 CSS 样式类，避免 removeAll + add 导致的样式闪烁
+        // 增量更新 CSS 样式类,避免 removeAll + add 导致的样式闪烁
         String newStyleClass = iconStyleClass(item);
         if (currentIconStyleClass != null && !currentIconStyleClass.equals(newStyleClass)) {
             iconView.getStyleClass().remove(currentIconStyleClass);
@@ -118,11 +124,11 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
     }
 
     /**
-     * 从外部强制刷新 cell 的显示文本。
+     * 从外部强制刷新 cell 的显示文本
      *
-     * <p>由于 FileTreeNode 是不可变的（显示名由外部 rename 映射动态决定），
-     * TreeView 无法感知到需要更新。此方法供 FileTreeView 在 rename 后调用，
-     * 直接触发 updateItem 以获取最新的 displayName。</p>
+     * <p>由于 FileTreeNode 是不可变的（显示名由外部 rename 映射动态决定）,
+     * TreeView 无法感知到需要更新此方法供 FileTreeView 在 rename 后调用,
+     * 直接触发 updateItem 以获取最新的 displayName</p>
      */
     public void refreshDisplay() {
         updateItem(getItem(), isEmpty());

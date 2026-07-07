@@ -13,10 +13,29 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Finds class/member usages by scanning bytecode operands with ASM.
+ * 用法搜索服务 — 通过 ASM 扫描字节码操作数查找类/成员的引用位置
+ *
+ * <p>逐类扫描工作区索引中的所有 class 字节码,在以下位置匹配目标：
+ * <ul>
+ *   <li>类继承/实现关系（superName、interfaces）</li>
+ *   <li>字段访问指令（GETFIELD/PUTFIELD/GETSTATIC/PUTSTATIC）</li>
+ *   <li>方法调用指令（INVOKEVIRTUAL/INVOKESPECIAL/INVOKESTATIC/INVOKEINTERFACE）</li>
+ *   <li>类型操作指令（NEW/ANEWARRAY/CHECKCAST/INSTANCEOF）</li>
+ *   <li>LDC 常量池中的 Type 引用</li>
+ *   <li>invokedynamic 中的 Handle 参数</li>
+ *   <li>字段/方法描述符中的对象类型引用</li>
+ * </ul>
+ *
+ * <p>查询格式支持：
+ * <ul>
+ *   <li>全限定类名：{@code com.example.MyClass}</li>
+ *   <li>简单类名：{@code MyClass}</li>
+ *   <li>成员引用：{@code com.example.MyClass#methodName}</li>
+ *   <li>内部类用 {@code $} 或 {@code .} 分隔均可</li>
+ * </ul>
  *
  * @author bingbaihanji
- * @date 2026-06-18
+ * @since 2026-06-18
  */
 public final class UsageSearchService {
 
@@ -26,6 +45,13 @@ public final class UsageSearchService {
         throw new AssertionError("utility class");
     }
 
+    /**
+     * 在工作区索引中搜索指定类/成员的全部引用位置
+     *
+     * @param index 工作区字节码索引
+     * @param query 用户查询字符串,支持类名和 {@code 类名#成员名} 格式
+     * @return 匹配的用法结果列表,未找到或查询无效时返回空列表
+     */
     public static List<UsageResult> findUsages(WorkspaceIndex index, String query) {
         if (index == null || query == null || query.isBlank()) {
             return List.of();
@@ -45,6 +71,14 @@ public final class UsageSearchService {
         return results;
     }
 
+    /**
+     * 对单个类进行 ASM 字节码扫描,查找目标引用
+     *
+     * @param cls     工作区索引中的类条目
+     * @param target  解析后的搜索目标（类名 + 可选成员名）
+     * @param results 累积的匹配结果列表
+     * @param seen    已见键集合,用于去重
+     */
     private static void scanClass(ClassIndexEntry cls, Target target,
                                   List<UsageResult> results, Set<String> seen) {
         byte[] bytes = cls.bytes();
@@ -159,6 +193,15 @@ public final class UsageSearchService {
         }
     }
 
+    /**
+     * 扫描类文件头信息（超类、接口、字段/方法描述符）,补充 ASM visitor 无法覆盖的引用
+     *
+     * @param cls     工作区索引中的类条目
+     * @param target  解析后的搜索目标
+     * @param results 累积的匹配结果列表
+     * @param seen    已见键集合,用于去重
+     * @param bytes   类文件的原始字节数组
+     */
     private static void addClassHeaderUsages(ClassIndexEntry cls, Target target,
                                              List<UsageResult> results, Set<String> seen,
                                              byte[] bytes) {
@@ -192,6 +235,16 @@ public final class UsageSearchService {
         });
     }
 
+    /**
+     * 扫描 invokedynamic 中的 Bootstrap Method Handle,检查其所有者类/成员是否匹配目标
+     *
+     * @param cls         当前扫描的类条目
+     * @param target      解析后的搜索目标
+     * @param results     累积的匹配结果列表
+     * @param seen        已见键集合,用于去重
+     * @param currentLine 当前字节码行号
+     * @param handle      invokedynamic 的 Bootstrap Method Handle
+     */
     private static void scanHandle(ClassIndexEntry cls, Target target,
                                    List<UsageResult> results, Set<String> seen,
                                    int currentLine, Handle handle) {
@@ -210,6 +263,16 @@ public final class UsageSearchService {
         }
     }
 
+    /**
+     * 检查 ASM Type 是否匹配目标类,若匹配则添加到结果列表
+     *
+     * @param cls         当前扫描的类条目
+     * @param target      解析后的搜索目标
+     * @param results     累积的匹配结果列表
+     * @param seen        已见键集合,用于去重
+     * @param currentLine 当前字节码行号
+     * @param type        ASM Type 实例（来自 LDC 或 multianewarray 指令）
+     */
     private static void addIfTypeMatches(ClassIndexEntry cls, Target target,
                                          List<UsageResult> results, Set<String> seen,
                                          int currentLine, Type type) {
@@ -221,6 +284,10 @@ public final class UsageSearchService {
         }
     }
 
+    /**
+     * 从 ASM Type 中提取数组元素类型的内部名（internal name）
+     * 例如 {@code String[][]} → {@code java/lang/String},非对象类型返回空字符串
+     */
     private static String elementInternalName(Type type) {
         Type element = type;
         while (element != null && element.getSort() == Type.ARRAY) {
@@ -231,6 +298,10 @@ public final class UsageSearchService {
                 : "";
     }
 
+    /**
+     * 判断字节码中的类内部名是否匹配搜索目标
+     * 匹配策略：全限定名包含匹配 + 简单名双向包含匹配（支持混淆类名自动匹配）
+     */
     private static boolean matchesClass(Target target, String owner) {
         if (owner == null || owner.isBlank()) {
             return false;
@@ -242,6 +313,10 @@ public final class UsageSearchService {
                 || target.raw.contains(simpleOwner);
     }
 
+    /**
+     * 判断字节码中的成员（字段/方法）是否匹配搜索目标
+     * 若查询包含 {@code #} 成员部分,则同时校验所有者类和成员名；否则只按简单名模糊匹配
+     */
     private static boolean matchesMember(Target target, String owner, String name) {
         if (name == null || name.isBlank()) {
             return false;
@@ -300,6 +375,16 @@ public final class UsageSearchService {
         return false;
     }
 
+    /**
+     * 向结果列表中添加一条用法记录,自动去重
+     *
+     * @param results    累积的匹配结果列表
+     * @param seen       已见键集合（{@code path\nlineNumber\ntype\ntext} 格式）
+     * @param sourcePath 源类全路径
+     * @param lineNumber 行号
+     * @param type       用法类型（类引用/字段访问/方法调用）
+     * @param text       匹配文本描述
+     */
     private static void add(List<UsageResult> results, Set<String> seen, String sourcePath,
                             int lineNumber, UsageResult.UsageType type, String text) {
         String key = sourcePath + '\n' + lineNumber + '\n' + type + '\n' + text;
@@ -308,10 +393,12 @@ public final class UsageSearchService {
         }
     }
 
+    /** 从 JVM 内部名（如 {@code java/lang/String}）提取简单类名（如 {@code String}） */
     private static String simpleName(String internalName) {
         return DecompilerContext.simpleName(internalName);
     }
 
+    /** 将 ASM 操作码转为可读的 JVM 指令助记符 */
     private static String opcodeName(int opcode) {
         return switch (opcode) {
             case Opcodes.NEW -> "new";
@@ -330,7 +417,29 @@ public final class UsageSearchService {
         };
     }
 
+    /**
+     * 用户查询解析结果 — 将原始输入拆分为类名部分和可选的成员名部分
+     *
+     * @param raw        原始查询字符串（已规范化：小写、分隔符统一为 {@code /}）
+     * @param classPart  类名部分（JVM 内部名格式,如 {@code com/example/myclass}）
+     * @param memberPart 成员名部分（{@code #} 之后的内容）,无成员时为空字符串
+     */
     private record Target(String raw, String classPart, String memberPart) {
+
+        /**
+         * 解析用户查询字符串为 {@link Target}
+         *
+         * <p>支持的格式：
+         * <ul>
+         *   <li>{@code com.example.MyClass} — 全限定类名</li>
+         *   <li>{@code MyClass} — 简单类名</li>
+         *   <li>{@code com.example.MyClass#methodName} — 指定成员</li>
+         *   <li>{@code MyClass#fieldName} — 简单名 + 成员</li>
+         * </ul>
+         *
+         * @param query 用户原始输入
+         * @return 解析后的 Target,无法解析时 classPart 为哨兵 {@code \0}
+         */
         private static Target parse(String query) {
             String rawQuery = query.trim()
                     .replaceAll("\\.class$", "")

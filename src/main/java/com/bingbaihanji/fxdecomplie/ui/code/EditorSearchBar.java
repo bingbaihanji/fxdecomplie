@@ -32,6 +32,11 @@ public final class EditorSearchBar extends HBox {
     private CodeArea codeArea;
     private int currentMatch = -1;
 
+    /**
+     * 构造编辑器内搜索栏,绑定到指定 CodeArea
+     *
+     * @param codeArea 目标代码编辑区（可为 null,后续通过 {@link #rebind(CodeArea)} 绑定）
+     */
     public EditorSearchBar(CodeArea codeArea) {
         super(6);
         this.codeArea = codeArea;
@@ -74,10 +79,16 @@ public final class EditorSearchBar extends HBox {
         });
     }
 
+    /** 显示搜索栏并聚焦输入框 */
     public void show() {
         show(null);
     }
 
+    /**
+     * 显示搜索栏,可选填充初始查询文本
+     *
+     * @param initialQuery 初始搜索文本（null 或空字符串表示不填充）
+     */
     public void show(String initialQuery) {
         setVisible(true);
         setManaged(true);
@@ -99,6 +110,7 @@ public final class EditorSearchBar extends HBox {
         }
     }
 
+    /** 隐藏搜索栏并清空匹配状态 */
     public void hide() {
         setVisible(false);
         setManaged(false);
@@ -107,10 +119,12 @@ public final class EditorSearchBar extends HBox {
         updateStatus();
     }
 
+    /** 跳转到下一个匹配项（循环） */
     public void navigateNext() {
         navigateMatch(1);
     }
 
+    /** 跳转到上一个匹配项（循环） */
     public void navigatePrevious() {
         navigateMatch(-1);
     }
@@ -126,13 +140,14 @@ public final class EditorSearchBar extends HBox {
             return;
         }
 
+        // 大小写不敏感地扫描全文,记录所有匹配的起始偏移
         int idx = 0;
         int textLen = text.length();
         while (idx <= content.length() - textLen) {
             boolean found = content.regionMatches(true, idx, text, 0, textLen);
             if (found) {
                 matchPositions.add(idx);
-                idx += textLen;
+                idx += textLen; // 跳过已匹配区域,避免重叠匹配
             } else {
                 idx++;
             }
@@ -153,6 +168,7 @@ public final class EditorSearchBar extends HBox {
             updateStatus();
             return;
         }
+        // 使用取模实现循环导航：正向+1 取模,反向先加 size 再取模避免负数
         if (direction > 0) {
             currentMatch = (currentMatch + 1) % matchPositions.size();
         } else {
@@ -188,7 +204,12 @@ public final class EditorSearchBar extends HBox {
         }
     }
 
-    /** 将平坦字符偏移转换为 TextPos(行列坐标) */
+    /**
+     * 将平坦字符偏移转换为 TextPos（行列坐标）,用于 CodeArea 文本选区定位
+     *
+     * @param targetOffset 目标字符偏移量
+     * @return 对应的 TextPos,targetOffset <= 0 时返回 (0,0)
+     */
     private TextPos offsetToTextPos(int targetOffset) {
         String content = codeArea.getText();
         if (content == null || targetOffset <= 0) {

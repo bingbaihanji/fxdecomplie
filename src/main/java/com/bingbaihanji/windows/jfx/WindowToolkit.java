@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 /**
  * JavaFX 原生窗口操作的平台无关入口点
  *
- * <p>调用方应优先使用此类，而非直接访问 Win32/JNA不支持的平台将返回
- * {@link WindowOperationStatus#SKIPPED}，而不是抛出异常</p>
+ * <p>调用方应优先使用此类,而非直接访问 Win32/JNA不支持的平台将返回
+ * {@link WindowOperationStatus#SKIPPED},而不是抛出异常</p>
  */
 public final class WindowToolkit {
 
@@ -31,7 +31,7 @@ public final class WindowToolkit {
     private static volatile WindowPlatformProvider provider = detectProvider();
 
     private WindowToolkit() {
-        throw new AssertionError("工具类，不可实例化");
+        throw new AssertionError("工具类,不可实例化");
     }
 
     /**
@@ -63,7 +63,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 获取指定 Stage 的原生窗口句柄，使用默认超时时间
+     * 获取指定 Stage 的原生窗口句柄,使用默认超时时间
      */
     public static Optional<NativeWindowHandle> nativeHandle(Stage stage) {
         return nativeHandle(stage, DEFAULT_HANDLE_TIMEOUT);
@@ -71,11 +71,11 @@ public final class WindowToolkit {
 
 
     /**
-     * 获取指定 Stage 的原生窗口句柄，支持自定义超时时间
+     * 获取指定 Stage 的原生窗口句柄,支持自定义超时时间
      *
      * @param stage   JavaFX Stage
      * @param timeout 获取句柄的最大等待时间
-     * @return 原生窗口句柄，获取失败或 stage 为 null 时返回 {@code Optional.empty()}
+     * @return 原生窗口句柄,获取失败或 stage 为 null 时返回 {@code Optional.empty()}
      */
     public static Optional<NativeWindowHandle> nativeHandle(Stage stage, Duration timeout) {
         if (stage == null) {
@@ -92,7 +92,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 为窗口应用原生外观属性，使用默认超时时间
+     * 为窗口应用原生外观属性,使用默认超时时间
      */
     public static WindowOperationResult applyAppearance(Window window, WindowAppearance appearance) {
         if (!(window instanceof Stage stage)) {
@@ -102,7 +102,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 为 Stage 应用原生外观属性，支持自定义超时时间
+     * 为 Stage 应用原生外观属性,支持自定义超时时间
      *
      * @param stage      目标 Stage
      * @param appearance 原生外观配置
@@ -122,11 +122,11 @@ public final class WindowToolkit {
     }
 
     /**
-     * 异步为窗口应用原生外观属性，完成后在 JavaFX 线程中回调
+     * 异步为窗口应用原生外观属性,完成后在 JavaFX 线程中回调
      *
      * @param window     目标窗口
      * @param appearance 原生外观配置
-     * @param onComplete 完成后的回调(在 JavaFX 线程中执行，失败时为 null)
+     * @param onComplete 完成后的回调(在 JavaFX 线程中执行,失败时为 null)
      * @return 可组合的异步结果
      */
     public static CompletableFuture<WindowOperationResult> applyAppearanceAsync(
@@ -150,7 +150,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 设置窗口置顶，使用 JavaFX Stage API 实现
+     * 设置窗口置顶,使用 JavaFX Stage API 实现
      */
     public static WindowOperationResult setAlwaysOnTop(Stage stage, boolean alwaysOnTop) {
         if (stage == null) {
@@ -161,7 +161,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 最小化窗口，使用 JavaFX Stage API 实现
+     * 最小化窗口,使用 JavaFX Stage API 实现
      */
     public static WindowOperationResult minimize(Stage stage) {
         if (stage == null) {
@@ -172,7 +172,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 最大化窗口，使用 JavaFX Stage API 实现
+     * 最大化窗口,使用 JavaFX Stage API 实现
      */
     public static WindowOperationResult maximize(Stage stage) {
         if (stage == null) {
@@ -183,7 +183,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 还原窗口(取消最小化和最大化)，使用 JavaFX Stage API 实现
+     * 还原窗口(取消最小化和最大化),使用 JavaFX Stage API 实现
      */
     public static WindowOperationResult restore(Stage stage) {
         if (stage == null) {
@@ -197,7 +197,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 将窗口带到最前，使用 JavaFX Stage API 实现
+     * 将窗口带到最前,使用 JavaFX Stage API 实现
      */
     public static WindowOperationResult bringToFront(Stage stage) {
         if (stage == null) {
@@ -214,7 +214,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 通过原生 API 强制将窗口带到最前，适用于 JavaFX API 不够强力的场景
+     * 通过原生 API 强制将窗口带到最前,适用于 JavaFX API 不够强力的场景
      */
     public static WindowOperationResult forceBringToFront(Stage stage) {
         if (stage == null) {
@@ -227,7 +227,7 @@ public final class WindowToolkit {
      * 设置窗口不透明度
      *
      * @param stage   目标 Stage
-     * @param opacity 不透明度，取值范围 (0, 1]
+     * @param opacity 不透明度,取值范围 (0, 1]
      * @throws IllegalArgumentException 如果 opacity 不在 (0, 1] 范围内
      */
     public static WindowOperationResult setOpacity(Stage stage, double opacity) {
@@ -252,8 +252,8 @@ public final class WindowToolkit {
      * 通过原生 API 闪烁任务栏窗口图标
      *
      * @param stage     目标 Stage
-     * @param count     闪烁次数，0 表示使用系统默认
-     * @param timeoutMs 每次闪烁的超时毫秒数，0 表示使用系统默认
+     * @param count     闪烁次数,0 表示使用系统默认
+     * @param timeoutMs 每次闪烁的超时毫秒数,0 表示使用系统默认
      */
     public static WindowOperationResult flash(Stage stage, int count, int timeoutMs) {
         if (stage == null) {
@@ -273,7 +273,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 禁用或启用窗口大小调整，使用 JavaFX Stage API 实现
+     * 禁用或启用窗口大小调整,使用 JavaFX Stage API 实现
      */
     public static WindowOperationResult disableResize(Stage stage, boolean disabled) {
         if (stage == null) {
@@ -284,7 +284,7 @@ public final class WindowToolkit {
     }
 
     /**
-     * 在任务切换器(Alt+Tab)中隐藏或显示窗口，通过原生 API 实现
+     * 在任务切换器(Alt+Tab)中隐藏或显示窗口,通过原生 API 实现
      */
     public static WindowOperationResult hideFromTaskSwitcher(Stage stage, boolean hide) {
         if (stage == null) {
@@ -295,7 +295,7 @@ public final class WindowToolkit {
 
     /**
      * 获取窗口所在屏幕的缩放比例
-     * 优先使用原生 API 获取精确缩放值，回退到 JavaFX 屏幕 API
+     * 优先使用原生 API 获取精确缩放值,回退到 JavaFX 屏幕 API
      */
     public static double windowScaleFactor(Stage stage) {
         if (stage == null) {
@@ -311,7 +311,7 @@ public final class WindowToolkit {
     /**
      * 停止本工具包创建的后台辅助线程
      *
-     * <p>线程为守护线程，正常应用关闭时调用此方法不是必须的
+     * <p>线程为守护线程,正常应用关闭时调用此方法不是必须的
      * 主要用于嵌入式使用和测试套件场景</p>
      */
     public static void shutdown() {

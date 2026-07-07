@@ -55,6 +55,7 @@ public class CfrDecompiler implements Decompiler {
         return Collections.unmodifiableMap(opts);
     }
 
+    /** 移除 .class 后缀,转换为内部类名格式 */
     private static String removeClassSuffix(String path) {
         if (path.endsWith(".class")) {
             return path.substring(0, path.length() - 6);
@@ -62,6 +63,13 @@ public class CfrDecompiler implements Decompiler {
         return path;
     }
 
+    /**
+     * 合并默认选项与用户上下文选项
+     * 用户选项覆盖同名的默认选项
+     *
+     * @param context 反编译上下文（可为 null）
+     * @return 合并后的不可变选项映射
+     */
     private static Map<String, String> mergedOptions(DecompilerContext context) {
         if (context == null || !context.hasOptions()) {
             return DEFAULT_OPTIONS;
@@ -71,19 +79,20 @@ public class CfrDecompiler implements Decompiler {
         return Collections.unmodifiableMap(merged);
     }
 
-    /** {@inheritDoc} */
+    /** 使用空上下文反编译,保留内部类名中的 .class 后缀 */
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
         String internalName = removeClassSuffix(classFilePath);
         return decompileType(internalName, classBytes, DecompilerContext.EMPTY);
     }
 
-    /** {@inheritDoc} */
+    /** 使用空上下文反编译给定内部类名 */
     @Override
     public String decompileType(String typeName, byte[] classBytes) {
         return decompileType(typeName, classBytes, DecompilerContext.EMPTY);
     }
 
+    /** 带上下文的文件路径反编译,自动去除 .class 后缀后委托给 {@link #decompileType} */
     @Override
     public String decompile(String classFilePath, byte[] classBytes,
                             DecompilerContext context) {
@@ -91,12 +100,25 @@ public class CfrDecompiler implements Decompiler {
         return decompileType(internalName, classBytes, context);
     }
 
+    /**
+     * 使用 CFR 引擎反编译指定类
+     *
+     * <p>核心流程：通过匿名 {@link ClassFileSource} 为主类和依赖类提供字节码,
+     * 匿名 {@link OutputSinkFactory} 收集反编译输出到 StringBuilder,
+     * 最终调用 {@link CfrDriver#analyse} 执行反编译</p>
+     *
+     * @param typeName   类的内部名称（如 {@code com/example/MyClass}）
+     * @param classBytes 类的原始字节码
+     * @param context    反编译上下文（可为 null,用于解析依赖类字节码和传递选项）
+     * @return 反编译后的 Java 源码字符串；若结果为空则返回带说明的错误注释
+     */
     @Override
     public String decompileType(String typeName, byte[] classBytes,
                                 DecompilerContext context) {
         final StringBuilder result = new StringBuilder();
         DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
 
+        // 为 CFR 提供字节码来源：主类直接用传入的 bytes,依赖类通过上下文解析
         ClassFileSource classFileSource = new ClassFileSource() {
             @Override
             public void informAnalysisRelativePathDetail(String usePath, String specPath) {
@@ -117,6 +139,7 @@ public class CfrDecompiler implements Decompiler {
                 String normalizedPath = path.replace("\\", "/");
                 String normalizedTypeName = typeName.replace("\\", "/");
 
+                // 检查是否为主类请求（多种路径形式匹配）
                 if (normalizedPath.equals(normalizedTypeName)
                         || normalizedPath.equals(normalizedTypeName + ".class")
                         || normalizedPath.endsWith("/" + DecompilerContext.simpleName(normalizedTypeName) + ".class")
@@ -124,6 +147,7 @@ public class CfrDecompiler implements Decompiler {
                     return Pair.make(classBytes, normalizedPath);
                 }
 
+                // 非主类：从上下文解析依赖类字节码
                 String internalName = removeClassSuffix(normalizedPath);
                 byte[] otherBytes = effectiveContext.resolveClassBytes(internalName);
                 if (otherBytes != null) {
@@ -134,6 +158,7 @@ public class CfrDecompiler implements Decompiler {
             }
         };
 
+        // 收集 CFR 反编译输出到 StringBuilder
         OutputSinkFactory outputSinkFactory = new OutputSinkFactory() {
             @Override
             public List<SinkClass> getSupportedSinks(SinkType sinkType, Collection<SinkClass> available) {
@@ -178,12 +203,13 @@ public class CfrDecompiler implements Decompiler {
         return decompiled;
     }
 
-    /** @return 引擎类型 CFR */
+    /** @return 引擎类型 {@link DecompilerTypeEnum#CFR} */
     @Override
     public DecompilerTypeEnum getType() {
         return DecompilerTypeEnum.CFR;
     }
 
+    /** @return CFR 默认反编译选项的不可变映射 */
     @Override
     public Map<String, String> getDefaultOptions() {
         return DEFAULT_OPTIONS;

@@ -61,7 +61,7 @@ public final class ClassDiscoverer {
             log.debug("发现单个 class 文件: {}", file.getName());
             return entries;
         } else {
-            log.debug("非标准文件类型，按资源处理: {}", file.getName());
+            log.debug("非标准文件类型,按资源处理: {}", file.getName());
             return List.of(new ClassEntry(file.getName(), file.getName(),
                     guessType(file.getName()), null));
         }

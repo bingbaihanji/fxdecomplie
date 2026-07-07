@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Smali 视图语法高亮器，用于 jadx 风格的 smali 输出。
+ * Smali 视图语法高亮器,用于 jadx 风格的 smali 输出
  *
  * <p>高亮元素：标题行（######）、注释（# 开头）、smali 指令关键字
  * （.class/.method/.field/.registers 等）、smali 风格操作码
@@ -125,10 +125,12 @@ final class SmaliHighlighter implements SyntaxDecorator {
     private static final Pattern RE_REGISTER = Pattern.compile(
             "\\b[vp]\\d+\\b");
 
+    /** 根据颜色创建 StyleAttributeMap */
     private static StyleAttributeMap builder(Color c) {
         return StyleAttributeMap.builder().setTextColor(c).build();
     }
 
+    /** 根据标记类型返回对应的样式属性 */
     private static StyleAttributeMap styleFor(Kind kind) {
         return switch (kind) {
             case DIRECTIVE -> S_DIRECTIVE;
@@ -142,6 +144,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
         };
     }
 
+    /** 根据语法标记列表构建富文本段落；标题行整体高亮,其他行按 token 着色 */
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
         String line = model.getPlainText(paragraphIndex);
@@ -166,13 +169,16 @@ final class SmaliHighlighter implements SyntaxDecorator {
         return builder.build();
     }
 
+    /**
+     * 对单行进行词法分析,按优先级匹配：注释、字符串、标签、指令、寄存器、数字、操作码、默认文本
+     */
     private List<Token> tokenize(String line) {
         List<Token> tokens = new ArrayList<>();
         int pos = 0;
         int len = line.length();
 
         while (pos < len) {
-            // 注释（# 开头，前面无 .xxx 指令）
+            // 注释（# 开头,前面无 .xxx 指令）
             if (line.charAt(pos) == '#' && (pos == 0 || Character.isWhitespace(line.charAt(pos - 1))
                     || line.charAt(pos - 1) == ';')) {
                 tokens.add(new Token(Kind.COMMENT, line.substring(pos)));
@@ -258,6 +264,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
         return tokens;
     }
 
+    /** 判断指定位置是否为新 token 的起始字符 */
     private boolean isTokenStart(String line, int pos) {
         if (pos >= line.length()) {
             return false;
@@ -268,13 +275,16 @@ final class SmaliHighlighter implements SyntaxDecorator {
                 || Character.isDigit(c) || Character.isLetter(c);
     }
 
+    /** 文本变更回调（Smali 视图不追踪增量变更,留空） */
     @Override
     public void handleChange(CodeTextModel model, TextPos start, TextPos end,
                              int linesRemoved, int linesAdded, int charIndex) {
     }
 
+    /** 词法标记类型 */
     private enum Kind {DIRECTIVE, OPCODE, COMMENT, STRING, HEADER, NUMBER, LABEL, DEFAULT}
 
+    /** 词法标记：类型 + 文本片段 */
     private record Token(Kind kind, String text) {
     }
 }

@@ -58,7 +58,7 @@ public class RegexHighlighter implements SyntaxDecorator {
                     + "|(?<IDENTIFIER>\\b[a-zA-Z_][a-zA-Z0-9_]*\\b)"
     );
 
-    /** 各 token 类型的样式属性 */
+    /** 默认/通用样式 */
     private final StyleAttributeMap styleDefault;
     /** 关键字样式 */
     private final StyleAttributeMap styleKeyword;
@@ -79,10 +79,16 @@ public class RegexHighlighter implements SyntaxDecorator {
     /** 类型/类名样式 */
     private final StyleAttributeMap styleType;
 
+    /** 使用内置默认暗色主题构造高亮器 */
     public RegexHighlighter() {
         this(VsCodeThemeLoader.defaultDark());
     }
 
+    /**
+     * 使用指定 VS Code 主题构造高亮器
+     *
+     * @param theme VS Code 主题数据
+     */
     public RegexHighlighter(VsCodeThemeLoader.ThemeData theme) {
         Map<String, StyleAttributeMap> styles = theme.tokenStyles();
         this.styleDefault = resolveStyle(styles, TOKEN_TO_SCOPES.get("DEFAULT"));
@@ -97,7 +103,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         this.styleType = resolveStyle(styles, TOKEN_TO_SCOPES.get("TYPE"));
     }
 
-    /** 检查标识符是否以大写开头(类名/接口名/枚举名) */
+    /** 检查标识符是否以大写开头（类名/接口名/枚举名等类型标识） */
     private static boolean isType(String identifier) {
         if (identifier == null || identifier.isEmpty()) {
             return false;
@@ -150,7 +156,7 @@ public class RegexHighlighter implements SyntaxDecorator {
     }
 
     /**
-     * 根据 token 文本和上下文确定其样式，供外部（如 BracketHighlighter）复用。
+     * 根据 token 文本和上下文确定其样式,供外部（如 BracketHighlighter）复用
      *
      * @param matched   token 文本
      * @param groupName 正则组名（"MULTICOMMENT","SINGLECOMMENT","STRING","ANNOTATION","NUMBER","IDENTIFIER"或null）
@@ -208,6 +214,10 @@ public class RegexHighlighter implements SyntaxDecorator {
                 StyleAttributeMap.builder().setTextColor(Color.web("#d4d4d4")).build());
     }
 
+    /**
+     * 为正则分词后的段落创建带样式片段的 RichParagraph
+     * <p>逐个匹配 token,token 之间的文本应用默认样式,其余文本根据正则组名分类着色</p>
+     */
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
         String text = model.getPlainText(paragraphIndex);
@@ -276,6 +286,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         return builder.build();
     }
 
+    /** 文本变更时重新高亮的回调（当前不做处理,由 createRichParagraph 全量重建） */
     @Override
     public void handleChange(CodeTextModel model, TextPos start, TextPos end,
                              int linesRemoved, int linesAdded, int charIndex) {

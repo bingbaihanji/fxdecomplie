@@ -18,10 +18,10 @@ import java.util.regex.Pattern;
 public final class OutlineParser {
 
     /**
-     * 方法签名匹配模式。
-     * 使用简单括号计数扫描参数列表，避免正则嵌套量词导致灾难性回溯或
-     * 深层嵌套泛型（如 {@code Map<String, Map<String, List<Integer>>>}）匹配失败。
-     * 匹配策略：定位开括号后逐字符扫描，跳过字符串/注释，括号计数归零时结束。
+     * 方法签名匹配模式
+     * 使用简单括号计数扫描参数列表,避免正则嵌套量词导致灾难性回溯或
+     * 深层嵌套泛型（如 {@code Map<String, Map<String, List<Integer>>>}）匹配失败
+     * 匹配策略：定位开括号后逐字符扫描,跳过字符串/注释,括号计数归零时结束
      */
     private static final Pattern METHOD_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|final|synchronized|abstract|native|\\s)*)"
@@ -34,7 +34,7 @@ public final class OutlineParser {
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|\\s)*)\\b(class|interface|enum|record)\\s+(\\w+)");
 
-    /** 匹配全限定类引用：包路径（小写段）+ 类名/内部类（大小写均可，混淆后类名常为小写单字母） */
+    /** 匹配全限定类引用：包路径（小写段）+ 类名/内部类（大小写均可,混淆后类名常为小写单字母） */
     private static final Pattern CLASS_REF_PATTERN = Pattern.compile(
             "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+\\.[A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)\\b");
 
@@ -43,15 +43,15 @@ public final class OutlineParser {
     }
 
     /**
-     * 从反编译 Java 源码提取大纲成员（字段、方法、内部类）。
+     * 从反编译 Java 源码提取大纲成员（字段、方法、内部类）
      *
-     * <p>逐行扫描源码，用大括号计数跟踪嵌套深度。方法匹配采用两步策略：
-     * 先用 {@link #METHOD_PATTERN} 匹配方法名前缀，再从开括号位置逐字符扫描
-     * 找到匹配的闭括号（跳过字符串和注释），避免正则嵌套量词的深度限制和
-     * 灾难性回溯问题。</p>
+     * <p>逐行扫描源码,用大括号计数跟踪嵌套深度方法匹配采用两步策略：
+     * 先用 {@link #METHOD_PATTERN} 匹配方法名前缀,再从开括号位置逐字符扫描
+     * 找到匹配的闭括号（跳过字符串和注释）,避免正则嵌套量词的深度限制和
+     * 灾难性回溯问题</p>
      *
      * @param sourceCode 反编译后的 Java 源码
-     * @return 大纲成员列表，按源码行号排序
+     * @return 大纲成员列表,按源码行号排序
      */
     public static List<OutlineMember> parse(String sourceCode) {
         if (sourceCode == null || sourceCode.isEmpty()) {
@@ -69,8 +69,8 @@ public final class OutlineParser {
             if (depth == 1 && !line.contains(" class ") && !line.contains(" interface ")
                     && !line.contains(" enum ") && !line.contains(" record ")) {
                 if ((m = METHOD_PATTERN.matcher(line)).find()) {
-                    // 从开括号位置扫描匹配闭括号，处理深层嵌套泛型参数
-                    int openParen = m.end() - 1; // pattern 以 "\(" 结尾，开括号在最后一字符
+                    // 从开括号位置扫描匹配闭括号,处理深层嵌套泛型参数
+                    int openParen = m.end() - 1; // pattern 以 "\(" 结尾,开括号在最后一字符
                     if (openParen >= 0 && hasMatchingCloseParen(line, openParen)) {
                         members.add(new OutlineMember(m.group(2), OutlineMember.MemberType.METHOD,
                                 extractModifiers(m.group(1)), i + 1));
@@ -90,8 +90,8 @@ public final class OutlineParser {
     }
 
     /**
-     * 从指定位置的开括号开始，逐字符扫描找到匹配的闭括号。
-     * 跳过字符串字面量和注释，支持任意深度的泛型嵌套。
+     * 从指定位置的开括号开始,逐字符扫描找到匹配的闭括号
+     * 跳过字符串字面量和注释,支持任意深度的泛型嵌套
      *
      * @param line      当前行文本
      * @param openParen 开括号 '(' 的索引
@@ -108,7 +108,7 @@ public final class OutlineParser {
             }
             // 跳过单行注释
             if (c == '/' && j + 1 < line.length() && line.charAt(j + 1) == '/') {
-                return false; // 注释到行尾，不可能有闭括号和 {/;
+                return false; // 注释到行尾,不可能有闭括号和 {/;
             }
             if (c == '(') {
                 depth++;
@@ -144,7 +144,7 @@ public final class OutlineParser {
         return false;
     }
 
-    /** 跳过字符串/字符字面量，处理转义字符 */
+    /** 跳过字符串/字符字面量,处理转义字符 */
     private static int skipQuoted(String s, int start, char quote) {
         int i = start + 1;
         while (i < s.length()) {
@@ -162,8 +162,8 @@ public final class OutlineParser {
     }
 
     /**
-     * 统计字符在行中的出现次数，跳过字符串字面量和注释。
-     * 避免 {@code "hello { world }"} 或 {@code // { } } 中的括号被误计。
+     * 统计字符在行中的出现次数,跳过字符串字面量和注释
+     * 避免 {@code "hello { world }"} 或 {@code // { } } 中的括号被误计
      */
     private static int count(String s, char c) {
         int n = 0;
@@ -176,7 +176,7 @@ public final class OutlineParser {
             }
             // 跳过单行注释
             if (ch == '/' && i + 1 < s.length() && s.charAt(i + 1) == '/') {
-                break; // 注释到行尾，本行后续不再有代码级括号
+                break; // 注释到行尾,本行后续不再有代码级括号
             }
             if (ch == c) {
                 n++;
@@ -212,7 +212,7 @@ public final class OutlineParser {
             while (m.find()) {
                 String match = m.group(1);
                 // 包含 '.' 且最后一段是有效 Java 标识符则视为类引用
-                // 混淆后的类名通常为小写单字母（如 a, b, c），不能再依赖首字母大写判断
+                // 混淆后的类名通常为小写单字母（如 a, b, c）,不能再依赖首字母大写判断
                 if (match.contains(".") && looksLikeClassReference(match)) {
                     refs.add(new CodeMetadata.Reference(
                             CodeMetadata.RefType.CLASS_REF, match, null, lineNum));
@@ -228,13 +228,13 @@ public final class OutlineParser {
     }
 
     /**
-     * 判断匹配片段是否为有效的类引用。
+     * 判断匹配片段是否为有效的类引用
      *
-     * <p>混淆后的类名通常为小写单字母（如 a/b/c），若只按首字母大写过滤
-     * 会漏掉所有混淆类引用，导致 Ctrl+Click 导航失效。</p>
+     * <p>混淆后的类名通常为小写单字母（如 a/b/c）,若只按首字母大写过滤
+     * 会漏掉所有混淆类引用,导致 Ctrl+Click 导航失效</p>
      *
-     * <p>简单规则：最后一个 '.' 后面的简单类名必须是有效 Java 标识符，
-     * 且至少包含两个 '.' 段（至少一级包 + 类名），避免误匹配单个变量。</p>
+     * <p>简单规则：最后一个 '.' 后面的简单类名必须是有效 Java 标识符,
+     * 且至少包含两个 '.' 段（至少一级包 + 类名）,避免误匹配单个变量</p>
      */
     private static boolean looksLikeClassReference(String match) {
         if (match == null || match.isBlank()) {

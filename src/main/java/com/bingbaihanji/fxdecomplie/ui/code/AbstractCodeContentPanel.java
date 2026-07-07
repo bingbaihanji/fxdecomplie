@@ -10,10 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 代码内容面板抽象基类，统一四种视图（源码/Smali/字节码/简化）的生命周期
+ * 代码内容面板抽象基类,统一四种视图（源码/Smali/字节码/简化）的生命周期
  *
- * <p>子类在后台线程中生成文本/数据，在 JavaFX 线程中创建实际节点，
- * 避免在后台线程构造 JavaFX 控件导致随机卡顿或崩溃。</p>
+ * <p>子类在后台线程中生成文本/数据,在 JavaFX 线程中创建实际节点,
+ * 避免在后台线程构造 JavaFX 控件导致随机卡顿或崩溃</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -39,7 +39,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
     /** 行号开关（由 CodeContentDeck 在创建面板后设置） */
     protected volatile boolean lineNumbersEnabled = true;
     private volatile Object cancelToken;
-    /** 内容创建完成回调（面板创建 CodeArea 后触发，用于应用字体/行号） */
+    /** 内容创建完成回调（面板创建 CodeArea 后触发,用于应用字体/行号） */
     private volatile Runnable onContentCreated;
 
     /** 显示加载指示器 */
@@ -69,7 +69,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
                 area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
             }
         } catch (Exception ignored) {
-            log.debug("加载自定义字体失败，使用 Consolas 回退", ignored);
+            log.debug("加载自定义字体失败,使用 Consolas 回退", ignored);
             area.setFont(javafx.scene.text.Font.font("Consolas", fontSize));
         }
         LineNumberGutter.setEnabled(area, lineNumbersEnabled);
@@ -84,16 +84,16 @@ public abstract class AbstractCodeContentPanel extends StackPane {
     public abstract String getContentType();
 
     /**
-     * 在后台线程中构建内容数据，不允许创建 JavaFX Node。
+     * 在后台线程中构建内容数据,不允许创建 JavaFX Node
      *
-     * @param cancelToken 取消令牌，构建过程中应周期性检查
+     * @param cancelToken 取消令牌,构建过程中应周期性检查
      * @return 内容数据
      * @throws Exception 构建失败时抛出
      */
     protected abstract Object buildContentAsync(Object cancelToken) throws Exception;
 
     /**
-     * 在 JavaFX 线程中将后台数据渲染为节点。
+     * 在 JavaFX 线程中将后台数据渲染为节点
      *
      * @param contentData {@link #buildContentAsync(Object)} 的返回值
      * @return 渲染节点
@@ -111,9 +111,9 @@ public abstract class AbstractCodeContentPanel extends StackPane {
     }
 
     /**
-     * 触发异步加载（首次调用生效，后续调用忽略）
+     * 触发异步加载（首次调用生效,后续调用忽略）
      *
-     * @param token 取消令牌，用于快速切换时丢弃过期结果
+     * @param token 取消令牌,用于快速切换时丢弃过期结果
      */
     public final void loadAsync(Object token) {
         if (!state.compareAndSet(STATE_UNLOADED, STATE_LOADING)) {
@@ -156,7 +156,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
         });
     }
 
-    /** 释放资源，子类可重写以清理 CodeArea 监听器等 */
+    /** 释放资源,子类可重写以清理 CodeArea 监听器等 */
     public void dispose() {
         cancelToken = new Object();
     }

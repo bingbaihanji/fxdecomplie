@@ -19,12 +19,6 @@ import java.util.function.Consumer;
  */
 public final class CodeLinkHandler {
 
-    /**
-     * 在 CodeArea 上安装 Ctrl+Click 导航。
-     *
-     * <p>优先把点击处的 token 交给上层解析，上层可以结合 import、当前包和 workspace
-     * 文件树完成项目内 class 跳转；没有 token 导航器时退回到行级 metadata。</p>
-     */
     private static final String LINK_HANDLER_KEY = "CODE_LINK_HANDLER";
 
     private CodeLinkHandler() {
@@ -43,6 +37,14 @@ public final class CodeLinkHandler {
         install(codeArea, metadata, null, onNavigate);
     }
 
+    /**
+     * 在 CodeArea 上安装 Ctrl+Click 导航,优先通过 token 导航器解析,回退到行级 metadata
+     *
+     * @param codeArea        代码编辑区域
+     * @param metadata        代码元数据（行到引用的映射）
+     * @param onTokenNavigate token 级导航回调,接收行号和标识符；传入 null 则仅使用 metadata
+     * @param onNavigate      行级导航回调,接收点击处的引用
+     */
     public static void install(CodeArea codeArea, CodeMetadata metadata,
                                BiConsumer<Integer, String> onTokenNavigate,
                                Consumer<CodeMetadata.Reference> onNavigate) {
@@ -89,18 +91,18 @@ public final class CodeLinkHandler {
     }
 
     /**
-     * 从行引用列表中选择与点击 token 匹配的引用。
+     * 从行引用列表中选择与点击 token 匹配的引用
      *
      * <p>匹配策略（按优先级）：
      * <ol>
      *   <li>完全限定名匹配（含内部类 $ 分隔）</li>
      *   <li>简单类名匹配（仅最后一段）</li>
-     *   <li>无匹配时返回 null，避免导航到无关引用</li>
+     *   <li>无匹配时返回 null,避免导航到无关引用</li>
      * </ol>
      *
      * @param refs  行上的所有类引用
      * @param token 点击处的标识符（可能为 package.ClassName 形式）
-     * @return 匹配的引用，无匹配时返回 null
+     * @return 匹配的引用,无匹配时返回 null
      */
     private static CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs,
                                                           String token) {
@@ -123,10 +125,11 @@ public final class CodeLinkHandler {
                 return ref;
             }
         }
-        // 无精确匹配时不回退到第一个引用，避免导航到错误位置
+        // 无精确匹配时不回退到第一个引用,避免导航到错误位置
         return null;
     }
 
+    /** 从指定文本位置提取可导航的 Java 标识符（类名或成员引用） */
     public static String navigationTokenAt(String text, TextPos pos) {
         if (text == null || text.isEmpty() || pos == null) {
             return "";
@@ -167,6 +170,7 @@ public final class CodeLinkHandler {
         return selectNavigationToken(qualified, localSegmentStart, localSegmentEnd);
     }
 
+    /** 将 TextPos（行号+列偏移）转换为文本在原始字符串中的平坦偏移量 */
     private static int flatOffset(String text, TextPos pos) {
         int line = Math.max(0, pos.index());
         int offset = Math.max(0, pos.offset());
@@ -185,14 +189,25 @@ public final class CodeLinkHandler {
         return Math.min(text.length(), lineStart + offset);
     }
 
+    /** @return true 若字符是 Java 名称字符（标识符字符、点号或美元符号） */
     private static boolean isJavaNameChar(char ch) {
         return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$';
     }
 
+    /** @return true 若字符属于 Java 标识符段字符（标识符字符或美元符号,不含点号） */
     private static boolean isJavaIdentifierSegmentChar(char ch) {
         return Character.isJavaIdentifierPart(ch) || ch == '$';
     }
 
+    /**
+     * 从限定名中选择适合导航的 token
+     * <p>处理 this./super. 前缀、静态成员访问、混淆类名等情况,返回最佳导航目标
+     *
+     * @param qualified    包含包名和类名的完整限定字符串
+     * @param segmentStart 标识符段在 qualified 中的起始位置
+     * @param segmentEnd   标识符段在 qualified 中的结束位置
+     * @return 最适合导航的类引用字符串
+     */
     private static String selectNavigationToken(String qualified, int segmentStart,
                                                 int segmentEnd) {
         if (qualified == null || segmentStart < 0 || segmentEnd <= segmentStart
@@ -217,9 +232,9 @@ public final class CodeLinkHandler {
                 return classRef;
             }
         }
-        // 混淆后的类名可能为小写单字母（如 com.pig4cloud.service.a），
-        // isClassNameSegment 会因首字母小写而拒绝。此时若该段是 qualified 最后一段
-        // 且其前的所有段都是包名风格（全小写/数字），则将整个 qualified 作为类引用。
+        // 混淆后的类名可能为小写单字母（如 com.pig4cloud.service.a）,
+        // isClassNameSegment 会因首字母小写而拒绝此时若该段是 qualified 最后一段
+        // 且其前的所有段都是包名风格（全小写/数字）,则将整个 qualified 作为类引用
         if (isLastSegment(qualified, segmentEnd) && isPackagePrefix(ownerPrefix)) {
             String classRef = qualified.substring(0, segmentEnd);
             if (isValidJavaIdentifier(segment)) {
@@ -234,7 +249,7 @@ public final class CodeLinkHandler {
         return segmentEnd >= qualified.length();
     }
 
-    /** @return true 若所有点分隔的段都是包名风格（小写开头），即没有明显的类名段 */
+    /** @return true 若所有点分隔的段都是包名风格（小写开头）,即没有明显的类名段 */
     private static boolean isPackagePrefix(String prefix) {
         if (prefix == null || prefix.isBlank()) {
             return false;
@@ -272,6 +287,7 @@ public final class CodeLinkHandler {
         return true;
     }
 
+    /** @return true 若 token 的每个点分隔段中至少有一个类名段（首字母大写）且之后全为类名段 */
     private static boolean looksLikeQualifiedClassReference(String token) {
         if (token == null || token.isBlank()) {
             return false;
@@ -295,6 +311,7 @@ public final class CodeLinkHandler {
         return classSegmentSeen;
     }
 
+    /** 从点前缀中提取所属类的引用,仅当前缀本身看起来是合法的限定类名时返回 */
     private static String ownerClassReference(String ownerPrefix) {
         if (ownerPrefix == null || ownerPrefix.isBlank()) {
             return "";
@@ -304,6 +321,7 @@ public final class CodeLinkHandler {
         return looksLikeQualifiedClassReference(owner) ? owner : "";
     }
 
+    /** @return true 若段首字母大写或以下划线/美元符号开头（类名风格） */
     private static boolean isClassNameSegment(String segment) {
         if (segment == null || segment.isBlank()) {
             return false;
@@ -312,11 +330,13 @@ public final class CodeLinkHandler {
         return Character.isUpperCase(first) || first == '_' || first == '$';
     }
 
+    /** @return true 若段首字母小写（包名风格） */
     private static boolean isPackageNameSegment(String segment) {
         return segment != null && !segment.isBlank()
                 && Character.isLowerCase(segment.charAt(0));
     }
 
+    /** @return true 若段看起来是静态成员引用（全大写或含数字但无小写字母） */
     private static boolean isLikelyStaticMemberSegment(String segment) {
         if (segment == null || segment.isBlank()) {
             return false;
@@ -338,6 +358,7 @@ public final class CodeLinkHandler {
         return hasLetter;
     }
 
+    /** 清理 token,去除首尾非 Java 名称字符 */
     private static String sanitizeToken(String token) {
         if (token == null) {
             return "";
@@ -352,6 +373,7 @@ public final class CodeLinkHandler {
         return result;
     }
 
+    /** 从限定名中提取简单类名（最后一段,/ 或 . 之后的部分） */
     private static String simpleName(String token) {
         String normalized = token.replace('.', '/');
         int slash = normalized.lastIndexOf('/');

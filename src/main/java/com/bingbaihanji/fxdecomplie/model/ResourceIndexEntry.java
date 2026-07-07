@@ -16,6 +16,7 @@ public record ResourceIndexEntry(String fullPath, byte[] bytes, boolean text) {
         bytes = bytes.clone();
     }
 
+    /** @return 返回字节数组的防御性副本,防止外部修改内部状态 */
     @Override
     public byte[] bytes() {
         return bytes.clone();

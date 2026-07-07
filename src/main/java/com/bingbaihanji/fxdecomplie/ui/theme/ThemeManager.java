@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * 编辑器主题管理器。
+ * 编辑器主题管理器
  *
- * <p>内置主题从 classpath 加载（当前仅 "Dark+" 对应 dark-plus.json），
- * 外部主题以 JSON 文件形式存储在 {@code <appDir>/themes/} 目录下，
- * 由用户通过设置界面导入管理。</p>
+ * <p>内置主题从 classpath 加载（当前仅 "Dark+" 对应 dark-plus.json）,
+ * 外部主题以 JSON 文件形式存储在 {@code <appDir>/themes/} 目录下,
+ * 由用户通过设置界面导入管理</p>
  *
  * @author bingbaihanji
  * @date 2026-06-29
@@ -43,7 +43,7 @@ public final class ThemeManager {
         return BUILTIN_THEMES;
     }
 
-    /** @return themes 目录路径，首次调用时自动创建 */
+    /** @return themes 目录路径,首次调用时自动创建 */
     public static Path themesDir() {
         Path dir = AppConfig.appDir().resolve("themes");
         try {
@@ -55,8 +55,8 @@ public final class ThemeManager {
     }
 
     /**
-     * 扫描 {@code <appDir>/themes/} 目录返回外部主题名称列表。
-     * 每个 JSON 文件名去掉 .json 后缀即为主题名。
+     * 扫描 {@code <appDir>/themes/} 目录返回外部主题名称列表
+     * 每个 JSON 文件名去掉 .json 后缀即为主题名
      */
     public static List<String> getExternalThemes() {
         Path dir = themesDir();
@@ -78,7 +78,7 @@ public final class ThemeManager {
         return names;
     }
 
-    /** @return 所有可用主题名：内置在前，外部在后 */
+    /** @return 所有可用主题名：内置在前,外部在后 */
     public static List<String> getAllThemes() {
         List<String> all = new ArrayList<>(BUILTIN_THEMES);
         all.addAll(getExternalThemes());
@@ -86,8 +86,8 @@ public final class ThemeManager {
     }
 
     /**
-     * 按名称解析 ThemeData：内置走 classpath，外部从 themes 目录加载。
-     * 加载失败时回退到 Dark+。
+     * 按名称解析 ThemeData：内置走 classpath,外部从 themes 目录加载
+     * 加载失败时回退到 Dark+
      */
     public static VsCodeThemeLoader.ThemeData resolveThemeData(String themeName) {
         if (themeName == null || themeName.isBlank() || "Dark+".equals(themeName)) {
@@ -98,21 +98,21 @@ public final class ThemeManager {
             try {
                 return VsCodeThemeLoader.load(file);
             } catch (IOException | RuntimeException e) {
-                log.warn("加载外部主题失败 [{}]，回退到 Dark+", themeName, e);
+                log.warn("加载外部主题失败 [{}],回退到 Dark+", themeName, e);
             }
         } else {
-            log.warn("外部主题文件不存在 [{}]，回退到 Dark+", file);
+            log.warn("外部主题文件不存在 [{}],回退到 Dark+", file);
         }
         return loadBuiltinDarkPlus();
     }
 
     /**
-     * 导入外部主题：先验证 JSON 有效性，再复制到 themes 目录。
+     * 导入外部主题：先验证 JSON 有效性,再复制到 themes 目录
      * 重名时自动追加序号 "name (2)", "name (3)" ...
      *
      * @param sourceFile 源 JSON 文件
      * @return 导入后的主题名（不含 .json 扩展名）
-     * @throws IOException 读取/写入失败，或 JSON 解析失败
+     * @throws IOException 读取/写入失败,或 JSON 解析失败
      */
     public static String importTheme(Path sourceFile) throws IOException {
         VsCodeThemeLoader.ThemeData themeData = VsCodeThemeLoader.load(sourceFile);
@@ -139,8 +139,12 @@ public final class ThemeManager {
     }
 
     /**
-     * 导出主题为 VS Code 格式 JSON 文件。
-     * 内置主题直接复制 classpath 资源；外部主题直接复制源文件。
+     * 导出主题为 VS Code 格式 JSON 文件
+     * 内置主题直接复制 classpath 资源；外部主题直接复制源文件
+     *
+     * @param themeName 主题名称
+     * @param targetFile 目标文件路径
+     * @throws IOException 读取/写入失败
      */
     public static void exportTheme(String themeName, Path targetFile) throws IOException {
         if ("Dark+".equals(themeName)) {
@@ -161,8 +165,9 @@ public final class ThemeManager {
     }
 
     /**
-     * 删除外部主题文件。内置主题不可删除。
+     * 删除外部主题文件内置主题不可删除
      *
+     * @param themeName 主题名称
      * @return true 如果删除成功
      */
     public static boolean deleteExternalTheme(String themeName) {
@@ -187,7 +192,7 @@ public final class ThemeManager {
         try {
             return VsCodeThemeLoader.loadResource(DARK_PLUS_RESOURCE);
         } catch (IOException | RuntimeException e) {
-            log.warn("加载内置 Dark+ 失败，使用硬编码默认值", e);
+            log.warn("加载内置 Dark+ 失败,使用硬编码默认值", e);
             return VsCodeThemeLoader.defaultDark();
         }
     }

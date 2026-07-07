@@ -172,7 +172,11 @@ public class MainMenuBar extends MenuBar {
         return item;
     }
 
-    /** 同步外部设置变更后的引擎菜单选中状态 */
+    /**
+     * 同步外部设置变更后的引擎菜单选中状态
+     *
+     * @param engine 要选中的反编译引擎
+     */
     public void setSelectedEngine(DecompilerTypeEnum engine) {
         RadioMenuItem item = engineItems.get(engine);
         if (item != null) {
@@ -180,7 +184,13 @@ public class MainMenuBar extends MenuBar {
         }
     }
 
-    /** 创建带快捷键的菜单项 */
+    /**
+     * 创建带可选快捷键的菜单项
+     *
+     * @param text        菜单项文本
+     * @param accelerator 快捷键字符串（如 "Shortcut+O"）,可为 null
+     * @param action      点击回调
+     */
     private MenuItem item(String text, String accelerator, Runnable action) {
         MenuItem item = new MenuItem(text);
         if (accelerator != null) {
@@ -190,7 +200,7 @@ public class MainMenuBar extends MenuBar {
         return item;
     }
 
-    /** 创建清除最近历史菜单项 */
+    /** 创建清除最近文件历史记录菜单项 */
     private MenuItem clearRecentItem(Actions actions) {
         MenuItem item = new MenuItem(
                 I18nUtil.getString("menu.file.recent.clear"));
@@ -198,6 +208,7 @@ public class MainMenuBar extends MenuBar {
         return item;
     }
 
+    /** 综合菜单动作接口,聚合所有子菜单的动作定义 */
     public interface Actions extends FileActions, EditActions, ViewActions, EngineActions {
         /** 显示关于对话框 */
         void about();

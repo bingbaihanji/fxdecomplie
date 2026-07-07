@@ -41,9 +41,9 @@ public final class ClassTabOpener {
     /** class 打开属于交互任务,使用专用虚拟线程,避免被索引/搜索任务队列拖慢 */
     private static final ExecutorService OPEN_EXECUTOR = Executors.newThreadPerTaskExecutor(
             Thread.ofVirtual().name("class-open-", 0).factory());
-    /** 超过该大小时跳过源码 metadata 提取，避免打开大类时延迟首屏显示 */
+    /** 超过该大小时跳过源码 metadata 提取,避免打开大类时延迟首屏显示 */
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
-    /** 交互打开 class 的反编译超时，避免坏类/混淆类长时间占住首屏 */
+    /** 交互打开 class 的反编译超时,避免坏类/混淆类长时间占住首屏 */
     private static final int INTERACTIVE_TIMEOUT_SECONDS = 15;
     /** Java 21 class major version. JD-Core is unstable on this version and newer. */
     private static final int MIN_UNSUPPORTED_JD_CLASS_VERSION = 65;
@@ -53,9 +53,9 @@ public final class ClassTabOpener {
     private final StatusBar statusBar;
     /** L2 反编译源码缓存,避免重复反编译已打开的类 */
     private final DecompileCache decompileCache = new DecompileCache();
-    /** 主导航（打开新类）请求序号，用于丢弃快速切换产生的过期结果 */
+    /** 主导航（打开新类）请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
-    /** 引擎切换/刷新请求序号，独立于主导航，避免切换引擎时误取消其他标签页的反编译 */
+    /** 引擎切换/刷新请求序号,独立于主导航,避免切换引擎时误取消其他标签页的反编译 */
     private final AtomicLong refreshGeneration = new AtomicLong();
     /** 编辑器主题数据 */
     private volatile VsCodeThemeLoader.ThemeData editorTheme;
@@ -65,7 +65,7 @@ public final class ClassTabOpener {
     private volatile Tab currentLoadingTab;
     /** 当前已显示但源码仍在反编译中的代码标签,用于快速切换时清理 */
     private volatile CodeEditorTab currentPendingTab;
-    /** 代码操作回调，用于安装右键菜单 */
+    /** 代码操作回调,用于安装右键菜单 */
     private volatile CodeActionHandler codeActionHandler;
     /** 标签页就绪回调（工具栏刷新等） */
     private volatile Runnable onTabReady;
@@ -89,7 +89,7 @@ public final class ClassTabOpener {
                 .replace(':', '_').replace('\\', '_').replace('/', '_');
     }
 
-    /** 计算 class 字节指纹(CRC32)，用于缓存键防内容变更误命中 */
+    /** 计算 class 字节指纹(CRC32),用于缓存键防内容变更误命中 */
     public static String computeClassFingerprint(byte[] bytes) {
         if (bytes == null || bytes.length == 0) {
             return "0";
@@ -134,7 +134,7 @@ public final class ClassTabOpener {
         try {
             return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.debug("UTF-8 解码失败，回退到 ISO-8859-1", e);
+            log.debug("UTF-8 解码失败,回退到 ISO-8859-1", e);
             return new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1);
         }
     }
@@ -188,7 +188,7 @@ public final class ClassTabOpener {
         DecompilerRunner.shutdown();
     }
 
-    /** 解析错误弹窗的父窗口：优先焦点窗口，其次第一个可见窗口 */
+    /** 解析错误弹窗的父窗口：优先焦点窗口,其次第一个可见窗口 */
     private static javafx.stage.Window resolveOwnerWindow() {
         // 尝试从焦点节点反查所属窗口
         javafx.scene.Scene scene = javafx.stage.Window.getWindows().stream()
@@ -212,7 +212,7 @@ public final class ClassTabOpener {
                 .findFirst().orElse(null);
     }
 
-    /** 更新编辑器主题，后续新打开的标签页将使用新主题 */
+    /** 更新编辑器主题,后续新打开的标签页将使用新主题 */
     public void setEditorTheme(VsCodeThemeLoader.ThemeData newTheme) {
         this.editorTheme = newTheme;
     }
@@ -224,7 +224,7 @@ public final class ClassTabOpener {
         return decompileCache;
     }
 
-    /** 设置代码操作回调，用于自动安装右键菜单 */
+    /** 设置代码操作回调,用于自动安装右键菜单 */
     public void setCodeActionHandler(CodeActionHandler handler) {
         this.codeActionHandler = handler;
     }
@@ -249,7 +249,7 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 在指定 TabPane 中打开类标签，不替换不同引擎的现有标签（用于分屏场景）。
+     * 在指定 TabPane 中打开类标签,不替换不同引擎的现有标签（用于分屏场景）
      *
      * @param node              类文件节点
      * @param workspace         工作区
@@ -287,7 +287,7 @@ public final class ClassTabOpener {
         Tab loadingTab = createLoadingTab(node, engine);
         loadingTab.setUserData(node.getFullPath());
         AtomicReference<Future<?>> taskRef = new AtomicReference<>();
-        // 必须在添加到 TabPane 之前注册 onClosed，避免用户快速关闭时
+        // 必须在添加到 TabPane 之前注册 onClosed,避免用户快速关闭时
         // 触发无 handler 的关闭事件导致后台任务泄漏
         loadingTab.setOnClosed(e -> {
             Future<?> f = taskRef.get();
@@ -595,7 +595,7 @@ public final class ClassTabOpener {
      * 打开文本文件标签页(XML/JSON/YML/properties/.java 等)
      * 读取字节码转为 UTF-8 文本,在只读 CodeArea 中显示
      */
-    /** 以 Hex 视图打开任意文件（右键菜单入口，始终新建标签页） */
+    /** 以 Hex 视图打开任意文件（右键菜单入口,始终新建标签页） */
     public void openFileInHexView(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
         statusBar.setFilePath(I18nUtil.getString("status.reading", node.getFullPath()));
         BackgroundTasks.run("HexView-" + node.getName(), () -> {
@@ -743,7 +743,7 @@ public final class ClassTabOpener {
         });
     }
 
-    /** 读取文件字节码（与 readClassBytes 逻辑一致，但不查 class 索引） */
+    /** 读取文件字节码（与 readClassBytes 逻辑一致,但不查 class 索引） */
     private byte[] readFileBytes(FileTreeNode node, Workspace workspace) throws IOException {
         byte[] bytes = WorkspaceByteReader.readNodeBytes(workspace, node, false);
         if (bytes != null) {
@@ -887,7 +887,7 @@ public final class ClassTabOpener {
             }
             throw new RuntimeException(cause);
         } catch (TimeoutException e) {
-            throw new RuntimeException("UI 线程繁忙，创建代码标签页超时，请稍后重试", e);
+            throw new RuntimeException("UI 线程繁忙,创建代码标签页超时,请稍后重试", e);
         }
     }
 
@@ -1068,7 +1068,7 @@ public final class ClassTabOpener {
                     toRemove.add(tab);
                 }
             } else if (node.getFullPath().equals(tab.getUserData())) {
-                // 加载中的占位标签（ProgressIndicator），通过 userData 匹配
+                // 加载中的占位标签（ProgressIndicator）,通过 userData 匹配
                 return tab;
             }
         }
@@ -1135,7 +1135,7 @@ public final class ClassTabOpener {
 
         // ---- L2+L3 均未命中:执行实际反编译 ----
         if (sourceCode == null) {
-            log.debug("缓存未命中，执行反编译: {} engine={}", internalName, effectiveEngine);
+            log.debug("缓存未命中,执行反编译: {} engine={}", internalName, effectiveEngine);
             if (!active.getAsBoolean()) {
                 throw new CancellationException("反编译请求已被替换");
             }
@@ -1160,14 +1160,14 @@ public final class ClassTabOpener {
             }
         }
 
-        // ---- 提取元数据用于 Ctrl+Click 导航；大源码的链接扫描会被禁用，这里也跳过避免拖慢首屏 ----
+        // ---- 提取元数据用于 Ctrl+Click 导航；大源码的链接扫描会被禁用,这里也跳过避免拖慢首屏 ----
         CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                 ? OutlineParser.extractMetadata(sourceCode)
                 : new CodeMetadata(Map.of());
         return new DecompileResult(sourceCode, metadata, effectiveEngine);
     }
 
-    /** 强制重新反编译当前类，跳过 L2/L3 读取；成功后用新结果回填缓存。 */
+    /** 强制重新反编译当前类,跳过 L2/L3 读取；成功后用新结果回填缓存 */
     private DecompileResult decompileFresh(String internalName, DecompilerTypeEnum engine,
                                            byte[] bytes, FileTreeNode node, Workspace workspace,
                                            BooleanSupplier active) {
@@ -1216,7 +1216,7 @@ public final class ClassTabOpener {
         return requestedEngine;
     }
 
-    /** 显示错误弹窗，优先以焦点窗口为 owner */
+    /** 显示错误弹窗,优先以焦点窗口为 owner */
     private void showAlert(String title, String message) {
         Runnable action = () -> {
             javafx.stage.Window owner = resolveOwnerWindow();

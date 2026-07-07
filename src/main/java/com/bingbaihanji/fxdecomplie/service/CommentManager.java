@@ -27,9 +27,9 @@ public final class CommentManager {
 
     private static final Logger log = LoggerFactory.getLogger(CommentManager.class);
     /**
-     * Gson 实例，注册了 CommentData 的自定义反序列化器，
-     * 确保即使 JSON 中字段为 null，反序列化后 CommentData Record 的各字段也不会为 null。
-     * Gson 的 UnsafeAllocator 可能绕过 Record 紧凑构造器，因此需要显式适配。
+     * Gson 实例,注册了 CommentData 的自定义反序列化器,
+     * 确保即使 JSON 中字段为 null,反序列化后 CommentData Record 的各字段也不会为 null
+     * Gson 的 UnsafeAllocator 可能绕过 Record 紧凑构造器,因此需要显式适配
      */
     private static final Gson GSON = new GsonBuilder()
             .registerTypeAdapter(CommentData.class, new CommentDataDeserializer())
@@ -75,7 +75,7 @@ public final class CommentManager {
         lock.lock();
         try {
             List<CommentData> existing = loadAll(workspaceHash, comment.className());
-            // 更新同位置已有注释，否则追加
+            // 更新同位置已有注释,否则追加
             boolean replaced = false;
             for (int i = 0; i < existing.size(); i++) {
                 CommentData c = existing.get(i);
@@ -95,12 +95,12 @@ public final class CommentManager {
             log.error("保存注释失败", e);
         } finally {
             lock.unlock();
-            // 不移除锁条目，防止 unlock→remove 窗口期其他线程创建新锁导致并发写
+            // 不移除锁条目,防止 unlock→remove 窗口期其他线程创建新锁导致并发写
         }
     }
 
     /**
-     * 加载某个类的全部注释（获取读锁，防止读到并发写入的半截 JSON）
+     * 加载某个类的全部注释（获取读锁,防止读到并发写入的半截 JSON）
      *
      * @param workspaceHash 工作区 hash
      * @param className     类全限定路径
@@ -146,7 +146,7 @@ public final class CommentManager {
             return false;
         } finally {
             lock.unlock();
-            // 不移除锁条目，防止 unlock→remove 窗口期其他线程创建新锁导致并发写
+            // 不移除锁条目,防止 unlock→remove 窗口期其他线程创建新锁导致并发写
         }
     }
 
@@ -160,7 +160,7 @@ public final class CommentManager {
             List<CommentData> list = GSON.fromJson(json, COMMENT_LIST_TYPE);
             return list != null ? new ArrayList<>(list) : new ArrayList<>();
         } catch (IOException | com.google.gson.JsonSyntaxException e) {
-            log.warn("读取注释文件失败，将视为空列表: {}", file, e);
+            log.warn("读取注释文件失败,将视为空列表: {}", file, e);
             return new ArrayList<>();
         }
     }
@@ -197,14 +197,14 @@ public final class CommentManager {
     }
 
     /**
-     * CommentData 的自定义 Gson 反序列化器。
+     * CommentData 的自定义 Gson 反序列化器
      *
-     * <p>Gson 可能通过 {@code UnsafeAllocator} 绕过 Record 的紧凑构造器直接创建实例，
-     * 导致反序列化后 {@code text()}、{@code memberSignature()} 等字段为 null，
-     * 调用方（{@code CommentExportDecorator.insert()} 等）会抛出 NPE。</p>
+     * <p>Gson 可能通过 {@code UnsafeAllocator} 绕过 Record 的紧凑构造器直接创建实例,
+     * 导致反序列化后 {@code text()}、{@code memberSignature()} 等字段为 null,
+     * 调用方（{@code CommentExportDecorator.insert()} 等）会抛出 NPE</p>
      *
-     * <p>此反序列化器从 JSON 中逐字段提取值，对缺失或 null 的字段填入默认值，
-     * 再通过规范的紧凑构造器创建 CommentData，确保各字段非 null。</p>
+     * <p>此反序列化器从 JSON 中逐字段提取值,对缺失或 null 的字段填入默认值,
+     * 再通过规范的紧凑构造器创建 CommentData,确保各字段非 null</p>
      */
     private static final class CommentDataDeserializer implements JsonDeserializer<CommentData> {
         private static String getString(JsonObject obj, String name, String defaultValue) {

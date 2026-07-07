@@ -16,6 +16,7 @@ public record MemberIndexEntry(String ownerPath, String name, String descriptor)
         descriptor = descriptor == null ? "" : descriptor;
     }
 
+    /** @return 用于 UI 展示的成员名称,若描述符为空则仅返回名称,否则拼接描述符 */
     public String displayName() {
         return descriptor.isBlank() ? name : name + descriptor;
     }

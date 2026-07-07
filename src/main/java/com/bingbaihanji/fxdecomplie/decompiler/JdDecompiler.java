@@ -38,7 +38,7 @@ public class JdDecompiler implements Decompiler {
     @Override
     public String decompileType(String typeName, byte[] classBytes,
                                 DecompilerContext context) {
-        // 规范化内部名，去除可能的 .class 后缀
+        // 规范化内部名,去除可能的 .class 后缀
         final String normalizedName = DecompilerContext.normalizeInternalName(typeName);
         if (classBytes == null) {
             return "// JD-Core Error: null class bytes for " + normalizedName;

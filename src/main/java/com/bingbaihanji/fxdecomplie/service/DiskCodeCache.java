@@ -52,7 +52,7 @@ public final class DiskCodeCache {
                 return null;
             }
             String content = Files.readString(file, StandardCharsets.UTF_8);
-            // 零字节文件（写入时崩溃/断电残留）视为缓存未命中，触发重新反编译
+            // 零字节文件（写入时崩溃/断电残留）视为缓存未命中,触发重新反编译
             return content.isEmpty() ? null : content;
         } catch (IOException e) {
             log.debug("加载磁盘代码缓存失败: {}", file, e);
@@ -68,7 +68,7 @@ public final class DiskCodeCache {
     public static void save(String workspaceHash, String internalName,
                             DecompilerTypeEnum engine, String optionsHash,
                             String sourceCode) {
-        // 跳过 null/blank 源码，避免写入空文件后被 load() 当作缓存未命中
+        // 跳过 null/blank 源码,避免写入空文件后被 load() 当作缓存未命中
         if (sourceCode == null || sourceCode.isBlank()) {
             return;
         }

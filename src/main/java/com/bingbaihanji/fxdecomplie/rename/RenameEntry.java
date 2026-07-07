@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
 /**
- * 单个重命名条目。
+ * 单个重命名条目
  *
  * @param type      类型（"class" / "method" / "field"）
  * @param className 所属类内部名（如 com/example/Foo）

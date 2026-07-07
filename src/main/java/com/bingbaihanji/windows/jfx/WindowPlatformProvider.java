@@ -13,13 +13,13 @@ import java.util.Optional;
  * 平台特定 JavaFX 窗口集成策略接口
  *
  * <p>每个平台实现此接口来提供原生窗口操作能力
- * 各方法都有默认实现，返回 {@link WindowOperationStatus#SKIPPED}，
+ * 各方法都有默认实现,返回 {@link WindowOperationStatus#SKIPPED},
  * 确保不支持的平台不会抛出异常</p>
  */
 public interface WindowPlatformProvider {
 
     /**
-     * 返回平台标识符，如 "win32"、"generic"
+     * 返回平台标识符,如 "win32"、"generic"
      */
     String platformId();
 
@@ -33,7 +33,7 @@ public interface WindowPlatformProvider {
      *
      * @param stage   JavaFX Stage
      * @param timeout 获取句柄的最大等待时间
-     * @return 原生窗口句柄，获取失败返回 {@code Optional.empty()}
+     * @return 原生窗口句柄,获取失败返回 {@code Optional.empty()}
      */
     Optional<NativeWindowHandle> nativeHandle(Stage stage, Duration timeout);
 
@@ -43,7 +43,7 @@ public interface WindowPlatformProvider {
      * @param stage      目标 Stage
      * @param appearance 原生外观配置
      * @param timeout    操作超时时间
-     * @return 操作结果，不支持时返回 SKIPPED
+     * @return 操作结果,不支持时返回 SKIPPED
      */
     default WindowOperationResult applyAppearance(Stage stage,
                                                   WindowAppearance appearance,
@@ -137,7 +137,7 @@ public interface WindowPlatformProvider {
      *
      * @param stage   目标 Stage
      * @param timeout 操作超时时间
-     * @return 缩放比例，默认返回 1.0
+     * @return 缩放比例,默认返回 1.0
      */
     default double windowScaleFactor(Stage stage, Duration timeout) {
         return 1.0;

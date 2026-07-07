@@ -60,44 +60,48 @@ import java.util.regex.Pattern;
 public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MainWindow.class);
+    /** 用于解析 Java 源码中 import 语句的正则 */
     private static final Pattern IMPORT_PATTERN = Pattern.compile(
             "^\\s*import\\s+(static\\s+)?([\\w.$]+|[\\w.]+\\.\\*)\\s*;\\s*$");
 
-    /** 应用配置 */
+    /** 应用全局配置（窗口、主题、引擎偏好等） */
     private final AppConfig config;
-    /** 是否使用自定义标题栏 */
+    /** 是否使用自定义标题栏（Windows 原生窗口控制） */
     private final boolean useHeaderBar;
-    /** HostServices 用于打开外部链接 */
+    /** HostServices,用于打开外部浏览器链接 */
     private final HostServices hostServices;
-    /** 编辑器主题数据 */
+    /** 编辑器当前主题数据（语法高亮颜色等） */
     private VsCodeThemeLoader.ThemeData editorTheme;
-    /** 主窗口 Stage */
+    /** 主窗口 Stage 引用 */
     private Stage stage;
-    /** 状态栏 */
+    /** 底部状态栏 */
     private StatusBar statusBar;
-    /** 外层标签页(JAR/ZIP/目录级别) */
+    /** 外层 TabPane（JAR/ZIP/目录级别标签页） */
     private TabPane outerTabPane;
     /** 工作区标签页管理器 */
     private WorkspaceTabManager tabManager;
-    /** 类文件反编译/标签页打开器 */
+    /** 类文件反编译及标签页打开器（含 L2 缓存） */
     private ClassTabOpener classTabOpener;
     /** 当前选择的反编译引擎 */
     private DecompilerTypeEnum currentEngine = DecompilerTypeEnum.VINEFLOWER;
     /** 是否显示行号 */
     private boolean lineNumbersEnabled;
-    /** 工具栏 */
+    /** 顶部工具栏 */
     private MainToolBar toolBar;
     /** 主菜单栏 */
     private MainMenuBar menuBar;
 
+    /** 使用全局配置构造主窗口 */
     public MainWindow(AppConfig config) {
         this(config, false, null);
     }
 
+    /** 使用配置和标题栏选项构造主窗口（不含 HostServices） */
     public MainWindow(AppConfig config, boolean useHeaderBar) {
         this(config, useHeaderBar, null);
     }
 
+    /** 完整构造主窗口,初始化配置、主题、引擎和行号等设置 */
     public MainWindow(AppConfig config, boolean useHeaderBar, HostServices hostServices) {
         this.config = config;
         this.useHeaderBar = useHeaderBar;
@@ -106,12 +110,14 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         this.lineNumbersEnabled = config.decompiler().lineNumbersEnabled();
     }
 
+    /** 复制字符串到系统剪贴板 */
     private static void copyToClipboard(String value) {
         javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
         content.putString(value == null ? "" : value);
         javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
     }
 
+    /** 将点分隔的类名转换为内部类路径（首段大写后用 $ 替代 .） */
     private static String toInnerClassPath(String className) {
         if (className == null || className.isBlank()) {
             return "";
@@ -135,6 +141,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return sb.toString();
     }
 
+    /** 判断树节点名是否与简单类令牌匹配（含内部类 $ 后缀匹配） */
     private static boolean matchesSimpleClassName(FileTreeNode node, String simpleToken,
                                                   String expectedClassFile) {
         if (node == null || simpleToken == null || simpleToken.isBlank()) {
@@ -150,6 +157,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return simpleName.equals(simpleToken) || simpleName.endsWith("$" + simpleToken);
     }
 
+    /** 在源码中查找匹配 token 的声明行,优先返回离点击行最近的匹配 */
     private static int findDeclarationLine(String sourceCode, String token, int clickedLine) {
         if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()) {
             return -1;
@@ -182,6 +190,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return bestLine;
     }
 
+    /** 判断源码行是否看起来是声明行（类/接口/枚举/方法/字段声明） */
     private static boolean looksLikeDeclarationLine(String line, String simpleToken) {
         String trimmed = line == null ? "" : line.strip();
         if (trimmed.isEmpty() || trimmed.startsWith("@")) {
@@ -204,6 +213,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 .matcher(trimmed).find();
     }
 
+    /** 去除行尾的 // 注释部分,返回纯代码 */
     private static String stripLineComment(String line) {
         if (line == null) {
             return "";
@@ -212,6 +222,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return comment >= 0 ? line.substring(0, comment) : line;
     }
 
+    /** 清理声明 token,去除首尾非 Java 名称/路径字符 */
     private static String sanitizeDeclarationToken(String token) {
         if (token == null) {
             return "";
@@ -226,16 +237,19 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return result;
     }
 
+    /** @return true 若字符是声明 token 的有效字符（Java 标识符、点号、美元符、斜杠） */
     private static boolean isDeclarationTokenChar(char ch) {
         return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$' || ch == '/';
     }
 
+    /** 从限定名中提取简单名（最后一段） */
     private static String tokenSimpleName(String token) {
         String normalized = token.replace('.', '/');
         int slash = normalized.lastIndexOf('/');
         return slash >= 0 ? normalized.substring(slash + 1) : normalized;
     }
 
+    /** @return true 若 token 首字母大写、下划线或美元符号开头（相对类引用） */
     private static boolean isRelativeClassToken(String token) {
         if (token == null || token.isBlank()) {
             return false;
@@ -251,6 +265,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return Character.isUpperCase(first) || first == '_' || first == '$';
     }
 
+    /** @return true 若 token 应优先作为类引用导航（含点号或首字母大写） */
     private static boolean shouldPreferClassNavigation(String token) {
         if (token == null || token.isBlank()) {
             return false;
@@ -261,6 +276,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return token.contains(".") || isRelativeClassToken(simpleToken);
     }
 
+    /** @return true 若 token 应在工作区中进行类查找（限定名、相对类引用或混淆短名） */
     private static boolean shouldSearchWorkspaceForClassToken(String token) {
         if (shouldPreferClassNavigation(token)) {
             return true;
@@ -271,6 +287,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return isShortObfuscatedClassToken(simpleToken);
     }
 
+    /** @return true 若 token 是可能的混淆类名（短名、非常见词汇、仅含合法字符） */
     private static boolean isShortObfuscatedClassToken(String token) {
         if (token == null || token.isBlank() || token.length() > 2) {
             return false;
@@ -281,6 +298,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return token.chars().allMatch(ch -> Character.isLetterOrDigit(ch) || ch == '_' || ch == '$');
     }
 
+    /** 判断指定行是否看起来使用了 token 指代的类（new/extends/import/类型声明等语境） */
     private static boolean looksLikeClassUsageAtLine(String sourceCode, int lineNumber, String token) {
         if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()
                 || lineNumber <= 0) {
@@ -314,6 +332,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 + "[a-zA-Z_$][a-zA-Z0-9_$]*\\b").matcher(line).find();
     }
 
+    /** @return true 若重命名条目允许回退到可见标识符替换（类名或通用标识符类型） */
     private static boolean allowVisibleIdentifierFallback(
             com.bingbaihanji.fxdecomplie.rename.RenameEntry entry) {
         if (entry == null || entry.type() == null) {
@@ -323,20 +342,24 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 || com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_IDENTIFIER.equals(entry.type());
     }
 
+    /** @return true 若重命名条目是类级别的重命名 */
     private static boolean isClassRenameEntry(
             com.bingbaihanji.fxdecomplie.rename.RenameEntry entry) {
         return entry != null
                 && com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS.equals(entry.type());
     }
 
+    /** @return true 若两个内部类名处于同一包下 */
     private static boolean samePackage(String leftInternalName, String rightInternalName) {
         return packageName(leftInternalName).equals(packageName(rightInternalName));
     }
 
+    /** 标准化内部类名（委托 ClassNameUtil） */
     private static String normalizeInternalClassName(String className) {
         return ClassNameUtil.normalizeInternalName(className);
     }
 
+    /** 获取内部类名的包名部分（委托 ClassNameUtil） */
     private static String packageName(String internalName) {
         return ClassNameUtil.packageName(internalName);
     }
@@ -365,6 +388,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 || name.endsWith(".war") || name.endsWith(".class");
     }
 
+    /** 将 TextPos（行号+列偏移）转换为文本在原始字符串中的平坦偏移量 */
     private static int flatOffset(String text,
                                   jfx.incubator.scene.control.richtext.TextPos pos) {
         int line = pos.index();
@@ -382,6 +406,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return Math.min(text.length(), off + col);
     }
 
+    /** 判断 offset 位置附近的标识符是否是类/接口/枚举声明的类型名 */
     private static boolean isDeclaredTypeNameAt(String sourceCode, int offset, String caretName) {
         if (sourceCode == null || sourceCode.isBlank() || caretName == null || caretName.isBlank()
                 || offset < 0 || offset > sourceCode.length()) {
@@ -416,6 +441,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 .matcher(prefix).find();
     }
 
+    /** 获取类的叶子名（去除包名后的最后一段,跳过内部类 $ 前缀） */
     private static String classLeafName(String className) {
         String simple = tokenSimpleName(normalizeInternalClassName(className));
         int dollar = simple.lastIndexOf('$');
@@ -509,7 +535,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         stage.show();
     }
 
-    /** 刷新工具栏按钮状态 */
+    /** 根据当前工作区和代码标签页状态刷新工具栏按钮的启用/禁用状态 */
     private void refreshToolbarState() {
         if (toolBar != null) {
             boolean hasWorkspace = tabManager != null && tabManager.currentWorkspaceView() != null;
@@ -683,7 +709,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
     }
 
-    /** 为单个树节点构建临时索引并弹出导出对话框(右键菜单入口) */
+    /** 为单个树节点构建临时索引并弹出导出对话框（右键菜单入口,在后台线程索引构建） */
     private void exportTreeItem(TreeItem<FileTreeNode> rootItem) {
         if (rootItem == null || rootItem.getValue() == null) {
             return;
@@ -714,7 +740,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
     }
 
-    /** 弹出导出配置对话框,提交后台导出任务并显示进度 */
+    /** 弹出导出配置对话框,提交后台导出任务并显示进度条,支持取消操作 */
     private void doExport(java.util.List<FileTreeNode> nodes,
                           WorkspaceIndex index, Workspace workspace) {
         var configOpt = ExportDialog.show(stage, config, currentEngine);
@@ -727,7 +753,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         ExportDialog.ProgressHandle progressHandle = ExportDialog.showProgress(stage);
         java.util.concurrent.atomic.AtomicReference<Future<?>> exportTaskRef = new java.util.concurrent.atomic.AtomicReference<>();
         AtomicBoolean exportCanceled = new AtomicBoolean(false);
-        // 必须在提交任务前注册取消回调，避免用户点击取消时 exportTaskRef 尚未设置
+        // 必须在提交任务前注册取消回调,避免用户点击取消时 exportTaskRef 尚未设置
         progressHandle.setOnCancel(() -> {
             exportCanceled.set(true);
             Future<?> f = exportTaskRef.get();
@@ -1117,7 +1143,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             return;
         }
         String source = context.openFile().sourceCode();
-        // 获取当前光标行，确定所在方法
+        // 获取当前光标行,确定所在方法
         WorkspaceView view = workspaceViewFor(context.workspace());
         if (view == null) {
             return;
@@ -1423,6 +1449,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /** 修复当前类的重命名显示映射（当显示名与重命名映射不一致时自动修正） */
     private void repairCurrentClassDisplayMappingIfNeeded(
             CodeViewContext context, CodeEditorTab codeTab, String workspaceHash,
             com.bingbaihanji.fxdecomplie.rename.RenameEntry baseEntry,
@@ -1465,6 +1492,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 baseEntry.className(), currentName, repairedDisplay);
     }
 
+    /** 当光标位于类声明处时强制将重命名目标设为本类 */
     private com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget forceCurrentClassRenameTarget(
             CodeViewContext context, String sourceCode, int offset, String caretName,
             String workspaceHash,
@@ -1538,6 +1566,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 "class", caretName);
     }
 
+    /** 根据 CodeViewContext 的路径和引擎查找对应的代码标签页（用于重命名操作定位） */
     private CodeEditorTab codeTabForContext(WorkspaceView view, CodeViewContext context) {
         if (view == null || context == null || context.openFile() == null) {
             return view == null ? null : view.splitEditorPane().currentCodeTab();
@@ -1557,11 +1586,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return view.splitEditorPane().currentCodeTab();
     }
 
+    /** 重命名后刷新所有已打开的代码标签页 */
     private int refreshOpenTabsAfterRename(Workspace workspace, String workspaceHash,
                                            com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry) {
         return refreshOpenTabsAfterRename(workspace, workspaceHash, visibleEntry, null);
     }
 
+    /** 重命名后刷新所有已打开的代码标签页,可指定跳过某个标签页（触发源标签页已自行更新） */
     private int refreshOpenTabsAfterRename(Workspace workspace, String workspaceHash,
                                            com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry,
                                            CodeEditorTab skipTab) {
@@ -1619,6 +1650,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return changedTabs;
     }
 
+    /** 在源码更新后重新安装代码标签页的上下文菜单（Ctrl+Click 导航和右键菜单） */
     private void reinstallCodeContext(CodeEditorTab codeTab, String sourceCode) {
         if (codeTab == null) {
             return;
@@ -1637,11 +1669,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     /**
-     * 刷新工作区文件树，确保所有可见 cell 的显示名与当前重命名状态一致。
+     * 刷新工作区文件树,确保所有可见 cell 的显示名与当前重命名状态一致
      *
-     * <p>JavaFX {@code Node.refresh()} 仅重新应用 CSS，不会触发 TreeCell 的
-     * {@code updateItem}。FileTreeView.refreshVisibleCells() 通过重建 cell factory
-     * 强制 VirtualFlow 重建所有可见 cell，从而触发 updateItem 获取最新显示名。</p>
+     * <p>JavaFX {@code Node.refresh()} 仅重新应用 CSS,不会触发 TreeCell 的
+     * {@code updateItem}FileTreeView.refreshVisibleCells() 通过重建 cell factory
+     * 强制 VirtualFlow 重建所有可见 cell,从而触发 updateItem 获取最新显示名</p>
      */
     private void refreshWorkspaceTree(Workspace workspace) {
         WorkspaceView view = workspaceViewFor(workspace);
@@ -1658,6 +1690,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         openSearch(selectedText);
     }
 
+    /** 根据引用信息在工作区中定位并打开目标类 */
     private boolean openReferenceInWorkspace(Workspace workspace, CodeMetadata.Reference reference) {
         FileTreeNode node = findNodeForReference(workspace, reference);
         if (node != null) {
@@ -1667,6 +1700,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return false;
     }
 
+    /** 根据引用对象在工作区文件树中查找目标节点（含重命名回查） */
     private FileTreeNode findNodeForReference(Workspace workspace, CodeMetadata.Reference reference) {
         if (workspace == null || reference == null || reference.targetClass() == null) {
             return null;
@@ -1690,6 +1724,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return findClassPathRaw(workspace, original);
     }
 
+    /** 从引用列表中选择与 token 最匹配的引用（按简单名/限定名匹配） */
     private CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs, String token) {
         if (refs == null || refs.isEmpty()) {
             return null;
@@ -1713,6 +1748,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return refs.getFirst();
     }
 
+    /** 在当前工作区中打开指定树节点对应的类标签页 */
     private void openNodeInWorkspace(Workspace workspace, FileTreeNode node) {
         WorkspaceView view = workspaceViewFor(workspace);
         if (view == null || node == null) {
@@ -1722,6 +1758,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 currentEngine, lineNumbersEnabled);
     }
 
+    /** 根据工作区对象查找其对应的 WorkspaceView */
     private WorkspaceView workspaceViewFor(Workspace workspace) {
         if (workspace == null || tabManager == null) {
             return null;
@@ -1732,6 +1769,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 .orElse(null);
     }
 
+    /** 查找包含指定代码标签页的 WorkspaceView */
     private WorkspaceView workspaceViewForCodeTab(CodeEditorTab codeTab) {
         if (codeTab == null || tabManager == null) {
             return null;
@@ -1743,6 +1781,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 .orElse(null);
     }
 
+    /** 获取上下文中类的字节码（优先从上下文、节点缓存、工作区中获取） */
     private byte[] classBytesForContext(CodeViewContext context) throws IOException {
         if (context == null) {
             return null;
@@ -1768,6 +1807,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return null;
     }
 
+    /** 尝试在当前代码标签页中定位并滚动到 token 的声明行 */
     private boolean revealDeclarationInCurrentTab(CodeViewContext context, int clickedLine,
                                                   String token) {
         if (context == null || token == null || token.isBlank()
@@ -1800,6 +1840,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return false;
     }
 
+    /** 在工作区中按 token 查找文件树节点（多策略回退：直接查找→同包→import→重命名→索引→遍历） */
     private FileTreeNode findNodeForToken(Workspace workspace, WorkspaceIndex index,
                                           String token, String currentClassName,
                                           String sourceCode, boolean allowClassLookup) {
@@ -1853,6 +1894,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return findNodeBySimpleNameInTree(workspace, token, currentClassName);
     }
 
+    /** 在工作区索引中按简单类名查找节点（优先同包匹配,回退到首个匹配） */
     private FileTreeNode findNodeBySimpleNameInIndex(Workspace workspace, WorkspaceIndex index,
                                                      String token, String currentInternal) {
         if (workspace == null || index == null || index == WorkspaceIndex.EMPTY
@@ -1888,6 +1930,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return firstMatch;
     }
 
+    /** 通过重命名/反混淆映射反向查找原类名对应的树节点 */
     private FileTreeNode findNodeFromRenameDisplayIndex(Workspace workspace, String token,
                                                         String currentInternalName) {
         if (workspace == null || token == null || token.isBlank()) {
@@ -1918,6 +1961,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return null;
     }
 
+    /** 从原始类名候选列表中选择最佳匹配的树节点（优先同包） */
     private FileTreeNode bestNodeForOriginalCandidates(Workspace workspace, List<String> originals,
                                                        String currentInternalName) {
         if (workspace == null || originals == null || originals.isEmpty()) {
@@ -1941,6 +1985,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return best;
     }
 
+    /** 通过解析源码中的 import 语句解析 token 对应的类节点 */
     private FileTreeNode findNodeFromSourceImports(Workspace workspace, String token,
                                                    String currentClassName, String sourceCode) {
         if (workspace == null || token == null || token.isBlank()) {
@@ -1996,6 +2041,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return null;
     }
 
+    /** BFS 遍历整个文件树按简单类名查找节点（最慢的回退策略） */
     private FileTreeNode findNodeBySimpleNameInTree(Workspace workspace, String token,
                                                     String currentClassName) {
         if (workspace == null || token == null || token.isBlank()) {
@@ -2034,6 +2080,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 .orElse(null);
     }
 
+    /** 在工作区文件树中按内部名查找类节点（含重命名回退查找） */
     private FileTreeNode findClassPath(Workspace workspace, String internalName) {
         if (workspace == null || internalName == null || internalName.isBlank()) {
             return null;
@@ -2052,6 +2099,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return null;
     }
 
+    /** 直接在工作区文件树中按内部名查找类节点（不含重命名回退） */
     private FileTreeNode findClassPathRaw(Workspace workspace, String internalName) {
         if (workspace == null || internalName == null || internalName.isBlank()) {
             return null;
@@ -2065,16 +2113,19 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return null;
     }
 
+    /** 创建当前引擎下工作区的注释作用域 */
     private CommentScope commentScope(Workspace workspace, DecompilerTypeEnum engine) {
         return CommentScope.of(workspace,
                 DecompilerOptions.hash(DecompilerOptions.forEngine(config, engine)));
     }
 
+    /** 创建当前导出配置下工作区的注释作用域 */
     private CommentScope commentScope(Workspace workspace, ExportConfig exportConfig) {
         return CommentScope.of(workspace, DecompilerOptions.hash(
                 exportConfig == null ? Map.of() : exportConfig.engineOptions()));
     }
 
+    /** 获取当前标签页源码并应用注释装饰（用于导出时附加用户注释） */
     private String decoratedCurrentSource(CodeEditorTab codeTab) {
         if (codeTab == null || codeTab.getOpenFile() == null) {
             return "";
@@ -2085,6 +2136,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 commentScope(view == null ? null : view.workspace(), openFile.engine()));
     }
 
+    /** 刷新当前类的所有已打开标签页中的注释装饰显示 */
     private void refreshVisibleComments(CodeViewContext context) {
         WorkspaceView view = workspaceViewFor(context.workspace());
         if (view == null || context.openFile() == null) {
@@ -2136,7 +2188,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 if (newCell != null) {
                     targetPane = newCell;
                 } else {
-                    // 已达最大分屏数，剩余引擎放入最右侧 cell
+                    // 已达最大分屏数,剩余引擎放入最右侧 cell
                     var panes = view.splitEditorPane().allTabPanes();
                     targetPane = panes.get(panes.size() - 1);
                 }
@@ -2180,6 +2232,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /** 显示反混淆预览对话框,提交用户选择的重命名条目并刷新所有相关标签页 */
     private void showDeobfuscatePreview(Workspace workspace,
                                         java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions,
                                         boolean memberScanComplete,
@@ -2318,6 +2371,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         statusBar.setFilePath("Rename snapshot restored, " + reloadTabs + " tabs reloaded");
     }
 
+    /** 反混淆后重新反编译所有已打开的代码标签页以应用新的重命名映射 */
     private int reloadOpenTabsAfterDeobfuscate(Workspace workspace) {
         WorkspaceView view = workspaceViewFor(workspace);
         if (view == null) {
@@ -2524,7 +2578,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         SettingsDialog.show(stage, config, updated -> {
             boolean engineSwitched = applySettings(updated);
 
-            // 检测编辑器主题变更 — 必须在 refreshCurrentTab 之前更新 ClassTabOpener，
+            // 检测编辑器主题变更 — 必须在 refreshCurrentTab 之前更新 ClassTabOpener,
             // 否则异步反编译任务会用旧主题创建新标签页覆盖掉 reapplyTheme 的结果
             String newEditorTheme = config.theme().editorTheme();
             if (!newEditorTheme.equals(oldEditorTheme)) {
@@ -2543,7 +2597,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         });
     }
 
-    /** 应用设置对话框确认后的配置变更：切换引擎、更新行号、更新字体 */
+    /** 应用设置对话框确认后的配置变更：切换引擎、更新行号显示和字体设置,返回是否切换了引擎 */
     private boolean applySettings(AppConfig updated) {
         DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
         boolean engineSwitched = false;
@@ -2564,6 +2618,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return engineSwitched;
     }
 
+    /** 获取当前活动代码标签页实际使用的反编译引擎 */
     private DecompilerTypeEnum activeCodeTabEngine() {
         CodeEditorTab currentTab = tabManager == null ? null : tabManager.currentCodeTab();
         if (currentTab == null || currentTab.getOpenFile() == null) {
@@ -2585,7 +2640,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         config.save();
     }
 
-    /** 根据导出结果弹出成功/部分成功对话框,支持打开输出目录和复制错误详情 */
+    /** 根据导出结果弹出成功/部分成功对话框,支持打开输出目录和复制错误详情列表 */
     private void showExportResult(ExportConfig exportConfig, ExportResult result) {
         if (!result.hasErrors()) {
             showExportDoneDialog(I18nUtil.getString("dialog.export.success.title"),
@@ -2611,7 +2666,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 message.toString(), exportConfig.outputPath(), result.errors());
     }
 
-    /** 在工作区中按完整路径打开类并延迟跳转到指定行(搜索/FindUsages 双击回调) */
+    /** 在工作区中按完整路径打开类并延迟跳转到指定行（搜索/FindUsages 双击回调） */
     private void openClassByPath(WorkspaceView view, String fullPath, int lineNumber) {
         FileTreeNode node = view.workspace().findNodeByPath(fullPath);
         if (node != null) {
@@ -2622,9 +2677,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
-    /** 递归遍历文件树,收集所有 .class 节点的完整路径(用于快速打开对话框) */
-
-    /** 延迟轮询工作区标签页,等待解编译完成并将 CodeArea 滚动到目标行(最多 2 秒) */
+    /** 延迟轮询工作区标签页,等待反编译完成并将 CodeArea 滚动到目标行（最多 2 秒） */
     private void navigateToLine(WorkspaceView view, String fullPath, int lineNumber, int retries) {
         // 最多约 2 秒
         if (retries > 20) {
@@ -2676,6 +2729,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /** 递归收集文件树中所有 .class 节点的完整路径（用于快速打开对话框） */
     private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {
         FileTreeNode data = item.getValue();
         if (data != null && data.isClassFile()) {
@@ -2760,7 +2814,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return fullSourceCache;
     }
 
-    /** 加载并打开文件 */
+    /** 异步加载并打开文件（JAR/ZIP/Class/目录）,在工作区标签页中展示文件树和反编译内容 */
     private void loadFile(File file) {
         log.info("loadFile: {} (size={}, isDir={})", file.getAbsolutePath(),
                 file.length(), file.isDirectory());
@@ -2789,12 +2843,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 });
     }
 
-    /** 显示导出成功对话框(无错误详情) */
+    /** 显示导出成功对话框（无错误详情列表） */
     private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath) {
         showExportDoneDialog(title, message, outputPath, java.util.List.of());
     }
 
-    /** 显示导出完成对话框(含错误详情列表和打开输出目录/复制详情按钮) */
+    /** 显示导出完成对话框（含错误详情列表及打开输出目录/复制详情按钮） */
     private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath,
                                       java.util.List<String> details) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

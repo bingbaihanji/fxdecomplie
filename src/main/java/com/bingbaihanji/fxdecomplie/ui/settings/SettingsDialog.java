@@ -52,12 +52,12 @@ public final class SettingsDialog {
         Tab decompilerTab = new Tab(I18nUtil.getString("settings.decompiler"));
         decompilerTab.setClosable(false);
 
-        // 默认引擎选择（现有控件，保持不变）
+        // 默认引擎选择（现有控件,保持不变）
         ComboBox<String> engineCombo = new ComboBox<>();
         engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD");
         engineCombo.setValue(config.decompiler().defaultEngine().name());
 
-        // 引擎选项 JSON 编辑器（移到独立 TitledPane 中，默认折叠）
+        // 引擎选项 JSON 编辑器（移到独立 TitledPane 中,默认折叠）
         Label engineOptionsLabel = new Label(I18nUtil.getString("settings.decompiler.engineOptions"));
         engineOptionsLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
 
@@ -76,7 +76,7 @@ public final class SettingsDialog {
             }
         });
 
-        // 跟踪每个引擎的参数控件 (key → control)，用于 JSON → 面板回填
+        // 跟踪每个引擎的参数控件 (key → control),用于 JSON → 面板回填
         Map<String, Map<String, javafx.scene.Node>> engineControlMaps = new LinkedHashMap<>();
         engineControlMaps.put("CFR", new LinkedHashMap<>());
         engineControlMaps.put("PROCYON", new LinkedHashMap<>());
@@ -436,6 +436,7 @@ public final class SettingsDialog {
         }
     }
 
+    /** 获取导出引擎下拉框选项列表 */
     private static List<String> exportEngineOptions() {
         List<String> options = new ArrayList<>();
         options.add("FOLLOW_CURRENT");
@@ -446,10 +447,12 @@ public final class SettingsDialog {
         return options;
     }
 
+    /** 将配置中的导出引擎值规范化,空值时回退到 FOLLOW_CURRENT */
     private static String exportEngineValue(String value) {
         return value == null || value.isBlank() ? "FOLLOW_CURRENT" : value;
     }
 
+    /** 安全地将字符串转换为枚举值,解析失败时返回默认值 */
     private static <E extends Enum<E>> E safeEnum(String value, E fallback) {
         try {
             return Enum.valueOf(fallback.getDeclaringClass(), value);
@@ -460,6 +463,15 @@ public final class SettingsDialog {
 
     // ==================== 引擎参数面板构建方法 ====================
 
+    /**
+     * 构建单个引擎的参数面板,包含通用和高级两个折叠区域
+     *
+     * @param config     应用配置
+     * @param engineName 引擎名称（如 CFR、PROCYON）
+     * @param params     该引擎的参数定义列表
+     * @param jsonArea   JSON 编辑器文本区域,用于双向同步
+     * @param controlMap 用于存储参数 key 到控件的映射
+     */
     private static VBox buildEngineParameterPanel(AppConfig config, String engineName,
                                                   List<DecompilerParameter> params,
                                                   TextArea jsonArea,
@@ -490,6 +502,10 @@ public final class SettingsDialog {
         return new VBox(scroll);
     }
 
+    /**
+     * 构建带标题的折叠参数面板,使用 GridPane 布局标签和控件
+     * 每个参数控件变更时自动同步到 engineOpts 并刷新 JSON 显示
+     */
     private static TitledPane buildTitledParameterPane(String titleKey,
                                                        List<DecompilerParameter> params,
                                                        Map<String, String> engineOpts,
@@ -530,6 +546,7 @@ public final class SettingsDialog {
         return pane;
     }
 
+    /** 根据参数类型创建对应的 JavaFX 控件（CheckBox/Spinner/TextField/ComboBox） */
     private static javafx.scene.Node createParameterControl(DecompilerParameter param,
                                                             String currentValue,
                                                             Runnable onChange) {
@@ -575,6 +592,7 @@ public final class SettingsDialog {
         };
     }
 
+    /** 从控件读取当前值并更新到引擎选项 Map 中 */
     private static void updateEngineOptionFromControl(String key, javafx.scene.Node control,
                                                       Map<String, String> engineOpts) {
         String value = switch (control) {
@@ -595,6 +613,7 @@ public final class SettingsDialog {
         engineOpts.put(key, value);
     }
 
+    /** 将当前配置中的引擎选项序列化为 JSON 显示在文本区域（JSON 区域聚焦时不更新,避免覆盖用户编辑） */
     private static void syncJsonFromConfig(AppConfig config, TextArea jsonArea) {
         if (jsonArea.isFocused()) {
             return;
@@ -608,6 +627,7 @@ public final class SettingsDialog {
         }
     }
 
+    /** 将 JSON 文本解析为引擎选项 Map 结构,解析失败返回 null */
     private static Map<String, Map<String, String>> parseEngineOptionsJson(String json) {
         if (json == null || json.isBlank()) {
             return null;
@@ -622,6 +642,7 @@ public final class SettingsDialog {
         }
     }
 
+    /** 将解析出的 JSON 选项值回填到引擎参数面板的控件上 */
     private static void applyJsonToControls(Map<String, Map<String, String>> jsonOpts,
                                             Map<String, Map<String, javafx.scene.Node>> engineControlMaps) {
         if (jsonOpts == null || engineControlMaps == null) {
@@ -641,6 +662,7 @@ public final class SettingsDialog {
         }
     }
 
+    /** 从配置中读取引擎选项并格式化为 JSON 显示在文本区域 */
     private static void refreshEngineOptionsJson(AppConfig config, TextArea jsonArea) {
         try {
             String json = new GsonBuilder().setPrettyPrinting().create()
@@ -652,6 +674,7 @@ public final class SettingsDialog {
         }
     }
 
+    /** 获取引擎子标签页当前选中的引擎名称（VINEFLOWER/CFR/PROCYON） */
     private static String getActiveEngineName(TabPane engineTabPane) {
         Tab selected = engineTabPane.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -665,6 +688,7 @@ public final class SettingsDialog {
         };
     }
 
+    /** 根据类型将字符串值设置到对应的 JavaFX 控件上 */
     private static void setControlValue(javafx.scene.Node control, String value) {
         switch (control) {
             case CheckBox cb -> cb.setSelected("true".equalsIgnoreCase(value) || "1".equals(value));
@@ -685,6 +709,7 @@ public final class SettingsDialog {
         }
     }
 
+    /** 从 JavaFX 控件读取当前值并以字符串形式返回 */
     private static String readControlValue(javafx.scene.Node control) {
         return switch (control) {
             case CheckBox cb -> {
@@ -703,6 +728,7 @@ public final class SettingsDialog {
         };
     }
 
+    /** 安全地将字符串解析为 int,失败时返回默认值 */
     private static int parseOrDefault(String s, int def) {
         try {
             return Integer.parseInt(s);

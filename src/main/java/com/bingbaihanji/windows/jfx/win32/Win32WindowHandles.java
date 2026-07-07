@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * 通过 JavaFX Stage 查找原生 Win32 窗口句柄的工具类
  *
  * <p>先在 JavaFX 线程通过反射获取句柄；若失败则通过枚举当前进程所有窗口的标题来匹配
- * 仅在 Windows 平台有效，其他平台直接返回 {@code Optional.empty()}</p>
+ * 仅在 Windows 平台有效,其他平台直接返回 {@code Optional.empty()}</p>
  */
 final class Win32WindowHandles {
 
@@ -36,7 +36,7 @@ final class Win32WindowHandles {
      *
      * @param stage   JavaFX Stage
      * @param timeout 等待窗口创建的最大时长
-     * @return 窗口句柄，若平台不支持或超时则返回 {@code Optional.empty()}
+     * @return 窗口句柄,若平台不支持或超时则返回 {@code Optional.empty()}
      */
     static Optional<WinDef.HWND> find(Stage stage, Duration timeout) {
         if (stage == null || !com.sun.jna.Platform.isWindows()) {
@@ -50,7 +50,7 @@ final class Win32WindowHandles {
         if (isValid(reflected)) {
             return Optional.of(reflected);
         }
-        // 反射获取失败，回退到按标题枚举当前进程窗口
+        // 反射获取失败,回退到按标题枚举当前进程窗口
         if (Platform.isFxApplicationThread()) {
             return Optional.ofNullable(findByCurrentProcessTitle(snapshot.title()))
                     .filter(Win32WindowHandles::isValid);
@@ -89,7 +89,7 @@ final class Win32WindowHandles {
     }
 
     /**
-     * 获取 Stage 的快照(标题 + 句柄)，必要时调度到 JavaFX 线程执行
+     * 获取 Stage 的快照(标题 + 句柄),必要时调度到 JavaFX 线程执行
      */
     private static StageSnapshot snapshot(Stage stage, Duration timeout) {
         if (Platform.isFxApplicationThread()) {
@@ -121,7 +121,7 @@ final class Win32WindowHandles {
 
     /**
      * 通过反射从 JavaFX Stage 内部获取原生句柄
-     * 不同 JavaFX 版本内部实现可能不同，标题枚举为备用方案
+     * 不同 JavaFX 版本内部实现可能不同,标题枚举为备用方案
      */
     public static WinDef.HWND findByReflection(Window window) {
         try {
@@ -140,16 +140,16 @@ final class Win32WindowHandles {
                 return fromPointerValue(Integer.toUnsignedLong(value));
             }
         } catch (Throwable ignored) {
-            // JavaFX 内部实现因版本而异，标题枚举为备用方案
+            // JavaFX 内部实现因版本而异,标题枚举为备用方案
         }
         return null;
     }
 
 
     /**
-     * 通过枚举当前进程所有窗口标题来查找匹配的窗口句柄。
+     * 通过枚举当前进程所有窗口标题来查找匹配的窗口句柄
      *
-     * <p>当标题为空时返回当前进程的第一个可见顶级窗口，适用于未设置标题的 Stage。</p>
+     * <p>当标题为空时返回当前进程的第一个可见顶级窗口,适用于未设置标题的 Stage</p>
      */
     private static WinDef.HWND findByCurrentProcessTitle(String title) {
         boolean matchAny = title == null || title.isBlank();
@@ -193,7 +193,7 @@ final class Win32WindowHandles {
     }
 
     /**
-     * Stage 快照，包含标题和窗口句柄
+     * Stage 快照,包含标题和窗口句柄
      */
     private record StageSnapshot(String title, WinDef.HWND hwnd) {
     }

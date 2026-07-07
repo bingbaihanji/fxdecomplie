@@ -55,13 +55,18 @@ public class AppConfig {
     private List<String> recentFiles = new ArrayList<>();
 
     /**
-     * 解析应用根目录：优先取 JAR 包所在目录,开发期回退到 user.dir
+     * 解析应用根目录:优先取 JAR 包所在目录,开发期回退到 user.dir
      * 所有应用数据(配置、缓存、日志)均存放在此目录下
      */
     public static Path appDir() {
         return APP_DIR;
     }
 
+    /**
+     * 解析应用根目录:优先取 JAR 包所在目录,开发期 classpath 在 target/classes/ 时回退到项目根
+     *
+     * @return 应用根目录的绝对路径
+     */
     private static Path resolveAppDir() {
         try {
             var codeSource = AppConfig.class.getProtectionDomain().getCodeSource();
@@ -77,11 +82,18 @@ public class AppConfig {
                 }
             }
         } catch (Exception ignored) {
-            log.debug("解析应用目录失败，回退到 user.dir", ignored);
+            log.debug("解析应用目录失败,回退到 user.dir", ignored);
         }
         return Path.of(System.getProperty("user.dir"));
     }
 
+    /**
+     * 开发期智能解析:classpath 在 target/classes/ 时返回项目根目录,
+     * 避免 mvn clean 删除 config 目录
+     *
+     * @param codeSourceDir 代码源目录(classpath 中的 classes 目录)
+     * @return 项目根目录或原始 codeSourceDir
+     */
     private static Path appRoot(Path codeSourceDir) {
         Path normalized = codeSourceDir.toAbsolutePath().normalize();
         Path name = normalized.getFileName();
@@ -113,18 +125,18 @@ public class AppConfig {
                 }
             }
         } catch (IOException | com.google.gson.JsonSyntaxException | com.google.gson.JsonIOException e) {
-            log.warn("加载配置失败，将备份损坏文件并使用默认配置", e);
+            log.warn("加载配置失败,将备份损坏文件并使用默认配置", e);
             backupCorruptedConfig();
         }
         return new AppConfig();
     }
 
-    /** 将损坏的配置文件重命名为 .bak 后缀，便于用户排查与手工恢复 */
+    /** 将损坏的配置文件重命名为 .bak 后缀,便于用户排查与手工恢复 */
     private static void backupCorruptedConfig() {
         try {
             if (Files.exists(CONFIG_FILE)) {
                 Path backup = Path.of(CONFIG_FILE + ".bak");
-                // 若已存在同名备份，追加序号避免覆盖
+                // 若已存在同名备份,追加序号避免覆盖
                 for (int i = 2; i <= 100 && Files.exists(backup); i++) {
                     backup = Path.of(CONFIG_FILE + ".bak." + i);
                 }
@@ -200,6 +212,7 @@ public class AppConfig {
         platform = v;
     }
 
+    /** 获取最近文件列表的不可变副本(线程安全) */
     public List<String> recentFiles() {
         synchronized (this) {
             return List.copyOf(recentFiles);
@@ -258,6 +271,9 @@ public class AppConfig {
         Thread.ofVirtual().start(this::save);
     }
 
+    /**
+     * 规范化配置值:填充 null 字段为默认值、修正越界数值、清理空白/无效的最近文件条目
+     */
     private void normalize() {
         if (window == null) {
             window = new Window();

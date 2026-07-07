@@ -17,7 +17,7 @@ public class FileTreeNode {
     private final String fullPath;
     /** 节点类型 */
     private final NodeTypeEnum nodeType;
-    /** 可选资源清理回调,例如关闭归档句柄。通过 AtomicReference 保证单次执行 */
+    /** 可选资源清理回调,例如关闭归档句柄通过 AtomicReference 保证单次执行 */
     private final AtomicReference<Runnable> cleanupRef = new AtomicReference<>();
     /** 缓存的文件字节,按需加载后保留,避免重复读取同一打开文件 */
     private volatile byte[] cachedBytes;
@@ -79,7 +79,7 @@ public class FileTreeNode {
     }
 
     /**
-     * 设置资源清理回调。每个节点仅支持一个清理动作，设置后可通过 {@link #close()} 触发。
+     * 设置资源清理回调每个节点仅支持一个清理动作,设置后可通过 {@link #close()} 触发
      *
      * @param cleanup 节点关闭时执行的清理动作（例如关闭共享 ZipFile）
      */
@@ -88,8 +88,8 @@ public class FileTreeNode {
     }
 
     /**
-     * 执行清理回调并原子性置空，保证并发调用时仅执行一次。
-     * 使用 {@link AtomicReference#getAndSet} 原子交换保证线程安全。
+     * 执行清理回调并原子性置空,保证并发调用时仅执行一次
+     * 使用 {@link AtomicReference#getAndSet} 原子交换保证线程安全
      */
     public void close() {
         Runnable action = cleanupRef.getAndSet(null);
@@ -139,7 +139,7 @@ public class FileTreeNode {
         return nodeType == NodeTypeEnum.RESOURCE || nodeType == NodeTypeEnum.JAVA_FILE;
     }
 
-    /** @return 是否为二进制资源文件（DLL/SO/EXE 等，可用 Hex 查看） */
+    /** @return 是否为二进制资源文件（DLL/SO/EXE 等,可用 Hex 查看） */
     public boolean isBinaryFile() {
         return nodeType == NodeTypeEnum.BINARY;
     }
@@ -170,8 +170,10 @@ public class FileTreeNode {
         BINARY
     }
 
+    /** 字节懒加载接口,用于延迟读取归档条目或文件系统中的字节内容 */
     @FunctionalInterface
     public interface ByteLoader {
+        /** @return 加载到的字节数组 */
         byte[] load() throws IOException;
     }
 }

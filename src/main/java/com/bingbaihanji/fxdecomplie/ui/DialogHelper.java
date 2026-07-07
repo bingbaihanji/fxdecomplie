@@ -26,15 +26,17 @@ public final class DialogHelper {
         throw new AssertionError("utility class");
     }
 
+    /** 显示信息提示对话框 */
     public static void showInfo(Stage owner, String title, String message) {
         showAlert(owner, Alert.AlertType.INFORMATION, title, message);
     }
 
+    /** 显示警告提示对话框 */
     public static void showWarning(Stage owner, String title, String message) {
         showAlert(owner, Alert.AlertType.WARNING, title, message);
     }
 
-    /** 确认对话框（是/否），返回 true 表示用户点击"是" */
+    /** 确认对话框（是/否）,返回 true 表示用户点击"是" */
     public static boolean showConfirm(Stage owner, String title, String message) {
         log.info("{} - {}", title, message);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.YES, ButtonType.NO);
@@ -47,20 +49,23 @@ public final class DialogHelper {
         return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }
 
+    /** 显示错误对话框（Stage 重载） */
     public static void showError(Stage owner, String title, String message) {
         showAlert(owner, Alert.AlertType.ERROR, title, message);
     }
 
+    /** 显示错误对话框（Window 重载,适用于非 Stage 窗口场景） */
     public static void showError(Window owner, String title, String message) {
         showAlert(owner, Alert.AlertType.ERROR, title, message);
     }
 
+    /** 显示通用 Alert 对话框（Stage 重载） */
     public static void showAlert(Stage owner, Alert.AlertType type, String title, String message) {
         showAlert((Window) owner, type, title, message);
     }
 
     public static void showAlert(Window owner, Alert.AlertType type, String title, String message) {
-        // 同步记录到控制台/日志文件，确保报错时有轨迹可查
+        // 同步记录到控制台/日志文件,确保报错时有轨迹可查
         String logMsg = title + " - " + message;
         switch (type) {
             case ERROR -> log.error(logMsg);
@@ -78,7 +83,7 @@ public final class DialogHelper {
         alert.showAndWait();
     }
 
-    /** 为 JavaFX Dialog/Alert 应用应用暗色 CSS、native 窗口暗色边框和窗口图标。 */
+    /** 为 JavaFX Dialog/Alert 应用应用暗色 CSS、native 窗口暗色边框和窗口图标 */
     public static void applyNativeStyle(Dialog<?> dialog) {
         if (dialog == null) {
             return;

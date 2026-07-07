@@ -5,9 +5,9 @@ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import jfx.incubator.scene.control.richtext.CodeArea;
 
 /**
- * 简化代码面板，对反编译源码做轻量词法状态机去注释和压缩空行
+ * 简化代码面板,对反编译源码做轻量词法状态机去注释和压缩空行
  *
- * <p>不会误删字符串/字符字面量中的 // 或 /*，首版不做破坏性泛型简化</p>
+ * <p>不会误删字符串/字符字面量中的 // 或 /*,首版不做破坏性泛型简化</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -22,7 +22,7 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
     }
 
     /**
-     * 轻量词法状态机：移除行注释(//)和块注释(/* ... *​/)，压缩连续空行
+     * 轻量词法状态机：移除行注释(//)和块注释(/* ... *​/),压缩连续空行
      */
     static String simplify(String source) {
         StringBuilder sb = new StringBuilder(source.length());
@@ -91,7 +91,7 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
                     }
                     i++;
                 }
-                // 块注释可能后跟换行，保留该换行
+                // 块注释可能后跟换行,保留该换行
                 continue;
             }
 
@@ -99,7 +99,7 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
             if (c == '\n') {
                 consecutiveNewlines++;
                 if (consecutiveNewlines <= 1) {
-                    // 检查前一字符，避免行注释去除了注释内容但留下了最后一个 \n 导致双空行
+                    // 检查前一字符,避免行注释去除了注释内容但留下了最后一个 \n 导致双空行
                     sb.append(c);
                 }
                 i++;
@@ -114,16 +114,19 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
         return sb.toString().trim();
     }
 
+    /** @return 内容类型标识 */
     @Override
     public String getContentType() {
         return "simple";
     }
 
+    /** 异步构建简化后的代码内容 */
     @Override
     protected Object buildContentAsync(Object cancelToken) {
         return simplify(sourceCode == null ? "" : sourceCode);
     }
 
+    /** 创建简化代码展示区域 */
     @Override
     protected javafx.scene.Node createContent(Object contentData) {
         CodeArea area = new CodeArea();

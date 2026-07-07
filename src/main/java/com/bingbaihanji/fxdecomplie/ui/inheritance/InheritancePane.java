@@ -24,9 +24,11 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class InheritancePane extends VBox {
 
     private final TreeView<InheritanceNode> treeView;
+    /** 加载代数计数器,用于丢弃已过期的异步加载结果 */
     private final AtomicLong loadGeneration = new AtomicLong();
     private OpenHandler openHandler;
 
+    /** 构造继承层次面板,初始化标题标签和树形控件 */
     public InheritancePane() {
         setPadding(new Insets(4));
         setSpacing(4);
@@ -76,14 +78,22 @@ public final class InheritancePane extends VBox {
         getChildren().addAll(title, treeView);
     }
 
+    /**
+     * 加载指定类的继承层次树
+     * <p>先显示"加载中"状态,然后在后台线程构建继承树,通过代数计数器确保只展示最新请求的结果</p>
+     *
+     * @param fullPath 目标类全限定路径
+     * @param index    工作区索引,用于读取父类/子类字节码
+     */
     public void load(String fullPath, WorkspaceIndex index) {
         showIndexing();
+        // 递增代数,标记本次请求
         long gen = loadGeneration.incrementAndGet();
         BackgroundTasks.run("InheritanceBuild", () -> {
             TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
             Platform.runLater(() -> {
                 if (loadGeneration.get() != gen) {
-                    return; // 已过期，丢弃
+                    return; // 已过期,丢弃
                 }
                 if (root != null) {
                     treeView.setRoot(root);
@@ -95,32 +105,38 @@ public final class InheritancePane extends VBox {
         });
     }
 
+    /** 显示"正在索引中"提示 */
     public void showIndexing() {
         treeView.setRoot(new TreeItem<>(new InheritanceNode("",
                 I18nUtil.getString("inheritance.indexing"),
                 InheritanceNode.RelationType.SELF, 0)));
     }
 
+    /** 显示"继承信息不可用"提示 */
     public void showUnavailable() {
         treeView.setRoot(new TreeItem<>(new InheritanceNode("",
                 I18nUtil.getString("inheritance.unavailable"),
                 InheritanceNode.RelationType.SELF, 0)));
     }
 
+    /** 显示"等待索引构建"提示 */
     public void showIndexPending() {
         treeView.setRoot(new TreeItem<>(new InheritanceNode("",
                 I18nUtil.getString("inheritance.indexPending"),
                 InheritanceNode.RelationType.SELF, 0)));
     }
 
+    /** 清空树形视图内容 */
     public void clear() {
         treeView.setRoot(null);
     }
 
+    /** 设置双击树节点的打开处理器 */
     public void setOpenHandler(OpenHandler handler) {
         this.openHandler = handler;
     }
 
+    /** 树节点双击打开回调接口 */
     @FunctionalInterface
     public interface OpenHandler {
         void open(String className);

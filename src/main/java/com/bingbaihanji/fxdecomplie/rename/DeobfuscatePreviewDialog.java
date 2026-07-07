@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 反混淆预览对话框，列表展示原始名 → 建议新名，可勾选确认。
+ * 反混淆预览对话框,列表展示原始名 → 建议新名,可勾选确认
  *
  * @author bingbaihanji
  * @date 2026-07-03
@@ -27,7 +27,7 @@ public final class DeobfuscatePreviewDialog {
     }
 
     /**
-     * 显示预览对话框。
+     * 显示预览对话框
      *
      * @param owner       父窗口
      * @param suggestions 建议的重命名列表
@@ -53,11 +53,15 @@ public final class DeobfuscatePreviewDialog {
         dialog.setTitle("Deobfuscate — " + suggestions.size() + " renames");
         dialog.setResizable(true);
 
+        // 构建可观察列表和可过滤列表,支持用户通过关键词筛选
         ObservableList<RenameEntry> items = FXCollections.observableArrayList(suggestions);
         FilteredList<RenameEntry> filteredItems = new FilteredList<>(items, entry -> true);
+        // 默认所有条目选中
         Map<RenameEntry, javafx.beans.property.BooleanProperty> selected = new LinkedHashMap<>();
         suggestions.forEach(entry -> selected.put(entry,
                 new javafx.beans.property.SimpleBooleanProperty(true)));
+
+        // 自定义单元格：每行一个 CheckBox,绑定选中状态
         ListView<RenameEntry> listView = new ListView<>(filteredItems);
         listView.setCellFactory(lv -> new ListCell<>() {
             private final CheckBox checkBox = new CheckBox();
@@ -81,11 +85,13 @@ public final class DeobfuscatePreviewDialog {
         listView.setPrefHeight(Math.min(suggestions.size() * 28 + 4, 400));
         listView.setPrefWidth(720);
 
+        // 搜索过滤输入框,实时过滤列表中的条目
         TextField filterField = new TextField();
         filterField.setPromptText("Filter");
         filterField.textProperty().addListener((obs, oldValue, newValue) ->
                 filteredItems.setPredicate(entry -> matchesFilter(entry, newValue)));
 
+        // 工具栏按钮：全选、全不选、选择/清除可见、清除常见短名
         Button selectAll = new Button("All");
         selectAll.setOnAction(e -> items.forEach(item -> selected.get(item).set(true)));
         Button selectNone = new Button("None");
@@ -122,6 +128,7 @@ public final class DeobfuscatePreviewDialog {
         return dialog.showAndWait().orElse(List.of());
     }
 
+    /** 从内部类名中提取短类名（去除包路径前缀） */
     private static String shortClassName(String className) {
         if (className == null || className.isBlank()) {
             return "";
@@ -130,6 +137,7 @@ public final class DeobfuscatePreviewDialog {
         return slash < 0 ? className : className.substring(slash + 1);
     }
 
+    /** 过滤匹配：在类型、类名、旧名、新名中搜索关键字（忽略大小写） */
     private static boolean matchesFilter(RenameEntry entry, String filter) {
         if (entry == null || filter == null || filter.isBlank()) {
             return true;
@@ -141,6 +149,7 @@ public final class DeobfuscatePreviewDialog {
                 || entry.newName().toLowerCase(java.util.Locale.ROOT).contains(needle);
     }
 
+    /** 为对话框应用原生风格主题 */
     private static void themeDialog(Dialog<?> dialog) {
         DialogHelper.applyNativeStyle(dialog);
     }

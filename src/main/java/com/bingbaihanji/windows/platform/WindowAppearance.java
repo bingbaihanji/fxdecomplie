@@ -17,7 +17,7 @@ public record WindowAppearance(
         FrameMargins frameMargins
 ) {
 
-    /** 默认标题栏颜色（深墨绿 0x00514933，COLORREF 格式） */
+    /** 默认标题栏颜色（深墨绿 0x00514933,COLORREF 格式） */
     public static final int DEFAULT_CAPTION_COLOR = 0x00514933;
     /** 默认标题栏文字颜色（ #915CB9 ） */
     public static final int DEFAULT_TEXT_COLOR = 0x00B95C91;
@@ -66,7 +66,7 @@ public record WindowAppearance(
     }
 
     /**
-     * Win32 风格的窗口边框外边距各边设为 -1 时，DWM 帧将扩展到整个客户区
+     * Win32 风格的窗口边框外边距各边设为 -1 时,DWM 帧将扩展到整个客户区
      */
     public record FrameMargins(int left, int right, int top, int bottom) {
         /**
@@ -118,13 +118,13 @@ public record WindowAppearance(
             return this;
         }
 
-        /** 设置标题栏背景颜色（COLORREF 格式，需 Windows 11+） */
+        /** 设置标题栏背景颜色（COLORREF 格式,需 Windows 11+） */
         public Builder captionColor(int captionColor) {
             this.captionColor = captionColor;
             return this;
         }
 
-        /** 设置标题栏文字颜色（COLORREF 格式，需 Windows 11+） */
+        /** 设置标题栏文字颜色（COLORREF 格式,需 Windows 11+） */
         public Builder textColor(int textColor) {
             this.textColor = textColor;
             return this;

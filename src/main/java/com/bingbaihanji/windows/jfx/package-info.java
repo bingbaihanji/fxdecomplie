@@ -3,7 +3,7 @@
  *
  * <p>使用 {@link WindowToolkit} 作为
  * 平台无关操作的主要入口点Windows 特定的 JNA 代码位于
- * {@code com.bingbaihanji.javafx.fx.win32} 包中，有意隐藏在
+ * {@code com.bingbaihanji.javafx.fx.win32} 包中,有意隐藏在
  * {@link WindowPlatformProvider} 之后
  * 平台无关的原生类型定义位于 {@code com.bingbaihanji.javafx.jna} 包中</p>
  *

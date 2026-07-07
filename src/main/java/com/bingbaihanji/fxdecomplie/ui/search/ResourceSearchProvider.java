@@ -22,14 +22,25 @@ import java.util.Objects;
 public class ResourceSearchProvider implements SearchProvider {
 
     private static final Logger log = LoggerFactory.getLogger(ResourceSearchProvider.class);
+    /** 结果上限,防止搜索耗时过长和内存溢出 */
     private static final int MAX_RESULTS = 500;
 
-    private final Map<String, byte[]> resourceCache; // 路径 → 原始字节
+    /** 资源路径 → 原始字节（如 XML/JSON/properties 等非 class 文件内容） */
+    private final Map<String, byte[]> resourceCache;
 
+    /**
+     * 使用资源缓存构造
+     *
+     * @param resourceCache 资源路径到原始字节数组的映射
+     */
     public ResourceSearchProvider(Map<String, byte[]> resourceCache) {
         this.resourceCache = Objects.requireNonNull(resourceCache, "resourceCache");
     }
 
+    /**
+     * 基本搜索：将资源字节以 UTF-8 解码为文本,逐行匹配关键字（不区分大小写）
+     * 不可解码的资源跳过并记录 debug 日志
+     */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
@@ -58,11 +69,13 @@ public class ResourceSearchProvider implements SearchProvider {
         return results;
     }
 
+    /** 支持 ALL 和 RESOURCE 两种搜索范围 */
     @Override
     public boolean supports(SearchScope scope) {
         return scope == SearchScope.ALL || scope == SearchScope.RESOURCE;
     }
 
+    /** 高级搜索：支持正则、大小写、全词匹配等选项的资源文件搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

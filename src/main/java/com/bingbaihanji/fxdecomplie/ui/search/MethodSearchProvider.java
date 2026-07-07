@@ -20,28 +20,48 @@ import java.util.regex.Pattern;
  */
 public class MethodSearchProvider implements SearchProvider {
 
+    /** 结果上限,防止搜索耗时过长和内存溢出 */
     private static final int MAX_RESULTS = 500;
 
+    /**
+     * 非方法关键字集合,用于过滤正则误匹配的 Java 关键字/控制流语句
+     * 方法声明正则可能将 if/while/for 等关键字也匹配为"方法名",此处排除
+     */
     private static final Set<String> NON_METHOD_KEYWORDS = Set.of(
             "if", "else", "while", "for", "do", "switch", "case", "catch", "finally",
             "try", "synchronized", "return", "throw", "new", "class", "interface",
             "enum", "record", "assert", "break", "continue", "this", "super",
             "instanceof", "import", "package");
 
+    /**
+     * 方法声明正则模式：
+     * - 可选注解（@Override 等）
+     * - 可选修饰符（public/static/final 等）
+     * - 可选类型参数（如 <T>）
+     * - 可选返回类型（如 List<String>）
+     * - 捕获组1：方法名
+     * - 方法名后跟 (
+     */
     private static final String METHOD_DECL_PATTERN =
             "^(?:@\\w+(?:\\([^)]*\\))?\\s*)*\\s*" +
                     "(?:(?:public|protected|private|static|final|synchronized|abstract|native)" +
                     "(?:\\s+(?:static|final|synchronized|abstract|native))*\\s+)?" +
                     "(?:<[\\w\\s,<>?]+>\\s+)?" +  // 可选的方法类型参数(如 <T>)
                     "(?:[\\w.]+(?:<[^>]+>)?(?:\\[\\])*\\s+)?" + // 可选的返回类型(如 List<String>)
-                    "(\\w+)\\s*\\(";
+                    "(\\w+)\\s*\\(";             // 捕获方法名
 
+    /** 预编译的方法声明正则（区分大小写） */
     private static final Pattern METHOD_DECL = Pattern.compile(METHOD_DECL_PATTERN,
             Pattern.MULTILINE);
 
+    /** 预编译的方法声明正则（不区分大小写）,用于高级搜索选项为非大小写敏感时 */
     private static final Pattern METHOD_DECL_CASE_INSENSITIVE = Pattern.compile(
             METHOD_DECL_PATTERN, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
+    /**
+     * 基本搜索：用正则匹配方法声明,提取方法名与关键字比较（不区分大小写）
+     * 自动过滤 if/while/for 等非方法关键字的误匹配
+     */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
@@ -72,11 +92,13 @@ public class MethodSearchProvider implements SearchProvider {
         return results;
     }
 
+    /** 支持 ALL 和 METHOD 两种搜索范围 */
     @Override
     public boolean supports(SearchScope scope) {
         return scope == SearchScope.ALL || scope == SearchScope.METHOD;
     }
 
+    /** 高级搜索：支持正则、大小写、全词匹配等选项的方法名搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {
@@ -88,6 +110,7 @@ public class MethodSearchProvider implements SearchProvider {
             return results;
         }
 
+        // 根据搜索选项选择合适的方法声明正则（区分/不区分大小写）
         Pattern methodDecl = options.caseSensitive()
                 ? METHOD_DECL : METHOD_DECL_CASE_INSENSITIVE;
 

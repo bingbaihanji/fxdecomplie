@@ -28,6 +28,7 @@ public class StatusBar extends HBox {
     /** 右侧：光标位置标签 */
     private final Label positionLabel;
 
+    /** 构建状态栏布局：路径 | 弹性空间 | 任务 | 引擎 | 编码 | 弹性空间 | 光标位置 */
     public StatusBar() {
         setPadding(new Insets(2, 8, 2, 8));
         getStyleClass().add("status-bar");

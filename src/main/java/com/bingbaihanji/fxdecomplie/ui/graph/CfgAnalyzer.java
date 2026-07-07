@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * 方法级控制流图（CFG）分析器，基于 ASM Tree API 划分基本块并生成 DOT 格式。
+ * 方法级控制流图（CFG）分析器,基于 ASM Tree API 划分基本块并生成 DOT 格式
  *
- * <p>零 JavaFX 依赖，纯算法工具类。</p>
+ * <p>零 JavaFX 依赖,纯算法工具类</p>
  *
  * @author bingbaihanji
  * @date 2026-07-03
@@ -26,12 +26,12 @@ public final class CfgAnalyzer {
     }
 
     /**
-     * 为指定方法生成控制流图 DOT 字符串。
+     * 为指定方法生成控制流图 DOT 字符串
      *
      * @param classBytes 类字节码
      * @param methodName 方法名
-     * @param methodDesc 方法描述符（如 "(II)V"），可为 null（匹配第一个同名方法）
-     * @return DOT 字符串，失败返回含错误信息的 DOT
+     * @param methodDesc 方法描述符（如 "(II)V"）,可为 null（匹配第一个同名方法）
+     * @return DOT 字符串,失败返回含错误信息的 DOT
      */
     public static String buildCfgDot(byte[] classBytes, String methodName, String methodDesc) {
         if (classBytes == null || classBytes.length == 0 || methodName == null) {
@@ -67,6 +67,21 @@ public final class CfgAnalyzer {
 
     // ---- 基本块分析 + DOT 生成 ----
 
+    /**
+     * 对指定方法执行基本块划分并生成 DOT 格式的控制流图
+     *
+     * <p>算法步骤：</p>
+     * <ol>
+     *   <li>标记基本块起始位置（leaders）：方法入口、异常处理器入口、跳转目标、跳转后继</li>
+     *   <li>根据 leaders 将指令序列划分为基本块</li>
+     *   <li>分析基本块末尾指令确定控制流边（无条件跳转、条件跳转、switch、异常边）</li>
+     *   <li>组装 DOT 字符串输出</li>
+     * </ol>
+     *
+     * @param className 类内部名称（如 "com/example/Foo"）
+     * @param mn        目标方法的 ASM MethodNode
+     * @return DOT 格式的控制流图字符串
+     */
     private static String buildDot(String className, MethodNode mn) {
         InsnList insns = mn.instructions;
         int size = insns.size();
@@ -199,7 +214,7 @@ public final class CfgAnalyzer {
                 }
             } else if (opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN
                     || opcode == Opcodes.ATHROW) {
-                // 终结指令，无后继
+                // 终结指令,无后继
             } else {
                 // fall-through 到下一块
                 if (bb.id + 1 < blocks.size()) {
@@ -266,6 +281,7 @@ public final class CfgAnalyzer {
         return sb.toString();
     }
 
+    /** 将单条 ASM 指令转换为可读文本,格式为 "序号: 操作码名" */
     private static String insnText(AbstractInsnNode insn, int idx) {
         int op = insn.getOpcode();
         if (op < 0) {
@@ -275,6 +291,12 @@ public final class CfgAnalyzer {
         return idx + ": " + name.toLowerCase();
     }
 
+    /**
+     * 转义 DOT 标签中的特殊字符（反斜杠、引号、换行、尖括号、花括号）
+     *
+     * @param s 原始字符串,可为 null
+     * @return 转义后的字符串,null 返回空串
+     */
     private static String escape(String s) {
         if (s == null) {
             return "";
@@ -286,10 +308,19 @@ public final class CfgAnalyzer {
 
     // ---- 基本块数据 ----
 
+    /**
+     * 基本块数据结构
+     * <p>一个基本块是一段连续指令序列,入口为第一条指令,出口为最后一条指令,
+     * 内部不含跳转目标（除入口外）和跳转指令（除出口外）</p>
+     */
     private static class BasicBlock {
+        /** 基本块编号（从 0 开始） */
         final int id;
+        /** 起始指令在 InsnList 中的索引 */
         final int startIdx;
+        /** 结束指令在 InsnList 中的索引 */
         final int endIdx;
+        /** 该基本块内所有指令的可读文本行 */
         final List<String> lines;
 
         BasicBlock(int id, int startIdx, int endIdx, List<String> lines) {

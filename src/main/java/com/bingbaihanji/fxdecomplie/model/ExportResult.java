@@ -16,10 +16,12 @@ public record ExportResult(int totalFiles, int successCount, List<String> errors
         errors = List.copyOf(errors);
     }
 
+    /** @return 导出过程中是否发生了错误 */
     public boolean hasErrors() {
         return !errors.isEmpty();
     }
 
+    /** @return 导出失败的文件数量 */
     public int failedCount() {
         return errors.size();
     }
