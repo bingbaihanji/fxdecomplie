@@ -1127,7 +1127,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         if (context.metadata() != null) {
             var refs = context.metadata().getRefsAtLine(lineNumber);
             if (!refs.isEmpty()) {
-                CodeMetadata.Reference selected = selectReference(refs, token);
+                // 计算点击处的列号,用于同名类精确匹配
+                int column = computeClickColumn(context, lineNumber, token);
+                CodeMetadata.Reference selected = selectReference(refs, token, column);
                 if (openReferenceInWorkspace(context.workspace(), selected)) {
                     return;
                 }
@@ -1857,22 +1859,111 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 从引用列表中选择与 token 最匹配的引用（按简单名/限定名匹配） */
     private CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs, String token) {
+        return selectReference(refs, token, -1);
+    }
+
+    /**
+     * 计算用户点击处 token 在源码行中的起始列号
+     *
+     * <p>从反编译源码中定位指定行,找到 token 在该行中首次出现的位置。
+     * 用于在多个同名引用中精确匹配用户点击的那一个。</p>
+     *
+     * @param context    代码视图上下文
+     * @param lineNumber 行号（从 1 开始）
+     * @param token      点击处的标识符
+     * @return token 在行中的起始列号（从 0 开始）,-1 表示未找到
+     */
+    private int computeClickColumn(CodeViewContext context, int lineNumber, String token) {
+        if (context == null || context.openFile() == null || token == null || token.isBlank()) {
+            return -1;
+        }
+        String sourceCode = context.openFile().sourceCode();
+        if (sourceCode == null || sourceCode.isBlank()) {
+            return -1;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        if (lineNumber < 1 || lineNumber > lines.length) {
+            return -1;
+        }
+        String line = lines[lineNumber - 1];
+        String cleanToken = sanitizeDeclarationToken(token);
+        if (cleanToken.isBlank()) {
+            return -1;
+        }
+        // 找到 token 在行中的位置（作为独立标识符,不是更长标识符的一部分）
+        int idx = line.indexOf(cleanToken);
+        if (idx < 0) {
+            return -1;
+        }
+        // 验证不是更长标识符的一部分
+        if (idx > 0 && Character.isJavaIdentifierPart(line.charAt(idx - 1))) {
+            return -1;
+        }
+        int end = idx + cleanToken.length();
+        if (end < line.length() && Character.isJavaIdentifierPart(line.charAt(end))) {
+            return -1;
+        }
+        return idx;
+    }
+
+    /**
+     * 从引用列表中选择与 token 匹配的引用,支持按列位置精确匹配
+     *
+     * <p>当同一行有多个同简单名的引用（如混淆后的多个 {@code a} 类）时,
+     * 列位置匹配可以精确选择用户点击的那个引用,避免误导航。</p>
+     *
+     * @param refs   行上的所有引用
+     * @param token  点击处的标识符
+     * @param column 点击处的列号（从 0 开始,-1 表示未知）
+     * @return 匹配的引用
+     */
+    private CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs,
+                                                   String token, int column) {
         if (refs == null || refs.isEmpty()) {
             return null;
         }
         String targetToken = sanitizeDeclarationToken(token);
         if (!targetToken.isBlank()) {
             String simpleToken = tokenSimpleName(targetToken);
+            // 分两轮匹配：第一轮找有精确列位置的引用,第二轮找无列位置的引用
+            // 这样字节码增强的引用（有 columnStart）优先于正则提取的引用（columnStart=-1）
+            CodeMetadata.Reference bestWithColumn = null;
+            int closestDistance = Integer.MAX_VALUE;
+            CodeMetadata.Reference fallbackNoColumn = null;
+
             for (CodeMetadata.Reference ref : refs) {
                 if (ref.targetClass() == null) {
                     continue;
                 }
                 String normalized = ref.targetClass().replace('.', '/');
+                // 完全限定名精确匹配（最高优先级）
                 if (ref.targetClass().equals(targetToken)
-                        || normalized.equals(targetToken.replace('.', '/'))
-                        || tokenSimpleName(normalized).equals(simpleToken)) {
+                        || normalized.equals(targetToken.replace('.', '/'))) {
                     return ref;
                 }
+                // 简单名匹配
+                if (tokenSimpleName(normalized).equals(simpleToken)) {
+                    if (ref.columnStart() >= 0) {
+                        // 有列位置的引用（来自字节码增强）：按距离选最近的
+                        int distance = column >= 0
+                                ? Math.abs(ref.columnStart() - column)
+                                : 0; // 无点击列信息时,取第一个有列位置的
+                        if (bestWithColumn == null || distance < closestDistance) {
+                            closestDistance = distance;
+                            bestWithColumn = ref;
+                        }
+                    } else if (fallbackNoColumn == null) {
+                        // 无列位置的引用（来自正则提取）：仅作为兜底
+                        fallbackNoColumn = ref;
+                    }
+                }
+            }
+            // 优先返回有列位置的匹配（字节码增强的精确引用）
+            if (bestWithColumn != null) {
+                return bestWithColumn;
+            }
+            if (fallbackNoColumn != null) {
+                return fallbackNoColumn;
             }
             return null;
         }
@@ -2555,7 +2646,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 装配所有搜索 Provider、构建源码缓存并弹出搜索对话框 */
     private void openSearchWithIndex(WorkspaceView view, WorkspaceIndex index, String initialQuery) {
         // 从已打开标签页构建源码缓存
-        java.util.Map<String, String> sourceCache = new java.util.HashMap<>();
+        java.util.Map<String, String> sourceCache = new HashMap<>();
         for (TabPane pane : view.splitEditorPane().allTabPanes()) {
             for (javafx.scene.control.Tab tab : pane.getTabs()) {
                 if (tab instanceof CodeEditorTab codeTab
@@ -2570,7 +2661,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         // 构建 classPath → displayName 映射（支持搜索反混淆/重命名后的名称）
         String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                 .of(view.workspace(), "").workspaceHash();
-        java.util.Map<String, String> displayNamesByPath = new java.util.HashMap<>();
+        java.util.Map<String, String> displayNamesByPath = new HashMap<>();
         for (String classPath : index.classPaths()) {
             String display = com.bingbaihanji.fxdecomplie.rename.RenameService
                     .displayClassName(classPath, wsHash);

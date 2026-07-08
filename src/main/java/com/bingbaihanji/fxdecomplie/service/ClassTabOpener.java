@@ -378,9 +378,15 @@ public final class ClassTabOpener {
                         .of(workspace, "").workspaceHash();
                 sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
-                CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
-                        ? OutlineParser.extractMetadata(sourceCode)
-                        : result.metadata();
+                // 使用 decompileWithCache 的字节码增强元数据,仅将重命名应用到引用目标类名
+                // 不重新从重命名后的源码提取,否则字节码泛型增强的位置信息会丢失
+                // 使用 decompileWithCache 的字节码增强元数据,仅将重命名应用到引用目标类名
+                // 不重新从重命名后的源码提取,否则字节码泛型增强的位置信息会丢失
+                CodeMetadata rawMetadata = result.metadata();
+                final CodeMetadata metadata = !rawMetadata.isEmpty()
+                        ? com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .applyRenamesToMetadata(rawMetadata, wsHash)
+                        : rawMetadata;
                 DecompilerTypeEnum usedEngine = result.engine();
                 Consumer<CodeMetadata.Reference> completedNavigate = createNavigationHandler(
                         workspace, codeTabPane, usedEngine, lineNumbersEnabled);
@@ -543,9 +549,12 @@ public final class ClassTabOpener {
                         .of(workspace, "").workspaceHash();
                 sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
-                CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
-                        ? OutlineParser.extractMetadata(sourceCode)
-                        : result.metadata();
+                // 使用 decompileWithCache 的字节码增强元数据,仅将重命名应用到引用目标类名
+                CodeMetadata rawMetadata2 = result.metadata();
+                final CodeMetadata metadata = !rawMetadata2.isEmpty()
+                        ? com.bingbaihanji.fxdecomplie.rename.RenameService
+                        .applyRenamesToMetadata(rawMetadata2, wsHash)
+                        : rawMetadata2;
                 DecompilerTypeEnum usedEngine = result.engine();
                 String displayName = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .displayClassName(internalName, wsHash);
@@ -1185,7 +1194,7 @@ public final class ClassTabOpener {
 
         // ---- 提取元数据用于 Ctrl+Click 导航；大源码的链接扫描会被禁用,这里也跳过避免拖慢首屏 ----
         CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
-                ? OutlineParser.extractMetadata(sourceCode)
+                ? OutlineParser.extractMetadata(sourceCode, bytes)
                 : new CodeMetadata(Map.of());
         return new DecompileResult(sourceCode, metadata, effectiveEngine);
     }
@@ -1219,7 +1228,7 @@ public final class ClassTabOpener {
         }
 
         CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
-                ? OutlineParser.extractMetadata(sourceCode)
+                ? OutlineParser.extractMetadata(sourceCode, bytes)
                 : new CodeMetadata(Map.of());
         return new DecompileResult(sourceCode, metadata, effectiveEngine);
     }

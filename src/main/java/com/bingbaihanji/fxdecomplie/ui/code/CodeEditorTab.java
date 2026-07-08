@@ -302,7 +302,7 @@ public class CodeEditorTab extends Tab {
                 newSource == null ? "" : newSource, openFile.engine());
         this.displayTitle = displayTitleFor(openFile);
         this.metadata = openFile.sourceCode().length() <= METADATA_SOURCE_THRESHOLD
-                ? OutlineParser.extractMetadata(openFile.sourceCode())
+                ? OutlineParser.extractMetadata(openFile.sourceCode(), classBytes)
                 : new CodeMetadata(java.util.Map.of());
         SourceContentPanel srcPanel = new SourceContentPanel(openFile.sourceCode(), theme,
                 fontFamily, defaultFontSize, wrapText, lineNumbersEnabled, this.metadata, this.onNavigate);

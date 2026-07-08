@@ -1051,9 +1051,9 @@ public final class NativeWindowsTools {
         long style = getExtendedWindowStyle(hwnd);
         long newStyle = show
                 ? (style | Win32Constants.WindowStyleEx.WS_EX_APPWINDOW)
-                & ~Win32Constants.WindowStyleEx.WS_EX_TOOLWINDOW
+                  & ~Win32Constants.WindowStyleEx.WS_EX_TOOLWINDOW
                 : (style | Win32Constants.WindowStyleEx.WS_EX_TOOLWINDOW)
-                & ~Win32Constants.WindowStyleEx.WS_EX_APPWINDOW;
+                  & ~Win32Constants.WindowStyleEx.WS_EX_APPWINDOW;
         return setExtendedWindowStyle(hwnd, newStyle, "showInTaskbar");
     }
 

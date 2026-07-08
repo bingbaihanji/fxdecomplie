@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
@@ -362,6 +363,91 @@ public final class RenameService {
         List<RenameEntry> entries = loadAll(wsHash);
         String source = applyClassRenames(sourceCode, entries, currentClass);
         return applyEntries(source, entries, currentClass);
+    }
+
+    /**
+     * 将重命名映射应用到代码元数据的引用目标类名
+     *
+     * <p>保留引用的行号和列位置不变,仅将 targetClass 中的旧类名替换为新类名。
+     * 用于在 {@link #applyRenames(String, String, String)} 修改源码后,
+     * 同步更新 Ctrl+Click 导航的引用目标。</p>
+     *
+     * @param metadata 原始代码元数据（可能包含字节码泛型增强的引用）
+     * @param wsHash   工作区哈希（用于加载重命名条目）
+     * @return 应用重命名后的新元数据
+     */
+    public static CodeMetadata applyRenamesToMetadata(CodeMetadata metadata, String wsHash) {
+        if (metadata == null || metadata.isEmpty() || wsHash == null || wsHash.isBlank()) {
+            return metadata;
+        }
+        List<RenameEntry> entries = loadAll(wsHash);
+        if (entries.isEmpty()) {
+            return metadata;
+        }
+        // 构建类重命名映射：旧内部名 -> 新内部名
+        // 对于类重命名, className 是全限定内部名, oldName 是旧简单名, newName 是新简单名
+        Map<String, String> classRenames = new HashMap<>();
+        for (RenameEntry entry : entries) {
+            if (TYPE_CLASS.equals(entry.type()) && !entry.className().isBlank()
+                    && !entry.newName().isBlank()) {
+                String oldInternal = normalizeInternalName(entry.className());
+                // 旧的全限定名 = 包路径 + 旧简单名
+                int lastSlash = oldInternal.lastIndexOf('/');
+                String newInternal = lastSlash >= 0
+                        ? oldInternal.substring(0, lastSlash + 1) + entry.newName()
+                        : entry.newName();
+                classRenames.put(oldInternal, normalizeInternalName(newInternal));
+            }
+        }
+        if (classRenames.isEmpty()) {
+            return metadata;
+        }
+
+        Map<Integer, List<CodeMetadata.Reference>> newRefsByLine = new HashMap<>();
+        // 遍历所有有引用的行,而不是逐行扫描（行号可能不连续）
+        for (var entry : metadata.getAllRefsByLine().entrySet()) {
+            int line = entry.getKey();
+            List<CodeMetadata.Reference> refs = entry.getValue();
+            if (refs.isEmpty()) {
+                continue;
+            }
+            List<CodeMetadata.Reference> newRefs = new ArrayList<>();
+            for (CodeMetadata.Reference ref : refs) {
+                boolean replaced = false;
+                if (ref.targetClass() != null) {
+                    String normalized = ref.targetClass().replace('.', '/');
+                    String renamed = classRenames.get(normalized);
+                    if (renamed != null) {
+                        // 精确匹配：直接替换
+                        newRefs.add(new CodeMetadata.Reference(
+                                ref.type(), renamed.replace('/', '.'), ref.targetMember(),
+                                ref.lineNumber(), ref.columnStart()));
+                        replaced = true;
+                    } else {
+                        // 内部类回退：若引用为 Outer.Inner 且 Outer 被重命名
+                        for (var renameEntry : classRenames.entrySet()) {
+                            String oldPrefix = renameEntry.getKey();
+                            String newPrefix = renameEntry.getValue();
+                            if (normalized.startsWith(oldPrefix + "$")) {
+                                String suffix = normalized.substring(oldPrefix.length());
+                                newRefs.add(new CodeMetadata.Reference(
+                                        ref.type(), (newPrefix + suffix).replace('/', '.'),
+                                        ref.targetMember(), ref.lineNumber(), ref.columnStart()));
+                                replaced = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!replaced) {
+                    newRefs.add(ref);
+                }
+            }
+            if (!newRefs.isEmpty()) {
+                newRefsByLine.put(line, newRefs);
+            }
+        }
+        return new CodeMetadata(newRefsByLine);
     }
 
     /** 返回应用类重命名后的 .java 导出路径 */
@@ -1246,7 +1332,19 @@ public final class RenameService {
         Matcher matcher = IMPORT_LINE_PATTERN.matcher(source);
         while (matcher.find()) {
             String imported = matcher.group(1);
-            if (imported == null || imported.endsWith(".*")) {
+            if (imported == null) {
+                continue;
+            }
+            if (imported.endsWith(".*")) {
+                // 通配符 import：import com.pig4cloud.domain.*;
+                // 检查通配符包下的类是否匹配 token
+                String wildcardPkg = imported.substring(0, imported.length() - 2);
+                String candidate = wildcardPkg + "." + token;
+                for (RenameEntry entry : classEntries) {
+                    if (qualifiedPrefixTargetsClass(candidate, entry)) {
+                        return entry;
+                    }
+                }
                 continue;
             }
             String importedSimple = visibleClassLeaf(normalizeInternalName(imported));
@@ -1292,6 +1390,15 @@ public final class RenameService {
         for (RenameEntry entry : classEntries) {
             if ((entry.oldName().equals(token) || classEntryMatchesToken(entry, token))
                     && qualifiedPrefixTargetsClass(qualifiedPrefix, entry)) {
+                return entry.newName();
+            }
+        }
+        // 全限定名匹配：prefix.token（如 com.pig4cloud.domain.token）精确匹配类名
+        // 处理 Vineflower 等反编译器在泛型中直接输出全限定名的情况
+        String fullQualified = qualifiedPrefix + "." + token;
+        for (RenameEntry entry : classEntries) {
+            if ((entry.oldName().equals(token) || classEntryMatchesToken(entry, token))
+                    && qualifiedPrefixTargetsClass(fullQualified, entry)) {
                 return entry.newName();
             }
         }

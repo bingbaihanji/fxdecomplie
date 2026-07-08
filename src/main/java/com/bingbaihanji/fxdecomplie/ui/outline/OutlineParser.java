@@ -1,6 +1,9 @@
 package com.bingbaihanji.fxdecomplie.ui.outline;
 
+import com.bingbaihanji.fxdecomplie.bytecode.BytecodeSignatureParser;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +19,8 @@ import java.util.regex.Pattern;
  * @date 2026-06-17
  */
 public final class OutlineParser {
+
+    private static final Logger log = LoggerFactory.getLogger(OutlineParser.class);
 
     /**
      * 方法签名匹配模式
@@ -234,7 +239,7 @@ public final class OutlineParser {
                 // 混淆后的类名通常为小写单字母（如 a, b, c）,不能再依赖首字母大写判断
                 if (match.contains(".") && looksLikeClassReference(match)) {
                     refs.add(new CodeMetadata.Reference(
-                            CodeMetadata.RefType.CLASS_REF, match, null, lineNum));
+                            CodeMetadata.RefType.CLASS_REF, match, null, lineNum, m.start()));
                 }
             }
 
@@ -244,6 +249,333 @@ public final class OutlineParser {
         }
 
         return new CodeMetadata(refsByLine);
+    }
+
+    /**
+     * 从反编译源码中提取代码元数据（带字节码增强）
+     *
+     * <p>在正则提取的基础上,额外解析 class 字节码的泛型签名,将反编译源码中
+     * 泛型类型参数的简单名（如 {@code ServiceImpl<AjglMapper, a>} 中的 {@code a}）
+     * 映射到字节码中的全限定名（如 {@code com.pig4cloud.domain.a}）。</p>
+     *
+     * <p>此方法解决了混淆场景下多个同名类的导航歧义问题：
+     * 字节码的 Signature 属性存储了无歧义的全限定类型引用,将其与反编译源码
+     * 中的泛型位置关联后,Ctrl+Click 可以精确跳转到正确的类。</p>
+     *
+     * @param sourceCode 反编译后的 Java 源码
+     * @param classBytes 类文件原始字节码（可为 null,此时退化为纯正则提取）
+     * @return 代码元数据（含字节码增强的泛型类引用）
+     */
+    public static CodeMetadata extractMetadata(String sourceCode, byte[] classBytes) {
+        Map<Integer, List<CodeMetadata.Reference>> refsByLine = new HashMap<>();
+        if (sourceCode == null || sourceCode.isEmpty()) {
+            return new CodeMetadata(refsByLine);
+        }
+
+        String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
+
+        // ---- 第一阶段：正则提取全限定类引用（原有逻辑） ----
+        boolean inBlockComment = false;
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            int lineNum = i + 1;
+            List<CodeMetadata.Reference> refs = new ArrayList<>();
+
+            String trimmed = line.trim();
+            if (inBlockComment) {
+                if (trimmed.contains("*/")) {
+                    inBlockComment = false;
+                }
+                continue;
+            }
+            if (trimmed.startsWith("//")) {
+                continue;
+            }
+            if (trimmed.startsWith("/*")) {
+                if (!trimmed.contains("*/")) {
+                    inBlockComment = true;
+                }
+                continue;
+            }
+            if (trimmed.startsWith("* ")) {
+                continue;
+            }
+
+            Matcher m = CLASS_REF_PATTERN.matcher(line);
+            while (m.find()) {
+                String match = m.group(1);
+                if (match.contains(".") && looksLikeClassReference(match)) {
+                    refs.add(new CodeMetadata.Reference(
+                            CodeMetadata.RefType.CLASS_REF, match, null, lineNum));
+                }
+            }
+
+            if (!refs.isEmpty()) {
+                refsByLine.put(lineNum, refs);
+            }
+        }
+
+        // ---- 第二阶段：字节码泛型签名增强 ----
+        if (classBytes != null && classBytes.length > 10) {
+            try {
+                enhanceWithBytecodeSignatures(lines, classBytes, refsByLine);
+            } catch (Exception e) {
+                log.debug("字节码签名增强失败,保留纯正则结果", e);
+            }
+        }
+
+        return new CodeMetadata(refsByLine);
+    }
+
+    /**
+     * 从字节码泛型签名中提取类型参数,与反编译源码的泛型位置关联
+     *
+     * <p>扫描源码中 extends/implements 子句和泛型参数中的简单类名,
+     * 用字节码签名中的对应位置的全限定名创建精确的导航引用。</p>
+     */
+    private static void enhanceWithBytecodeSignatures(String[] lines, byte[] classBytes,
+                                                      Map<Integer, List<CodeMetadata.Reference>> refsByLine) {
+        List<List<String>> typeArgsByOwner = BytecodeSignatureParser
+                .extractTypeArgumentsByOwner(classBytes);
+        if (typeArgsByOwner.isEmpty()) {
+            return;
+        }
+
+        // 按 extends/implements 子句匹配源码中的类型参数
+        // 关键：同一行可能同时有 extends 和 implements,需要逐个关键字处理
+        int ownerIndex = 0;
+        boolean inBlockComment = false;
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            int lineNum = i + 1;
+            String trimmed = line.trim();
+
+            if (inBlockComment) {
+                if (trimmed.contains("*/")) {
+                    inBlockComment = false;
+                }
+                continue;
+            }
+            if (trimmed.startsWith("//")) {
+                continue;
+            }
+            if (trimmed.startsWith("/*")) {
+                if (!trimmed.contains("*/")) {
+                    inBlockComment = true;
+                }
+                continue;
+            }
+            if (trimmed.startsWith("* ")) {
+                continue;
+            }
+
+            // 按关键字位置从左到右处理 extends 和 implements
+            // 同一行可能两者都有（如 extends X<A> implements Y<B>）
+            int searchFrom = 0;
+            while (searchFrom < line.length() && ownerIndex < typeArgsByOwner.size()) {
+                // 查找下一个 extends 或 implements 关键字
+                int extendsIdx = line.indexOf("extends ", searchFrom);
+                int implementsIdx = line.indexOf("implements ", searchFrom);
+
+                // 选择最近的关键字
+                int keywordIdx;
+                boolean isExtends;
+                if (extendsIdx >= 0 && (implementsIdx < 0 || extendsIdx < implementsIdx)) {
+                    keywordIdx = extendsIdx;
+                    isExtends = true;
+                } else if (implementsIdx >= 0) {
+                    keywordIdx = implementsIdx;
+                    isExtends = false;
+                } else {
+                    break; // 本行无更多关键字
+                }
+
+                // 跳过 "extends {" 这种内部类/匿名类模式
+                if (isExtends) {
+                    String afterExtends = line.substring(keywordIdx + 8).stripLeading();
+                    if (afterExtends.startsWith("{")) {
+                        searchFrom = keywordIdx + 8;
+                        continue;
+                    }
+                }
+
+                // 确定该关键字对应的 ownerIndex
+                // extends 总是对应 ownerIndex 0（父类）
+                // implements 对应 ownerIndex > 0（接口）
+                int currentOwnerIndex;
+                if (isExtends) {
+                    if (ownerIndex != 0) {
+                        // 已经处理过 extends,跳过
+                        searchFrom = keywordIdx + 8;
+                        continue;
+                    }
+                    currentOwnerIndex = ownerIndex;
+                    ownerIndex++;
+                } else {
+                    // implements
+                    if (ownerIndex == 0) {
+                        // 还没处理 extends,先跳过（不应发生）
+                        searchFrom = keywordIdx + 11;
+                        continue;
+                    }
+                    currentOwnerIndex = ownerIndex;
+                    ownerIndex++;
+                }
+                // 提取该关键字后的泛型参数（从关键字位置开始扫描尖括号）
+                String fromKeyword = line.substring(keywordIdx);
+                List<TypeArgWithPosition> sourceTypeArgs = extractGenericTypeArgumentsWithPosition(fromKeyword);
+                // 修正列号偏移（相对于整行而非关键字后子串）
+                List<TypeArgWithPosition> adjustedArgs = new ArrayList<>();
+                for (TypeArgWithPosition arg : sourceTypeArgs) {
+                    adjustedArgs.add(new TypeArgWithPosition(arg.name(), arg.columnStart() + keywordIdx));
+                }
+
+                if (adjustedArgs.isEmpty() || currentOwnerIndex >= typeArgsByOwner.size()) {
+                    searchFrom = keywordIdx + (isExtends ? 8 : 11);
+                    continue;
+                }
+
+                List<String> bytecodeArgs = typeArgsByOwner.get(currentOwnerIndex);
+                if (bytecodeArgs.isEmpty()) {
+                    searchFrom = keywordIdx + (isExtends ? 8 : 11);
+                    continue;
+                }
+
+                // 按位置匹配字节码类型参数与源码类型参数
+                List<CodeMetadata.Reference> refs = refsByLine.computeIfAbsent(
+                        lineNum, k -> new ArrayList<>());
+
+                for (int j = 0; j < adjustedArgs.size() && j < bytecodeArgs.size(); j++) {
+                    String sourceArg = adjustedArgs.get(j).name;
+                    int argColumn = adjustedArgs.get(j).columnStart;
+                    String bytecodeArg = bytecodeArgs.get(j);
+
+                    // 仅处理简单名（非全限定名）,且字节码提供了有效的全限定名
+                    if (!sourceArg.contains(".") && bytecodeArg != null
+                            && !bytecodeArg.isBlank() && bytecodeArg.contains(".")) {
+                        String dotName = bytecodeArg;
+
+                        // 避免重复添加（如果正则已提取了相同的全限定名）
+                        boolean alreadyExists = refs.stream().anyMatch(r ->
+                                r.targetClass() != null && r.targetClass().equals(dotName));
+                        if (!alreadyExists) {
+                            refs.add(new CodeMetadata.Reference(
+                                    CodeMetadata.RefType.CLASS_REF, dotName, null, lineNum, argColumn));
+                        }
+                    }
+                }
+
+                searchFrom = keywordIdx + (isExtends ? 8 : 11);
+            }
+        }
+    }
+
+    /**
+     * 从源码行中提取泛型类型参数的简单名列表
+     *
+     * <p>例如从 {@code public class Foo extends ServiceImpl<AjglMapper, a> implements Bar<b, c>}
+     * 提取 ["AjglMapper", "a", "b", "c"]。</p>
+     *
+     * <p>使用尖括号深度跟踪,跳过嵌套泛型和方法调用中的括号。</p>
+     */
+    static List<String> extractGenericTypeArguments(String line) {
+        List<String> args = new ArrayList<>();
+        for (TypeArgWithPosition arg : extractGenericTypeArgumentsWithPosition(line)) {
+            args.add(arg.name);
+        }
+        return args;
+    }
+
+    /**
+     * 从源码行中提取泛型类型参数及其在行中的起始列号
+     *
+     * <p>与 {@link #extractGenericTypeArguments(String)} 类似,但额外返回每个参数
+     * 在源码行中的字符偏移量,用于创建精确的列位置引用。</p>
+     */
+    static List<TypeArgWithPosition> extractGenericTypeArgumentsWithPosition(String line) {
+        List<TypeArgWithPosition> args = new ArrayList<>();
+        if (line == null) {
+            return args;
+        }
+
+        int depth = 0; // 尖括号深度
+        StringBuilder current = new StringBuilder();
+        int argStart = -1; // 当前参数的起始列号
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            // 跳过字符串和字符字面量
+            if (c == '"' || c == '\'') {
+                i = skipQuoted(line, i, c) - 1;
+                continue;
+            }
+
+            if (c == '<') {
+                if (depth == 0) {
+                    current.setLength(0);
+                    argStart = -1;
+                }
+                depth++;
+                if (depth > 1) {
+                    current.append(c);
+                }
+            } else if (c == '>') {
+                depth--;
+                if (depth == 0) {
+                    String arg = current.toString().strip();
+                    if (!arg.isEmpty() && isSimpleTypeArg(arg) && argStart >= 0) {
+                        args.add(new TypeArgWithPosition(arg, argStart));
+                    }
+                    current.setLength(0);
+                    argStart = -1;
+                } else if (depth > 0) {
+                    current.append(c);
+                }
+            } else if (c == ',' && depth == 1) {
+                String arg = current.toString().strip();
+                if (!arg.isEmpty() && isSimpleTypeArg(arg) && argStart >= 0) {
+                    args.add(new TypeArgWithPosition(arg, argStart));
+                }
+                current.setLength(0);
+                argStart = -1;
+            } else if (depth >= 1) {
+                if (depth == 1 && argStart < 0 && !Character.isWhitespace(c)) {
+                    argStart = i;
+                }
+                current.append(c);
+            }
+        }
+        return args;
+    }
+
+    /**
+     * 判断是否为可导航的简单类型参数
+     * 排除通配符（?）、类型变量（T, E 等大写单字母）、基本类型包装类
+     */
+    private static boolean isSimpleTypeArg(String arg) {
+        if (arg.isEmpty() || "?".equals(arg)) {
+            return false;
+        }
+        // 带有 extends/super 的通配符
+        if (arg.startsWith("?")) {
+            return false;
+        }
+        // 全限定名不需要增强（正则已处理）
+        if (arg.contains(".")) {
+            return false;
+        }
+        // 有效 Java 标识符
+        if (!Character.isJavaIdentifierStart(arg.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < arg.length(); i++) {
+            if (!Character.isJavaIdentifierPart(arg.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -280,5 +612,9 @@ public final class OutlineParser {
             return "";
         }
         return raw.trim().replaceAll("\\s+", " ");
+    }
+
+    /** 泛型类型参数及其在源码行中的起始列号 */
+    record TypeArgWithPosition(String name, int columnStart) {
     }
 }

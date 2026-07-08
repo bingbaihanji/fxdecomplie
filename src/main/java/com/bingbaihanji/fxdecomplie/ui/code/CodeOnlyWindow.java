@@ -80,6 +80,7 @@ public final class CodeOnlyWindow {
     private final SplitEditorPane splitEditorPane;
     private final TabPane tabPane;
     private final Stage stage;
+
     private CodeOnlyWindow(AppConfig config, Stage stage) {
         this.config = config;
         this.editorTheme = AppTheme.loadEditorTheme(config);
@@ -497,7 +498,7 @@ public final class CodeOnlyWindow {
         CodeEditorTab tab = new CodeEditorTab(openFile, editorTheme,
                 config.theme().fontFamily(), config.theme().fontSize(),
                 config.decompiler().wrapText(), config.decompiler().lineNumbersEnabled(),
-                payload.classBytes(), OutlineParser.extractMetadata(payload.sourceCode()), null);
+                payload.classBytes(), OutlineParser.extractMetadata(payload.sourceCode(), payload.classBytes()), null);
         installFallbackHandlers(tab, config, editorTheme);
         return tab;
     }
@@ -587,7 +588,7 @@ public final class CodeOnlyWindow {
                 }
 
                 CodeMetadata metadata = source != null && source.length() <= METADATA_SOURCE_THRESHOLD
-                        ? OutlineParser.extractMetadata(source)
+                        ? OutlineParser.extractMetadata(source, preResolvedBytes)
                         : new CodeMetadata(Map.of());
                 OpenFile updated = new OpenFile(previous.className(), previous.fullPath(), source, engine);
                 // 回到 FX 线程更新 UI：替换源码面板内容
