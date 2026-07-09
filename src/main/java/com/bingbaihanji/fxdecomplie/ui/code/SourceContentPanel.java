@@ -36,6 +36,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     private final Consumer<CodeMetadata.Reference> onNavigate;
     private CodeArea codeArea;
     private BracketHighlighter bracketHighlighter;
+    private LinkHoverHighlighter linkHoverHighlighter;
     private String sourceCode;
     private BiConsumer<Integer, String> onTokenNavigate;
     /** CodeArea 重建后的回调,用于父组件重新安装事件处理器 */
@@ -103,6 +104,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
             codeArea.setHighlightCurrentParagraph(true);
             bracketHighlighter = new BracketHighlighter(codeArea, regexHighlighter);
             bracketHighlighter.install();
+            linkHoverHighlighter = LinkHoverHighlighter.install(codeArea, regexHighlighter);
         }
         codeArea.setText(src == null ? "" : src);
         cachedLineCount = -1;
@@ -118,6 +120,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         }
         if (!linkNavigationEnabled || (onNavigate == null && onTokenNavigate == null)) {
             CodeLinkHandler.uninstall(codeArea);
+            LinkHoverHighlighter.uninstall(codeArea);
             return;
         }
         CodeLinkHandler.install(codeArea, metadata, onTokenNavigate, onNavigate);
@@ -146,6 +149,10 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         if (bracketHighlighter != null) {
             bracketHighlighter.dispose();
             bracketHighlighter = null;
+        }
+        if (linkHoverHighlighter != null) {
+            linkHoverHighlighter.dispose();
+            linkHoverHighlighter = null;
         }
         getChildren().clear();
         buildCodeArea();
@@ -192,6 +199,10 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
             }
             bracketHighlighter = new BracketHighlighter(codeArea, newHighlighter);
             bracketHighlighter.install();
+            if (linkHoverHighlighter != null) {
+                linkHoverHighlighter.dispose();
+            }
+            linkHoverHighlighter = LinkHoverHighlighter.install(codeArea, newHighlighter);
         } catch (Exception e) {
             log.warn("重新应用编辑器主题失败", e);
         }
@@ -264,13 +275,17 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         return codeArea != null;
     }
 
-    /** 释放资源：清理括号高亮器并置空 codeArea */
+    /** 释放资源：清理高亮器并置空 codeArea */
     @Override
     public void dispose() {
         super.dispose();
         if (bracketHighlighter != null) {
             bracketHighlighter.dispose();
             bracketHighlighter = null;
+        }
+        if (linkHoverHighlighter != null) {
+            linkHoverHighlighter.dispose();
+            linkHoverHighlighter = null;
         }
         codeArea = null;
     }

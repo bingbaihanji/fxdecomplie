@@ -7,6 +7,7 @@ import jfx.incubator.scene.control.richtext.CodeArea;
 import jfx.incubator.scene.control.richtext.TextPos;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -20,6 +21,18 @@ import java.util.function.Consumer;
 public final class CodeLinkHandler {
 
     private static final String LINK_HANDLER_KEY = "CODE_LINK_HANDLER";
+    private static final Set<String> NON_NAVIGABLE_TOKENS = Set.of(
+            "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+            "class", "const", "continue", "default", "do", "double", "else", "enum",
+            "extends", "false", "final", "finally", "float", "for", "goto", "if",
+            "implements", "import", "instanceof", "int", "interface", "long", "native",
+            "new", "null", "package", "private", "protected", "public", "return",
+            "short", "static", "strictfp", "super", "switch", "synchronized", "this",
+            "throw", "throws", "transient", "true", "try", "void", "volatile", "while",
+            "var", "record", "sealed", "permits", "yield", "module", "requires",
+            "exports", "opens", "to", "uses", "provides", "with", "transitive",
+            "non-sealed"
+    );
 
     private CodeLinkHandler() {
         throw new AssertionError("utility class");
@@ -131,19 +144,25 @@ public final class CodeLinkHandler {
 
     /** 从指定文本位置提取可导航的 Java 标识符（类名或成员引用） */
     public static String navigationTokenAt(String text, TextPos pos) {
+        NavigationToken token = navigationTokenRangeAt(text, pos);
+        return token == null ? "" : token.token();
+    }
+
+    /** 返回光标处可导航 token 及其在文档中的字符范围,用于 Ctrl 悬停高亮。 */
+    public static NavigationToken navigationTokenRangeAt(String text, TextPos pos) {
         if (text == null || text.isEmpty() || pos == null) {
-            return "";
+            return null;
         }
         int offset = flatOffset(text, pos);
         if (offset < 0 || offset > text.length()) {
-            return "";
+            return null;
         }
         int probe = offset;
         if (probe >= text.length() || !isJavaIdentifierSegmentChar(text.charAt(probe))) {
             if (probe > 0 && isJavaIdentifierSegmentChar(text.charAt(probe - 1))) {
                 probe--;
             } else {
-                return "";
+                return null;
             }
         }
         int segmentStart = probe;
@@ -167,7 +186,20 @@ public final class CodeLinkHandler {
         String qualified = text.substring(qualifiedStart, qualifiedEnd);
         int localSegmentStart = segmentStart - qualifiedStart;
         int localSegmentEnd = segmentEnd - qualifiedStart;
-        return selectNavigationToken(qualified, localSegmentStart, localSegmentEnd);
+        String token = selectNavigationToken(qualified, localSegmentStart, localSegmentEnd);
+        if (!isNavigableToken(token)) {
+            return null;
+        }
+        int tokenStart = segmentStart;
+        int tokenEnd = segmentEnd;
+        if (token.indexOf('.') >= 0) {
+            int tokenLocalStart = qualified.indexOf(token);
+            if (tokenLocalStart >= 0) {
+                tokenStart = qualifiedStart + tokenLocalStart;
+                tokenEnd = tokenStart + token.length();
+            }
+        }
+        return new NavigationToken(token, tokenStart, tokenEnd);
     }
 
     /** 将 TextPos（行号+列偏移）转换为文本在原始字符串中的平坦偏移量 */
@@ -373,10 +405,21 @@ public final class CodeLinkHandler {
         return result;
     }
 
+    private static boolean isNavigableToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        String simple = simpleName(token);
+        return !simple.isBlank() && !NON_NAVIGABLE_TOKENS.contains(simple);
+    }
+
     /** 从限定名中提取简单类名（最后一段,/ 或 . 之后的部分） */
     private static String simpleName(String token) {
         String normalized = token.replace('.', '/');
         int slash = normalized.lastIndexOf('/');
         return slash >= 0 ? normalized.substring(slash + 1) : normalized;
+    }
+
+    public record NavigationToken(String token, int startOffset, int endOffset) {
     }
 }

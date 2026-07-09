@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.Node;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 
@@ -114,6 +115,11 @@ public final class SplitEditorPane extends StackPane {
         // tab 关闭监听 → 折叠空 cell
         pane.getTabs().addListener((javafx.collections.ListChangeListener<Tab>) change -> {
             while (change.next()) {
+                if (change.wasAdded()) {
+                    for (Tab tab : change.getAddedSubList()) {
+                        installTabContextMenu(pane, tab);
+                    }
+                }
                 if (change.wasRemoved()) {
                     Platform.runLater(() -> checkCollapseCell(pane));
                 }
@@ -350,9 +356,78 @@ public final class SplitEditorPane extends StackPane {
         cachedMenu.setOnShowing(e -> rebuildContextMenuItems(cachedMenu, pane));
         pane.getProperties().put("fxdecomplie.splitEditor.cachedMenu", cachedMenu);
         pane.setOnContextMenuRequested(event -> {
-            cachedMenu.show(pane, event.getScreenX(), event.getScreenY());
+            Tab tab = tabForContextEvent(pane, event);
+            if (tab != null) {
+                pane.getSelectionModel().select(tab);
+            }
+            showTabContextMenu(pane, cachedMenu, event);
             event.consume();
         });
+    }
+
+    private void installTabContextMenu(TabPane pane, Tab tab) {
+        if (pane == null || tab == null) {
+            return;
+        }
+        ContextMenu menu = contextMenuFor(pane);
+        tab.setContextMenu(menu);
+        Node graphic = tab.getGraphic();
+        if (graphic == null) {
+            return;
+        }
+        graphic.setOnContextMenuRequested(event -> {
+            pane.getSelectionModel().select(tab);
+            showTabContextMenu(pane, menu, event);
+            event.consume();
+        });
+    }
+
+    private ContextMenu contextMenuFor(TabPane pane) {
+        Object cached = pane.getProperties().get("fxdecomplie.splitEditor.cachedMenu");
+        if (cached instanceof ContextMenu menu) {
+            return menu;
+        }
+        ContextMenu menu = new ContextMenu();
+        menu.setOnShowing(e -> rebuildContextMenuItems(menu, pane));
+        pane.getProperties().put("fxdecomplie.splitEditor.cachedMenu", menu);
+        return menu;
+    }
+
+    private void showTabContextMenu(TabPane pane, ContextMenu menu, ContextMenuEvent event) {
+        if (pane == null || menu == null || event == null) {
+            return;
+        }
+        menu.hide();
+        rebuildContextMenuItems(menu, pane);
+        menu.show(pane, event.getScreenX(), event.getScreenY());
+    }
+
+    private Tab tabForContextEvent(TabPane pane, ContextMenuEvent event) {
+        if (pane == null || event == null) {
+            return null;
+        }
+        Object target = event.getTarget();
+        if (!(target instanceof Node node)) {
+            return null;
+        }
+        for (Tab tab : pane.getTabs()) {
+            Node graphic = tab.getGraphic();
+            if (graphic != null && isNodeOrDescendant(node, graphic)) {
+                return tab;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isNodeOrDescendant(Node node, Node ancestor) {
+        Node current = node;
+        while (current != null) {
+            if (current == ancestor) {
+                return true;
+            }
+            current = current.getParent();
+        }
+        return false;
     }
 
     /** 根据当前选中标签页重建缓存菜单的菜单项 */
