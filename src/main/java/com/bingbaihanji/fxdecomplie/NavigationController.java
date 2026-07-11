@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie;
 
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
@@ -185,11 +184,6 @@ public final class NavigationController {
         String original = com.bingbaihanji.fxdecomplie.rename.RenameService
                 .originalInternalName(reference.targetClass(), wsHash);
         return findClassPathRaw(workspace, original);
-    }
-
-    /** 从引用列表中选择与 token 最匹配的引用(按简单名/限定名匹配) */
-    private CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs, String token) {
-        return selectReference(refs, token, -1);
     }
 
     /**

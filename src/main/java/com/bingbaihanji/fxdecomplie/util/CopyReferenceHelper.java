@@ -100,14 +100,14 @@ public final class CopyReferenceHelper {
 
         // 2. 检查光标是否在构造方法声明行上
         String classLine = getLine(sourceCode, lineIndex);
-        if (classLine != null && isConstructorLine(classLine, className)
+        if (isConstructorLine(classLine, className)
                 && isCursorOnToken(classLine, column, className)) {
             String params = extractParams(classLine, importMap, currentPackage);
             return fqn + "#" + className + params;
         }
 
         // 3. 检查光标是否在类声明行上
-        if (classLine != null && isCursorOnToken(classLine, column, className)) {
+        if (isCursorOnToken(classLine, column, className)) {
             return fqn;
         }
 

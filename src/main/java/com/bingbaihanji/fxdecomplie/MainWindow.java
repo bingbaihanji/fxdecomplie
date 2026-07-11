@@ -64,7 +64,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 类文件反编译及标签页打开器(含 L2 缓存) */
     private ClassTabOpener classTabOpener;
     /** 当前选择的反编译引擎 */
-    private DecompilerTypeEnum currentEngine = DecompilerTypeEnum.VINEFLOWER;
+    private DecompilerTypeEnum currentEngine = DecompilerTypeEnum.JADX;
     /** 是否显示行号 */
     private boolean lineNumbersEnabled;
     /** 顶部工具栏 */

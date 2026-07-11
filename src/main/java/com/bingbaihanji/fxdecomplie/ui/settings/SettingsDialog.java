@@ -358,7 +358,7 @@ public final class SettingsDialog {
         Button restoreDefaultsBtn = new Button(I18nUtil.getString("settings.restoreDefaults"));
         restoreDefaultsBtn.setStyle("-fx-font-size: 12px; -fx-text-fill: #f44747;");
         restoreDefaultsBtn.setOnAction(e -> {
-            engineCombo.setValue("VINEFLOWER");
+            engineCombo.setValue("JADX");
             lineNumCheck.setSelected(true);
             wrapCheck.setSelected(true);
             fontSizeSpinner.getValueFactory().setValue(14);

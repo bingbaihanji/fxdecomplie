@@ -233,12 +233,12 @@ public final class RenameController {
         if (!isCurrentClassRenamePosition(context, sourceCode, offset, caretName, workspaceHash)) {
             return target;
         }
-        String owner = JavaSourceAnalyzer.normalizeInternalClassName(context.classInternalName());
+        String ownerInternal = JavaSourceAnalyzer.normalizeInternalClassName(context.classInternalName());
         String originalOwner = com.bingbaihanji.fxdecomplie.rename.RenameService
-                .originalInternalName(owner, workspaceHash);
+                .originalInternalName(ownerInternal, workspaceHash);
         String originalLeaf = JavaSourceAnalyzer.classLeafName(originalOwner);
         if (originalLeaf.isBlank()) {
-            originalLeaf = JavaSourceAnalyzer.classLeafName(owner);
+            originalLeaf = JavaSourceAnalyzer.classLeafName(ownerInternal);
         }
         return new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
                 new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
@@ -284,21 +284,15 @@ public final class RenameController {
         if (node == null || !node.isClassFile()) {
             return target;
         }
-        String owner = node.getFullPath();
-        if (owner.endsWith(".class")) {
-            owner = owner.substring(0, owner.length() - ".class".length());
+        String ownerPath = node.getFullPath();
+        if (ownerPath.endsWith(".class")) {
+            ownerPath = ownerPath.substring(0, ownerPath.length() - ".class".length());
         }
         return new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
                 new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
                         com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS,
-                        owner, caretName, caretName, ""),
+                        ownerPath, caretName, caretName, ""),
                 "class", caretName);
-    }
-
-    /** 重命名后刷新所有已打开的代码标签页 */
-    private int refreshOpenTabsAfterRename(Workspace workspace, String workspaceHash,
-                                           com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry) {
-        return refreshOpenTabsAfterRename(workspace, workspaceHash, visibleEntry, null);
     }
 
     /** 重命名后刷新所有已打开的代码标签页,可指定跳过某个标签页(触发源标签页已自行更新) */

@@ -300,7 +300,7 @@ public class AppConfig {
             language = "";
         }
         if (decompiler.defaultEngine == null) {
-            decompiler.defaultEngine = DecompilerTypeEnum.VINEFLOWER;
+            decompiler.defaultEngine = DecompilerTypeEnum.JADX;
         }
         if (decompiler.engineOptions == null) {
             decompiler.engineOptions = new LinkedHashMap<>();
@@ -460,7 +460,7 @@ public class AppConfig {
     public static class Decompiler {
         /** 默认反编译引擎 */
         private DecompilerTypeEnum defaultEngine =
-                DecompilerTypeEnum.VINEFLOWER;
+                DecompilerTypeEnum.JADX;
         /** 是否显示行号 */
         private boolean lineNumbersEnabled = true;
         /** 是否自动换行 */
