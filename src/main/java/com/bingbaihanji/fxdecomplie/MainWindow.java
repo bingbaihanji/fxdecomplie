@@ -96,6 +96,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private final RenameController renameController = new RenameController(this);
     /** 搜索与用法查找控制器（搜索对话框/Find Usages/包搜索/全文缓存/索引等待） */
     private final SearchController searchController = new SearchController(this);
+    /** 引擎切换与图形展示控制器（引擎切换/标签页刷新/继承图/CFG/方法图/引擎对比） */
+    private final EngineController engineController = new EngineController(this);
 
     // --- 供控制器访问共享状态的包级私有访问器（Mediator 模式）---
     AppConfig config() { return config; }
@@ -114,11 +116,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     DecompilerTypeEnum currentEngine() { return currentEngine; }
 
+    void setCurrentEngine(DecompilerTypeEnum engine) { this.currentEngine = engine; }
+
+    MainMenuBar menuBar() { return menuBar; }
+
     Stage stage() { return stage; }
 
     NavigationController navigationController() { return navigationController; }
 
     SearchController searchController() { return searchController; }
+
+    EngineController engineController() { return engineController; }
 
     /** 使用全局配置构造主窗口 */
     public MainWindow(AppConfig config) {
@@ -738,54 +746,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 切换反编译引擎并重新反编译当前文件 */
     @Override
     public void selectEngine(DecompilerTypeEnum engine) {
-        if (currentEngine == engine) {
-            return;
-        }
-        log.info("切换反编译引擎: {} -> {}", currentEngine, engine);
-        currentEngine = engine;
-        config.decompiler().defaultEngine(engine);
-        if (menuBar != null) {
-            menuBar.setSelectedEngine(engine);
-        }
-        tabManager.setCurrentEngineName(engine.name());
-        statusBar.setEngine(engine.name());
-        statusBar.setFilePath(I18nUtil.getString("status.currentEngine", engine.name()));
-
-        WorkspaceView view = tabManager.currentWorkspaceView();
-        CodeEditorTab currentTab = tabManager.currentCodeTab();
-        if (view != null && currentTab != null) {
-            TabPane targetPane = view.splitEditorPane().tabPaneFor(currentTab);
-            if (targetPane == null) {
-                targetPane = view.splitEditorPane().primaryTabPane();
-            }
-            classTabOpener.cancelCurrentTask();
-            classTabOpener.refreshCurrentClassTab(
-                    view.workspace(), targetPane, currentTab, engine, lineNumbersEnabled);
-        }
+        engineController.selectEngine(engine);
     }
 
     /** 用当前引擎重新反编译当前类 */
     @Override
     public void refreshCurrentTab() {
-        refreshCurrentTab(currentEngine);
-    }
-
-    /** 用指定引擎重新反编译当前类 */
-    private void refreshCurrentTab(DecompilerTypeEnum engine) {
-        WorkspaceView view = tabManager.currentWorkspaceView();
-        CodeEditorTab currentTab = tabManager.currentCodeTab();
-        if (view == null || currentTab == null) {
-            statusBar.setFilePath(I18nUtil.getString("toolbar.reload.disabled"));
-            return;
-        }
-        TabPane targetPane = view.splitEditorPane().tabPaneFor(currentTab);
-        if (targetPane == null) {
-            targetPane = view.splitEditorPane().primaryTabPane();
-        }
-        classTabOpener.cancelCurrentTask();
-        classTabOpener.refreshCurrentClassTab(
-                view.workspace(), targetPane, currentTab, engine, lineNumbersEnabled);
-        statusBar.setFilePath(I18nUtil.getString("status.reloading", currentTab.getOpenFile().fullPath()));
+        engineController.refreshCurrentTab();
     }
 
     /** 在文件树中定位当前打开的类文件 */
@@ -820,165 +787,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     @Override
     public void showInheritanceGraph(CodeViewContext context) {
-        if (context == null) {
-            return;
-        }
-        String fullPath = context.classInternalName();
-        if (fullPath == null || fullPath.isBlank()) {
-            showGraphFailed(fullPath, null);
-            return;
-        }
-        Workspace workspace = context.workspace();
-        WorkspaceIndex index = workspace != null && workspace.isIndexReady()
-                ? workspace.getIndex()
-                : context.workspaceIndex();
-        statusBar.setTask(I18nUtil.getString("task.loading"));
-        statusBar.setFilePath(I18nUtil.getString("graph.building", fullPath));
-        log.info("请求查看继承图: {}", fullPath);
-        GraphDialog dialog = new GraphDialog(stage,
-                I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath);
-        dialog.show();
-        BackgroundTasks.run("InheritanceGraph-" + fullPath, () -> {
-            try {
-                byte[] classBytes = classBytesForContext(context);
-                if (classBytes == null || classBytes.length == 0) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                WorkspaceIndex graphIndex = workspace != null
-                        ? searchController.awaitWorkspaceIndex(workspace)
-                        : index;
-                if (graphIndex == WorkspaceIndex.EMPTY && index != null) {
-                    graphIndex = index;
-                }
-                var tree = InheritanceService.buildTree(fullPath, graphIndex, classBytes);
-                if (tree == null) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                String dot = GraphService.toInheritanceDOT(tree);
-                Platform.runLater(() -> {
-                    statusBar.clearTask();
-                    dialog.showDot(dot);
-                });
-            } catch (Exception e) {
-                log.error("查看继承图失败: {}", fullPath, e);
-                Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
-            }
-        });
+        engineController.showInheritanceGraph(context);
     }
 
     @Override
     public void showControlFlowGraph(CodeViewContext context) {
-        if (context == null || context.openFile() == null) {
-            return;
-        }
-        String source = context.openFile().sourceCode();
-        // 获取当前光标行,确定所在方法
-        WorkspaceView view = workspaceViewFor(context.workspace());
-        if (view == null) {
-            return;
-        }
-        int line = 1;
-        CodeEditorTab codeTab = view.splitEditorPane().currentCodeTab();
-        if (codeTab != null && codeTab.getCodeArea() != null) {
-            var caret = codeTab.getCodeArea().getCaretPosition();
-            if (caret != null) {
-                line = caret.index() + 1;
-            }
-        }
-        String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper
-                .findMethodAtLine(source, line);
-        if (methodName == null || methodName.isBlank()) {
-            return;
-        }
-        statusBar.setTask(I18nUtil.getString("task.loading"));
-        statusBar.setFilePath("CFG - " + methodName);
-        GraphDialog dialog = new GraphDialog(stage, "CFG - " + methodName);
-        dialog.show();
-        BackgroundTasks.run("CFG-" + methodName, () -> {
-            try {
-                byte[] classBytes = classBytesForContext(context);
-                if (classBytes == null) {
-                    Platform.runLater(() -> showGraphFailed(dialog, null, null));
-                    return;
-                }
-                String dot = com.bingbaihanji.fxdecomplie.ui.graph.CfgAnalyzer
-                        .buildCfgDot(classBytes, methodName, null);
-                Platform.runLater(() -> dialog.showDot(dot));
-                Platform.runLater(statusBar::clearTask);
-            } catch (Exception e) {
-                log.error("CFG生成失败", e);
-                Platform.runLater(() -> {
-                    showGraphFailed(dialog, null, e);
-                    statusBar.clearTask();
-                });
-            }
-        });
+        engineController.showControlFlowGraph(context);
     }
 
     @Override
     public void showMethodGraph(CodeViewContext context) {
-        if (context == null) {
-            return;
-        }
-        String fullPath = context.classInternalName();
-        if (fullPath == null || fullPath.isBlank()) {
-            showGraphFailed(fullPath, null);
-            return;
-        }
-        statusBar.setTask(I18nUtil.getString("task.loading"));
-        statusBar.setFilePath(I18nUtil.getString("graph.building", fullPath));
-        log.info("请求查看方法图: {}", fullPath);
-        GraphDialog dialog = new GraphDialog(stage,
-                I18nUtil.getString("context.methodGraph") + " - " + fullPath);
-        dialog.show();
-        BackgroundTasks.run("MethodGraph-" + fullPath, () -> {
-            try {
-                byte[] classBytes = classBytesForContext(context);
-                if (classBytes == null || classBytes.length == 0) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                var graph = GraphService.parseMethodCalls(classBytes);
-                if (graph.methods().isEmpty()) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                String dot = GraphService.toMethodDOT(graph);
-                Platform.runLater(() -> {
-                    statusBar.clearTask();
-                    dialog.showDot(dot);
-                });
-            } catch (Exception e) {
-                log.error("查看方法图失败: {}", fullPath, e);
-                Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
-            }
-        });
-    }
-
-    private void showGraphFailed(String fullPath, Throwable error) {
-        showGraphFailed(null, fullPath, error);
-    }
-
-    private void showGraphFailed(GraphDialog dialog, String fullPath, Throwable error) {
-        statusBar.clearTask();
-        statusBar.setFilePath(I18nUtil.getString("graph.renderFailed"));
-        String message = I18nUtil.getString("graph.renderFailed")
-                + (fullPath == null || fullPath.isBlank() ? "" : ": " + fullPath);
-        if (error != null) {
-            message += System.lineSeparator() + error.getMessage();
-        }
-        if (dialog != null) {
-            dialog.showMessage(message);
-            return;
-        }
-        if (error == null) {
-            showWarning(I18nUtil.getString("dialog.warning.title"), message);
-        } else {
-            showError(I18nUtil.getString("dialog.error.title"),
-                    message);
-        }
+        engineController.showMethodGraph(context);
     }
 
     @Override
@@ -1116,7 +935,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     /** 获取上下文中类的字节码(优先从上下文、节点缓存、工作区中获取) */
-    private byte[] classBytesForContext(CodeViewContext context) throws IOException {
+    byte[] classBytesForContext(CodeViewContext context) throws IOException {
         if (context == null) {
             return null;
         }
@@ -1190,41 +1009,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 用全部引擎反编译当前类并排打开标签页,方便对比输出 */
     @Override
     public void compareEngines() {
-        WorkspaceView view = tabManager.currentWorkspaceView();
-        CodeEditorTab currentTab = tabManager.currentCodeTab();
-        if (view == null || currentTab == null) {
-            showWarning(I18nUtil.getString("menu.engine.compareAll"),
-                    I18nUtil.getString("dialog.needOpenFile"));
-            return;
-        }
-
-        String fullPath = currentTab.getOpenFile().fullPath();
-        FileTreeNode node = view.workspace().findNodeByPath(fullPath);
-        if (node == null) {
-            statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
-            return;
-        }
-
-        statusBar.setFilePath(I18nUtil.getString("status.compareAllEngines", node.getFullPath()));
-        DecompilerTypeEnum[] engines = DecompilerTypeEnum.values();
-        // 第一个引擎在主 panel 打开；其余引擎通过 splitRight 分布到不同分屏
-        for (int i = 0; i < engines.length; i++) {
-            final TabPane targetPane;
-            if (i == 0) {
-                targetPane = view.splitEditorPane().primaryTabPane();
-            } else {
-                TabPane newCell = view.splitEditorPane().splitRight(null);
-                if (newCell != null) {
-                    targetPane = newCell;
-                } else {
-                    // 已达最大分屏数,剩余引擎放入最右侧 cell
-                    var panes = view.splitEditorPane().allTabPanes();
-                    targetPane = panes.get(panes.size() - 1);
-                }
-            }
-            classTabOpener.openClassTab(node, view.workspace(), targetPane,
-                    engines[i], lineNumbersEnabled, i == 0, i == 0);
-        }
+        engineController.compareEngines();
     }
 
     @Override
@@ -1372,9 +1157,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 );
             }
 
-            DecompilerTypeEnum activeTabEngine = activeCodeTabEngine();
+            DecompilerTypeEnum activeTabEngine = engineController.activeCodeTabEngine();
             if (!engineSwitched && tabManager != null && tabManager.currentCodeTab() != null) {
-                refreshCurrentTab(activeTabEngine);
+                engineController.refreshCurrentTab(activeTabEngine);
             }
         });
     }
@@ -1384,7 +1169,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
         boolean engineSwitched = false;
         if (configuredEngine != currentEngine) {
-            selectEngine(configuredEngine);
+            engineController.selectEngine(configuredEngine);
             engineSwitched = true;
         }
         lineNumbersEnabled = updated.decompiler().lineNumbersEnabled();
@@ -1398,15 +1183,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         );
 
         return engineSwitched;
-    }
-
-    /** 获取当前活动代码标签页实际使用的反编译引擎 */
-    private DecompilerTypeEnum activeCodeTabEngine() {
-        CodeEditorTab currentTab = tabManager == null ? null : tabManager.currentCodeTab();
-        if (currentTab == null || currentTab.getOpenFile() == null) {
-            return currentEngine;
-        }
-        return currentTab.getOpenFile().engine();
     }
 
     /** 将导出对话框中选择的选项写回全局配置,下次打开时记住 */
