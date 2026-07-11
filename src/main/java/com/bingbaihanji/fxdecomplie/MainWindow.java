@@ -102,6 +102,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private final SettingsController settingsController = new SettingsController(this);
     /** 导出控制器（批量导出/子树导出/导出配置持久化/导出结果对话框） */
     private final ExportController exportController = new ExportController(this);
+    /** 工作区控制器（打开文件/目录/项目、保存项目、关闭工作区、快速打开、最近文件、工作区加载） */
+    private final WorkspaceController workspaceController = new WorkspaceController(this);
 
     // --- 供控制器访问共享状态的包级私有访问器（Mediator 模式）---
     AppConfig config() { return config; }
@@ -133,6 +135,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     SearchController searchController() { return searchController; }
 
     EngineController engineController() { return engineController; }
+
+    ExportController exportController() { return exportController; }
+
+    TabPane outerTabPane() { return outerTabPane; }
 
     VsCodeThemeLoader.ThemeData editorTheme() { return editorTheme; }
 
@@ -250,15 +256,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         return JavaSourceAnalyzer.packageName(internalName);
     }
 
-    /** 将项目文件中保存的引擎名字符串还原为枚举值,非法值回退到默认引擎 */
-    private static DecompilerTypeEnum parseEngine(String value, DecompilerTypeEnum fallback) {
-        try {
-            return DecompilerTypeEnum.valueOf(value);
-        } catch (IllegalArgumentException | NullPointerException e) {
-            return fallback == null ? DecompilerTypeEnum.VINEFLOWER : fallback;
-        }
-    }
-
     /** 判断文件是否为可加载类型(JAR/ZIP/WAR/Class 及目录) */
     private static boolean isSupportedLoadFile(File file) {
         if (file.isDirectory()) {
@@ -351,7 +348,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 }
                 if (allSupported) {
                     for (java.io.File f : files) {
-                        loadFile(f);
+                        workspaceController.loadFile(f);
                     }
                 }
             }
@@ -373,125 +370,44 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     /** 根据当前工作区和代码标签页状态刷新工具栏按钮的启用/禁用状态 */
-    private void refreshToolbarState() {
+    void refreshToolbarState() {
         editorActions.refreshToolbarState();
     }
 
     /** 打开 JAR/ZIP/Class 文件 */
     @Override
     public void openFile() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle(I18nUtil.getString("dialog.openFile.title"));
-        chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Java Archives & Class Files", "*.jar", "*.zip", "*.class"),
-                new FileChooser.ExtensionFilter("All Files", "*.*")
-        );
-        File file = chooser.showOpenDialog(stage);
-        if (file != null) {
-            loadFile(file);
-        }
+        workspaceController.openFile();
     }
 
     /** 打开目录 */
     @Override
     public void openDirectory() {
-        DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle(I18nUtil.getString("dialog.openDir.title"));
-        File dir = chooser.showDialog(stage);
-        if (dir != null) {
-            loadFile(dir);
-        }
+        workspaceController.openDirectory();
     }
 
     /** 打开项目文件 */
     @Override
     public void openProject() {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle(I18nUtil.getString("project.open"));
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("FxDecompiler Project", "*.fxdproj"));
-        File file = chooser.showOpenDialog(stage);
-        if (file == null) {
-            return;
-        }
-        try {
-            DecompilerProject project = ProjectFileManager.load(file.toPath());
-            currentEngine = parseEngine(project.engine(), currentEngine);
-            config.decompiler().defaultEngine(currentEngine);
-            if (!project.exportPath().isBlank()) {
-                config.export().lastPath(project.exportPath());
-            }
-            for (String inputPath : project.inputPaths()) {
-                File input = new File(inputPath);
-                if (input.exists()) {
-                    loadFile(input);
-                }
-            }
-            statusBar.setFilePath(I18nUtil.getString("project.opened", file.getAbsolutePath()));
-        } catch (IOException ex) {
-            showError(I18nUtil.getString("dialog.error.title"),
-                    I18nUtil.getString("project.open.failed", ex.getMessage()));
-        }
+        workspaceController.openProject();
     }
 
     /** 保存当前项目文件 */
     @Override
     public void saveProject() {
-        List<String> inputPaths = new ArrayList<>();
-        String selectedPath = "";
-        Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
-        for (Tab tab : outerTabPane.getTabs()) {
-            WorkspaceView view = tabManager.getWorkspaceViews().get(tab);
-            if (view == null) {
-                continue;
-            }
-            String path = view.workspace().getSourceFile().getAbsolutePath();
-            inputPaths.add(path);
-            if (tab == selected) {
-                selectedPath = path;
-            }
-        }
-        if (inputPaths.isEmpty()) {
-            showWarning(I18nUtil.getString("project.save"), I18nUtil.getString("dialog.export.noworkspace"));
-            return;
-        }
-
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle(I18nUtil.getString("project.save"));
-        chooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("FxDecompiler Project", "*.fxdproj"));
-        chooser.setInitialFileName("workspace.fxdproj");
-        File file = chooser.showSaveDialog(stage);
-        if (file == null) {
-            return;
-        }
-        try {
-            ProjectFileManager.save(file.toPath(), new DecompilerProject(
-                    1, currentEngine.name(), inputPaths, selectedPath, config.export().lastPath()));
-            statusBar.setFilePath(I18nUtil.getString("project.saved", file.getAbsolutePath()));
-        } catch (IOException ex) {
-            showError(I18nUtil.getString("dialog.error.title"),
-                    I18nUtil.getString("project.save.failed", ex.getMessage()));
-        }
+        workspaceController.saveProject();
     }
 
     /** 关闭当前选中的工作区标签页(含解编译结果和文件树) */
     @Override
     public void closeCurrentWorkspace() {
-        Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
-        if (selected != null && tabManager.getWorkspaceViews().containsKey(selected)) {
-            tabManager.closeWorkspaceTab(selected);
-        }
+        workspaceController.closeCurrentWorkspace();
     }
 
     /** 关闭除当前选中之外的所有工作区标签页 */
     @Override
     public void closeOtherWorkspaces() {
-        Tab selected = outerTabPane.getSelectionModel().getSelectedItem();
-        if (selected == null || !tabManager.getWorkspaceViews().containsKey(selected)) {
-            return;
-        }
-        tabManager.closeOtherWorkspaces(selected);
+        workspaceController.closeOtherWorkspaces();
     }
 
     // ─── CodeActionHandler 实现 ─────────────────────────────────
@@ -499,32 +415,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 保存当前代码标签页为 .java 文件 */
     @Override
     public void saveCurrentFile() {
-        CodeEditorTab codeTab = tabManager.currentCodeTab();
-        if (codeTab == null) {
-            showWarning(I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.nofile"));
-            return;
-        }
-        if (!codeTab.isSourceReady()) {
-            showWarning(I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.pending"));
-            return;
-        }
-
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle(I18nUtil.getString("dialog.saveFile.title"));
-        chooser.setInitialFileName(codeTab.getOpenFile().className() + ".java");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Java Source", "*.java"));
-        File file = chooser.showSaveDialog(stage);
-        if (file == null) {
-            return;
-        }
-
-        try {
-            ExportService.exportCurrentCode(decoratedCurrentSource(codeTab), file.toPath());
-            statusBar.setFilePath(I18nUtil.getString("status.saved", file.getAbsolutePath()));
-        } catch (IOException ex) {
-            showError(I18nUtil.getString("dialog.error.title"),
-                    I18nUtil.getString("dialog.save.failed", ex.getMessage()));
-        }
+        workspaceController.saveCurrentFile();
     }
 
     /** 批量导出所有类为 .java 文件 */
@@ -634,16 +525,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 在文件树中定位当前打开的类文件 */
     @Override
     public void locateCurrentFileInTree() {
-        CodeEditorTab currentTab = tabManager.currentCodeTab();
-        if (currentTab == null) {
-            statusBar.setFilePath(I18nUtil.getString("toolbar.reload.disabled"));
-            return;
-        }
-        String fullPath = currentTab.getOpenFile().fullPath();
-        boolean found = tabManager.selectTreeNodeByPath(fullPath);
-        if (!found) {
-            statusBar.setFilePath(I18nUtil.getString("toolbar.localizer.failed"));
-        }
+        workspaceController.locateCurrentFileInTree();
     }
 
     @Override
@@ -849,7 +731,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     /** 获取当前标签页源码并应用注释装饰(用于导出时附加用户注释) */
-    private String decoratedCurrentSource(CodeEditorTab codeTab) {
+    String decoratedCurrentSource(CodeEditorTab codeTab) {
         if (codeTab == null || codeTab.getOpenFile() == null) {
             return "";
         }
@@ -923,64 +805,35 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 快速打开类 */
     @Override
     public void quickOpenClass() {
-        var view = tabManager.currentWorkspaceView();
-        if (view == null) {
-            showWarning(I18nUtil.getString("menu.edit.quickOpen"),
-                    I18nUtil.getString("dialog.needOpenFile"));
-            return;
-        }
-        java.util.List<String> classNames = new java.util.ArrayList<>();
-        collectClassNames(view.workspace().getTreeRoot(), classNames);
-        QuickOpenDialog.show(stage, classNames, fullPath -> {
-            FileTreeNode node = view.workspace().findNodeByPath(fullPath);
-            if (node != null) {
-                classTabOpener.openClassTab(node, view.workspace(), view.codeTabPane(),
-                        currentEngine, lineNumbersEnabled);
-            } else {
-                statusBar.setFilePath(I18nUtil.getString("status.locateFailed", fullPath));
-            }
-        });
+        workspaceController.quickOpenClass();
     }
 
     /** 打开最近文件 */
     @Override
     public void openRecentFile(String path) {
-        loadFile(new java.io.File(path));
+        workspaceController.openRecentFile(path);
     }
 
     /** 启动参数或外部入口打开文件/目录 */
     public void openInitialFile(File file) {
-        if (file != null && file.exists()) {
-            loadFile(file);
-        }
+        workspaceController.openInitialFile(file);
     }
 
     /** 获取最近文件列表 */
     @Override
     public java.util.List<String> getRecentFiles() {
-        return config.recentFiles();
+        return workspaceController.getRecentFiles();
     }
 
     @Override
     public void clearRecentFiles() {
-        config.clearRecentFiles();
+        workspaceController.clearRecentFiles();
     }
 
     /** 打开新窗口 */
     @Override
     public void openNewWindow() {
-        CodeEditorTab currentTab = tabManager.currentCodeTab();
-        if (currentTab == null) {
-            showWarning(I18nUtil.getString("dialog.warning.title"),
-                    I18nUtil.getString("dialog.needOpenFile"));
-            return;
-        }
-        if (!currentTab.isSourceReady()) {
-            showWarning(I18nUtil.getString("dialog.warning.title"),
-                    I18nUtil.getString("dialog.save.pending"));
-            return;
-        }
-        CodeOnlyWindow.openFrom(currentTab, config, stage);
+        workspaceController.openNewWindow();
     }
 
     /** 显示关于对话框 */
@@ -1030,55 +883,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         for (FileTreeModel child : item.getChildren()) {
             collectTreeNodes(child, result);
         }
-    }
-
-    /** 递归收集文件树中所有 .class 节点的完整路径(用于快速打开对话框) */
-    private void collectClassNames(FileTreeModel item, java.util.List<String> result) {
-        FileTreeNode data = item.getValue();
-        if (data != null && data.isClassFile()) {
-            result.add(data.getFullPath());
-        }
-        for (FileTreeModel child : item.getChildren()) {
-            collectClassNames(child, result);
-        }
-    }
-
-    /** 异步加载并打开文件(JAR/ZIP/Class/目录),在工作区标签页中展示文件树和反编译内容 */
-    private void loadFile(File file) {
-        log.info("loadFile: {} (size={}, isDir={})", file.getAbsolutePath(),
-                file.length(), file.isDirectory());
-        statusBar.setFilePath(I18nUtil.getString("status.loading", file.getAbsolutePath()));
-        statusBar.setTask(I18nUtil.getString("task.loading"));
-
-        WorkspaceLoader.loadAsync(file, config,
-                workspace -> {
-                    statusBar.clearTask();
-                    tabManager.addWorkspaceTab(workspace,
-                            (node, codeTabPane) -> classTabOpener.openClassTab(
-                                    node, workspace, codeTabPane, currentEngine, lineNumbersEnabled),
-                            (node, codeTabPane) -> classTabOpener.openTextFileTab(
-                                    node, workspace, codeTabPane),
-                            exportController::exportTreeItem,
-                            node -> searchController.openFindUsagesForNode(workspace, node),
-                            searchController::openSearchForPackage,
-                            (node, codeTabPane) -> classTabOpener.openFileInHexView(
-                                    node, workspace, codeTabPane));
-                    refreshToolbarState();
-                },
-                errorMsg -> {
-                    statusBar.clearTask();
-                    showError(I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.load.error") + ": " + errorMsg);
-                });
-    }
-
-    private void showInfo(String title, String message) {
-        com.bingbaihanji.fxdecomplie.ui.DialogHelper.showInfo(stage, title, message);
-    }
-
-    /** 弹出警告对话框 */
-    private void showWarning(String title, String message) {
-        com.bingbaihanji.fxdecomplie.ui.DialogHelper.showWarning(stage, title, message);
     }
 
     /** 弹出错误对话框 */
