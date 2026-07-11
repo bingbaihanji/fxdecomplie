@@ -177,7 +177,7 @@ public class ClassNode extends NotificationAttrNode
 	}
 
 	private static void processSpecialClasses(ClassNode cls) {
-		if (cls.getName().equals("package-info") && cls.getFields().isEmpty() && cls.getMethods().isEmpty()) {
+		if ("package-info".equals(cls.getName()) && cls.getFields().isEmpty() && cls.getMethods().isEmpty()) {
 			cls.add(AFlag.PACKAGE_INFO);
 			cls.add(AFlag.DONT_RENAME);
 		}
@@ -269,7 +269,7 @@ public class ClassNode extends NotificationAttrNode
 		if (fileName.endsWith(".java")) {
 			fileName = fileName.substring(0, fileName.length() - 5);
 		}
-		if (fileName.isEmpty() || fileName.equals("SourceFile")) {
+		if (fileName.isEmpty() || "SourceFile".equals(fileName)) {
 			return false;
 		}
 		if (clsInfo != null) {
@@ -953,7 +953,8 @@ public class ClassNode extends NotificationAttrNode
 		return dependencies.size() + codegenDeps.size();
 	}
 
-	public List<ClassNode> getUseIn() {
+	@Override
+    public List<ClassNode> getUseIn() {
 		return useIn;
 	}
 

@@ -64,7 +64,7 @@ public class AndroidResourcesUtils {
 
 	public static boolean handleAppResField(ICodeWriter code, ClassGen clsGen, ClassInfo declClass) {
 		ClassInfo parentClass = declClass.getParentClass();
-		if (parentClass != null && parentClass.getShortName().equals("R")) {
+		if (parentClass != null && "R".equals(parentClass.getShortName())) {
 			clsGen.useClass(code, parentClass);
 			code.add('.');
 			code.add(declClass.getAliasShortName());
@@ -82,7 +82,7 @@ public class AndroidResourcesUtils {
 
 	public static boolean isResourceClass(ClassNode cls) {
 		ClassNode parentClass = cls.getParentClass();
-		return parentClass != null && parentClass.getAlias().equals("R");
+		return parentClass != null && "R".equals(parentClass.getAlias());
 	}
 
 	private static final class ResClsInfo {

@@ -362,7 +362,7 @@ public class ProcessAnonymous extends AbstractVisitor {
 			return superCls;
 		}
 		if (cls.root().getArgs().isAllowInlineKotlinLambda()) {
-			if (superCls.getObject().equals("kotlin.jvm.internal.Lambda")) {
+			if ("kotlin.jvm.internal.Lambda".equals(superCls.getObject())) {
 				// Inline such class with have different semantic: missing 'arity' property.
 				// For now, it is unclear how it may affect code execution.
 				return interfaceType;

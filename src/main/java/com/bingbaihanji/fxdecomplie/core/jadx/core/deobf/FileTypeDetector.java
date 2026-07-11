@@ -48,7 +48,7 @@ public class FileTypeDetector {
 	private static String detectByHeaders(byte[] data) {
 		for (FileSignature sig : FILE_SIGNATURES) {
 			if (FileSignature.matches(sig, data)) {
-				if (sig.getFileType().equals("png") && isNinePatch(data)) {
+				if ("png".equals(sig.getFileType()) && isNinePatch(data)) {
 					return ".9.png";
 				}
 				return "." + sig.getFileType();

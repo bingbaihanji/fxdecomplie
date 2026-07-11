@@ -68,7 +68,7 @@ public class InvokeDecoder implements IJavaInsnDecoder {
 			}
 		}
 		String returnType = mthProto.getReturnType();
-		if (!returnType.equals("V")) {
+		if (!"V".equals(returnType)) {
 			insn.setResultReg(state.push(returnType));
 		} else {
 			insn.setResultReg(-1);

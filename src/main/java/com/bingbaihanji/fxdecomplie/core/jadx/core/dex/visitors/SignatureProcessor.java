@@ -311,7 +311,7 @@ public class SignatureProcessor extends AbstractVisitor {
 		if (!innerObj.contains(".")) {
 			// short reference
 			for (ClassNode innerClass : outerCls.getInnerClasses()) {
-				if (innerClass.getShortName().equals(innerObj)) {
+				if (innerClass.getAlias().equals(innerObj)) {
 					return true;
 				}
 			}

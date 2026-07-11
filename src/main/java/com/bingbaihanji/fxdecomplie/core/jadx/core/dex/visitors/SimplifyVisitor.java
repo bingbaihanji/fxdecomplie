@@ -543,7 +543,7 @@ public class SimplifyVisitor extends AbstractVisitor {
 		if (chainInsn.getType() == InsnType.INVOKE && chainInsn.getArgsCount() == 2) {
 			MethodInfo callMth = ((InvokeNode) chainInsn).getCallMth();
 			if (callMth.getDeclClass().getFullName().equals(Consts.CLASS_STRING_BUILDER)
-					&& callMth.getName().equals("append")) {
+					&& "append".equals(callMth.getName())) {
 				return chainInsn.getArg(1);
 			}
 		}

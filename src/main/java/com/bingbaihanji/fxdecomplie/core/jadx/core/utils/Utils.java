@@ -657,7 +657,7 @@ public class Utils {
 		if (strValue == null) {
 			return defValue;
 		}
-		return strValue.equalsIgnoreCase("true");
+		return "true".equalsIgnoreCase(strValue);
 	}
 
 	/**

@@ -107,7 +107,7 @@ public class FixSwitchOverEnum extends AbstractVisitor {
 
 	private static boolean processDirectEnumSwitch(MethodNode mth, SwitchInsn swInsn, InvokeNode invInsn, InsnArg arg) {
 		MethodInfo callMth = invInsn.getCallMth();
-		if (!callMth.getShortId().equals("ordinal()I")) {
+		if (!"ordinal()I".equals(callMth.getShortId())) {
 			return false;
 		}
 		InsnArg invVar = invInsn.getArg(0);
@@ -245,7 +245,7 @@ public class FixSwitchOverEnum extends AbstractVisitor {
 			return null;
 		}
 		InvokeNode inv = (InvokeNode) invInsn;
-		if (!inv.getCallMth().getShortId().equals("ordinal()I")) {
+		if (!"ordinal()I".equals(inv.getCallMth().getShortId())) {
 			return null;
 		}
 		ClassNode enumCls = root.resolveClass(inv.getCallMth().getDeclClass());

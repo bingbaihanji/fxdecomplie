@@ -301,7 +301,7 @@ public class BlockProcessor extends AbstractVisitor {
 			// Every successor that dominates its predecessor is a header of a loop,
 			// block -> successor is a back edge.
 			block.getSuccessors().forEach(successor -> {
-				if (block.getDoms().get(successor.getId()) || block == successor) {
+				if (block.getDoms().get(successor.getPos()) || block == successor) {
 					successor.add(AFlag.LOOP_START);
 					block.add(AFlag.LOOP_END);
 

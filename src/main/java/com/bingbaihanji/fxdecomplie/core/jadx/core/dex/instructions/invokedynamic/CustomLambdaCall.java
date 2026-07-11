@@ -44,11 +44,11 @@ public class CustomLambdaCall {
 			return false;
 		}
 		IMethodRef methodRef = methodHandle.getMethodRef();
-		if (!methodRef.getParentClassType().equals("Ljava/lang/invoke/LambdaMetafactory;")) {
+		if (!"Ljava/lang/invoke/LambdaMetafactory;".equals(methodRef.getParentClassType())) {
 			return false;
 		}
 		String mthName = methodRef.getName();
-		return mthName.equals("metafactory") || mthName.equals("altMetafactory");
+		return "metafactory".equals(mthName) || "altMetafactory".equals(mthName);
 	}
 
 	public static InvokeCustomNode buildLambdaMethodCall(MethodNode mth, InsnData insn, boolean isRange, List<EncodedValue> values) {

@@ -250,7 +250,7 @@ public final class JavaClass implements JavaNode {
 
 	@Override
 	public String getName() {
-		return cls.getShortName();
+		return cls.getAlias();
 	}
 
 	@Override

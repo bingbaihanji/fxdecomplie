@@ -96,7 +96,7 @@ public class DeobfAliasProvider implements IAliasProvider {
 			}
 			for (ArgType interfaceType : cls.getInterfaces()) {
 				String name = interfaceType.getObject();
-				if (name.equals("java.lang.Runnable")) {
+				if ("java.lang.Runnable".equals(name)) {
 					return "Runnable";
 				}
 				if (name.startsWith("java.util.concurrent.") // e.g. Callable

@@ -20,7 +20,7 @@ public class ExcludeAndroidRClass extends AbstractDeobfCondition {
 		if (cls.contains(AFlag.ANDROID_R_CLASS)) {
 			return true;
 		}
-		if (!cls.getClassInfo().getShortName().equals("R")) {
+		if (!"R".equals(cls.getClassInfo().getShortName())) {
 			return false;
 		}
 		if (!cls.getMethods().isEmpty() || !cls.getFields().isEmpty()) {

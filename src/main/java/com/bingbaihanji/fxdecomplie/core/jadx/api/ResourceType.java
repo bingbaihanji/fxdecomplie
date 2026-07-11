@@ -68,7 +68,7 @@ public enum ResourceType {
 			String ext = fileName.substring(dot).toLowerCase(Locale.ROOT);
 			ResourceType resType = EXT_MAP.get(ext);
 			if (resType != null) {
-				if (resType == XML && fileName.equals("AndroidManifest.xml")) {
+				if (resType == XML && "AndroidManifest.xml".equals(fileName)) {
 					return MANIFEST;
 				}
 				return resType;

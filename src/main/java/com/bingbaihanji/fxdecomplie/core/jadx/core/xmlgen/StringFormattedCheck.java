@@ -85,8 +85,9 @@ public class StringFormattedCheck {
 				continue;
 			}
 			if (c >= '0' && c <= '9' && pos2 < length) {
-				while ((c = str.charAt(pos2++)) >= '0' && c <= '9' && pos2 < length)
-					;
+				while ((c = str.charAt(pos2++)) >= '0' && c <= '9' && pos2 < length) {
+                    ;
+                }
 				if (c == '$') {
 					positional.add(pos);
 					continue;

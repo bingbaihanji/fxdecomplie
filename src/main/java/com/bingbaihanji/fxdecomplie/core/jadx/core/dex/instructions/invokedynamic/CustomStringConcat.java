@@ -33,10 +33,10 @@ public class CustomStringConcat {
 			return false;
 		}
 		IMethodRef methodRef = methodHandle.getMethodRef();
-		if (!methodRef.getName().equals("makeConcatWithConstants")) {
+		if (!"makeConcatWithConstants".equals(methodRef.getName())) {
 			return false;
 		}
-		if (!methodRef.getParentClassType().equals("Ljava/lang/invoke/StringConcatFactory;")) {
+		if (!"Ljava/lang/invoke/StringConcatFactory;".equals(methodRef.getParentClassType())) {
 			return false;
 		}
 		if (!Objects.equals(values.get(1).getValue(), "makeConcatWithConstants")) {

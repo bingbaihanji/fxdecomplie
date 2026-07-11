@@ -62,7 +62,8 @@ public final class InsnList implements Iterable<InsnNode> {
 		remove(list, insn);
 	}
 
-	public Iterator<InsnNode> iterator() {
+	@Override
+    public Iterator<InsnNode> iterator() {
 		return list.iterator();
 	}
 

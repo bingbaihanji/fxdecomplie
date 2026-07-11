@@ -67,7 +67,8 @@ public final class TernaryInsn extends InsnNode {
 		return condition.replaceArg(from, to);
 	}
 
-	public void visitInsns(Consumer<InsnNode> visitor) {
+	@Override
+    public void visitInsns(Consumer<InsnNode> visitor) {
 		super.visitInsns(visitor);
 		condition.visitInsns(visitor);
 	}

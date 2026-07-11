@@ -138,7 +138,7 @@ public class MethodGen {
 		}
 		if (ai.isConstructor()) {
 			code.attachDefinition(mth);
-			code.add(classGen.getClassNode().getShortName()); // constructor
+			code.add(classGen.getClassNode().getAlias()); // constructor
 		} else {
 			classGen.useType(code, mth.getReturnType());
 			code.add(' ');

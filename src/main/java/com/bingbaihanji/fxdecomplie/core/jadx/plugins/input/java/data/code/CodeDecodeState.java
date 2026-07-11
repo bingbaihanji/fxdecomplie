@@ -187,7 +187,7 @@ public class CodeDecodeState {
 	}
 
 	public StackValueType getSVType(String type) {
-		if (type.equals("J") || type.equals("D")) {
+		if ("J".equals(type) || "D".equals(type)) {
 			return StackValueType.WIDE;
 		}
 		return StackValueType.NARROW;

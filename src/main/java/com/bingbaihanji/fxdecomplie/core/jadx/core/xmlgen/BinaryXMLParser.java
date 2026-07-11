@@ -326,10 +326,10 @@ public class BinaryXMLParser extends CommonBinaryParser {
 			decodeAttribute(attributeNS, attrValDataType, attrValData,
 					attrFullName);
 		}
-		if (shortNsName != null && shortNsName.equals("android")) {
-			if (attrName.equals("pathData")) {
+		if (shortNsName != null && "android".equals(shortNsName)) {
+			if ("pathData".equals(attrName)) {
 				rootNode.getGradleInfoStorage().setVectorPathData(true);
-			} else if (attrName.equals("fillType")) {
+			} else if ("fillType".equals(attrName)) {
 				rootNode.getGradleInfoStorage().setVectorFillType(true);
 			}
 		}
@@ -503,7 +503,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
 		if (!writer.isMetadataSupported()) {
 			return;
 		}
-		if (clsName == null || !attrFullName.equals("android:name")) {
+		if (clsName == null || !"android:name".equals(attrFullName)) {
 			return;
 		}
 		String clsFullName;

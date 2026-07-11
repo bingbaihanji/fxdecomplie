@@ -63,7 +63,7 @@ public class ExportGradle {
 	public static ExportGradleType detectExportType(RootNode root, List<ResourceFile> resources) {
 		ResourceFile androidManifest = AndroidManifestParser.getAndroidManifest(resources);
 		if (androidManifest != null) {
-			if (resources.stream().anyMatch(r -> r.getOriginalName().equals("classes.jar"))) {
+			if (resources.stream().anyMatch(r -> "classes.jar".equals(r.getOriginalName()))) {
 				return ExportGradleType.ANDROID_LIBRARY;
 			}
 			if (resources.stream().anyMatch(r -> r.getType() == ResourceType.ARSC)) {

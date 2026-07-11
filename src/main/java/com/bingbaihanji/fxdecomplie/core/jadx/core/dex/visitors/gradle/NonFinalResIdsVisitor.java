@@ -36,7 +36,8 @@ public class NonFinalResIdsVisitor extends AbstractVisitor implements IRegionIte
 
 	private GradleInfoStorage gradleInfoStorage;
 
-	public void init(RootNode root) throws JadxException {
+	@Override
+    public void init(RootNode root) throws JadxException {
 		gradleInfoStorage = root.getGradleInfoStorage();
 	}
 
@@ -54,7 +55,7 @@ public class NonFinalResIdsVisitor extends AbstractVisitor implements IRegionIte
 
 	private static boolean isCustomResourceClass(ClassInfo cls) {
 		ClassInfo parentClass = cls.getParentClass();
-		return parentClass != null && parentClass.getShortName().equals("R") && !parentClass.getFullName().equals("android.R");
+		return parentClass != null && "R".equals(parentClass.getShortName()) && !"android.R".equals(parentClass.getFullName());
 	}
 
 	@Override

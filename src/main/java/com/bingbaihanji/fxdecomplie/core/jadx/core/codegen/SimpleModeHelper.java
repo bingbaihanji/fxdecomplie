@@ -50,14 +50,14 @@ public class SimpleModeHelper {
 			List<BlockNode> preds = block.getPredecessors();
 			int predsCount = preds.size();
 			if (predsCount > 1) {
-				startLabel.set(block.getId());
+				startLabel.set(block.getPos());
 			} else if (predsCount == 1 && prev != null) {
 				if (!prev.equals(preds.get(0))) {
 					if (!block.contains(AFlag.EXC_BOTTOM_SPLITTER)) {
-						startLabel.set(block.getId());
+						startLabel.set(block.getPos());
 					}
 					if (prev.getSuccessors().size() == 1 && !mth.isPreExitBlock(prev)) {
-						endGoto.set(prev.getId());
+						endGoto.set(prev.getPos());
 					}
 				}
 			}
@@ -66,10 +66,10 @@ public class SimpleModeHelper {
 				processTargetInsn(block, lastInsn, nextBlock);
 			}
 			if (block.contains(AType.EXC_HANDLER)) {
-				startLabel.set(block.getId());
+				startLabel.set(block.getPos());
 			}
 			if (nextBlock == null && !mth.isPreExitBlock(block)) {
-				endGoto.set(block.getId());
+				endGoto.set(block.getPos());
 			}
 			prev = block;
 		}
@@ -122,24 +122,24 @@ public class SimpleModeHelper {
 			BlockNode thenBlock = ifInsn.getThenBlock();
 			if (Objects.equals(next, thenBlock)) {
 				ifInsn.invertCondition();
-				startLabel.set(ifInsn.getThenBlock().getId());
+				startLabel.set(ifInsn.getThenBlock().getPos());
 			} else {
-				startLabel.set(thenBlock.getId());
+				startLabel.set(thenBlock.getPos());
 			}
 			ifInsn.normalize();
 		} else {
 			for (BlockNode successor : block.getSuccessors()) {
-				startLabel.set(successor.getId());
+				startLabel.set(successor.getPos());
 			}
 		}
 	}
 
 	public boolean isNeedStartLabel(BlockNode block) {
-		return startLabel.get(block.getId());
+		return startLabel.get(block.getPos());
 	}
 
 	public boolean isNeedEndGoto(BlockNode block) {
-		return endGoto.get(block.getId());
+		return endGoto.get(block.getPos());
 	}
 
 	// DFS sort blocks to reduce goto count

@@ -99,7 +99,8 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
 		return parentClass.getTopParentClass();
 	}
 
-	public List<MethodNode> getUseIn() {
+	@Override
+    public List<MethodNode> getUseIn() {
 		return useIn;
 	}
 

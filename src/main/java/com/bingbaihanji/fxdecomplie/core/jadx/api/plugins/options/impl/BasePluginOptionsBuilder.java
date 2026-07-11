@@ -113,10 +113,10 @@ public abstract class BasePluginOptionsBuilder implements JadxPluginOptions {
 
 	private static boolean parseBoolOption(String name, String val) {
 		String valLower = val.trim().toLowerCase(Locale.ROOT);
-		if (valLower.equals("yes") || valLower.equals("true")) {
+		if ("yes".equals(valLower) || "true".equals(valLower)) {
 			return true;
 		}
-		if (valLower.equals("no") || valLower.equals("false")) {
+		if ("no".equals(valLower) || "false".equals(valLower)) {
 			return false;
 		}
 		throw new IllegalArgumentException("Unknown value '" + val + "' for option '" + name + "', expect: 'yes' or 'no'");

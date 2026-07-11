@@ -92,7 +92,7 @@ public class AnnotationGen {
 			for (Iterator<Entry<String, EncodedValue>> it = vl.entrySet().iterator(); it.hasNext();) {
 				Entry<String, EncodedValue> e = it.next();
 				String paramName = getParamName(annCls, e.getKey());
-				if (paramName.equals("value") && vl.size() == 1) {
+				if ("value".equals(paramName) && vl.size() == 1) {
 					// don't add "value = " if no other parameters
 				} else {
 					code.add(paramName);

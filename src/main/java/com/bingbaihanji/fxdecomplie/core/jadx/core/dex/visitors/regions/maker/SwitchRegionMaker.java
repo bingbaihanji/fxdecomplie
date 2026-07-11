@@ -155,8 +155,8 @@ public final class SwitchRegionMaker {
 			}
 			outs.or(s.getDomFrontier());
 		}
-		outs.clear(block.getId());
-		outs.clear(mth.getExitBlock().getId());
+		outs.clear(block.getPos());
+		outs.clear(mth.getExitBlock().getPos());
 
 		BlockNode out = null;
 		if (outs.cardinality() == 1) {
@@ -170,14 +170,14 @@ public final class SwitchRegionMaker {
 				outs.andNot(loop.getStart().getPostDoms());
 				outs.andNot(loop.getEnd().getPostDoms());
 				BlockNode loopEnd = loop.getEnd();
-				if (outs.cardinality() == 2 && outs.get(loopEnd.getId())) {
+				if (outs.cardinality() == 2 && outs.get(loopEnd.getPos())) {
 					// insert 'continue' for cases lead to loop end
 					// expect only 2 exits: loop end and switch out
 					List<BlockNode> outList = BlockUtils.bitSetToBlocks(mth, outs);
 					outList.remove(loopEnd);
 					BlockNode possibleOut = Utils.getOne(outList);
 					if (possibleOut != null && insertContinueInSwitch(block, possibleOut, loopEnd)) {
-						outs.clear(loopEnd.getId());
+						outs.clear(loopEnd.getPos());
 						out = possibleOut;
 					}
 				}
@@ -188,7 +188,7 @@ public final class SwitchRegionMaker {
 			}
 			if (out == null) {
 				BlockNode imPostDom = block.getIPostDom();
-				if (outs.get(imPostDom.getId())) {
+				if (outs.get(imPostDom.getPos())) {
 					out = imPostDom;
 				} else {
 					outs.andNot(block.getPostDoms());
@@ -208,7 +208,7 @@ public final class SwitchRegionMaker {
 		}
 		if (imPostDom == insn.getDefTargetBlock()
 				&& block.getCleanSuccessors().contains(imPostDom)
-				&& block.getDomFrontier().get(imPostDom.getId())) {
+				&& block.getDomFrontier().get(imPostDom.getPos())) {
 			// add exit to stop on empty 'default' block
 			stack.addExit(imPostDom);
 		}
@@ -368,7 +368,7 @@ public final class SwitchRegionMaker {
 	private boolean insertContinueInSwitch(BlockNode switchBlock, BlockNode switchOut, BlockNode loopEnd) {
 		boolean inserted = false;
 		for (BlockNode caseBlock : switchBlock.getCleanSuccessors()) {
-			if (caseBlock.getDomFrontier().get(loopEnd.getId()) && caseBlock != switchOut) {
+			if (caseBlock.getDomFrontier().get(loopEnd.getPos()) && caseBlock != switchOut) {
 				// search predecessor of loop end on path from this successor
 				Set<BlockNode> list = new HashSet<>(BlockUtils.collectBlocksDominatedBy(mth, caseBlock, caseBlock));
 				if (list.contains(switchOut) || switchOut.getPredecessors().stream().anyMatch(list::contains)) {

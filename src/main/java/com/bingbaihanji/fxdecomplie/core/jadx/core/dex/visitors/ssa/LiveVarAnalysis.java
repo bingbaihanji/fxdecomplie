@@ -50,12 +50,12 @@ public class LiveVarAnalysis {
 	}
 
 	public boolean isLive(BlockNode block, int regNum) {
-		return isLive(block.getId(), regNum);
+		return isLive(block.getPos(), regNum);
 	}
 
 	private void fillBasicBlockInfo() {
 		for (BlockNode block : mth.getBasicBlocks()) {
-			int blockId = block.getId();
+			int blockId = block.getPos();
 			BitSet gen = uses[blockId];
 			BitSet kill = defs[blockId];
 			for (InsnNode insn : block.getInstructions()) {
@@ -89,11 +89,11 @@ public class LiveVarAnalysis {
 		do {
 			changed = false;
 			for (BlockNode block : blocks) {
-				int blockId = block.getId();
+				int blockId = block.getPos();
 				BitSet prevIn = liveInBlocks[blockId];
 				BitSet newIn = new BitSet(regsCount);
 				for (BlockNode successor : block.getSuccessors()) {
-					newIn.or(liveInBlocks[successor.getId()]);
+					newIn.or(liveInBlocks[successor.getPos()]);
 				}
 				newIn.andNot(defs[blockId]);
 				newIn.or(uses[blockId]);

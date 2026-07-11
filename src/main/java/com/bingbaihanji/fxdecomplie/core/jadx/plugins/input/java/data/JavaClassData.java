@@ -131,7 +131,7 @@ public class JavaClassData implements IClassData {
 		methodRef.setName(constPoolReader.getUtf8(nameIdx));
 		methodRef.setDescr(constPoolReader.getUtf8(descriptorIdx));
 
-		if (methodRef.getName().equals("<init>")) {
+		if ("<init>".equals(methodRef.getName())) {
 			accessFlags |= AccessFlags.CONSTRUCTOR; // java bytecode don't use that flag
 		}
 

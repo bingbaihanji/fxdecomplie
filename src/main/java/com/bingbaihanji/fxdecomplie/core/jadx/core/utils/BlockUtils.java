@@ -370,7 +370,7 @@ public class BlockUtils {
 	public static BitSet blocksToBitSet(MethodNode mth, Collection<BlockNode> blocks) {
 		BitSet bs = newBlocksBitSet(mth);
 		for (BlockNode block : blocks) {
-			bs.set(block.getId());
+			bs.set(block.getPos());
 		}
 		return bs;
 	}
@@ -491,7 +491,7 @@ public class BlockUtils {
 					queue.forEach(visitor);
 					return true;
 				}
-				int id = next.getId();
+				int id = next.getPos();
 				if (!visited.get(id)) {
 					visited.set(id);
 					queue.addLast(next);
@@ -662,7 +662,7 @@ public class BlockUtils {
 				return;
 			}
 			for (BlockNode next : current.getPredecessors()) {
-				int id = next.getId();
+				int id = next.getPos();
 				if (!visited.get(id)) {
 					visited.set(id);
 					queue.add(next);
@@ -983,7 +983,7 @@ public class BlockUtils {
 			BlockNode idom = block.getIDom();
 			if (idom != null) {
 				combine.andNot(idom.getDoms());
-				combine.clear(idom.getId());
+				combine.clear(idom.getPos());
 			}
 		});
 		return bitSetToOneBlock(mth, combine);
@@ -1019,7 +1019,7 @@ public class BlockUtils {
 		boolean first = true;
 		for (BlockNode b : blocks) {
 			tmpBS.clear();
-			tmpBS.set(b.getId());
+			tmpBS.set(b.getPos());
 			tmpBS.or(b.getDomFrontier());
 			if (first) {
 				domFrontBS.or(tmpBS);
@@ -1028,7 +1028,7 @@ public class BlockUtils {
 				domFrontBS.and(tmpBS);
 			}
 		}
-		domFrontBS.clear(mth.getExitBlock().getId());
+		domFrontBS.clear(mth.getExitBlock().getPos());
 		if (domFrontBS.isEmpty()) {
 			return null;
 		}
@@ -1038,9 +1038,9 @@ public class BlockUtils {
 		}
 		BitSet excluded = newBlocksBitSet(mth);
 		// exclude method exit and loop start blocks
-		excluded.set(mth.getExitBlock().getId());
+		excluded.set(mth.getExitBlock().getPos());
 		// exclude loop start blocks
-		mth.getLoops().forEach(l -> excluded.set(l.getStart().getId()));
+		mth.getLoops().forEach(l -> excluded.set(l.getStart().getPos()));
 		if (!mth.isNoExceptionHandlers()) {
 			// exclude exception handlers paths
 			mth.getExceptionHandlers().forEach(h -> addExcHandler(mth, h, excluded));
@@ -1085,7 +1085,7 @@ public class BlockUtils {
 			mth.addDebugComment("Null handler block in: " + handler);
 			return;
 		}
-		set.set(handlerBlock.getId());
+		set.set(handlerBlock.getPos());
 	}
 
 	public static BlockNode getPathCross(MethodNode mth, BlockNode b1, BlockNode b2) {
@@ -1118,10 +1118,10 @@ public class BlockUtils {
 
 	private static void collectWhileDominates(BlockNode dominator, BlockNode child, Collection<BlockNode> result,
 			BitSet visited, boolean includeExcHandlers) {
-		if (visited.get(child.getId())) {
+		if (visited.get(child.getPos())) {
 			return;
 		}
-		visited.set(child.getId());
+		visited.set(child.getPos());
 		List<BlockNode> successors = includeExcHandlers ? child.getSuccessors() : child.getCleanSuccessors();
 		for (BlockNode node : successors) {
 			if (node.isDominator(dominator)) {

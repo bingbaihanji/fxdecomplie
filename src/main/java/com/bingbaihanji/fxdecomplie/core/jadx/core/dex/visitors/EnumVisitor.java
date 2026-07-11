@@ -228,7 +228,7 @@ public class EnumVisitor extends AbstractVisitor {
 			valuesCandidates.removeIf(f -> !f.getAccessFlags().isSynthetic());
 		}
 		if (valuesCandidates.size() > 1) {
-			Optional<FieldNode> valuesOpt = valuesCandidates.stream().filter(f -> f.getName().equals("$VALUES")).findAny();
+			Optional<FieldNode> valuesOpt = valuesCandidates.stream().filter(f -> "$VALUES".equals(f.getName())).findAny();
 			if (valuesOpt.isPresent()) {
 				valuesCandidates.clear();
 				valuesCandidates.add(valuesOpt.get());
@@ -315,7 +315,7 @@ public class EnumVisitor extends AbstractVisitor {
 		List<EnumField> enumFields = extractEnumFieldsFromInsn(enumData, wrappedInsn);
 		if (enumFields != null && ListUtils.isSingleElement(valuesMth.getUseIn(), enumData.classInitMth)) {
 			valuesMth.add(AFlag.DONT_GENERATE);
-			if (valuesMth.getName().equals("$values")) {
+			if ("$values".equals(valuesMth.getName())) {
 				// Kotlin synthetic method used for init values
 				// rename to actual values method to use in $ENTRIES init code
 				valuesMth.getMethodInfo().setAlias("values");
@@ -631,7 +631,7 @@ public class EnumVisitor extends AbstractVisitor {
 					mth.addAttr(new RenameReasonAttr(mth).append("to resolve conflict with enum method"));
 				}
 			} else if (isValuesMethod(mth, clsType)) {
-				if (!mth.getMethodInfo().getAlias().equals("values") && !mth.getUseIn().isEmpty()) {
+				if (!"values".equals(mth.getMethodInfo().getAlias()) && !mth.getUseIn().isEmpty()) {
 					// rename to use default values method
 					mth.getMethodInfo().setAlias("values");
 					mth.addAttr(new RenameReasonAttr(mth).append("to match enum method name"));
@@ -659,8 +659,8 @@ public class EnumVisitor extends AbstractVisitor {
 	}
 
 	private boolean isDefaultConstructor(MethodNode mth, String shortId) {
-		boolean defaultId = shortId.equals("<init>(Ljava/lang/String;I)V")
-				|| shortId.equals("<init>(Ljava/lang/String;)V");
+		boolean defaultId = "<init>(Ljava/lang/String;I)V".equals(shortId)
+				|| "<init>(Ljava/lang/String;)V".equals(shortId);
 		if (defaultId) {
 			// check content
 			return mth.countInsns() == 0;

@@ -49,7 +49,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 public class DebugUtils {
 	private static final Logger LOG = LoggerFactory.getLogger(DebugUtils.class);
 
-	public static final Predicate<MethodNode> TEST_MTH_FILTER = mth -> mth.getName().equals("test");
+	public static final Predicate<MethodNode> TEST_MTH_FILTER = mth -> "test".equals(mth.getName());
 
 	private DebugUtils() {
 	}

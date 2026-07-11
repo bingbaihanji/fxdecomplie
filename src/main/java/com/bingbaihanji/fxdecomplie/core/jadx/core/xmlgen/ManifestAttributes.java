@@ -116,12 +116,12 @@ public class ManifestAttributes {
 				NamedNodeMap nodeMap = tempNode.getAttributes();
 				for (int i = 0; i < nodeMap.getLength(); i++) {
 					Node node = nodeMap.item(i);
-					if (node.getNodeName().equals("name")) {
+					if ("name".equals(node.getNodeName())) {
 						name = node.getNodeValue();
 						break;
 					}
 				}
-				if (name != null && tempNode.getNodeName().equals("attr")) {
+				if (name != null && "attr".equals(tempNode.getNodeName())) {
 					parseValues(name, tempNode.getChildNodes());
 				} else {
 					parseAttrList(tempNode.getChildNodes());
@@ -137,9 +137,9 @@ public class ManifestAttributes {
 			if (tempNode.getNodeType() == Node.ELEMENT_NODE
 					&& tempNode.hasAttributes()) {
 				if (attr == null) {
-					if (tempNode.getNodeName().equals("enum")) {
+					if ("enum".equals(tempNode.getNodeName())) {
 						attr = new MAttr(MAttrType.ENUM);
-					} else if (tempNode.getNodeName().equals("flag")) {
+					} else if ("flag".equals(tempNode.getNodeName())) {
 						attr = new MAttr(MAttrType.FLAG);
 					}
 					if (attr == null) {
@@ -217,7 +217,7 @@ public class ManifestAttributes {
 				continue;
 			}
 
-			if (ri.getTypeName().equals("attr") && ri.getNamedValues().size() > 1) {
+			if ("attr".equals(ri.getTypeName()) && ri.getNamedValues().size() > 1) {
 				RawNamedValue first = ri.getNamedValues().get(0);
 				MAttrType attrTyp;
 				int attrTypeVal = first.getRawValue().getData() & 0xff0000;

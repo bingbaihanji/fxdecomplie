@@ -92,7 +92,7 @@ public class ResXmlGen {
 				cw.add('<').add(ri.getTypeName()).add(' ');
 				String itemTag = "item";
 				cw.add("name=\"").add(ri.getKeyName()).add('\"');
-				if (ri.getTypeName().equals("attr") && protoValue.getValue() != null) {
+				if ("attr".equals(ri.getTypeName()) && protoValue.getValue() != null) {
 					cw.add(" format=\"").add(protoValue.getValue()).add('\"');
 				}
 				if (protoValue.getParent() != null) {
@@ -115,7 +115,7 @@ public class ResXmlGen {
 			cw.startLine();
 			cw.add('<').add(ri.getTypeName()).add(" name=\"");
 			String itemTag = "item";
-			if (ri.getTypeName().equals("attr") && !ri.getNamedValues().isEmpty()) {
+			if ("attr".equals(ri.getTypeName()) && !ri.getNamedValues().isEmpty()) {
 				cw.add(ri.getKeyName());
 				int type = ri.getNamedValues().get(0).getRawValue().getData();
 				if ((type & ValuesParser.ATTR_TYPE_ENUM) != 0) {
@@ -138,7 +138,7 @@ public class ResXmlGen {
 			} else {
 				cw.add(ri.getKeyName());
 			}
-			if (ri.getTypeName().equals("style") || ri.getParentRef() != 0) {
+			if ("style".equals(ri.getTypeName()) || ri.getParentRef() != 0) {
 				cw.add("\" parent=\"");
 				if (ri.getParentRef() != 0) {
 					String parent = vp.decodeValue(TYPE_REFERENCE, ri.getParentRef());
@@ -186,8 +186,8 @@ public class ResXmlGen {
 		String valueStr = vp.decodeValue(value.getRawValue());
 		int dataType = value.getRawValue().getDataType();
 
-		if (!typeName.equals("attr")) {
-			if (dataType == ParserConstants.TYPE_REFERENCE && (valueStr == null || valueStr.equals("0"))) {
+		if (!"attr".equals(typeName)) {
+			if (dataType == ParserConstants.TYPE_REFERENCE && (valueStr == null || "0".equals(valueStr))) {
 				valueStr = "@null";
 			}
 			if (dataType == ParserConstants.TYPE_INT_DEC && nameStr != null) {
@@ -245,16 +245,16 @@ public class ResXmlGen {
 		cw.startLine();
 		cw.add('<').add(itemTag);
 		if (attrName != null && attrValue != null) {
-			if (typeName.equals("attr")) {
+			if ("attr".equals(typeName)) {
 				cw.add(' ').add("name=\"").add(attrName.replace("id.", "")).add("\" value=\"").add(attrValue).add('"');
-			} else if (typeName.equals("style")) {
+			} else if ("style".equals(typeName)) {
 				cw.add(' ').add("name=\"").add(attrName.replace("attr.", "")).add('"');
 			} else {
 				cw.add(' ').add(attrName).add("=\"").add(attrValue).add('"');
 			}
 		}
 
-		if (itemTag.equals("string") && valueStr.contains("%") && StringFormattedCheck.hasMultipleNonPositionalSubstitutions(valueStr)) {
+		if ("string".equals(itemTag) && valueStr.contains("%") && StringFormattedCheck.hasMultipleNonPositionalSubstitutions(valueStr)) {
 			cw.add(" formatted=\"false\"");
 		}
 
@@ -262,7 +262,7 @@ public class ResXmlGen {
 			cw.add(" />");
 		} else {
 			cw.add('>');
-			if (itemTag.equals("string") || (typeName.equals("array") && valueStr.charAt(0) != '@')) {
+			if ("string".equals(itemTag) || ("array".equals(typeName) && valueStr.charAt(0) != '@')) {
 				cw.add(StringUtils.escapeResStrValue(valueStr));
 			} else {
 				cw.add(StringUtils.escapeResValue(valueStr));

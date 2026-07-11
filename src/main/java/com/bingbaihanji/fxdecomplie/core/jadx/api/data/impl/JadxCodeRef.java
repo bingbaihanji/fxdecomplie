@@ -43,7 +43,8 @@ public class JadxCodeRef implements IJavaCodeRef {
 		// used for json serialization
 	}
 
-	public CodeRefType getAttachType() {
+	@Override
+    public CodeRefType getAttachType() {
 		return attachType;
 	}
 

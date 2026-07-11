@@ -50,7 +50,7 @@ public class DominatorTree {
 				int pickedPred = -1;
 				BlockNode newIDom = null;
 				for (BlockNode pred : preds) {
-					int id = pred.getId();
+					int id = pred.getPos();
 					if (doms[id] != null) {
 						newIDom = pred;
 						pickedPred = id;
@@ -61,7 +61,7 @@ public class DominatorTree {
 					throw new JadxRuntimeException("No immediate dominator for block: " + b);
 				}
 				for (BlockNode predBlock : preds) {
-					int predId = predBlock.getId();
+					int predId = predBlock.getPos();
 					if (predId == pickedPred) {
 						continue;
 					}
@@ -79,14 +79,14 @@ public class DominatorTree {
 	}
 
 	private static BlockNode intersect(List<BlockNode> sorted, BlockNode[] doms, BlockNode b1, BlockNode b2) {
-		int f1 = b1.getId();
-		int f2 = b2.getId();
+		int f1 = b1.getPos();
+		int f2 = b2.getPos();
 		while (f1 != f2) {
 			while (f1 > f2) {
-				f1 = doms[f1].getId();
+				f1 = doms[f1].getPos();
 			}
 			while (f2 > f1) {
-				f2 = doms[f2].getId();
+				f2 = doms[f2].getPos();
 			}
 		}
 		return sorted.get(f1);
@@ -112,7 +112,7 @@ public class DominatorTree {
 		BitSet domBS = new BitSet(doms.length);
 		BlockNode nextIDom = idom;
 		while (true) {
-			int id = nextIDom.getId();
+			int id = nextIDom.getPos();
 			if (domBS.get(id)) {
 				break;
 			}
@@ -161,6 +161,6 @@ public class DominatorTree {
 			df = new BitSet(blocksCount);
 			block.setDomFrontier(df);
 		}
-		df.set(dfBlock.getId());
+		df.set(dfBlock.getPos());
 	}
 }

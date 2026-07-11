@@ -700,7 +700,7 @@ public class ClassGen {
 			return shortName;
 		}
 		// don't add import for top classes from 'java.lang' package (subpackages excluded)
-		if (extClsInfo.getPackage().equals("java.lang") && extClsInfo.getParentClass() == null) {
+		if ("java.lang".equals(extClsInfo.getPackage()) && extClsInfo.getParentClass() == null) {
 			return shortName;
 		}
 		if (extClsInfo.getAliasPkg().equals(useCls.getAliasPkg())) {
@@ -799,7 +799,7 @@ public class ClassGen {
 		ClassNode classNode = root.resolveClass(useCls);
 		if (classNode != null) {
 			for (ClassNode inner : classNode.getInnerClasses()) {
-				if (inner.getShortName().equals(shortName)
+				if (inner.getAlias().equals(shortName)
 						&& !inner.getFullName().equals(searchCls.getAliasFullName())) {
 					return true;
 				}

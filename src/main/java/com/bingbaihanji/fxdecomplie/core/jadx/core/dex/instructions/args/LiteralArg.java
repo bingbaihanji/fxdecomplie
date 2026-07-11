@@ -142,7 +142,7 @@ public final class LiteralArg extends InsnArg {
 	public String toString() {
 		try {
 			String value = TypeGen.literalToString(literal, getType(), StringUtils.getInstance(), true, false);
-			if (getType().equals(ArgType.BOOLEAN) && (value.equals("true") || value.equals("false"))) {
+			if (getType().equals(ArgType.BOOLEAN) && ("true".equals(value) || "false".equals(value))) {
 				return value;
 			}
 			return '(' + value + ' ' + type + ')';

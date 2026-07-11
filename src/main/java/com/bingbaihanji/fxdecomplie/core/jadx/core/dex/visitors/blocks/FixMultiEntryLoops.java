@@ -91,7 +91,7 @@ public class FixMultiEntryLoops {
 		BlockNode header = e.getEnd();
 		BlockNode loopEnd = e.getStart();
 		return header == loopEnd
-				|| loopEnd.getDoms().get(header.getId()); // header dominates loop end
+				|| loopEnd.getDoms().get(header.getPos()); // header dominates loop end
 	}
 
 	private enum BlockColor {
@@ -106,9 +106,9 @@ public class FixMultiEntryLoops {
 
 	// TODO: transform to non-recursive form
 	private static void colorDFS(MethodNode mth, BlockColor[] colors, BlockNode block) {
-		colors[block.getId()] = BlockColor.GRAY;
+		colors[block.getPos()] = BlockColor.GRAY;
 		for (BlockNode v : block.getSuccessors()) {
-			switch (colors[v.getId()]) {
+			switch (colors[v.getPos()]) {
 				case WHITE:
 					colorDFS(mth, colors, v);
 					break;
@@ -120,6 +120,6 @@ public class FixMultiEntryLoops {
 					break;
 			}
 		}
-		colors[block.getId()] = BlockColor.BLACK;
+		colors[block.getPos()] = BlockColor.BLACK;
 	}
 }

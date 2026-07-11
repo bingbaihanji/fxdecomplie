@@ -12,7 +12,7 @@ public class FileSignature {
 			if (parts[i].length() != 2) {
 				throw new RuntimeException(signatureHex);
 			}
-			if (!parts[i].equals("??")) {
+			if (!"??".equals(parts[i])) {
 				this.signatureBytes[i] = (byte) Integer.parseInt(parts[i], 16);
 			}
 		}

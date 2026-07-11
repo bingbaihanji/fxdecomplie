@@ -396,7 +396,7 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
 		}
 		if (insn != null && insn.getType() == InsnType.INVOKE) {
 			InvokeNode invInsn = (InvokeNode) insn;
-			if (invInsn.getCallMth().getRawFullId().equals("java.lang.String.hashCode()I")) {
+			if ("java.lang.String.hashCode()I".equals(invInsn.getCallMth().getRawFullId())) {
 				return invInsn;
 			}
 		}
@@ -407,7 +407,7 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
 		if (ifInsn != null && ifInsn.getType() == InsnType.IF && ifInsn.getArgsCount() == 2) {
 			InsnNode wrapped = InsnUtils.getWrappedInsn(ifInsn.getArg(0));
 			return wrapped != null && wrapped.getType() == InsnType.INVOKE
-					&& ((InvokeNode) wrapped).getCallMth().getRawFullId().equals("java.lang.String.equals(Ljava/lang/Object;)Z");
+					&& "java.lang.String.equals(Ljava/lang/Object;)Z".equals(((InvokeNode) wrapped).getCallMth().getRawFullId());
 		}
 		return false;
 	}

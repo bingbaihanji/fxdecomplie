@@ -12,7 +12,8 @@ public final class NamedArg extends InsnArg implements Named {
 		this.type = type;
 	}
 
-	@NotNull
+	@Override
+    @NotNull
 	public String getName() {
 		return name;
 	}

@@ -73,14 +73,15 @@ public class InvokeNode extends BaseInvokeNode {
 		}
 		// java bytecode uses virtual call with modified method info
 		if (type == InvokeType.VIRTUAL
-				&& mth.getDeclClass().getFullName().equals("java.lang.invoke.MethodHandle")
-				&& (mth.getName().equals("invoke") || mth.getName().equals("invokeExact"))) {
+				&& "java.lang.invoke.MethodHandle".equals(mth.getDeclClass().getFullName())
+				&& ("invoke".equals(mth.getName()) || "invokeExact".equals(mth.getName()))) {
 			return true;
 		}
 		return false;
 	}
 
-	public int getFirstArgOffset() {
+	@Override
+    public int getFirstArgOffset() {
 		return type == InvokeType.STATIC ? 0 : 1;
 	}
 

@@ -62,7 +62,7 @@ public class SelectFromDuplicates {
 				return -1;
 			}
 			String num = matcher.group(1);
-			if (num.equals("1")) {
+			if ("1".equals(num)) {
 				return -1;
 			}
 			return Integer.parseInt(num);

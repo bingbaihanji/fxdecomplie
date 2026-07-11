@@ -142,11 +142,11 @@ public final class MethodInfo implements Comparable<MethodInfo> {
 	}
 
 	public boolean isConstructor() {
-		return name.equals("<init>");
+		return "<init>".equals(name);
 	}
 
 	public boolean isClassInit() {
-		return name.equals("<clinit>");
+		return "<clinit>".equals(name);
 	}
 
 	public String getAlias() {
