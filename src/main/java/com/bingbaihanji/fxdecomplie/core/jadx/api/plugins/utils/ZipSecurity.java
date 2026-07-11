@@ -27,9 +27,14 @@ import java.util.zip.ZipFile;
  */
 @Deprecated
 public class ZipSecurity {
-    private static final boolean DISABLE_CHECKS = Utils.getEnvVarBool("JADX_DISABLE_ZIP_SECURITY", false);
+    private static final boolean DISABLE_CHECKS = "true".equalsIgnoreCase(System.getenv("JADX_DISABLE_ZIP_SECURITY"));
 
-    private static final int MAX_ENTRIES_COUNT = Utils.getEnvVarInt("JADX_ZIP_MAX_ENTRIES_COUNT", 100_000);
+    private static final int MAX_ENTRIES_COUNT = parseEnvInt("JADX_ZIP_MAX_ENTRIES_COUNT", 100_000);
+
+    private static int parseEnvInt(String name, int def) {
+        String v = System.getenv(name);
+        return v != null ? Integer.parseInt(v) : def;
+    }
 
     private static final IJadxZipSecurity ZIP_SECURITY = buildZipSecurity();
 

@@ -212,7 +212,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     private void updateIndent() {
-        this.indentStr = Utils.strRepeat(singleIndentStr, indent);
+        this.indentStr = singleIndentStr.repeat(indent);
     }
 
     /**

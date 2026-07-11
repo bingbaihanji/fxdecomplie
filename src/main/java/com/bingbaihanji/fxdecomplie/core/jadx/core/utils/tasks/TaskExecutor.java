@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.utils.tasks;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.utils.tasks.ITaskExecutor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
+import com.bingbaihanji.fxdecomplie.util.NamedThreadFactory;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -155,7 +156,7 @@ public class TaskExecutor implements ITaskExecutor {
             if (running.get() || executor != null) {
                 throw new IllegalStateException("Already executing");
             }
-            executor = Executors.newFixedThreadPool(1, Utils.simpleThreadFactory("task-s"));
+            executor = Executors.newFixedThreadPool(1, new com.bingbaihanji.fxdecomplie.util.NamedThreadFactory("task-s"));
             running.set(true);
             terminating.set(false);
             progress.set(0);
@@ -264,7 +265,7 @@ public class TaskExecutor implements ITaskExecutor {
                     }
                 } else {
                     ExecutorService parallelExecutor = Executors.newFixedThreadPool(
-                            threads, Utils.simpleThreadFactory("task-p"));
+                            threads, new com.bingbaihanji.fxdecomplie.util.NamedThreadFactory("task-p"));
                     for (Runnable task : stage.getTasks()) {
                         parallelExecutor.execute(() -> wrapTask(task));
                     }

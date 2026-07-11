@@ -162,7 +162,7 @@ public abstract class ArgType {
      */
     public static ArgType object(String obj) {
         // 待办：添加缓存
-        String cleanObjectName = Utils.cleanObjectName(obj);
+        String cleanObjectName = com.bingbaihanji.fxdecomplie.util.SmaliNameUtils.smaliToJava(obj);
         switch (cleanObjectName) {
             case JadxConsts.CLASS_OBJECT:
                 return OBJECT;
@@ -238,7 +238,7 @@ public abstract class ArgType {
 
     /** 根据类名创建参数化泛型对象类型 */
     public static ArgType generic(String obj, List<ArgType> generics) {
-        return new GenericObject(Utils.cleanObjectName(obj), generics);
+        return new GenericObject(com.bingbaihanji.fxdecomplie.util.SmaliNameUtils.smaliToJava(obj), generics);
     }
 
     /** 根据类名创建带单个泛型参数的参数化泛型对象类型 */
