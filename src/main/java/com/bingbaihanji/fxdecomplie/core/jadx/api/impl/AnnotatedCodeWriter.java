@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeAnnotation;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeNodeRef;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.annotations.NodeDeclareRef;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +33,7 @@ public class AnnotatedCodeWriter extends SimpleCodeWriter implements ICodeWriter
     public AnnotatedCodeWriter addMultiLine(String str) {
         if (str.contains(newLineStr)) {
             buf.append(str.replace(newLineStr, newLineStr + indentStr));
-            line += StringUtils.countMatches(str, newLineStr);
+            line += CodegenEscapeUtils.countMatches(str, newLineStr);
             offset = 0;
         } else {
             buf.append(str);

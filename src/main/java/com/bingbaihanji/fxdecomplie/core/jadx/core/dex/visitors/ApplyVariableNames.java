@@ -11,7 +11,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.variables.ProcessVariables;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.util.JadxConsts;
@@ -186,7 +186,7 @@ public class ApplyVariableNames extends AbstractVisitor {
 
     private String makeNameForObject(ArgType type) {
         if (type.isGenericType()) {
-            return StringUtils.escape(type.getObject().toLowerCase());
+            return CodegenEscapeUtils.escape(type.getObject().toLowerCase());
         }
         if (type.isObject()) {
             String alias = getAliasForObject(type.getObject());
@@ -195,7 +195,7 @@ public class ApplyVariableNames extends AbstractVisitor {
             }
             return makeNameForCheckedClass(ClassInfo.fromType(root, type));
         }
-        return StringUtils.escape(type.toString());
+        return CodegenEscapeUtils.escape(type.toString());
     }
 
     private String makeNameForCheckedClass(ClassInfo classInfo) {
@@ -204,7 +204,7 @@ public class ApplyVariableNames extends AbstractVisitor {
         if (vName != null) {
             return vName;
         }
-        String lower = StringUtils.escape(shortName.toLowerCase());
+        String lower = CodegenEscapeUtils.escape(shortName.toLowerCase());
         if (shortName.equals(lower)) {
             return lower + "Var";
         }
@@ -244,7 +244,7 @@ public class ApplyVariableNames extends AbstractVisitor {
         if (!GOOD_VAR_NAMES.contains(name)) {
             String typeName = makeNameForType(ssaVar.getCodeVar().getType());
             if (!typeName.equalsIgnoreCase(name)) {
-                return typeName + StringUtils.capitalizeFirstChar(name);
+                return typeName + CodegenEscapeUtils.capitalizeFirstChar(name);
             }
         }
         return name;

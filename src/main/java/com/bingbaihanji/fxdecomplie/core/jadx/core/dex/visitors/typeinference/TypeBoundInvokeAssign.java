@@ -44,7 +44,7 @@ public final class TypeBoundInvokeAssign implements ITypeBoundDynamic {
         IMethodDetails methodDetails = root.getMethodUtils().getMethodDetails(invokeNode);
         if (methodDetails != null) {
             // use methods detail to resolve declaration class for virtual invokes
-            mthDeclType = methodDetails.getMethodInfo().getDeclClass().getType();
+            mthDeclType = methodDetails.methodInfo().getDeclClass().getType();
         } else {
             mthDeclType = instanceType;
         }

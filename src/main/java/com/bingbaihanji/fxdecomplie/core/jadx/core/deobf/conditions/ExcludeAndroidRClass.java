@@ -20,7 +20,7 @@ public class ExcludeAndroidRClass extends AbstractDeobfCondition {
         }
         for (ClassNode inner : cls.getInnerClasses()) {
             for (MethodNode m : inner.getMethods()) {
-                if (!m.getMethodInfo().isConstructor() && !m.getMethodInfo().isClassInit()) {
+                if (!m.methodInfo().isConstructor() && !m.methodInfo().isClassInit()) {
                     return false;
                 }
             }

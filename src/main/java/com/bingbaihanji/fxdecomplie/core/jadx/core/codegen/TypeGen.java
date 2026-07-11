@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.LiteralArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.PrimitiveType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IDexNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
@@ -54,7 +54,7 @@ public class TypeGen {
         return literalToString(lit, type, dexNode.root().getStringUtils(), fallback, false);
     }
 
-    public static String literalToString(long lit, ArgType type, StringUtils stringUtils, boolean fallback, boolean cast) {
+    public static String literalToString(long lit, ArgType type, CodegenEscapeUtils stringUtils, boolean fallback, boolean cast) {
         if (type == null || !type.isTypeKnown()) {
             String n = Long.toString(lit);
             if (fallback && Math.abs(lit) > 100) {
@@ -86,9 +86,9 @@ public class TypeGen {
             case LONG:
                 return stringUtils.formatLong(lit, cast);
             case FLOAT:
-                return StringUtils.formatFloat(Float.intBitsToFloat((int) lit));
+                return CodegenEscapeUtils.formatFloat(Float.intBitsToFloat((int) lit));
             case DOUBLE:
-                return StringUtils.formatDouble(Double.longBitsToDouble(lit));
+                return CodegenEscapeUtils.formatDouble(Double.longBitsToDouble(lit));
 
             case OBJECT:
             case ARRAY:

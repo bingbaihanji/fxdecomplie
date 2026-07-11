@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import org.jetbrains.annotations.Nullable;
 
 class ClassAliasInfo {
@@ -11,7 +11,7 @@ class ClassAliasInfo {
     private String fullName;
 
     ClassAliasInfo(@Nullable String pkg, String shortName) {
-        if (StringUtils.isEmpty(shortName)) {
+        if (CodegenEscapeUtils.isEmpty(shortName)) {
             throw new IllegalArgumentException("Class alias can't be empty");
         }
         this.pkg = pkg;

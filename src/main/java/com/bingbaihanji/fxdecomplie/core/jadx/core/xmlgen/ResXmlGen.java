@@ -4,7 +4,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeWriter;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.SimpleCodeWriter;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ProtoValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.RawNamedValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
@@ -256,9 +256,9 @@ public class ResXmlGen {
         } else {
             cw.add('>');
             if ("string".equals(itemTag) || ("array".equals(typeName) && valueStr.charAt(0) != '@')) {
-                cw.add(StringUtils.escapeResStrValue(valueStr));
+                cw.add(CodegenEscapeUtils.escapeResStrValue(valueStr));
             } else {
-                cw.add(StringUtils.escapeResValue(valueStr));
+                cw.add(CodegenEscapeUtils.escapeResValue(valueStr));
             }
             cw.add("</").add(itemTag).add('>');
         }

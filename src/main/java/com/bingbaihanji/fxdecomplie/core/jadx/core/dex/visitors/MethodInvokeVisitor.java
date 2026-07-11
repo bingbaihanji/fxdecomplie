@@ -239,7 +239,7 @@ public class MethodInvokeVisitor extends AbstractVisitor {
                 ArgType resolvedType = root.getTypeUtils().replaceTypeVariablesUsingMap(argType, typeVarsMapping);
                 if (resolvedType == null || resolvedType.equals(argType)) {
                     // type variables erased from method info by compiler
-                    resolvedType = mthDetails.getMethodInfo().getArgumentsTypes().get(argNum);
+                    resolvedType = mthDetails.methodInfo().getArgumentsTypes().get(argNum);
                 }
                 fixedArgTypes.add(resolvedType);
                 fixed = true;
@@ -251,7 +251,7 @@ public class MethodInvokeVisitor extends AbstractVisitor {
         if (returnType.containsTypeVariable()) {
             ArgType resolvedType = root.getTypeUtils().replaceTypeVariablesUsingMap(returnType, typeVarsMapping);
             if (resolvedType == null || resolvedType.containsTypeVariable()) {
-                returnType = mthDetails.getMethodInfo().getReturnType();
+                returnType = mthDetails.methodInfo().getReturnType();
                 fixed = true;
             }
         }

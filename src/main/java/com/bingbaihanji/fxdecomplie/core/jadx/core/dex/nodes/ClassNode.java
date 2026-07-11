@@ -572,7 +572,7 @@ public class ClassNode extends NotificationAttrNode
     private void buildCache() {
         mthInfoMap = new HashMap<>(methods.size());
         for (MethodNode mth : methods) {
-            mthInfoMap.put(mth.getMethodInfo(), mth);
+            mthInfoMap.put(mth.methodInfo(), mth);
         }
     }
 
@@ -669,7 +669,7 @@ public class ClassNode extends NotificationAttrNode
 
     public MethodNode searchMethodByShortId(String shortId) {
         for (MethodNode m : methods) {
-            if (m.getMethodInfo().getShortId().equals(shortId)) {
+            if (m.methodInfo().getShortId().equals(shortId)) {
                 return m;
             }
         }
@@ -683,7 +683,7 @@ public class ClassNode extends NotificationAttrNode
     @Nullable
     public MethodNode searchMethodByShortName(String name) {
         for (MethodNode m : methods) {
-            if (m.getMethodInfo().getName().equals(name)) {
+            if (m.methodInfo().getName().equals(name)) {
                 return m;
             }
         }

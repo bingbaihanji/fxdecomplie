@@ -159,7 +159,7 @@ public class DeobfPresets {
                 }
             }
             for (MethodNode mth : cls.getMethods()) {
-                MethodInfo methodInfo = mth.getMethodInfo();
+                MethodInfo methodInfo = mth.methodInfo();
                 if (methodInfo.hasAlias()) {
                     mthPresetMap.put(methodInfo.getRawFullId(), methodInfo.getAlias());
                 }
@@ -188,7 +188,7 @@ public class DeobfPresets {
 
                     @Override
                     public String forMethod(MethodNode mth) {
-                        return getForMth(mth.getMethodInfo());
+                        return getForMth(mth.methodInfo());
                     }
                 });
     }

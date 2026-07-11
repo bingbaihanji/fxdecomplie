@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.InfoStorage;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class UserRenames {
             case FIELD:
                 FieldNode fieldNode = cls.searchFieldByShortId(nodeRef.getShortId());
                 if (fieldNode == null) {
-                    String fieldName = StringUtils.getPrefix(nodeRef.getShortId(), ":");
+                    String fieldName = CodegenEscapeUtils.getPrefix(nodeRef.getShortId(), ":");
                     String fieldSign = cls.getFields().stream()
                             .filter(f -> f.getFieldInfo().getName().equals(fieldName))
                             .map(f -> f.getFieldInfo().getShortId())

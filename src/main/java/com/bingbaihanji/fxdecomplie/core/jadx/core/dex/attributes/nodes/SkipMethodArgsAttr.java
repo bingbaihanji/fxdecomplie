@@ -16,7 +16,7 @@ public class SkipMethodArgsAttr extends PinnedAttribute {
     private final BitSet skipArgs;
 
     private SkipMethodArgsAttr(MethodNode mth) {
-        this.skipArgs = new BitSet(mth.getMethodInfo().getArgsCount());
+        this.skipArgs = new BitSet(mth.methodInfo().getArgsCount());
     }
 
     public static void skipArg(MethodNode mth, RegisterArg arg) {

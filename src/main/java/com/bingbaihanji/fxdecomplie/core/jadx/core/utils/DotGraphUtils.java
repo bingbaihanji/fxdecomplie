@@ -1,25 +1,46 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.utils;
 
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeWriter;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JavaMethod;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.SimpleCodeWriter;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.IAttributeNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SwitchRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.SynchronizedRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.TryCatchRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExceptionHandler;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.SaveCode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import org.jetbrains.annotations.Nullable;
 
@@ -154,7 +175,7 @@ public class DotGraphUtils {
 
     // The filename the method cfg would be stored in under the given out directory
     public File getFullFile(MethodNode mth, File outDir) {
-        String fileName = StringUtils.escape(mth.getMethodInfo().getShortId())
+        String fileName = CodegenEscapeUtils.escape(mth.methodInfo().getShortId())
                 + (useRegions ? ".regions" : "")
                 + (rawInsn ? ".raw" : "")
                 + ".dot";
@@ -181,7 +202,7 @@ public class DotGraphUtils {
 
     public @Nullable String dumpToString(MethodNode mth) {
         dot.startLine("digraph \"CFG for");
-        dot.add(escape(mth.getMethodInfo().getFullId()));
+        dot.add(escape(mth.methodInfo().getFullId()));
         dot.add("\" {");
 
         BlockNode enterBlock = mth.getEnterBlock();

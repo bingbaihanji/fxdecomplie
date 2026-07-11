@@ -43,7 +43,7 @@ public final class ConstructorInsn extends BaseInvokeNode {
         if (!classType.equals(mth.getParentClass().getClassInfo())) {
             return CallType.SUPER;
         }
-        if (callMth.getShortId().equals(mth.getMethodInfo().getShortId())) {
+        if (callMth.getShortId().equals(mth.methodInfo().getShortId())) {
             // self constructor
             return CallType.SELF;
         }

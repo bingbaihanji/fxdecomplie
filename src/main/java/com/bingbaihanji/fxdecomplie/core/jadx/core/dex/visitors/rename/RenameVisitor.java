@@ -11,7 +11,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import org.jetbrains.annotations.Nullable;
 
@@ -128,7 +128,7 @@ public class RenameVisitor extends AbstractVisitor {
 
     @Nullable
     private static String fixClsShortName(JadxArgs args, String clsName) {
-        if (StringUtils.isEmpty(clsName)) {
+        if (CodegenEscapeUtils.isEmpty(clsName)) {
             return null;
         }
         boolean renameValid = args.isRenameValid();
@@ -195,7 +195,7 @@ public class RenameVisitor extends AbstractVisitor {
         if (args.isRenameValid()) {
             Set<String> names = new HashSet<>(methods.size());
             for (MethodNode mth : methods) {
-                String signature = mth.getMethodInfo().makeSignature(true, false);
+                String signature = mth.methodInfo().makeSignature(true, false);
                 if (!names.add(signature) && canRename(mth)) {
                     mth.rename(aliasProvider.forMethod(mth));
                     mth.addAttr(new RenameReasonAttr("collision with other method in class"));

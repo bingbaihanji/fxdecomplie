@@ -57,7 +57,7 @@ public class JadxNodeRef implements IJavaNodeRef {
     public static JadxNodeRef forMth(JavaMethod mth) {
         return new JadxNodeRef(RefType.METHOD,
                 getClassRefStr(mth.getDeclaringClass()),
-                mth.getMethodNode().getMethodInfo().getShortId());
+                mth.getMethodNode().methodInfo().getShortId());
     }
 
     public static JadxNodeRef forFld(JavaField fld) {

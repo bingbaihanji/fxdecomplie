@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface IMethodDetails extends IJadxAttribute {
 
-    MethodInfo getMethodInfo();
+    MethodInfo methodInfo();
 
     ArgType getReturnType();
 

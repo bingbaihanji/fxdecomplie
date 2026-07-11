@@ -108,7 +108,7 @@ public class InlineMethods extends AbstractVisitor {
 
     private boolean replaceRegs(MethodNode mth, MethodNode callMth, MethodInlineAttr mia, InvokeNode insn, InsnNode inlCopy) {
         try {
-            if (!callMth.getMethodInfo().getArgumentsTypes().isEmpty()) {
+            if (!callMth.methodInfo().getArgumentsTypes().isEmpty()) {
                 // 重映射参数寄存器
                 InsnArg[] regs = new InsnArg[callMth.getRegsCount()];
                 int[] regNums = mia.getArgsRegNums();

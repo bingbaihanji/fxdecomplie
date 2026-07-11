@@ -154,7 +154,7 @@ public class MethodUtils {
         ClassNode classNode = root.resolveClass(startCls);
         if (classNode != null) {
             for (MethodNode mth : classNode.getMethods()) {
-                if (mthInfo.isOverloadedBy(mth.getMethodInfo())) {
+                if (mthInfo.isOverloadedBy(mth.methodInfo())) {
                     if (collectedMths == null) {
                         return true;
                     }
@@ -182,7 +182,7 @@ public class MethodUtils {
                 return false;
             }
             for (ClspMethod clspMth : clsDetails.getMethodsMap().values()) {
-                if (mthInfo.isOverloadedBy(clspMth.getMethodInfo())) {
+                if (mthInfo.isOverloadedBy(clspMth.methodInfo())) {
                     if (collectedMths == null) {
                         return true;
                     }
@@ -228,12 +228,12 @@ public class MethodUtils {
     public ClassInfo getMethodOriginDeclClass(MethodNode mth) {
         IMethodDetails baseMth = getOverrideBaseMth(mth);
         if (baseMth != null) {
-            return baseMth.getMethodInfo().getDeclClass();
+            return baseMth.methodInfo().getDeclClass();
         }
         MethodBridgeAttr bridgeAttr = mth.get(AType.BRIDGED_BY);
         if (bridgeAttr != null) {
             return getMethodOriginDeclClass(bridgeAttr.getBridgeMth());
         }
-        return mth.getMethodInfo().getDeclClass();
+        return mth.methodInfo().getDeclClass();
     }
 }

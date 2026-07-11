@@ -4,7 +4,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IAliasProvider;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 
 public class DeobfAliasProvider implements IAliasProvider {
 
@@ -53,7 +53,7 @@ public class DeobfAliasProvider implements IAliasProvider {
     private static String getClsName(String name) {
         int pgkEnd = name.lastIndexOf('.');
         String clsName = name.substring(pgkEnd + 1);
-        return StringUtils.removeChar(clsName, '$');
+        return CodegenEscapeUtils.removeChar(clsName, '$');
     }
 
     @Override

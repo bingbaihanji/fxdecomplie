@@ -96,7 +96,7 @@ public class ClsSet {
     }
 
     private static void writeMethod(DataOutputStream out, ClspMethod method, Map<String, ClspClass> names) throws IOException {
-        MethodInfo methodInfo = method.getMethodInfo();
+        MethodInfo methodInfo = method.methodInfo();
         writeString(out, methodInfo.getName());
         writeArgTypesList(out, methodInfo.getArgumentsTypes(), names);
         writeArgType(out, methodInfo.getReturnType(), names);
@@ -284,7 +284,7 @@ public class ClsSet {
         if (accessFlags.isPrivate() || accessFlags.isSynthetic() || accessFlags.isBridge()) {
             return;
         }
-        ClspMethod clspMethod = new ClspMethod(mth.getMethodInfo(), mth.getArgTypes(),
+        ClspMethod clspMethod = new ClspMethod(mth.methodInfo(), mth.getArgTypes(),
                 mth.getReturnType(), mth.getTypeParameters(),
                 mth.getThrows(), accessFlags.rawValue());
         methods.add(clspMethod);

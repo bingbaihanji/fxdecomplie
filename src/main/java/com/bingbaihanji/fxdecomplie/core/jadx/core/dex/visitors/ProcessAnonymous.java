@@ -106,7 +106,7 @@ public class ProcessAnonymous extends AbstractVisitor {
         if (cls.getUseIn().size() == 1 && cls.getUseInMth().size() == 1) {
             MethodNode useMth = cls.getUseInMth().get(0);
             // allow use in enum class init
-            return useMth.getMethodInfo().isClassInit() && useMth.getParentClass().isEnum();
+            return useMth.methodInfo().isClassInit() && useMth.getParentClass().isEnum();
         }
         return false;
     }
@@ -171,7 +171,7 @@ public class ProcessAnonymous extends AbstractVisitor {
 
     private static boolean checkForInstanceFieldUsage(ClassNode cls, MethodNode ctr) {
         MethodNode ctrUseMth = ctr.getUseIn().get(0);
-        if (!ctrUseMth.getMethodInfo().isClassInit()) {
+        if (!ctrUseMth.methodInfo().isClassInit()) {
             return false;
         }
         if (cls.getUseInMth().isEmpty()) {

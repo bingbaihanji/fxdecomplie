@@ -249,7 +249,7 @@ public class ClassModifier extends AbstractVisitor {
         if (wrappedAccFlags.isStatic()) {
             return false;
         }
-        if (callMth.getArgsCount() != mth.getMethodInfo().getArgsCount()) {
+        if (callMth.getArgsCount() != mth.methodInfo().getArgsCount()) {
             return false;
         }
         // rename method only from current class
@@ -274,7 +274,7 @@ public class ClassModifier extends AbstractVisitor {
         }
         wrappedMth.addAttr(new MethodReplaceAttr(mth));
         wrappedMth.copyAttributeFrom(mth, AType.METHOD_OVERRIDE);
-        wrappedMth.addDebugComment("Method merged with bridge method: " + mth.getMethodInfo().getShortId());
+        wrappedMth.addDebugComment("Method merged with bridge method: " + mth.methodInfo().getShortId());
         return true;
     }
 
@@ -301,7 +301,7 @@ public class ClassModifier extends AbstractVisitor {
         AccessInfo af = mth.getAccessFlags();
         boolean publicConstructor = mth.isConstructor() && af.isPublic();
         boolean enumDefConstructor = mth.isConstructor() && mth.getParentClass().contains(AFlag.CONVERTED_ENUM);
-        boolean clsInit = mth.getMethodInfo().isClassInit() && af.isStatic();
+        boolean clsInit = mth.methodInfo().isClassInit() && af.isStatic();
         if (publicConstructor || enumDefConstructor || clsInit) {
             if (!BlockUtils.isAllBlocksEmpty(mth.getBasicBlocks())) {
                 return;

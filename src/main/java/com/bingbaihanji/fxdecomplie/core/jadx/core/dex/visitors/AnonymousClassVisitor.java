@@ -57,7 +57,7 @@ public class AnonymousClassVisitor extends AbstractVisitor {
     }
 
     private static Map<InsnArg, FieldNode> getArgsToFieldsMapping(MethodNode mth, List<InsnNode> usedInsns) {
-        MethodInfo callMth = mth.getMethodInfo();
+        MethodInfo callMth = mth.methodInfo();
         ClassNode cls = mth.getParentClass();
         List<RegisterArg> argList = mth.getArgRegs();
         ClassNode outerCls = mth.getUseIn().get(0).getParentClass();

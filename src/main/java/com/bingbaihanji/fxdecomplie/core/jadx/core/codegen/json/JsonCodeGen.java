@@ -143,12 +143,12 @@ public class JsonCodeGen {
             }
             JsonMethod jsonMth = new JsonMethod();
             jsonMth.setName(mth.getName());
-            if (mth.getMethodInfo().hasAlias()) {
+            if (mth.methodInfo().hasAlias()) {
                 jsonMth.setAlias(mth.getAlias());
             }
-            jsonMth.setSignature(mth.getMethodInfo().getShortId());
+            jsonMth.setSignature(mth.methodInfo().getShortId());
             jsonMth.setReturnType(getTypeAlias(classGen, mth.getReturnType()));
-            jsonMth.setArguments(Utils.collectionMap(mth.getMethodInfo().getArgumentsTypes(), clsType -> getTypeAlias(classGen, clsType)));
+            jsonMth.setArguments(Utils.collectionMap(mth.methodInfo().getArgumentsTypes(), clsType -> getTypeAlias(classGen, clsType)));
 
             MethodGen mthGen = new MethodGen(classGen, mth);
             ICodeWriter cw = new AnnotatedCodeWriter(args);

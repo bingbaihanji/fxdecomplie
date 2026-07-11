@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.TypeGen;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 
@@ -154,7 +154,7 @@ public final class LiteralArg extends InsnArg {
     @Override
     public String toString() {
         try {
-            String value = TypeGen.literalToString(literal, getType(), StringUtils.getInstance(), true, false);
+            String value = TypeGen.literalToString(literal, getType(), CodegenEscapeUtils.getInstance(), true, false);
             if (getType().equals(ArgType.BOOLEAN) && ("true".equals(value) || "false".equals(value))) {
                 return value;
             }

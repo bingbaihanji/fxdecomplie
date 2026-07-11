@@ -12,18 +12,7 @@ import java.util.List;
  * Method details build from MethodInfo.
  * Note: some fields have unknown values.
  */
-public class SimpleMethodDetails implements IMethodDetails {
-
-    private final MethodInfo methodInfo;
-
-    public SimpleMethodDetails(MethodInfo methodInfo) {
-        this.methodInfo = methodInfo;
-    }
-
-    @Override
-    public MethodInfo getMethodInfo() {
-        return methodInfo;
-    }
+public record SimpleMethodDetails(MethodInfo methodInfo) implements IMethodDetails {
 
     @Override
     public ArgType getReturnType() {

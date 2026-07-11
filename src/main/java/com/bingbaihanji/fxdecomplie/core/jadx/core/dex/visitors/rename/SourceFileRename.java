@@ -10,7 +10,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BetterName;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
@@ -56,8 +56,8 @@ public class SourceFileRename extends AbstractVisitor {
             return null;
         }
         String name = sourceFileAttr.getFileName();
-        name = StringUtils.removeSuffix(name, ".java");
-        name = StringUtils.removeSuffix(name, ".kt");
+        name = CodegenEscapeUtils.removeSuffix(name, ".java");
+        name = CodegenEscapeUtils.removeSuffix(name, ".kt");
         if (!NameMapper.isValidAndPrintable(name)) {
             return null;
         }

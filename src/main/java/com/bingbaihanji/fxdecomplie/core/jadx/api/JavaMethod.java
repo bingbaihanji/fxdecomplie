@@ -39,7 +39,7 @@ public final class JavaMethod implements JavaNode {
     /** 获取方法的完整名称 */
     @Override
     public String getFullName() {
-        return mth.getMethodInfo().getFullName();
+        return mth.methodInfo().getFullName();
     }
 
     /** 获取声明该方法的类 */
@@ -61,7 +61,7 @@ public final class JavaMethod implements JavaNode {
 
     /** 获取方法的参数类型列表，并尝试解析类别名 */
     public List<ArgType> getArguments() {
-        List<ArgType> infoArgTypes = mth.getMethodInfo().getArgumentsTypes();
+        List<ArgType> infoArgTypes = mth.methodInfo().getArgumentsTypes();
         if (infoArgTypes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -112,12 +112,12 @@ public final class JavaMethod implements JavaNode {
 
     /** 判断该方法是否为构造方法 */
     public boolean isConstructor() {
-        return mth.getMethodInfo().isConstructor();
+        return mth.methodInfo().isConstructor();
     }
 
     /** 判断该方法是否为类初始化方法（静态初始化块 &lt;clinit&gt;） */
     public boolean isClassInit() {
-        return mth.getMethodInfo().isClassInit();
+        return mth.methodInfo().isClassInit();
     }
 
     /** 获取该方法定义在源码中的位置（偏移量） */
@@ -134,7 +134,7 @@ public final class JavaMethod implements JavaNode {
     /** 移除方法的别名，恢复为原始名称 */
     @Override
     public void removeAlias() {
-        this.mth.getMethodInfo().removeAlias();
+        this.mth.methodInfo().removeAlias();
     }
 
     /** 判断给定的代码注解是否指向该方法自身 */

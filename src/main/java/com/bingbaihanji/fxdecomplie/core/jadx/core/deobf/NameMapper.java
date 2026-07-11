@@ -1,13 +1,13 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.deobf;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils.notEmpty;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils.notEmpty;
 
 /**
  * 名称映射工具类，提供 Java 标识符验证、可打印字符检查以及无效字符移除等功能。
@@ -231,7 +231,7 @@ public class NameMapper {
         }
         int len = name.length();
         StringBuilder sb = new StringBuilder(len);
-        StringUtils.visitCodePoints(name, codePoint -> {
+        CodegenEscapeUtils.visitCodePoints(name, codePoint -> {
             if (isPrintableAsciiCodePoint(codePoint) && isValidIdentifierPart(codePoint)) {
                 sb.appendCodePoint(codePoint);
             }
@@ -263,7 +263,7 @@ public class NameMapper {
      */
     public static String removeNonPrintableCharacters(String name) {
         StringBuilder sb = new StringBuilder(name.length());
-        StringUtils.visitCodePoints(name, codePoint -> {
+        CodegenEscapeUtils.visitCodePoints(name, codePoint -> {
             if (isPrintableAsciiCodePoint(codePoint)) {
                 sb.appendCodePoint(codePoint);
             }

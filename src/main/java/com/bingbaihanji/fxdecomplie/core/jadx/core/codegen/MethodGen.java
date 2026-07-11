@@ -182,7 +182,7 @@ public class MethodGen {
      * @return 若在方法名后需要追加空格（普通方法定义）返回 true；匿名构造器等场景返回 false
      */
     public boolean addDefinition(ICodeWriter code) {
-        if (mth.getMethodInfo().isClassInit()) {
+        if (mth.methodInfo().isClassInit()) {
             code.startLine();
             code.attachDefinition(mth);
             code.add("static");
@@ -211,7 +211,7 @@ public class MethodGen {
         if (clsAccFlags.isAnnotation()) {
             ai = ai.remove(AccessFlags.PUBLIC);
         }
-        if (mth.getMethodInfo().hasAlias() && !ai.isConstructor()) {
+        if (mth.methodInfo().hasAlias() && !ai.isConstructor()) {
             CodeGenUtils.addRenamedComment(code, mth, mth.getName());
         }
         if (mth.contains(AFlag.INCONSISTENT_CODE) && mth.checkCommentsLevel(CommentsLevel.ERROR)) {
@@ -284,7 +284,7 @@ public class MethodGen {
             if (mth.checkCommentsLevel(CommentsLevel.INFO)) {
                 code.add(" // ");
                 code.add(Utils.listToString(overrideAttr.getOverrideList(), ", ",
-                        md -> md.getMethodInfo().getDeclClass().getAliasFullName()));
+                        md -> md.methodInfo().getDeclClass().getAliasFullName()));
             }
         }
         if (false) {
@@ -498,9 +498,9 @@ public class MethodGen {
                 .add('.')
                 .add(mth.getAlias())
                 .add('(')
-                .add(Utils.listToString(mth.getMethodInfo().getArgumentsTypes()))
+                .add(Utils.listToString(mth.methodInfo().getArgumentsTypes()))
                 .add("):")
-                .add(mth.getMethodInfo().getReturnType().toString())
+                .add(mth.methodInfo().getReturnType().toString())
                 .add("\");");
     }
 

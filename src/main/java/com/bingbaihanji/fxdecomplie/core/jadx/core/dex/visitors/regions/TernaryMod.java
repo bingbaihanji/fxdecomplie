@@ -290,7 +290,7 @@ public class TernaryMod extends AbstractRegionVisitor implements IRegionIterativ
             return;
         }
         InsnNode elseAssign = otherArg.getAssignInsn();
-        if (mth.isConstructor() || (mth.getParentClass().isEnum() && mth.getMethodInfo().isClassInit())) {
+        if (mth.isConstructor() || (mth.getParentClass().isEnum() && mth.methodInfo().isClassInit())) {
             // forcing ternary inline for constructors (will help in moving super call to the top) and enums
             // skip code style checks
         } else {

@@ -768,7 +768,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
             if (method == this) {
                 continue;
             }
-            if (method.getMethodInfo().isOverloadedBy(thisMthInfo)) {
+            if (method.methodInfo().isOverloadedBy(thisMthInfo)) {
                 return true;
             }
         }
@@ -958,7 +958,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     @Override
-    public MethodInfo getMethodInfo() {
+    public MethodInfo methodInfo() {
         return mthInfo;
     }
 
@@ -994,7 +994,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
         MethodOverrideAttr overrideAttr = get(AType.METHOD_OVERRIDE);
         if (overrideAttr != null) {
             for (MethodNode relatedMth : overrideAttr.getRelatedMthNodes()) {
-                relatedMth.getMethodInfo().setAlias(newName);
+                relatedMth.methodInfo().setAlias(newName);
             }
         } else {
             mthInfo.setAlias(newName);

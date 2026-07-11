@@ -63,7 +63,7 @@ public class EnumVisitor extends AbstractVisitor {
                 .remove(AccessFlags.ABSTRACT)
                 .remove(AccessFlags.STATIC));
         for (MethodNode mth : cls.getMethods()) {
-            if (mth.getMethodInfo().isConstructor()) {
+            if (mth.methodInfo().isConstructor()) {
                 mth.setAccessFlags(mth.getAccessFlags().remove(AccessInfo.VISIBILITY_FLAGS));
             }
         }
@@ -369,7 +369,7 @@ public class EnumVisitor extends AbstractVisitor {
             if ("$values".equals(valuesMth.getName())) {
                 // Kotlin synthetic method used for init values
                 // rename to actual values method to use in $ENTRIES init code
-                valuesMth.getMethodInfo().setAlias("values");
+                valuesMth.methodInfo().setAlias("values");
             }
         }
         return enumFields;
@@ -598,7 +598,7 @@ public class EnumVisitor extends AbstractVisitor {
         MethodNode valuesMethod = null;
         // remove compiler generated methods
         for (MethodNode mth : cls.getMethods()) {
-            MethodInfo mi = mth.getMethodInfo();
+            MethodInfo mi = mth.methodInfo();
             if (mi.isClassInit() || mth.isNoCode()) {
                 continue;
             }
@@ -620,13 +620,13 @@ public class EnumVisitor extends AbstractVisitor {
                     mth.add(AFlag.DONT_GENERATE);
                 } else {
                     // custom values method => rename to resolve conflict with enum method
-                    mth.getMethodInfo().setAlias("valuesCustom");
+                    mth.methodInfo().setAlias("valuesCustom");
                     mth.addAttr(new RenameReasonAttr(mth).append("to resolve conflict with enum method"));
                 }
             } else if (isValuesMethod(mth, clsType)) {
-                if (!"values".equals(mth.getMethodInfo().getAlias()) && !mth.getUseIn().isEmpty()) {
+                if (!"values".equals(mth.methodInfo().getAlias()) && !mth.getUseIn().isEmpty()) {
                     // rename to use default values method
-                    mth.getMethodInfo().setAlias("values");
+                    mth.methodInfo().setAlias("values");
                     mth.addAttr(new RenameReasonAttr(mth).append("to match enum method name"));
                     mth.add(AFlag.DONT_RENAME);
                 }
@@ -646,7 +646,7 @@ public class EnumVisitor extends AbstractVisitor {
     private void markArgsForSkip(MethodNode mth) {
         // skip first and second args
         SkipMethodArgsAttr.skipArg(mth, 0);
-        if (mth.getMethodInfo().getArgsCount() > 1) {
+        if (mth.methodInfo().getArgsCount() > 1) {
             SkipMethodArgsAttr.skipArg(mth, 1);
         }
     }
@@ -695,7 +695,7 @@ public class EnumVisitor extends AbstractVisitor {
     }
 
     private void fixValuesAccess(MethodNode mth, FieldInfo valuesFieldInfo, ArgType clsType, @Nullable MethodNode valuesMethod) {
-        MethodInfo mi = mth.getMethodInfo();
+        MethodInfo mi = mth.methodInfo();
         if (mi.isConstructor() || mi.isClassInit() || mth.isNoCode() || mth == valuesMethod) {
             return;
         }
@@ -710,7 +710,7 @@ public class EnumVisitor extends AbstractVisitor {
             if (insn.getType() == InsnType.SGET && insnTest.test(insn)) {
                 MethodInfo valueMth = valuesMethod == null
                         ? getValueMthInfo(mth.root(), clsType)
-                        : valuesMethod.getMethodInfo();
+                        : valuesMethod.methodInfo();
                 InvokeNode invokeNode = new InvokeNode(valueMth, InvokeType.STATIC, 0);
                 invokeNode.setResult(insn.getResult());
                 if (valuesMethod == null) {

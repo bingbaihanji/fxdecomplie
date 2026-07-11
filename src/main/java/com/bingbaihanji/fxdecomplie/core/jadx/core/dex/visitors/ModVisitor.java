@@ -422,7 +422,7 @@ public class ModVisitor extends AbstractVisitor {
         }
         SkipMethodArgsAttr attr = callMth.get(AType.SKIP_MTH_ARGS);
         if (attr != null) {
-            int argsCount = Math.min(callMth.getMethodInfo().getArgsCount(), co.getArgsCount());
+            int argsCount = Math.min(callMth.methodInfo().getArgsCount(), co.getArgsCount());
             for (int i = 0; i < argsCount; i++) {
                 if (attr.isSkip(i)) {
                     anonymousCallArgMod(co.getArg(i));

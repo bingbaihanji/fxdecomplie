@@ -86,7 +86,7 @@ public class ProcessKotlinInternals extends AbstractVisitor {
         int mthCount = 0;
         for (MethodNode mth : cls.getMethods()) {
             if (mth.getAccessFlags().isStatic()
-                    && mth.getMethodInfo().getShortId().endsWith(KOTLIN_VARNAME_SOURCE_MTH1)) {
+                    && mth.methodInfo().getShortId().endsWith(KOTLIN_VARNAME_SOURCE_MTH1)) {
                 mthCount++;
             }
         }
@@ -217,9 +217,9 @@ public class ProcessKotlinInternals extends AbstractVisitor {
             if (!mth.getAccessFlags().isStatic()) {
                 continue;
             }
-            String shortId = mth.getMethodInfo().getShortId();
+            String shortId = mth.methodInfo().getShortId();
             if (shortId.endsWith(KOTLIN_VARNAME_SOURCE_MTH1) || shortId.endsWith(KOTLIN_VARNAME_SOURCE_MTH2)) {
-                set.add(mth.getMethodInfo());
+                set.add(mth.methodInfo());
             }
         }
         return set;

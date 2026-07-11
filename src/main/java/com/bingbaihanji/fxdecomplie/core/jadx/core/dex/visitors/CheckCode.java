@@ -21,7 +21,7 @@ public class CheckCode extends AbstractVisitor {
 
     @Override
     public void visit(MethodNode mth) throws JadxException {
-        MethodInfo mthInfo = mth.getMethodInfo();
+        MethodInfo mthInfo = mth.methodInfo();
         if (mthInfo.getArgumentsTypes().size() > 255) {
             // java spec don't allow more than 255 args
             if (canRemoveMethod(mth)) {

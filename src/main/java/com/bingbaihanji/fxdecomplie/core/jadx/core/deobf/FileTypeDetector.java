@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.deobf;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.FileSignature;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -58,7 +58,7 @@ public class FileTypeDetector {
     public static String detectFileExtension(byte[] data) {
         // detect ext by headers
         String extByHeaders = detectByHeaders(data);
-        if (!StringUtils.isEmpty(extByHeaders)) {
+        if (!CodegenEscapeUtils.isEmpty(extByHeaders)) {
             return extByHeaders;
         }
 

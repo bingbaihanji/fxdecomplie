@@ -55,7 +55,7 @@ public class ClspMethod implements IMethodDetails, Comparable<ClspMethod> {
 
     /** 获取方法信息 */
     @Override
-    public MethodInfo getMethodInfo() {
+    public MethodInfo methodInfo() {
         return methodInfo;
     }
 
@@ -144,7 +144,7 @@ public class ClspMethod implements IMethodDetails, Comparable<ClspMethod> {
             sb.append(Utils.listToString(getTypeParameters()));
             sb.append("> ");
         }
-        sb.append(getMethodInfo().getFullName());
+        sb.append(methodInfo().getFullName());
         sb.append('(');
         sb.append(Utils.listToString(getArgTypes()));
         sb.append("):");

@@ -178,7 +178,7 @@ public class SignatureProcessor extends AbstractVisitor {
         }
         try {
             List<ArgType> typeParameters = sp.consumeGenericTypeParameters();
-            List<ArgType> parsedArgTypes = sp.consumeMethodArgs(mth.getMethodInfo().getArgsCount());
+            List<ArgType> parsedArgTypes = sp.consumeMethodArgs(mth.methodInfo().getArgsCount());
             ArgType parsedRetType = sp.consumeType();
 
             if (!validateInnerType(parsedRetType) || !validateInnerType(parsedArgTypes)) {
@@ -202,7 +202,7 @@ public class SignatureProcessor extends AbstractVisitor {
 
     private boolean validateAndApplyTypes(MethodNode mth, SignatureParser sp, ArgType retType, List<ArgType> argTypes) {
         try {
-            if (!validateParsedType(retType, mth.getMethodInfo().getReturnType())) {
+            if (!validateParsedType(retType, mth.methodInfo().getReturnType())) {
                 mth.addWarnComment("Incorrect return type in method signature: " + sp.getSignature());
                 return false;
             }
@@ -219,7 +219,7 @@ public class SignatureProcessor extends AbstractVisitor {
     }
 
     private List<ArgType> checkArgTypes(MethodNode mth, SignatureParser sp, List<ArgType> parsedArgTypes) {
-        MethodInfo mthInfo = mth.getMethodInfo();
+        MethodInfo mthInfo = mth.methodInfo();
         List<ArgType> mthArgTypes = mthInfo.getArgumentsTypes();
         int len = parsedArgTypes.size();
         if (len != mthArgTypes.size()) {

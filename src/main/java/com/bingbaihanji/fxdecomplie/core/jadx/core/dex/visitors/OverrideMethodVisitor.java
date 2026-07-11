@@ -105,7 +105,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
             return result;
         }
         ClassNode cls = mth.getParentClass();
-        String signature = mth.getMethodInfo().makeSignature(false);
+        String signature = mth.methodInfo().makeSignature(false);
         List<IMethodDetails> overrideList = new ArrayList<>();
         Set<IMethodDetails> baseMethods = new HashSet<>();
         for (ArgType superType : superData.getSuperTypes()) {
@@ -156,24 +156,24 @@ public class OverrideMethodVisitor extends AbstractVisitor {
     private MethodNode searchOverriddenMethod(ClassNode cls, MethodNode mth, String signature) {
         // 通过精确的完整签名（含返回值）搜索，以对抗混淆（参见测试
         // 'TestOverrideWithSameName'）
-        String shortId = mth.getMethodInfo().getShortId();
+        String shortId = mth.methodInfo().getShortId();
         for (MethodNode supMth : cls.getMethods()) {
-            if (supMth.getMethodInfo().getShortId().equals(shortId) && !supMth.getAccessFlags().isStatic()) {
+            if (supMth.methodInfo().getShortId().equals(shortId) && !supMth.getAccessFlags().isStatic()) {
                 return supMth;
             }
         }
         // 按不含返回值的签名搜索，并检查其返回值是否为更宽的类型
         for (MethodNode supMth : cls.getMethods()) {
-            if (supMth.getMethodInfo().getShortId().startsWith(signature) && !supMth.getAccessFlags().isStatic()) {
+            if (supMth.methodInfo().getShortId().startsWith(signature) && !supMth.getAccessFlags().isStatic()) {
                 TypeCompare typeCompare = cls.root().getTypeCompare();
-                ArgType supRetType = supMth.getMethodInfo().getReturnType();
-                ArgType mthRetType = mth.getMethodInfo().getReturnType();
+                ArgType supRetType = supMth.methodInfo().getReturnType();
+                ArgType mthRetType = mth.methodInfo().getReturnType();
                 TypeCompareEnum res = typeCompare.compareTypes(supRetType, mthRetType);
                 if (res.isWider()) {
                     return supMth;
                 }
                 if (res == TypeCompareEnum.UNKNOWN || res == TypeCompareEnum.CONFLICT) {
-                    mth.addDebugComment("Possible override for method " + supMth.getMethodInfo().getFullId());
+                    mth.addDebugComment("Possible override for method " + supMth.methodInfo().getFullId());
                 }
             }
         }
@@ -362,7 +362,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
             return false;
         }
         TypeCompare typeCompare = mth.root().getTypeUpdate().getTypeCompare();
-        ArgType baseCls = baseMth.getMethodInfo().getDeclClass().getType();
+        ArgType baseCls = baseMth.methodInfo().getDeclClass().getType();
         for (ArgType superType : superData.getSuperTypes()) {
             TypeCompareEnum compareResult = typeCompare.compareTypes(superType, baseCls);
             if (compareResult == TypeCompareEnum.NARROW_BY_GENERIC) {
@@ -415,7 +415,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
             return null;
         }
         TypeCompare typeCompare = mth.root().getTypeUpdate().getTypeCompare();
-        ArgType baseCls = baseMth.getMethodInfo().getDeclClass().getType();
+        ArgType baseCls = baseMth.methodInfo().getDeclClass().getType();
         for (ArgType superType : superData.getSuperTypes()) {
             TypeCompareEnum compareResult = typeCompare.compareTypes(superType, baseCls);
             if (compareResult == TypeCompareEnum.NARROW_BY_GENERIC) {
@@ -431,18 +431,18 @@ public class OverrideMethodVisitor extends AbstractVisitor {
     }
 
     private void checkMethodSignatureCollisions(MethodNode mth, boolean rename) {
-        String mthName = mth.getMethodInfo().getAlias();
+        String mthName = mth.methodInfo().getAlias();
         String newSignature = MethodInfo.makeShortId(mthName, mth.getArgTypes(), null);
         for (MethodNode otherMth : mth.getParentClass().getMethods()) {
             String otherMthName = otherMth.getAlias();
             if (otherMthName.equals(mthName) && otherMth != mth) {
-                String otherSignature = otherMth.getMethodInfo().makeSignature(true, false);
+                String otherSignature = otherMth.methodInfo().makeSignature(true, false);
                 if (otherSignature.equals(newSignature)) {
                     if (rename) {
                         if (otherMth.contains(AFlag.DONT_RENAME) || otherMth.contains(AType.METHOD_OVERRIDE)) {
                             otherMth.addWarnComment("Can't rename method to resolve collision");
                         } else {
-                            otherMth.getMethodInfo().setAlias(makeNewAlias(otherMth));
+                            otherMth.methodInfo().setAlias(makeNewAlias(otherMth));
                             otherMth.addAttr(new RenameReasonAttr("avoid collision after fix types in other method"));
                         }
                     }

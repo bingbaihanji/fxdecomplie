@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.ResourcesLoader;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ConstStorage;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidResourcesMap;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ValuesParser;
@@ -189,7 +189,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
 
         String nsKey = getString(beginURI);
         String nsValue = getString(beginPrefix);
-        if (StringUtils.notBlank(nsKey) && !nsMap.containsValue(nsValue)) {
+        if (CodegenEscapeUtils.notBlank(nsKey) && !nsMap.containsValue(nsValue)) {
             nsMap.putIfAbsent(nsKey, nsValue);
         }
         namespaceDepth++;
@@ -215,7 +215,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
 
         String nsKey = getString(endURI);
         String nsValue = getString(endPrefix);
-        if (StringUtils.notBlank(nsKey) && !nsMap.containsValue(nsValue)) {
+        if (CodegenEscapeUtils.notBlank(nsKey) && !nsMap.containsValue(nsValue)) {
             nsMap.putIfAbsent(nsKey, nsValue);
         }
     }
@@ -237,7 +237,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
             writer.add('>');
         }
         writer.attachSourceLine(lineNumber);
-        String escapedStr = StringUtils.escapeXML(str);
+        String escapedStr = CodegenEscapeUtils.escapeXML(str);
         writer.add(escapedStr);
 
         long size = is.readInt16();
@@ -292,7 +292,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
                         writer.add(':');
                         writer.add(nsValue);
                     }
-                    writer.add("=\"").add(StringUtils.escapeXML(entry.getKey())).add('"');
+                    writer.add("=\"").add(CodegenEscapeUtils.escapeXML(entry.getKey())).add('"');
                 }
             }
         }
@@ -341,7 +341,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
                 decodedAttr = deobfClassName(decodedAttr);
             }
             attachClassNode(writer, attrName, decodedAttr);
-            writer.add(StringUtils.escapeXML(decodedAttr));
+            writer.add(CodegenEscapeUtils.escapeXML(decodedAttr));
         } else {
             decodeAttribute(attributeNS, attrValDataType, attrValData,
                     attrFullName);
@@ -461,7 +461,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
                 str = deobfClassName(str);
             }
             attachClassNode(writer, attrFullName, str);
-            writer.add(str != null ? StringUtils.escapeXML(str) : "null");
+            writer.add(str != null ? CodegenEscapeUtils.escapeXML(str) : "null");
         }
     }
 

@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 
 public final class ConstStringNode extends InsnNode {
 
@@ -35,6 +35,6 @@ public final class ConstStringNode extends InsnNode {
 
     @Override
     public String toString() {
-        return super.baseString() + StringUtils.getInstance().unescapeString(str) + super.attributesString();
+        return super.baseString() + CodegenEscapeUtils.getInstance().unescapeString(str) + super.attributesString();
     }
 }

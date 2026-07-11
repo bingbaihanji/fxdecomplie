@@ -195,7 +195,7 @@ public class ConstructorVisitor extends AbstractVisitor {
         if (defCtr == null || defCtr.equals(callMth) || defCtr.getAccessFlags().isSynthetic()) {
             return null;
         }
-        ConstructorInsn newInsn = new ConstructorInsn(defCtr.getMethodInfo(), co.getCallType());
+        ConstructorInsn newInsn = new ConstructorInsn(defCtr.methodInfo(), co.getCallType());
         newInsn.setResult(co.getResult().duplicate());
         newInsn.inheritMetadata(co);
         return newInsn;

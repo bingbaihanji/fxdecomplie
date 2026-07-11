@@ -106,7 +106,7 @@ public class ClspClass {
     public void setMethods(List<ClspMethod> methods) {
         Map<String, ClspMethod> map = new HashMap<>(methods.size());
         for (ClspMethod mth : methods) {
-            map.put(mth.getMethodInfo().getShortId(), mth);
+            map.put(mth.methodInfo().getShortId(), mth);
         }
         setMethodsMap(map);
     }

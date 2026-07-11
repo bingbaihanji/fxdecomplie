@@ -15,7 +15,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import org.jetbrains.annotations.Nullable;
@@ -146,7 +146,7 @@ public class AnnotationGen {
             return;
         }
 
-        StringUtils stringUtils = getStringUtils();
+        CodegenEscapeUtils stringUtils = getStringUtils();
         Object value = encodedValue.getValue();
         switch (encodedValue.getType()) {
             case ENCODED_NULL:
@@ -171,10 +171,10 @@ public class AnnotationGen {
                 code.add(stringUtils.formatLong((Long) value, false));
                 break;
             case ENCODED_FLOAT:
-                code.add(StringUtils.formatFloat((Float) value));
+                code.add(CodegenEscapeUtils.formatFloat((Float) value));
                 break;
             case ENCODED_DOUBLE:
-                code.add(StringUtils.formatDouble((Double) value));
+                code.add(CodegenEscapeUtils.formatDouble((Double) value));
                 break;
             case ENCODED_STRING:
                 code.add(stringUtils.unescapeString((String) value));
@@ -219,7 +219,7 @@ public class AnnotationGen {
         }
     }
 
-    private StringUtils getStringUtils() {
+    private CodegenEscapeUtils getStringUtils() {
         return cls.root().getStringUtils();
     }
 }

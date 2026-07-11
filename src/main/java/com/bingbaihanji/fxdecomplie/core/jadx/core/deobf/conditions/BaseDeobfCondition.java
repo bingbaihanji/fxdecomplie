@@ -32,7 +32,7 @@ public class BaseDeobfCondition extends AbstractDeobfCondition {
     @Override
     public Action check(MethodNode mth) {
         if (mth.contains(AFlag.DONT_RENAME)
-                || mth.getMethodInfo().hasAlias()
+                || mth.methodInfo().hasAlias()
                 || mth.isConstructor()) {
             return Action.FORBID_RENAME;
         }

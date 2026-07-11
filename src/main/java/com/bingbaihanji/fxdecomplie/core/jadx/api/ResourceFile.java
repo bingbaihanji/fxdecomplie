@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.FileTypeDetector;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResContainer;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
@@ -142,7 +142,7 @@ public class ResourceFile {
                 });
 
                 String fileExtension = FileTypeDetector.detectFileExtension(bytes);
-                if (!StringUtils.isEmpty(fileExtension)) {
+                if (!CodegenEscapeUtils.isEmpty(fileExtension)) {
                     sb.append(fileExtension);
                 } else {
                     sb.append(getExtFromName(name));

@@ -210,7 +210,7 @@ public class DebugInfoApplyVisitor extends AbstractVisitor {
         }
         try {
             List<MethodParametersAttr.Info> params = parametersAttr.getList();
-            if (params.size() != mth.getMethodInfo().getArgsCount()) {
+            if (params.size() != mth.methodInfo().getArgsCount()) {
                 return;
             }
             int i = 0;

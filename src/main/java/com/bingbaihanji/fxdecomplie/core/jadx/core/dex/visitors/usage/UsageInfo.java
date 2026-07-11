@@ -149,7 +149,7 @@ public class UsageInfo implements IUsageInfoData {
         }
         // implicit usage
         clsUse(mth, useMth.getReturnType());
-        useMth.getMethodInfo().getArgumentsTypes().forEach(argType -> clsUse(mth, argType));
+        useMth.methodInfo().getArgumentsTypes().forEach(argType -> clsUse(mth, argType));
     }
 
     /**
@@ -230,6 +230,6 @@ public class UsageInfo implements IUsageInfoData {
 
     private List<MethodNode> resolveMthList(List<MethodNode> mthNodeList) {
         return Utils.collectionMap(mthNodeList,
-                m -> root.resolveDirectMethod(m.getParentClass().getRawName(), m.getMethodInfo().getShortId()));
+                m -> root.resolveDirectMethod(m.getParentClass().getRawName(), m.methodInfo().getShortId()));
     }
 }

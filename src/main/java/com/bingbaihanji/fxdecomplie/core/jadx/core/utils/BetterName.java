@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.utils;
 
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +38,8 @@ public class BetterName {
             return firstName;
         }
 
-        if (StringUtils.isEmpty(firstName) || StringUtils.isEmpty(secondName)) {
-            return StringUtils.notEmpty(firstName)
+        if (CodegenEscapeUtils.isEmpty(firstName) || CodegenEscapeUtils.isEmpty(secondName)) {
+            return CodegenEscapeUtils.notEmpty(firstName)
                     ? firstName
                     : secondName;
         }
@@ -65,7 +66,7 @@ public class BetterName {
     private static AnalyzeResult analyze(String name) {
         var result = new AnalyzeResult();
 
-        StringUtils.visitCodePoints(name, cp -> {
+        CodegenEscapeUtils.visitCodePoints(name, cp -> {
             if (Character.isDigit(cp)) {
                 result.digitCount++;
             }
@@ -124,7 +125,7 @@ public class BetterName {
     private static int differentCharsCount(String str) {
         String lower = str.toLowerCase(Locale.ROOT);
         Set<Integer> chars = new HashSet<>();
-        StringUtils.visitCodePoints(lower, chars::add);
+        CodegenEscapeUtils.visitCodePoints(lower, chars::add);
         return chars.size();
     }
 

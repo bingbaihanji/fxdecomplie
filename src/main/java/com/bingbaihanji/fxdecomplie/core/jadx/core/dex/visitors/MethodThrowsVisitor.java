@@ -247,15 +247,15 @@ public class MethodThrowsVisitor extends AbstractVisitor {
         // 'TestOverrideWithSameName')
         String shortId = mth.getShortId();
         for (MethodNode supMth : cls.getMethods()) {
-            if (supMth.getMethodInfo().getShortId().equals(shortId)) {
+            if (supMth.methodInfo().getShortId().equals(shortId)) {
                 return supMth;
             }
         }
         // search by signature without return value and check if return value is wider type
         for (MethodNode supMth : cls.getMethods()) {
-            if (supMth.getMethodInfo().getShortId().startsWith(signature) && !supMth.getAccessFlags().isStatic()) {
+            if (supMth.methodInfo().getShortId().startsWith(signature) && !supMth.getAccessFlags().isStatic()) {
                 TypeCompare typeCompare = cls.root().getTypeCompare();
-                ArgType supRetType = supMth.getMethodInfo().getReturnType();
+                ArgType supRetType = supMth.methodInfo().getReturnType();
                 ArgType mthRetType = mth.getReturnType();
                 TypeCompareEnum res = typeCompare.compareTypes(supRetType, mthRetType);
                 if (res.isWider()) {

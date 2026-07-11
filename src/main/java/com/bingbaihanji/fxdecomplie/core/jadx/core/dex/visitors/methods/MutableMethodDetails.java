@@ -18,7 +18,7 @@ public class MutableMethodDetails implements IMethodDetails {
     private int accFlags;
 
     public MutableMethodDetails(IMethodDetails base) {
-        this.mthInfo = base.getMethodInfo();
+        this.mthInfo = base.methodInfo();
         this.retType = base.getReturnType();
         this.argTypes = Collections.unmodifiableList(base.getArgTypes());
         this.typeParams = Collections.unmodifiableList(base.getTypeParameters());
@@ -28,7 +28,7 @@ public class MutableMethodDetails implements IMethodDetails {
     }
 
     @Override
-    public MethodInfo getMethodInfo() {
+    public MethodInfo methodInfo() {
         return mthInfo;
     }
 

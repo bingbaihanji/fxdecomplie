@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -147,7 +147,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     public void changeShortName(String aliasName) {
         ClassAliasInfo newAlias;
         String aliasPkg = getAliasPkg();
-        if (Objects.equals(name, aliasName) || StringUtils.isEmpty(aliasName)) {
+        if (Objects.equals(name, aliasName) || CodegenEscapeUtils.isEmpty(aliasName)) {
             if (Objects.equals(getPackage(), aliasPkg)) {
                 newAlias = null;
             } else {

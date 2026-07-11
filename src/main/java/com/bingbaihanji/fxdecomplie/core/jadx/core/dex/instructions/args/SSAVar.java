@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.PhiInsn;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -435,7 +435,7 @@ public class SSAVar implements Comparable<SSAVar> {
     @Override
     public String toString() {
         return toShortString()
-                + (StringUtils.notEmpty(getName()) ? " '" + getName() + "' " : "")
+                + (CodegenEscapeUtils.notEmpty(getName()) ? " '" + getName() + "' " : "")
                 + ' ' + typeInfo.getType();
     }
 }

@@ -79,7 +79,7 @@ public class JsonMappingGen {
         jsonCls.setMethods(new ArrayList<>(methods.size()));
         for (MethodNode method : methods) {
             JsonMthMapping jsonMethod = new JsonMthMapping();
-            MethodInfo methodInfo = method.getMethodInfo();
+            MethodInfo methodInfo = method.methodInfo();
             jsonMethod.setSignature(methodInfo.getShortId());
             jsonMethod.setName(methodInfo.getName());
             jsonMethod.setAlias(methodInfo.getAlias());
