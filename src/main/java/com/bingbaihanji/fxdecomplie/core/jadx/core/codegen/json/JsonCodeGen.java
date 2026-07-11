@@ -21,7 +21,6 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.GsonUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.google.gson.FieldNamingPolicy;
@@ -35,7 +34,7 @@ import java.util.Map;
 
 public class JsonCodeGen {
 
-    private static final Gson GSON = GsonUtils.defaultGsonBuilder()
+    private static final Gson GSON = new com.google.gson.GsonBuilder().disableJdkUnsafe().disableInnerClassSerialization().setStrictness(com.google.gson.Strictness.STRICT).setPrettyPrinting()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
             .disableHtmlEscaping()
             .create();
