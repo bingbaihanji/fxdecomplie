@@ -7,7 +7,10 @@ import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.util.AtomicFile;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
@@ -21,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -102,7 +104,7 @@ public final class RenameService {
                     + "(?:\\s*\\[\\s*\\])?\\s+([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*[:=;]");
     /** 匹配 Lambda 表达式带括号参数组 */
     private static final Pattern LAMBDA_GROUP_PATTERN = Pattern.compile("\\(([^()\\n]*)\\)\\s*->");
-    /** 匹配 Lambda 表达式单参数（无括号） */
+    /** 匹配 Lambda 表达式单参数(无括号) */
     private static final Pattern LAMBDA_SINGLE_PATTERN = Pattern.compile(
             "(?<![\\w$])([a-zA-Z_$][a-zA-Z0-9_$]*)\\s*->");
     /** 匹配 import 语句行 */
@@ -119,7 +121,7 @@ public final class RenameService {
     private static final ConcurrentMap<String, Map<String, List<String>>> ORIGINAL_BY_DISPLAY_CACHE = new ConcurrentHashMap<>();
     /** 工作区级别锁：保证同一工作区的重命名操作为串行 */
     private static final ConcurrentMap<String, Object> WORKSPACE_LOCKS = new ConcurrentHashMap<>();
-    /** 重命名文件存储根目录（可被外部设置覆盖） */
+    /** 重命名文件存储根目录(可被外部设置覆盖) */
     private static volatile Path rootDir;
 
     private RenameService() {
@@ -171,8 +173,8 @@ public final class RenameService {
     /**
      * 批量保存重命名
      *
-     * @param skipExisting 若为 true,已有 sameKey 条目保留不覆盖（用于反混淆等自动批量场景,
-     *                     保护用户手动重命名不被反混淆建议覆盖）
+     * @param skipExisting 若为 true,已有 sameKey 条目保留不覆盖(用于反混淆等自动批量场景,
+     *                     保护用户手动重命名不被反混淆建议覆盖)
      */
     public static int saveAll(String workspaceHash, List<RenameEntry> entries,
                               boolean skipExisting) {
@@ -246,7 +248,7 @@ public final class RenameService {
     /**
      * 加载工作区全部重命名条目
      *
-     * <p>优先从内存缓存返回（避免滚动文件树时高频触发磁盘 I/O 导致卡顿）,
+     * <p>优先从内存缓存返回(避免滚动文件树时高频触发磁盘 I/O 导致卡顿),
      * 缓存未命中时才读取磁盘文件</p>
      */
     public static List<RenameEntry> loadAll(String workspaceHash) {
@@ -368,12 +370,12 @@ public final class RenameService {
     /**
      * 将重命名映射应用到代码元数据的引用目标类名
      *
-     * <p>保留引用的行号和列位置不变,仅将 targetClass 中的旧类名替换为新类名。
+     * <p>保留引用的行号和列位置不变,仅将 targetClass 中的旧类名替换为新类名 
      * 用于在 {@link #applyRenames(String, String, String)} 修改源码后,
-     * 同步更新 Ctrl+Click 导航的引用目标。</p>
+     * 同步更新 Ctrl+Click 导航的引用目标 </p>
      *
-     * @param metadata 原始代码元数据（可能包含字节码泛型增强的引用）
-     * @param wsHash   工作区哈希（用于加载重命名条目）
+     * @param metadata 原始代码元数据(可能包含字节码泛型增强的引用)
+     * @param wsHash   工作区哈希(用于加载重命名条目)
      * @return 应用重命名后的新元数据
      */
     public static CodeMetadata applyRenamesToMetadata(CodeMetadata metadata, String wsHash) {
@@ -386,7 +388,7 @@ public final class RenameService {
         }
         // 构建类重命名映射：旧内部名 -> 新内部名
         // 对于类重命名, className 是全限定内部名, oldName 是旧简单名, newName 是新简单名
-        Map<String, String> classRenames = new HashMap<>();
+        Map<String, String> classRenames = new ArrayMap<>();
         for (RenameEntry entry : entries) {
             if (TYPE_CLASS.equals(entry.type()) && !entry.className().isBlank()
                     && !entry.newName().isBlank()) {
@@ -403,8 +405,8 @@ public final class RenameService {
             return metadata;
         }
 
-        Map<Integer, List<CodeMetadata.Reference>> newRefsByLine = new HashMap<>();
-        // 遍历所有有引用的行,而不是逐行扫描（行号可能不连续）
+        Map<Integer, List<CodeMetadata.Reference>> newRefsByLine = new ArrayMap<>();
+        // 遍历所有有引用的行,而不是逐行扫描(行号可能不连续)
         for (var entry : metadata.getAllRefsByLine().entrySet()) {
             int line = entry.getKey();
             List<CodeMetadata.Reference> refs = entry.getValue();
@@ -534,7 +536,7 @@ public final class RenameService {
      * 构建显示名 → 原始内部名候选列表的映射
      *
      * <p>该映射用于反向查找：给定一个显示类名,找出所有可能的原始内部名
-     * 会注册多个别名变体（斜杠形、包名+新名、叶子名）,以应对短名冲突场景</p>
+     * 会注册多个别名变体(斜杠形、包名+新名、叶子名),以应对短名冲突场景</p>
      */
     private static Map<String, List<String>> buildOriginalByDisplayName(String workspaceHash) {
         List<RenameEntry> entries = loadAll(workspaceHash);
@@ -590,7 +592,7 @@ public final class RenameService {
         if (result.isBlank() || entries == null || entries.isEmpty()) {
             return result;
         }
-        Set<String> seen = new HashSet<>();
+        Set<String> seen = new ArraySet<>();
         for (int step = 0; step < entries.size(); step++) {
             String key = normalizeInternalName(result);
             if (!seen.add(key)) {
@@ -885,9 +887,9 @@ public final class RenameService {
      * 解析 ProGuard mapping 文件中的成员行
      *
      * <p>格式示例：
-     * <pre>  原始类型 原始名(int) -> 混淆名</pre>（方法）
-     * <pre>  原始类型 原始名 -> 混淆名</pre>（字段）
-     * 行首的数字前缀（行号）会被自动剥离</p>
+     * <pre>  原始类型 原始名(int) -> 混淆名</pre>(方法)
+     * <pre>  原始类型 原始名 -> 混淆名</pre>(字段)
+     * 行首的数字前缀(行号)会被自动剥离</p>
      */
     private static RenameEntry parseProGuardMemberLine(String line, String className) {
         String[] parts = line.split("\\s+->\\s+", 2);
@@ -917,7 +919,7 @@ public final class RenameService {
         return new RenameEntry(TYPE_FIELD, className, obfuscatedName, originalName, "");
     }
 
-    /** 剥离 ProGuard mapping 行开头的数字行号前缀（格式如 "123:456:"） */
+    /** 剥离 ProGuard mapping 行开头的数字行号前缀(格式如 "123:456:") */
     private static String stripProGuardLineNumbers(String text) {
         String result = text;
         while (true) {
@@ -1029,7 +1031,7 @@ public final class RenameService {
      * 将重命名条目应用到源码文本中
      *
      * <p>遍历源码,跳过注释和字符串字面量,对每个 Java 标识符查找匹配的重命名条目并替换
-     * 替换时根据上下文（方法内/类上下文/限定名）和方法作用域选择合适的条目</p>
+     * 替换时根据上下文(方法内/类上下文/限定名)和方法作用域选择合适的条目</p>
      */
     private static String applyEntries(String sourceCode, List<RenameEntry> entries,
                                        String currentClass) {
@@ -1094,8 +1096,8 @@ public final class RenameService {
     /**
      * 将类重命名应用到源码中
      *
-     * <p>分两步：先替换类声明中的类名,再替换源码中对该类的引用（类型使用、import、限定名等）
-     * 跳过注释和字符串字面量,根据上下文（声明/构造器/类型使用/静态限定符）判断是否需要替换</p>
+     * <p>分两步：先替换类声明中的类名,再替换源码中对该类的引用(类型使用、import、限定名等)
+     * 跳过注释和字符串字面量,根据上下文(声明/构造器/类型使用/静态限定符)判断是否需要替换</p>
      */
     private static String applyClassRenames(String sourceCode, List<RenameEntry> entries,
                                             String currentClass) {
@@ -1322,7 +1324,7 @@ public final class RenameService {
             return current;
         }
         // 不再按简单名称全局回退匹配
-        // 混淆代码中大量类共享相同简单名（如 a、b）,全局匹配会导致跨包误重命名
+        // 混淆代码中大量类共享相同简单名(如 a、b),全局匹配会导致跨包误重命名
         // 仅当 import 或同包能精确解析到目标类时才应用重命名
         return null;
     }
@@ -1393,7 +1395,7 @@ public final class RenameService {
                 return entry.newName();
             }
         }
-        // 全限定名匹配：prefix.token（如 com.pig4cloud.domain.token）精确匹配类名
+        // 全限定名匹配：prefix.token(如 com.pig4cloud.domain.token)精确匹配类名
         // 处理 Vineflower 等反编译器在泛型中直接输出全限定名的情况
         String fullQualified = qualifiedPrefix + "." + token;
         for (RenameEntry entry : classEntries) {
@@ -1604,9 +1606,9 @@ public final class RenameService {
      * <p>优先级顺序：
      * <ol>
      *   <li>类上下文 → 使用类重命名</li>
-     *   <li>方法作用域内的非限定名 → 使用参数重命名（需作用域匹配）</li>
+     *   <li>方法作用域内的非限定名 → 使用参数重命名(需作用域匹配)</li>
      *   <li>方法调用上下文 → 使用方法重命名</li>
-     *   <li>字段访问上下文 → 使用字段重命名（排除被局部变量遮蔽的情况）</li>
+     *   <li>字段访问上下文 → 使用字段重命名(排除被局部变量遮蔽的情况)</li>
      *   <li>通用标识符重命名</li>
      *   <li>兜底：匹配任何非类类型的重命名条目</li>
      * </ol></p>
@@ -1618,8 +1620,8 @@ public final class RenameService {
         boolean classContext = isClassContext(source, start, end);
         boolean qualified = isQualifiedIdentifier(source, start);
 
-        // 1. 类上下文：优先使用类重命名（需通过 import/同包/当前类上下文验证）
-        // 限定名中的标识符（如 com.pig4cloud.domain.a 中的 a）不在此处处理,
+        // 1. 类上下文：优先使用类重命名(需通过 import/同包/当前类上下文验证)
+        // 限定名中的标识符(如 com.pig4cloud.domain.a 中的 a)不在此处处理,
         // 由 applyClassRenames 的 qualifiedClassReplacementForToken 精确匹配全限定路径
         if (classContext && !qualified) {
             String classReplacement = firstClassReplacement(source, entries, oldName, currentClass);
@@ -1652,7 +1654,7 @@ public final class RenameService {
                 }
             }
         } else {
-            // 4. 非方法上下文 → 字段重命名（排除被局部变量遮蔽的字段）
+            // 4. 非方法上下文 → 字段重命名(排除被局部变量遮蔽的字段)
             for (RenameEntry entry : entries) {
                 if (TYPE_FIELD.equals(entry.type()) && entry.oldName().equals(oldName)
                         && appliesToClass(entry, currentClass)
@@ -1669,7 +1671,7 @@ public final class RenameService {
                 return entry.newName();
             }
         }
-        // 6. 兜底：匹配任何非类类型的重命名（放宽 className 限制）
+        // 6. 兜底：匹配任何非类类型的重命名(放宽 className 限制)
         for (RenameEntry entry : entries) {
             if (entry.oldName().equals(oldName)
                     && (TYPE_METHOD.equals(entry.type()) || TYPE_FIELD.equals(entry.type())
@@ -1785,8 +1787,8 @@ public final class RenameService {
     /**
      * 判断 class rename 条目是否针对给定的内部类名
      *
-     * <p>仅按 className 字段精确匹配不按 oldName（简单名）回退匹配,
-     * 因为混淆代码中大量类共享相同简单名（如 a、b）,会导致跨包误匹配</p>
+     * <p>仅按 className 字段精确匹配不按 oldName(简单名)回退匹配,
+     * 因为混淆代码中大量类共享相同简单名(如 a、b),会导致跨包误匹配</p>
      */
     private static boolean classEntryTargetsInternalName(RenameEntry entry, String internalName) {
         if (entry == null || !TYPE_CLASS.equals(entry.type())) {
@@ -2135,7 +2137,7 @@ public final class RenameService {
     /**
      * 解析源码中所有方法的作用域
      *
-     * <p>逐行扫描源码,识别方法签名行（包含方法名和括号,后跟大括号）,
+     * <p>逐行扫描源码,识别方法签名行(包含方法名和括号,后跟大括号),
      * 提取方法名、参数名、以及方法体内的局部变量名用于后续按作用域精确替换符号</p>
      */
     private static List<MethodScope> findMethodScopes(String source, String classSimpleName) {
@@ -2234,7 +2236,7 @@ public final class RenameService {
     /**
      * 解析方法体内的局部变量名
      *
-     * <p>先将注释和字符串字面量替换为空白（避免误匹配）,
+     * <p>先将注释和字符串字面量替换为空白(避免误匹配),
      * 然后分别解析：普通局部变量声明、catch/for 变量、Lambda 参数</p>
      */
     private static Set<String> parseLocalVariableNames(String source, int bodyStart, int bodyEnd) {
@@ -2614,8 +2616,8 @@ public final class RenameService {
     }
 
     /**
-     * 规范化 RenameEntry：统一字段格式（类型小写、类名标准化为内部名、空值兜底）
-     * 用于消除不同来源（用户输入、ProGuard解析、反混淆建议）的格式差异
+     * 规范化 RenameEntry：统一字段格式(类型小写、类名标准化为内部名、空值兜底)
+     * 用于消除不同来源(用户输入、ProGuard解析、反混淆建议)的格式差异
      */
     private static RenameEntry normalize(RenameEntry entry) {
         String type = safe(entry.type()).toLowerCase(Locale.ROOT);
@@ -2633,7 +2635,7 @@ public final class RenameService {
     /**
      * 为存储规范化重命名条目
      *
-     * <p>对于类重命名,将 className 字段反查回原始内部名（处理多层重命名链）,
+     * <p>对于类重命名,将 className 字段反查回原始内部名(处理多层重命名链),
      * 并更新 oldName 为原始类名的叶子名这确保持久化的条目始终以原始名为基准,
      * 不受显示名变更影响</p>
      */
@@ -2682,7 +2684,7 @@ public final class RenameService {
         return result;
     }
 
-    /** 判断两条类重命名条目是否指向同一目标类（className 相同） */
+    /** 判断两条类重命名条目是否指向同一目标类(className 相同) */
     private static boolean sameClassRenameTarget(RenameEntry left, RenameEntry right) {
         return TYPE_CLASS.equals(left.type())
                 && TYPE_CLASS.equals(right.type())
@@ -2715,8 +2717,8 @@ public final class RenameService {
      *
      * <p>支持两种情况：
      * <ol>
-     *   <li>简单名完全匹配 oldName → 整体替换（内部类时保留外部类前缀 $）</li>
-     *   <li>简单名的最后一节（$ 后）匹配 oldName → 只替换最后一段</li>
+     *   <li>简单名完全匹配 oldName → 整体替换(内部类时保留外部类前缀 $)</li>
+     *   <li>简单名的最后一节($ 后)匹配 oldName → 只替换最后一段</li>
      * </ol>
      * 替换后保持包路径不变</p>
      */
@@ -2730,7 +2732,7 @@ public final class RenameService {
             int dollar = oldName.lastIndexOf('$');
             renamedSimple = dollar >= 0 ? oldName.substring(0, dollar + 1) + newName : newName;
         } else {
-            // 只匹配最后一节（内部类最内层名）
+            // 只匹配最后一节(内部类最内层名)
             int dollar = simple.lastIndexOf('$');
             if (dollar >= 0 && simple.substring(dollar + 1).equals(oldName)) {
                 renamedSimple = simple.substring(0, dollar + 1) + newName;
@@ -2749,36 +2751,30 @@ public final class RenameService {
     /**
      * 原子写入重命名文件
      *
-     * <p>先写入临时文件,再通过原子 move 替换目标文件如果系统不支持原子移动
-     * （如某些文件系统）,则回退到普通移动写入前自动创建快照备份</p>
+     * <p>通过 {@link AtomicFile} 保证写入完整性：先写 .new 文件,成功后原子重命名
+     * 写入前自动创建快照备份</p>
      */
     private static boolean writeFile(String workspaceHash, List<RenameEntry> list) {
         Path file = resolveFile(workspaceHash);
-        Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
         try {
             Files.createDirectories(file.getParent());
             snapshotRenameFile(file); // 写入前备份旧文件
-            Files.writeString(tmp, GSON.toJson(list), StandardCharsets.UTF_8);
-            try {
-                // 优先尝试原子移动（保证写入完整性）
-                Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-            }
+            AtomicFile af = new AtomicFile(file.toFile());
+            af.write(os -> {
+                try {
+                    os.write(GSON.toJson(list).getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             return true;
         } catch (IOException | RuntimeException e) {
             log.error("保存重命名失败", e);
-            try {
-                Files.deleteIfExists(tmp); // 清理临时文件
-            } catch (IOException cleanupError) {
-                log.debug("清理重命名临时文件失败: {}", tmp, cleanupError);
-            }
             return false;
         }
     }
 
-    /** 创建重命名文件的快照备份（带时间戳）,用于支持恢复操作 */
+    /** 创建重命名文件的快照备份(带时间戳),用于支持恢复操作 */
     private static void snapshotRenameFile(Path file) {
         if (!Files.isRegularFile(file)) {
             return;
@@ -2796,12 +2792,12 @@ public final class RenameService {
         return WORKSPACE_LOCKS.computeIfAbsent(safe(workspaceHash), key -> new Object());
     }
 
-    /** 计算重命名文件的存储路径（使用 SHA-256 哈希避免文件名冲突） */
+    /** 计算重命名文件的存储路径(使用 SHA-256 哈希避免文件名冲突) */
     private static Path resolveFile(String workspaceHash) {
         return getRootDir().resolve(workspaceHashDigest(workspaceHash) + ".json");
     }
 
-    /** 兼容旧版文件命名方式：直接使用工作区哈希（替换非法字符）作为文件名 */
+    /** 兼容旧版文件命名方式：直接使用工作区哈希(替换非法字符)作为文件名 */
     private static Path resolveLegacyFile(String workspaceHash) {
         String safe = (workspaceHash == null ? "" : workspaceHash).replaceAll("[\\\\/:*?\"<>|]", "_");
         return getRootDir().resolve(safe + ".json");
@@ -2822,7 +2818,7 @@ public final class RenameService {
      * 重命名目标：封装光标处的符号解析结果
      *
      * @param entry       对应的 RenameEntry
-     * @param kind        重命名类型（class/method/field/param/identifier）
+     * @param kind        重命名类型(class/method/field/param/identifier)
      * @param currentName 当前显示名称
      */
     public record RenameTarget(RenameEntry entry, String kind, String currentName) {
@@ -2865,8 +2861,8 @@ public final class RenameService {
     private record MethodScope(String name, int start, int end,
                                Set<String> params, Set<String> locals) {
         private MethodScope {
-            params = Collections.unmodifiableSet(new HashSet<>(params == null ? Set.of() : params));
-            locals = Collections.unmodifiableSet(new HashSet<>(locals == null ? Set.of() : locals));
+            params = Collections.unmodifiableSet(new ArraySet<>(params == null ? Set.of() : params));
+            locals = Collections.unmodifiableSet(new ArraySet<>(locals == null ? Set.of() : locals));
         }
 
         /** 判断给定偏移是否在该方法作用域内 */

@@ -24,6 +24,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.*;
 
 import java.io.File;
@@ -62,7 +63,7 @@ public final class WorkspaceTabManager {
     /** 拖放配置(用于主窗口安装代码标签拖拽处理器) */
     private AppConfig dragDropConfig;
     private VsCodeThemeLoader.ThemeData dragDropTheme;
-    /** 内层代码标签切换回调（工具栏刷新等） */
+    /** 内层代码标签切换回调(工具栏刷新等) */
     private Runnable onActiveTabChange;
 
     /** 构造工作区标签页管理器 */
@@ -130,7 +131,7 @@ public final class WorkspaceTabManager {
      * @param treeView          目标文件树视图
      * @param workspace         当前工作区
      * @param codeTabPane       代码标签页面板
-     * @param navigationService 导航服务（前进/后退支持）
+     * @param navigationService 导航服务(前进/后退支持)
      * @param onClassClick      点击类节点时的回调
      * @param onTextFileClick   点击文本文件节点时的回调
      * @param onExportNode      导出节点回调
@@ -148,32 +149,38 @@ public final class WorkspaceTabManager {
                                                BiConsumer<FileTreeNode, TabPane> onHexClick) {
         // 预计算 workspaceHash 避免每次 cell 更新时重复字符串拼接
         String workspaceHash = CommentScope.workspaceHash(workspace);
-        treeView.setCellFactory(tv -> {
-            com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell cell =
-                    new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell(
-                            node -> displayTreeNodeName(workspaceHash, node));
-            ContextMenu cachedMenu = new ContextMenu();
-            cachedMenu.setOnShowing(e -> {
-                TreeItem<FileTreeNode> item = cell.getTreeItem();
-                if (cell.isEmpty() || item == null || item.getValue() == null) {
-                    e.consume();
-                    return;
-                }
-                rebuildTreeContextMenuItems(cachedMenu, item, workspace, codeTabPane,
-                        navigationService, onClassClick, onTextFileClick, onExportNode,
-                        onFindUsage, onSearchPackage, onHexClick);
-            });
-            cell.setOnContextMenuRequested(event -> {
-                TreeItem<FileTreeNode> item = cell.getTreeItem();
-                if (cell.isEmpty() || item == null || item.getValue() == null) {
-                    return;
-                }
-                treeView.getSelectionModel().select(item);
-                cachedMenu.show(cell, event.getScreenX(), event.getScreenY());
-                event.consume();
-            });
-            return cell;
+        treeView.setCellFactory(tv -> new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell(
+                node -> displayTreeNodeName(workspaceHash, node)));
+
+        // 在 TreeView 级别通过事件过滤器处理右键菜单(避免 TreeView 内部行为拦截事件)
+        ContextMenu cachedMenu = new ContextMenu();
+        treeView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
+            TreeItem<FileTreeNode> item = findTreeItemForContextMenuEvent(event, treeView);
+            if (item == null || item.getValue() == null) {
+                return;
+            }
+            treeView.getSelectionModel().select(item);
+            rebuildTreeContextMenuItems(cachedMenu, item, workspace, codeTabPane,
+                    navigationService, onClassClick, onTextFileClick, onExportNode,
+                    onFindUsage, onSearchPackage, onHexClick);
+            cachedMenu.show(treeView, event.getScreenX(), event.getScreenY());
+            event.consume();
         });
+    }
+
+    /** 从右键菜单事件中查找对应的树节点(遍历节点层级找到 TreeCell,回退到选中项) */
+    @SuppressWarnings("unchecked")
+    private static TreeItem<FileTreeNode> findTreeItemForContextMenuEvent(
+            ContextMenuEvent event, TreeView<FileTreeNode> treeView) {
+        Node target = event.getPickResult().getIntersectedNode();
+        while (target != null) {
+            if (target instanceof TreeCell<?> cell && cell.getTreeItem() != null) {
+                return (TreeItem<FileTreeNode>) cell.getTreeItem();
+            }
+            target = target.getParent();
+        }
+        // 回退到当前选中项(键盘触发 context menu 时 pick result 可能不指向 cell)
+        return treeView.getSelectionModel().getSelectedItem();
     }
 
     /** 获取树节点显示名称,优先使用反混淆别名,回退到原始名称 */
@@ -218,7 +225,7 @@ public final class WorkspaceTabManager {
         return menu;
     }
 
-    /** 重建缓存的文件树右键菜单项（在 onShowing 时调用） */
+    /** 重建缓存的文件树右键菜单项(在 onShowing 时调用) */
     private static void rebuildTreeContextMenuItems(ContextMenu menu,
                                                     TreeItem<FileTreeNode> item, Workspace workspace,
                                                     TabPane codeTabPane,
@@ -289,7 +296,7 @@ public final class WorkspaceTabManager {
                 copyPath, copyClassName, new SeparatorMenuItem(), expand, collapse);
     }
 
-    /** 根据树节点类型（类文件/文本文件）打开对应的标签页 */
+    /** 根据树节点类型(类文件/文本文件)打开对应的标签页 */
     private static void openTreeItem(TreeItem<FileTreeNode> item, Workspace workspace,
                                      TabPane codeTabPane, NavigationService navigationService,
                                      BiConsumer<FileTreeNode, TabPane> onClassClick,
@@ -330,7 +337,7 @@ public final class WorkspaceTabManager {
         item.getChildren().forEach(WorkspaceTabManager::collapseStatic);
     }
 
-    /** 格式化最近文件路径显示（文件名 + 完整路径） */
+    /** 格式化最近文件路径显示(文件名 + 完整路径) */
     private static String recentDisplay(String path) {
         if (path == null || path.isBlank()) {
             return "";
@@ -339,7 +346,7 @@ public final class WorkspaceTabManager {
         return name.isBlank() ? path : name + "    " + path;
     }
 
-    /** 更新标签页的固定（pin）指示器文本,在已固定标签前加圆形标记 */
+    /** 更新标签页的固定(pin)指示器文本,在已固定标签前加圆形标记 */
     private static void updatePinnedTabText(Tab tab) {
         if (tab == null) {
             return;
@@ -423,7 +430,7 @@ public final class WorkspaceTabManager {
         return null;
     }
 
-    /** 设置内层代码标签页切换回调（用于工具栏状态刷新等） */
+    /** 设置内层代码标签页切换回调(用于工具栏状态刷新等) */
     public void setOnActiveTabChange(Runnable callback) {
         this.onActiveTabChange = callback;
     }
@@ -434,7 +441,7 @@ public final class WorkspaceTabManager {
         this.dragDropTheme = theme;
     }
 
-    /** 获取所有工作区视图映射（标签页到 WorkspaceView） */
+    /** 获取所有工作区视图映射(标签页到 WorkspaceView) */
     public Map<Tab, WorkspaceView> getWorkspaceViews() {
         return workspaceViews;
     }
@@ -452,7 +459,7 @@ public final class WorkspaceTabManager {
     }
 
     /**
-     * 添加工作区标签页（简化版,不含查找使用/搜索包/十六进制查看回调）
+     * 添加工作区标签页(简化版,不含查找使用/搜索包/十六进制查看回调)
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -466,7 +473,7 @@ public final class WorkspaceTabManager {
     }
 
     /**
-     * 添加工作区标签页（含导出回调,不含查找使用/搜索包/十六进制查看回调）
+     * 添加工作区标签页(含导出回调,不含查找使用/搜索包/十六进制查看回调)
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -485,7 +492,7 @@ public final class WorkspaceTabManager {
     }
 
     /**
-     * 添加工作区标签页（完整版,包含所有回调）
+     * 添加工作区标签页(完整版,包含所有回调)
      *
      * @param workspace       工作区
      * @param onClassClick    点击类节点时的回调
@@ -508,7 +515,7 @@ public final class WorkspaceTabManager {
         treeView.setPrefWidth(280);
         NavigationService navigationService = new NavigationService();
 
-        // 分屏编辑器（1-3 个并排 TabPane）
+        // 分屏编辑器(1-3 个并排 TabPane)
         SplitEditorPane splitEditorPane = new SplitEditorPane(dragDropConfig, dragDropTheme);
         TabPane codeTabPane = splitEditorPane.primaryTabPane();
         codeTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
@@ -668,7 +675,7 @@ public final class WorkspaceTabManager {
         return selected == null ? null : workspaceViews.get(selected);
     }
 
-    /** 检查工作区视图是否仍然活跃（未被用户关闭）,用于防止对已释放 UI 的操作 */
+    /** 检查工作区视图是否仍然活跃(未被用户关闭),用于防止对已释放 UI 的操作 */
     public boolean isWorkspaceActive(WorkspaceView view) {
         return view != null && workspaceViews.containsKey(view.workspaceTab());
     }
@@ -682,7 +689,7 @@ public final class WorkspaceTabManager {
         return view.splitEditorPane().currentCodeTab();
     }
 
-    /** 根据指定标签页的工作区状态更新状态栏（文件路径、编码、引擎、光标位置） */
+    /** 根据指定标签页的工作区状态更新状态栏(文件路径、编码、引擎、光标位置) */
     public void updateStatusForWorkspace(Tab tab) {
         WorkspaceView view = tab == null ? null : workspaceViews.get(tab);
         if (view == null) {

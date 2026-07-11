@@ -58,7 +58,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
      * @param fontSize           字号
      * @param wrapText           是否自动换行
      * @param lineNumbersEnabled 是否显示行号
-     * @param metadata           代码元数据（用于 Ctrl+Click 导航）
+     * @param metadata           代码元数据(用于 Ctrl+Click 导航)
      * @param onNavigate         导航回调
      */
     public SourceContentPanel(String sourceCode, VsCodeThemeLoader.ThemeData theme,
@@ -81,7 +81,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
 
     /**
      * 构建 CodeArea,配置字体、换行、行号、语法高亮和括号匹配
-     * 超大源码（超过 500KB）禁用正则高亮和链接导航以提升性能
+     * 超大源码(超过 500KB)禁用正则高亮和链接导航以提升性能
      */
     private void buildCodeArea() {
         codeArea = new CodeArea();

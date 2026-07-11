@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 /**
  * 代码视图顶层容器,管理底部标签切换与分屏勾选框
  *
- * <p>内部组件：EditorSearchBar（Ctrl+F 激活）→ 内容区（CodeContentDeck）
+ * <p>内部组件：EditorSearchBar(Ctrl+F 激活)→ 内容区(CodeContentDeck)
  * 分屏由外部 SplitEditorPane 管理,本类仅提供勾选框并回调外部</p>
  *
  * @author bingbaihanji
@@ -22,15 +22,15 @@ public class CodeViewPanel extends VBox {
     private final EditorSearchBar searchBar;
     private final CheckBox splitToggle;
     private int defaultFontSize = 14;
-    /** 用户配置的原始字号（用于 resetZoom 恢复） */
+    /** 用户配置的原始字号(用于 resetZoom 恢复) */
     private int originalFontSize = 14;
     private String fontFamily = "Consolas";
     private boolean lineNumbersEnabled = true;
     private CodeViewContext contextMenuContext;
     private CodeActionHandler contextMenuHandler;
-    /** 分屏开关回调（true=开启, false=关闭） */
+    /** 分屏开关回调(true=开启, false=关闭) */
     private Consumer<Boolean> onSplitToggled;
-    /** Ctrl+; 快捷键处理器引用（用于先移除再添加,防止重复注册） */
+    /** Ctrl+; 快捷键处理器引用(用于先移除再添加,防止重复注册) */
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> commentKeyHandler;
     private jfx.incubator.scene.control.richtext.CodeArea commentKeyArea;
     /** Ctrl+F 文件内查找处理器引用 */
@@ -52,8 +52,8 @@ public class CodeViewPanel extends VBox {
      *
      * @param sourceCode          反编译源码文本
      * @param classBytes          类文件原始字节码
-     * @param sourcePanel         已构建的源码面板（可为 null,内部自动创建）
-     * @param fontFamily          字体族名（如 "Consolas"）
+     * @param sourcePanel         已构建的源码面板(可为 null,内部自动创建)
+     * @param fontFamily          字体族名(如 "Consolas")
      * @param fontSize            初始字号
      * @param lineNumbersEnabled  是否显示行号
      */
@@ -113,7 +113,7 @@ public class CodeViewPanel extends VBox {
         this.onSplitToggled = callback;
     }
 
-    /** 程序化更新勾选框状态（由外部 SplitEditorPane 同步） */
+    /** 程序化更新勾选框状态(由外部 SplitEditorPane 同步) */
     public void setSplitToggleSelected(boolean selected) {
         splitToggle.setSelected(selected);
     }
@@ -125,7 +125,7 @@ public class CodeViewPanel extends VBox {
     }
 
     /**
-     * 在源码 CodeArea 上安装右键上下文菜单和快捷键（Ctrl+; 注释、Shift+F6 重命名）
+     * 在源码 CodeArea 上安装右键上下文菜单和快捷键(Ctrl+; 注释、Shift+F6 重命名)
      *
      * @param ctx     代码视图上下文
      * @param handler 右键菜单和快捷键的操作处理器
@@ -185,7 +185,7 @@ public class CodeViewPanel extends VBox {
                 contextMenuHandler.renameAtCaret(contextMenuContext, area.getCaretPosition());
                 return;
             }
-            // Alt+Ctrl+Shift+C: 复制引用（类全限定名 / 字段引用 / 方法签名 / 路径:行号）
+            // Alt+Ctrl+Shift+C: 复制引用(类全限定名 / 字段引用 / 方法签名 / 路径:行号)
             if (e.isAltDown() && e.isControlDown() && e.isShiftDown()
                     && e.getCode() == javafx.scene.input.KeyCode.C) {
                 e.consume();
@@ -218,7 +218,7 @@ public class CodeViewPanel extends VBox {
     }
 
     /**
-     * 用带完整主题的新源码面板替换 Code 视图（用于代码 Tab 间切换复用面板）
+     * 用带完整主题的新源码面板替换 Code 视图(用于代码 Tab 间切换复用面板)
      *
      * @param newSource   新的反编译源码文本
      * @param sourcePanel 已应用主题的新 SourcePanel
@@ -230,7 +230,7 @@ public class CodeViewPanel extends VBox {
     }
 
     /**
-     * 用新反编译源码更新视图（替换 CodeArea 文本并刷新搜索栏绑定和上下文菜单）
+     * 用新反编译源码更新视图(替换 CodeArea 文本并刷新搜索栏绑定和上下文菜单)
      *
      * @param newSource 新的反编译源码文本
      */
@@ -271,7 +271,7 @@ public class CodeViewPanel extends VBox {
         deck.applyFontSettings(defaultFontSize, fontFamily);
     }
 
-    /** 设置默认字号（不立即生效,仅更新内部记录） */
+    /** 设置默认字号(不立即生效,仅更新内部记录) */
     public void setDefaultFontSize(int size) {
         this.defaultFontSize = size;
     }

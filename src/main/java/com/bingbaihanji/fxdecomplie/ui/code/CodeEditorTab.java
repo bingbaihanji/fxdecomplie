@@ -44,7 +44,7 @@ public class CodeEditorTab extends Tab {
     private VsCodeThemeLoader.ThemeData theme;
     /** 标签页显示标题 */
     private String displayTitle;
-    /** Java 源码编辑器（兼容引用） */
+    /** Java 源码编辑器(兼容引用) */
     private CodeArea codeArea;
     /** 打开的文件 */
     private OpenFile openFile;
@@ -54,9 +54,9 @@ public class CodeEditorTab extends Tab {
     private Consumer<CodeMetadata.Reference> onNavigate;
     /** 反编译源码是否已就绪 */
     private boolean sourceReady = true;
-    /** 分屏请求回调（由外部设置,传入本 tab 以便在右侧分屏打开同 class 不同引擎） */
+    /** 分屏请求回调(由外部设置,传入本 tab 以便在右侧分屏打开同 class 不同引擎) */
     private Consumer<CodeEditorTab> onSplitRequested;
-    /** 切换引擎回调（由外部设置,传入目标引擎进行原地重反编译） */
+    /** 切换引擎回调(由外部设置,传入目标引擎进行原地重反编译) */
     private Consumer<DecompilerTypeEnum> onSwitchEngine;
 
     /** 简化构造器,使用默认暗色主题和 Consolas 14pt 字体配置 */
@@ -112,7 +112,7 @@ public class CodeEditorTab extends Tab {
             }
         });
         this.codeViewPanel = viewPanel;
-        // 初始主题传递到 CodeContentDeck（HEX 面板懒加载时需要）
+        // 初始主题传递到 CodeContentDeck(HEX 面板懒加载时需要)
         viewPanel.getDeck().setTheme(theme);
 
         this.codeArea = srcPanel.getCodeArea();
@@ -175,7 +175,7 @@ public class CodeEditorTab extends Tab {
         return (SplitEditorPane) getProperties().get("splitEditorPane");
     }
 
-    /** 设置所属的分屏编辑器（由 SplitEditorPane 在 tab 选中时调用） */
+    /** 设置所属的分屏编辑器(由 SplitEditorPane 在 tab 选中时调用) */
     public void setSplitEditorPane(SplitEditorPane pane) {
         if (pane == null) {
             clearSplitEditorPane();
@@ -195,7 +195,7 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.setSplitToggleSelected(false);
     }
 
-    /** @return 分屏请求回调（包级可见,供外部读取） */
+    /** @return 分屏请求回调(包级可见,供外部读取) */
     Consumer<CodeEditorTab> getOnSplitRequested() {
         return onSplitRequested;
     }
@@ -205,7 +205,7 @@ public class CodeEditorTab extends Tab {
         this.onSplitRequested = callback;
     }
 
-    /** @return 切换引擎回调（包级可见,供外部读取） */
+    /** @return 切换引擎回调(包级可见,供外部读取) */
     Consumer<DecompilerTypeEnum> getOnSwitchEngine() {
         return onSwitchEngine;
     }
@@ -215,21 +215,21 @@ public class CodeEditorTab extends Tab {
         this.onSwitchEngine = callback;
     }
 
-    /** 触发切换引擎（由外部菜单调用） */
+    /** 触发切换引擎(由外部菜单调用) */
     public void switchEngine(DecompilerTypeEnum engine) {
         if (onSwitchEngine != null) {
             onSwitchEngine.accept(engine);
         }
     }
 
-    /** 存储工作区和节点引用（用于分屏时查找同 class） */
+    /** 存储工作区和节点引用(用于分屏时查找同 class) */
     public void setWorkspaceContext(com.bingbaihanji.fxdecomplie.model.Workspace workspace,
                                     com.bingbaihanji.fxdecomplie.model.FileTreeNode node) {
         getProperties().put("workspace", workspace);
         getProperties().put("fileTreeNode", node);
     }
 
-    /** 触发分屏（由 CodeViewPanel 勾选框或右键菜单触发） */
+    /** 触发分屏(由 CodeViewPanel 勾选框或右键菜单触发) */
     void requestSplit() {
         if (onSplitRequested != null) {
             onSplitRequested.accept(this);
@@ -410,7 +410,7 @@ public class CodeEditorTab extends Tab {
         codeViewPanel.setLineNumbersEnabled(enabled);
     }
 
-    /** 应用字体设置到所有已有面板（Code/Smali/Bytecode/Simple） */
+    /** 应用字体设置到所有已有面板(Code/Smali/Bytecode/Simple) */
     public void applyFontSettings(int fontSize, String fontFamily) {
         codeViewPanel.applyFontSettings(fontSize, fontFamily);
     }

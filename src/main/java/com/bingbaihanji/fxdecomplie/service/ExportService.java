@@ -66,11 +66,11 @@ public final class ExportService {
     }
 
     /**
-     * 根据用户选择的选项导出所有支持的工作区文件（带注释范围支持）
+     * 根据用户选择的选项导出所有支持的工作区文件(带注释范围支持)
      *
      * @param root        工作区树根节点
      * @param config      导出配置
-     * @param index       工作区索引（预构建）
+     * @param index       工作区索引(预构建)
      * @param commentScope 注释导出范围,null 表示不导出注释
      * @param onProgress  进度回调,接收当前路径和百分比
      * @return 导出摘要
@@ -85,15 +85,15 @@ public final class ExportService {
     }
 
     /**
-     * 执行完整的导出流水线：过滤、反编译、写入目标（目录或 ZIP）
+     * 执行完整的导出流水线：过滤、反编译、写入目标(目录或 ZIP)
      *
-     * @param nodes         可导出的文件节点列表（须在 FX 线程提取）
-     * @param config        导出配置（格式、引擎、路径、冲突策略等）
+     * @param nodes         可导出的文件节点列表(须在 FX 线程提取)
+     * @param config        导出配置(格式、引擎、路径、冲突策略等)
      * @param index         工作区索引,用于字节码解析上下文
      * @param commentScope  注释导出范围,null 表示不导出注释
      * @param onProgress    进度回调,接收当前路径和百分比
      * @param canceled      用户取消标志 supplier,非 null 时每轮迭代检查
-     * @return 导出结果摘要（总数、成功数、错误列表）
+     * @return 导出结果摘要(总数、成功数、错误列表)
      * @throws IOException 输出目录或 ZIP 创建失败时抛出
      */
     public static ExportResult exportAll(List<FileTreeNode> nodes, ExportConfig config,
@@ -105,7 +105,7 @@ public final class ExportService {
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(index, "index");
 
-        // ---- 步骤 1: 过滤可导出的类/资源条目（调用方已在 FX 线程提取为普通 List）----
+        // ---- 步骤 1: 过滤可导出的类/资源条目(调用方已在 FX 线程提取为普通 List)----
         List<FileTreeNode> items = new ArrayList<>();
         for (FileTreeNode node : nodes) {
             if (shouldExport(node, config.exportResources())) {
@@ -206,7 +206,7 @@ public final class ExportService {
     }
 
     /**
-     * 从 TreeItem 树中提取可导出节点的快照（必须在 FX 线程调用）
+     * 从 TreeItem 树中提取可导出节点的快照(必须在 FX 线程调用)
      * 仅供遗留 API 和测试使用；新代码应在 FX 线程提取 FileTreeNode 列表后直接调用 exportAll
      */
     @Deprecated

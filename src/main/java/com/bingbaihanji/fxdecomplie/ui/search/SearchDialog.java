@@ -72,16 +72,16 @@ public final class SearchDialog {
     }
 
     /**
-     * 打开全文搜索对话框（完整参数版本）
+     * 打开全文搜索对话框(完整参数版本)
      * 200ms 防抖输入,按类型分组在 TreeView 中展示结果,双击结果项跳转
      *
      * @param owner                   父窗口
-     * @param searchService           搜索服务（聚合多个 SearchProvider）
-     * @param sourceCache             已反编译的源码缓存（类路径 → 源码文本）
-     * @param fullSourceLoader        全量源码加载器（用于搜索所有类）；为 null 则禁用全量搜索选项
+     * @param searchService           搜索服务(聚合多个 SearchProvider)
+     * @param sourceCache             已反编译的源码缓存(类路径 → 源码文本)
+     * @param fullSourceLoader        全量源码加载器(用于搜索所有类)；为 null 则禁用全量搜索选项
      * @param defaultFullSourceSearch 是否默认选中全量源码搜索
-     * @param maxResults              最大返回结果数（限制在 50~2000 之间）
-     * @param initialQuery            初始搜索关键词（可为空字符串）
+     * @param maxResults              最大返回结果数(限制在 50~2000 之间)
+     * @param initialQuery            初始搜索关键词(可为空字符串)
      * @param onJump                  双击结果项时的跳转回调
      */
     public static void show(javafx.stage.Window owner, SearchService searchService,
@@ -205,7 +205,7 @@ public final class SearchDialog {
                 // 提交搜索任务到后台线程池
                 Future<?> task = BackgroundTasks.run("search-worker", () -> {
                     Map<String, String> effectiveSourceCache = sourceCache;
-                    // 如果启用了全量源码搜索,加载全量源码缓存（可能耗时较长）
+                    // 如果启用了全量源码搜索,加载全量源码缓存(可能耗时较长)
                     if (includeFullSource && fullSourceLoader != null) {
                         Platform.runLater(() -> statusLabel.setText(
                                 I18nUtil.getString("search.preparingFullSource")));
@@ -317,7 +317,7 @@ public final class SearchDialog {
         }
     }
 
-    /** 将下拉框显示标签（国际化文本）映射为对应的 SearchScope 枚举值 */
+    /** 将下拉框显示标签(国际化文本)映射为对应的 SearchScope 枚举值 */
     private static SearchScope scopeFromLabel(String label) {
         if (label == null || label.equals(I18nUtil.getString("search.type.all"))) {
             return SearchScope.ALL;
@@ -344,12 +344,12 @@ public final class SearchDialog {
     }
 
     /**
-     * 构建搜索结果树：按匹配类型（类名/方法/代码/资源/注释/字节码）分组,
+     * 构建搜索结果树：按匹配类型(类名/方法/代码/资源/注释/字节码)分组,
      * 每组显示为可展开的 TreeItem,限制总叶子节点不超过 maxResults
      *
      * @param results    扁平搜索结果列表
      * @param maxResults 最大叶子节点数量
-     * @return 根节点（类型为"搜索结果"）
+     * @return 根节点(类型为"搜索结果")
      */
     private static TreeItem<SearchResult> buildResultTree(List<SearchResult> results,
                                                           int maxResults) {
@@ -387,7 +387,7 @@ public final class SearchDialog {
     }
 
     /**
-     * 将匹配类型映射为对应的国际化显示标签（用于分组标题）
+     * 将匹配类型映射为对应的国际化显示标签(用于分组标题)
      * 方法名和字段名共用"方法/成员"分组
      */
     private static String groupLabel(SearchResult.MatchType type) {

@@ -98,7 +98,7 @@ public class ProcyonDecompiler implements Decompiler {
     /**
      * 使用指定上下文反编译类文件
      *
-     * @param classFilePath 类文件路径（可以是文件系统路径或内部名）
+     * @param classFilePath 类文件路径(可以是文件系统路径或内部名)
      * @param classBytes    类字节码
      * @param context       反编译上下文,用于传递依赖解析器和额外参数
      * @return 反编译后的 Java 源码字符串
@@ -121,9 +121,9 @@ public class ProcyonDecompiler implements Decompiler {
      * </ol>
      * 查找或解析失败时返回带错误信息的注释文本,而非抛出异常</p>
      *
-     * @param typeName   类型全限定名（内部格式,如 com/example/Foo）
+     * @param typeName   类型全限定名(内部格式,如 com/example/Foo)
      * @param classBytes 目标类字节码
-     * @param context    反编译上下文,可为 null（使用空上下文）
+     * @param context    反编译上下文,可为 null(使用空上下文)
      * @return 反编译后的 Java 源码；失败时返回以 {@code //} 开头的注释文本
      */
     @Override
@@ -196,9 +196,9 @@ public class ProcyonDecompiler implements Decompiler {
         /**
          * 尝试加载指定内部名的类型字节码
          * <p>加载优先级：目标类本身 → 上下文依赖解析这样 Procyon 在反编译时
-         * 可以获取到依赖类的字节码信息,从而生成更准确的代码（如泛型参数、方法签名等）</p>
+         * 可以获取到依赖类的字节码信息,从而生成更准确的代码(如泛型参数、方法签名等)</p>
          *
-         * @param internalName 类型内部名（如 com/example/Foo）
+         * @param internalName 类型内部名(如 com/example/Foo)
          * @param buffer       输出缓冲区,成功时写入字节码
          * @return 加载成功返回 true,否则返回 false
          */

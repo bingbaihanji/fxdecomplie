@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
+import com.bingbaihanji.fxdecomplie.util.AtomicFile;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
@@ -100,7 +101,7 @@ public final class CommentManager {
     }
 
     /**
-     * 加载某个类的全部注释（获取读锁,防止读到并发写入的半截 JSON）
+     * 加载某个类的全部注释(获取读锁,防止读到并发写入的半截 JSON)
      *
      * @param workspaceHash 工作区 hash
      * @param className     类全限定路径
@@ -169,15 +170,14 @@ public final class CommentManager {
                                   List<CommentData> comments) throws IOException {
         Path file = resolveFile(workspaceHash, className);
         Files.createDirectories(file.getParent());
-        Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
-        String json = GSON.toJson(comments);
-        Files.writeString(tmp, json, StandardCharsets.UTF_8);
-        try {
-            Files.move(tmp, file, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
-            Files.move(tmp, file, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        }
+        AtomicFile af = new AtomicFile(file.toFile());
+        af.write(os -> {
+            try {
+                os.write(GSON.toJson(comments).getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     private static Path resolveFile(String workspaceHash, String className) {
@@ -208,7 +208,7 @@ public final class CommentManager {
      *
      * <p>Gson 可能通过 {@code UnsafeAllocator} 绕过 Record 的紧凑构造器直接创建实例,
      * 导致反序列化后 {@code text()}、{@code memberSignature()} 等字段为 null,
-     * 调用方（{@code CommentExportDecorator.insert()} 等）会抛出 NPE</p>
+     * 调用方({@code CommentExportDecorator.insert()} 等)会抛出 NPE</p>
      *
      * <p>此反序列化器从 JSON 中逐字段提取值,对缺失或 null 的字段填入默认值,
      * 再通过规范的紧凑构造器创建 CommentData,确保各字段非 null</p>

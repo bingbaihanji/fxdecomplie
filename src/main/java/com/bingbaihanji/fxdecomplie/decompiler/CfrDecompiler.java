@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import org.benf.cfr.reader.api.CfrDriver;
 import org.benf.cfr.reader.api.ClassFileSource;
 import org.benf.cfr.reader.api.OutputSinkFactory;
@@ -27,7 +28,7 @@ public class CfrDecompiler implements Decompiler {
 
     /** @return CFR 默认选项配置 */
     private static Map<String, String> createDefaultOptions() {
-        Map<String, String> opts = new HashMap<>();
+        Map<String, String> opts = new ArrayMap<>();
         opts.put("showversion", "false");          // 不显示 CFR 版本信息
         opts.put("hideutf", "false");              // 不隐藏 UTF-8 字符
         opts.put("innerclasses", "true");          // 反编译内部类
@@ -67,7 +68,7 @@ public class CfrDecompiler implements Decompiler {
      * 合并默认选项与用户上下文选项
      * 用户选项覆盖同名的默认选项
      *
-     * @param context 反编译上下文（可为 null）
+     * @param context 反编译上下文(可为 null)
      * @return 合并后的不可变选项映射
      */
     private static Map<String, String> mergedOptions(DecompilerContext context) {
@@ -107,9 +108,9 @@ public class CfrDecompiler implements Decompiler {
      * 匿名 {@link OutputSinkFactory} 收集反编译输出到 StringBuilder,
      * 最终调用 {@link CfrDriver#analyse} 执行反编译</p>
      *
-     * @param typeName   类的内部名称（如 {@code com/example/MyClass}）
+     * @param typeName   类的内部名称(如 {@code com/example/MyClass})
      * @param classBytes 类的原始字节码
-     * @param context    反编译上下文（可为 null,用于解析依赖类字节码和传递选项）
+     * @param context    反编译上下文(可为 null,用于解析依赖类字节码和传递选项)
      * @return 反编译后的 Java 源码字符串；若结果为空则返回带说明的错误注释
      */
     @Override
@@ -139,7 +140,7 @@ public class CfrDecompiler implements Decompiler {
                 String normalizedPath = path.replace("\\", "/");
                 String normalizedTypeName = typeName.replace("\\", "/");
 
-                // 检查是否为主类请求（精确路径匹配）
+                // 检查是否为主类请求(精确路径匹配)
                 if (normalizedPath.equals(normalizedTypeName)
                         || normalizedPath.equals(normalizedTypeName + ".class")
                         || normalizedPath.equals("/" + normalizedTypeName)

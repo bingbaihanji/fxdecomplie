@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
 /**
  * Smali 视图语法高亮器,用于 jadx 风格的 smali 输出
  *
- * <p>高亮元素：标题行（######）、注释（# 开头）、smali 指令关键字
- * （.class/.method/.field/.registers 等）、smali 风格操作码
- * （invoke-virtual/const/4/return-void 等）、字符串和数字</p>
+ * <p>高亮元素：标题行(######)、注释(# 开头)、smali 指令关键字
+ * (.class/.method/.field/.registers 等)、smali 风格操作码
+ * (invoke-virtual/const/4/return-void 等)、字符串和数字</p>
  *
  * @author bingbaihanji
  * @date 2026-06-23
@@ -42,7 +42,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
     private static final StyleAttributeMap S_NUMBER = builder(NUMBER);
     private static final StyleAttributeMap S_LABEL = builder(LABEL);
 
-    /** smali 指令关键字（.class / .method / .field 等） */
+    /** smali 指令关键字(.class / .method / .field 等) */
     private static final Pattern RE_DIRECTIVE = Pattern.compile(
             "\\.(?:class|super|source|implements|method|end\\s+method|field|end\\s+field|"
                     + "registers|line|local|end\\s+local|prologue|epilogue|annotation|"
@@ -50,10 +50,10 @@ final class SmaliHighlighter implements SyntaxDecorator {
                     + "end\\s+array-data|packed-switch|end\\s+packed-switch|"
                     + "sparse-switch|end\\s+sparse-switch|ver)");
 
-    /** 标签引用（:label_?? 或 :cond_? 格式） */
+    /** 标签引用(:label_?? 或 :cond_? 格式) */
     private static final Pattern RE_LABEL = Pattern.compile(":[a-zA-Z_]\\w*");
 
-    /** smali 风格操作码（带斜杠变体和连字符变体） */
+    /** smali 风格操作码(带斜杠变体和连字符变体) */
     private static final Pattern RE_OPCODE = Pattern.compile(
             "\\b(?:const/4|const/16|const/high16|const-wide/16|const-wide/32|const-wide/high16|"
                     + "const-string|const-string/jumbo|const-class|const|const-wide|"
@@ -117,7 +117,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
                     + "execute-inline|invoke-object-init/range|invoke-direct-empty|"
                     + "throw-verification-error)\\b");
 
-    /** 数字（hex 和十进制） */
+    /** 数字(hex 和十进制) */
     private static final Pattern RE_NUMBER = Pattern.compile(
             "(?<![.#\\w-])(?:0x[0-9a-fA-F]+|-?\\d+(?:\\.\\d+)?[fFLl]?)(?![.#\\w])");
 
@@ -152,7 +152,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
             return RichParagraph.builder().build();
         }
 
-        // 标题行（######）
+        // 标题行(######)
         if (line.startsWith("######")) {
             return RichParagraph.builder().addSegment(line, S_HEADER).build();
         }
@@ -178,7 +178,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
         int len = line.length();
 
         while (pos < len) {
-            // 注释（# 开头,前面无 .xxx 指令）
+            // 注释(# 开头,前面无 .xxx 指令)
             if (line.charAt(pos) == '#' && (pos == 0 || Character.isWhitespace(line.charAt(pos - 1))
                     || line.charAt(pos - 1) == ';')) {
                 tokens.add(new Token(Kind.COMMENT, line.substring(pos)));
@@ -210,7 +210,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
                 continue;
             }
 
-            // smali 指令（.xxx）
+            // smali 指令(.xxx)
             if (line.charAt(pos) == '.') {
                 Matcher dm = RE_DIRECTIVE.matcher(line);
                 if (dm.find(pos) && dm.start() == pos) {
@@ -236,7 +236,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
                 continue;
             }
 
-            // 数字（hex 或十进制）
+            // 数字(hex 或十进制)
             Matcher nm = RE_NUMBER.matcher(line);
             if (nm.find(pos) && nm.start() == pos) {
                 tokens.add(new Token(Kind.NUMBER, nm.group()));
@@ -252,7 +252,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
                 continue;
             }
 
-            // 默认文本块（一个连续的非特殊字符序列）
+            // 默认文本块(一个连续的非特殊字符序列)
             int end = pos + 1;
             while (end < len && !isTokenStart(line, end)) {
                 end++;
@@ -275,7 +275,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
                 || Character.isWhitespace(c);
     }
 
-    /** 文本变更回调（Smali 视图不追踪增量变更,留空） */
+    /** 文本变更回调(Smali 视图不追踪增量变更,留空) */
     @Override
     public void handleChange(CodeTextModel model, TextPos start, TextPos end,
                              int linesRemoved, int linesAdded, int charIndex) {

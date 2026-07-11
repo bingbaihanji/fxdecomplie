@@ -81,11 +81,11 @@ public final class CommentExportDecorator {
             return c.line();
         }
 
-        // 策略2: 成员签名匹配（使用标识符边界精确匹配,避免子串误匹配）
+        // 策略2: 成员签名匹配(使用标识符边界精确匹配,避免子串误匹配)
         if (c.memberSignature() != null && !c.memberSignature().isBlank()) {
             int nameIdx = c.memberSignature().indexOf('(');
             String methodName = nameIdx > 0 ? c.memberSignature().substring(0, nameIdx) : c.memberSignature();
-            // 只取最后一段作为简单名称（去掉包名/类名前缀）
+            // 只取最后一段作为简单名称(去掉包名/类名前缀)
             int dotIdx = methodName.lastIndexOf('.');
             String simpleName = dotIdx >= 0 ? methodName.substring(dotIdx + 1) : methodName;
             if (!simpleName.isBlank()) {
@@ -100,7 +100,7 @@ public final class CommentExportDecorator {
             }
         }
 
-        // 策略3: 按原始行号降级（可能不准）
+        // 策略3: 按原始行号降级(可能不准)
         return c.line();
     }
 

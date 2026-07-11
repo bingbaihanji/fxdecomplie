@@ -10,7 +10,7 @@ import javafx.scene.web.WebView;
 /**
  * Hex 表格视图 — WebView + &lt;table&gt; + CSS 变量列宽 + sticky 表头 + 拖拽分隔线
  *
- * <p>列宽由三个 CSS 自定义属性控制（--col-off/--col-hex/--col-asc）,
+ * <p>列宽由三个 CSS 自定义属性控制(--col-off/--col-hex/--col-asc),
  * 拖拽表头右侧手柄时 JS 更新对应变量,所有行同步变化</p>
  *
  * @author bingbaihanji
@@ -126,24 +126,24 @@ public class HexTabView extends StackPane {
         load(null);
     }
 
-    /** 将 JavaFX Color 转换为十六进制颜色字符串（#RRGGBB） */
+    /** 将 JavaFX Color 转换为十六进制颜色字符串(#RRGGBB) */
     static String toHex(Color c) {
         return String.format("#%02X%02X%02X", (int) (c.getRed() * 255), (int) (c.getGreen() * 255), (int) (c.getBlue() * 255));
     }
 
-    /** 将颜色调亮（混合白色）,f 为混合因子（0-1） */
+    /** 将颜色调亮(混合白色),f 为混合因子(0-1) */
     static String lighten(Color c, double f) {
         return String.format("#%02X%02X%02X", (int) ((c.getRed() + (1 - c.getRed()) * f) * 255), (int) ((c.getGreen() + (1 - c.getGreen()) * f) * 255), (int) ((c.getBlue() + (1 - c.getBlue()) * f) * 255));
     }
 
-    /** 将颜色调暗,f 为衰减因子（0-1,值越大越暗） */
+    /** 将颜色调暗,f 为衰减因子(0-1,值越大越暗) */
     static String darken(Color c, double f) {
         return String.format("#%02X%02X%02X", (int) (c.getRed() * (1 - f) * 255), (int) (c.getGreen() * (1 - f) * 255), (int) (c.getBlue() * (1 - f) * 255));
     }
 
     // === 颜色 ===
 
-    /** 从主题数据派生出 Hex 视图所需的配色方案（自动判断明暗主题） */
+    /** 从主题数据派生出 Hex 视图所需的配色方案(自动判断明暗主题) */
     static HexColors deriveColors(ThemeData theme) {
         Color bg = theme.editorBackground();
         Color fg = theme.editorForeground();
@@ -154,12 +154,12 @@ public class HexTabView extends StackPane {
         }
     }
 
-    /** 使用亮度感知系数判断是否为暗色（相对亮度 < 0.5） */
+    /** 使用亮度感知系数判断是否为暗色(相对亮度 < 0.5) */
     private static boolean isDark(Color c) {
         return 0.2126 * c.getRed() + 0.7152 * c.getGreen() + 0.0722 * c.getBlue() < 0.5;
     }
 
-    /** 将字节数据格式化为完整的 HTML 页面（表格 + CSS + 拖拽脚本） */
+    /** 将字节数据格式化为完整的 HTML 页面(表格 + CSS + 拖拽脚本) */
     static String formatHtml(byte[] data, ThemeData theme) {
         HexColors c = deriveColors(theme);
         int limit = Math.min(data.length, MAX_BYTES);
@@ -229,7 +229,7 @@ public class HexTabView extends StackPane {
         }
     }
 
-    /** 加载并显示字节数据（null 或空时显示空白页） */
+    /** 加载并显示字节数据(null 或空时显示空白页) */
     public void load(byte[] data) {
         this.currentData = data;
         render();

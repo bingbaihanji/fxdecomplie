@@ -30,7 +30,7 @@ public final class OutlinePane extends VBox {
     private final TextField filterField;
     /** 大纲列表视图 */
     private final ListView<OutlineMember> listView;
-    /** 原始数据列表（未过滤） */
+    /** 原始数据列表(未过滤) */
     private final ObservableList<OutlineMember> sourceList;
     /** 过滤后的数据列表 */
     private final FilteredList<OutlineMember> filteredList;

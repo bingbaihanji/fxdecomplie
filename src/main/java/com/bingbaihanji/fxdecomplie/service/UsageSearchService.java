@@ -17,10 +17,10 @@ import java.util.*;
  *
  * <p>逐类扫描工作区索引中的所有 class 字节码,在以下位置匹配目标：
  * <ul>
- *   <li>类继承/实现关系（superName、interfaces）</li>
- *   <li>字段访问指令（GETFIELD/PUTFIELD/GETSTATIC/PUTSTATIC）</li>
- *   <li>方法调用指令（INVOKEVIRTUAL/INVOKESPECIAL/INVOKESTATIC/INVOKEINTERFACE）</li>
- *   <li>类型操作指令（NEW/ANEWARRAY/CHECKCAST/INSTANCEOF）</li>
+ *   <li>类继承/实现关系(superName、interfaces)</li>
+ *   <li>字段访问指令(GETFIELD/PUTFIELD/GETSTATIC/PUTSTATIC)</li>
+ *   <li>方法调用指令(INVOKEVIRTUAL/INVOKESPECIAL/INVOKESTATIC/INVOKEINTERFACE)</li>
+ *   <li>类型操作指令(NEW/ANEWARRAY/CHECKCAST/INSTANCEOF)</li>
  *   <li>LDC 常量池中的 Type 引用</li>
  *   <li>invokedynamic 中的 Handle 参数</li>
  *   <li>字段/方法描述符中的对象类型引用</li>
@@ -75,7 +75,7 @@ public final class UsageSearchService {
      * 对单个类进行 ASM 字节码扫描,查找目标引用
      *
      * @param cls     工作区索引中的类条目
-     * @param target  解析后的搜索目标（类名 + 可选成员名）
+     * @param target  解析后的搜索目标(类名 + 可选成员名)
      * @param results 累积的匹配结果列表
      * @param seen    已见键集合,用于去重
      */
@@ -194,7 +194,7 @@ public final class UsageSearchService {
     }
 
     /**
-     * 扫描类文件头信息（超类、接口、字段/方法描述符）,补充 ASM visitor 无法覆盖的引用
+     * 扫描类文件头信息(超类、接口、字段/方法描述符),补充 ASM visitor 无法覆盖的引用
      *
      * @param cls     工作区索引中的类条目
      * @param target  解析后的搜索目标
@@ -271,7 +271,7 @@ public final class UsageSearchService {
      * @param results     累积的匹配结果列表
      * @param seen        已见键集合,用于去重
      * @param currentLine 当前字节码行号
-     * @param type        ASM Type 实例（来自 LDC 或 multianewarray 指令）
+     * @param type        ASM Type 实例(来自 LDC 或 multianewarray 指令)
      */
     private static void addIfTypeMatches(ClassIndexEntry cls, Target target,
                                          List<UsageResult> results, Set<String> seen,
@@ -285,7 +285,7 @@ public final class UsageSearchService {
     }
 
     /**
-     * 从 ASM Type 中提取数组元素类型的内部名（internal name）
+     * 从 ASM Type 中提取数组元素类型的内部名(internal name)
      * 例如 {@code String[][]} → {@code java/lang/String},非对象类型返回空字符串
      */
     private static String elementInternalName(Type type) {
@@ -300,7 +300,7 @@ public final class UsageSearchService {
 
     /**
      * 判断字节码中的类内部名是否匹配搜索目标
-     * 匹配策略：全限定名包含匹配 + 简单名双向包含匹配（支持混淆类名自动匹配）
+     * 匹配策略：全限定名包含匹配 + 简单名双向包含匹配(支持混淆类名自动匹配)
      */
     private static boolean matchesClass(Target target, String owner) {
         if (owner == null || owner.isBlank()) {
@@ -314,7 +314,7 @@ public final class UsageSearchService {
     }
 
     /**
-     * 判断字节码中的成员（字段/方法）是否匹配搜索目标
+     * 判断字节码中的成员(字段/方法)是否匹配搜索目标
      * 若查询包含 {@code #} 成员部分,则同时校验所有者类和成员名；否则只按简单名模糊匹配
      */
     private static boolean matchesMember(Target target, String owner, String name) {
@@ -379,10 +379,10 @@ public final class UsageSearchService {
      * 向结果列表中添加一条用法记录,自动去重
      *
      * @param results    累积的匹配结果列表
-     * @param seen       已见键集合（{@code path\nlineNumber\ntype\ntext} 格式）
+     * @param seen       已见键集合({@code path\nlineNumber\ntype\ntext} 格式)
      * @param sourcePath 源类全路径
      * @param lineNumber 行号
-     * @param type       用法类型（类引用/字段访问/方法调用）
+     * @param type       用法类型(类引用/字段访问/方法调用)
      * @param text       匹配文本描述
      */
     private static void add(List<UsageResult> results, Set<String> seen, String sourcePath,
@@ -393,7 +393,7 @@ public final class UsageSearchService {
         }
     }
 
-    /** 从 JVM 内部名（如 {@code java/lang/String}）提取简单类名（如 {@code String}） */
+    /** 从 JVM 内部名(如 {@code java/lang/String})提取简单类名(如 {@code String}) */
     private static String simpleName(String internalName) {
         return DecompilerContext.simpleName(internalName);
     }
@@ -420,9 +420,9 @@ public final class UsageSearchService {
     /**
      * 用户查询解析结果 — 将原始输入拆分为类名部分和可选的成员名部分
      *
-     * @param raw        原始查询字符串（已规范化：小写、分隔符统一为 {@code /}）
-     * @param classPart  类名部分（JVM 内部名格式,如 {@code com/example/myclass}）
-     * @param memberPart 成员名部分（{@code #} 之后的内容）,无成员时为空字符串
+     * @param raw        原始查询字符串(已规范化：小写、分隔符统一为 {@code /})
+     * @param classPart  类名部分(JVM 内部名格式,如 {@code com/example/myclass})
+     * @param memberPart 成员名部分({@code #} 之后的内容),无成员时为空字符串
      */
     private record Target(String raw, String classPart, String memberPart) {
 

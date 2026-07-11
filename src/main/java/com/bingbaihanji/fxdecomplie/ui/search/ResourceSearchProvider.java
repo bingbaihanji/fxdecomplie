@@ -26,7 +26,7 @@ public class ResourceSearchProvider implements SearchProvider {
     /** 结果上限,防止搜索耗时过长和内存溢出 */
     private static final int MAX_RESULTS = 500;
 
-    /** 资源路径 → 原始字节（如 XML/JSON/properties 等非 class 文件内容） */
+    /** 资源路径 → 原始字节(如 XML/JSON/properties 等非 class 文件内容) */
     private final Map<String, byte[]> resourceCache;
 
     /**
@@ -39,7 +39,7 @@ public class ResourceSearchProvider implements SearchProvider {
     }
 
     /**
-     * 基本搜索：将资源字节以 UTF-8 解码为文本,逐行匹配关键字（不区分大小写）
+     * 基本搜索：将资源字节以 UTF-8 解码为文本,逐行匹配关键字(不区分大小写)
      * 不可解码的资源跳过并记录 debug 日志
      */
     @Override

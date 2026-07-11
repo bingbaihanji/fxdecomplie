@@ -203,7 +203,7 @@ public class SearchService {
         }
     }
 
-    /** 排除模式配置（原始模式 + 预编译模式打包为不可变记录,保证原子更新） */
+    /** 排除模式配置(原始模式 + 预编译模式打包为不可变记录,保证原子更新) */
     private record ExcludeConfig(List<String> patterns, List<Pattern> compiled) {
     }
 }

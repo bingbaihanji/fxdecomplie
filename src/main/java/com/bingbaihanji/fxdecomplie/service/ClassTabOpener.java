@@ -56,7 +56,7 @@ public final class ClassTabOpener {
     private final StatusBar statusBar;
     /** L2 反编译源码缓存,避免重复反编译已打开的类 */
     private final DecompileCache decompileCache = new DecompileCache();
-    /** 主导航（打开新类）请求序号,用于丢弃快速切换产生的过期结果 */
+    /** 主导航(打开新类)请求序号,用于丢弃快速切换产生的过期结果 */
     private final AtomicLong decompileGeneration = new AtomicLong();
     /** 引擎切换/刷新请求序号,独立于主导航,避免切换引擎时误取消其他标签页的反编译 */
     private final AtomicLong refreshGeneration = new AtomicLong();
@@ -70,7 +70,7 @@ public final class ClassTabOpener {
     private volatile CodeEditorTab currentPendingTab;
     /** 代码操作回调,用于安装右键菜单 */
     private volatile CodeActionHandler codeActionHandler;
-    /** 标签页就绪回调（工具栏刷新等） */
+    /** 标签页就绪回调(工具栏刷新等) */
     private volatile Runnable onTabReady;
 
     public ClassTabOpener(AppConfig config, VsCodeThemeLoader.ThemeData editorTheme, StatusBar statusBar) {
@@ -242,7 +242,7 @@ public final class ClassTabOpener {
         this.codeActionHandler = handler;
     }
 
-    /** 设置标签页就绪回调（工具栏刷新等） */
+    /** 设置标签页就绪回调(工具栏刷新等) */
     public void setOnTabReady(Runnable callback) {
         this.onTabReady = callback;
     }
@@ -262,11 +262,11 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 在指定 TabPane 中打开类标签,不替换不同引擎的现有标签（用于分屏场景）
+     * 在指定 TabPane 中打开类标签,不替换不同引擎的现有标签(用于分屏场景)
      *
      * @param node              类文件节点
      * @param workspace         工作区
-     * @param targetPane        目标 TabPane（分屏中的某个 cell）
+     * @param targetPane        目标 TabPane(分屏中的某个 cell)
      * @param engine            反编译引擎
      * @param lineNumbersEnabled 是否显示行号
      */
@@ -607,7 +607,7 @@ public final class ClassTabOpener {
         }
     }
 
-    /** 取消当前运行的反编译任务（同时使主导航和刷新请求失效） */
+    /** 取消当前运行的反编译任务(同时使主导航和刷新请求失效) */
     public void cancelCurrentTask() {
         decompileGeneration.incrementAndGet();
         refreshGeneration.incrementAndGet();
@@ -618,7 +618,7 @@ public final class ClassTabOpener {
      * 打开文本文件标签页(XML/JSON/YML/properties/.java 等)
      * 读取字节码转为 UTF-8 文本,在只读 CodeArea 中显示
      */
-    /** 以 Hex 视图打开任意文件（右键菜单入口,始终新建标签页） */
+    /** 以 Hex 视图打开任意文件(右键菜单入口,始终新建标签页) */
     public void openFileInHexView(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
         statusBar.setFilePath(I18nUtil.getString("status.reading", node.getFullPath()));
         BackgroundTasks.run("HexView-" + node.getName(), () -> {
@@ -766,7 +766,7 @@ public final class ClassTabOpener {
         });
     }
 
-    /** 读取文件字节码（与 readClassBytes 逻辑一致,但不查 class 索引） */
+    /** 读取文件字节码(与 readClassBytes 逻辑一致,但不查 class 索引) */
     private byte[] readFileBytes(FileTreeNode node, Workspace workspace) throws IOException {
         byte[] bytes = WorkspaceByteReader.readNodeBytes(workspace, node, false);
         if (bytes != null) {
@@ -1091,7 +1091,7 @@ public final class ClassTabOpener {
                     toRemove.add(tab);
                 }
             } else if (node.getFullPath().equals(tab.getUserData())) {
-                // 加载中的占位标签（ProgressIndicator）,通过 userData 匹配
+                // 加载中的占位标签(ProgressIndicator),通过 userData 匹配
                 return tab;
             }
         }
@@ -1118,9 +1118,9 @@ public final class ClassTabOpener {
         return null;
     }
 
-    /** 绑定光标位置到状态栏（先移除旧监听器避免累积） */
+    /** 绑定光标位置到状态栏(先移除旧监听器避免累积) */
     private void bindCaretPosition(CodeEditorTab codeTab) {
-        // 移除旧的光标监听器（存储在 tab 的 userData 中）
+        // 移除旧的光标监听器(存储在 tab 的 userData 中)
         Object oldListener = codeTab.getUserData();
         if (oldListener instanceof javafx.beans.value.ChangeListener<?> cl) {
             codeTab.getCodeArea().caretPositionProperty().removeListener(

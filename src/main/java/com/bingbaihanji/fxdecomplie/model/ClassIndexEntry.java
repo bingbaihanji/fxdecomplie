@@ -65,17 +65,17 @@ public final class ClassIndexEntry {
         }
     }
 
-    /** @return 类的完全限定路径（内部形式,如 com/example/Foo.class） */
+    /** @return 类的完全限定路径(内部形式,如 com/example/Foo.class) */
     public String fullPath() {
         return fullPath;
     }
 
-    /** @return 类的内部名称（如 com/example/Foo） */
+    /** @return 类的内部名称(如 com/example/Foo) */
     public String internalName() {
         return internalName;
     }
 
-    /** @return 类的简单名称（如 Foo） */
+    /** @return 类的简单名称(如 Foo) */
     public String simpleName() {
         return simpleName;
     }
@@ -97,12 +97,12 @@ public final class ClassIndexEntry {
         }
     }
 
-    /** @return 已索引的方法成员列表（不可变） */
+    /** @return 已索引的方法成员列表(不可变) */
     public List<MemberIndexEntry> methods() {
         return methods;
     }
 
-    /** @return 已索引的字段成员列表（不可变） */
+    /** @return 已索引的字段成员列表(不可变) */
     public List<MemberIndexEntry> fields() {
         return fields;
     }
@@ -111,7 +111,7 @@ public final class ClassIndexEntry {
      * 懒加载并缓存字节码文本表示
      *
      * <p>使用双重检查锁定保证线程安全仅缓存成功结果；
-     * 加载失败时不缓存（返回回退摘要）,允许后续调用重试</p>
+     * 加载失败时不缓存(返回回退摘要),允许后续调用重试</p>
      *
      * @return ASM Textifier 格式的字节码文本,失败时返回 ClassFileParser 摘要
      */

@@ -10,9 +10,9 @@ import com.bingbaihanji.fxdecomplie.model.*;
  * @param workspace      当前工作区
  * @param node           文件树节点
  * @param openFile       打开的文件元数据
- * @param classBytes     类文件原始字节码（构造时已 clone）
- * @param metadata       反编译元数据（行号→引用映射）
- * @param workspaceIndex 工作区全局索引（可能尚未构建完成）
+ * @param classBytes     类文件原始字节码(构造时已 clone)
+ * @param metadata       反编译元数据(行号→引用映射)
+ * @param workspaceIndex 工作区全局索引(可能尚未构建完成)
  * @param workspaceHash  基于输入文件路径/mtime/size 的稳定标识,用于注释隔离
  * @param sourceHash     当前反编译源码文本 hash
  * @param optionsHash    反编译引擎+选项组合 hash,与缓存键口径一致

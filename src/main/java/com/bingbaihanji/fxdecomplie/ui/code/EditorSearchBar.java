@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * 编辑器内搜索栏在 CodeArea 中提供 Ctrl+F 查找功能
  *
- * <p>TODO: 颜色值（#333333, #3c3c3c, #cccccc, #5c2020）硬编码,应改为使用主题系统（AppTheme / VsCodeThemeLoader）</p>
+ * <p>TODO: 颜色值(#333333, #3c3c3c, #cccccc, #5c2020)硬编码,应改为使用主题系统(AppTheme / VsCodeThemeLoader)</p>
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -37,7 +37,7 @@ public final class EditorSearchBar extends HBox {
     /**
      * 构造编辑器内搜索栏,绑定到指定 CodeArea
      *
-     * @param codeArea 目标代码编辑区（可为 null,后续通过 {@link #rebind(CodeArea)} 绑定）
+     * @param codeArea 目标代码编辑区(可为 null,后续通过 {@link #rebind(CodeArea)} 绑定)
      */
     public EditorSearchBar(CodeArea codeArea) {
         super(6);
@@ -89,7 +89,7 @@ public final class EditorSearchBar extends HBox {
     /**
      * 显示搜索栏,可选填充初始查询文本
      *
-     * @param initialQuery 初始搜索文本（null 或空字符串表示不填充）
+     * @param initialQuery 初始搜索文本(null 或空字符串表示不填充)
      */
     public void show(String initialQuery) {
         setVisible(true);
@@ -104,7 +104,7 @@ public final class EditorSearchBar extends HBox {
         }
     }
 
-    /** 重新绑定到新的 CodeArea（源码刷新时调用） */
+    /** 重新绑定到新的 CodeArea(源码刷新时调用) */
     public void rebind(CodeArea newArea) {
         if (newArea != null) {
             this.codeArea = newArea;
@@ -121,12 +121,12 @@ public final class EditorSearchBar extends HBox {
         updateStatus();
     }
 
-    /** 跳转到下一个匹配项（循环） */
+    /** 跳转到下一个匹配项(循环) */
     public void navigateNext() {
         navigateMatch(1);
     }
 
-    /** 跳转到上一个匹配项（循环） */
+    /** 跳转到上一个匹配项(循环) */
     public void navigatePrevious() {
         navigateMatch(-1);
     }
@@ -207,7 +207,7 @@ public final class EditorSearchBar extends HBox {
     }
 
     /**
-     * 将平坦字符偏移转换为 TextPos（行列坐标）,用于 CodeArea 文本选区定位
+     * 将平坦字符偏移转换为 TextPos(行列坐标),用于 CodeArea 文本选区定位
      *
      * @param targetOffset 目标字符偏移量
      * @return 对应的 TextPos,targetOffset <= 0 时返回 (0,0)

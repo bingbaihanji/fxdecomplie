@@ -36,7 +36,7 @@ public final class DialogHelper {
         showAlert(owner, Alert.AlertType.WARNING, title, message);
     }
 
-    /** 确认对话框（是/否）,返回 true 表示用户点击"是" */
+    /** 确认对话框(是/否),返回 true 表示用户点击"是" */
     public static boolean showConfirm(Stage owner, String title, String message) {
         log.info("{} - {}", title, message);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION, message, ButtonType.YES, ButtonType.NO);
@@ -49,17 +49,17 @@ public final class DialogHelper {
         return alert.showAndWait().orElse(ButtonType.NO) == ButtonType.YES;
     }
 
-    /** 显示错误对话框（Stage 重载） */
+    /** 显示错误对话框(Stage 重载) */
     public static void showError(Stage owner, String title, String message) {
         showAlert(owner, Alert.AlertType.ERROR, title, message);
     }
 
-    /** 显示错误对话框（Window 重载,适用于非 Stage 窗口场景） */
+    /** 显示错误对话框(Window 重载,适用于非 Stage 窗口场景) */
     public static void showError(Window owner, String title, String message) {
         showAlert(owner, Alert.AlertType.ERROR, title, message);
     }
 
-    /** 显示通用 Alert 对话框（Stage 重载） */
+    /** 显示通用 Alert 对话框(Stage 重载) */
     public static void showAlert(Stage owner, Alert.AlertType type, String title, String message) {
         showAlert((Window) owner, type, title, message);
     }

@@ -37,23 +37,23 @@ import java.util.regex.Pattern;
  */
 public final class BracketHighlighter {
 
-    /** 防抖延迟（毫秒） */
+    /** 防抖延迟(毫秒) */
     private static final int DEBOUNCE_MS = 150;
     /** 超大文件跳过括号匹配的字节阈值 */
     private static final int SKIP_LENGTH_THRESHOLD = 500_000;
 
     /** 所有括号字符集合 */
     private static final Set<Character> BRACKETS = Set.of('(', ')', '{', '}', '[', ']', '<', '>');
-    /** 括号对映射（开 → 闭） */
+    /** 括号对映射(开 → 闭) */
     private static final Map<Character, Character> PAIRS = Map.of(
             '(', ')', '{', '}', '[', ']', '<', '>');
 
-    /** 匹配成功括号高亮色（金色） */
+    /** 匹配成功括号高亮色(金色) */
     private static final Color COLOR_MATCHED = Color.rgb(255, 215, 0);
-    /** 不匹配括号高亮色（红色） */
+    /** 不匹配括号高亮色(红色) */
     private static final Color COLOR_UNMATCHED = Color.rgb(255, 80, 80);
 
-    /** 分词正则（与 RegexHighlighter.TOKEN_PATTERN 保持完全一致） */
+    /** 分词正则(与 RegexHighlighter.TOKEN_PATTERN 保持完全一致) */
     private static final Pattern TOKEN_PATTERN = Pattern.compile(
             "(?<MC>/\\*[\\s\\S]*?\\*/)|(?<SC>//[^\n]*)|(?<STR>\"(?:\\\\.|[^\"\\\\])*\")"
                     + "|(?<ANN>@[a-zA-Z_][a-zA-Z0-9_.]*)|(?<NUM>\\b\\d+\\.?\\d*[fFlLdD]?\\b)"
@@ -63,7 +63,7 @@ public final class BracketHighlighter {
     private final RegexHighlighter regexHighlighter;
     private final PauseTransition debounce;
 
-    /** 当前匹配括号的文档偏移量（-1 表示无匹配） */
+    /** 当前匹配括号的文档偏移量(-1 表示无匹配) */
     private volatile int matchedOpenPos = -1;
     private volatile int matchedClosePos = -1;
     private volatile boolean isMatched;
@@ -72,7 +72,7 @@ public final class BracketHighlighter {
 
     /**
      * @param codeArea         目标 CodeArea
-     * @param regexHighlighter 底层语法高亮器（用于获取 token 样式）
+     * @param regexHighlighter 底层语法高亮器(用于获取 token 样式)
      */
     public BracketHighlighter(CodeArea codeArea, RegexHighlighter regexHighlighter) {
         this.codeArea = codeArea;
@@ -89,7 +89,7 @@ public final class BracketHighlighter {
      * @return 括号字符的文档偏移量,未找到返回 -1
      */
     private static int findBracketNearCaret(String text, int docOff) {
-        // 优先检查光标前一个字符（光标通常在括号之后）
+        // 优先检查光标前一个字符(光标通常在括号之后)
         if (docOff > 0 && BRACKETS.contains(text.charAt(docOff - 1))) {
             return docOff - 1;
         }
@@ -173,7 +173,7 @@ public final class BracketHighlighter {
                 i = end < 0 ? -1 : end;
                 continue;
             }
-            // 向后跳过单行注释（从行首到当前位置）
+            // 向后跳过单行注释(从行首到当前位置)
             if (c == '\n') {
                 int lineStart = i + 1;
                 int commentStart = text.indexOf("//", lineStart);
@@ -234,7 +234,7 @@ public final class BracketHighlighter {
     /**
      * 从闭括号反推开括号字符
      *
-     * @param close 闭括号字符（如 ')'、'}'、']'、'>'）
+     * @param close 闭括号字符(如 ')'、'}'、']'、'>')
      * @return 对应的开括号字符,未找到返回 '\0'
      */
     private static char findOpenForClose(char close) {
@@ -248,7 +248,7 @@ public final class BracketHighlighter {
 
     // ---- 括号匹配算法 ----
 
-    /** 将 TextPos（段落索引 + 列偏移）转换为文档绝对字符偏移 */
+    /** 将 TextPos(段落索引 + 列偏移)转换为文档绝对字符偏移 */
     private static int textPosToDocOffset(String text, TextPos pos) {
         int paragraphIndex = pos.index();
         int columnOffset = pos.offset();
@@ -413,7 +413,7 @@ public final class BracketHighlighter {
                 return;
             }
 
-            // 收集本段内的括号位置（去重 + 排序）
+            // 收集本段内的括号位置(去重 + 排序)
             List<Integer> positions = new ArrayList<>(2);
             if (bracket1 >= 0) {
                 positions.add(bracket1);
@@ -428,7 +428,7 @@ public final class BracketHighlighter {
                 if (bp > prev) {
                     builder.addSegment(segment.substring(prev, bp), tokenStyle);
                 }
-                // 括号字符本身（长度固定为 1）
+                // 括号字符本身(长度固定为 1)
                 builder.addSegment(segment.substring(bp, bp + 1), bracketStyle);
                 prev = bp + 1;
             }

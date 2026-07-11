@@ -30,9 +30,9 @@ public final class ImageViewer extends BorderPane {
 
     /** 图片显示控件 */
     private final ImageView imageView = new ImageView();
-    /** 图片容器（StackPane 居中,支持拖拽平移） */
+    /** 图片容器(StackPane 居中,支持拖拽平移) */
     private final StackPane canvas = new StackPane(imageView);
-    /** 底部状态信息标签（尺寸、缩放、旋转角度） */
+    /** 底部状态信息标签(尺寸、缩放、旋转角度) */
     private final Label infoLabel = new Label("");
 
     /** 当前缩放比例 */
@@ -46,7 +46,7 @@ public final class ImageViewer extends BorderPane {
     /** 鼠标按下时图片的 TranslateY */
     private double transOnDownY;
 
-    /** 创建图片查看器,包含工具栏（缩放/适配/旋转）和键盘快捷键 */
+    /** 创建图片查看器,包含工具栏(缩放/适配/旋转)和键盘快捷键 */
     public ImageViewer() {
         setStyle("-fx-background-color: #1e1e1e;");
 
@@ -147,7 +147,7 @@ public final class ImageViewer extends BorderPane {
         }
     }
 
-    /** 按步长缩放图片（正值为放大,负值为缩小） */
+    /** 按步长缩放图片(正值为放大,负值为缩小) */
     private void changeZoom(double delta) {
         zoom = clamp(zoom + delta, MIN_ZOOM, MAX_ZOOM);
         applyZoom();
@@ -155,7 +155,7 @@ public final class ImageViewer extends BorderPane {
         updateInfo();
     }
 
-    /** 缩放图片使其适配当前视口大小（重置旋转和平移） */
+    /** 缩放图片使其适配当前视口大小(重置旋转和平移) */
     private void fitWindow() {
         Image img = imageView.getImage();
         Bounds vb = canvas.getLayoutBounds();
@@ -172,7 +172,7 @@ public final class ImageViewer extends BorderPane {
         updateInfo();
     }
 
-    /** 恢复 1:1 原始尺寸（重置旋转和平移） */
+    /** 恢复 1:1 原始尺寸(重置旋转和平移) */
     private void actualSize() {
         zoom = 1.0;
         imageView.setRotate(0);
@@ -185,7 +185,7 @@ public final class ImageViewer extends BorderPane {
 
     // ---- 边界约束 ----
 
-    /** 旋转图片指定角度（累积,取模 360） */
+    /** 旋转图片指定角度(累积,取模 360) */
     private void rotate(int deg) {
         imageView.setRotate((imageView.getRotate() + deg) % 360);
         applyZoom();

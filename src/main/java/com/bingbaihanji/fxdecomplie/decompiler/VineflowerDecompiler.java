@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.decompiler;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import org.jetbrains.java.decompiler.main.decompiler.BaseDecompiler;
 import org.jetbrains.java.decompiler.main.extern.IContextSource;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
@@ -13,11 +14,14 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.Manifest;
 
 /**
- * Vineflower 反编译引擎适配器（使用 IContextSource API,无废弃 API）
+ * Vineflower 反编译引擎适配器(使用 IContextSource API,无废弃 API)
  *
  * @author bingbaihanji
  * @date 2026-06-24
@@ -29,9 +33,9 @@ public class VineflowerDecompiler implements Decompiler {
     /** Vineflower 默认反编译选项 */
     private static final Map<String, Object> DEFAULT_OPTIONS = createDefaultOptions();
 
-    /** @return 基于 Vineflower 默认值构建的增强默认选项（开启枚举、泛型、内部类等反编译特性） */
+    /** @return 基于 Vineflower 默认值构建的增强默认选项(开启枚举、泛型、内部类等反编译特性) */
     private static Map<String, Object> createDefaultOptions() {
-        Map<String, Object> opts = new HashMap<>(IFernflowerPreferences.DEFAULTS);
+        Map<String, Object> opts = new ArrayMap<>(IFernflowerPreferences.DEFAULTS);
         opts.put(IFernflowerPreferences.DECOMPILE_ENUM, "1");
         opts.put(IFernflowerPreferences.DECOMPILE_GENERIC_SIGNATURES, "1");
         opts.put(IFernflowerPreferences.DECOMPILE_INNER, "1");
@@ -63,7 +67,7 @@ public class VineflowerDecompiler implements Decompiler {
      * 合并默认选项与用户上下文选项
      * 若启用了 dump original lines,自动连带启用 source file comments
      *
-     * @param context 反编译上下文（可为 null）
+     * @param context 反编译上下文(可为 null)
      * @return 合并后的不可变选项映射
      */
     private static Map<String, Object> mergedOptions(DecompilerContext context) {
@@ -71,7 +75,7 @@ public class VineflowerDecompiler implements Decompiler {
             log.debug("mergedOptions: using DEFAULT_OPTIONS only ({} entries)", DEFAULT_OPTIONS.size());
             return DEFAULT_OPTIONS;
         }
-        Map<String, Object> merged = new HashMap<>(DEFAULT_OPTIONS);
+        Map<String, Object> merged = new ArrayMap<>(DEFAULT_OPTIONS);
         Map<String, Object> userOptions = normalizedOptions(context.options());
         userOptions.forEach(merged::put);
         if (isEnabled(userOptions.get(IFernflowerPreferences.DUMP_ORIGINAL_LINES))) {
@@ -84,7 +88,7 @@ public class VineflowerDecompiler implements Decompiler {
 
     /**
      * 将用户选项规格化为 Vineflower 识别的格式
-     * 包括：别名映射（通过 {@link DecompilerOptions#VINEFLOWER_OPTION_ALIASES}）、
+     * 包括：别名映射(通过 {@link DecompilerOptions#VINEFLOWER_OPTION_ALIASES})、
      * 布尔值转换为 "1"/"0"
      */
     private static Map<String, Object> normalizedOptions(Map<String, String> options) {
@@ -112,7 +116,7 @@ public class VineflowerDecompiler implements Decompiler {
         return value;
     }
 
-    /** 判断选项值是否为启用状态（"1" 或 "true"） */
+    /** 判断选项值是否为启用状态("1" 或 "true") */
     private static boolean isEnabled(Object value) {
         if (value == null) {
             return false;
@@ -157,13 +161,13 @@ public class VineflowerDecompiler implements Decompiler {
     /**
      * 使用 Vineflower 引擎反编译指定类
      *
-     * <p>核心流程：创建 {@link SingleClassContextSource} 作为字节码来源（无需临时文件）,
+     * <p>核心流程：创建 {@link SingleClassContextSource} 作为字节码来源(无需临时文件),
      * 通过 {@link IResultSaver} 收集反编译输出到 StringBuilder,
      * 调用 {@link BaseDecompiler#decompileContext()} 执行反编译</p>
      *
-     * @param typeName   类的内部名称（如 {@code com/example/MyClass}）
-     * @param classBytes 类的原始字节码（会被 clone 一份）
-     * @param context    反编译上下文（可为 null,用于解析依赖类字节码和传递选项）
+     * @param typeName   类的内部名称(如 {@code com/example/MyClass})
+     * @param classBytes 类的原始字节码(会被 clone 一份)
+     * @param context    反编译上下文(可为 null,用于解析依赖类字节码和传递选项)
      * @return 反编译后的 Java 源码字符串；若结果为空则返回带说明的错误注释；异常时返回错误信息注释
      */
     @Override
@@ -273,7 +277,7 @@ public class VineflowerDecompiler implements Decompiler {
         return DecompilerTypeEnum.VINEFLOWER;
     }
 
-    /** @return Vineflower 默认反编译选项的字符串映射（值由 Object 转为 String） */
+    /** @return Vineflower 默认反编译选项的字符串映射(值由 Object 转为 String) */
     @Override
     public Map<String, String> getDefaultOptions() {
         Map<String, String> stringOpts = new LinkedHashMap<>();
@@ -281,7 +285,7 @@ public class VineflowerDecompiler implements Decompiler {
         return stringOpts;
     }
 
-    // ==================== IContextSource 实现（单 class 服务） ====================
+    // ==================== IContextSource 实现(单 class 服务) ====================
 
     /**
      * 为单个 class 提供字节码的 IContextSource
@@ -329,13 +333,13 @@ public class VineflowerDecompiler implements Decompiler {
             return null;
         }
 
-        /** 检查指定类名是否存在（主类或依赖类） */
+        /** 检查指定类名是否存在(主类或依赖类) */
         @Override
         public boolean hasClass(String className) throws IOException {
             return resolveClassBytes(className) != null;
         }
 
-        /** 获取指定类的字节码（主类或依赖类） */
+        /** 获取指定类的字节码(主类或依赖类) */
         @Override
         public byte[] getClassBytes(String className) throws IOException {
             return resolveClassBytes(className);
@@ -343,7 +347,7 @@ public class VineflowerDecompiler implements Decompiler {
 
         /**
          * 解析类字节码的核心方法
-         * 首先检查是否为主类（多种路径格式）,
+         * 首先检查是否为主类(多种路径格式),
          * 若不是则去除 .class 后缀和开头的 "/" 后再匹配主类,
          * 最后从上下文解析依赖类字节码
          */
@@ -384,7 +388,7 @@ public class VineflowerDecompiler implements Decompiler {
         /** 创建输出接收器,将 Vineflower 输出委托给外部的 {@link IResultSaver} */
         @Override
         public IOutputSink createOutputSink(IResultSaver saver) {
-            // 将 Vineflower 输出委托给全局 IResultSaver（即 decompileType 中的匿名实现）
+            // 将 Vineflower 输出委托给全局 IResultSaver(即 decompileType 中的匿名实现)
             return new IOutputSink() {
                 @Override
                 public void begin() {

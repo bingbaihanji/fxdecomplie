@@ -21,9 +21,9 @@ public class ClassSearchProvider implements SearchProvider {
     /** 结果上限,防止搜索耗时过长和内存溢出 */
     private static final int MAX_RESULTS = 500;
 
-    /** 所有已知类名列表（fullPath 格式） */
+    /** 所有已知类名列表(fullPath 格式) */
     private final List<String> classNames;
-    /** 原始 fullPath → 显示名（含 .class 后缀）,用于搜索反混淆/重命名后的名称 */
+    /** 原始 fullPath → 显示名(含 .class 后缀),用于搜索反混淆/重命名后的名称 */
     private final Map<String, String> displayNamesByPath;
 
     /** 无参构造：使用空列表,仅从 sourceCache 中搜索 */
@@ -32,7 +32,7 @@ public class ClassSearchProvider implements SearchProvider {
         this.displayNamesByPath = Map.of();
     }
 
-    /** 仅使用类名列表构造（无显示名映射） */
+    /** 仅使用类名列表构造(无显示名映射) */
     public ClassSearchProvider(List<String> classNames) {
         this.classNames = classNames != null ? List.copyOf(classNames) : List.of();
         this.displayNamesByPath = Map.of();
@@ -42,7 +42,7 @@ public class ClassSearchProvider implements SearchProvider {
      * 使用类名列表和显示名映射构造
      *
      * @param classNames       类全路径列表
-     * @param displayNamesByPath fullPath 到显示名的映射（用于搜索反混淆/重命名后的类名）
+     * @param displayNamesByPath fullPath 到显示名的映射(用于搜索反混淆/重命名后的类名)
      */
     public ClassSearchProvider(List<String> classNames,
                                Map<String, String> displayNamesByPath) {
@@ -51,7 +51,7 @@ public class ClassSearchProvider implements SearchProvider {
                 ? Map.copyOf(displayNamesByPath) : Map.of();
     }
 
-    /** 基本搜索：同时匹配原始类名和显示名（不区分大小写） */
+    /** 基本搜索：同时匹配原始类名和显示名(不区分大小写) */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();

@@ -10,8 +10,8 @@ import java.util.Map;
 /**
  * 自定义 ClassVisitor + 原始字节解析,生成 jadx 风格的字节码文本
  *
- * <p>包含：magic/version 头、访问标志（hex 值）、常量池逐条列出（含引用注释）、
- * 每个方法的 descriptor/flags/Code 属性（stack/locals/args_size）、
+ * <p>包含：magic/version 头、访问标志(hex 值)、常量池逐条列出(含引用注释)、
+ * 每个方法的 descriptor/flags/Code 属性(stack/locals/args_size)、
  * 指令 hex 偏移 + 原始字节 + | + 偏移 + 操作码</p>
  *
  * <p>两阶段处理：阶段1 从 raw bytes 解析常量池和 Code 属性文件偏移；
@@ -50,7 +50,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
         try {
             int count = readU2(raw, 8);
-            // 防御：count 不能超过文件大小（每个条目最少1字节tag）
+            // 防御：count 不能超过文件大小(每个条目最少1字节tag)
             if (count < 1 || count > raw.length) {
                 return "Constant pool: <invalid count=" + count + ">\n\n";
             }
@@ -181,7 +181,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
     }
 
-    /** 格式化类头信息（magic、版本号、访问标志、this_class、super_class） */
+    /** 格式化类头信息(magic、版本号、访问标志、this_class、super_class) */
     static String formatClassHeader(byte[] raw, String className, String superName,
                                     String[] interfaces) {
         if (raw == null || raw.length < 10) {
@@ -201,23 +201,23 @@ final class BytecodeTextBuilder extends ClassVisitor {
         h.append("minor version: ").append(minor).append('\n');
         h.append("major version: ").append(major).append("  # ").append(javaVersionName(major)).append('\n');
 
-        // 类体起始偏移（跳过常量池后）,布局：access_flags(2) + this_class(2) + super_class(2) + if_count(2)
+        // 类体起始偏移(跳过常量池后),布局：access_flags(2) + this_class(2) + super_class(2) + if_count(2)
         int bodyOff = skipToClassBody(raw);
-        // 访问标志（+0）
+        // 访问标志(+0)
         int access = readU2(raw, bodyOff);
         h.append(String.format("flags: (0x%04x) %s\n", access, formatAccessFlags(access)));
 
-        // this_class（+2）
+        // this_class(+2)
         int thisIdx = readU2(raw, bodyOff + 2);
         String thisName = cpUtf8(raw, thisIdx);
         h.append(String.format("this_class: #%d  // %s\n", thisIdx, thisName));
 
-        // super_class（+4）
+        // super_class(+4)
         int superIdx = readU2(raw, bodyOff + 4);
         String superNameResolved = superIdx > 0 ? cpUtf8(raw, superIdx) : "java/lang/Object";
         h.append(String.format("super_class: #%d  // %s\n", superIdx, superNameResolved));
 
-        // interfaces_count（+6）,接口列表从 +8 开始
+        // interfaces_count(+6),接口列表从 +8 开始
         int ifCount = readU2(raw, bodyOff + 6);
         h.append("interfaces: ").append(ifCount);
         if (ifCount > 0) {
@@ -236,7 +236,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return h.toString();
     }
 
-    /** 解析类文件属性名（SourceFile、Signature 等） */
+    /** 解析类文件属性名(SourceFile、Signature 等) */
     static String parseClassAttributes(byte[] raw) {
         if (raw == null || raw.length < 10) {
             return "";
@@ -344,7 +344,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return map;
     }
 
-    /** 获取方法的 Code 属性信息（stack、locals、code_length） */
+    /** 获取方法的 Code 属性信息(stack、locals、code_length) */
     static String formatCodeHeader(byte[] raw, String methodKey, boolean isStatic) {
         Map<String, Integer> offsets = scanCodeOffsets(raw);
         Integer codeOff = offsets.get(methodKey);
@@ -366,10 +366,10 @@ final class BytecodeTextBuilder extends ClassVisitor {
     }
 
     /**
-     * 根据方法描述符计算 args_size（参数占用的寄存器字数,long/double 占2,实例方法 +1 给 this）
+     * 根据方法描述符计算 args_size(参数占用的寄存器字数,long/double 占2,实例方法 +1 给 this)
      *
-     * @param methodKey 方法名 + 描述符（如 "foo(I)V"）
-     * @param isStatic  方法是否为 static（ACC_STATIC 标志）
+     * @param methodKey 方法名 + 描述符(如 "foo(I)V")
+     * @param isStatic  方法是否为 static(ACC_STATIC 标志)
      */
     private static int computeArgsSize(String methodKey, boolean isStatic) {
         // methodKey = name + desc
@@ -420,7 +420,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
     // -- 字节操作工具 --
 
     /**
-     * 从字节数组中读取无符号 2 字节整数（大端序）
+     * 从字节数组中读取无符号 2 字节整数(大端序)
      *
      * @param b   字节数组
      * @param off 起始偏移
@@ -451,7 +451,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
                 | ((long) (b[off + 6] & 0xFF) << 8) | (long) (b[off + 7] & 0xFF);
     }
 
-    /** 常量池字节数（不含 tag 字节,用于跳过常量池） */
+    /** 常量池字节数(不含 tag 字节,用于跳过常量池) */
     private static int cpByteSize(byte[] raw) {
         int count = readU2(raw, 8);
         if (count < 1 || count > raw.length) {
@@ -468,12 +468,12 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return off - 10;
     }
 
-    /** 跳转到类体（跳过常量池后的偏移） */
+    /** 跳转到类体(跳过常量池后的偏移) */
     private static int skipToClassBody(byte[] raw) {
         return 10 + cpByteSize(raw);
     }
 
-    /** 常量池条目数据部分大小（不含 tag） */
+    /** 常量池条目数据部分大小(不含 tag) */
     private static int cpEntryDataSize(int tag, byte[] raw, int off) {
         return switch (tag) {
             case 1 -> {
@@ -691,7 +691,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return a.toString();
     }
 
-    /** 获取操作码助记符（小写） */
+    /** 获取操作码助记符(小写) */
     static String opcodeName(int opcode) {
         if (opcode < 0 || opcode >= org.objectweb.asm.util.Printer.OPCODES.length) {
             return "unknown_" + opcode;
@@ -734,10 +734,10 @@ final class BytecodeTextBuilder extends ClassVisitor {
         this.className = name.replace('/', '.');
         this.internalName = name;
 
-        // 类头（magic、版本、标志、this_class、super_class）
+        // 类头(magic、版本、标志、this_class、super_class)
         sb.append(formatClassHeader(raw, name, superName, interfaces));
 
-        // 类属性（SourceFile 等）
+        // 类属性(SourceFile 等)
         sb.append("Attributes:\n");
         sb.append(parseClassAttributes(raw));
         sb.append('\n');
@@ -894,7 +894,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
          *
          * @param name       变量名
          * @param descriptor 类型描述符
-         * @param signature  泛型签名（可能为 null）
+         * @param signature  泛型签名(可能为 null)
          * @param start      作用域起始标签
          * @param end        作用域结束标签
          * @param index      变量在局部变量表中的槽位索引
@@ -923,7 +923,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             sb.append(INDENT).append(".end method\n\n");
         }
 
-        /** 输出零操作数指令（如 return、dup、aconst_null 等） */
+        /** 输出零操作数指令(如 return、dup、aconst_null 等) */
         @Override
         public void visitInsn(int opcode) {
             appendInsnHex(opcode, 1);
@@ -931,7 +931,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += 1;
         }
 
-        /** 输出单操作数整数指令（如 bipush、sipush、newarray） */
+        /** 输出单操作数整数指令(如 bipush、sipush、newarray) */
         @Override
         public void visitIntInsn(int opcode, int operand) {
             int size = actualSize(raw, codeOffset + pc);
@@ -940,7 +940,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出局部变量指令（如 iload、istore、aload 等） */
+        /** 输出局部变量指令(如 iload、istore、aload 等) */
         @Override
         public void visitVarInsn(int opcode, int var) {
             int size = actualSize(raw, codeOffset + pc);
@@ -949,7 +949,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出类型指令（如 new、anewarray、checkcast、instanceof） */
+        /** 输出类型指令(如 new、anewarray、checkcast、instanceof) */
         @Override
         public void visitTypeInsn(int opcode, String type) {
             int size = actualSize(raw, codeOffset + pc);
@@ -1000,7 +1000,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出 invokedynamic 指令（动态方法调用） */
+        /** 输出 invokedynamic 指令(动态方法调用) */
         @Override
         public void visitInvokeDynamicInsn(String name, String descriptor,
                                            Handle bsm, Object... bsmArgs) {
@@ -1012,7 +1012,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出跳转指令（如 ifeq、goto 等）,含分支偏移量和目标地址 */
+        /** 输出跳转指令(如 ifeq、goto 等),含分支偏移量和目标地址 */
         @Override
         public void visitJumpInsn(int opcode, Label label) {
             int size = actualSize(raw, codeOffset + pc);
@@ -1030,7 +1030,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出 LDC 系列指令（加载常量：字符串、整数、浮点数、类型等） */
+        /** 输出 LDC 系列指令(加载常量：字符串、整数、浮点数、类型等) */
         @Override
         public void visitLdcInsn(Object cst) {
             int size;
@@ -1067,7 +1067,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出 IINC 指令（局部变量自增/自减） */
+        /** 输出 IINC 指令(局部变量自增/自减) */
         @Override
         public void visitIincInsn(int var, int increment) {
             int size = actualSize(raw, codeOffset + pc);
@@ -1078,7 +1078,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
 
         /**
-         * 输出 tableswitch 指令（连续区间跳转表）
+         * 输出 tableswitch 指令(连续区间跳转表)
          *
          * @param min    键最小值
          * @param max    键最大值
@@ -1097,7 +1097,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
 
         /**
-         * 输出 lookupswitch 指令（稀疏键值跳转表）
+         * 输出 lookupswitch 指令(稀疏键值跳转表)
          *
          * @param dflt   默认跳转标签
          * @param keys   键值数组
@@ -1113,7 +1113,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出 multianewarray 指令（多维数组创建） */
+        /** 输出 multianewarray 指令(多维数组创建) */
         @Override
         public void visitMultiANewArrayInsn(String descriptor, int numDimensions) {
             int size = 4;
@@ -1137,7 +1137,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             int fileOff = codeOffset + pc;
             sb.append(INSN_INDENT)
                     .append(String.format("%08x: ", fileOff));
-            // 原始字节（最多6字节）,防御截断的字节码
+            // 原始字节(最多6字节),防御截断的字节码
             int safeSize = Math.min(size, raw.length - Math.max(0, fileOff));
             for (int i = 0; i < safeSize && i < 6; i++) {
                 int b = raw[fileOff + i] & 0xFF;

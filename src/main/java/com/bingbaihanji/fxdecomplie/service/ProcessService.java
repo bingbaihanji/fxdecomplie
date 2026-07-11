@@ -29,7 +29,7 @@ public final class ProcessService {
      * <p>通过 {@link ProcessBuilder} 启动第二个 JVM 进程,子进程的
      * stdin/stdout/stderr 继承父进程,避免管道缓冲区满导致子进程挂起</p>
      *
-     * @param filePath 要在新窗口中打开的文件路径（可为 null）
+     * @param filePath 要在新窗口中打开的文件路径(可为 null)
      */
     public static void launchNewInstance(String filePath) {
         try {

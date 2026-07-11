@@ -95,7 +95,7 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
                 continue;
             }
 
-            // 压缩连续空行（最多保留1个空行）
+            // 压缩连续空行(最多保留1个空行)
             if (c == '\n') {
                 consecutiveNewlines++;
                 if (consecutiveNewlines <= 1) {

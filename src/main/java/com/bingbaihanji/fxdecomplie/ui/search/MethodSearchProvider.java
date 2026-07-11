@@ -35,10 +35,10 @@ public class MethodSearchProvider implements SearchProvider {
 
     /**
      * 方法声明正则模式：
-     * - 可选注解（@Override 等）
-     * - 可选修饰符（public/static/final 等）
-     * - 可选类型参数（如 <T>）
-     * - 可选返回类型（如 List<String>）
+     * - 可选注解(@Override 等)
+     * - 可选修饰符(public/static/final 等)
+     * - 可选类型参数(如 <T>)
+     * - 可选返回类型(如 List<String>)
      * - 捕获组1：方法名
      * - 方法名后跟 (
      */
@@ -50,16 +50,16 @@ public class MethodSearchProvider implements SearchProvider {
                     "(?:[\\w.]+(?:<[^>]+>)?(?:\\[\\])*\\s+)?" + // 可选的返回类型(如 List<String>)
                     "(\\w+)\\s*\\(";             // 捕获方法名
 
-    /** 预编译的方法声明正则（区分大小写） */
+    /** 预编译的方法声明正则(区分大小写) */
     private static final Pattern METHOD_DECL = Pattern.compile(METHOD_DECL_PATTERN,
             Pattern.MULTILINE);
 
-    /** 预编译的方法声明正则（不区分大小写）,用于高级搜索选项为非大小写敏感时 */
+    /** 预编译的方法声明正则(不区分大小写),用于高级搜索选项为非大小写敏感时 */
     private static final Pattern METHOD_DECL_CASE_INSENSITIVE = Pattern.compile(
             METHOD_DECL_PATTERN, Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 
     /**
-     * 基本搜索：用正则匹配方法声明,提取方法名与关键字比较（不区分大小写）
+     * 基本搜索：用正则匹配方法声明,提取方法名与关键字比较(不区分大小写)
      * 自动过滤 if/while/for 等非方法关键字的误匹配
      */
     @Override
@@ -110,7 +110,7 @@ public class MethodSearchProvider implements SearchProvider {
             return results;
         }
 
-        // 根据搜索选项选择合适的方法声明正则（区分/不区分大小写）
+        // 根据搜索选项选择合适的方法声明正则(区分/不区分大小写)
         Pattern methodDecl = options.caseSensitive()
                 ? METHOD_DECL : METHOD_DECL_CASE_INSENSITIVE;
         Pattern precompiled = compileSearchPattern(options, query);

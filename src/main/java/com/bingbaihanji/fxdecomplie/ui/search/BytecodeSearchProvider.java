@@ -21,13 +21,13 @@ public class BytecodeSearchProvider implements SearchProvider {
     /** 返回的字节码文本结果上限 */
     private static final int MAX_RESULTS = 500;
 
-    /** 内部类名 → javap 风格反汇编文本（简单模式） */
+    /** 内部类名 → javap 风格反汇编文本(简单模式) */
     private final Map<String, String> bytecodeCache;
-    /** 工作区字节码索引（高级模式,支持 SearchOptions） */
+    /** 工作区字节码索引(高级模式,支持 SearchOptions) */
     private final WorkspaceIndex index;
 
     /**
-     * 使用字节码缓存构造（简单搜索模式）
+     * 使用字节码缓存构造(简单搜索模式)
      *
      * @param bytecodeCache 类路径到字节码文本的映射
      */
@@ -37,7 +37,7 @@ public class BytecodeSearchProvider implements SearchProvider {
     }
 
     /**
-     * 使用工作区索引构造（高级搜索模式,支持 SearchOptions）
+     * 使用工作区索引构造(高级搜索模式,支持 SearchOptions)
      *
      * @param index 工作区索引
      */
@@ -46,7 +46,7 @@ public class BytecodeSearchProvider implements SearchProvider {
         this.index = Objects.requireNonNull(index, "index");
     }
 
-    /** 基本搜索：逐行匹配字节码文本中的关键字（不区分大小写） */
+    /** 基本搜索：逐行匹配字节码文本中的关键字(不区分大小写) */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache) {
         List<SearchResult> results = new ArrayList<>();
@@ -107,7 +107,7 @@ public class BytecodeSearchProvider implements SearchProvider {
 
     /**
      * 遍历所有可用的字节码文本,对每个条目调用 consumer
-     * 优先使用工作区索引（index）,回退到字节码缓存（bytecodeCache）
+     * 优先使用工作区索引(index),回退到字节码缓存(bytecodeCache)
      * 支持中断检测,以便搜索任务取消后立即停止遍历
      */
     private void forEachBytecodeText(BiConsumer<String, String> consumer) {

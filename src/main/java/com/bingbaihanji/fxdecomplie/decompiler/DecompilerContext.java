@@ -21,9 +21,9 @@ public final class DecompilerContext implements AutoCloseable {
 
     /** 字节码提供器,用于按内部名称解析依赖类字节码 */
     private final ClassBytecodeProvider bytecodeProvider;
-    /** 反编译选项（不可变） */
+    /** 反编译选项(不可变) */
     private final Map<String, String> options;
-    /** 可关闭的资源（如 ZipFile）,反编译完成后可能需要关闭 */
+    /** 可关闭的资源(如 ZipFile),反编译完成后可能需要关闭 */
     private final AutoCloseable closeable;
     /** 是否在使用后自动关闭 closeable */
     private final boolean closeAfterUse;
@@ -46,7 +46,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 使用指定字节码提供器创建上下文（无额外选项）
+     * 使用指定字节码提供器创建上下文(无额外选项)
      *
      * @param bytecodeProvider 字节码提供器
      * @return 反编译上下文
@@ -59,7 +59,7 @@ public final class DecompilerContext implements AutoCloseable {
      * 使用指定字节码提供器和选项创建上下文
      *
      * @param bytecodeProvider 字节码提供器
-     * @param options          反编译选项（不可变拷贝）
+     * @param options          反编译选项(不可变拷贝)
      * @return 反编译上下文
      */
     public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
@@ -68,10 +68,10 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 使用指定字节码提供器、选项和可关闭资源创建上下文（默认 closeAfterUse=true）
+     * 使用指定字节码提供器、选项和可关闭资源创建上下文(默认 closeAfterUse=true)
      *
      * @param bytecodeProvider 字节码提供器
-     * @param options          反编译选项（不可变拷贝）
+     * @param options          反编译选项(不可变拷贝)
      * @param closeable        反编译完成后需要关闭的资源
      * @return 反编译上下文
      */
@@ -82,8 +82,8 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 创建一次性使用的上下文（语义等同 {@link #of(ClassBytecodeProvider, Map, AutoCloseable)},
-     * closeAfterUse 固定为 true）
+     * 创建一次性使用的上下文(语义等同 {@link #of(ClassBytecodeProvider, Map, AutoCloseable)},
+     * closeAfterUse 固定为 true)
      *
      * @param bytecodeProvider 字节码提供器
      * @param options          反编译选项
@@ -98,7 +98,7 @@ public final class DecompilerContext implements AutoCloseable {
 
     /**
      * 核心工厂方法：校验参数并按规则创建上下文
-     * 若 bytecodeProvider 为 null 且传入了 closeable,则立即关闭 closeable 并抛出异常（参数无效）；
+     * 若 bytecodeProvider 为 null 且传入了 closeable,则立即关闭 closeable 并抛出异常(参数无效)；
      * 若仅 bytecodeProvider 为 null,则回退为仅带选项的上下文
      */
     private static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
@@ -120,22 +120,22 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 从工作区索引创建上下文（无额外选项）
+     * 从工作区索引创建上下文(无额外选项)
      * 通过 WorkspaceIndex 的 {@code getClassBytes} 方法解析依赖类字节码
      *
      * @param index 工作区索引
-     * @return 反编译上下文（若 index 为 null 则返回仅携带选项的空上下文）
+     * @return 反编译上下文(若 index 为 null 则返回仅携带选项的空上下文)
      */
     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index) {
         return fromWorkspaceIndex(index, Map.of());
     }
 
     /**
-     * 从工作区索引创建上下文（带选项）
+     * 从工作区索引创建上下文(带选项)
      *
      * @param index   工作区索引
      * @param options 反编译选项
-     * @return 反编译上下文（若 index 为 null 则返回仅携带选项的空上下文）
+     * @return 反编译上下文(若 index 为 null 则返回仅携带选项的空上下文)
      */
     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index,
                                                        Map<String, String> options) {
@@ -146,7 +146,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 创建仅携带选项的上下文（无字节码提供器,不解析依赖类）
+     * 创建仅携带选项的上下文(无字节码提供器,不解析依赖类)
      *
      * @param options 反编译选项
      * @return 反编译上下文
@@ -156,7 +156,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 标准化内部名称（去掉开头的 L 和结尾的 ; 等描述符前缀/后缀）
+     * 标准化内部名称(去掉开头的 L 和结尾的 ; 等描述符前缀/后缀)
      *
      * @param internalName 待标准化的内部名称
      * @return 标准化后的内部名称
@@ -186,7 +186,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 解析依赖类字节码（与 {@link #getClassBytes} 行为一致,为将来扩展预留）
+     * 解析依赖类字节码(与 {@link #getClassBytes} 行为一致,为将来扩展预留)
      *
      * @param internalName JVM 内部类名
      * @return 类文件字节数组,若找不到则返回 {@code null}
@@ -195,7 +195,7 @@ public final class DecompilerContext implements AutoCloseable {
         return getClassBytes(internalName);
     }
 
-    /** @return 反编译选项（不可变） */
+    /** @return 反编译选项(不可变) */
     public Map<String, String> options() {
         return options;
     }
@@ -204,7 +204,7 @@ public final class DecompilerContext implements AutoCloseable {
      * 获取单个选项值
      *
      * @param key          选项键
-     * @param defaultValue 默认值（未找到时返回）
+     * @param defaultValue 默认值(未找到时返回)
      * @return 选项值
      */
     public String option(String key, String defaultValue) {

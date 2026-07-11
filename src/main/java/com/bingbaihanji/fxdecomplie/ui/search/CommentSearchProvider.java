@@ -31,7 +31,7 @@ public class CommentSearchProvider implements SearchProvider {
     }
 
     /**
-     * 基本搜索：遍历所有已反编译源码文件,仅搜索注释行中的关键字（不区分大小写）
+     * 基本搜索：遍历所有已反编译源码文件,仅搜索注释行中的关键字(不区分大小写)
      * 支持中断检测,以便搜索任务取消后立即停止
      */
     @Override

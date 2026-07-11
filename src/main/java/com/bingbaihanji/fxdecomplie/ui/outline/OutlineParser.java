@@ -25,7 +25,7 @@ public final class OutlineParser {
     /**
      * 方法签名匹配模式
      * 使用简单括号计数扫描参数列表,避免正则嵌套量词导致灾难性回溯或
-     * 深层嵌套泛型（如 {@code Map<String, Map<String, List<Integer>>>}）匹配失败
+     * 深层嵌套泛型(如 {@code Map<String, Map<String, List<Integer>>>})匹配失败
      * 匹配策略：定位开括号后逐字符扫描,跳过字符串/注释,括号计数归零时结束
      */
     private static final Pattern METHOD_PATTERN = Pattern.compile(
@@ -39,7 +39,7 @@ public final class OutlineParser {
     private static final Pattern INNER_CLASS_PATTERN = Pattern.compile(
             "^\\s*((?:public|protected|private|static|\\s)*)\\b(class|interface|enum|record)\\s+(\\w+)");
 
-    /** 匹配全限定类引用：包路径（小写段）+ 类名/内部类（大小写均可,混淆后类名常为小写单字母） */
+    /** 匹配全限定类引用：包路径(小写段)+ 类名/内部类(大小写均可,混淆后类名常为小写单字母) */
     private static final Pattern CLASS_REF_PATTERN = Pattern.compile(
             "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+\\.[A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)\\b");
 
@@ -48,11 +48,11 @@ public final class OutlineParser {
     }
 
     /**
-     * 从反编译 Java 源码提取大纲成员（字段、方法、内部类）
+     * 从反编译 Java 源码提取大纲成员(字段、方法、内部类)
      *
      * <p>逐行扫描源码,用大括号计数跟踪嵌套深度方法匹配采用两步策略：
      * 先用 {@link #METHOD_PATTERN} 匹配方法名前缀,再从开括号位置逐字符扫描
-     * 找到匹配的闭括号（跳过字符串和注释）,避免正则嵌套量词的深度限制和
+     * 找到匹配的闭括号(跳过字符串和注释),避免正则嵌套量词的深度限制和
      * 灾难性回溯问题</p>
      *
      * @param sourceCode 反编译后的 Java 源码
@@ -68,7 +68,7 @@ public final class OutlineParser {
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
-            // 先用上一轮的 depth 做成员检查（避免当前行自身的 { 干扰判断），
+            // 先用上一轮的 depth 做成员检查(避免当前行自身的 { 干扰判断),
             // 再统计本行大括号更新 depth 供后续行使用
             int prevDepth = depth;
             depth += count(line, '{') - count(line, '}');
@@ -211,7 +211,7 @@ public final class OutlineParser {
             int lineNum = i + 1;
             List<CodeMetadata.Reference> refs = new ArrayList<>();
 
-            // 跳过注释行（跟踪多行块注释状态）
+            // 跳过注释行(跟踪多行块注释状态)
             String trimmed = line.trim();
             if (inBlockComment) {
                 if (trimmed.contains("*/")) {
@@ -236,7 +236,7 @@ public final class OutlineParser {
             while (m.find()) {
                 String match = m.group(1);
                 // 包含 '.' 且最后一段是有效 Java 标识符则视为类引用
-                // 混淆后的类名通常为小写单字母（如 a, b, c）,不能再依赖首字母大写判断
+                // 混淆后的类名通常为小写单字母(如 a, b, c),不能再依赖首字母大写判断
                 if (match.contains(".") && looksLikeClassReference(match)) {
                     refs.add(new CodeMetadata.Reference(
                             CodeMetadata.RefType.CLASS_REF, match, null, lineNum, m.start()));
@@ -252,19 +252,19 @@ public final class OutlineParser {
     }
 
     /**
-     * 从反编译源码中提取代码元数据（带字节码增强）
+     * 从反编译源码中提取代码元数据(带字节码增强)
      *
      * <p>在正则提取的基础上,额外解析 class 字节码的泛型签名,将反编译源码中
-     * 泛型类型参数的简单名（如 {@code ServiceImpl<AjglMapper, a>} 中的 {@code a}）
-     * 映射到字节码中的全限定名（如 {@code com.pig4cloud.domain.a}）。</p>
+     * 泛型类型参数的简单名(如 {@code ServiceImpl<AjglMapper, a>} 中的 {@code a})
+     * 映射到字节码中的全限定名(如 {@code com.pig4cloud.domain.a}) </p>
      *
      * <p>此方法解决了混淆场景下多个同名类的导航歧义问题：
      * 字节码的 Signature 属性存储了无歧义的全限定类型引用,将其与反编译源码
-     * 中的泛型位置关联后,Ctrl+Click 可以精确跳转到正确的类。</p>
+     * 中的泛型位置关联后,Ctrl+Click 可以精确跳转到正确的类 </p>
      *
      * @param sourceCode 反编译后的 Java 源码
-     * @param classBytes 类文件原始字节码（可为 null,此时退化为纯正则提取）
-     * @return 代码元数据（含字节码增强的泛型类引用）
+     * @param classBytes 类文件原始字节码(可为 null,此时退化为纯正则提取)
+     * @return 代码元数据(含字节码增强的泛型类引用)
      */
     public static CodeMetadata extractMetadata(String sourceCode, byte[] classBytes) {
         Map<Integer, List<CodeMetadata.Reference>> refsByLine = new HashMap<>();
@@ -274,7 +274,7 @@ public final class OutlineParser {
 
         String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
 
-        // ---- 第一阶段：正则提取全限定类引用（原有逻辑） ----
+        // ---- 第一阶段：正则提取全限定类引用(原有逻辑) ----
         boolean inBlockComment = false;
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
@@ -331,7 +331,7 @@ public final class OutlineParser {
      * 从字节码泛型签名中提取类型参数,与反编译源码的泛型位置关联
      *
      * <p>扫描源码中 extends/implements 子句和泛型参数中的简单类名,
-     * 用字节码签名中的对应位置的全限定名创建精确的导航引用。</p>
+     * 用字节码签名中的对应位置的全限定名创建精确的导航引用 </p>
      */
     private static void enhanceWithBytecodeSignatures(String[] lines, byte[] classBytes,
                                                       Map<Integer, List<CodeMetadata.Reference>> refsByLine) {
@@ -371,7 +371,7 @@ public final class OutlineParser {
             }
 
             // 按关键字位置从左到右处理 extends 和 implements
-            // 同一行可能两者都有（如 extends X<A> implements Y<B>）
+            // 同一行可能两者都有(如 extends X<A> implements Y<B>)
             int searchFrom = 0;
             while (searchFrom < line.length() && ownerIndex < typeArgsByOwner.size()) {
                 // 查找下一个 extends 或 implements 关键字
@@ -401,8 +401,8 @@ public final class OutlineParser {
                 }
 
                 // 确定该关键字对应的 ownerIndex
-                // extends 总是对应 ownerIndex 0（父类）
-                // implements 对应 ownerIndex > 0（接口）
+                // extends 总是对应 ownerIndex 0(父类)
+                // implements 对应 ownerIndex > 0(接口)
                 int currentOwnerIndex;
                 if (isExtends) {
                     if (ownerIndex != 0) {
@@ -415,17 +415,17 @@ public final class OutlineParser {
                 } else {
                     // implements
                     if (ownerIndex == 0) {
-                        // 还没处理 extends,先跳过（不应发生）
+                        // 还没处理 extends,先跳过(不应发生)
                         searchFrom = keywordIdx + 11;
                         continue;
                     }
                     currentOwnerIndex = ownerIndex;
                     ownerIndex++;
                 }
-                // 提取该关键字后的泛型参数（从关键字位置开始扫描尖括号）
+                // 提取该关键字后的泛型参数(从关键字位置开始扫描尖括号)
                 String fromKeyword = line.substring(keywordIdx);
                 List<TypeArgWithPosition> sourceTypeArgs = extractGenericTypeArgumentsWithPosition(fromKeyword);
-                // 修正列号偏移（相对于整行而非关键字后子串）
+                // 修正列号偏移(相对于整行而非关键字后子串)
                 List<TypeArgWithPosition> adjustedArgs = new ArrayList<>();
                 for (TypeArgWithPosition arg : sourceTypeArgs) {
                     adjustedArgs.add(new TypeArgWithPosition(arg.name(), arg.columnStart() + keywordIdx));
@@ -451,12 +451,12 @@ public final class OutlineParser {
                     int argColumn = adjustedArgs.get(j).columnStart;
                     String bytecodeArg = bytecodeArgs.get(j);
 
-                    // 仅处理简单名（非全限定名）,且字节码提供了有效的全限定名
+                    // 仅处理简单名(非全限定名),且字节码提供了有效的全限定名
                     if (!sourceArg.contains(".") && bytecodeArg != null
                             && !bytecodeArg.isBlank() && bytecodeArg.contains(".")) {
                         String dotName = bytecodeArg;
 
-                        // 避免重复添加（如果正则已提取了相同的全限定名）
+                        // 避免重复添加(如果正则已提取了相同的全限定名)
                         boolean alreadyExists = refs.stream().anyMatch(r ->
                                 r.targetClass() != null && r.targetClass().equals(dotName));
                         if (!alreadyExists) {
@@ -475,9 +475,9 @@ public final class OutlineParser {
      * 从源码行中提取泛型类型参数的简单名列表
      *
      * <p>例如从 {@code public class Foo extends ServiceImpl<AjglMapper, a> implements Bar<b, c>}
-     * 提取 ["AjglMapper", "a", "b", "c"]。</p>
+     * 提取 ["AjglMapper", "a", "b", "c"] </p>
      *
-     * <p>使用尖括号深度跟踪,跳过嵌套泛型和方法调用中的括号。</p>
+     * <p>使用尖括号深度跟踪,跳过嵌套泛型和方法调用中的括号 </p>
      */
     static List<String> extractGenericTypeArguments(String line) {
         List<String> args = new ArrayList<>();
@@ -491,7 +491,7 @@ public final class OutlineParser {
      * 从源码行中提取泛型类型参数及其在行中的起始列号
      *
      * <p>与 {@link #extractGenericTypeArguments(String)} 类似,但额外返回每个参数
-     * 在源码行中的字符偏移量,用于创建精确的列位置引用。</p>
+     * 在源码行中的字符偏移量,用于创建精确的列位置引用 </p>
      */
     static List<TypeArgWithPosition> extractGenericTypeArgumentsWithPosition(String line) {
         List<TypeArgWithPosition> args = new ArrayList<>();
@@ -552,7 +552,7 @@ public final class OutlineParser {
 
     /**
      * 判断是否为可导航的简单类型参数
-     * 排除通配符（?）、类型变量（T, E 等大写单字母）、基本类型包装类
+     * 排除通配符(?)、类型变量(T, E 等大写单字母)、基本类型包装类
      */
     private static boolean isSimpleTypeArg(String arg) {
         if (arg.isEmpty() || "?".equals(arg)) {
@@ -562,7 +562,7 @@ public final class OutlineParser {
         if (arg.startsWith("?")) {
             return false;
         }
-        // 全限定名不需要增强（正则已处理）
+        // 全限定名不需要增强(正则已处理)
         if (arg.contains(".")) {
             return false;
         }
@@ -581,11 +581,11 @@ public final class OutlineParser {
     /**
      * 判断匹配片段是否为有效的类引用
      *
-     * <p>混淆后的类名通常为小写单字母（如 a/b/c）,若只按首字母大写过滤
+     * <p>混淆后的类名通常为小写单字母(如 a/b/c),若只按首字母大写过滤
      * 会漏掉所有混淆类引用,导致 Ctrl+Click 导航失效</p>
      *
      * <p>简单规则：最后一个 '.' 后面的简单类名必须是有效 Java 标识符,
-     * 且至少包含两个 '.' 段（至少一级包 + 类名）,避免误匹配单个变量</p>
+     * 且至少包含两个 '.' 段(至少一级包 + 类名),避免误匹配单个变量</p>
      */
     private static boolean looksLikeClassReference(String match) {
         if (match == null || match.isBlank()) {

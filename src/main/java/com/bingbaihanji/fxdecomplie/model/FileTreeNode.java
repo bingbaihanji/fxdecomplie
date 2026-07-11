@@ -86,7 +86,7 @@ public class FileTreeNode {
     /**
      * 设置资源清理回调每个节点仅支持一个清理动作,设置后可通过 {@link #close()} 触发
      *
-     * @param cleanup 节点关闭时执行的清理动作（例如关闭共享 ZipFile）
+     * @param cleanup 节点关闭时执行的清理动作(例如关闭共享 ZipFile)
      */
     public void setCleanup(Runnable cleanup) {
         cleanupRef.set(cleanup);
@@ -154,7 +154,7 @@ public class FileTreeNode {
         return nodeType == NodeTypeEnum.RESOURCE || nodeType == NodeTypeEnum.JAVA_FILE;
     }
 
-    /** @return 是否为二进制资源文件（DLL/SO/EXE 等,可用 Hex 查看） */
+    /** @return 是否为二进制资源文件(DLL/SO/EXE 等,可用 Hex 查看) */
     public boolean isBinaryFile() {
         return nodeType == NodeTypeEnum.BINARY;
     }

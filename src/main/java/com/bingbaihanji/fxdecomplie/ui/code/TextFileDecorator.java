@@ -43,7 +43,7 @@ public final class TextFileDecorator implements SyntaxDecorator {
     }
 
     /**
-     * 处理文本变更事件（文本文件无需增量更新,空实现）
+     * 处理文本变更事件(文本文件无需增量更新,空实现)
      *
      * @param model        代码文本模型
      * @param start        变更起始位置

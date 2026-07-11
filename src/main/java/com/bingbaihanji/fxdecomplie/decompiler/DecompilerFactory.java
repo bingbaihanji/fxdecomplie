@@ -37,6 +37,7 @@ public final class DecompilerFactory {
                 case CFR -> new CfrDecompiler();
                 case VINEFLOWER -> new VineflowerDecompiler();
                 case JD -> new JdDecompiler();
+                case JADX -> new JadxDecompiler();
             };
             try {
                 engine.initialize();
@@ -54,7 +55,7 @@ public final class DecompilerFactory {
 
     /**
      * 清理所有引擎实例,释放资源
-     * 单个引擎清理失败不影响其余引擎的清理（异常被捕获并记录日志）
+     * 单个引擎清理失败不影响其余引擎的清理(异常被捕获并记录日志)
      * 清理后清空缓存
      */
     public static void cleanup() {

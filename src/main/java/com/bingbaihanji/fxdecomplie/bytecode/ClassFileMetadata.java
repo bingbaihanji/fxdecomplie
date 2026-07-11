@@ -35,11 +35,11 @@ public record ClassFileMetadata(
     }
 
     /**
-     * 类成员的元数据信息（字段或方法）
+     * 类成员的元数据信息(字段或方法)
      *
-     * @param accessFlags 访问标志（public/private/static 等）
+     * @param accessFlags 访问标志(public/private/static 等)
      * @param name        成员名称
-     * @param descriptor  类型描述符（如方法签名字符串）
+     * @param descriptor  类型描述符(如方法签名字符串)
      */
     public record MemberInfo(int accessFlags, String name, String descriptor) {
 

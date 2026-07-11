@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.inheritance;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ import java.util.*;
  * {@link TreeItem} 继承层次</p>
  *
  * <p>子类查找通过 {@link SubclassIndex} 预建索引实现 O(1) 查询,索引构建
- * 有超时和上限保护（{@link #SUBCLASS_TIMEOUT_MS} / {@link #MAX_SUBCLASSES}）,
+ * 有超时和上限保护({@link #SUBCLASS_TIMEOUT_MS} / {@link #MAX_SUBCLASSES}),
  * 避免大 workspace 下长时间阻塞</p>
  *
  * @author bingbaihanji
@@ -31,7 +32,7 @@ public final class InheritanceService {
     private static final int MAX_DEPTH = 20;
     /** 子类树展示最大数量上限 */
     private static final int MAX_SUBCLASSES = 200;
-    /** 子类索引构建超时时间（毫秒） */
+    /** 子类索引构建超时时间(毫秒) */
     private static final long SUBCLASS_TIMEOUT_MS = 3000;
 
     private InheritanceService() {
@@ -70,7 +71,7 @@ public final class InheritanceService {
     public static TreeItem<InheritanceNode> buildTree(String fullPath, WorkspaceIndex index,
                                                       byte[] rootBytes) {
         // 防循环访问记录
-        Set<String> visited = new HashSet<>();
+        Set<String> visited = new ArraySet<>();
         String internalName = toInternal(fullPath);
         // EMPTY 哨兵等效于无索引
         WorkspaceIndex usableIndex = index == WorkspaceIndex.EMPTY ? null : index;
@@ -108,13 +109,13 @@ public final class InheritanceService {
             log.warn("解析类元数据用于继承树失败: {}", fullPath);
         }
 
-        // 补充子类树（需要工作区索引）
+        // 补充子类树(需要工作区索引)
         appendSubClassTree(internalName, root, visited, usableIndex);
         return root;
     }
 
     /**
-     * 递归向上追溯父类链,将每个父类节点插入到父节点子列表的最前面（保持层级顺序）
+     * 递归向上追溯父类链,将每个父类节点插入到父节点子列表的最前面(保持层级顺序)
      * 遇到 java/lang/Object 或超过最大深度时停止
      */
     private static void buildSuperChain(String internalName, TreeItem<InheritanceNode> parent,
@@ -205,7 +206,7 @@ public final class InheritanceService {
         return index == null ? null : index.getClassBytes(internalName);
     }
 
-    /** 将文件路径转为 JVM 内部名称格式（去除 .class 后缀,反斜杠替换为正斜杠） */
+    /** 将文件路径转为 JVM 内部名称格式(去除 .class 后缀,反斜杠替换为正斜杠) */
     private static String toInternal(String path) {
         if (path.endsWith(".class")) {
             return path.substring(0, path.length() - 6).replace("\\", "/");
@@ -213,7 +214,7 @@ public final class InheritanceService {
         return path.replace("\\", "/");
     }
 
-    /** 从内部名称中提取简短类名（最后一个 / 之后的部分） */
+    /** 从内部名称中提取简短类名(最后一个 / 之后的部分) */
     private static String simpleName(String internalName) {
         int idx = internalName.lastIndexOf('/');
         return idx >= 0 ? internalName.substring(idx + 1) : internalName;
@@ -223,7 +224,7 @@ public final class InheritanceService {
      * 子类反向索引：parent → children 的映射,O(1) 查询子类
      *
      * <p>构建时遍历 workspace 中所有 class,提取每个 class 的父类和接口,
-     * 建立反向引用注意：同一 child 可能多次出现（实现多接口的类）,
+     * 建立反向引用注意：同一 child 可能多次出现(实现多接口的类),
      * 但每个 parent→child 对只记录一次</p>
      */
     private static final class SubclassIndex {
@@ -289,7 +290,7 @@ public final class InheritanceService {
         }
     }
 
-    /** 可变计数器,用于在递归过程中跨调用栈共享计数（避免装箱开销） */
+    /** 可变计数器,用于在递归过程中跨调用栈共享计数(避免装箱开销) */
     private static final class Counter {
         int value;
     }

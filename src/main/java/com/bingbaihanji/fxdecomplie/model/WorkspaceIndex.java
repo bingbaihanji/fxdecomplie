@@ -59,7 +59,7 @@ public final class WorkspaceIndex {
     }
 
     /**
-     * 从已提取的 FileTreeNode 列表构建索引（线程安全,可在后台线程调用）
+     * 从已提取的 FileTreeNode 列表构建索引(线程安全,可在后台线程调用)
      *
      * @param nodes class 和资源 FileTreeNode 列表
      * @return 工作区索引
@@ -163,12 +163,12 @@ public final class WorkspaceIndex {
         }
     }
 
-    /** @return 该工作区中所有类的索引条目（不可变列表） */
+    /** @return 该工作区中所有类的索引条目(不可变列表) */
     public List<ClassIndexEntry> classes() {
         return classes;
     }
 
-    /** @return 该工作区中所有资源的索引条目（不可变列表） */
+    /** @return 该工作区中所有资源的索引条目(不可变列表) */
     public List<ResourceIndexEntry> resources() {
         return resources;
     }
@@ -218,7 +218,7 @@ public final class WorkspaceIndex {
 
     /**
      * 构建并返回按路径索引的字节码文本
-     * 每次调用都会重新生成（不缓存）,因为在反编译视图与字节码视图间切换时需要最新数据
+     * 每次调用都会重新生成(不缓存),因为在反编译视图与字节码视图间切换时需要最新数据
      *
      * @return 类路径到字节码文本字符串的映射
      */

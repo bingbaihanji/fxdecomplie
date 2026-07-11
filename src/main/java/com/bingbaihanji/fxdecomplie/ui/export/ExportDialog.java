@@ -61,7 +61,7 @@ public final class ExportDialog {
         formatCombo.getItems().addAll(ExportConfig.Format.values());
         formatCombo.setValue(parseFormat(appConfig.export().defaultFormat()));
         formatCombo.setMaxWidth(Double.MAX_VALUE);
-        // 格式切换时自动调整输出路径（ZIP↔DIR 互转）
+        // 格式切换时自动调整输出路径(ZIP↔DIR 互转)
         formatCombo.setOnAction(e -> outputField.setText(
                 switchPathFormat(outputField.getText(), formatCombo.getValue())));
 
@@ -304,7 +304,7 @@ public final class ExportDialog {
             dialog.close();
         }
 
-        /** 取消导出（跳过已关闭状态） */
+        /** 取消导出(跳过已关闭状态) */
         private void cancel() {
             if (closing) {
                 return;

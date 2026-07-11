@@ -14,16 +14,16 @@ import java.util.List;
  * 从 class 字节码中提取泛型签名信息,用于增强反编译源码的 Ctrl+Click 导航
  *
  * <p>当反编译器输出 {@code ServiceImpl<AjglMapper, a>} 时,简单名 {@code a} 可能对应
- * 多个同名类（如 {@code com.pig4cloud.domain.a} 和 {@code com.pig4cloud.service.a}）。
+ * 多个同名类(如 {@code com.pig4cloud.domain.a} 和 {@code com.pig4cloud.service.a}) 
  * 本解析器从字节码的 Signature 属性中提取实际的泛型类型参数,为每个简单名提供
- * 精确的全限定类名映射。</p>
+ * 精确的全限定类名映射 </p>
  *
  * <h3>原理</h3>
  * <p>字节码中的类签名存储了完整的泛型信息,例如：</p>
  * <pre>
  * Lcom/baomidou/.mybatisplus/extension/service/impl/ServiceImpl&lt;Lcom/pig4cloud/domain/AjglMapper;Lcom/pig4cloud/domain/a;&gt;;
  * </pre>
- * <p>通过解析此签名,可以确定 {@code a} 实际指向 {@code com/pig4cloud/domain/a}。</p>
+ * <p>通过解析此签名,可以确定 {@code a} 实际指向 {@code com/pig4cloud/domain/a} </p>
  *
  * @author bingbaihanji
  * @date 2026-07-08
@@ -39,15 +39,15 @@ public final class BytecodeSignatureParser {
     /**
      * 从 class 字节码中提取所有泛型类型参数的全限定名列表
      *
-     * <p>返回一个扁平列表,包含按源码中出现顺序排列的所有类型参数。
-     * 例如对于 {@code ServiceImpl<AjglMapper, a>}，返回
-     * ["com/pig4cloud/domain/AjglMapper", "com/pig4cloud/domain/a"]。</p>
+     * <p>返回一个扁平列表,包含按源码中出现顺序排列的所有类型参数 
+     * 例如对于 {@code ServiceImpl<AjglMapper, a>},返回
+     * ["com/pig4cloud/domain/AjglMapper", "com/pig4cloud/domain/a"] </p>
      *
      * <p>同时返回父类类型参数列表和每个接口的类型参数列表,调用方按顺序
-     * 与反编译源码中的 extends/implements 子句匹配。</p>
+     * 与反编译源码中的 extends/implements 子句匹配 </p>
      *
      * @param classBytes class 文件原始字节
-     * @return 类型参数列表（内部名格式,如 "com/pig4cloud/domain/a"），
+     * @return 类型参数列表(内部名格式,如 "com/pig4cloud/domain/a"),
      *         解析失败或无泛型信息时返回空列表
      */
 
@@ -55,10 +55,10 @@ public final class BytecodeSignatureParser {
      * 从 class 字节码中提取父类和接口的泛型类型参数,按 extends/implements 顺序排列
      *
      * <p>返回列表的结构：第一个元素对应父类(superclass)的类型参数列表,
-     * 后续元素对应每个接口的类型参数列表。</p>
+     * 后续元素对应每个接口的类型参数列表 </p>
      *
      * @param classBytes class 文件原始字节
-     * @return 每个父类型（extends 或 implements）的类型参数列表，
+     * @return 每个父类型(extends 或 implements)的类型参数列表,
      *         解析失败时返回空列表
      */
     public static List<List<String>> extractTypeArgumentsByOwner(byte[] classBytes) {
@@ -82,7 +82,7 @@ public final class BytecodeSignatureParser {
      */
     private static final class TypeArgumentExtractor extends ClassVisitor {
 
-        /** 按父类型分组的类型参数列表（[0]=superclass, [1..]=interfaces） */
+        /** 按父类型分组的类型参数列表([0]=superclass, [1..]=interfaces) */
         private final List<List<String>> typeArgumentsByOwner = new ArrayList<>();
         private String classSignature;
         private String superName;
@@ -173,7 +173,7 @@ public final class BytecodeSignatureParser {
                 return args;
             }
 
-            // 找到类名结束位置（'<' 或 ';'）
+            // 找到类名结束位置('<' 或 ';')
             int pos = start + 1;
             while (pos < sig.length()) {
                 char c = sig.charAt(pos);
@@ -213,25 +213,25 @@ public final class BytecodeSignatureParser {
                 }
 
                 if (c == 'L') {
-                    // 提取类引用的内部名（L 前缀表示真实类引用,类型变量使用 T 前缀已在上方处理）
+                    // 提取类引用的内部名(L 前缀表示真实类引用,类型变量使用 T 前缀已在上方处理)
                     String internalName = extractClassInternalName(sig, pos);
                     if (internalName != null) {
                         args.add(internalName);
                     }
-                    // 跳过这个类引用（含泛型参数）
+                    // 跳过这个类引用(含泛型参数)
                     pos = skipClassRef(sig, pos);
                     if (pos < 0) {
                         break;
                     }
                 } else if (c == 'T') {
-                    // 类型变量（如 T, E）,跳过
+                    // 类型变量(如 T, E),跳过
                     int semi = sig.indexOf(';', pos);
                     pos = semi >= 0 ? semi + 1 : sig.length();
                 } else if (c == '*' || c == '+' || c == '-') {
                     // 通配符
                     pos++;
                 } else {
-                    // 基本类型（I, J, Z 等）
+                    // 基本类型(I, J, Z 等)
                     pos++;
                 }
             }
@@ -239,7 +239,7 @@ public final class BytecodeSignatureParser {
         }
 
         /**
-         * 从 'L' 开始提取类引用的内部名（不含泛型参数）
+         * 从 'L' 开始提取类引用的内部名(不含泛型参数)
          *
          * <p>例如从 {@code Lcom/pig4cloud/domain/a;} 提取 {@code com/pig4cloud/domain/a}</p>
          */
@@ -259,7 +259,7 @@ public final class BytecodeSignatureParser {
         }
 
         /**
-         * 跳过一个完整的类引用（含泛型参数和结尾分号）
+         * 跳过一个完整的类引用(含泛型参数和结尾分号)
          *
          * @return 跳过后的下一个位置,-1 表示格式错误
          */

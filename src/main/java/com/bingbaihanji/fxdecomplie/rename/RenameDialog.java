@@ -24,7 +24,7 @@ public final class RenameDialog {
      *
      * @param owner   父窗口
      * @param oldName 当前名称
-     * @param kind    类型（"class" / "method" / "field"）
+     * @param kind    类型("class" / "method" / "field")
      * @return 新名称,取消返回 null
      */
     public static String show(Stage owner, String oldName, String kind) {

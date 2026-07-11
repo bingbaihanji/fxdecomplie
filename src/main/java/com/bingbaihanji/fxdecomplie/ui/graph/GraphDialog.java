@@ -28,7 +28,7 @@ import java.util.Objects;
  *
  * <h3>使用方式</h3>
  * <pre>{@code
- * // 继承图 / 方法图（背景线程生成 DOT 后切换到图形）
+ * // 继承图 / 方法图(背景线程生成 DOT 后切换到图形)
  * GraphDialog dialog = new GraphDialog(stage, "继承图 - MyClass");
  * dialog.show();
  * BackgroundTasks.run("BuildGraph", () -> {
@@ -57,15 +57,15 @@ public class GraphDialog extends Dialog<Void> {
                     + "-fx-font-family:'Consolas',monospace;-fx-font-size:13px;"
                     + "-fx-highlight-fill:#264f78;-fx-highlight-text-fill:#fff;";
 
-    /** 内容区域（StackPane）,承载 TextArea / 图形 / 加载提示 */
+    /** 内容区域(StackPane),承载 TextArea / 图形 / 加载提示 */
     private StackPane contentStack;
-    /** DOT 源码文本区（懒初始化） */
+    /** DOT 源码文本区(懒初始化) */
     private TextArea dotArea;
-    /** 当前图形视图节点（DotGraphRenderer 返回的 ScrollPane 或空图提示） */
+    /** 当前图形视图节点(DotGraphRenderer 返回的 ScrollPane 或空图提示) */
     private Node currentGraphView;
     /** Graph / DOT 切换按钮 */
     private ToggleButton viewToggle;
-    /** 底部状态标签（DOT 源码 / JavaFX 图形 / 错误信息） */
+    /** 底部状态标签(DOT 源码 / JavaFX 图形 / 错误信息) */
     private Label statusLabel;
 
     /**
@@ -197,7 +197,7 @@ public class GraphDialog extends Dialog<Void> {
     }
 
     /**
-     * 显示居中的加载指示器和提示文字（旋转进度圈 + 文本）
+     * 显示居中的加载指示器和提示文字(旋转进度圈 + 文本)
      *
      * @param msg 加载提示文字,如"正在生成图形..."
      */
@@ -216,8 +216,8 @@ public class GraphDialog extends Dialog<Void> {
     /**
      * 解析 DOT 并渲染为 JavaFX 图形
      *
-     * <p>先展示 DOT 源码（即时反馈）,再同步解析 + 渲染图形（操作轻量,
-     * 直接在 FX 线程执行不阻塞 UI）渲染失败时保留 DOT 源码视图</p>
+     * <p>先展示 DOT 源码(即时反馈),再同步解析 + 渲染图形(操作轻量,
+     * 直接在 FX 线程执行不阻塞 UI)渲染失败时保留 DOT 源码视图</p>
      *
      * @param dot DOT 格式字符串
      */
@@ -241,7 +241,7 @@ public class GraphDialog extends Dialog<Void> {
             } catch (RuntimeException e) {
                 log.warn("GraphDialog: 原生图形渲染失败,保留 DOT 源码", e);
                 currentGraphView = null;
-                statusLabel.setText("DOT 源码（图形解析失败）");
+                statusLabel.setText("DOT 源码(图形解析失败)");
             }
         });
     }
@@ -258,7 +258,7 @@ public class GraphDialog extends Dialog<Void> {
     // ======================== 静态工具方法 ========================
 
     /**
-     * 切换到 DOT 源码视图（用于 Graph → DOT 切换或首次展示）
+     * 切换到 DOT 源码视图(用于 Graph → DOT 切换或首次展示)
      * DOT 源码不自动换行以保持格式
      *
      * @param dot DOT 格式字符串
@@ -268,7 +268,7 @@ public class GraphDialog extends Dialog<Void> {
     }
 
     /**
-     * 显示纯文本消息（覆盖当前内容区域）
+     * 显示纯文本消息(覆盖当前内容区域)
      * 消息文本自动换行以便阅读
      *
      * @param msg 消息内容,可为 null
@@ -281,7 +281,7 @@ public class GraphDialog extends Dialog<Void> {
      * 将内容区域切换为 TextArea
      *
      * @param text 显示的文本
-     * @param wrap 是否启用自动换行（消息文本需换行,DOT 源码不需要）
+     * @param wrap 是否启用自动换行(消息文本需换行,DOT 源码不需要)
      */
     private void switchToTextArea(String text, boolean wrap) {
         if (dotArea == null) {

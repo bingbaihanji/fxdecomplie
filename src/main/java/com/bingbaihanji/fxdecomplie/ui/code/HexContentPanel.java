@@ -19,7 +19,7 @@ public class HexContentPanel extends AbstractCodeContentPanel {
     /**
      * 构造 HEX 内容面板
      *
-     * @param classBytes 类文件原始字节码（内部会做防御性拷贝）
+     * @param classBytes 类文件原始字节码(内部会做防御性拷贝)
      * @param theme      编辑器主题数据
      */
     public HexContentPanel(byte[] classBytes, ThemeData theme) {

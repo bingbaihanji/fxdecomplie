@@ -2,6 +2,8 @@ package com.bingbaihanji.fxdecomplie.rename;
 
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,14 +23,14 @@ public final class AutoDeobfuscator {
 
     private static final Logger log = LoggerFactory.getLogger(AutoDeobfuscator.class);
 
-    /** 混淆名长度范围：1-3 字符为典型的混淆名（如 a, bb, cCd） */
+    /** 混淆名长度范围：1-3 字符为典型的混淆名(如 a, bb, cCd) */
     private static final int MIN_OBFUSCATED_LENGTH = 1;
     private static final int MAX_OBFUSCATED_LENGTH = 3;
     /** 标准/第三方库前缀,这些包下的类不需要反混淆 */
     private static final Set<String> STANDARD_PREFIXES = Set.of(
             "java/", "javax/", "jdk/", "sun/", "com/sun/", "kotlin/",
             "kotlinx/", "android/", "androidx/");
-    /** 白名单前缀：即使匹配标准前缀也仍然扫描（某些 support 库可能需要反混淆） */
+    /** 白名单前缀：即使匹配标准前缀也仍然扫描(某些 support 库可能需要反混淆) */
     private static final Set<String> WHITELIST_PREFIXES = Set.of(
             "android/support/v4/", "android/support/v7/", "androidx/core/os/",
             "androidx/annotation/");
@@ -39,7 +41,7 @@ public final class AutoDeobfuscator {
     private static final Set<String> OBJECT_METHODS = Set.of(
             "toString", "hashCode", "equals", "clone", "finalize", "getClass",
             "notify", "notifyAll", "wait");
-    /** 常见的短名称（如 id, db, ui, io 等）,这些不应被当作混淆名处理 */
+    /** 常见的短名称(如 id, db, ui, io 等),这些不应被当作混淆名处理 */
     private static final Set<String> COMMON_SHORT_NAMES = Set.of(
             "id", "db", "ui", "io", "ok", "no", "tag", "key", "val", "url", "uri",
             "sql", "xml", "api", "dto", "dao", "vo", "bo", "po", "to", "ctx",
@@ -54,7 +56,7 @@ public final class AutoDeobfuscator {
      * 扫描工作区并生成反混淆建议
      *
      * @param workspace 目标工作区
-     * @return 建议重命名列表（旧名 → 新名）
+     * @return 建议重命名列表(旧名 → 新名)
      */
     public static List<RenameEntry> scan(Workspace workspace) {
         if (workspace == null) {
@@ -123,7 +125,7 @@ public final class AutoDeobfuscator {
                 log.debug("  skip class {} (shouldRenameClass=false, simple={})", owner, simple);
             }
 
-            Set<String> usedNames = usedByClass.getOrDefault(owner, new HashSet<>());
+            Set<String> usedNames = usedByClass.getOrDefault(owner, new ArraySet<>());
             Map<String, Integer> fieldNameCount = countNames(cls.fields());
             for (MemberIndexEntry field : cls.fields()) {
                 if (shouldRenameField(field, fieldNameCount)) {
@@ -157,7 +159,7 @@ public final class AutoDeobfuscator {
         if (name == null || name.isEmpty()) {
             return false;
         }
-        // 常见短名（如 id、db）不算混淆名
+        // 常见短名(如 id、db)不算混淆名
         if (isCommonShortName(name)) {
             return false;
         }
@@ -168,7 +170,7 @@ public final class AutoDeobfuscator {
         return name.chars().allMatch(c -> Character.isLetterOrDigit(c) || c == '_' || c == '$');
     }
 
-    /** 判断名称是否为常见短名（忽略大小写） */
+    /** 判断名称是否为常见短名(忽略大小写) */
     public static boolean isCommonShortName(String name) {
         return name != null && COMMON_SHORT_NAMES.contains(name.toLowerCase(Locale.ROOT));
     }
@@ -185,7 +187,7 @@ public final class AutoDeobfuscator {
     }
 
     /**
-     * 使用 TreeItem 扫描（从 UI 树中获取子节点）
+     * 使用 TreeItem 扫描(从 UI 树中获取子节点)
      */
     public static List<RenameEntry> scanFromTree(TreeItem<FileTreeNode> root) {
         if (root == null) {
@@ -235,7 +237,7 @@ public final class AutoDeobfuscator {
         if (nodes == null || suggestions == null) {
             return;
         }
-        Set<String> emittedClasses = new HashSet<>();
+        Set<String> emittedClasses = new ArraySet<>();
         int classAliasIndex = 0;
         for (RenameEntry entry : suggestions) {
             if (RenameService.TYPE_CLASS.equals(entry.type())) {
@@ -309,7 +311,7 @@ public final class AutoDeobfuscator {
     /**
      * 判断某个类是否需要重命名
      *
-     * <p>内部类且后半段为全数字的不重命名（如匿名类 $1）此外,简单名是混淆名
+     * <p>内部类且后半段为全数字的不重命名(如匿名类 $1)此外,简单名是混淆名
      * 或与包名冲突的也需要重命名</p>
      */
     private static boolean shouldRenameClass(String simpleName, String internalName,
@@ -317,7 +319,7 @@ public final class AutoDeobfuscator {
         if (simpleName == null || simpleName.isBlank()) {
             return false;
         }
-        // 内部类：提取最内层名称；匿名内部类（全数字）不重命名
+        // 内部类：提取最内层名称；匿名内部类(全数字)不重命名
         if (simpleName.contains("$")) {
             String inner = simpleName.substring(simpleName.lastIndexOf('$') + 1);
             if (inner.chars().allMatch(Character::isDigit)) {
@@ -328,13 +330,13 @@ public final class AutoDeobfuscator {
         return shouldRenameName(simpleName) || collidesWithPackage(simpleName, index);
     }
 
-    /** 字段需要重命名的条件：是混淆名或同名字段出现多次（重载冲突） */
+    /** 字段需要重命名的条件：是混淆名或同名字段出现多次(重载冲突) */
     private static boolean shouldRenameField(MemberIndexEntry field,
                                              Map<String, Integer> fieldNameCount) {
         return shouldRenameName(field.name()) || fieldNameCount.getOrDefault(field.name(), 0) > 1;
     }
 
-    /** 方法需要重命名的条件：是混淆名或同签名方法出现多次（重载冲突）,但排除不可重命名的方法 */
+    /** 方法需要重命名的条件：是混淆名或同签名方法出现多次(重载冲突),但排除不可重命名的方法 */
     private static boolean shouldRenameMethod(MemberIndexEntry method,
                                               Map<String, Integer> signatureCount) {
         String name = method.name();
@@ -350,7 +352,7 @@ public final class AutoDeobfuscator {
         return isObfuscated(name) || !RenameService.isValidName(name) || !isPrintableAscii(name);
     }
 
-    /** 检查名称是否全为可打印 ASCII 字符（码点 32-126） */
+    /** 检查名称是否全为可打印 ASCII 字符(码点 32-126) */
     private static boolean isPrintableAscii(String name) {
         if (name == null || name.isBlank()) {
             return false;
@@ -366,7 +368,7 @@ public final class AutoDeobfuscator {
 
     /** 检查类简单名是否与工作区中的包名片段冲突 */
     private static boolean collidesWithPackage(String simpleName, WorkspaceIndex index) {
-        Set<String> packageParts = new HashSet<>();
+        Set<String> packageParts = new ArraySet<>();
         for (ClassIndexEntry cls : index.classes()) {
             String pkg = packageName(cls.internalName());
             if (!pkg.isBlank()) {
@@ -381,9 +383,9 @@ public final class AutoDeobfuscator {
     }
 
     private static Map<String, Set<String>> collectExistingMemberNames(WorkspaceIndex index) {
-        Map<String, Set<String>> result = new HashMap<>();
+        Map<String, Set<String>> result = new ArrayMap<>();
         for (ClassIndexEntry cls : index.classes()) {
-            Set<String> names = new HashSet<>();
+            Set<String> names = new ArraySet<>();
             cls.fields().forEach(field -> names.add(field.name()));
             cls.methods().forEach(method -> names.add(method.name()));
             result.put(cls.internalName(), names);
@@ -435,7 +437,7 @@ public final class AutoDeobfuscator {
         return result;
     }
 
-    /** 判断方法是否为可能的覆写方法（Object 方法或 on/run/call 前缀,通常来自框架回调） */
+    /** 判断方法是否为可能的覆写方法(Object 方法或 on/run/call 前缀,通常来自框架回调) */
     private static boolean isLikelyOverride(MemberIndexEntry method) {
         String name = method.name();
         return OBJECT_METHODS.contains(name) || name.startsWith("on")
@@ -512,7 +514,7 @@ public final class AutoDeobfuscator {
             return "m" + mthIndex++ + sanitizeNamePart(oldName);
         }
 
-        /** 生成覆写方法别名：mo0 + 原始名可打印部分（用于可能被覆写的方法） */
+        /** 生成覆写方法别名：mo0 + 原始名可打印部分(用于可能被覆写的方法) */
         String forOverrideMethod(String oldName) {
             return "mo" + mthIndex++ + sanitizeNamePart(oldName);
         }

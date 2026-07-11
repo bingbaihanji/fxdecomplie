@@ -56,7 +56,7 @@ public final class GraphService {
      *
      * @param sb    DOT 输出缓冲区
      * @param item  当前树节点
-     * @param seen  已输出节点集合（防重）
+     * @param seen  已输出节点集合(防重)
      * @param depth 当前递归深度
      */
     private static void appendInheritanceNodes(StringBuilder sb, TreeItem<InheritanceNode> item,
@@ -89,9 +89,9 @@ public final class GraphService {
     /**
      * 递归为继承树生成边
      *
-     * <p>边的方向总是指向父节点（配合 rankdir=BT 实现"自底向上"的继承层次）：
-     * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口,边 parent→child（指向更上层）；
-     * SUBCLASS → child 是 parent 的子类,边 child→parent（指向被分析的类）</p>
+     * <p>边的方向总是指向父节点(配合 rankdir=BT 实现"自底向上"的继承层次)：
+     * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口,边 parent→child(指向更上层)；
+     * SUBCLASS → child 是 parent 的子类,边 child→parent(指向被分析的类)</p>
      */
     private static void appendInheritanceEdges(StringBuilder sb, TreeItem<InheritanceNode> item,
                                                Set<String> seen) {
@@ -112,7 +112,7 @@ public final class GraphService {
                     // 父类/接口：箭头指向更上层
                     appendInheritanceEdge(sb, parent.className(), childNode.className());
                 } else if (childNode.relation() == InheritanceNode.RelationType.SUBCLASS) {
-                    // 子类：箭头指向被分析的类（parent）
+                    // 子类：箭头指向被分析的类(parent)
                     appendInheritanceEdge(sb, childNode.className(), parent.className());
                 }
             }
@@ -124,8 +124,8 @@ public final class GraphService {
      * 向 DOT 缓冲区追加一条继承边
      *
      * @param sb   DOT 输出缓冲区
-     * @param from 起始节点标识（类全限定名）
-     * @param to   目标节点标识（类全限定名）
+     * @param from 起始节点标识(类全限定名)
+     * @param to   目标节点标识(类全限定名)
      */
     private static void appendInheritanceEdge(StringBuilder sb, String from, String to) {
         sb.append("    \"").append(escapeDot(from))
@@ -176,8 +176,8 @@ public final class GraphService {
         }
 
         if (graph.methods().size() > MAX_METHOD_NODES) {
-            sb.append("    label=\"方法过多,已截断（显示前 ")
-                    .append(MAX_METHOD_NODES).append(" 个）\";\n");
+            sb.append("    label=\"方法过多,已截断(显示前 ")
+                    .append(MAX_METHOD_NODES).append(" 个)\";\n");
         }
         sb.append("}\n");
         return sb.toString();
@@ -219,7 +219,7 @@ public final class GraphService {
     }
 
     /**
-     * 从全限定类名中提取简短类名（去除包名前缀）
+     * 从全限定类名中提取简短类名(去除包名前缀)
      *
      * @param fullName 全限定类名,如 "java.util.ArrayList"
      * @return 简短类名,如 "ArrayList"；null 输入返回空串
@@ -233,7 +233,7 @@ public final class GraphService {
     }
 
     /**
-     * 生成方法节点的唯一键（方法名 + 描述符）,用于去重和查找
+     * 生成方法节点的唯一键(方法名 + 描述符),用于去重和查找
      *
      * @param n 方法节点
      * @return 唯一键字符串
@@ -268,12 +268,12 @@ public final class GraphService {
      * ASM ClassVisitor,扫描方法体中的类内部方法调用,构建方法调用图
      *
      * <p>遍历每个方法的字节码指令,收集 INVOKEVIRTUAL/INVOKESTATIC 等调用指令,
-     * 仅记录目标类与当前类相同的方法调用（类内部调用）</p>
+     * 仅记录目标类与当前类相同的方法调用(类内部调用)</p>
      */
     private static final class MethodCallCollector extends ClassVisitor {
-        /** 方法节点映射（键 = 方法名+描述符） */
+        /** 方法节点映射(键 = 方法名+描述符) */
         private final Map<String, MethodNode> nodeMap = new LinkedHashMap<>();
-        /** 方法调用边集合（已去重） */
+        /** 方法调用边集合(已去重) */
         private final Set<MethodEdge> edges = new LinkedHashSet<>();
         /** 当前正在解析的类内部名称 */
         private String owner;

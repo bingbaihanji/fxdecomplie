@@ -15,7 +15,7 @@ import java.util.Optional;
  * 最小化的 class 文件解析器,用于元数据路径,
  * 确保在 ASM 尚不支持最新 class 文件主版本号时仍可正常工作
  * <p>
- * 该解析器只读取 class 文件的基本结构信息（版本、类名、父类、接口、字段、方法签名）,
+ * 该解析器只读取 class 文件的基本结构信息(版本、类名、父类、接口、字段、方法签名),
  * 不解析方法体、属性等详细内容,因此轻量且能兼容任意版本的 class 文件
  *
  * @author bingbaihanji
@@ -56,7 +56,7 @@ public final class ClassFileParser {
      * @param bytes class 文件原始字节
      * @return 解析出的元数据对象
      * @throws IOException           读取 class 文件发生 I/O 错误
-     * @throws ClassFormatException class 文件格式不合法（魔数错误、结构截断等）
+     * @throws ClassFormatException class 文件格式不合法(魔数错误、结构截断等)
      * @throws NullPointerException  bytes 为 null
      */
     public static ClassFileMetadata parse(byte[] bytes) throws IOException, ClassFormatException {
@@ -142,11 +142,11 @@ public final class ClassFileParser {
     /**
      * 将 class 文件主版本号转换为对应的 Java 版本号
      * <p>
-     * 转换公式：Java 版本 = 主版本号 - 44（JDK 1.0 = 45,JDK 1.1 = 45,...）
-     * 对于主版本号小于 45 的情况（理论上不存在）,直接返回原值
+     * 转换公式：Java 版本 = 主版本号 - 44(JDK 1.0 = 45,JDK 1.1 = 45,...)
+     * 对于主版本号小于 45 的情况(理论上不存在),直接返回原值
      *
      * @param majorVersion class 文件主版本号
-     * @return 对应的 Java 主版本号（如 8、11、17 等）
+     * @return 对应的 Java 主版本号(如 8、11、17 等)
      */
     public static int javaVersion(int majorVersion) {
         return majorVersion >= 45 ? majorVersion - 44 : majorVersion;
@@ -157,8 +157,8 @@ public final class ClassFileParser {
      * 其他常量类型直接跳过以节省内存
      *
      * @param in    数据输入流
-     * @param count 常量池条目总数（含索引 0 占位）
-     * @return 常量池对象数组（索引 0 为 null）
+     * @param count 常量池条目总数(含索引 0 占位)
+     * @return 常量池对象数组(索引 0 为 null)
      */
     private static Object[] readConstantPool(DataInputStream in, int count)
             throws IOException, ClassFormatException {
@@ -185,7 +185,7 @@ public final class ClassFileParser {
                 // CONSTANT_InterfaceMethodref(11), CONSTANT_NameAndType(12),
                 // CONSTANT_Dynamic(17), CONSTANT_InvokeDynamic(18): 4 字节,跳过
                 case 9, 10, 11, 12, 17, 18 -> skipFully(in, 4);
-                // CONSTANT_MethodHandle(15): 3 字节（1 字节引用类型 + 2 字节索引）,跳过
+                // CONSTANT_MethodHandle(15): 3 字节(1 字节引用类型 + 2 字节索引),跳过
                 case 15 -> skipFully(in, 3);
                 default -> {
                     // 未知常量池标签,记录警告并跳过,保持向前兼容性
@@ -233,11 +233,11 @@ public final class ClassFileParser {
     }
 
     /**
-     * 从常量池中解析类名特殊处理 classIndex=0（表示无父类,如 java.lang.Object）
+     * 从常量池中解析类名特殊处理 classIndex=0(表示无父类,如 java.lang.Object)
      *
      * @param cp         常量池数组
      * @param classIndex 常量池中类引用的索引
-     * @return 类内部名称,或 null（表示无父类）
+     * @return 类内部名称,或 null(表示无父类)
      */
     private static String className(Object[] cp, int classIndex) throws ClassFormatException {
         if (classIndex == 0) {
@@ -286,7 +286,7 @@ public final class ClassFileParser {
 
     /**
      * 安全跳过指定长度的字节,处理 {@link DataInputStream#skipBytes(int)} 可能无法一次跳过全部
-     * 字节的情况（某些 InputStream 实现返回部分跳过）,使用循环确保完全跳过
+     * 字节的情况(某些 InputStream 实现返回部分跳过),使用循环确保完全跳过
      *
      * @param in     数据输入流
      * @param length 需要跳过的字节数

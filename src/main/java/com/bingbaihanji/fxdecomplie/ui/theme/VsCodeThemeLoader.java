@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public final class VsCodeThemeLoader {
 
-    /** 内置默认暗色主题（懒加载） */
+    /** 内置默认暗色主题(懒加载) */
     private static final ThemeData DEFAULT_DARK = buildDefaultDark();
 
     private VsCodeThemeLoader() {
@@ -81,7 +81,7 @@ public final class VsCodeThemeLoader {
     /**
      * 从 classpath 资源路径加载 VS Code 主题 JSON 文件
      *
-     * @param resourcePath classpath 资源路径（如 "/com/.../themes/dark-plus.json"）
+     * @param resourcePath classpath 资源路径(如 "/com/.../themes/dark-plus.json")
      * @return 解析后的主题数据
      * @throws IOException 资源未找到或 JSON 解析失败
      */
@@ -98,7 +98,7 @@ public final class VsCodeThemeLoader {
     /** 解析主题 JSON */
     private static ThemeData parse(String json) {
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-        // 读取主题名称和类型（dark/light）
+        // 读取主题名称和类型(dark/light)
         String name = getString(root, "name", "Unknown");
         String type = getString(root, "type", "dark");
 
@@ -114,7 +114,7 @@ public final class VsCodeThemeLoader {
         if (tokenColors != null) {
             for (JsonElement e : tokenColors) {
                 JsonObject tc = e.getAsJsonObject();
-                // 提取 scope（可能是字符串或数组,取第一个 scope 名）
+                // 提取 scope(可能是字符串或数组,取第一个 scope 名)
                 String scope = extractScope(tc.get("scope"));
                 if (scope == null) {
                     continue;
@@ -132,7 +132,7 @@ public final class VsCodeThemeLoader {
                 // 多 scope 逗号分隔时取第一个作为映射键
                 String key = scope.contains(",") ? scope.split(",")[0].trim() : scope;
                 if (key.startsWith(".")) {
-                    // 以点开头的 scope（如 ".entity.name.function"）：同时注册去点和带点两种键
+                    // 以点开头的 scope(如 ".entity.name.function")：同时注册去点和带点两种键
                     String strippedKey = key.substring(1);
                     if (!tokenStyles.containsKey(strippedKey)) {
                         tokenStyles.putIfAbsent(strippedKey, style(fgHex, bold, italic));

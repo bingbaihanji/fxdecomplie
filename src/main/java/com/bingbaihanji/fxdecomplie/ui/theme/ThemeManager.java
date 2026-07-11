@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * 编辑器主题管理器
  *
- * <p>内置主题从 classpath 加载（当前仅 "Dark+" 对应 dark-plus.json）,
+ * <p>内置主题从 classpath 加载(当前仅 "Dark+" 对应 dark-plus.json),
  * 外部主题以 JSON 文件形式存储在 {@code <appDir>/themes/} 目录下,
  * 由用户通过设置界面导入管理</p>
  *
@@ -31,7 +31,7 @@ public final class ThemeManager {
     private static final String DARK_PLUS_RESOURCE =
             "/com/bingbaihanji/fxdecomplie/themes/dark-plus.json";
 
-    /** 内置主题名列表（不可变） */
+    /** 内置主题名列表(不可变) */
     private static final List<String> BUILTIN_THEMES = List.of("Dark+");
 
     private ThemeManager() {
@@ -95,7 +95,7 @@ public final class ThemeManager {
         }
         Path file = themesDir().resolve(themeName + ".json").normalize();
         if (!file.startsWith(themesDir().normalize())) {
-            log.warn("非法主题名称（路径穿越）: {}", themeName);
+            log.warn("非法主题名称(路径穿越): {}", themeName);
             return loadBuiltinDarkPlus();
         }
         if (Files.isRegularFile(file)) {
@@ -115,7 +115,7 @@ public final class ThemeManager {
      * 重名时自动追加序号 "name (2)", "name (3)" ...
      *
      * @param sourceFile 源 JSON 文件
-     * @return 导入后的主题名（不含 .json 扩展名）
+     * @return 导入后的主题名(不含 .json 扩展名)
      * @throws IOException 读取/写入失败,或 JSON 解析失败
      */
     public static String importTheme(Path sourceFile) throws IOException {
@@ -164,7 +164,7 @@ public final class ThemeManager {
         } else {
             Path source = themesDir().resolve(themeName + ".json").normalize();
             if (!source.startsWith(themesDir().normalize())) {
-                throw new IOException("非法主题名称（路径穿越）: " + themeName);
+                throw new IOException("非法主题名称(路径穿越): " + themeName);
             }
             if (!Files.isRegularFile(source)) {
                 throw new IOException("主题文件不存在: " + source);
@@ -187,7 +187,7 @@ public final class ThemeManager {
         }
         Path file = themesDir().resolve(themeName + ".json").normalize();
         if (!file.startsWith(themesDir().normalize())) {
-            log.warn("非法主题名称（路径穿越）: {}", themeName);
+            log.warn("非法主题名称(路径穿越): {}", themeName);
             return false;
         }
         try {

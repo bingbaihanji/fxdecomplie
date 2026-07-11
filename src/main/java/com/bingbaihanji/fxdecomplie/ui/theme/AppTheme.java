@@ -37,7 +37,7 @@ public final class AppTheme {
      * 加载编辑器主题
      *
      * @param config 应用配置
-     * @return 主题数据（通过 ThemeManager 按名称加载,失败时回退到硬编码默认值）
+     * @return 主题数据(通过 ThemeManager 按名称加载,失败时回退到硬编码默认值)
      */
     public static VsCodeThemeLoader.ThemeData loadEditorTheme(AppConfig config) {
         String themeName = config.theme().editorTheme();

@@ -9,8 +9,8 @@ package com.bingbaihanji.windows.platform;
 public enum WindowOperationStatus {
     /** 操作成功完成 */
     SUCCESS,
-    /** 操作被跳过（平台不支持、参数无效、句柄不可用等） */
+    /** 操作被跳过(平台不支持、参数无效、句柄不可用等) */
     SKIPPED,
-    /** 操作执行失败（原生 API 返回错误） */
+    /** 操作执行失败(原生 API 返回错误) */
     FAILED
 }

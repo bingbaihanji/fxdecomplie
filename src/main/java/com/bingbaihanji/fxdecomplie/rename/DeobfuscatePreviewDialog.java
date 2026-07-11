@@ -32,7 +32,7 @@ public final class DeobfuscatePreviewDialog {
      *
      * @param owner       父窗口
      * @param suggestions 建议的重命名列表
-     * @return 用户确认的重命名列表（取消返回空列表）
+     * @return 用户确认的重命名列表(取消返回空列表)
      */
     public static List<RenameEntry> show(Stage owner, List<RenameEntry> suggestions) {
         if (suggestions == null) {
@@ -129,7 +129,7 @@ public final class DeobfuscatePreviewDialog {
         return dialog.showAndWait().orElse(List.of());
     }
 
-    /** 从内部类名中提取短类名（去除包路径前缀） */
+    /** 从内部类名中提取短类名(去除包路径前缀) */
     private static String shortClassName(String className) {
         if (className == null || className.isBlank()) {
             return "";
@@ -138,7 +138,7 @@ public final class DeobfuscatePreviewDialog {
         return slash < 0 ? className : className.substring(slash + 1);
     }
 
-    /** 过滤匹配：在类型、类名、旧名、新名中搜索关键字（忽略大小写） */
+    /** 过滤匹配：在类型、类名、旧名、新名中搜索关键字(忽略大小写) */
     private static boolean matchesFilter(RenameEntry entry, String filter) {
         if (entry == null || filter == null || filter.isBlank()) {
             return true;

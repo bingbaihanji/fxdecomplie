@@ -125,6 +125,7 @@ public class MainMenuBar extends MenuBar {
         RadioMenuItem cfrItem = engineItem("CFR", DecompilerTypeEnum.CFR, currentEngine, engineGroup, actions);
         RadioMenuItem vineflowerItem = engineItem("Vineflower", DecompilerTypeEnum.VINEFLOWER, currentEngine, engineGroup, actions);
         RadioMenuItem jdItem = engineItem("JD-Core", DecompilerTypeEnum.JD, currentEngine, engineGroup, actions);
+        RadioMenuItem jadxItem = engineItem("jadx", DecompilerTypeEnum.JADX, currentEngine, engineGroup, actions);
 
         MenuItem compareAllItem = new MenuItem(I18nUtil.getString("menu.engine.compareAll"));
         compareAllItem.setOnAction(e -> actions.compareEngines());
@@ -138,7 +139,7 @@ public class MainMenuBar extends MenuBar {
         MenuItem restoreRenameSnapshotItem = new MenuItem("Restore Rename Snapshot");
         restoreRenameSnapshotItem.setOnAction(e -> actions.restoreLastRenameSnapshot());
 
-        engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem,
+        engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem, jadxItem,
                 new SeparatorMenuItem(), compareAllItem, deobfuscateItem,
                 importMappingItem, exportMappingItem,
                 restoreRenameSnapshotItem);
@@ -188,7 +189,7 @@ public class MainMenuBar extends MenuBar {
      * 创建带可选快捷键的菜单项
      *
      * @param text        菜单项文本
-     * @param accelerator 快捷键字符串（如 "Shortcut+O"）,可为 null
+     * @param accelerator 快捷键字符串(如 "Shortcut+O"),可为 null
      * @param action      点击回调
      */
     private MenuItem item(String text, String accelerator, Runnable action) {

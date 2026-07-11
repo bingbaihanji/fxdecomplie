@@ -25,7 +25,7 @@ public class FileTreeView extends TreeView<FileTreeNode> {
 
     /**
      * 刷新所有 TreeCell 的显示文本
-     * 延迟到下一 pulse（此时 cells 已在 scene graph 中）,然后调用每个
+     * 延迟到下一 pulse(此时 cells 已在 scene graph 中),然后调用每个
      * FileTreeCell.refreshDisplay() 触发 updateItem 获取最新显示名
      * 若 lookUp 未找到 cells,回退到 setRoot 重建方案
      */

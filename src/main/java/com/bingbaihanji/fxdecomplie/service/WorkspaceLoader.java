@@ -98,7 +98,7 @@ public final class WorkspaceLoader {
         if (!name.endsWith(".jar") && !name.endsWith(".zip")) {
             return false;
         }
-        // 验证文件头是否为 ZIP 格式（PK\x03\x04）,避免把伪装成 .jar 的普通文件当作归档
+        // 验证文件头是否为 ZIP 格式(PK\x03\x04),避免把伪装成 .jar 的普通文件当作归档
         try (var in = new java.io.FileInputStream(file)) {
             byte[] header = new byte[4];
             return in.read(header) == 4

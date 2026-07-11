@@ -23,7 +23,7 @@ public final class WorkspaceIndexService {
     }
 
     /**
-     * 确保工作区索引已启动构建（幂等操作）
+     * 确保工作区索引已启动构建(幂等操作)
      * 若索引已就绪或已在构建中则直接返回,否则以低优先级后台线程启动索引构建
      */
     public static void ensureIndexingStarted(Workspace workspace) {

@@ -22,7 +22,7 @@ public class CodeSearchProvider implements SearchProvider {
     private static final int MAX_RESULTS = 500;
 
     /**
-     * 基本搜索：遍历所有已反编译源码文件,逐行匹配关键字（不区分大小写）
+     * 基本搜索：遍历所有已反编译源码文件,逐行匹配关键字(不区分大小写)
      * 支持中断检测,以便搜索任务取消后立即停止
      */
     @Override

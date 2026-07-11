@@ -1,0 +1,15 @@
+package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.types;
+
+import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.JadxPass;
+
+public interface JadxAfterLoadPass extends JadxPass {
+	JadxPassType TYPE = new JadxPassType("AfterLoadPass");
+
+	void init(JadxDecompiler decompiler);
+
+	@Override
+	default JadxPassType getPassType() {
+		return TYPE;
+	}
+}

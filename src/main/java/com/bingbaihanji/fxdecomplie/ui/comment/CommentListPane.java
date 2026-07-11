@@ -32,7 +32,7 @@ public final class CommentListPane extends VBox {
     private String className;
 
     /**
-     * 构建注释列表面板,包含过滤器输入框和四列表格（行号、成员、摘要、时间）
+     * 构建注释列表面板,包含过滤器输入框和四列表格(行号、成员、摘要、时间)
      */
     public CommentListPane() {
         setPadding(new Insets(4));
@@ -59,7 +59,7 @@ public final class CommentListPane extends VBox {
                         ? c.getValue().memberSignature() : "—"));
         memberCol.setPrefWidth(100);
 
-        // 注释摘要列（截取前 40 字符）
+        // 注释摘要列(截取前 40 字符)
         TableColumn<CommentData, String> summaryCol = new TableColumn<>(I18nUtil.getString("comment.column.summary"));
         summaryCol.setCellValueFactory(c -> javafx.beans.binding.Bindings.createStringBinding(() -> {
             String t = c.getValue().text();

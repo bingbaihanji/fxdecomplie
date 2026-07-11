@@ -37,7 +37,7 @@ public final class CommentDialog {
      * @param line            行号
      * @param sourceHash      源码 hash
      * @param optionsHash     选项 hash
-     * @param existing        已有注释（更新模式）,null 为新增模式
+     * @param existing        已有注释(更新模式),null 为新增模式
      * @param onSave          保存回调
      */
     public static void show(Window owner, String className, String memberSignature,
@@ -95,7 +95,7 @@ public final class CommentDialog {
                 return null;
             }
             String text = textArea.getText();
-            // 空文本处理：编辑模式允许清空（删除注释）,新增模式拒绝空输入
+            // 空文本处理：编辑模式允许清空(删除注释),新增模式拒绝空输入
             if (text == null || text.isBlank()) {
                 return existing != null ? new CommentData(className, memberSignature, line,
                         sourceHash, optionsHash, styleCombo.getValue(),

@@ -94,7 +94,7 @@ public final class NavigationService {
      * @param codeTabPane    代码标签页容器
      * @param classOpener    打开类文件的回调
      * @param resourceOpener 打开资源文件的回调
-     * @param recordHistory  是否将当前路径记录到导航历史中（手动导航时为 true,历史前进/后退时为 false）
+     * @param recordHistory  是否将当前路径记录到导航历史中(手动导航时为 true,历史前进/后退时为 false)
      */
     private void openPath(PathNode<?> path, Workspace workspace, TabPane codeTabPane,
                           BiConsumer<FileTreeNode, TabPane> classOpener,

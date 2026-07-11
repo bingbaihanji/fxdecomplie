@@ -5,12 +5,16 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.util.LruCache;
 import com.bingbaihanji.util.I18nUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
@@ -33,8 +37,8 @@ import java.util.zip.ZipFile;
  * </ol>
  *
  * <h3>线程模型</h3>
- * 使用独立线程池（1-2 核,队列 2-4）,与 BackgroundTasks 主线程池隔离,
- * 避免反编译任务（CPU/IO 密集）阻塞索引和搜索等短任务
+ * 使用独立线程池(1-2 核,队列 2-4),与 BackgroundTasks 主线程池隔离,
+ * 避免反编译任务(CPU/IO 密集)阻塞索引和搜索等短任务
  */
 public final class DecompilerRunner {
 
@@ -43,6 +47,7 @@ public final class DecompilerRunner {
             DecompilerTypeEnum.VINEFLOWER,
             DecompilerTypeEnum.CFR,
             DecompilerTypeEnum.PROCYON,
+            DecompilerTypeEnum.JADX,
             // JD-Core 对新语法支持较弱,只作为其他引擎失败后的最后兜底
             DecompilerTypeEnum.JD
     };
@@ -132,7 +137,7 @@ public final class DecompilerRunner {
     /**
      * 带上下文生命周期控制的反编译方法
      *
-     * @param closeContext 若为 false,调用方负责关闭 context（用于导出等批量场景）
+     * @param closeContext 若为 false,调用方负责关闭 context(用于导出等批量场景)
      */
     public static String decompileWithTimeout(String classFilePath, byte[] classBytes,
                                               DecompilerTypeEnum engine,
@@ -232,7 +237,7 @@ public final class DecompilerRunner {
     }
 
     /**
-     * 瞬时失败（繁忙/超时）,此类输出不应缓存,但提示用户可重试
+     * 瞬时失败(繁忙/超时),此类输出不应缓存,但提示用户可重试
      */
     public static boolean isTransientFailureOutput(String source) {
         if (source == null || source.isBlank()) {
@@ -246,7 +251,7 @@ public final class DecompilerRunner {
     }
 
     /**
-     * 任意失败输出（瞬时 + 永久）,统一判定入口
+     * 任意失败输出(瞬时 + 永久),统一判定入口
      * 缓存写入前调用此方法可以避免把错误文本当作源码持久化
      */
     public static boolean isFailureOutput(String source) {
@@ -291,7 +296,7 @@ public final class DecompilerRunner {
             source = failureOutput(classFilePath, selectedEngine + ": " + message);
         }
 
-        // 仅 JD-Core 失败时走回退（Vineflower/CFR/Procyon 的 "Error:" 输出也视为失败）
+        // 仅 JD-Core 失败时走回退(Vineflower/CFR/Procyon 的 "Error:" 输出也视为失败)
         if (!isEngineFailureOutput(source, selectedEngine)) {
             return source;
         }
@@ -318,7 +323,7 @@ public final class DecompilerRunner {
         return source;
     }
 
-    /** 判断指定引擎的输出是否为失败结果（含 Vineflower/CFR/Procyon 的 Error 前缀） */
+    /** 判断指定引擎的输出是否为失败结果(含 Vineflower/CFR/Procyon 的 Error 前缀) */
     private static boolean isEngineFailureOutput(String source, DecompilerTypeEnum engine) {
         if (source == null) {
             return true;
@@ -332,6 +337,7 @@ public final class DecompilerRunner {
             case CFR -> trimmed.startsWith("// CFR Error:");
             case PROCYON -> trimmed.startsWith("// Procyon Error:");
             case JD -> isJdFailureOutput(source);
+            case JADX -> trimmed.startsWith("// jadx Error:");
         };
     }
 
@@ -448,13 +454,7 @@ public final class DecompilerRunner {
         private static final int MAX_HIT_CACHE = 256;
 
         private final Workspace workspace;
-        private final Map<String, byte[]> hitCache = Collections.synchronizedMap(
-                new LinkedHashMap<>(64, 0.75f, true) {
-                    @Override
-                    protected boolean removeEldestEntry(Map.Entry<String, byte[]> eldest) {
-                        return size() > MAX_HIT_CACHE;
-                    }
-                });
+        private final LruCache<String, byte[]> hitCache = new LruCache<>(MAX_HIT_CACHE);
         private final Set<String> missCache = Collections.synchronizedSet(new HashSet<>());
         private ZipFile zipFile;
 
@@ -530,7 +530,7 @@ public final class DecompilerRunner {
                 zipFile.close();
                 zipFile = null;
             }
-            hitCache.clear();
+            hitCache.evictAll();
             missCache.clear();
         }
     }

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 代码内容面板抽象基类,统一四种视图（源码/Smali/字节码/简化）的生命周期
+ * 代码内容面板抽象基类,统一四种视图(源码/Smali/字节码/简化)的生命周期
  *
  * <p>子类在后台线程中生成文本/数据,在 JavaFX 线程中创建实际节点,
  * 避免在后台线程构造 JavaFX 控件导致随机卡顿或崩溃</p>
@@ -32,14 +32,14 @@ public abstract class AbstractCodeContentPanel extends StackPane {
     private static final int STATE_ERROR = 3;
 
     private final AtomicInteger state = new AtomicInteger(STATE_UNLOADED);
-    /** 字体族（由 CodeContentDeck 在创建面板后设置） */
+    /** 字体族(由 CodeContentDeck 在创建面板后设置) */
     protected volatile String fontFamily = "Consolas";
-    /** 字号（由 CodeContentDeck 在创建面板后设置） */
+    /** 字号(由 CodeContentDeck 在创建面板后设置) */
     protected volatile int fontSize = 14;
-    /** 行号开关（由 CodeContentDeck 在创建面板后设置） */
+    /** 行号开关(由 CodeContentDeck 在创建面板后设置) */
     protected volatile boolean lineNumbersEnabled = true;
     private volatile Object cancelToken;
-    /** 内容创建完成回调（面板创建 CodeArea 后触发,用于应用字体/行号） */
+    /** 内容创建完成回调(面板创建 CodeArea 后触发,用于应用字体/行号) */
     private volatile Runnable onContentCreated;
 
     /** 显示加载指示器 */
@@ -47,7 +47,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
         showLoading();
     }
 
-    /** 设置字体参数（CodeContentDeck 在 createPanel 后调用） */
+    /** 设置字体参数(CodeContentDeck 在 createPanel 后调用) */
     public void setFontSettings(String fontFamily, int fontSize, boolean lineNumbersEnabled) {
         this.fontFamily = fontFamily != null && !fontFamily.isBlank() ? fontFamily : "Consolas";
         this.fontSize = Math.clamp(fontSize, 8, 48);
@@ -111,7 +111,7 @@ public abstract class AbstractCodeContentPanel extends StackPane {
     }
 
     /**
-     * 触发异步加载（首次调用生效,后续调用忽略）
+     * 触发异步加载(首次调用生效,后续调用忽略)
      *
      * @param token 取消令牌,用于快速切换时丢弃过期结果
      */

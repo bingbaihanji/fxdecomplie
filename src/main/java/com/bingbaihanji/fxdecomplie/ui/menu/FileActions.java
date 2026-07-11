@@ -45,10 +45,10 @@ public interface FileActions {
     /** 新窗口打开当前文件 */
     void openNewWindow();
 
-    /** 用当前引擎重新反编译当前类（工具栏 reload） */
+    /** 用当前引擎重新反编译当前类(工具栏 reload) */
     void refreshCurrentTab();
 
-    /** 在文件树中定位当前类文件（工具栏 localizer） */
+    /** 在文件树中定位当前类文件(工具栏 localizer) */
     void locateCurrentFileInTree();
 
     /** 退出应用 */

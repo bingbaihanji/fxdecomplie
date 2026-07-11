@@ -14,5 +14,7 @@ public enum DecompilerTypeEnum {
     /** Vineflower 反编译器 */
     VINEFLOWER,
     /** JD-Core 反编译器 */
-    JD
+    JD,
+    /** jadx 反编译器 */
+    JADX
 }

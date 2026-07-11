@@ -99,7 +99,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
             return;
         }
 
-        // 复用 ImageView,只切换 Image 引用和样式类（避免每次 new ImageView()）
+        // 复用 ImageView,只切换 Image 引用和样式类(避免每次 new ImageView())
         Image image = resolveImage(item);
         iconView.setImage(image);
 
@@ -126,7 +126,7 @@ public class FileTreeCell extends TreeCell<FileTreeNode> {
     /**
      * 从外部强制刷新 cell 的显示文本
      *
-     * <p>由于 FileTreeNode 是不可变的（显示名由外部 rename 映射动态决定）,
+     * <p>由于 FileTreeNode 是不可变的(显示名由外部 rename 映射动态决定),
      * TreeView 无法感知到需要更新此方法供 FileTreeView 在 rename 后调用,
      * 直接触发 updateItem 以获取最新的 displayName</p>
      */

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Vineflower 反编译引擎全部可配置参数定义（与 Recaf VineflowerConfig 对齐）
+ * Vineflower 反编译引擎全部可配置参数定义(与 Recaf VineflowerConfig 对齐)
  *
  * @author bingbaihanji
  * @date 2026-06-26

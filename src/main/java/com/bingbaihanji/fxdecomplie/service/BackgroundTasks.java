@@ -43,10 +43,10 @@ public final class BackgroundTasks {
      *
      * <p>任务启动时不清除线程中断标志,保留取消信号让任务内部
      * 通过 {@code Thread.currentThread().isInterrupted()} 自行检测
-     * 仅读取并重置残留中断标志（来自线程池复用的旧任务）,
+     * 仅读取并重置残留中断标志(来自线程池复用的旧任务),
      * 若当前已有中断信号则跳过任务执行</p>
      *
-     * @param name 任务名称（设置为线程名,便于调试）
+     * @param name 任务名称(设置为线程名,便于调试)
      * @param task 要执行的任务
      * @return 可通过 {@link #cancel(Future)} 取消的 Future
      */
@@ -61,7 +61,7 @@ public final class BackgroundTasks {
                     EXECUTOR.getQueue().size(), MAX_QUEUE_SIZE);
             return EXECUTOR.submit(() -> {
                 Thread.currentThread().setName(name);
-                // 检查线程是否已被中断（任务提交后、执行前被取消）
+                // 检查线程是否已被中断(任务提交后、执行前被取消)
                 if (Thread.currentThread().isInterrupted()) {
                     log.debug("后台任务在启动前被取消: {}", name);
                     return;

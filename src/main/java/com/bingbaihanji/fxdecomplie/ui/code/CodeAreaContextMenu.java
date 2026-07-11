@@ -134,7 +134,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.showMethodGraph(context);
     }
 
-    /** 显示当前方法的控制流图（CFG） */
+    /** 显示当前方法的控制流图(CFG) */
     private void onShowControlFlowGraph() {
         if (actionHandler == null || context == null) {
             return;
@@ -171,13 +171,13 @@ public class CodeAreaContextMenu extends ContextMenu {
         actionHandler.deleteComment(context, line);
     }
 
-    /** @return 当前操作位置所在行号（1-based）,优先使用右键位置,其次使用光标位置 */
+    /** @return 当前操作位置所在行号(1-based),优先使用右键位置,其次使用光标位置 */
     private int currentLine() {
         TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         return pos == null ? 1 : Math.max(1, pos.index() + 1);
     }
 
-    /** @return 当前操作位置处的代码符号（用于导航跳转） */
+    /** @return 当前操作位置处的代码符号(用于导航跳转) */
     private String tokenAtActionPosition() {
         TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         return CodeLinkHandler.navigationTokenAt(codeArea.getText(), pos);

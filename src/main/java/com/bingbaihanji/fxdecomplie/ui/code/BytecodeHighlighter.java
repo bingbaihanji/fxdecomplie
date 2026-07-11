@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
 /**
  * 字节码视图语法高亮器,用于 jadx 风格的字节码输出
  *
- * <p>高亮元素：标题行、结构头（magic/flags/this_class/Constant pool 等）、
- * hex 地址、hex 字节、指令偏移（|xxxx:）、操作码、常量池引用（#N）、
+ * <p>高亮元素：标题行、结构头(magic/flags/this_class/Constant pool 等)、
+ * hex 地址、hex 字节、指令偏移(|xxxx:)、操作码、常量池引用(#N)、
  * 注释、字符串</p>
  *
  * @author bingbaihanji
@@ -63,7 +63,7 @@ final class BytecodeHighlighter implements SyntaxDecorator {
                     + "param|max|class|super|source|implements|prologue|epilogue|"
                     + "catch|catchall)");
 
-    /** JVM 操作码（小写） */
+    /** JVM 操作码(小写) */
     private static final Pattern RE_OPCODE = Pattern.compile(
             "\\b(?:aaload|aastore|aconst_null|aload|aload_0|aload_1|aload_2|aload_3|"
                     + "anewarray|areturn|arraylength|astore|astore_0|astore_1|astore_2|astore_3|"
@@ -107,7 +107,7 @@ final class BytecodeHighlighter implements SyntaxDecorator {
     /** 常量池引用: #N */
     private static final Pattern RE_CP_REF = Pattern.compile("#\\d+");
 
-    /** 数字（独立数字） */
+    /** 数字(独立数字) */
     private static final Pattern RE_NUMBER = Pattern.compile(
             "(?<![.#\\w-])(?:0x[0-9a-fA-F]+|-?\\d+(?:\\.\\d+)?[fFLl]?)(?![.#\\w])");
 
@@ -160,26 +160,26 @@ final class BytecodeHighlighter implements SyntaxDecorator {
         int pos = 0;
         int len = line.length();
 
-        // 先检查结构头行（整行判定）
+        // 先检查结构头行(整行判定)
         Matcher hm = RE_HEADER.matcher(line);
         if (hm.find() && hm.start() <= 4) {
             tokens.add(new Token(Kind.HEADER, line.substring(0, hm.end())));
             pos = hm.end();
         }
 
-        // 标题行（######）
+        // 标题行(######)
         if (pos == 0 && line.startsWith("######")) {
             tokens.add(new Token(Kind.HEADER, line));
             return tokens;
         }
 
-        // 注释行（行首 #）
+        // 注释行(行首 #)
         if (pos < len && line.charAt(pos) == '#' && (pos == 0 || Character.isWhitespace(line.charAt(pos - 1)))) {
             tokens.add(new Token(Kind.COMMENT, line.substring(pos)));
             return tokens;
         }
 
-        // 整行注释（只有缩进 + #）
+        // 整行注释(只有缩进 + #)
         String trimmed = line.stripLeading();
         if (trimmed.startsWith("#") || trimmed.startsWith(";") || trimmed.startsWith("//")) {
             tokens.add(new Token(Kind.COMMENT, line));
@@ -206,7 +206,7 @@ final class BytecodeHighlighter implements SyntaxDecorator {
                 continue;
             }
 
-            // hex 地址（缩进后的 8hex:）
+            // hex 地址(缩进后的 8hex:)
             Matcher ha = RE_HEX_ADDR.matcher(line);
             if (ha.find(pos) && ha.start() == pos) {
                 tokens.add(new Token(Kind.HEX_ADDR, ha.group()));

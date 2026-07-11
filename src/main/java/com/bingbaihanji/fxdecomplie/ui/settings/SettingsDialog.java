@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.settings;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.CfrParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.decompiler.JadxParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.ProcyonParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.VineflowerParameters;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
@@ -52,12 +53,12 @@ public final class SettingsDialog {
         Tab decompilerTab = new Tab(I18nUtil.getString("settings.decompiler"));
         decompilerTab.setClosable(false);
 
-        // 默认引擎选择（现有控件,保持不变）
+        // 默认引擎选择(现有控件,保持不变)
         ComboBox<String> engineCombo = new ComboBox<>();
-        engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD");
+        engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD", "JADX");
         engineCombo.setValue(config.decompiler().defaultEngine().name());
 
-        // 引擎选项 JSON 编辑器（移到独立 TitledPane 中,默认折叠）
+        // 引擎选项 JSON 编辑器(移到独立 TitledPane 中,默认折叠)
         Label engineOptionsLabel = new Label(I18nUtil.getString("settings.decompiler.engineOptions"));
         engineOptionsLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
 
@@ -81,6 +82,7 @@ public final class SettingsDialog {
         engineControlMaps.put("CFR", new LinkedHashMap<>());
         engineControlMaps.put("PROCYON", new LinkedHashMap<>());
         engineControlMaps.put("VINEFLOWER", new LinkedHashMap<>());
+        engineControlMaps.put("JADX", new LinkedHashMap<>());
 
         // ── 引擎参数子标签页 ──
         TabPane engineTabPane = new TabPane();
@@ -103,7 +105,13 @@ public final class SettingsDialog {
         vfTab.setContent(buildEngineParameterPanel(config, "VINEFLOWER", VineflowerParameters.PARAMETERS,
                 engineOptionsArea, engineControlMaps.get("VINEFLOWER")));
 
-        engineTabPane.getTabs().addAll(cfrTab, procyonTab, vfTab);
+        // jadx 面板
+        Tab jadxTab = new Tab("jadx");
+        jadxTab.setClosable(false);
+        jadxTab.setContent(buildEngineParameterPanel(config, "JADX", JadxParameters.PARAMETERS,
+                engineOptionsArea, engineControlMaps.get("JADX")));
+
+        engineTabPane.getTabs().addAll(cfrTab, procyonTab, vfTab, jadxTab);
 
         // JSON 编辑器折叠面板
         TitledPane jsonPane = new TitledPane();
@@ -390,7 +398,7 @@ public final class SettingsDialog {
             config.export().lastPath(exportPathField.getText() == null
                     ? "" : exportPathField.getText());
 
-            // 保存引擎选项（已通过面板控件实时更新到 engineControlMaps + engineOptions Map）
+            // 保存引擎选项(已通过面板控件实时更新到 engineControlMaps + engineOptions Map)
             try {
                 Map<String, Map<String, String>> jsonOpts =
                         parseEngineOptionsJson(engineOptionsArea.getText());
@@ -467,7 +475,7 @@ public final class SettingsDialog {
      * 构建单个引擎的参数面板,包含通用和高级两个折叠区域
      *
      * @param config     应用配置
-     * @param engineName 引擎名称（如 CFR、PROCYON）
+     * @param engineName 引擎名称(如 CFR、PROCYON)
      * @param params     该引擎的参数定义列表
      * @param jsonArea   JSON 编辑器文本区域,用于双向同步
      * @param controlMap 用于存储参数 key 到控件的映射
@@ -546,7 +554,7 @@ public final class SettingsDialog {
         return pane;
     }
 
-    /** 根据参数类型创建对应的 JavaFX 控件（CheckBox/Spinner/TextField/ComboBox） */
+    /** 根据参数类型创建对应的 JavaFX 控件(CheckBox/Spinner/TextField/ComboBox) */
     private static javafx.scene.Node createParameterControl(DecompilerParameter param,
                                                             String currentValue,
                                                             Runnable onChange) {
@@ -613,7 +621,7 @@ public final class SettingsDialog {
         engineOpts.put(key, value);
     }
 
-    /** 将当前配置中的引擎选项序列化为 JSON 显示在文本区域（JSON 区域聚焦时不更新,避免覆盖用户编辑） */
+    /** 将当前配置中的引擎选项序列化为 JSON 显示在文本区域(JSON 区域聚焦时不更新,避免覆盖用户编辑) */
     private static void syncJsonFromConfig(AppConfig config, TextArea jsonArea) {
         if (jsonArea.isFocused()) {
             return;
@@ -674,7 +682,7 @@ public final class SettingsDialog {
         }
     }
 
-    /** 获取引擎子标签页当前选中的引擎名称（VINEFLOWER/CFR/PROCYON） */
+    /** 获取引擎子标签页当前选中的引擎名称 */
     private static String getActiveEngineName(TabPane engineTabPane) {
         Tab selected = engineTabPane.getSelectionModel().getSelectedItem();
         if (selected == null) {
@@ -684,6 +692,7 @@ public final class SettingsDialog {
             case "CFR" -> "CFR";
             case "Procyon" -> "PROCYON";
             case "Vineflower" -> "VINEFLOWER";
+            case "jadx" -> "JADX";
             default -> "VINEFLOWER";
         };
     }

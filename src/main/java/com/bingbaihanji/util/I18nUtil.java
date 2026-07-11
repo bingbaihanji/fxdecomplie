@@ -7,11 +7,11 @@ import java.text.MessageFormat;
 import java.util.*;
 
 /**
- * 国际化工具类（纯静态方法,线程安全）
+ * 国际化工具类(纯静态方法,线程安全)
  * <p>
  * 对 {@link I18nContext} 的便捷封装,涵盖常见使用场景
- * 适合直接移植到其他 Java 项目,仅依赖 SLF4J（日志）和
- * {@link I18nContext}（资源加载）
+ * 适合直接移植到其他 Java 项目,仅依赖 SLF4J(日志)和
+ * {@link I18nContext}(资源加载)
  * </p>
  *
  * <h3>常见场景</h3>
@@ -37,7 +37,7 @@ import java.util.*;
  * // 检查 key 是否存在
  * if (I18nUtil.containsKey("feature.experimental")) { ... }
  *
- * // 独立于全局语言的提供者（测试/多租户）
+ * // 独立于全局语言的提供者(测试/多租户)
  * I18nMessageProvider p = I18nUtil.createInstance(Locale.US);
  * String enText = p.get("hello");
  * }</pre>
@@ -72,7 +72,7 @@ public final class I18nUtil {
         }
     }
 
-    // ======================== 全局便捷方法（委托给单例 I18nContext） ========================
+    // ======================== 全局便捷方法(委托给单例 I18nContext) ========================
 
     /**
      * 获取带参数格式化的国际化文本
@@ -124,7 +124,7 @@ public final class I18nUtil {
      * 获取带参数的国际化文本,key 不存在时以默认值作为模板格式化
      *
      * @param key          资源文件中的 key
-     * @param defaultValue 默认值模板（使用 {0}, {1} 占位符）
+     * @param defaultValue 默认值模板(使用 {0}, {1} 占位符)
      * @param params       格式化参数
      * @return 国际化文本或格式化后的默认值
      */
@@ -159,7 +159,7 @@ public final class I18nUtil {
     /**
      * 获取布尔值
      * <p>
-     * 支持的 true 值：true / yes / 1 / on（不区分大小写）
+     * 支持的 true 值：true / yes / 1 / on(不区分大小写)
      * </p>
      *
      * @param key          资源文件中的 key
@@ -229,7 +229,7 @@ public final class I18nUtil {
     /**
      * 获取枚举常量的国际化显示名
      * <p>
-     * 拼接规则：枚举类全名（不含包名）+ "." + 常量名 → key
+     * 拼接规则：枚举类全名(不含包名)+ "." + 常量名 → key
      * 例：{@code I18nUtil.getEnum(GridType.POLAR)} 生成 key
      * {@code "GridType.POLAR"}若未定义则返回常量名本身
      * </p>
@@ -276,7 +276,7 @@ public final class I18nUtil {
     }
 
     /**
-     * 直接格式化模板字符串（不走资源文件查找）
+     * 直接格式化模板字符串(不走资源文件查找)
      *
      * @param pattern {@link MessageFormat} 模板,如 {@code "第{0}页, 共{1}页"}
      * @param params  格式化参数
@@ -342,7 +342,7 @@ public final class I18nUtil {
     }
 
     /**
-     * 注册可刷新组件（语言切换时自动调用其 {@link I18nRefreshable#refreshI18n()}）
+     * 注册可刷新组件(语言切换时自动调用其 {@link I18nRefreshable#refreshI18n()})
      */
     public static void addRefreshable(I18nRefreshable refreshable) {
         I18nContext.getInstance().addRefreshable(refreshable);
@@ -377,7 +377,7 @@ public final class I18nUtil {
         return new LocalizedMessageProvider(context);
     }
 
-    // ======================== 独立实例（测试、多租户等场景） ========================
+    // ======================== 独立实例(测试、多租户等场景) ========================
 
     /**
      * 创建使用自定义资源基名的独立提供者
@@ -399,7 +399,7 @@ public final class I18nUtil {
     }
 
     /**
-     * 安全获取 ResourceBundle（处理单例未初始化等异常）
+     * 安全获取 ResourceBundle(处理单例未初始化等异常)
      */
     private static ResourceBundle safeGetBundle() {
         return I18nContext.getInstance().getBundle();
@@ -408,7 +408,7 @@ public final class I18nUtil {
     // ======================== 内部实现 ========================
 
     /**
-     * 国际化消息提供者（可注入、可 mock 的抽象）
+     * 国际化消息提供者(可注入、可 mock 的抽象)
      */
     public interface I18nMessageProvider {
 

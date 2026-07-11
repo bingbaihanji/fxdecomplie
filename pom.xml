@@ -19,6 +19,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <jna.version>5.17.0</jna.version>
+        <commons-lang3.version>3.17.0</commons-lang3.version>
     </properties>
 
     <dependencies>
@@ -162,6 +163,22 @@
             <version>${jna.version}</version>
         </dependency>
 
+
+        <!-- commons-lang3 -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+
+        <!-- JetBrains Annotations (used by jadx) -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>26.0.2</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>
@@ -173,10 +190,10 @@
                 <configuration>
                     <source>25</source>
                     <target>25</target>
-                    <compilerArgs>
-                        <arg>--add-modules</arg>
-                        <arg>javafx.controls,javafx.graphics,javafx.base,jfx.incubator.richtext</arg>
-                    </compilerArgs>
+<!--                    <compilerArgs>-->
+<!--                        <arg>&#45;&#45;add-modules</arg>-->
+<!--                        <arg>javafx.controls,javafx.graphics,javafx.base,jfx.incubator.richtext</arg>-->
+<!--                    </compilerArgs>-->
                 </configuration>
             </plugin>
 

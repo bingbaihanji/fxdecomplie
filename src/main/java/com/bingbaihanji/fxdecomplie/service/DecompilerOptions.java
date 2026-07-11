@@ -17,8 +17,8 @@ import java.util.Map;
 public final class DecompilerOptions {
 
     /**
-     * Vineflower 选项别名映射（缩写 → 规范名称）,同时供 VineflowerDecompiler 和本类使用
-     * 允许用户在配置中使用简短别名（如 {@code rbr}）代替完整的选项键名（如 {@code deobfuscate-bridge-methods}）,
+     * Vineflower 选项别名映射(缩写 → 规范名称),同时供 VineflowerDecompiler 和本类使用
+     * 允许用户在配置中使用简短别名(如 {@code rbr})代替完整的选项键名(如 {@code deobfuscate-bridge-methods}),
      * 在 normalize 阶段统一转换为规范名称以确保选项识别一致
      */
     public static final Map<String, String> VINEFLOWER_OPTION_ALIASES = Map.ofEntries(
@@ -139,7 +139,7 @@ public final class DecompilerOptions {
 
     /**
      * 为选项 Map 生成稳定的内容哈希
-     * 使用 SHA-256 避免特殊字符（=、,）导致的键值碰撞
+     * 使用 SHA-256 避免特殊字符(=、,)导致的键值碰撞
      *
      * @param options 引擎选项键值对
      * @return 选项哈希,空选项返回 "default"

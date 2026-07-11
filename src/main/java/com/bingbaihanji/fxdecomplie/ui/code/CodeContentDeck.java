@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 管理五种代码内容视图（Code/Smali/Bytecode/Simple/HEX）的懒加载、切换和销毁
+ * 管理五种代码内容视图(Code/Smali/Bytecode/Simple/HEX)的懒加载、切换和销毁
  *
  * <p>底部使用 HBox + ToggleButton ToggleGroup 而非嵌套 TabPane,
  * 避免与主代码标签、Split view、拖拽之间互相干扰</p>
@@ -75,7 +75,7 @@ public class CodeContentDeck extends VBox {
      *
      * @param sourceCode          反编译源码内容
      * @param classBytes          类文件字节码
-     * @param sourcePanel         外部创建的源码面板（可为 null,由内部懒创建）
+     * @param sourcePanel         外部创建的源码面板(可为 null,由内部懒创建)
      * @param fontFamily          字体族名称
      * @param fontSize            字号
      * @param lineNumbersEnabled  是否显示行号
@@ -101,7 +101,7 @@ public class CodeContentDeck extends VBox {
         selectTab(TAB_CODE);
     }
 
-    /** 从任意面板中提取 CodeArea 编辑器引用（用于统一操作字体、行号等） */
+    /** 从任意面板中提取 CodeArea 编辑器引用(用于统一操作字体、行号等) */
     private static jfx.incubator.scene.control.richtext.CodeArea getCodeArea(AbstractCodeContentPanel panel) {
         return switch (panel) {
             case SourceContentPanel p -> p.getCodeArea();
@@ -266,7 +266,7 @@ public class CodeContentDeck extends VBox {
         resetSimplePanel();
     }
 
-    /** @return 源码面板中的 CodeArea（可能为 null） */
+    /** @return 源码面板中的 CodeArea(可能为 null) */
     public SourceContentPanel getSourcePanel() {
         return (SourceContentPanel) panels[TAB_CODE];
     }
@@ -274,7 +274,7 @@ public class CodeContentDeck extends VBox {
     /**
      * 用外部配置的 SourceContentPanel 替换 Code 面板
      *
-     * @param panel 外部创建的 SourceContentPanel（带完整 theme/font 配置）
+     * @param panel 外部创建的 SourceContentPanel(带完整 theme/font 配置)
      */
     public void setSourcePanel(SourceContentPanel panel) {
         panels[TAB_CODE] = panel;
@@ -302,7 +302,7 @@ public class CodeContentDeck extends VBox {
         resetSimplePanel();
     }
 
-    /** 更新 Code 面板显示文本（如注释装饰后）,不改变 Simple 面板所基于的原始源码缓存 */
+    /** 更新 Code 面板显示文本(如注释装饰后),不改变 Simple 面板所基于的原始源码缓存 */
     public void updateDisplayedSource(String displaySource) {
         if (panels[TAB_CODE] instanceof SourceContentPanel sp) {
             sp.setDisplayedSourceCode(displaySource);
@@ -326,12 +326,12 @@ public class CodeContentDeck extends VBox {
         return cancelGen.get();
     }
 
-    /** @return 内容区域 StackPane（供外部重组布局） */
+    /** @return 内容区域 StackPane(供外部重组布局) */
     public StackPane getContentArea() {
         return contentArea;
     }
 
-    /** @return 底部标签栏 HBox（供外部重组布局） */
+    /** @return 底部标签栏 HBox(供外部重组布局) */
     public HBox getBottomBar() {
         return bottomBar;
     }
@@ -346,7 +346,7 @@ public class CodeContentDeck extends VBox {
         selectTab(index);
     }
 
-    /** 设置编辑器主题（用于 HEX 面板配色） */
+    /** 设置编辑器主题(用于 HEX 面板配色) */
     public void setTheme(VsCodeThemeLoader.ThemeData newTheme) {
         this.theme = newTheme;
         if (panels[TAB_HEX] instanceof HexContentPanel hex) {

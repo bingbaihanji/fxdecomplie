@@ -12,7 +12,7 @@ import java.util.StringJoiner;
 public class MethodSignatureUtils {
 
     private MethodSignatureUtils() {
-        // 工具类，禁止实例化
+        // 工具类,禁止实例化
     }
 
     /**

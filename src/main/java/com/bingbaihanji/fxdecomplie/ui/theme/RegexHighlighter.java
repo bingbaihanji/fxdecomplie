@@ -105,7 +105,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         this.styleType = resolveStyle(styles, TOKEN_TO_SCOPES.get("TYPE"));
     }
 
-    /** 检查标识符是否以大写开头（类名/接口名/枚举名等类型标识） */
+    /** 检查标识符是否以大写开头(类名/接口名/枚举名等类型标识) */
     private static boolean isType(String identifier) {
         if (identifier == null || identifier.isEmpty()) {
             return false;
@@ -175,11 +175,11 @@ public class RegexHighlighter implements SyntaxDecorator {
     }
 
     /**
-     * 根据 token 文本和上下文确定其样式,供外部（如 BracketHighlighter）复用
+     * 根据 token 文本和上下文确定其样式,供外部(如 BracketHighlighter)复用
      *
      * @param matched   token 文本
-     * @param groupName 正则组名（"MULTICOMMENT","SINGLECOMMENT","STRING","ANNOTATION","NUMBER","IDENTIFIER"或null）
-     * @param fullLine  段落完整文本（用于上下文判断）
+     * @param groupName 正则组名("MULTICOMMENT","SINGLECOMMENT","STRING","ANNOTATION","NUMBER","IDENTIFIER"或null)
+     * @param fullLine  段落完整文本(用于上下文判断)
      * @param endPos    token 结束位置
      * @param startPos  token 起始位置
      * @return 对应样式属性
@@ -235,8 +235,8 @@ public class RegexHighlighter implements SyntaxDecorator {
 
     /**
      * 为正则分词后的段落创建带样式片段的 RichParagraph
-     * <p>逐个匹配 token,token 之间的文本应用默认样式,其余文本根据正则组名分类着色。
-     * 支持跨段落块注释状态追踪（/* ... * / 跨行时中间行保持注释高亮）</p>
+     * <p>逐个匹配 token,token 之间的文本应用默认样式,其余文本根据正则组名分类着色 
+     * 支持跨段落块注释状态追踪(/* ... * / 跨行时中间行保持注释高亮)</p>
      */
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
@@ -253,7 +253,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         if (inBlockComment) {
             int closeIdx = text.indexOf("*/");
             if (closeIdx >= 0) {
-                // 块注释在本行结束：从行首到 */ 后（含 */）为注释
+                // 块注释在本行结束：从行首到 */ 后(含 */)为注释
                 int closeEnd = closeIdx + 2;
                 builder.addSegment(text.substring(0, closeEnd), styleComment);
                 lastEnd = closeEnd;
@@ -319,7 +319,7 @@ public class RegexHighlighter implements SyntaxDecorator {
             builder.addSegment(text.substring(lastEnd), styleDefault);
         }
 
-        // 检测本行是否进入了未闭合的块注释 /* ...（无对应 */）
+        // 检测本行是否进入了未闭合的块注释 /* ...(无对应 */)
         // 扫描未被 STRING/MULTICOMMENT token 消费的尾部文本,查找未闭合的 /*
         if (!inBlockComment) {
             String tail = lastEnd < text.length() ? text.substring(lastEnd) : "";
@@ -335,7 +335,7 @@ public class RegexHighlighter implements SyntaxDecorator {
         return builder.build();
     }
 
-    /** 文本变更时重新高亮的回调（当前不做处理,由 createRichParagraph 全量重建） */
+    /** 文本变更时重新高亮的回调(当前不做处理,由 createRichParagraph 全量重建) */
     @Override
     public void handleChange(CodeTextModel model, TextPos start, TextPos end,
                              int linesRemoved, int linesAdded, int charIndex) {

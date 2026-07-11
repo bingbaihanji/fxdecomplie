@@ -5,8 +5,8 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.Node;
-import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.control.*;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.StackPane;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 多分屏编辑器容器,按需管理 1-3 个并排 TabPane（cells）
+ * 多分屏编辑器容器,按需管理 1-3 个并排 TabPane(cells)
  *
  * <p>类似 IDEA 的 Split Editor：默认仅一个主 panel,右键标签选择 "向右拆分"
  * 时动态创建右侧 panel每个 cell 独立持有 CodeEditorTab,
@@ -27,21 +27,21 @@ public final class SplitEditorPane extends StackPane {
 
     /** 最大分屏数 */
     private static final int MAX_CELLS = 3;
-    /** cell 最小宽度（防止拖拽分隔线完全覆盖 cell） */
+    /** cell 最小宽度(防止拖拽分隔线完全覆盖 cell) */
     private static final double MIN_CELL_WIDTH = 200.0;
 
     private final SplitPane splitPane;
-    /** 所有 cell（cells[0] 始终存在,其余按需创建；关闭中间 cell 后自动压缩数组） */
+    /** 所有 cell(cells[0] 始终存在,其余按需创建；关闭中间 cell 后自动压缩数组) */
     private final TabPane[] cells = new TabPane[MAX_CELLS];
-    /** 外部拖放配置（来自 WorkspaceTabManager） */
+    /** 外部拖放配置(来自 WorkspaceTabManager) */
     private final AppConfig dragDropConfig;
-    /** 编辑器主题（用于外部拖放） */
+    /** 编辑器主题(用于外部拖放) */
     private final com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader.ThemeData dragDropTheme;
-    /** 最近获得焦点的 cell（基于引用而非索引,避免压缩后索引错位） */
+    /** 最近获得焦点的 cell(基于引用而非索引,避免压缩后索引错位) */
     private TabPane focusedCell;
     /** 当前活跃 cell 数 (= splitPane.getItems().size()) */
     private int activeCount = 1;
-    /** 分屏状态变化回调（用于同步主 panel 的勾选框） */
+    /** 分屏状态变化回调(用于同步主 panel 的勾选框) */
     private Runnable onSplitStateChanged;
 
     /** 创建不带拖放功能的默认分屏编辑器 */
@@ -64,7 +64,7 @@ public final class SplitEditorPane extends StackPane {
         splitPane.getStyleClass().add("split-editor-pane");
         getChildren().add(splitPane);
 
-        // 默认只创建主 cell（cell 0）
+        // 默认只创建主 cell(cell 0)
         cells[0] = createCell();
         splitPane.getItems().add(cells[0]);
         // 单 cell 时隐藏分隔线
@@ -86,6 +86,19 @@ public final class SplitEditorPane extends StackPane {
         return DecompilerTypeEnum.VINEFLOWER;
     }
 
+    private static boolean isNodeOrDescendant(Node node, Node ancestor) {
+        Node current = node;
+        while (current != null) {
+            if (current == ancestor) {
+                return true;
+            }
+            current = current.getParent();
+        }
+        return false;
+    }
+
+    // ==================== 公开 API ====================
+
     /** 创建新 cell 并插入到 SplitPane 指定位置,同时同步内部 cells 数组 */
     private TabPane createCellAt(int posInSplitPane) {
         TabPane newCell = createCell();
@@ -95,8 +108,6 @@ public final class SplitEditorPane extends StackPane {
         return newCell;
     }
 
-    // ==================== 公开 API ====================
-
     /** 创建一个 TabPane cell */
     private TabPane createCell() {
         TabPane pane = new TabPane();
@@ -104,7 +115,7 @@ public final class SplitEditorPane extends StackPane {
         pane.setMinWidth(MIN_CELL_WIDTH);
         pane.getStyleClass().add("code-tab-pane");
 
-        // 选中变化 → 更新焦点跟踪（基于 cell 引用,避免压缩后索引错位）
+        // 选中变化 → 更新焦点跟踪(基于 cell 引用,避免压缩后索引错位)
         pane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             focusedCell = pane;
             if (newTab instanceof CodeEditorTab ct) {
@@ -137,7 +148,7 @@ public final class SplitEditorPane extends StackPane {
         return pane;
     }
 
-    /** @return 主 TabPane（始终存在,cell 0） */
+    /** @return 主 TabPane(始终存在,cell 0) */
     public TabPane primaryTabPane() {
         return cells[0];
     }
@@ -202,7 +213,7 @@ public final class SplitEditorPane extends StackPane {
             return null;
         }
 
-        // 以 splitPane 中的实际位置为准（cells 数组可能因压缩而产生空洞）
+        // 以 splitPane 中的实际位置为准(cells 数组可能因压缩而产生空洞)
         int srcPos = 0;
         if (sourceTab != null) {
             TabPane srcPane = tabPaneFor(sourceTab);
@@ -227,6 +238,8 @@ public final class SplitEditorPane extends StackPane {
         this.onSplitStateChanged = callback;
     }
 
+    // ==================== 内部方法 ====================
+
     /** 关闭所有非主 cell,回到单 panel 状态 */
     public void closeAllSplits() {
         for (int i = MAX_CELLS - 1; i > 0; i--) {
@@ -236,9 +249,7 @@ public final class SplitEditorPane extends StackPane {
         }
     }
 
-    // ==================== 内部方法 ====================
-
-    /** 关闭指定 cell（折叠）,将其 tab 移到主 cell */
+    /** 关闭指定 cell(折叠),将其 tab 移到主 cell */
     public void closeSplit(TabPane cell) {
         if (cell == primaryTabPane() || cell == null) {
             return;
@@ -255,7 +266,7 @@ public final class SplitEditorPane extends StackPane {
         }
 
         splitPane.getItems().remove(cell);
-        // 清除聚焦引用（如果指向已关闭的 cell）
+        // 清除聚焦引用(如果指向已关闭的 cell)
         if (focusedCell == cell) {
             focusedCell = null;
         }
@@ -307,11 +318,11 @@ public final class SplitEditorPane extends StackPane {
         for (Tab tab : tabs) {
             cells[0].getTabs().add(tab);
         }
-        // 关闭 donor cell（会自动压缩数组）
+        // 关闭 donor cell(会自动压缩数组)
         closeSplit(donor);
     }
 
-    /** 将 cells 数组与 splitPane 实际顺序同步（插入中间 cell 后必须调用） */
+    /** 将 cells 数组与 splitPane 实际顺序同步(插入中间 cell 后必须调用) */
     private void syncCellsArray() {
         java.util.Arrays.fill(cells, null);
         int i = 0;
@@ -321,6 +332,8 @@ public final class SplitEditorPane extends StackPane {
             }
         }
     }
+
+    // ==================== 右键菜单 ====================
 
     /** 按活跃 cell 数量重新均分分隔线 */
     private void rebalanceDividers() {
@@ -339,7 +352,7 @@ public final class SplitEditorPane extends StackPane {
         notifySplitStateChanged();
     }
 
-    // ==================== 右键菜单 ====================
+    // ==================== 辅助方法 ====================
 
     /** 通过 Platform.runLater 通知外部回调分屏状态已变化 */
     private void notifySplitStateChanged() {
@@ -348,9 +361,7 @@ public final class SplitEditorPane extends StackPane {
         }
     }
 
-    // ==================== 辅助方法 ====================
-
-    /** 为指定 TabPane 安装右键上下文菜单（固定、切换引擎、分屏、关闭等操作）,缓存菜单实例避免每次右键重建 */
+    /** 为指定 TabPane 安装右键上下文菜单(固定、切换引擎、分屏、关闭等操作),缓存菜单实例避免每次右键重建 */
     private void installContextMenu(TabPane pane) {
         ContextMenu cachedMenu = new ContextMenu();
         cachedMenu.setOnShowing(e -> rebuildContextMenuItems(cachedMenu, pane));
@@ -419,17 +430,6 @@ public final class SplitEditorPane extends StackPane {
         return null;
     }
 
-    private static boolean isNodeOrDescendant(Node node, Node ancestor) {
-        Node current = node;
-        while (current != null) {
-            if (current == ancestor) {
-                return true;
-            }
-            current = current.getParent();
-        }
-        return false;
-    }
-
     /** 根据当前选中标签页重建缓存菜单的菜单项 */
     private void rebuildContextMenuItems(ContextMenu menu, TabPane pane) {
         menu.getItems().clear();
@@ -463,7 +463,7 @@ public final class SplitEditorPane extends StackPane {
             }
         }
 
-        // 向右拆分（委托给 tab 的 requestSplit,统一处理 cell 创建 + 内容打开）
+        // 向右拆分(委托给 tab 的 requestSplit,统一处理 cell 创建 + 内容打开)
         MenuItem splitRight = new MenuItem(I18nUtil.getString("context.splitRight"));
         splitRight.setDisable(current == null || activeCount >= MAX_CELLS);
         Tab splitRef = current;
@@ -473,7 +473,7 @@ public final class SplitEditorPane extends StackPane {
             }
         });
 
-        // 关闭分屏（仅非主 cell 可用）
+        // 关闭分屏(仅非主 cell 可用)
         MenuItem closeSplitItem = new MenuItem(I18nUtil.getString("context.closeSplit"));
         closeSplitItem.setDisable(pane == primaryTabPane());
         closeSplitItem.setOnAction(e -> closeSplit(pane));

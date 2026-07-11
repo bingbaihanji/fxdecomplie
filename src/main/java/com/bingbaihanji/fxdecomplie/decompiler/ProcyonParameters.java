@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.model.DecompilerParameter.ParamType;
 import java.util.List;
 
 /**
- * Procyon 反编译引擎全部可配置参数定义（与 Recaf ProcyonConfig 对齐）
+ * Procyon 反编译引擎全部可配置参数定义(与 Recaf ProcyonConfig 对齐)
  *
  * @author bingbaihanji
  * @date 2026-06-26
@@ -54,10 +54,10 @@ public final class ProcyonParameters {
     }
 
     /**
-     * 创建常用类别（{@link Category#COMMON}）的布尔型参数定义
+     * 创建常用类别({@link Category#COMMON})的布尔型参数定义
      *
-     * @param key          参数键名（camelCase 格式）
-     * @param defaultValue 默认值（"true" 或 "false"）
+     * @param key          参数键名(camelCase 格式)
+     * @param defaultValue 默认值("true" 或 "false")
      * @return 配置完成的 DecompilerParameter 实例
      */
     private static DecompilerParameter of(String key, String defaultValue) {
@@ -66,10 +66,10 @@ public final class ProcyonParameters {
     }
 
     /**
-     * 创建高级类别（{@link Category#ADVANCED}）的布尔型参数定义
+     * 创建高级类别({@link Category#ADVANCED})的布尔型参数定义
      *
-     * @param key          参数键名（camelCase 格式）
-     * @param defaultValue 默认值（"true" 或 "false"）
+     * @param key          参数键名(camelCase 格式)
+     * @param defaultValue 默认值("true" 或 "false")
      * @return 配置完成的 DecompilerParameter 实例
      */
     private static DecompilerParameter adv(String key, String defaultValue) {

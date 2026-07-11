@@ -10,10 +10,10 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * 国际化语言环境上下文（单例、线程安全）
+ * 国际化语言环境上下文(单例、线程安全)
  * <p>
  * 负责管理当前语言环境、资源包加载以及语言变化通知
- * 加载优先级：外部文件（JAR 同级目录）→ classpath
+ * 加载优先级：外部文件(JAR 同级目录)→ classpath
  * 语言回退链：zh_CN_Variant → zh_CN → zh → root
  * </p>
  *
@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * I18nContext ctx = I18nContext.getInstance();
  * String text = ctx.getBundle().getString("menu.file");
  *
- * // 独立上下文（测试、多租户）
+ * // 独立上下文(测试、多租户)
  * I18nContext independent = I18nContext.of(Locale.US);
  *
  * // 自定义基名的独立上下文
@@ -40,7 +40,7 @@ public final class I18nContext {
     /** 系统属性 key：覆盖默认资源文件基名 */
     public static final String SYS_PROP_BASE_NAME = "i18n.base.name";
     private static final Logger log = LoggerFactory.getLogger(I18nContext.class);
-    /** 常用语言列表（按需扩展） */
+    /** 常用语言列表(按需扩展) */
     private static final Locale[] COMMON_LOCALES = {
             Locale.SIMPLIFIED_CHINESE,
             Locale.TRADITIONAL_CHINESE,
@@ -57,11 +57,11 @@ public final class I18nContext {
             new Locale("ru"),
     };
     private static volatile I18nContext instance;
-    /** 资源文件基名（如 "language/language"） */
+    /** 资源文件基名(如 "language/language") */
     private final String baseName;
     /** 语言变化监听器 */
     private final Set<Runnable> localeChangeListeners = new CopyOnWriteArraySet<>();
-    /** 可刷新组件（语言切换时自动更新文本） */
+    /** 可刷新组件(语言切换时自动更新文本) */
     private final Set<I18nRefreshable> refreshable = new CopyOnWriteArraySet<>();
     /** 当前语言环境 */
     private volatile Locale currentLocale;
@@ -86,7 +86,7 @@ public final class I18nContext {
     }
 
     /**
-     * 获取全局单例（双重检查锁定,首次调用时延迟初始化）
+     * 获取全局单例(双重检查锁定,首次调用时延迟初始化)
      * <p>
      * 通过系统属性 {@value #SYS_PROP_BASE_NAME} 可自定义资源文件基名,
      * 否则使用默认值 {@value #DEFAULT_BASE_NAME}
@@ -108,7 +108,7 @@ public final class I18nContext {
     }
 
     /**
-     * 创建独立的 I18nContext 实例（不随全局语言切换而变化）
+     * 创建独立的 I18nContext 实例(不随全局语言切换而变化)
      *
      * @param locale 目标语言环境
      * @return 独立的 I18nContext
@@ -175,7 +175,7 @@ public final class I18nContext {
     }
 
     /**
-     * 切换语言环境（成功后触发所有监听器）
+     * 切换语言环境(成功后触发所有监听器)
      *
      * @param locale 目标语言环境
      * @throws MissingResourceException 如果目标语言的资源包不可用
@@ -205,7 +205,7 @@ public final class I18nContext {
     }
 
     /**
-     * 注册可刷新组件（语言切换时自动调用 {@link I18nRefreshable#refreshI18n()}）
+     * 注册可刷新组件(语言切换时自动调用 {@link I18nRefreshable#refreshI18n()})
      */
     public void addRefreshable(I18nRefreshable refreshable) {
         this.refreshable.add(Objects.requireNonNull(refreshable, "refreshable"));
@@ -219,7 +219,7 @@ public final class I18nContext {
     }
 
     /**
-     * 检查指定语言环境是否有可用资源（仅检查文件/资源是否存在,不加载完整 bundle）
+     * 检查指定语言环境是否有可用资源(仅检查文件/资源是否存在,不加载完整 bundle)
      *
      * @param locale 目标语言环境
      * @return true 表示存在至少一个候选语言的资源文件
@@ -238,7 +238,7 @@ public final class I18nContext {
     // ======================== 资源加载 ========================
 
     /**
-     * 获取已安装的语言环境列表（扫描常用语言,通过 classpath 检测）
+     * 获取已安装的语言环境列表(扫描常用语言,通过 classpath 检测)
      */
     public List<Locale> getAvailableLocales() {
         List<Locale> result = new ArrayList<>();
@@ -251,9 +251,9 @@ public final class I18nContext {
     }
 
     /**
-     * 加载资源包（含语言回退链）
+     * 加载资源包(含语言回退链)
      * <p>
-     * 回退顺序示例（locale=zh_CN_xxx）：zh_CN_xxx → zh_CN → zh → root
+     * 回退顺序示例(locale=zh_CN_xxx)：zh_CN_xxx → zh_CN → zh → root
      * 每个候选语言：先查外部文件,再查 classpath
      * </p>
      */
@@ -275,7 +275,7 @@ public final class I18nContext {
     }
 
     /**
-     * 生成候选 Locale 列表（精确 → 宽松 → 默认）
+     * 生成候选 Locale 列表(精确 → 宽松 → 默认)
      */
     private List<Locale> getCandidateLocales(Locale locale) {
         List<Locale> candidates = new ArrayList<>(4);
@@ -293,7 +293,7 @@ public final class I18nContext {
     }
 
     /**
-     * 将基名和 Locale 拼接为完整 bundle 名（如 "language/language_zh_CN"）
+     * 将基名和 Locale 拼接为完整 bundle 名(如 "language/language_zh_CN")
      */
     private String toBundleName(String baseName, Locale locale) {
         if (locale == Locale.ROOT || locale.getLanguage().isEmpty()) {
@@ -313,7 +313,7 @@ public final class I18nContext {
     // ----- 外部文件加载 -----
 
     /**
-     * bundle 名 → .properties 文件路径（如 "language/language_zh_CN.properties"）
+     * bundle 名 → .properties 文件路径(如 "language/language_zh_CN.properties")
      */
     private String toResourceName(String bundleName) {
         return bundleName.replace('.', '/') + ".properties";
@@ -348,7 +348,7 @@ public final class I18nContext {
     // ----- Classpath 加载 -----
 
     /**
-     * 获取 JAR/class 所在目录（运行时位置）
+     * 获取 JAR/class 所在目录(运行时位置)
      */
     private File getJarDirectory() {
         try {
@@ -392,7 +392,7 @@ public final class I18nContext {
     }
 
     private void notifyListeners() {
-        // 通知旧式监听器（向后兼容）
+        // 通知旧式监听器(向后兼容)
         for (Runnable listener : localeChangeListeners) {
             try {
                 listener.run();

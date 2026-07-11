@@ -65,7 +65,7 @@ public final class ClassNameUtil {
     /**
      * 将类名转换为 {@code .class} 文件相对路径
      *
-     * @param className 类名（任意格式）
+     * @param className 类名(任意格式)
      * @return 以 {@code .class} 结尾的文件路径,空输入返回空字符串
      */
     public static String classFilePath(String className) {
@@ -74,12 +74,12 @@ public final class ClassNameUtil {
     }
 
     /**
-     * 剥离 Spring Boot / Web 容器类路径前缀（如 {@code BOOT-INF/classes/}）
+     * 剥离 Spring Boot / Web 容器类路径前缀(如 {@code BOOT-INF/classes/})
      * <p>
-     * 支持前缀直接匹配和嵌套在子目录中的情况（如 {@code /BOOT-INF/classes/}）
+     * 支持前缀直接匹配和嵌套在子目录中的情况(如 {@code /BOOT-INF/classes/})
      * </p>
      *
-     * @param className 类名（任意格式）
+     * @param className 类名(任意格式)
      * @return 剥离前缀后的规范化类名
      */
     public static String stripContainerClassPrefix(String className) {
@@ -121,12 +121,12 @@ public final class ClassNameUtil {
     }
 
     /**
-     * 提取类的简单名（不含包路径）
+     * 提取类的简单名(不含包路径)
      * <p>
      * 例如 {@code com/example/Foo} 返回 {@code Foo}
      * </p>
      *
-     * @param className 类名（任意格式）
+     * @param className 类名(任意格式)
      * @return 简单类名,空输入返回空字符串
      */
     public static String simpleName(String className) {
@@ -139,12 +139,12 @@ public final class ClassNameUtil {
     }
 
     /**
-     * 提取类的包名（不含类名本身）
+     * 提取类的包名(不含类名本身)
      * <p>
      * 例如 {@code com/example/Foo} 返回 {@code com/example}
      * </p>
      *
-     * @param className 类名（任意格式）
+     * @param className 类名(任意格式)
      * @return 包名路径,无包时返回空字符串
      */
     public static String packageName(String className) {
@@ -156,12 +156,12 @@ public final class ClassNameUtil {
     /**
      * 生成类文件路径候选列表,用于在归档中逐级查找
      * <p>
-     * 生成策略：从普通路径开始,依次将最深的 {@code /} 替换为 {@code $}（模拟内部类路径）,
+     * 生成策略：从普通路径开始,依次将最深的 {@code /} 替换为 {@code $}(模拟内部类路径),
      * 同时为每个候选生成剥离容器前缀的变体例如 {@code com/example/Outer$Inner.class}
      * </p>
      *
-     * @param className 类名（任意格式）
-     * @return 有序的 {@code .class} 文件路径候选列表（不可变）,空输入返回空列表
+     * @param className 类名(任意格式)
+     * @return 有序的 {@code .class} 文件路径候选列表(不可变),空输入返回空列表
      */
     public static List<String> classFilePathCandidates(String className) {
         String normalized = normalizeInternalName(className);
@@ -172,7 +172,7 @@ public final class ClassNameUtil {
         // 1. 原始规范化路径
         addCandidate(candidates, normalized + ".class");
 
-        // 2. 剥离容器前缀后的路径（如有差异）
+        // 2. 剥离容器前缀后的路径(如有差异)
         String stripped = stripContainerClassPrefix(normalized);
         if (!stripped.equals(normalized)) {
             addCandidate(candidates, stripped + ".class");

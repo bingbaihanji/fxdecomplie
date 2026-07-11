@@ -64,7 +64,7 @@ public final class CodeOnlyWindow {
     private static final String TOKEN_PREFIX = "fxdecomplie-code-tab:";
     private static final int MAX_DRAG_PAYLOADS = 128;
     private static final int METADATA_SOURCE_THRESHOLD = 500_000;
-    /** 拖拽负载及其创建时间戳（毫秒）,用于定期清理过期条目 */
+    /** 拖拽负载及其创建时间戳(毫秒),用于定期清理过期条目 */
     private static final Map<String, TimestampedPayload> DRAG_PAYLOADS =
             new ConcurrentHashMap<>();
     private static final Map<String, TabPane> DRAG_SOURCES =
@@ -72,7 +72,7 @@ public final class CodeOnlyWindow {
     private static final Map<String, CodeEditorTab> DRAG_SOURCE_TABS =
             new ConcurrentHashMap<>();
     private static final AtomicLong ENGINE_SWITCH_IDS = new AtomicLong();
-    /** 拖拽负载存活时间阈值（毫秒）,超过此时间的条目在 trim 时被清理 */
+    /** 拖拽负载存活时间阈值(毫秒),超过此时间的条目在 trim 时被清理 */
     private static final long DRAG_PAYLOAD_TTL_MS = 60_000L;
     private static final Logger log = LoggerFactory.getLogger(CodeOnlyWindow.class);
     private final AppConfig config;
@@ -539,7 +539,7 @@ public final class CodeOnlyWindow {
             BackgroundTasks.cancel(future);
         }
 
-        // 生成唯一请求 ID,用于判断任务过期（用户连续快速切换时忽略旧结果）
+        // 生成唯一请求 ID,用于判断任务过期(用户连续快速切换时忽略旧结果)
         long requestId = ENGINE_SWITCH_IDS.incrementAndGet();
         ACTIVE_ENGINE_REQUESTS.put(tab, new AtomicLong(requestId));
         tab.getProperties().put(ENGINE_SWITCH_REQUEST, requestId);
@@ -569,11 +569,11 @@ public final class CodeOnlyWindow {
                         previous.fullPath(), preResolvedBytes, engine, context,
                         () -> !Thread.currentThread().isInterrupted()
                                 && isEngineSwitchCurrent(tab, requestId));
-                // 任务已过期（用户切换到其他引擎）,放弃本次结果
+                // 任务已过期(用户切换到其他引擎),放弃本次结果
                 if (!isEngineSwitchCurrent(tab, requestId)) {
                     return;
                 }
-                // 反编译返回错误输出（超时/进程崩溃）,恢复之前源码并弹窗提示
+                // 反编译返回错误输出(超时/进程崩溃),恢复之前源码并弹窗提示
                 if (DecompilerRunner.isTransientFailureOutput(source)) {
                     log.error("副窗口切换反编译引擎失败: {} -> {}\n{}",
                             previous.fullPath(), engine, source);
@@ -619,7 +619,7 @@ public final class CodeOnlyWindow {
         return current != null && current.get() == requestId;
     }
 
-    /** 在 FX 线程解析标签页的字节码（避免跨线程访问 tab.getProperties()） */
+    /** 在 FX 线程解析标签页的字节码(避免跨线程访问 tab.getProperties()) */
     private static byte[] resolveBytesForTab(CodeEditorTab tab) throws java.io.IOException {
         byte[] bytes = tab.getClassBytes();
         if (bytes != null && bytes.length > 0) {
@@ -632,7 +632,7 @@ public final class CodeOnlyWindow {
         return null;
     }
 
-    /** 在 FX 线程解析标签页的工作区（避免跨线程访问 tab.getProperties()） */
+    /** 在 FX 线程解析标签页的工作区(避免跨线程访问 tab.getProperties()) */
     private static Workspace resolveWorkspaceForTab(CodeEditorTab tab) {
         Object workspace = tab.getProperties().get("workspace");
         return workspace instanceof Workspace ws ? ws : null;

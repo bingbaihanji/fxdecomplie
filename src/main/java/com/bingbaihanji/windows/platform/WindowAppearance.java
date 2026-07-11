@@ -17,9 +17,9 @@ public record WindowAppearance(
         FrameMargins frameMargins
 ) {
 
-    /** 默认标题栏颜色（深墨绿 0x00514933,COLORREF 格式） */
+    /** 默认标题栏颜色(深墨绿 0x00514933,COLORREF 格式) */
     public static final int DEFAULT_CAPTION_COLOR = 0x00514933;
-    /** 默认标题栏文字颜色（ #915CB9 ） */
+    /** 默认标题栏文字颜色( #915CB9 ) */
     public static final int DEFAULT_TEXT_COLOR = 0x00B95C91;
 
     /**
@@ -32,7 +32,7 @@ public record WindowAppearance(
     /**
      * 创建适用于深色对话框的原生外观配置
      *
-     * @param borderColor      边框颜色（COLORREF 格式）
+     * @param borderColor      边框颜色(COLORREF 格式)
      * @param cornerPreference 圆角偏好
      * @return 预设的深色对话框外观
      */
@@ -70,7 +70,7 @@ public record WindowAppearance(
      */
     public record FrameMargins(int left, int right, int top, int bottom) {
         /**
-         * 创建全客户区扩展的边距（四边均为 -1）
+         * 创建全客户区扩展的边距(四边均为 -1)
          */
         public static FrameMargins fullClientArea() {
             return new FrameMargins(-1, -1, -1, -1);
@@ -118,13 +118,13 @@ public record WindowAppearance(
             return this;
         }
 
-        /** 设置标题栏背景颜色（COLORREF 格式,需 Windows 11+） */
+        /** 设置标题栏背景颜色(COLORREF 格式,需 Windows 11+) */
         public Builder captionColor(int captionColor) {
             this.captionColor = captionColor;
             return this;
         }
 
-        /** 设置标题栏文字颜色（COLORREF 格式,需 Windows 11+） */
+        /** 设置标题栏文字颜色(COLORREF 格式,需 Windows 11+) */
         public Builder textColor(int textColor) {
             this.textColor = textColor;
             return this;

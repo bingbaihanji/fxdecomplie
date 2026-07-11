@@ -42,7 +42,7 @@ public final class FindUsageDialog {
         throw new AssertionError("utility class");
     }
 
-    /** 显示查找使用对话框（无初始查询） */
+    /** 显示查找使用对话框(无初始查询) */
     public static void show(Window owner, WorkspaceIndex index, JumpCallback onJump) {
         show(owner, index, onJump, "");
     }

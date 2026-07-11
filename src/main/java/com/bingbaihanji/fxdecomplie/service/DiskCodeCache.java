@@ -2,15 +2,14 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.util.AtomicFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
@@ -52,7 +51,7 @@ public final class DiskCodeCache {
                 return null;
             }
             String content = Files.readString(file, StandardCharsets.UTF_8);
-            // 零字节文件（写入时崩溃/断电残留）视为缓存未命中,触发重新反编译
+            // 零字节文件(写入时崩溃/断电残留)视为缓存未命中,触发重新反编译
             return content.isEmpty() ? null : content;
         } catch (IOException e) {
             log.debug("加载磁盘代码缓存失败: {}", file, e);
@@ -72,27 +71,19 @@ public final class DiskCodeCache {
         if (sourceCode == null || sourceCode.isBlank()) {
             return;
         }
-        Path tmp = null;
         try {
             Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
-            tmp = file.resolveSibling(file.getFileName() + ".tmp");
             Files.createDirectories(file.getParent());
-            Files.writeString(tmp, sourceCode, StandardCharsets.UTF_8);
-            try {
-                Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException e) {
-            log.debug("保存磁盘代码缓存失败: {}/{}", workspaceHash, internalName, e);
-            if (tmp != null) {
+            AtomicFile af = new AtomicFile(file.toFile());
+            af.write(os -> {
                 try {
-                    Files.deleteIfExists(tmp);
-                } catch (IOException cleanupError) {
-                    log.debug("清理磁盘代码缓存临时文件失败: {}", tmp, cleanupError);
+                    os.write(sourceCode.getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            }
+            });
+        } catch (IOException | RuntimeException e) {
+            log.debug("保存磁盘代码缓存失败: {}/{}", workspaceHash, internalName, e);
         }
     }
 

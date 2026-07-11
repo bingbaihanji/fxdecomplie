@@ -1,10 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.bingbaihanji.fxdecomplie.util.LruCache;
 
 /**
  * L2 反编译源码内存缓存,缓存键 = workspaceKey + internalName + engine + optionsHash
@@ -16,15 +13,9 @@ import java.util.Map;
 public class DecompileCache {
 
     private static final int MAX_CACHE_SIZE = 1_000;
-    /** 缓存键分隔符（null 字符不可能出现在 JVM 内部名称中），用于各组件之间的精确匹配,避免前缀碰撞 */
+    /** 缓存键分隔符(null 字符不可能出现在 JVM 内部名称中),用于各组件之间的精确匹配,避免前缀碰撞 */
     private static final String KEY_SEP = "\0";
-    private final Map<String, String> cache = Collections.synchronizedMap(
-            new LinkedHashMap<>(16, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
-                    return size() > MAX_CACHE_SIZE;
-                }
-            });
+    private final LruCache<String, String> cache = new LruCache<>(MAX_CACHE_SIZE);
 
     /** 构建缓存键,组合工作区标识、类内部名、引擎类型和选项哈希 */
     private static String cacheKey(String workspaceKey, String internalName,
@@ -47,18 +38,20 @@ public class DecompileCache {
 
     /**
      * 失效指定类的所有缓存条目
-     * 使用双分隔符避免前缀碰撞（如 "com/Fo" 误匹配 "com/Foo"）
+     * 使用双分隔符避免前缀碰撞(如 "com/Fo" 误匹配 "com/Foo")
      */
     public void invalidate(String workspaceKey, String internalName) {
         String prefix = workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP;
         synchronized (cache) {
-            cache.keySet().removeIf(k -> k.startsWith(prefix));
+            cache.snapshot().keySet().stream()
+                    .filter(k -> k.startsWith(prefix))
+                    .forEach(cache::remove);
         }
     }
 
     /** 清空所有内存缓存条目 */
     public void clear() {
-        cache.clear();
+        cache.evictAll();
     }
 
     /** @return 当前缓存的条目数量 */

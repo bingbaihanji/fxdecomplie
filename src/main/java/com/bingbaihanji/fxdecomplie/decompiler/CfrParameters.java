@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.model.DecompilerParameter.ParamType;
 import java.util.List;
 
 /**
- * CFR 反编译引擎全部可配置参数定义（与 Recaf CfrConfig 对齐）
+ * CFR 反编译引擎全部可配置参数定义(与 Recaf CfrConfig 对齐)
  *
  * @author bingbaihanji
  * @date 2026-06-26

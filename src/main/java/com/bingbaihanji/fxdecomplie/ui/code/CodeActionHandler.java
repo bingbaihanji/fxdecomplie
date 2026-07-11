@@ -6,18 +6,18 @@ import jfx.incubator.scene.control.richtext.TextPos;
 /**
  * 代码视图操作回调接口,定义 CodeViewPanel 需要调用的外部操作
  *
- * <p>实现方（如 MainWindow）负责具体逻辑：导航、图形展示、注释管理等</p>
+ * <p>实现方(如 MainWindow)负责具体逻辑：导航、图形展示、注释管理等</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
  */
 public interface CodeActionHandler {
 
-    /** 跳转到声明（Ctrl+Click / 右键菜单） */
+    /** 跳转到声明(Ctrl+Click / 右键菜单) */
     void goToDeclaration(CodeMetadata.Reference reference);
 
     /**
-     * 跳转到声明（右键菜单）
+     * 跳转到声明(右键菜单)
      *
      * <p>默认仍按行级 metadata 跳转；实现方可以结合当前 token 和工作区索引做兜底解析</p>
      */
@@ -59,9 +59,9 @@ public interface CodeActionHandler {
     void searchInWorkspace(String selectedText);
 
     /**
-     * 复制引用字符串到剪贴板的回调（Alt+Ctrl+Shift+C）。
-     * 引用字符串已由 CodeViewPanel 通过 {@link com.bingbaihanji.fxdecomplie.util.CopyReferenceHelper} 计算，
-     * 子类可覆盖此方法以显示状态栏提示。
+     * 复制引用字符串到剪贴板的回调(Alt+Ctrl+Shift+C) 
+     * 引用字符串已由 CodeViewPanel 通过 {@link com.bingbaihanji.fxdecomplie.util.CopyReferenceHelper} 计算,
+     * 子类可覆盖此方法以显示状态栏提示 
      *
      * @param referenceText 已生成的引用字符串
      */

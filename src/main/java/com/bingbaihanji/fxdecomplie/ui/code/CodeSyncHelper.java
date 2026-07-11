@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  * <p>同步策略分层降级：
  * 1. ASM LineNumberTable → 精确行映射
  * 2. 方法签名文本搜索 → 模糊匹配
- * 3. 失败时静默忽略（记录 debug 日志,不弹窗）</p>
+ * 3. 失败时静默忽略(记录 debug 日志,不弹窗)</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -76,15 +76,15 @@ public final class CodeSyncHelper {
      * 从字节码文本中查找目标方法的起始行号
      *
      * @param bytecodeText     ASM Textifier 输出的字节码文本
-     * @param methodDescriptor 方法描述符（name + descriptor）
-     * @return 找到的行号（1-based）,未找到返回 -1
+     * @param methodDescriptor 方法描述符(name + descriptor)
+     * @return 找到的行号(1-based),未找到返回 -1
      */
     public static int findMethodLineInBytecode(String bytecodeText, String methodDescriptor) {
         if (bytecodeText == null || methodDescriptor == null) {
             return -1;
         }
         String[] lines = bytecodeText.split("\n", -1);
-        // 从方法描述符提取方法名（name部分）
+        // 从方法描述符提取方法名(name部分)
         int parenIdx = methodDescriptor.indexOf('(');
         String methodName = parenIdx > 0 ? methodDescriptor.substring(0, parenIdx) : methodDescriptor;
 
@@ -101,7 +101,7 @@ public final class CodeSyncHelper {
      * 从源码文本中定位光标所在行所属的方法签名
      *
      * @param sourceCode 反编译源码
-     * @param lineNumber 光标所在行号（1-based）
+     * @param lineNumber 光标所在行号(1-based)
      * @return 方法声明摘要,未找到返回 null
      */
     public static String findMethodAtLine(String sourceCode, int lineNumber) {

@@ -9,7 +9,7 @@ import java.util.List;
  * 自定义 ASM ClassVisitor,生成 jadx 风格的 smali 文本
  *
  * <p>输出格式：.class / .super / .source 头信息 + .field / .method 定义,
- * 方法体包含 .registers / .line / .local 和 smali 风格操作码（小写、带连字符）</p>
+ * 方法体包含 .registers / .line / .local 和 smali 风格操作码(小写、带连字符)</p>
  *
  * @author bingbaihanji
  * @date 2026-06-23
@@ -116,7 +116,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         return String.valueOf(value);
     }
 
-    /** 将 ASM 操作码转为 smali 风格操作码（小写、连字符分隔） */
+    /** 将 ASM 操作码转为 smali 风格操作码(小写、连字符分隔) */
     static String toSmaliOpcode(int opcode) {
         return switch (opcode) {
             case Opcodes.NOP -> "nop";
@@ -231,7 +231,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         };
     }
 
-    /** 带操作数指令的 smali 前缀（通过 visitXxxInsn 展开参数） */
+    /** 带操作数指令的 smali 前缀(通过 visitXxxInsn 展开参数) */
     static String opcodePrefixSmali(int opcode) {
         return switch (opcode) {
             case Opcodes.BIPUSH -> "const/4";
@@ -319,7 +319,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         };
     }
 
-    /** 格式化类型为可读形式（用于 .field 和 .local） */
+    /** 格式化类型为可读形式(用于 .field 和 .local) */
     static String formatTypeReadable(Type type) {
         if (type == null) {
             return "?";
@@ -423,7 +423,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         String rawName = className != null ? className : "?";
         String dotName = className != null ? className.replace('/', '.') : "?";
 
-        // 标题注释（非 smali 标准,便于辨识）
+        // 标题注释(非 smali 标准,便于辨识)
         out.append("###### Smali: ").append(dotName);
         if (!dotName.equals(rawName)) {
             out.append(" (").append(rawName).append(")");
@@ -581,14 +581,14 @@ final class SmaliTextBuilder extends ClassVisitor {
 
         // -- 指令访问 --
 
-        /** 无操作数指令（如 return-void、nop 等） */
+        /** 无操作数指令(如 return-void、nop 等) */
         @Override
         public void visitInsn(int opcode) {
             mb.append(METHOD_INDENT).append(METHOD_INDENT)
                     .append(toSmaliOpcode(opcode)).append('\n');
         }
 
-        /** 单整数操作数指令（如 bipush、sipush、newarray） */
+        /** 单整数操作数指令(如 bipush、sipush、newarray) */
         @Override
         public void visitIntInsn(int opcode, int operand) {
             String prefix = opcodePrefixSmali(opcode);
@@ -601,7 +601,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append(' ').append(operand).append('\n');
         }
 
-        /** 局部变量存取指令（如 iload、istore、aload 等） */
+        /** 局部变量存取指令(如 iload、istore、aload 等) */
         @Override
         public void visitVarInsn(int opcode, int var) {
             String prefix = opcodePrefixSmali(opcode);
@@ -617,7 +617,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append(' ').append(var).append('\n');
         }
 
-        /** 类型操作指令（如 new、checkcast、instanceof） */
+        /** 类型操作指令(如 new、checkcast、instanceof) */
         @Override
         public void visitTypeInsn(int opcode, String type) {
             String prefix = opcodePrefixSmali(opcode);
@@ -627,7 +627,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append(' ').append(typeDesc).append('\n');
         }
 
-        /** 字段存取指令（如 getfield、putstatic 等） */
+        /** 字段存取指令(如 getfield、putstatic 等) */
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
             String prefix = opcodePrefixSmali(opcode);
@@ -638,7 +638,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append('\n');
         }
 
-        /** 方法调用指令（如 invoke-virtual、invoke-static 等）,解析参数和返回类型 */
+        /** 方法调用指令(如 invoke-virtual、invoke-static 等),解析参数和返回类型 */
         @Override
         public void visitMethodInsn(int opcode, String owner, String name,
                                     String descriptor, boolean isInterface) {
@@ -669,7 +669,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # invokedynamic\n");
         }
 
-        /** 跳转指令（如 if-eq、goto 等）,label 暂用占位符表示 */
+        /** 跳转指令(如 if-eq、goto 等),label 暂用占位符表示 */
         @Override
         public void visitJumpInsn(int opcode, Label label) {
             String prefix = opcodePrefixSmali(opcode);
@@ -706,7 +706,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # iinc ").append(var).append(' ').append(increment).append('\n');
         }
 
-        /** tableswitch 指令（连续 case 值的 switch） */
+        /** tableswitch 指令(连续 case 值的 switch) */
         @Override
         public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
             mb.append(METHOD_INDENT).append(METHOD_INDENT)
@@ -714,7 +714,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # tableswitch ").append(min).append("..").append(max).append('\n');
         }
 
-        /** lookupswitch 指令（稀疏 case 值的 switch） */
+        /** lookupswitch 指令(稀疏 case 值的 switch) */
         @Override
         public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
             mb.append(METHOD_INDENT).append(METHOD_INDENT)
@@ -737,7 +737,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # multianewarray\n");
         }
 
-        /** 方法访问结束,拼接完整的 smali 方法文本（签名 + .registers + 指令 + .end method） */
+        /** 方法访问结束,拼接完整的 smali 方法文本(签名 + .registers + 指令 + .end method) */
         @Override
         public void visitEnd() {
             // 构建方法完整文本
@@ -753,7 +753,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             }
             header.append(' ').append(methodName);
 
-            // 格式化方法描述符（smali 风格: 参数类型用 () 括起来,后面跟返回类型）
+            // 格式化方法描述符(smali 风格: 参数类型用 () 括起来,后面跟返回类型)
             Type[] argTypes = Type.getArgumentTypes(methodDesc);
             Type retType = Type.getReturnType(methodDesc);
             header.append('(');
