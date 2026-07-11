@@ -38,8 +38,22 @@ public final class CommentManager {
             .create();
     private static final Type COMMENT_LIST_TYPE = new TypeToken<List<CommentData>>() {
     }.getType();
-    private static final java.util.concurrent.ConcurrentMap<String, java.util.concurrent.locks.ReentrantLock>
-            FILE_LOCKS = new java.util.concurrent.ConcurrentHashMap<>();
+    /**
+     * 分段锁数组：按 lockKey 的哈希映射到固定数量的锁，保证同一文件始终映射到同一把锁。
+     * <p>
+     * 相比"每 key 一把锁的 ConcurrentHashMap"，分段锁内存有界（永不增长、无泄漏），
+     * 且不存在"移除锁条目 → 其他线程重建新锁"导致两个线程持不同锁进入临界区的竞态。
+     * 不同文件偶发共享同一分段锁只会带来可忽略的额外串行化，不影响正确性。
+     */
+    private static final int LOCK_STRIPES = 64;
+    private static final java.util.concurrent.locks.ReentrantLock[] FILE_LOCKS =
+            new java.util.concurrent.locks.ReentrantLock[LOCK_STRIPES];
+
+    static {
+        for (int i = 0; i < LOCK_STRIPES; i++) {
+            FILE_LOCKS[i] = new java.util.concurrent.locks.ReentrantLock();
+        }
+    }
 
     private static volatile Path commentRootDir;
 
@@ -60,6 +74,12 @@ public final class CommentManager {
         return Paths.get("fxdecomplie", "comments");
     }
 
+    /** 按 lockKey 哈希映射到固定分段锁，同一 key 始终返回同一把锁 */
+    private static java.util.concurrent.locks.ReentrantLock lockFor(String lockKey) {
+        int idx = (lockKey.hashCode() & 0x7fffffff) % LOCK_STRIPES;
+        return FILE_LOCKS[idx];
+    }
+
     /**
      * 保存注释
      *
@@ -71,8 +91,7 @@ public final class CommentManager {
             return;
         }
         String lockKey = workspaceHash + ":" + comment.className();
-        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
-                k -> new java.util.concurrent.locks.ReentrantLock());
+        var lock = lockFor(lockKey);
         lock.lock();
         try {
             List<CommentData> existing = loadAll(workspaceHash, comment.className());
@@ -109,8 +128,7 @@ public final class CommentManager {
      */
     public static List<CommentData> load(String workspaceHash, String className) {
         String lockKey = workspaceHash + ":" + className;
-        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
-                k -> new java.util.concurrent.locks.ReentrantLock());
+        var lock = lockFor(lockKey);
         lock.lock();
         try {
             return loadAll(workspaceHash, className);
@@ -125,8 +143,7 @@ public final class CommentManager {
     public static boolean delete(String workspaceHash, String className,
                                  String memberSignature, int line, String time) {
         String lockKey = workspaceHash + ":" + className;
-        var lock = FILE_LOCKS.computeIfAbsent(lockKey,
-                k -> new java.util.concurrent.locks.ReentrantLock());
+        var lock = lockFor(lockKey);
         lock.lock();
         try {
             List<CommentData> existing = loadAll(workspaceHash, className);
@@ -175,15 +192,14 @@ public final class CommentManager {
             try {
                 os.write(GSON.toJson(comments).getBytes(StandardCharsets.UTF_8));
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new java.io.UncheckedIOException(e);
             }
         });
     }
 
     private static Path resolveFile(String workspaceHash, String className) {
         String safeWorkspace = safePathSegment(workspaceHash);
-        String safeName = className.replace('/', '_').replace('\\', '_')
-                .replace("..", "__");
+        String safeName = safePathSegment(className);
         return getCommentDir().resolve(safeWorkspace).resolve(safeName + ".json");
     }
 

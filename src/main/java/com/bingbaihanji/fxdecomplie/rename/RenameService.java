@@ -136,6 +136,24 @@ public final class RenameService {
         rootDir = dir;
     }
 
+    /**
+     * 释放指定工作区占用的内存缓存与锁条目。
+     * <p>
+     * 三个静态缓存均以 workspaceHash 为键，条目生命周期应与工作区一致。
+     * 工作区关闭时调用本方法，避免长会话中缓存随打开过的工作区数量单调增长。
+     *
+     * @param workspaceHash 工作区 hash（与 load/save 使用的键一致）
+     */
+    public static void cleanupWorkspace(String workspaceHash) {
+        if (workspaceHash == null) {
+            return;
+        }
+        String safe = safe(workspaceHash);
+        MEMORY_CACHE.remove(workspaceHash);
+        ORIGINAL_BY_DISPLAY_CACHE.remove(workspaceHash);
+        WORKSPACE_LOCKS.remove(safe);
+    }
+
     /** 校验 Java 标识符合法性 */
     public static boolean isValidName(String name) {
         if (name == null || name.isEmpty() || RESERVED_NAMES.contains(name)) {

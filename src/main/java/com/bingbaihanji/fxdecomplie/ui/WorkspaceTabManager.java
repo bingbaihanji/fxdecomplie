@@ -785,6 +785,8 @@ public final class WorkspaceTabManager {
                 pane.getTabs().clear();
                 pane.getSelectionModel().clearSelection();
             }
+            // 释放该工作区占用的 RenameService 内存缓存与锁条目
+            RenameService.cleanupWorkspace(CommentScope.workspaceHash(view.workspace()));
             view.workspace().close();
         }
 
