@@ -104,6 +104,74 @@ public final class ByteUtils {
                 | (long) (bytes[6] & 0xFF) << 8 | (long) (bytes[7] & 0xFF);
     }
 
+    /**
+     * 将单个字节值转换为补零的两位十六进制字符串。
+     * @param value 字节值（仅取低 8 位）
+     * @return 两位十六进制字符串
+     */
+    public static String byteToHex(int value) {
+        int v = value & 0xFF;
+        char[] hexChars = {HEX_CHARS[v >>> 4], HEX_CHARS[v & 0x0F]};
+        return new String(hexChars);
+    }
+
+    /**
+     * 将 int 值转换为补零的 8 位十六进制字符串。
+     * @param value 整数值
+     * @return 8 位十六进制字符串
+     */
+    public static String intToHex(int value) {
+        char[] hexChars = new char[8];
+        int v = value;
+        for (int i = 7; i >= 0; i--) {
+            hexChars[i] = HEX_CHARS[v & 0x0F];
+            v >>>= 4;
+        }
+        return new String(hexChars);
+    }
+
+    /**
+     * 计算字节数组的 MD5 哈希值。
+     * @param data 输入字节数组
+     * @return 十六进制表示的 MD5 值
+     */
+    public static String md5Sum(byte[] data) {
+        java.util.Objects.requireNonNull(data, "data 不能为 null");
+        try {
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
+            md.update(data);
+            return bytesToHex(md.digest());
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException("MD5 algorithm not available", e);
+        }
+    }
+
+    /**
+     * 计算字符串（UTF-8 编码）的 MD5 哈希值。
+     * @param str 输入字符串
+     * @return 十六进制表示的 MD5 值
+     */
+    public static String md5Sum(String str) {
+        java.util.Objects.requireNonNull(str, "str 不能为 null");
+        return md5Sum(str.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /**
+     * 通过文件魔数（PK\03\04）判断文件是否为 ZIP 格式。
+     * @param file 待检测的文件
+     * @return 是 ZIP 文件返回 true
+     */
+    public static boolean isZipFile(java.io.File file) {
+        byte[] magic = {0x50, 0x4B, 0x03, 0x04};
+        try (java.io.InputStream is = new java.io.FileInputStream(file)) {
+            byte[] headers = new byte[magic.length];
+            int read = is.read(headers);
+            return read == magic.length && java.util.Arrays.equals(headers, magic);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private static String format(double size, String type) {
         int precision = 0;
 
