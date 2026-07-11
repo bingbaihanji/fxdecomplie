@@ -2,7 +2,6 @@ package com.bingbaihanji.fxdecomplie;
 
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
@@ -12,21 +11,12 @@ import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentDialog;
-import com.bingbaihanji.fxdecomplie.ui.export.ExportDialog;
-import com.bingbaihanji.fxdecomplie.ui.graph.GraphDialog;
-import com.bingbaihanji.fxdecomplie.ui.graph.GraphService;
-import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceService;
 import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
-import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
 import com.bingbaihanji.fxdecomplie.ui.search.*;
-import com.bingbaihanji.fxdecomplie.ui.settings.SettingsDialog;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
-import com.bingbaihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbaihanji.fxdecomplie.ui.window.AppHeaderBar;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
-import com.bingbaihanji.fxdecomplie.util.text.JavaSourceAnalyzer;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.application.HostServices;
 import javafx.application.Platform;
@@ -35,8 +25,6 @@ import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,11 +32,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * FxDecompiler 应用窗口的中央控制器
@@ -163,99 +146,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         this.lineNumbersEnabled = config.decompiler().lineNumbersEnabled();
     }
 
-    /** 将点分隔的类名转换为内部类路径(首段大写后用 $ 替代 .) */
-    private static String toInnerClassPath(String className) {
-        return JavaSourceAnalyzer.toInnerClassPath(className);
-    }
-
-    /** 判断树节点名是否与简单类令牌匹配(含内部类 $ 后缀匹配) */
-    private static boolean matchesSimpleClassName(FileTreeNode node, String simpleToken,
-                                                  String expectedClassFile) {
-        return JavaSourceAnalyzer.matchesSimpleClassName(node, simpleToken, expectedClassFile);
-    }
-
-    /** 在源码中查找匹配 token 的声明行,优先返回离点击行最近的匹配 */
-    private static int findDeclarationLine(String sourceCode, String token, int clickedLine) {
-        return JavaSourceAnalyzer.findDeclarationLine(sourceCode, token, clickedLine);
-    }
-
-    /** 判断源码行是否看起来是声明行(类/接口/枚举/方法/字段声明) */
-    private static boolean looksLikeDeclarationLine(String line, String simpleToken) {
-        return JavaSourceAnalyzer.looksLikeDeclarationLine(line, simpleToken);
-    }
-
-    /** 去除行尾的 // 注释部分,返回纯代码(正确处理字符串字面量内的 // ) */
-    private static String stripLineComment(String line) {
-        return JavaSourceAnalyzer.stripLineComment(line);
-    }
-
-    /**
-     * 使用 indexOf 快速检查行中是否包含指定关键字后跟 token (替代正则编译)
-     *
-     * @param line     被检查的行
-     * @param token    要匹配的标识符
-     * @param keywords 关键字数组(含尾部空格,如 "class ")
-     * @return true 若行中某关键字后(经空白分隔)紧跟 token 且两侧满足词边界
-     */
-    private static boolean containsKeywordBeforeToken(String line, String token, String... keywords) {
-        return JavaSourceAnalyzer.containsKeywordBeforeToken(line, token, keywords);
-    }
-
-    /** 清理声明 token,去除首尾非 Java 名称/路径字符 */
-    private static String sanitizeDeclarationToken(String token) {
-        return JavaSourceAnalyzer.sanitizeDeclarationToken(token);
-    }
-
-    /** @return true 若字符是声明 token 的有效字符(Java 标识符、点号、美元符、斜杠) */
-    private static boolean isDeclarationTokenChar(char ch) {
-        return JavaSourceAnalyzer.isDeclarationTokenChar(ch);
-    }
-
-    /** 从限定名中提取简单名(最后一段) */
-    private static String tokenSimpleName(String token) {
-        return JavaSourceAnalyzer.tokenSimpleName(token);
-    }
-
-    /** @return true 若 token 首字母大写、下划线或美元符号开头(相对类引用) */
-    private static boolean isRelativeClassToken(String token) {
-        return JavaSourceAnalyzer.isRelativeClassToken(token);
-    }
-
-    /** @return true 若 token 应优先作为类引用导航(含点号或首字母大写) */
-    private static boolean shouldPreferClassNavigation(String token) {
-        return JavaSourceAnalyzer.shouldPreferClassNavigation(token);
-    }
-
-    /** @return true 若 token 应在工作区中进行类查找(限定名、相对类引用或混淆短名) */
-    private static boolean shouldSearchWorkspaceForClassToken(String token) {
-        return JavaSourceAnalyzer.shouldSearchWorkspaceForClassToken(token);
-    }
-
-    /** @return true 若 token 是可能的混淆类名(短名、非常见词汇、仅含合法字符) */
-    private static boolean isShortObfuscatedClassToken(String token) {
-        return JavaSourceAnalyzer.isShortObfuscatedClassToken(token);
-    }
-
-    /** 判断指定行是否看起来使用了 token 指代的类(new/extends/import/类型声明等语境) */
-    private static boolean looksLikeClassUsageAtLine(String sourceCode, int lineNumber, String token) {
-        return JavaSourceAnalyzer.looksLikeClassUsageAtLine(sourceCode, lineNumber, token);
-    }
-
-    /** @return true 若两个内部类名处于同一包下 */
-    private static boolean samePackage(String leftInternalName, String rightInternalName) {
-        return JavaSourceAnalyzer.samePackage(leftInternalName, rightInternalName);
-    }
-
-    /** 标准化内部类名(委托 ClassNameUtil) */
-    private static String normalizeInternalClassName(String className) {
-        return JavaSourceAnalyzer.normalizeInternalClassName(className);
-    }
-
-    /** 获取内部类名的包名部分(委托 ClassNameUtil) */
-    private static String packageName(String internalName) {
-        return JavaSourceAnalyzer.packageName(internalName);
-    }
-
     /** 判断文件是否为可加载类型(JAR/ZIP/WAR/Class 及目录) */
     private static boolean isSupportedLoadFile(File file) {
         if (file.isDirectory()) {
@@ -264,22 +154,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         String name = file.getName().toLowerCase(java.util.Locale.ROOT);
         return name.endsWith(".jar") || name.endsWith(".zip")
                 || name.endsWith(".war") || name.endsWith(".class");
-    }
-
-    /** 将 TextPos(行号+列偏移)转换为文本在原始字符串中的平坦偏移量 */
-    private static int flatOffset(String text,
-                                  jfx.incubator.scene.control.richtext.TextPos pos) {
-        return JavaSourceAnalyzer.flatOffset(text, pos);
-    }
-
-    /** 判断 offset 位置附近的标识符是否是类/接口/枚举声明的类型名 */
-    private static boolean isDeclaredTypeNameAt(String sourceCode, int offset, String caretName) {
-        return JavaSourceAnalyzer.isDeclaredTypeNameAt(sourceCode, offset, caretName);
-    }
-
-    /** 获取类的叶子名(去除包名后的最后一段,跳过内部类 $ 前缀) */
-    private static String classLeafName(String className) {
-        return JavaSourceAnalyzer.classLeafName(className);
     }
 
     /** 显示主窗口 */
