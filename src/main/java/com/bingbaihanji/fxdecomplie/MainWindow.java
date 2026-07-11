@@ -98,6 +98,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private final SearchController searchController = new SearchController(this);
     /** 引擎切换与图形展示控制器（引擎切换/标签页刷新/继承图/CFG/方法图/引擎对比） */
     private final EngineController engineController = new EngineController(this);
+    /** 设置控制器（设置对话框/配置应用） */
+    private final SettingsController settingsController = new SettingsController(this);
 
     // --- 供控制器访问共享状态的包级私有访问器（Mediator 模式）---
     AppConfig config() { return config; }
@@ -127,6 +129,10 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     SearchController searchController() { return searchController; }
 
     EngineController engineController() { return engineController; }
+
+    VsCodeThemeLoader.ThemeData editorTheme() { return editorTheme; }
+
+    void setEditorTheme(VsCodeThemeLoader.ThemeData theme) { this.editorTheme = theme; }
 
     /** 使用全局配置构造主窗口 */
     public MainWindow(AppConfig config) {
@@ -1141,48 +1147,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 打开设置对话框 */
     @Override
     public void openSettings() {
-        String oldEditorTheme = config.theme().editorTheme();
-        SettingsDialog.show(stage, config, updated -> {
-            boolean engineSwitched = applySettings(updated);
-
-            // 检测编辑器主题变更 — 必须在 refreshCurrentTab 之前更新 ClassTabOpener,
-            // 否则异步反编译任务会用旧主题创建新标签页覆盖掉 reapplyTheme 的结果
-            String newEditorTheme = config.theme().editorTheme();
-            if (!newEditorTheme.equals(oldEditorTheme)) {
-                editorTheme = AppTheme.loadEditorTheme(config);
-                classTabOpener.setEditorTheme(editorTheme);
-                tabManager.getWorkspaceViews().values().forEach(view ->
-                        view.splitEditorPane().forEachTab(tab ->
-                                tab.reapplyTheme(editorTheme))
-                );
-            }
-
-            DecompilerTypeEnum activeTabEngine = engineController.activeCodeTabEngine();
-            if (!engineSwitched && tabManager != null && tabManager.currentCodeTab() != null) {
-                engineController.refreshCurrentTab(activeTabEngine);
-            }
-        });
-    }
-
-    /** 应用设置对话框确认后的配置变更：切换引擎、更新行号显示和字体设置,返回是否切换了引擎 */
-    private boolean applySettings(AppConfig updated) {
-        DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
-        boolean engineSwitched = false;
-        if (configuredEngine != currentEngine) {
-            engineController.selectEngine(configuredEngine);
-            engineSwitched = true;
-        }
-        lineNumbersEnabled = updated.decompiler().lineNumbersEnabled();
-        int newFontSize = updated.theme().fontSize();
-        String newFontFamily = updated.theme().fontFamily();
-        tabManager.getWorkspaceViews().values().forEach(view ->
-                view.splitEditorPane().forEachTab(tab -> {
-                    tab.setLineNumbersEnabled(lineNumbersEnabled);
-                    tab.applyFontSettings(newFontSize, newFontFamily);
-                })
-        );
-
-        return engineSwitched;
+        settingsController.openSettings();
     }
 
     /** 将导出对话框中选择的选项写回全局配置,下次打开时记住 */
