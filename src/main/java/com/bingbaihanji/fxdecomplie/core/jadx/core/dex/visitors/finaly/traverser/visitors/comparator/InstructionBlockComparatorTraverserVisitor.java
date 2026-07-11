@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.SameInstr
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.DuplicatedTraverserStateFactory;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.TraverserStateFactory;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Pair;
+import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -210,7 +210,7 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
 
         int maxIterateCount = Math.min(finallyInsnsSize, candidateInsnsSize);
 
-        List<Pair<InsnNode>> matchingInsns = new ArrayList<>(maxIterateCount);
+        List<Pair<InsnNode, InsnNode>> matchingInsns = new ArrayList<>(maxIterateCount);
 
         // 从后往前逐条比较指令，统计匹配的指令数量
         for (int i = 0; i < maxIterateCount; i++) {
@@ -221,7 +221,7 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
                 break;
             }
 
-            Pair<InsnNode> match = new Pair<>(finallyInsn, candidateInsn);
+            Pair<InsnNode, InsnNode> match = new Pair<>(finallyInsn, candidateInsn);
             matchingInsns.add(match);
         }
 

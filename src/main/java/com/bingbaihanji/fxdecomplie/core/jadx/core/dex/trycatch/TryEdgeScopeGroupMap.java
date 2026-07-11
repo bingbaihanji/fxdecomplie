@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Pair;
+import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,7 +15,7 @@ import java.util.*;
  */
 public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, BlockNode>> {
 
-    private final List<Pair<TryEdge>> mergedEdges = new ArrayList<>();
+    private final List<Pair<TryEdge, TryEdge>> mergedEdges = new ArrayList<>();
     private final TryCatchBlockAttr tryCatch;
     private final Map<TryEdge, Map<TryEdge, BlockNode>> underlyingMap;
     public TryEdgeScopeGroupMap(MethodNode mth, TryCatchBlockAttr tryCatch, int initialCapacity) {
@@ -92,7 +92,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
         return !mergedEdges.isEmpty();
     }
 
-    public List<Pair<TryEdge>> getMergedScopes() {
+    public List<Pair<TryEdge, TryEdge>> getMergedScopes() {
         return mergedEdges;
     }
 
@@ -119,7 +119,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
         List<TryEdge> isolatedEdgePairs = new LinkedList<>();
 
         for (TryEdge mergeEdgeA : keySet()) {
-            Pair<TryEdge> edgeMergedPair = getMergedNodeFromEdge(mergeEdgeA);
+            Pair<TryEdge, TryEdge> edgeMergedPair = getMergedNodeFromEdge(mergeEdgeA);
 
             if (edgeMergedPair != null) {
                 continue;
@@ -129,8 +129,8 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
 
             List<BlockNode> scopeEnds = new ArrayList<>(handlerRelations.size());
             for (TryEdge mergeEdgeB : handlerRelations.keySet()) {
-                Pair<TryEdge> mergedPairFromRelation = getMergedNodeFromEdge(mergeEdgeB);
-                if (mergedPairFromRelation != null && mergedPairFromRelation.getFirst() == mergeEdgeA) {
+                Pair<TryEdge, TryEdge> mergedPairFromRelation = getMergedNodeFromEdge(mergeEdgeB);
+                if (mergedPairFromRelation != null && mergedPairFromRelation.first() == mergeEdgeA) {
                     continue;
                 }
 
@@ -198,9 +198,9 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
         }
 
         if (groups.size() == 1) {
-            for (Pair<TryEdge> pair : mergedEdges) {
-                TryEdge keptEdge = pair.getFirst();
-                TryEdge removedEdge = pair.getSecond();
+            for (Pair<TryEdge, TryEdge> pair : mergedEdges) {
+                TryEdge keptEdge = pair.first();
+                TryEdge removedEdge = pair.second();
 
                 if (keptEdge.isHandlerExit() && !tryCatch.getHandlers().contains(keptEdge.getExceptionHandler())) {
                     continue;
@@ -238,9 +238,9 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
     }
 
     @Nullable
-    private Pair<TryEdge> getMergedNodeFromEdge(TryEdge edge) {
-        for (Pair<TryEdge> pair : mergedEdges) {
-            if (pair.getSecond() == edge) {
+    private Pair<TryEdge, TryEdge> getMergedNodeFromEdge(TryEdge edge) {
+        for (Pair<TryEdge, TryEdge> pair : mergedEdges) {
+            if (pair.second() == edge) {
                 return pair;
             }
         }
@@ -315,7 +315,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
     private Map<TryEdge, BlockNode> mergeSameScopes(Map<TryEdge, BlockNode> handlers) {
         List<Entry<TryEdge, BlockNode>> exceptionHandlers = new ArrayList<>(handlers.entrySet());
 
-        List<Pair<TryEdgeScope>> handlerPairs = new LinkedList<>();
+        List<Pair<TryEdgeScope, TryEdgeScope>> handlerPairs = new LinkedList<>();
         for (int i = 0; i < exceptionHandlers.size(); i++) {
             for (int j = i + 1; j < exceptionHandlers.size(); j++) {
                 TryEdgeScope a = new TryEdgeScope(exceptionHandlers.get(i).getKey(), exceptionHandlers.get(i).getValue());
@@ -328,10 +328,10 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
 
         int i = 0;
         while (i < handlerPairs.size()) {
-            Pair<TryEdgeScope> handlerPair = handlerPairs.get(i);
+            Pair<TryEdgeScope, TryEdgeScope> handlerPair = handlerPairs.get(i);
 
-            TryEdgeScope edgeScopeA = handlerPair.getFirst();
-            TryEdgeScope edgeScopeB = handlerPair.getSecond();
+            TryEdgeScope edgeScopeA = handlerPair.first();
+            TryEdgeScope edgeScopeB = handlerPair.second();
             BlockNode edgeBlockA = edgeScopeA.block;
             BlockNode edgeBlockB = edgeScopeB.block;
             boolean pathExists = BlockUtils.isPathExists(edgeBlockA, edgeBlockB) || BlockUtils.isPathExists(edgeBlockB, edgeBlockA);
@@ -352,14 +352,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
         return simplifiedScopes;
     }
 
-    private static final class TryEdgeScope {
+    private record TryEdgeScope(TryEdge edge, BlockNode block) {
 
-        private final TryEdge edge;
-        private final BlockNode block;
-
-        public TryEdgeScope(TryEdge edge, BlockNode block) {
-            this.edge = edge;
-            this.block = block;
-        }
     }
 }

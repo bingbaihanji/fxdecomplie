@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.Centralit
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.SameInstructionsStrategy;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.GlobalTraverserSourceState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.TraverserStateFactory;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Pair;
+import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +27,7 @@ public class TraverserActivePathState {
     private final GlobalTraverserSourceState finallyGlobalState;
     private final GlobalTraverserSourceState candidateGlobalState;
     private final TraverserGlobalCommonState commonGlobalState;
-    private final Set<Pair<InsnNode>> matchedInsns;
+    private final Set<Pair<InsnNode, InsnNode>> matchedInsns;
     private final BlockCompletionMonitorMap finallyCompletionMonitor;
     private final BlockCompletionMonitorMap candidateCompletionMonitor;
 
@@ -64,7 +64,7 @@ public class TraverserActivePathState {
      * state between a previous traverser controller and is a liaison for initialising non-null
      * final fields for the {@link TraverserActivePathState#produceFromFactories} function.
      */
-    private TraverserActivePathState(Set<Pair<InsnNode>> matchedInsns, BlockCompletionMonitorMap finallyCompletionMonitor,
+    private TraverserActivePathState(Set<Pair<InsnNode, InsnNode>> matchedInsns, BlockCompletionMonitorMap finallyCompletionMonitor,
                                      BlockCompletionMonitorMap candidateCompletionMonitor, TraverserGlobalCommonState commonGlobalState,
                                      GlobalTraverserSourceState finallyGlobalState, GlobalTraverserSourceState candidateGlobalState) {
         this.finallyStateRef = new AtomicReference<>();
@@ -106,7 +106,7 @@ public class TraverserActivePathState {
     }
 
     public final TraverserActivePathState duplicate() {
-        Set<Pair<InsnNode>> dMatchedInsns = new HashSet<>(matchedInsns);
+        Set<Pair<InsnNode, InsnNode>> dMatchedInsns = new HashSet<>(matchedInsns);
         BlockCompletionMonitorMap dFinallyCompletionMonitor = finallyCompletionMonitor.duplicate();
         BlockCompletionMonitorMap dCandidateCompletionMonitor = candidateCompletionMonitor.duplicate();
         TraverserActivePathState dState =
@@ -136,7 +136,7 @@ public class TraverserActivePathState {
         return candidateStateRef;
     }
 
-    public final Set<Pair<InsnNode>> getMatchedInsns() {
+    public final Set<Pair<InsnNode, InsnNode>> getMatchedInsns() {
         return matchedInsns;
     }
 

@@ -21,7 +21,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserActivePathState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.ssa.SSATransform;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Pair;
+import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import org.jetbrains.annotations.Nullable;
@@ -248,7 +248,7 @@ public class MarkFinallyVisitor extends AbstractVisitor {
         // If any scope has been merged with the fallthrough case of the try catch, don't merge inner trys.
         // Otherwise, merge inner trys.
         boolean mergedFallthroughScope =
-                ListUtils.anyMatch(tryInfo.scopeGroups.getMergedScopes(), scopePair -> scopePair.getFirst().isNotHandlerExit());
+                ListUtils.anyMatch(tryInfo.scopeGroups.getMergedScopes(), scopePair -> scopePair.first().isNotHandlerExit());
         boolean mergeInnerTryBlocks = hasInnerBlocks && !mergedFallthroughScope;
 
         tryInfo.finallyHandler.setFinally(true);
@@ -324,9 +324,9 @@ public class MarkFinallyVisitor extends AbstractVisitor {
             Set<BlockNode> completeFinally = new HashSet<>();
             Set<BlockNode> completeCandidate = new HashSet<>();
             for (TraverserActivePathState pathResult : pathResults) {
-                for (Pair<InsnNode> matchingInsnPair : pathResult.getMatchedInsns()) {
-                    InsnNode finallyInsn = matchingInsnPair.getFirst();
-                    InsnNode candidateInsn = matchingInsnPair.getSecond();
+                for (Pair<InsnNode, InsnNode> matchingInsnPair : pathResult.getMatchedInsns()) {
+                    InsnNode finallyInsn = matchingInsnPair.first();
+                    InsnNode candidateInsn = matchingInsnPair.second();
                     List<InsnNode> candidateInsnsList;
                     if (!matchingInsns.containsKey(finallyInsn)) {
                         candidateInsnsList = new LinkedList<>();
