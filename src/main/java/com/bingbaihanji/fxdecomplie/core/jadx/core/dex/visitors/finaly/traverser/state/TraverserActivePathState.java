@@ -1,4 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
@@ -49,13 +51,13 @@ public class TraverserActivePathState {
         TraverserState finallyState = new NewBlockTraverserState(this, finallyCentralityState, finallyBlockInfo);
         TraverserState candidateState = new NewBlockTraverserState(this, candidateCentralityState, candidateBlockInfo);
 
-        this.finallyGlobalState = new GlobalTraverserSourceState(new HashSet<>(finallyBlocks));
-        this.candidateGlobalState = new GlobalTraverserSourceState(new HashSet<>(candidateBlocks));
+        this.finallyGlobalState = new GlobalTraverserSourceState(new ArraySet<>(finallyBlocks));
+        this.candidateGlobalState = new GlobalTraverserSourceState(new ArraySet<>(candidateBlocks));
         this.commonGlobalState = new TraverserGlobalCommonState(mth);
 
         this.finallyStateRef = new AtomicReference<>(finallyState);
         this.candidateStateRef = new AtomicReference<>(candidateState);
-        this.matchedInsns = new HashSet<>();
+        this.matchedInsns = new ArraySet<>();
         this.finallyCompletionMonitor = new BlockCompletionMonitorMap();
         this.candidateCompletionMonitor = new BlockCompletionMonitorMap();
     }
@@ -106,7 +108,7 @@ public class TraverserActivePathState {
     }
 
     public final TraverserActivePathState duplicate() {
-        Set<Pair<InsnNode, InsnNode>> dMatchedInsns = new HashSet<>(matchedInsns);
+        Set<Pair<InsnNode, InsnNode>> dMatchedInsns = new ArraySet<>(matchedInsns);
         BlockCompletionMonitorMap dFinallyCompletionMonitor = finallyCompletionMonitor.duplicate();
         BlockCompletionMonitorMap dCandidateCompletionMonitor = candidateCompletionMonitor.duplicate();
         TraverserActivePathState dState =
@@ -203,7 +205,7 @@ public class TraverserActivePathState {
     }
 
     private Set<BlockNode> getAllFullyMatchedBlocks(BlockCompletionMonitorMap monitorMap) {
-        Set<BlockNode> matches = new HashSet<>();
+        Set<BlockNode> matches = new ArraySet<>();
         for (BlockCompletionMonitor monitor : monitorMap.values()) {
             if (!monitor.isEntireBlock()) {
                 continue;
@@ -224,7 +226,7 @@ public class TraverserActivePathState {
         private BlockCompletionMonitor(BlockNode block) {
             this.block = block;
             int insnCount = block.getInstructions().size();
-            this.matchedIndices = new HashSet<>(insnCount);
+            this.matchedIndices = new ArraySet<>(insnCount);
             for (int i = 0; i < insnCount; i++) {
                 matchedIndices.add(i);
             }
@@ -271,7 +273,7 @@ public class TraverserActivePathState {
         private final Map<BlockNode, BlockCompletionMonitor> underlying;
 
         public BlockCompletionMonitorMap() {
-            underlying = new HashMap<>();
+            underlying = new ArrayMap<>();
         }
 
         @Override
@@ -375,3 +377,4 @@ public class TraverserActivePathState {
         }
     }
 }
+

@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -36,7 +37,7 @@ public final class TryCatchEdgeBlockMap implements Map<TryEdge, List<BlockNode>>
     private final Map<TryEdge, List<BlockNode>> underlying;
 
     public TryCatchEdgeBlockMap() {
-        underlying = new HashMap<>();
+        underlying = new ArrayMap<>();
     }
 
     public static boolean anyBlockHasNonImplicitTry(List<BlockNode> blocks) {
@@ -195,3 +196,4 @@ public final class TryCatchEdgeBlockMap implements Map<TryEdge, List<BlockNode>>
         return blks;
     }
 }
+

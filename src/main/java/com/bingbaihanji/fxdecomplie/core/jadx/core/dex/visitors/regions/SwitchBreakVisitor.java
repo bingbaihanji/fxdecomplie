@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -189,8 +190,8 @@ public class SwitchBreakVisitor extends AbstractVisitor {
     }
 
     private abstract static class BaseSwitchRegionVisitor extends AbstractRegionVisitor {
-        protected final Set<IRegion> addBreakRegion = new HashSet<>();
-        protected final Set<IContainer> cleanupSet = new HashSet<>();
+        protected final Set<IRegion> addBreakRegion = new ArraySet<>();
+        protected final Set<IContainer> cleanupSet = new ArraySet<>();
         protected SwitchRegion currentSwitch;
         private boolean reRunRequested = false;
 
@@ -259,3 +260,4 @@ public class SwitchBreakVisitor extends AbstractVisitor {
         }
     }
 }
+

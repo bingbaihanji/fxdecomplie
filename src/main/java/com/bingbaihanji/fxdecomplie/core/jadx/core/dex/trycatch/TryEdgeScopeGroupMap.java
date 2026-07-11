@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
@@ -20,7 +21,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
     private final Map<TryEdge, Map<TryEdge, BlockNode>> underlyingMap;
     public TryEdgeScopeGroupMap(MethodNode mth, TryCatchBlockAttr tryCatch, int initialCapacity) {
         this.tryCatch = tryCatch;
-        underlyingMap = new HashMap<>(initialCapacity);
+        underlyingMap = new ArrayMap<>(initialCapacity);
     }
 
     @Override
@@ -112,7 +113,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
      * edge's scope.
      */
     public Map<BlockNode, List<TryEdge>> getScopeEnds(MethodNode mth) {
-        Map<BlockNode, List<TryEdge>> groups = new HashMap<>();
+        Map<BlockNode, List<TryEdge>> groups = new ArrayMap<>();
 
         // A list containing pairs of edges where there are no shared common clean successors between the
         // two handlers. This usually indicates that these edge pairs must be processed differently.
@@ -249,7 +250,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
 
     private Map<TryEdge, BlockNode> createEdgeTerminusMap(Map<TryEdge, BlockNode> edgeStartMap, TryEdge edge,
                                                           BlockNode edgeStart) {
-        Map<TryEdge, BlockNode> scopeRelations = new HashMap<>(edgeStartMap.size() - 1);
+        Map<TryEdge, BlockNode> scopeRelations = new ArrayMap<>(edgeStartMap.size() - 1);
         for (TryEdge otherEdge : edgeStartMap.keySet()) {
             if (edge == otherEdge) {
                 continue;
@@ -324,7 +325,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
             }
         }
 
-        Map<TryEdge, BlockNode> simplifiedScopes = new HashMap<>(handlers);
+        Map<TryEdge, BlockNode> simplifiedScopes = new ArrayMap<>(handlers);
 
         int i = 0;
         while (i < handlerPairs.size()) {
@@ -356,3 +357,4 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
 
     }
 }
+

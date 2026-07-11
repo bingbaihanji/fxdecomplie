@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -57,7 +58,7 @@ public class BlockSplitter extends AbstractVisitor {
         exitBlock.add(AFlag.MTH_EXIT_BLOCK);
         mth.setExitBlock(exitBlock);
 
-        Map<Integer, BlockNode> blocksMap = new HashMap<>();
+        Map<Integer, BlockNode> blocksMap = new ArrayMap<>();
         BlockNode curBlock = enterBlock;
         InsnNode prevInsn = null;
         for (InsnNode insn : mth.getInstructions()) {
@@ -177,7 +178,7 @@ public class BlockSplitter extends AbstractVisitor {
 
     static List<BlockNode> copyBlocksTree(MethodNode mth, List<BlockNode> blocks) {
         List<BlockNode> copyBlocks = new ArrayList<>(blocks.size());
-        Map<BlockNode, BlockNode> map = new HashMap<>();
+        Map<BlockNode, BlockNode> map = new ArrayMap<>();
         for (BlockNode block : blocks) {
             BlockNode newBlock = startNewBlock(mth, block.getStartOffset());
             copyBlockData(block, newBlock);
@@ -456,3 +457,4 @@ public class BlockSplitter extends AbstractVisitor {
         mth.unloadInsnArr();
     }
 }
+

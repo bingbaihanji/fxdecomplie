@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedValue;
@@ -157,7 +158,7 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
         data.setNewCases(newCases);
         if (data.getType() == SwitchStringType.SWITCH_SWITCH || data.getType() == SwitchStringType.IF_SWITCH) {
             // group by num
-            Map<Integer, List<Object>> casesMap = new HashMap<>(cases.size());
+            Map<Integer, List<Object>> casesMap = new ArrayMap<>(cases.size());
             for (CaseData caseData : cases) {
                 casesMap.computeIfAbsent(caseData.getCodeNum(), v -> new ArrayList<>()).add(caseData.getStrValue());
             }
@@ -523,3 +524,4 @@ public class SwitchOverStringVisitor extends AbstractVisitor implements IRegionI
         }
     }
 }
+

@@ -1,4 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -197,7 +199,7 @@ public class BlockExceptionHandler {
      * 合并或标记内外层关系，并进行多重 catch 检查和排序。
      */
     private static List<TryCatchBlockAttr> prepareTryBlocks(MethodNode mth) {
-        Map<ExceptionHandler, List<BlockNode>> blocksByHandler = new HashMap<>();
+        Map<ExceptionHandler, List<BlockNode>> blocksByHandler = new ArrayMap<>();
         for (BlockNode block : mth.getBasicBlocks()) {
             CatchAttr catchAttr = block.get(AType.EXC_CATCH);
             if (catchAttr != null) {
@@ -308,7 +310,7 @@ public class BlockExceptionHandler {
             outerTryBlock.setBlocks(mergedBlocks);
             return false;
         }
-        Set<ExceptionHandler> innerHandlerSet = new HashSet<>(innerTryBlock.getHandlers());
+        Set<ExceptionHandler> innerHandlerSet = new ArraySet<>(innerTryBlock.getHandlers());
         if (innerHandlerSet.containsAll(outerTryBlock.getHandlers())) {
             // 合并
             List<BlockNode> mergedBlocks = Utils.concatDistinct(outerTryBlock.getBlocks(), innerTryBlock.getBlocks());
@@ -684,3 +686,4 @@ public class BlockExceptionHandler {
         }
     }
 }
+

@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
@@ -15,7 +16,7 @@ public final class TraverserGlobalCommonState {
 
     public TraverserGlobalCommonState(MethodNode mth) {
         this.mth = mth;
-        this.searchedStates = new HashMap<>();
+        this.searchedStates = new ArrayMap<>();
     }
 
     public void addCachedStateFor(BlockNode finallyBlock, BlockNode candidateBlock, List<TraverserActivePathState> state) {
@@ -38,3 +39,4 @@ public final class TraverserGlobalCommonState {
         return mth;
     }
 }
+

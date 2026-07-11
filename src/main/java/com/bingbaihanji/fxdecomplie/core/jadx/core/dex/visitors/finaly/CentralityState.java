@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
@@ -15,7 +16,7 @@ import java.util.*;
  */
 public final class CentralityState {
 
-    private final Set<RegisterArg> allowableOutputArguments = new HashSet<>();
+    private final Set<RegisterArg> allowableOutputArguments = new ArraySet<>();
     private final SameInstructionsStrategy sameInstructionsStrategy;
     private boolean allowsCentral = true;
     private boolean allowsNonStartingNode;
@@ -146,3 +147,4 @@ public final class CentralityState {
         return allowableOutputArguments;
     }
 }
+

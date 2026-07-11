@@ -1,4 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -200,9 +202,9 @@ public class MarkFinallyVisitor extends AbstractVisitor {
         if (insns == null || insns.isEmpty()) {
             return false;
         }
-        Set<InsnNode> ignoredFinallyInsns = new HashSet<>();
-        Set<InsnNode> ignoredCandidateInsns = new HashSet<>();
-        Map<InsnNode, List<InsnNode>> insnMap = new HashMap<>();
+        Set<InsnNode> ignoredFinallyInsns = new ArraySet<>();
+        Set<InsnNode> ignoredCandidateInsns = new ArraySet<>();
+        Map<InsnNode, List<InsnNode>> insnMap = new ArrayMap<>();
         for (InsnNode finallyInsn : insns.keySet()) {
             List<InsnNode> candidateInsns = insns.get(finallyInsn);
 
@@ -293,7 +295,7 @@ public class MarkFinallyVisitor extends AbstractVisitor {
         if (finallyScopeTerminus == null) {
             return null;
         }
-        Map<InsnNode, List<InsnNode>> matchingInsns = new HashMap<>();
+        Map<InsnNode, List<InsnNode>> matchingInsns = new ArrayMap<>();
         for (TryEdge edge : tryInfo.handlerScopes.keySet()) {
             if (edge.isHandlerExit() && edge.getExceptionHandler() == tryInfo.finallyHandler) {
                 continue;
@@ -321,8 +323,8 @@ public class MarkFinallyVisitor extends AbstractVisitor {
                 LOG.error("Could not search for finally duplicate instructions in path", e);
                 return null;
             }
-            Set<BlockNode> completeFinally = new HashSet<>();
-            Set<BlockNode> completeCandidate = new HashSet<>();
+            Set<BlockNode> completeFinally = new ArraySet<>();
+            Set<BlockNode> completeCandidate = new ArraySet<>();
             for (TraverserActivePathState pathResult : pathResults) {
                 for (Pair<InsnNode, InsnNode> matchingInsnPair : pathResult.getMatchedInsns()) {
                     InsnNode finallyInsn = matchingInsnPair.first();
@@ -481,7 +483,8 @@ public class MarkFinallyVisitor extends AbstractVisitor {
             this.finallyHandler = finallyHandler;
             this.scopeTerminusGroups = fallthroughGroups;
             this.handlerScopes = handlerScopes;
-            this.rethrowBlocks = new HashSet<>();
+            this.rethrowBlocks = new ArraySet<>();
         }
     }
 }
+

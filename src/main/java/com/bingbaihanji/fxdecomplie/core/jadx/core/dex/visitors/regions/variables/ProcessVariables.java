@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.variables;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -150,7 +151,7 @@ public class ProcessVariables extends AbstractVisitor {
 
         IRegion region = checkPlace.getRegion();
         IBlock block = checkPlace.getBlock();
-        Set<UsePlace> toCheck = new HashSet<>(usePlaces);
+        Set<UsePlace> toCheck = new ArraySet<>(usePlaces);
         boolean blockFound = false;
         for (IContainer subBlock : region.getSubBlocks()) {
             if (!blockFound && subBlock == block) {
@@ -345,3 +346,4 @@ public class ProcessVariables extends AbstractVisitor {
         return false;
     }
 }
+

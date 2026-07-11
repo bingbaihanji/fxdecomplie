@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -36,7 +37,7 @@ public class ExcHandlersRegionMaker {
         List<TryCatchBlockAttr> tcs = mth.getAll(AType.TRY_BLOCKS_LIST);
         for (TryCatchBlockAttr tc : tcs) {
             List<BlockNode> blocks = new ArrayList<>(tc.getHandlersCount());
-            Set<BlockNode> splitters = new HashSet<>();
+            Set<BlockNode> splitters = new ArraySet<>();
             for (ExceptionHandler handler : tc.getHandlers()) {
                 BlockNode handlerBlock = handler.getHandlerBlock();
                 if (handlerBlock != null) {
@@ -46,7 +47,7 @@ public class ExcHandlersRegionMaker {
                     mth.addDebugComment("No exception handler block: " + handler);
                 }
             }
-            Set<BlockNode> exits = new HashSet<>();
+            Set<BlockNode> exits = new ArraySet<>();
             for (BlockNode splitter : splitters) {
                 for (BlockNode handler : blocks) {
                     if (handler.contains(AFlag.REMOVE)) {
@@ -75,10 +76,10 @@ public class ExcHandlersRegionMaker {
      * Search handlers successor blocks aren't included in any region.
      */
     private @Nullable IRegion processHandlersOutBlocks(List<TryCatchBlockAttr> tcs) {
-        Set<IBlock> allRegionBlocks = new HashSet<>();
+        Set<IBlock> allRegionBlocks = new ArraySet<>();
         RegionUtils.getAllRegionBlocks(mth.getRegion(), allRegionBlocks);
 
-        Set<IBlock> successorBlocks = new HashSet<>();
+        Set<IBlock> successorBlocks = new ArraySet<>();
         for (TryCatchBlockAttr tc : tcs) {
             for (ExceptionHandler handler : tc.getHandlers()) {
                 IContainer region = handler.getHandlerRegion();
@@ -152,3 +153,4 @@ public class ExcHandlersRegionMaker {
         }
     }
 }
+

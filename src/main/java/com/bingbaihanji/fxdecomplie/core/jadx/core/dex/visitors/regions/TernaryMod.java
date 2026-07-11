@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
@@ -229,7 +230,7 @@ public class TernaryMod extends AbstractRegionVisitor implements IRegionIterativ
         if (ePhi == null || tPhi != ePhi) {
             return false;
         }
-        Map<Integer, Integer> map = new HashMap<>(tPhi.getArgsCount());
+        Map<Integer, Integer> map = new ArrayMap<>(tPhi.getArgsCount());
         for (InsnArg arg : tPhi.getArguments()) {
             if (!arg.isRegister()) {
                 continue;
@@ -358,3 +359,4 @@ public class TernaryMod extends AbstractRegionVisitor implements IRegionIterativ
         return false;
     }
 }
+

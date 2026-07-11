@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeWriter;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.SimpleCodeWriter;
@@ -47,7 +48,7 @@ public class CheckRegions extends AbstractVisitor {
         }
 
         // check if all blocks included in regions
-        Set<BlockNode> blocksInRegions = new HashSet<>();
+        Set<BlockNode> blocksInRegions = new ArraySet<>();
         DepthRegionTraversal.traverse(mth, new AbstractRegionVisitor() {
             @Override
             public void processBlock(MethodNode mth, IBlock container) {
@@ -97,3 +98,4 @@ public class CheckRegions extends AbstractVisitor {
         });
     }
 }
+

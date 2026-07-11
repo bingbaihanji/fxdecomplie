@@ -1,4 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
@@ -292,7 +294,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
      */
     public void getFallthroughTryEdges(List<TryEdge> edges, List<BlockNode> exploredBlocks, List<TryCatchBlockAttr> exploredTrys) {
         List<ExceptionHandler> mergedHandlers = getMergedHandlers();
-        Set<BlockNode> searchBlocks = new HashSet<>(getBlocks());
+        Set<BlockNode> searchBlocks = new ArraySet<>(getBlocks());
         for (ExceptionHandler handler : mergedHandlers) {
             handler.getBlocks().forEach(searchBlocks::remove);
         }
@@ -392,7 +394,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
                 if (emptyPathEndOfSuccessor.contains(AFlag.EXC_TOP_SPLITTER)) {
                     // 该块是一个进入另一个 try-catch 的出口。在这种情况下，下一个 try-catch 处于同一作用域内。
                     // 因此，我们会取出该 try 的所有边，并将它们添加到当前 try 的边列表中。
-                    Set<TryCatchBlockAttr> nestedTrys = new HashSet<>();
+                    Set<TryCatchBlockAttr> nestedTrys = new ArraySet<>();
                     List<BlockNode> allSuccessorsOnTryBody = ListUtils.filter(emptyPathEndOfSuccessor.getSuccessors(),
                             potentialTryBlock -> potentialTryBlock.contains(AFlag.TRY_ENTER));
                     for (BlockNode tryBodyEnter : allSuccessorsOnTryBody) {
@@ -470,7 +472,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
      */
     public Map<TryEdge, BlockNode> getEdgeBlockMap() {
         List<TryEdge> edges = getTryEdges();
-        Map<TryEdge, BlockNode> blockMap = new HashMap<>();
+        Map<TryEdge, BlockNode> blockMap = new ArrayMap<>();
         for (TryEdge edge : edges) {
             blockMap.put(edge, edge.getTarget());
         }
@@ -580,3 +582,4 @@ public class TryCatchBlockAttr implements IJadxAttribute {
         return sb.toString();
     }
 }
+

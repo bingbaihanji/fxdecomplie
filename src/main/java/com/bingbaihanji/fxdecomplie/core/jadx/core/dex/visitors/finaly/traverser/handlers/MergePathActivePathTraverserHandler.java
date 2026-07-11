@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.handlers;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
@@ -208,10 +209,11 @@ public final class MergePathActivePathTraverserHandler extends AbstractActivePat
     }
 
     private static final class PostMergeStatus {
-        public final Set<RegisterArg> finallyAllowableOutputs = new HashSet<>();
-        public final Set<RegisterArg> candidateAllowableOutputs = new HashSet<>();
+        public final Set<RegisterArg> finallyAllowableOutputs = new ArraySet<>();
+        public final Set<RegisterArg> candidateAllowableOutputs = new ArraySet<>();
         public boolean finallyAllowsCentral;
         public boolean candidateAllowsCentral;
         public boolean perfectMatch = true;
     }
 }
+

@@ -405,7 +405,7 @@ public final class RenameService {
             return metadata;
         }
 
-        Map<Integer, List<CodeMetadata.Reference>> newRefsByLine = new ArrayMap<>();
+        Map<Integer, List<CodeMetadata.Reference>> newRefsByLine = new HashMap<>();
         // 遍历所有有引用的行,而不是逐行扫描(行号可能不连续)
         for (var entry : metadata.getAllRefsByLine().entrySet()) {
             int line = entry.getKey();
@@ -445,9 +445,7 @@ public final class RenameService {
                     newRefs.add(ref);
                 }
             }
-            if (!newRefs.isEmpty()) {
-                newRefsByLine.put(line, newRefs);
-            }
+            newRefsByLine.put(line, newRefs);
         }
         return new CodeMetadata(newRefsByLine);
     }

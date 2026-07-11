@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
@@ -105,11 +106,11 @@ final class RegionStack {
         IRegion region;
 
         public State() {
-            exits = new HashSet<>();
+            exits = new ArraySet<>();
         }
 
         private State(State c, IRegion region) {
-            this.exits = new HashSet<>(c.exits);
+            this.exits = new ArraySet<>(c.exits);
             this.region = region;
         }
 
@@ -123,3 +124,4 @@ final class RegionStack {
         }
     }
 }
+

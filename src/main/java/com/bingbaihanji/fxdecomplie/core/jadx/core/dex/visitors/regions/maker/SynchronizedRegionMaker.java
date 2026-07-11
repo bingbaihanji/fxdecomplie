@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstClassNode;
@@ -132,7 +133,7 @@ public class SynchronizedRegionMaker {
         curRegion.getSubBlocks().add(synchRegion);
 
         Set<BlockNode> exits = new LinkedHashSet<>();
-        Set<BlockNode> cacheSet = new HashSet<>();
+        Set<BlockNode> cacheSet = new ArraySet<>();
         traverseMonitorExits(synchRegion, insn.getArg(0), block, exits, cacheSet);
 
         for (InsnNode exitInsn : synchRegion.getExitInsns()) {
@@ -177,3 +178,4 @@ public class SynchronizedRegionMaker {
         return exit;
     }
 }
+

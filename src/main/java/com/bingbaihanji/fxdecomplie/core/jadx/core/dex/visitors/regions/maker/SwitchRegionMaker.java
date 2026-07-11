@@ -1,4 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.LoopInfo;
@@ -402,7 +403,7 @@ public final class SwitchRegionMaker {
         for (BlockNode caseBlock : switchBlock.getCleanSuccessors()) {
             if (caseBlock.getDomFrontier().get(loopEnd.getPos()) && caseBlock != switchOut) {
                 // search predecessor of loop end on path from this successor
-                Set<BlockNode> list = new HashSet<>(BlockUtils.collectBlocksDominatedBy(mth, caseBlock, caseBlock));
+                Set<BlockNode> list = new ArraySet<>(BlockUtils.collectBlocksDominatedBy(mth, caseBlock, caseBlock));
                 if (list.contains(switchOut) || switchOut.getPredecessors().stream().anyMatch(list::contains)) {
                     // 'continue' not needed
                 } else {
@@ -421,3 +422,4 @@ public final class SwitchRegionMaker {
         return inserted;
     }
 }
+

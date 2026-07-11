@@ -1,4 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
@@ -160,7 +162,7 @@ public class BlockProcessor extends AbstractVisitor {
         if (bottomSplitter == null || bottomSplitter.getPredecessors().size() != 1) {
             return false;
         }
-        Set<BlockNode> removeSet = new HashSet<>();
+        Set<BlockNode> removeSet = new ArraySet<>();
         removeSet.add(bottomSplitter);
         removeSet.add(splitCross);
         removeFromMethod(removeSet, mth);
@@ -735,8 +737,8 @@ public class BlockProcessor extends AbstractVisitor {
         }
         // 仅当存在多个异常处理器时才进行拆分
         // 向上遍历前驱直到到达异常处理器
-        Map<BlockNode, ExcHandlerAttr> handlersMap = new HashMap<>(preds.size());
-        Set<BlockNode> handlers = new HashSet<>(preds.size());
+        Map<BlockNode, ExcHandlerAttr> handlersMap = new ArrayMap<>(preds.size());
+        Set<BlockNode> handlers = new ArraySet<>(preds.size());
         for (BlockNode pred : preds) {
             BlockUtils.visitPredecessorsUntil(mth, pred, block -> {
                 ExcHandlerAttr excHandlerAttr = block.get(AType.EXC_HANDLER);
@@ -876,7 +878,7 @@ public class BlockProcessor extends AbstractVisitor {
     private static final class DebugModAttr implements IJadxAttribute {
         static final IJadxAttrType<DebugModAttr> TYPE = IJadxAttrType.create("DebugModAttr");
 
-        private final Map<String, Integer> statMap = new HashMap<>();
+        private final Map<String, Integer> statMap = new ArrayMap<>();
 
         public void addEvent(String name) {
             statMap.merge(name, 1, Integer::sum);
@@ -894,3 +896,4 @@ public class BlockProcessor extends AbstractVisitor {
         }
     }
 }
+
