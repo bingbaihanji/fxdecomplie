@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data;
 
 public interface ITry {
-	ICatch getCatch();
+    ICatch getCatch();
 
-	int getStartOffset();
+    int getStartOffset();
 
-	int getEndOffset();
+    int getEndOffset();
 }

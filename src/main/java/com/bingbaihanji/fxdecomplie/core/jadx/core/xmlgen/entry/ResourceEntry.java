@@ -11,117 +11,117 @@ import java.util.List;
  */
 public final class ResourceEntry {
 
-	private final int id;
-	private final String pkgName;
-	private final String typeName;
-	private final String keyName;
-	private final String config;
+    private final int id;
+    private final String pkgName;
+    private final String typeName;
+    private final String keyName;
+    private final String config;
 
-	private int parentRef;
-	private ProtoValue protoValue;
-	private RawValue simpleValue;
-	private List<RawNamedValue> namedValues;
+    private int parentRef;
+    private ProtoValue protoValue;
+    private RawValue simpleValue;
+    private List<RawNamedValue> namedValues;
 
-	public ResourceEntry(int id, String pkgName, String typeName, String keyName, String config) {
-		this.id = id;
-		this.pkgName = pkgName;
-		this.typeName = typeName;
-		this.keyName = keyName;
-		this.config = config;
-	}
+    public ResourceEntry(int id, String pkgName, String typeName, String keyName, String config) {
+        this.id = id;
+        this.pkgName = pkgName;
+        this.typeName = typeName;
+        this.keyName = keyName;
+        this.config = config;
+    }
 
-	/**
-	 * 以新的键名复制当前资源条目（保留取值与父引用）。
-	 *
-	 * @param newKeyName 新的键名
-	 * @return 复制得到的资源条目
-	 */
-	public ResourceEntry copy(String newKeyName) {
-		ResourceEntry copy = new ResourceEntry(id, pkgName, typeName, newKeyName, config);
-		copy.parentRef = this.parentRef;
-		copy.protoValue = this.protoValue;
-		copy.simpleValue = this.simpleValue;
-		copy.namedValues = this.namedValues;
-		return copy;
-	}
+    /**
+     * 以新的键名复制当前资源条目（保留取值与父引用）。
+     *
+     * @param newKeyName 新的键名
+     * @return 复制得到的资源条目
+     */
+    public ResourceEntry copy(String newKeyName) {
+        ResourceEntry copy = new ResourceEntry(id, pkgName, typeName, newKeyName, config);
+        copy.parentRef = this.parentRef;
+        copy.protoValue = this.protoValue;
+        copy.simpleValue = this.simpleValue;
+        copy.namedValues = this.namedValues;
+        return copy;
+    }
 
-	/**
-	 * 复制当前资源条目，并将键名替换为带资源 ID 的形式（{@code 资源名_res_0x十六进制ID}）。
-	 *
-	 * @param resName 资源名称
-	 * @return 复制得到的资源条目
-	 */
-	public ResourceEntry copyWithId(String resName) {
-		return copy(String.format("%s_res_0x%08x", resName, id));
-	}
+    /**
+     * 复制当前资源条目，并将键名替换为带资源 ID 的形式（{@code 资源名_res_0x十六进制ID}）。
+     *
+     * @param resName 资源名称
+     * @return 复制得到的资源条目
+     */
+    public ResourceEntry copyWithId(String resName) {
+        return copy(String.format("%s_res_0x%08x", resName, id));
+    }
 
-	/**
-	 * AOSP 中定义的 32 位资源 ID。
-	 *
-	 * <ol>
-	 * <li>包 ID（8 位）</li>
-	 * <li>类型 ID（8 位）</li>
-	 * <li>条目 ID（16 位）</li>
-	 * </ol>
-	 *
-	 * 参见 ResourceUtils.h 中的 <code>make_resid()</code>
-	 *
-	 * @return 资源 ID
-	 */
-	public int getId() {
-		return id;
-	}
+    /**
+     * AOSP 中定义的 32 位资源 ID。
+     *
+     * <ol>
+     * <li>包 ID（8 位）</li>
+     * <li>类型 ID（8 位）</li>
+     * <li>条目 ID（16 位）</li>
+     * </ol>
+     *
+     * 参见 ResourceUtils.h 中的 <code>make_resid()</code>
+     *
+     * @return 资源 ID
+     */
+    public int getId() {
+        return id;
+    }
 
-	public String getPkgName() {
-		return pkgName;
-	}
+    public String getPkgName() {
+        return pkgName;
+    }
 
-	public String getTypeName() {
-		return typeName;
-	}
+    public String getTypeName() {
+        return typeName;
+    }
 
-	public String getKeyName() {
-		return keyName;
-	}
+    public String getKeyName() {
+        return keyName;
+    }
 
-	public String getConfig() {
-		return config;
-	}
+    public String getConfig() {
+        return config;
+    }
 
-	public void setParentRef(int parentRef) {
-		this.parentRef = parentRef;
-	}
+    public int getParentRef() {
+        return parentRef;
+    }
 
-	public int getParentRef() {
-		return parentRef;
-	}
+    public void setParentRef(int parentRef) {
+        this.parentRef = parentRef;
+    }
 
-	public ProtoValue getProtoValue() {
-		return protoValue;
-	}
+    public ProtoValue getProtoValue() {
+        return protoValue;
+    }
 
-	public void setProtoValue(ProtoValue protoValue) {
-		this.protoValue = protoValue;
-	}
+    public void setProtoValue(ProtoValue protoValue) {
+        this.protoValue = protoValue;
+    }
 
-	public RawValue getSimpleValue() {
-		return simpleValue;
-	}
+    public RawValue getSimpleValue() {
+        return simpleValue;
+    }
 
-	public void setSimpleValue(RawValue simpleValue) {
-		this.simpleValue = simpleValue;
-	}
+    public void setSimpleValue(RawValue simpleValue) {
+        this.simpleValue = simpleValue;
+    }
 
-	public void setNamedValues(List<RawNamedValue> namedValues) {
-		this.namedValues = namedValues;
-	}
+    public List<RawNamedValue> getNamedValues() {
+        return namedValues;
+    }
 
-	public List<RawNamedValue> getNamedValues() {
-		return namedValues;
-	}
+    public void setNamedValues(List<RawNamedValue> namedValues) {
+        this.namedValues = namedValues;
+    }
 
-	@Override
-	public String toString() {
-		return "  0x" + Integer.toHexString(id) + " (" + id + ')' + config + " = " + typeName + '.' + keyName;
-	}
+    @Override
+    public String toString() {
+        return "  0x" + Integer.toHexString(id) + " (" + id + ')' + config + " = " + typeName + '.' + keyName;
+    }
 }

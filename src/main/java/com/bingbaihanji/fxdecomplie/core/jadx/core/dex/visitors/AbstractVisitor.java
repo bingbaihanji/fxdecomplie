@@ -13,50 +13,50 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
  */
 public abstract class AbstractVisitor implements IDexTreeVisitor {
 
-	/**
-	 * 初始化访问器。默认空实现，子类可按需重写。
-	 *
-	 * @param root 根节点
-	 */
-	@Override
-	public void init(RootNode root) throws JadxException {
-		// 空实现
-	}
+    /**
+     * 初始化访问器。默认空实现，子类可按需重写。
+     *
+     * @param root 根节点
+     */
+    @Override
+    public void init(RootNode root) throws JadxException {
+        // 空实现
+    }
 
-	/**
-	 * 访问类节点。默认空实现并返回 {@code true} 表示继续遍历其方法。
-	 *
-	 * @param cls 待访问的类节点
-	 * @return 是否继续访问该类中的方法
-	 */
-	@Override
-	public boolean visit(ClassNode cls) throws JadxException {
-		// 空实现
-		return true;
-	}
+    /**
+     * 访问类节点。默认空实现并返回 {@code true} 表示继续遍历其方法。
+     *
+     * @param cls 待访问的类节点
+     * @return 是否继续访问该类中的方法
+     */
+    @Override
+    public boolean visit(ClassNode cls) throws JadxException {
+        // 空实现
+        return true;
+    }
 
-	/**
-	 * 访问方法节点。默认空实现，子类可按需重写。
-	 *
-	 * @param mth 待访问的方法节点
-	 */
-	@Override
-	public void visit(MethodNode mth) throws JadxException {
-		// 空实现
-	}
+    /**
+     * 访问方法节点。默认空实现，子类可按需重写。
+     *
+     * @param mth 待访问的方法节点
+     */
+    @Override
+    public void visit(MethodNode mth) throws JadxException {
+        // 空实现
+    }
 
-	/**
-	 * 获取访问器名称，默认返回当前类的简单类名。
-	 *
-	 * @return 访问器名称
-	 */
-	@Override
-	public String getName() {
-		return this.getClass().getSimpleName();
-	}
+    /**
+     * 获取访问器名称，默认返回当前类的简单类名。
+     *
+     * @return 访问器名称
+     */
+    @Override
+    public String getName() {
+        return this.getClass().getSimpleName();
+    }
 
-	@Override
-	public String toString() {
-		return getName();
-	}
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

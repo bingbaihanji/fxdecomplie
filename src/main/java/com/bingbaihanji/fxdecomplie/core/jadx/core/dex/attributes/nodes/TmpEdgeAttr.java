@@ -7,23 +7,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 
 public class TmpEdgeAttr implements IJadxAttribute {
 
-	private final BlockNode block;
+    private final BlockNode block;
 
-	public TmpEdgeAttr(BlockNode block) {
-		this.block = block;
-	}
+    public TmpEdgeAttr(BlockNode block) {
+        this.block = block;
+    }
 
-	public BlockNode getBlock() {
-		return block;
-	}
+    public BlockNode getBlock() {
+        return block;
+    }
 
-	@Override
-	public IJadxAttrType<? extends IJadxAttribute> getAttrType() {
-		return AType.TMP_EDGE;
-	}
+    @Override
+    public IJadxAttrType<? extends IJadxAttribute> getAttrType() {
+        return AType.TMP_EDGE;
+    }
 
-	@Override
-	public String toString() {
-		return "TMP_EDGE: " + block;
-	}
+    @Override
+    public String toString() {
+        return "TMP_EDGE: " + block;
+    }
 }

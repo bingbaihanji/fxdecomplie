@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.utils.tasks;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Schedule and execute tasks combined into stages
@@ -11,59 +11,59 @@ import org.jetbrains.annotations.Nullable;
  */
 public interface ITaskExecutor {
 
-	/**
-	 * Add parallel stage with provided tasks
-	 */
-	void addParallelTasks(List<? extends Runnable> parallelTasks);
+    /**
+     * Add parallel stage with provided tasks
+     */
+    void addParallelTasks(List<? extends Runnable> parallelTasks);
 
-	/**
-	 * Add sequential stage with provided tasks
-	 */
-	void addSequentialTasks(List<? extends Runnable> seqTasks);
+    /**
+     * Add sequential stage with provided tasks
+     */
+    void addSequentialTasks(List<? extends Runnable> seqTasks);
 
-	/**
-	 * Add sequential stage with a single task
-	 */
-	void addSequentialTask(Runnable task);
+    /**
+     * Add sequential stage with a single task
+     */
+    void addSequentialTask(Runnable task);
 
-	/**
-	 * Scheduled tasks count
-	 */
-	int getTasksCount();
+    /**
+     * Scheduled tasks count
+     */
+    int getTasksCount();
 
-	/**
-	 * Set threads count for parallel stage.
-	 * Can be changed during execution.
-	 * Defaults to half of processors count.
-	 */
-	void setThreadsCount(int threadsCount);
+    int getThreadsCount();
 
-	int getThreadsCount();
+    /**
+     * Set threads count for parallel stage.
+     * Can be changed during execution.
+     * Defaults to half of processors count.
+     */
+    void setThreadsCount(int threadsCount);
 
-	/**
-	 * Start tasks execution.
-	 */
-	void execute();
+    /**
+     * Start tasks execution.
+     */
+    void execute();
 
-	int getProgress();
+    int getProgress();
 
-	/**
-	 * Not started tasks will be not executed after this method invocation.
-	 */
-	void terminate();
+    /**
+     * Not started tasks will be not executed after this method invocation.
+     */
+    void terminate();
 
-	boolean isTerminating();
+    boolean isTerminating();
 
-	boolean isRunning();
+    boolean isRunning();
 
-	/**
-	 * Block until execution is finished
-	 */
-	void awaitTermination();
+    /**
+     * Block until execution is finished
+     */
+    void awaitTermination();
 
-	/**
-	 * Return internal executor service.
-	 */
-	@Nullable
-	ExecutorService getInternalExecutor();
+    /**
+     * Return internal executor service.
+     */
+    @Nullable
+    ExecutorService getInternalExecutor();
 }

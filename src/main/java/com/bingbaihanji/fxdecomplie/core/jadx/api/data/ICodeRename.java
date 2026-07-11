@@ -4,10 +4,10 @@ import org.jetbrains.annotations.Nullable;
 
 public interface ICodeRename extends Comparable<ICodeRename> {
 
-	IJavaNodeRef getNodeRef();
+    IJavaNodeRef getNodeRef();
 
-	@Nullable
-	IJavaCodeRef getCodeRef();
+    @Nullable
+    IJavaCodeRef getCodeRef();
 
-	String getNewName();
+    String getNewName();
 }

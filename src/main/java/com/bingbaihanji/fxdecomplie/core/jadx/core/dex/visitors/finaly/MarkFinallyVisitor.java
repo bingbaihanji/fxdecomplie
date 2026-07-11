@@ -1,17 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
@@ -33,9 +21,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserActivePathState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.ssa.SSATransform;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.ListUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Pair;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  * This visitor is responsible for extracting finally blocks from duplicated instructions located
@@ -59,436 +52,436 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
  * during regioning of the block graph.
  */
 @JadxVisitor(
-		name = "MarkFinallyVisitor",
-		desc = "Search and mark duplicate code generated for finally block",
-		runAfter = SSATransform.class,
-		runBefore = ConstInlineVisitor.class
+        name = "MarkFinallyVisitor",
+        desc = "Search and mark duplicate code generated for finally block",
+        runAfter = SSATransform.class,
+        runBefore = ConstInlineVisitor.class
 )
 public class MarkFinallyVisitor extends AbstractVisitor {
-	private static final Logger LOG = LoggerFactory.getLogger(MarkFinallyVisitor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MarkFinallyVisitor.class);
 
-	private static final class TryExtractInfo {
-		private final TryCatchBlockAttr tryBlock;
-		private final TryEdgeScopeGroupMap scopeGroups;
-		private final ExceptionHandler finallyHandler;
-		private final Map<BlockNode, List<TryEdge>> scopeTerminusGroups;
-		private final TryCatchEdgeBlockMap handlerScopes;
-		private final Set<BlockNode> rethrowBlocks;
+    private static void resetTryBlocks(MethodNode mth, List<TryCatchBlockAttr> tryBlocks) {
+        mth.clearExceptionHandlers();
+        // remove merged or empty try blocks from list in method attribute
+        List<TryCatchBlockAttr> clearedTryBlocks = new ArrayList<>(tryBlocks);
+        if (clearedTryBlocks.removeIf(TryCatchBlockAttr::isImplicitOrMerged)) {
+            mth.remove(AType.TRY_BLOCKS_LIST);
+            mth.addAttr(AType.TRY_BLOCKS_LIST, clearedTryBlocks);
+        }
+    }
 
-		private Set<BlockNode> completeFinallyBlocks = null;
-		private Set<BlockNode> completeCandidateBlocks = null;
+    /**
+     * For a given try block, attempts to calculate try block data. This includes the handler blocks for
+     * each try branch, data regarding the scope of each try branch relative to every other branch, and
+     * the blocks logically contained within each try branch. This information is stored via internal
+     * class members and is not returned by the function.
+     *
+     * @param mth      The method containing the try block.
+     * @param tryBlock The try block to determine the scope information of.
+     * @return The handler identified as the "all" handler.
+     */
+    private static @Nullable TryExtractInfo getTryBlockData(MethodNode mth, TryCatchBlockAttr tryBlock) {
+        if (tryBlock.isMerged()) {
+            return null;
+        }
+        // Find the all handler
+        ExceptionHandler allHandler = null;
+        for (ExceptionHandler excHandler : tryBlock.getHandlers()) {
+            if (excHandler.isCatchAll()) {
+                allHandler = excHandler;
+                break;
+            }
+        }
+        if (allHandler == null) {
+            return null;
+        }
+        TryEdgeScopeGroupMap scopeGroups = tryBlock.getExecutionScopeGroups(mth);
+        var fallthroughGroups = tryBlock.getHandlerFallthroughGroups(mth, scopeGroups);
+        var handlerScopes = TryCatchEdgeBlockMap.getAllInScope(mth, tryBlock, scopeGroups, allHandler, fallthroughGroups);
+        return new TryExtractInfo(tryBlock, scopeGroups, allHandler, fallthroughGroups, handlerScopes);
+    }
 
-		private TryExtractInfo(TryCatchBlockAttr tryBlock, TryEdgeScopeGroupMap scopeGroups,
-				ExceptionHandler finallyHandler, Map<BlockNode, List<TryEdge>> fallthroughGroups,
-				TryCatchEdgeBlockMap handlerScopes) {
-			this.tryBlock = tryBlock;
-			this.scopeGroups = scopeGroups;
-			this.finallyHandler = finallyHandler;
-			this.scopeTerminusGroups = fallthroughGroups;
-			this.handlerScopes = handlerScopes;
-			this.rethrowBlocks = new HashSet<>();
-		}
-	}
+    /**
+     * Processes a try block, attempting to extract a finally by locating common instruction patterns
+     * between all
+     * try branches.
+     *
+     * @param mth     The method containing the try block.
+     * @param tryInfo The try block information.
+     * @return Whether a finally block has been successfully extracted.
+     */
+    private static boolean processTryBlock(MethodNode mth, TryExtractInfo tryInfo) {
+        if (tryInfo.rethrowBlocks.isEmpty()) {
+            return false;
+        }
+        if (extractFinally(mth, tryInfo)) {
+            for (BlockNode rethrowBlock : tryInfo.rethrowBlocks) {
+                InsnNode lastInsn = BlockUtils.getLastInsn(rethrowBlock);
+                if (lastInsn == null) {
+                    continue;
+                }
+                lastInsn.add(AFlag.DONT_GENERATE);
+            }
+            return true;
+        }
+        return false;
+    }
 
-	@Override
-	public void visit(MethodNode mth) {
-		if (mth.isNoCode() || mth.isNoExceptionHandlers()) {
-			return;
-		}
-		try {
-			boolean implicitHandlerRemoved = false;
-			List<TryCatchBlockAttr> tryBlocks = mth.getAll(AType.TRY_BLOCKS_LIST);
-			List<TryCatchBlockAttr> processRequiredTryBlocks = new ArrayList<>();
+    private static @Nullable List<BlockNode> cutHandlerBlocks(MethodNode mth, TryExtractInfo tryInfo, ExceptionHandler handler) {
+        BlockNode handlerBlock = handler.getHandlerBlock();
+        List<BlockNode> handlerBlocks = tryInfo.handlerScopes.getBlocksForHandler(handler);
+        if (handlerBlocks == null) {
+            return null;
+        }
 
-			// Search through all exception handlers and:
-			// - Remove implicit handlers
-			// - Mark non-implicit handlers to be searched for a finally block
-			for (TryCatchBlockAttr tryBlock : tryBlocks) {
-				TryExtractInfo tryInfo = getTryBlockData(mth, tryBlock);
-				if (tryInfo == null) {
-					continue;
-				}
-				List<BlockNode> cutHandlerBlocks = cutHandlerBlocks(mth, tryInfo, tryInfo.finallyHandler);
-				if (cutHandlerBlocks == null) {
-					continue;
-				}
-				if (attemptRemoveImplicitHandlers(cutHandlerBlocks, tryInfo)) {
-					implicitHandlerRemoved = true;
-				} else {
-					processRequiredTryBlocks.add(tryBlock);
-				}
-			}
-			// If any implicit handlers have been found, remove them
-			if (implicitHandlerRemoved) {
-				resetTryBlocks(mth, tryBlocks);
-			}
+        InsnNode handlerFinalInsn = BlockUtils.getFirstInsn(handlerBlock);
+        if (handlerFinalInsn != null && handlerFinalInsn.getType() == InsnType.MOVE_EXCEPTION) {
+            handlerBlocks.remove(handlerBlock); // exclude block with 'move-exception'
+        }
 
-			// Search through all non-implicit handlers and search for a finally block.
-			boolean finallyExtracted = false;
-			for (TryCatchBlockAttr tryBlock : processRequiredTryBlocks) {
-				// Refresh scope groups now due to implicit handlers
-				TryExtractInfo tryInfo = getTryBlockData(mth, tryBlock);
-				if (tryInfo == null) {
-					continue;
-				}
-				cutHandlerBlocks(mth, tryInfo, tryInfo.finallyHandler);
-				finallyExtracted |= processTryBlock(mth, tryInfo);
-			}
-			// If any handlers have been merged, remove them
-			if (finallyExtracted) {
-				resetTryBlocks(mth, tryBlocks);
-			}
-		} catch (Exception e) {
-			LOG.error("MarkFinallyVisitor error", e);
-			undoFinallyVisitor(mth);
-			mth.addWarnComment("Undo finally extract visitor", e);
-		}
-	}
+        BlockNode bottomBlock = BlockUtils.getBottomBlock(handlerBlocks);
+        if (bottomBlock == null) {
+            mth.addWarn("Bottom block not found for handler: " + handler);
+            return handlerBlocks;
+        }
+        List<BlockNode> pathExits = BlockUtils.followEmptyUpPathWithinSet(bottomBlock, handlerBlocks);
+        if (pathExits.isEmpty()) {
+            return handlerBlocks;
+        }
+        for (BlockNode pathExit : pathExits) {
+            // For this to be able to extract a finally, we must ensure that all paths into the handler's logic
+            // end with a THROW equal to the output of the move-exception instruction located at the start of
+            // this handler, if any.
+            InsnNode bottomBlockLastInsn = BlockUtils.getLastInsn(pathExit);
+            boolean isValidPathExit = bottomBlockLastInsn != null
+                    && handlerFinalInsn != null
+                    && bottomBlockLastInsn.getType() == InsnType.THROW
+                    && bottomBlockLastInsn.getArgsCount() > 0
+                    && bottomBlockLastInsn.getArg(0).equals(handlerFinalInsn.getResult());
+            if (!isValidPathExit) {
+                return handlerBlocks;
+            }
+        }
+        List<BlockNode> cutHandlerBlocks = new ArrayList<>(handlerBlocks);
+        for (BlockNode pathExit : pathExits) {
+            cutHandlerBlocks.remove(pathExit);
+            removeEmptyUpPath(cutHandlerBlocks, pathExit);
+            tryInfo.rethrowBlocks.add(pathExit);
+        }
+        return cutHandlerBlocks;
+    }
 
-	private static void resetTryBlocks(MethodNode mth, List<TryCatchBlockAttr> tryBlocks) {
-		mth.clearExceptionHandlers();
-		// remove merged or empty try blocks from list in method attribute
-		List<TryCatchBlockAttr> clearedTryBlocks = new ArrayList<>(tryBlocks);
-		if (clearedTryBlocks.removeIf(TryCatchBlockAttr::isImplicitOrMerged)) {
-			mth.remove(AType.TRY_BLOCKS_LIST);
-			mth.addAttr(AType.TRY_BLOCKS_LIST, clearedTryBlocks);
-		}
-	}
+    /**
+     * Attempts to identify and remove an implicit try catch block.
+     *
+     * @param cutHandlerBlocks The cut handler blocks of the all handler.
+     * @return Whether the try block is implicit and has been removed.
+     */
+    private static boolean attemptRemoveImplicitHandlers(List<BlockNode> cutHandlerBlocks, TryExtractInfo tryInfo) {
+        if (!(cutHandlerBlocks.isEmpty() || BlockUtils.isAllBlocksEmpty(cutHandlerBlocks))) {
+            return false;
+        }
+        // remove empty catch
+        tryInfo.finallyHandler.getTryBlock().removeHandler(tryInfo.finallyHandler);
+        return true;
+    }
 
-	/**
-	 * For a given try block, attempts to calculate try block data. This includes the handler blocks for
-	 * each try branch, data regarding the scope of each try branch relative to every other branch, and
-	 * the blocks logically contained within each try branch. This information is stored via internal
-	 * class members and is not returned by the function.
-	 *
-	 * @param mth      The method containing the try block.
-	 * @param tryBlock The try block to determine the scope information of.
-	 * @return The handler identified as the "all" handler.
-	 */
-	private static @Nullable TryExtractInfo getTryBlockData(MethodNode mth, TryCatchBlockAttr tryBlock) {
-		if (tryBlock.isMerged()) {
-			return null;
-		}
-		// Find the all handler
-		ExceptionHandler allHandler = null;
-		for (ExceptionHandler excHandler : tryBlock.getHandlers()) {
-			if (excHandler.isCatchAll()) {
-				allHandler = excHandler;
-				break;
-			}
-		}
-		if (allHandler == null) {
-			return null;
-		}
-		TryEdgeScopeGroupMap scopeGroups = tryBlock.getExecutionScopeGroups(mth);
-		var fallthroughGroups = tryBlock.getHandlerFallthroughGroups(mth, scopeGroups);
-		var handlerScopes = TryCatchEdgeBlockMap.getAllInScope(mth, tryBlock, scopeGroups, allHandler, fallthroughGroups);
-		return new TryExtractInfo(tryBlock, scopeGroups, allHandler, fallthroughGroups, handlerScopes);
-	}
+    /**
+     * Search and mark common code from 'try' block and 'handlers'.
+     */
+    private static boolean extractFinally(MethodNode mth, TryExtractInfo tryInfo) {
+        // Get all handlers from this and inner try blocks.
+        boolean hasInnerBlocks = !tryInfo.tryBlock.getInnerTryBlocks().isEmpty();
+        List<ExceptionHandler> handlers = getHandlersForTryCatch(tryInfo.tryBlock);
+        if (handlers.isEmpty()) {
+            return false;
+        }
+        Map<InsnNode, List<InsnNode>> insns = findCommonInsns(mth, tryInfo);
+        if (insns == null || insns.isEmpty()) {
+            return false;
+        }
+        Set<InsnNode> ignoredFinallyInsns = new HashSet<>();
+        Set<InsnNode> ignoredCandidateInsns = new HashSet<>();
+        Map<InsnNode, List<InsnNode>> insnMap = new HashMap<>();
+        for (InsnNode finallyInsn : insns.keySet()) {
+            List<InsnNode> candidateInsns = insns.get(finallyInsn);
 
-	/**
-	 * Processes a try block, attempting to extract a finally by locating common instruction patterns
-	 * between all
-	 * try branches.
-	 *
-	 * @param mth     The method containing the try block.
-	 * @param tryInfo The try block information.
-	 * @return Whether a finally block has been successfully extracted.
-	 */
-	private static boolean processTryBlock(MethodNode mth, TryExtractInfo tryInfo) {
-		if (tryInfo.rethrowBlocks.isEmpty()) {
-			return false;
-		}
-		if (extractFinally(mth, tryInfo)) {
-			for (BlockNode rethrowBlock : tryInfo.rethrowBlocks) {
-				InsnNode lastInsn = BlockUtils.getLastInsn(rethrowBlock);
-				if (lastInsn == null) {
-					continue;
-				}
-				lastInsn.add(AFlag.DONT_GENERATE);
-			}
-			return true;
-		}
-		return false;
-	}
+            // For an instruction to have matched, the number of times it has been found must be
+            // equal to the number of edges that the exception handler has which aren't the
+            // finally handler.
+            if (candidateInsns.size() != tryInfo.handlerScopes.size() - 1) {
+                ignoredFinallyInsns.add(finallyInsn);
+                ignoredCandidateInsns.addAll(candidateInsns);
+                // TODO: Add support for partial `catch (Throwable)` finally clauses.
+                // continue;
+                return false;
+            }
 
-	private static @Nullable List<BlockNode> cutHandlerBlocks(MethodNode mth, TryExtractInfo tryInfo, ExceptionHandler handler) {
-		BlockNode handlerBlock = handler.getHandlerBlock();
-		List<BlockNode> handlerBlocks = tryInfo.handlerScopes.getBlocksForHandler(handler);
-		if (handlerBlocks == null) {
-			return null;
-		}
+            insnMap.put(finallyInsn, candidateInsns);
+        }
+        for (InsnNode finallyInsn : insnMap.keySet()) {
+            finallyInsn.add(AFlag.FINALLY_INSNS);
+            List<InsnNode> candidateInsns = insnMap.get(finallyInsn);
+            for (InsnNode candidateInsn : candidateInsns) {
+                copyCodeVars(finallyInsn, candidateInsn);
+                candidateInsn.add(AFlag.DONT_GENERATE);
+            }
+        }
+        for (BlockNode finallyBlock : tryInfo.completeFinallyBlocks) {
+            if (ListUtils.anyMatch(finallyBlock.getInstructions(), ignoredFinallyInsns::contains)) {
+                // If this block contains an instruction which was not found in all try edges,
+                // don't mark it as a finally block.
+                continue;
+            }
+            finallyBlock.add(AFlag.FINALLY_INSNS);
+        }
+        for (BlockNode candidateBlock : tryInfo.completeCandidateBlocks) {
+            if (ListUtils.anyMatch(candidateBlock.getInstructions(), ignoredCandidateInsns::contains)) {
+                // If this block contains an instruction which was found to "duplicate" a finally
+                // instruction which was not found in all try edges, don't mark it as a duplicated
+                // block.
+                continue;
+            }
+            candidateBlock.add(AFlag.DONT_GENERATE);
+        }
 
-		InsnNode handlerFinalInsn = BlockUtils.getFirstInsn(handlerBlock);
-		if (handlerFinalInsn != null && handlerFinalInsn.getType() == InsnType.MOVE_EXCEPTION) {
-			handlerBlocks.remove(handlerBlock); // exclude block with 'move-exception'
-		}
+        // If any scope has been merged with the fallthrough case of the try catch, don't merge inner trys.
+        // Otherwise, merge inner trys.
+        boolean mergedFallthroughScope =
+                ListUtils.anyMatch(tryInfo.scopeGroups.getMergedScopes(), scopePair -> scopePair.getFirst().isNotHandlerExit());
+        boolean mergeInnerTryBlocks = hasInnerBlocks && !mergedFallthroughScope;
 
-		BlockNode bottomBlock = BlockUtils.getBottomBlock(handlerBlocks);
-		if (bottomBlock == null) {
-			mth.addWarn("Bottom block not found for handler: " + handler);
-			return handlerBlocks;
-		}
-		List<BlockNode> pathExits = BlockUtils.followEmptyUpPathWithinSet(bottomBlock, handlerBlocks);
-		if (pathExits.isEmpty()) {
-			return handlerBlocks;
-		}
-		for (BlockNode pathExit : pathExits) {
-			// For this to be able to extract a finally, we must ensure that all paths into the handler's logic
-			// end with a THROW equal to the output of the move-exception instruction located at the start of
-			// this handler, if any.
-			InsnNode bottomBlockLastInsn = BlockUtils.getLastInsn(pathExit);
-			boolean isValidPathExit = bottomBlockLastInsn != null
-					&& handlerFinalInsn != null
-					&& bottomBlockLastInsn.getType() == InsnType.THROW
-					&& bottomBlockLastInsn.getArgsCount() > 0
-					&& bottomBlockLastInsn.getArg(0).equals(handlerFinalInsn.getResult());
-			if (!isValidPathExit) {
-				return handlerBlocks;
-			}
-		}
-		List<BlockNode> cutHandlerBlocks = new ArrayList<>(handlerBlocks);
-		for (BlockNode pathExit : pathExits) {
-			cutHandlerBlocks.remove(pathExit);
-			removeEmptyUpPath(cutHandlerBlocks, pathExit);
-			tryInfo.rethrowBlocks.add(pathExit);
-		}
-		return cutHandlerBlocks;
-	}
+        tryInfo.finallyHandler.setFinally(true);
+        if (mergeInnerTryBlocks) {
+            List<TryCatchBlockAttr> innerTryBlocks = tryInfo.tryBlock.getInnerTryBlocks();
+            for (TryCatchBlockAttr innerTryBlock : innerTryBlocks) {
+                tryInfo.tryBlock.getHandlers().addAll(innerTryBlock.getHandlers());
+                tryInfo.tryBlock.getBlocks().addAll(innerTryBlock.getBlocks());
+                innerTryBlock.setMerged(true);
+            }
+            tryInfo.tryBlock.setBlocks(ListUtils.distinctList(tryInfo.tryBlock.getBlocks()));
+            innerTryBlocks.clear();
+        }
+        return true;
+    }
 
-	/**
-	 * Attempts to identify and remove an implicit try catch block.
-	 *
-	 * @param cutHandlerBlocks The cut handler blocks of the all handler.
-	 * @return Whether the try block is implicit and has been removed.
-	 */
-	private static boolean attemptRemoveImplicitHandlers(List<BlockNode> cutHandlerBlocks, TryExtractInfo tryInfo) {
-		if (!(cutHandlerBlocks.isEmpty() || BlockUtils.isAllBlocksEmpty(cutHandlerBlocks))) {
-			return false;
-		}
-		// remove empty catch
-		tryInfo.finallyHandler.getTryBlock().removeHandler(tryInfo.finallyHandler);
-		return true;
-	}
+    /**
+     * Gets a list of every exception handler attached to this try block, including handlers of inner
+     * try blocks.
+     *
+     * @param tryBlock The source try block to get the list of exception handlers for
+     * @return The list of exception handlers.
+     */
+    private static List<ExceptionHandler> getHandlersForTryCatch(TryCatchBlockAttr tryBlock) {
+        boolean hasInnerBlocks = !tryBlock.getInnerTryBlocks().isEmpty();
+        List<ExceptionHandler> handlers;
+        if (hasInnerBlocks) {
+            // collect handlers from this and all inner blocks
+            handlers = new ArrayList<>(tryBlock.getHandlers());
+            for (TryCatchBlockAttr innerTryBlock : tryBlock.getInnerTryBlocks()) {
+                handlers.addAll(getHandlersForTryCatch(innerTryBlock));
+            }
+        } else {
+            handlers = tryBlock.getHandlers();
+        }
+        return handlers;
+    }
 
-	/**
-	 * Search and mark common code from 'try' block and 'handlers'.
-	 */
-	private static boolean extractFinally(MethodNode mth, TryExtractInfo tryInfo) {
-		// Get all handlers from this and inner try blocks.
-		boolean hasInnerBlocks = !tryInfo.tryBlock.getInnerTryBlocks().isEmpty();
-		List<ExceptionHandler> handlers = getHandlersForTryCatch(tryInfo.tryBlock);
-		if (handlers.isEmpty()) {
-			return false;
-		}
-		Map<InsnNode, List<InsnNode>> insns = findCommonInsns(mth, tryInfo);
-		if (insns == null || insns.isEmpty()) {
-			return false;
-		}
-		Set<InsnNode> ignoredFinallyInsns = new HashSet<>();
-		Set<InsnNode> ignoredCandidateInsns = new HashSet<>();
-		Map<InsnNode, List<InsnNode>> insnMap = new HashMap<>();
-		for (InsnNode finallyInsn : insns.keySet()) {
-			List<InsnNode> candidateInsns = insns.get(finallyInsn);
+    private static @Nullable Map<InsnNode, List<InsnNode>> findCommonInsns(MethodNode mth, TryExtractInfo tryInfo) {
+        List<BlockNode> allHandlerBlocks = tryInfo.handlerScopes.getBlocksForHandler(tryInfo.finallyHandler);
+        BlockNode finallyScopeTerminus = getTerminusForHandler(tryInfo.finallyHandler, tryInfo);
+        if (finallyScopeTerminus == null) {
+            return null;
+        }
+        Map<InsnNode, List<InsnNode>> matchingInsns = new HashMap<>();
+        for (TryEdge edge : tryInfo.handlerScopes.keySet()) {
+            if (edge.isHandlerExit() && edge.getExceptionHandler() == tryInfo.finallyHandler) {
+                continue;
+            }
+            List<BlockNode> handlerBlocks = tryInfo.handlerScopes.get(edge);
+            BlockNode scopeTerminus = null;
+            for (BlockNode edgeTerminusBlock : tryInfo.scopeTerminusGroups.keySet()) {
+                List<TryEdge> edgesWithTerminus = tryInfo.scopeTerminusGroups.get(edgeTerminusBlock);
+                if (edgesWithTerminus.contains(edge)) {
+                    scopeTerminus = edgeTerminusBlock;
+                    break;
+                }
+            }
+            if (scopeTerminus == null) {
+                throw new JadxRuntimeException("Expected to find fallthrough terminus for handler " + edge);
+            }
+            TraverserActivePathState comparatorState =
+                    new TraverserActivePathState(mth, new SameInstructionsStrategyImpl(), finallyScopeTerminus,
+                            scopeTerminus, allHandlerBlocks, handlerBlocks);
+            TraverserController controller = new TraverserController();
+            List<TraverserActivePathState> pathResults;
+            try {
+                pathResults = controller.process(comparatorState);
+            } catch (TraverserException e) {
+                LOG.error("Could not search for finally duplicate instructions in path", e);
+                return null;
+            }
+            Set<BlockNode> completeFinally = new HashSet<>();
+            Set<BlockNode> completeCandidate = new HashSet<>();
+            for (TraverserActivePathState pathResult : pathResults) {
+                for (Pair<InsnNode> matchingInsnPair : pathResult.getMatchedInsns()) {
+                    InsnNode finallyInsn = matchingInsnPair.getFirst();
+                    InsnNode candidateInsn = matchingInsnPair.getSecond();
+                    List<InsnNode> candidateInsnsList;
+                    if (!matchingInsns.containsKey(finallyInsn)) {
+                        candidateInsnsList = new LinkedList<>();
+                        matchingInsns.put(finallyInsn, candidateInsnsList);
+                    } else {
+                        candidateInsnsList = matchingInsns.get(finallyInsn);
+                    }
+                    candidateInsnsList.add(candidateInsn);
+                }
+                completeFinally.addAll(pathResult.getAllFullyMatchedFinallyBlocks());
+                completeCandidate.addAll(pathResult.getAllFullyMatchedCandidateBlocks());
+            }
+            if (tryInfo.completeFinallyBlocks == null) {
+                tryInfo.completeFinallyBlocks = completeFinally;
+            } else {
+                tryInfo.completeFinallyBlocks.retainAll(completeFinally);
+            }
+            if (tryInfo.completeCandidateBlocks == null) {
+                tryInfo.completeCandidateBlocks = completeCandidate;
+            } else {
+                tryInfo.completeCandidateBlocks.addAll(completeCandidate);
+            }
+        }
+        return matchingInsns;
+    }
 
-			// For an instruction to have matched, the number of times it has been found must be
-			// equal to the number of edges that the exception handler has which aren't the
-			// finally handler.
-			if (candidateInsns.size() != tryInfo.handlerScopes.size() - 1) {
-				ignoredFinallyInsns.add(finallyInsn);
-				ignoredCandidateInsns.addAll(candidateInsns);
-				// TODO: Add support for partial `catch (Throwable)` finally clauses.
-				// continue;
-				return false;
-			}
+    private static void removeEmptyUpPath(List<BlockNode> handlerBlocks, BlockNode startBlock) {
+        for (BlockNode pred : startBlock.getPredecessors()) {
+            if (pred.isEmpty()) {
+                if (handlerBlocks.remove(pred) && !BlockUtils.isBackEdge(pred, startBlock)) {
+                    removeEmptyUpPath(handlerBlocks, pred);
+                }
+            }
+        }
+    }
 
-			insnMap.put(finallyInsn, candidateInsns);
-		}
-		for (InsnNode finallyInsn : insnMap.keySet()) {
-			finallyInsn.add(AFlag.FINALLY_INSNS);
-			List<InsnNode> candidateInsns = insnMap.get(finallyInsn);
-			for (InsnNode candidateInsn : candidateInsns) {
-				copyCodeVars(finallyInsn, candidateInsn);
-				candidateInsn.add(AFlag.DONT_GENERATE);
-			}
-		}
-		for (BlockNode finallyBlock : tryInfo.completeFinallyBlocks) {
-			if (ListUtils.anyMatch(finallyBlock.getInstructions(), ignoredFinallyInsns::contains)) {
-				// If this block contains an instruction which was not found in all try edges,
-				// don't mark it as a finally block.
-				continue;
-			}
-			finallyBlock.add(AFlag.FINALLY_INSNS);
-		}
-		for (BlockNode candidateBlock : tryInfo.completeCandidateBlocks) {
-			if (ListUtils.anyMatch(candidateBlock.getInstructions(), ignoredCandidateInsns::contains)) {
-				// If this block contains an instruction which was found to "duplicate" a finally
-				// instruction which was not found in all try edges, don't mark it as a duplicated
-				// block.
-				continue;
-			}
-			candidateBlock.add(AFlag.DONT_GENERATE);
-		}
+    private static void copyCodeVars(InsnNode fromInsn, InsnNode toInsn) {
+        copyCodeVars(fromInsn.getResult(), toInsn.getResult());
+        int argsCount = fromInsn.getArgsCount();
+        for (int i = 0; i < argsCount; i++) {
+            copyCodeVars(fromInsn.getArg(i), toInsn.getArg(i));
+        }
+    }
 
-		// If any scope has been merged with the fallthrough case of the try catch, don't merge inner trys.
-		// Otherwise, merge inner trys.
-		boolean mergedFallthroughScope =
-				ListUtils.anyMatch(tryInfo.scopeGroups.getMergedScopes(), scopePair -> scopePair.getFirst().isNotHandlerExit());
-		boolean mergeInnerTryBlocks = hasInnerBlocks && !mergedFallthroughScope;
+    private static void copyCodeVars(InsnArg fromArg, InsnArg toArg) {
+        if (fromArg == null || toArg == null
+                || !fromArg.isRegister() || !toArg.isRegister()) {
+            return;
+        }
+        SSAVar fromSsaVar = ((RegisterArg) fromArg).getSVar();
+        SSAVar toSsaVar = ((RegisterArg) toArg).getSVar();
+        toSsaVar.setCodeVar(fromSsaVar.getCodeVar());
+    }
 
-		tryInfo.finallyHandler.setFinally(true);
-		if (mergeInnerTryBlocks) {
-			List<TryCatchBlockAttr> innerTryBlocks = tryInfo.tryBlock.getInnerTryBlocks();
-			for (TryCatchBlockAttr innerTryBlock : innerTryBlocks) {
-				tryInfo.tryBlock.getHandlers().addAll(innerTryBlock.getHandlers());
-				tryInfo.tryBlock.getBlocks().addAll(innerTryBlock.getBlocks());
-				innerTryBlock.setMerged(true);
-			}
-			tryInfo.tryBlock.setBlocks(ListUtils.distinctList(tryInfo.tryBlock.getBlocks()));
-			innerTryBlocks.clear();
-		}
-		return true;
-	}
+    /**
+     * Reload method without applying this visitor
+     */
+    private static void undoFinallyVisitor(MethodNode mth) {
+        try {
+            mth.root().getProcessClasses().processMethodUntilVisitor(mth, "MarkFinallyVisitor", false);
+        } catch (Exception e) {
+            mth.addError("Undo finally extract failed", e);
+        }
+    }
 
-	/**
-	 * Gets a list of every exception handler attached to this try block, including handlers of inner
-	 * try blocks.
-	 *
-	 * @param tryBlock The source try block to get the list of exception handlers for
-	 * @return The list of exception handlers.
-	 */
-	private static List<ExceptionHandler> getHandlersForTryCatch(TryCatchBlockAttr tryBlock) {
-		boolean hasInnerBlocks = !tryBlock.getInnerTryBlocks().isEmpty();
-		List<ExceptionHandler> handlers;
-		if (hasInnerBlocks) {
-			// collect handlers from this and all inner blocks
-			handlers = new ArrayList<>(tryBlock.getHandlers());
-			for (TryCatchBlockAttr innerTryBlock : tryBlock.getInnerTryBlocks()) {
-				handlers.addAll(getHandlersForTryCatch(innerTryBlock));
-			}
-		} else {
-			handlers = tryBlock.getHandlers();
-		}
-		return handlers;
-	}
+    private static @Nullable BlockNode getTerminusForHandler(ExceptionHandler handler, TryExtractInfo tryInfo) {
+        for (BlockNode terminus : tryInfo.scopeTerminusGroups.keySet()) {
+            List<TryEdge> edgesWithTerminus = tryInfo.scopeTerminusGroups.get(terminus);
+            for (TryEdge edge : edgesWithTerminus) {
+                if (edge.isNotHandlerExit()) {
+                    continue;
+                }
+                if (edge.getExceptionHandler().equals(handler)) {
+                    return terminus;
+                }
+            }
+        }
+        return null;
+    }
 
-	private static @Nullable Map<InsnNode, List<InsnNode>> findCommonInsns(MethodNode mth, TryExtractInfo tryInfo) {
-		List<BlockNode> allHandlerBlocks = tryInfo.handlerScopes.getBlocksForHandler(tryInfo.finallyHandler);
-		BlockNode finallyScopeTerminus = getTerminusForHandler(tryInfo.finallyHandler, tryInfo);
-		if (finallyScopeTerminus == null) {
-			return null;
-		}
-		Map<InsnNode, List<InsnNode>> matchingInsns = new HashMap<>();
-		for (TryEdge edge : tryInfo.handlerScopes.keySet()) {
-			if (edge.isHandlerExit() && edge.getExceptionHandler() == tryInfo.finallyHandler) {
-				continue;
-			}
-			List<BlockNode> handlerBlocks = tryInfo.handlerScopes.get(edge);
-			BlockNode scopeTerminus = null;
-			for (BlockNode edgeTerminusBlock : tryInfo.scopeTerminusGroups.keySet()) {
-				List<TryEdge> edgesWithTerminus = tryInfo.scopeTerminusGroups.get(edgeTerminusBlock);
-				if (edgesWithTerminus.contains(edge)) {
-					scopeTerminus = edgeTerminusBlock;
-					break;
-				}
-			}
-			if (scopeTerminus == null) {
-				throw new JadxRuntimeException("Expected to find fallthrough terminus for handler " + edge);
-			}
-			TraverserActivePathState comparatorState =
-					new TraverserActivePathState(mth, new SameInstructionsStrategyImpl(), finallyScopeTerminus,
-							scopeTerminus, allHandlerBlocks, handlerBlocks);
-			TraverserController controller = new TraverserController();
-			List<TraverserActivePathState> pathResults;
-			try {
-				pathResults = controller.process(comparatorState);
-			} catch (TraverserException e) {
-				LOG.error("Could not search for finally duplicate instructions in path", e);
-				return null;
-			}
-			Set<BlockNode> completeFinally = new HashSet<>();
-			Set<BlockNode> completeCandidate = new HashSet<>();
-			for (TraverserActivePathState pathResult : pathResults) {
-				for (Pair<InsnNode> matchingInsnPair : pathResult.getMatchedInsns()) {
-					InsnNode finallyInsn = matchingInsnPair.getFirst();
-					InsnNode candidateInsn = matchingInsnPair.getSecond();
-					List<InsnNode> candidateInsnsList;
-					if (!matchingInsns.containsKey(finallyInsn)) {
-						candidateInsnsList = new LinkedList<>();
-						matchingInsns.put(finallyInsn, candidateInsnsList);
-					} else {
-						candidateInsnsList = matchingInsns.get(finallyInsn);
-					}
-					candidateInsnsList.add(candidateInsn);
-				}
-				completeFinally.addAll(pathResult.getAllFullyMatchedFinallyBlocks());
-				completeCandidate.addAll(pathResult.getAllFullyMatchedCandidateBlocks());
-			}
-			if (tryInfo.completeFinallyBlocks == null) {
-				tryInfo.completeFinallyBlocks = completeFinally;
-			} else {
-				tryInfo.completeFinallyBlocks.retainAll(completeFinally);
-			}
-			if (tryInfo.completeCandidateBlocks == null) {
-				tryInfo.completeCandidateBlocks = completeCandidate;
-			} else {
-				tryInfo.completeCandidateBlocks.addAll(completeCandidate);
-			}
-		}
-		return matchingInsns;
-	}
+    @Override
+    public void visit(MethodNode mth) {
+        if (mth.isNoCode() || mth.isNoExceptionHandlers()) {
+            return;
+        }
+        try {
+            boolean implicitHandlerRemoved = false;
+            List<TryCatchBlockAttr> tryBlocks = mth.getAll(AType.TRY_BLOCKS_LIST);
+            List<TryCatchBlockAttr> processRequiredTryBlocks = new ArrayList<>();
 
-	private static void removeEmptyUpPath(List<BlockNode> handlerBlocks, BlockNode startBlock) {
-		for (BlockNode pred : startBlock.getPredecessors()) {
-			if (pred.isEmpty()) {
-				if (handlerBlocks.remove(pred) && !BlockUtils.isBackEdge(pred, startBlock)) {
-					removeEmptyUpPath(handlerBlocks, pred);
-				}
-			}
-		}
-	}
+            // Search through all exception handlers and:
+            // - Remove implicit handlers
+            // - Mark non-implicit handlers to be searched for a finally block
+            for (TryCatchBlockAttr tryBlock : tryBlocks) {
+                TryExtractInfo tryInfo = getTryBlockData(mth, tryBlock);
+                if (tryInfo == null) {
+                    continue;
+                }
+                List<BlockNode> cutHandlerBlocks = cutHandlerBlocks(mth, tryInfo, tryInfo.finallyHandler);
+                if (cutHandlerBlocks == null) {
+                    continue;
+                }
+                if (attemptRemoveImplicitHandlers(cutHandlerBlocks, tryInfo)) {
+                    implicitHandlerRemoved = true;
+                } else {
+                    processRequiredTryBlocks.add(tryBlock);
+                }
+            }
+            // If any implicit handlers have been found, remove them
+            if (implicitHandlerRemoved) {
+                resetTryBlocks(mth, tryBlocks);
+            }
 
-	private static void copyCodeVars(InsnNode fromInsn, InsnNode toInsn) {
-		copyCodeVars(fromInsn.getResult(), toInsn.getResult());
-		int argsCount = fromInsn.getArgsCount();
-		for (int i = 0; i < argsCount; i++) {
-			copyCodeVars(fromInsn.getArg(i), toInsn.getArg(i));
-		}
-	}
+            // Search through all non-implicit handlers and search for a finally block.
+            boolean finallyExtracted = false;
+            for (TryCatchBlockAttr tryBlock : processRequiredTryBlocks) {
+                // Refresh scope groups now due to implicit handlers
+                TryExtractInfo tryInfo = getTryBlockData(mth, tryBlock);
+                if (tryInfo == null) {
+                    continue;
+                }
+                cutHandlerBlocks(mth, tryInfo, tryInfo.finallyHandler);
+                finallyExtracted |= processTryBlock(mth, tryInfo);
+            }
+            // If any handlers have been merged, remove them
+            if (finallyExtracted) {
+                resetTryBlocks(mth, tryBlocks);
+            }
+        } catch (Exception e) {
+            LOG.error("MarkFinallyVisitor error", e);
+            undoFinallyVisitor(mth);
+            mth.addWarnComment("Undo finally extract visitor", e);
+        }
+    }
 
-	private static void copyCodeVars(InsnArg fromArg, InsnArg toArg) {
-		if (fromArg == null || toArg == null
-				|| !fromArg.isRegister() || !toArg.isRegister()) {
-			return;
-		}
-		SSAVar fromSsaVar = ((RegisterArg) fromArg).getSVar();
-		SSAVar toSsaVar = ((RegisterArg) toArg).getSVar();
-		toSsaVar.setCodeVar(fromSsaVar.getCodeVar());
-	}
+    private static final class TryExtractInfo {
+        private final TryCatchBlockAttr tryBlock;
+        private final TryEdgeScopeGroupMap scopeGroups;
+        private final ExceptionHandler finallyHandler;
+        private final Map<BlockNode, List<TryEdge>> scopeTerminusGroups;
+        private final TryCatchEdgeBlockMap handlerScopes;
+        private final Set<BlockNode> rethrowBlocks;
 
-	/**
-	 * Reload method without applying this visitor
-	 */
-	private static void undoFinallyVisitor(MethodNode mth) {
-		try {
-			mth.root().getProcessClasses().processMethodUntilVisitor(mth, "MarkFinallyVisitor", false);
-		} catch (Exception e) {
-			mth.addError("Undo finally extract failed", e);
-		}
-	}
+        private Set<BlockNode> completeFinallyBlocks = null;
+        private Set<BlockNode> completeCandidateBlocks = null;
 
-	private static @Nullable BlockNode getTerminusForHandler(ExceptionHandler handler, TryExtractInfo tryInfo) {
-		for (BlockNode terminus : tryInfo.scopeTerminusGroups.keySet()) {
-			List<TryEdge> edgesWithTerminus = tryInfo.scopeTerminusGroups.get(terminus);
-			for (TryEdge edge : edgesWithTerminus) {
-				if (edge.isNotHandlerExit()) {
-					continue;
-				}
-				if (edge.getExceptionHandler().equals(handler)) {
-					return terminus;
-				}
-			}
-		}
-		return null;
-	}
+        private TryExtractInfo(TryCatchBlockAttr tryBlock, TryEdgeScopeGroupMap scopeGroups,
+                               ExceptionHandler finallyHandler, Map<BlockNode, List<TryEdge>> fallthroughGroups,
+                               TryCatchEdgeBlockMap handlerScopes) {
+            this.tryBlock = tryBlock;
+            this.scopeGroups = scopeGroups;
+            this.finallyHandler = finallyHandler;
+            this.scopeTerminusGroups = fallthroughGroups;
+            this.handlerScopes = handlerScopes;
+            this.rethrowBlocks = new HashSet<>();
+        }
+    }
 }

@@ -10,39 +10,39 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
  */
 public class ExcHandlerAttr implements IJadxAttribute {
 
-	/** 关联的异常处理器 */
-	private final ExceptionHandler handler;
+    /** 关联的异常处理器 */
+    private final ExceptionHandler handler;
 
-	/**
-	 * 构造异常处理器属性。
-	 *
-	 * @param handler 关联的异常处理器
-	 */
-	public ExcHandlerAttr(ExceptionHandler handler) {
-		this.handler = handler;
-	}
+    /**
+     * 构造异常处理器属性。
+     *
+     * @param handler 关联的异常处理器
+     */
+    public ExcHandlerAttr(ExceptionHandler handler) {
+        this.handler = handler;
+    }
 
-	@Override
-	public AType<ExcHandlerAttr> getAttrType() {
-		return AType.EXC_HANDLER;
-	}
+    @Override
+    public AType<ExcHandlerAttr> getAttrType() {
+        return AType.EXC_HANDLER;
+    }
 
-	/**
-	 * @return 该处理器所属的 try-catch 块
-	 */
-	public TryCatchBlockAttr getTryBlock() {
-		return handler.getTryBlock();
-	}
+    /**
+     * @return 该处理器所属的 try-catch 块
+     */
+    public TryCatchBlockAttr getTryBlock() {
+        return handler.getTryBlock();
+    }
 
-	/**
-	 * @return 关联的异常处理器
-	 */
-	public ExceptionHandler getHandler() {
-		return handler;
-	}
+    /**
+     * @return 关联的异常处理器
+     */
+    public ExceptionHandler getHandler() {
+        return handler;
+    }
 
-	@Override
-	public String toString() {
-		return "ExcHandler: " + handler;
-	}
+    @Override
+    public String toString() {
+        return "ExcHandler: " + handler;
+    }
 }

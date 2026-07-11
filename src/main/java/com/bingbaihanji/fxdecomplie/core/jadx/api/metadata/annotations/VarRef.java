@@ -12,57 +12,57 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeAnnotation;
  */
 public abstract class VarRef implements ICodeAnnotation {
 
-	public static VarRef fromPos(int refPos) {
-		if (refPos == 0) {
-			throw new IllegalArgumentException("Zero refPos");
-		}
-		return new FixedVarRef(refPos);
-	}
+    public static VarRef fromPos(int refPos) {
+        if (refPos == 0) {
+            throw new IllegalArgumentException("Zero refPos");
+        }
+        return new FixedVarRef(refPos);
+    }
 
-	public static VarRef fromVarNode(VarNode varNode) {
-		return new RelatedVarRef(varNode);
-	}
+    public static VarRef fromVarNode(VarNode varNode) {
+        return new RelatedVarRef(varNode);
+    }
 
-	public abstract int getRefPos();
+    public abstract int getRefPos();
 
-	@Override
-	public AnnType getAnnType() {
-		return AnnType.VAR_REF;
-	}
+    @Override
+    public AnnType getAnnType() {
+        return AnnType.VAR_REF;
+    }
 
-	public static final class FixedVarRef extends VarRef {
-		private final int refPos;
+    @Override
+    public String toString() {
+        return "VarRef{" + getRefPos() + '}';
+    }
 
-		public FixedVarRef(int refPos) {
-			this.refPos = refPos;
-		}
+    public static final class FixedVarRef extends VarRef {
+        private final int refPos;
 
-		@Override
-		public int getRefPos() {
-			return refPos;
-		}
-	}
+        public FixedVarRef(int refPos) {
+            this.refPos = refPos;
+        }
 
-	public static final class RelatedVarRef extends VarRef {
-		private final VarNode varNode;
+        @Override
+        public int getRefPos() {
+            return refPos;
+        }
+    }
 
-		public RelatedVarRef(VarNode varNode) {
-			this.varNode = varNode;
-		}
+    public static final class RelatedVarRef extends VarRef {
+        private final VarNode varNode;
 
-		@Override
-		public int getRefPos() {
-			return varNode.getDefPosition();
-		}
+        public RelatedVarRef(VarNode varNode) {
+            this.varNode = varNode;
+        }
 
-		@Override
-		public String toString() {
-			return "VarRef{" + varNode + ", name=" + varNode.getName() + ", mth=" + varNode.getMth() + '}';
-		}
-	}
+        @Override
+        public int getRefPos() {
+            return varNode.getDefPosition();
+        }
 
-	@Override
-	public String toString() {
-		return "VarRef{" + getRefPos() + '}';
-	}
+        @Override
+        public String toString() {
+            return "VarRef{" + varNode + ", name=" + varNode.getName() + ", mth=" + varNode.getMth() + '}';
+        }
+    }
 }

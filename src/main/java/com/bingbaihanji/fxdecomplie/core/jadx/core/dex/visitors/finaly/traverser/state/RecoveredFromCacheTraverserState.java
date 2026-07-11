@@ -1,73 +1,72 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.CentralityState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.TraverserStateFactory;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.handlers.AbstractBlockTraverserHandler;
+import org.jetbrains.annotations.Nullable;
 
 public final class RecoveredFromCacheTraverserState extends TraverserState {
 
-	public static TraverserStateFactory<RecoveredFromCacheTraverserState> getFactory(TraverserState underlying) {
-		return new RecoveredFromCacheStateFactory(underlying);
-	}
+    private final TraverserState underlying;
 
-	private static final class RecoveredFromCacheStateFactory extends TraverserStateFactory<RecoveredFromCacheTraverserState> {
-		private final TraverserState underlying;
+    public RecoveredFromCacheTraverserState(TraverserState underlying) {
+        super(underlying.getComparatorState());
+        this.underlying = underlying;
+    }
 
-		private RecoveredFromCacheStateFactory(TraverserState underlying) {
-			this.underlying = underlying;
-		}
+    public static TraverserStateFactory<RecoveredFromCacheTraverserState> getFactory(TraverserState underlying) {
+        return new RecoveredFromCacheStateFactory(underlying);
+    }
 
-		@Override
-		protected RecoveredFromCacheTraverserState generateInternalState(TraverserActivePathState state) {
-			return new RecoveredFromCacheTraverserState(underlying);
-		}
+    @Override
+    public @Nullable AbstractBlockTraverserHandler getNextHandler() {
+        return null;
+    }
 
-	}
+    @Override
+    public ComparisonState getCompareState() {
+        return ComparisonState.NOT_READY;
+    }
 
-	private final TraverserState underlying;
+    @Override
+    public boolean isTerminal() {
+        return true;
+    }
 
-	public RecoveredFromCacheTraverserState(TraverserState underlying) {
-		super(underlying.getComparatorState());
-		this.underlying = underlying;
-	}
+    @Override
+    protected @Nullable CentralityState getUnderlyingCentralityState() {
+        return null;
+    }
 
-	@Override
-	public @Nullable AbstractBlockTraverserHandler getNextHandler() {
-		return null;
-	}
+    @Override
+    protected @Nullable TraverserBlockInfo getUnderlyingBlockInsnInfo() {
+        return null;
+    }
 
-	@Override
-	public ComparisonState getCompareState() {
-		return ComparisonState.NOT_READY;
-	}
+    @Override
+    protected TraverserState duplicateInternalState(TraverserActivePathState comparatorState) {
+        return new RecoveredFromCacheTraverserState(underlying);
+    }
 
-	@Override
-	public boolean isTerminal() {
-		return true;
-	}
+    public TraverserState getUnderlying() {
+        return underlying;
+    }
 
-	@Override
-	protected @Nullable CentralityState getUnderlyingCentralityState() {
-		return null;
-	}
+    public boolean canContinue() {
+        return underlying.isTerminal();
+    }
 
-	@Override
-	protected @Nullable TraverserBlockInfo getUnderlyingBlockInsnInfo() {
-		return null;
-	}
+    private static final class RecoveredFromCacheStateFactory extends TraverserStateFactory<RecoveredFromCacheTraverserState> {
+        private final TraverserState underlying;
 
-	@Override
-	protected TraverserState duplicateInternalState(TraverserActivePathState comparatorState) {
-		return new RecoveredFromCacheTraverserState(underlying);
-	}
+        private RecoveredFromCacheStateFactory(TraverserState underlying) {
+            this.underlying = underlying;
+        }
 
-	public TraverserState getUnderlying() {
-		return underlying;
-	}
+        @Override
+        protected RecoveredFromCacheTraverserState generateInternalState(TraverserActivePathState state) {
+            return new RecoveredFromCacheTraverserState(underlying);
+        }
 
-	public boolean canContinue() {
-		return underlying.isTerminal();
-	}
+    }
 }

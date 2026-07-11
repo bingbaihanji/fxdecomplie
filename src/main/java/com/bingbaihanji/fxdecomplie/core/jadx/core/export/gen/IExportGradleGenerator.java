@@ -4,9 +4,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.export.OutDirs;
 
 public interface IExportGradleGenerator {
 
-	void init();
+    void init();
 
-	OutDirs getOutDirs();
+    OutDirs getOutDirs();
 
-	void generateFiles();
+    void generateFiles();
 }

@@ -1,35 +1,35 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.options;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.jetbrains.annotations.Nullable;
-
 public interface OptionDescription {
 
-	String name();
+    String name();
 
-	String description();
+    String description();
 
-	/**
-	 * Possible values.
-	 * Empty if not a limited set
-	 */
-	List<String> values();
+    /**
+     * Possible values.
+     * Empty if not a limited set
+     */
+    List<String> values();
 
-	/**
-	 * Default value.
-	 * Null if required
-	 */
-	@Nullable
-	String defaultValue();
+    /**
+     * Default value.
+     * Null if required
+     */
+    @Nullable
+    String defaultValue();
 
-	default OptionType getType() {
-		return OptionType.STRING;
-	}
+    default OptionType getType() {
+        return OptionType.STRING;
+    }
 
-	default Set<OptionFlag> getFlags() {
-		return Collections.emptySet();
-	}
+    default Set<OptionFlag> getFlags() {
+        return Collections.emptySet();
+    }
 }

@@ -6,19 +6,19 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
 
 public abstract class AbstractBlockTraverserVisitor {
 
-	private final TraverserState state;
+    private final TraverserState state;
 
-	public AbstractBlockTraverserVisitor(TraverserState state) {
-		this.state = state;
-	}
+    public AbstractBlockTraverserVisitor(TraverserState state) {
+        this.state = state;
+    }
 
-	public abstract TraverserState visit(BlockNode block);
+    public abstract TraverserState visit(BlockNode block);
 
-	public TraverserState getState() {
-		return state;
-	}
+    public TraverserState getState() {
+        return state;
+    }
 
-	public TraverserActivePathState getComparator() {
-		return state.getComparatorState();
-	}
+    public TraverserActivePathState getComparator() {
+        return state.getComparatorState();
+    }
 }

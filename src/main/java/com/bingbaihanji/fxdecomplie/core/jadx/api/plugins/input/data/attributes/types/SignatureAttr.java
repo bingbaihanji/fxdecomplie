@@ -7,23 +7,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 
 public class SignatureAttr extends PinnedAttribute {
 
-	private final String signature;
+    private final String signature;
 
-	public SignatureAttr(String signature) {
-		this.signature = signature;
-	}
+    public SignatureAttr(String signature) {
+        this.signature = signature;
+    }
 
-	public String getSignature() {
-		return signature;
-	}
+    public String getSignature() {
+        return signature;
+    }
 
-	@Override
-	public IJadxAttrType<? extends IJadxAttribute> getAttrType() {
-		return JadxAttrType.SIGNATURE;
-	}
+    @Override
+    public IJadxAttrType<? extends IJadxAttribute> getAttrType() {
+        return JadxAttrType.SIGNATURE;
+    }
 
-	@Override
-	public String toString() {
-		return "SIGNATURE: " + signature;
-	}
+    @Override
+    public String toString() {
+        return "SIGNATURE: " + signature;
+    }
 }

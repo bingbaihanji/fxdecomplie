@@ -13,23 +13,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
  */
 public class ExcSplitCrossAttr implements IJadxAttribute {
 
-	private final BlockNode originalPathCross;
+    private final BlockNode originalPathCross;
 
-	public ExcSplitCrossAttr(BlockNode originalPathCross) {
-		this.originalPathCross = originalPathCross;
-	}
+    public ExcSplitCrossAttr(BlockNode originalPathCross) {
+        this.originalPathCross = originalPathCross;
+    }
 
-	public BlockNode getOriginalPathCross() {
-		return this.originalPathCross;
-	}
+    public BlockNode getOriginalPathCross() {
+        return this.originalPathCross;
+    }
 
-	@Override
-	public IJadxAttrType<? extends IJadxAttribute> getAttrType() {
-		return AType.EXC_SPLIT_CROSS;
-	}
+    @Override
+    public IJadxAttrType<? extends IJadxAttribute> getAttrType() {
+        return AType.EXC_SPLIT_CROSS;
+    }
 
-	@Override
-	public String toString() {
-		return "ExcSplitCross -> " + originalPathCross.toString();
-	}
+    @Override
+    public String toString() {
+        return "ExcSplitCross -> " + originalPathCross.toString();
+    }
 }

@@ -1,98 +1,98 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.methods;
 
-import java.util.Collections;
-import java.util.List;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IMethodDetails;
 
+import java.util.Collections;
+import java.util.List;
+
 public class MutableMethodDetails implements IMethodDetails {
 
-	private final MethodInfo mthInfo;
-	private ArgType retType;
-	private List<ArgType> argTypes;
-	private List<ArgType> typeParams;
-	private List<ArgType> throwTypes;
-	private boolean varArg;
-	private int accFlags;
+    private final MethodInfo mthInfo;
+    private ArgType retType;
+    private List<ArgType> argTypes;
+    private List<ArgType> typeParams;
+    private List<ArgType> throwTypes;
+    private boolean varArg;
+    private int accFlags;
 
-	public MutableMethodDetails(IMethodDetails base) {
-		this.mthInfo = base.getMethodInfo();
-		this.retType = base.getReturnType();
-		this.argTypes = Collections.unmodifiableList(base.getArgTypes());
-		this.typeParams = Collections.unmodifiableList(base.getTypeParameters());
-		this.throwTypes = Collections.unmodifiableList(base.getThrows());
-		this.varArg = base.isVarArg();
-		this.accFlags = base.getRawAccessFlags();
-	}
+    public MutableMethodDetails(IMethodDetails base) {
+        this.mthInfo = base.getMethodInfo();
+        this.retType = base.getReturnType();
+        this.argTypes = Collections.unmodifiableList(base.getArgTypes());
+        this.typeParams = Collections.unmodifiableList(base.getTypeParameters());
+        this.throwTypes = Collections.unmodifiableList(base.getThrows());
+        this.varArg = base.isVarArg();
+        this.accFlags = base.getRawAccessFlags();
+    }
 
-	@Override
-	public MethodInfo getMethodInfo() {
-		return mthInfo;
-	}
+    @Override
+    public MethodInfo getMethodInfo() {
+        return mthInfo;
+    }
 
-	@Override
-	public ArgType getReturnType() {
-		return retType;
-	}
+    @Override
+    public ArgType getReturnType() {
+        return retType;
+    }
 
-	@Override
-	public List<ArgType> getArgTypes() {
-		return argTypes;
-	}
+    @Override
+    public List<ArgType> getArgTypes() {
+        return argTypes;
+    }
 
-	@Override
-	public List<ArgType> getTypeParameters() {
-		return typeParams;
-	}
+    public void setArgTypes(List<ArgType> argTypes) {
+        this.argTypes = argTypes;
+    }
 
-	@Override
-	public List<ArgType> getThrows() {
-		return throwTypes;
-	}
+    @Override
+    public List<ArgType> getTypeParameters() {
+        return typeParams;
+    }
 
-	@Override
-	public boolean isVarArg() {
-		return varArg;
-	}
+    @Override
+    public List<ArgType> getThrows() {
+        return throwTypes;
+    }
 
-	public void setRetType(ArgType retType) {
-		this.retType = retType;
-	}
+    @Override
+    public boolean isVarArg() {
+        return varArg;
+    }
 
-	public void setArgTypes(List<ArgType> argTypes) {
-		this.argTypes = argTypes;
-	}
+    public void setVarArg(boolean varArg) {
+        this.varArg = varArg;
+    }
 
-	public void setTypeParams(List<ArgType> typeParams) {
-		this.typeParams = typeParams;
-	}
+    public void setRetType(ArgType retType) {
+        this.retType = retType;
+    }
 
-	public void setThrowTypes(List<ArgType> throwTypes) {
-		this.throwTypes = throwTypes;
-	}
+    public void setTypeParams(List<ArgType> typeParams) {
+        this.typeParams = typeParams;
+    }
 
-	public void setVarArg(boolean varArg) {
-		this.varArg = varArg;
-	}
+    public void setThrowTypes(List<ArgType> throwTypes) {
+        this.throwTypes = throwTypes;
+    }
 
-	@Override
-	public int getRawAccessFlags() {
-		return accFlags;
-	}
+    @Override
+    public int getRawAccessFlags() {
+        return accFlags;
+    }
 
-	public void setRawAccessFlags(int accFlags) {
-		this.accFlags = accFlags;
-	}
+    public void setRawAccessFlags(int accFlags) {
+        this.accFlags = accFlags;
+    }
 
-	@Override
-	public String toAttrString() {
-		return IMethodDetails.super.toAttrString() + " (mut)";
-	}
+    @Override
+    public String toAttrString() {
+        return IMethodDetails.super.toAttrString() + " (mut)";
+    }
 
-	@Override
-	public String toString() {
-		return "Mutable" + toAttrString();
-	}
+    @Override
+    public String toString() {
+        return "Mutable" + toAttrString();
+    }
 }

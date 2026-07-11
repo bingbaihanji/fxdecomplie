@@ -7,40 +7,39 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 
 public class AnonymousClassAttr extends PinnedAttribute {
 
-	public enum InlineType {
-		CONSTRUCTOR,
-		INSTANCE_FIELD,
-	}
+    private final ClassNode outerCls;
+    private final ArgType baseType;
+    private final InlineType inlineType;
+    public AnonymousClassAttr(ClassNode outerCls, ArgType baseType, InlineType inlineType) {
+        this.outerCls = outerCls;
+        this.baseType = baseType;
+        this.inlineType = inlineType;
+    }
 
-	private final ClassNode outerCls;
-	private final ArgType baseType;
-	private final InlineType inlineType;
+    public ClassNode getOuterCls() {
+        return outerCls;
+    }
 
-	public AnonymousClassAttr(ClassNode outerCls, ArgType baseType, InlineType inlineType) {
-		this.outerCls = outerCls;
-		this.baseType = baseType;
-		this.inlineType = inlineType;
-	}
+    public ArgType getBaseType() {
+        return baseType;
+    }
 
-	public ClassNode getOuterCls() {
-		return outerCls;
-	}
+    public InlineType getInlineType() {
+        return inlineType;
+    }
 
-	public ArgType getBaseType() {
-		return baseType;
-	}
+    @Override
+    public AType<AnonymousClassAttr> getAttrType() {
+        return AType.ANONYMOUS_CLASS;
+    }
 
-	public InlineType getInlineType() {
-		return inlineType;
-	}
+    @Override
+    public String toString() {
+        return "AnonymousClass{" + outerCls + ", base: " + baseType + ", inline type: " + inlineType + '}';
+    }
 
-	@Override
-	public AType<AnonymousClassAttr> getAttrType() {
-		return AType.ANONYMOUS_CLASS;
-	}
-
-	@Override
-	public String toString() {
-		return "AnonymousClass{" + outerCls + ", base: " + baseType + ", inline type: " + inlineType + '}';
-	}
+    public enum InlineType {
+        CONSTRUCTOR,
+        INSTANCE_FIELD,
+    }
 }

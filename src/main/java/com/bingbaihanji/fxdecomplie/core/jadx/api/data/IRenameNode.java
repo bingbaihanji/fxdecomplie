@@ -7,10 +7,10 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.data;
  */
 public interface IRenameNode {
 
-	/**
-	 * 将节点重命名为指定的新名称。
-	 *
-	 * @param newName 新名称
-	 */
-	void rename(String newName);
+    /**
+     * 将节点重命名为指定的新名称。
+     *
+     * @param newName 新名称
+     */
+    void rename(String newName);
 }

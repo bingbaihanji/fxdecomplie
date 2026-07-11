@@ -1,9 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins;
 
-import java.util.function.Supplier;
-
-import org.jetbrains.annotations.Nullable;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.data.IJadxFiles;
@@ -15,54 +11,57 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.options.JadxPluginOpti
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.JadxPass;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.resources.IResourcesLoader;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Supplier;
 
 public interface JadxPluginContext {
 
-	JadxArgs getArgs();
+    JadxArgs getArgs();
 
-	JadxDecompiler getDecompiler();
+    JadxDecompiler getDecompiler();
 
-	void addPass(JadxPass pass);
+    void addPass(JadxPass pass);
 
-	void addCodeInput(JadxCodeInput codeInput);
+    void addCodeInput(JadxCodeInput codeInput);
 
-	void registerOptions(JadxPluginOptions options);
+    void registerOptions(JadxPluginOptions options);
 
-	/**
-	 * Function to calculate hash of all options which can change output code.
-	 * Hash for input files ({@link JadxArgs#getInputFiles()}) and registered options
-	 * calculated by default implementations.
-	 */
-	void registerInputsHashSupplier(Supplier<String> supplier);
+    /**
+     * Function to calculate hash of all options which can change output code.
+     * Hash for input files ({@link JadxArgs#getInputFiles()}) and registered options
+     * calculated by default implementations.
+     */
+    void registerInputsHashSupplier(Supplier<String> supplier);
 
-	/**
-	 * Customize resource loading
-	 */
-	IResourcesLoader getResourcesLoader();
+    /**
+     * Customize resource loading
+     */
+    IResourcesLoader getResourcesLoader();
 
-	/**
-	 * Access to jadx-gui specific methods
-	 */
-	@Nullable
-	JadxGuiContext getGuiContext();
+    /**
+     * Access to jadx-gui specific methods
+     */
+    @Nullable
+    JadxGuiContext getGuiContext();
 
-	/**
-	 * Subscribe and send events
-	 */
-	IJadxEvents events();
+    /**
+     * Subscribe and send events
+     */
+    IJadxEvents events();
 
-	/**
-	 * Access to registered plugins and runtime data
-	 */
-	IJadxPlugins plugins();
+    /**
+     * Access to registered plugins and runtime data
+     */
+    IJadxPlugins plugins();
 
-	/**
-	 * Access to plugin specific files and directories
-	 */
-	IJadxFiles files();
+    /**
+     * Access to plugin specific files and directories
+     */
+    IJadxFiles files();
 
-	/**
-	 * Custom jadx zip reader to fight tampering and provide additional security checks
-	 */
-	ZipReader getZipReader();
+    /**
+     * Custom jadx zip reader to fight tampering and provide additional security checks
+     */
+    ZipReader getZipReader();
 }

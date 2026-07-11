@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.handlers;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.TraverserException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserState;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Traverser handlers are responsible for deducing how blocks should be searched within a path
@@ -12,27 +12,27 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
  */
 public abstract class AbstractBlockPathTraverserHandler extends AbstractBlockTraverserHandler {
 
-	private final AtomicReference<? extends TraverserState> stateRef;
+    private final AtomicReference<? extends TraverserState> stateRef;
 
-	public AbstractBlockPathTraverserHandler(TraverserState initialState) {
-		this.stateRef = new AtomicReference<>(initialState);
-	}
+    public AbstractBlockPathTraverserHandler(TraverserState initialState) {
+        this.stateRef = new AtomicReference<>(initialState);
+    }
 
-	public AbstractBlockPathTraverserHandler(AtomicReference<? extends TraverserState> initialStateRef) {
-		this.stateRef = initialStateRef;
-	}
+    public AbstractBlockPathTraverserHandler(AtomicReference<? extends TraverserState> initialStateRef) {
+        this.stateRef = initialStateRef;
+    }
 
-	protected abstract void handle() throws TraverserException;
+    protected abstract void handle() throws TraverserException;
 
-	public final void process() throws TraverserException {
-		handle();
-	}
+    public final void process() throws TraverserException {
+        handle();
+    }
 
-	public final TraverserState getState() {
-		return stateRef.get();
-	}
+    public final TraverserState getState() {
+        return stateRef.get();
+    }
 
-	public final AtomicReference<? extends TraverserState> getStateReference() {
-		return stateRef;
-	}
+    public final AtomicReference<? extends TraverserState> getStateReference() {
+        return stateRef;
+    }
 }

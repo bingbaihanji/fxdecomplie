@@ -14,17 +14,17 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes
  */
 public interface IJadxAttrType<T extends IJadxAttribute> {
 
-	static <A extends IJadxAttribute> IJadxAttrType<A> create() {
-		return new IJadxAttrType<>() {
-		};
-	}
+    static <A extends IJadxAttribute> IJadxAttrType<A> create() {
+        return new IJadxAttrType<>() {
+        };
+    }
 
-	static <A extends IJadxAttribute> IJadxAttrType<A> create(String name) {
-		return new IJadxAttrType<>() {
-			@Override
-			public String toString() {
-				return name;
-			}
-		};
-	}
+    static <A extends IJadxAttribute> IJadxAttrType<A> create(String name) {
+        return new IJadxAttrType<>() {
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
+    }
 }

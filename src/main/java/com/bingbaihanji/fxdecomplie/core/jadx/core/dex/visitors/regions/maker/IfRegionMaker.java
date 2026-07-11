@@ -1,17 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
 
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.EdgeInsnAttr;
@@ -20,11 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnContainer;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfCondition;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfInfo;
@@ -34,677 +18,675 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExcHandlerAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.blocks.BlockSet;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.bitSetToBlocks;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.bitSetToOneBlock;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.followEmptyPath;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getBottomBlock;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getPathCross;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.isEqualPaths;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.isEqualReturnBlocks;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.isPathExists;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.newBlocksBitSet;
+import java.util.*;
+
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.*;
 
 final class IfRegionMaker {
-	private static final Logger LOG = LoggerFactory.getLogger(IfRegionMaker.class);
-	private final MethodNode mth;
-	private final RegionMaker regionMaker;
+    private static final Logger LOG = LoggerFactory.getLogger(IfRegionMaker.class);
+    private final MethodNode mth;
+    private final RegionMaker regionMaker;
 
-	IfRegionMaker(MethodNode mth, RegionMaker regionMaker) {
-		this.mth = mth;
-		this.regionMaker = regionMaker;
-	}
+    IfRegionMaker(MethodNode mth, RegionMaker regionMaker) {
+        this.mth = mth;
+        this.regionMaker = regionMaker;
+    }
 
-	@Nullable
-	BlockNode process(IRegion currentRegion, BlockNode block, IfNode ifnode, RegionStack stack) {
-		if (block.contains(AFlag.ADDED_TO_REGION)) {
-			// block already included in other 'if' region
-			return ifnode.getThenBlock();
-		}
-		IfInfo currentIf = makeIfInfo(mth, block);
-		if (currentIf == null) {
-			return null;
-		}
-		IfInfo mergedIf = mergeNestedIfNodes(currentIf);
-		if (mergedIf != null) {
-			currentIf = mergedIf;
-		} else {
-			// invert simple condition (compiler often do it)
-			// ensure that we only ever invert once, because if multiple regions contain this block
-			// we'll change the block after it's already been included in a region, which can cause
-			// other regions containing the block to believe the condition has been flipped when it
-			// has not, or vice versa.
-			if (!block.contains(AFlag.DONT_INVERT)) {
-				currentIf = IfInfo.invert(currentIf);
-				block.add(AFlag.DONT_INVERT);
-			}
-		}
-		IfInfo modifiedIf = restructureIf(block, currentIf);
-		if (modifiedIf != null) {
-			currentIf = modifiedIf;
-		} else {
-			if (currentIf.getMergedBlocks().size() <= 1) {
-				return null;
-			}
-			currentIf = makeIfInfo(mth, block);
-			currentIf = restructureIf(block, currentIf);
-			if (currentIf == null) {
-				// all attempts failed
-				return null;
-			}
-		}
-		confirmMerge(currentIf);
+    @Nullable
+    static IfInfo makeIfInfo(MethodNode mth, BlockNode ifBlock) {
+        InsnNode lastInsn = BlockUtils.getLastInsn(ifBlock);
+        if (lastInsn == null || lastInsn.getType() != InsnType.IF) {
+            return null;
+        }
+        IfNode ifNode = (IfNode) lastInsn;
+        IfCondition condition = IfCondition.fromIfNode(ifNode);
+        IfInfo info = new IfInfo(mth, condition, ifNode.getThenBlock(), ifNode.getElseBlock());
+        info.getMergedBlocks().add(ifBlock);
+        return info;
+    }
 
-		IfRegion ifRegion = new IfRegion(currentRegion);
-		ifRegion.updateCondition(currentIf);
-		currentRegion.getSubBlocks().add(ifRegion);
+    static IfInfo searchNestedIf(IfInfo info) {
+        IfInfo next = mergeNestedIfNodes(info);
+        if (next != null) {
+            return next;
+        }
+        return info;
+    }
 
-		BlockNode outBlock = currentIf.getOutBlock();
-		stack.push(ifRegion);
-		stack.addExit(outBlock);
+    static @Nullable BlockNode findOutBlock(MethodNode mth, BlockNode thenBlock, BlockNode elseBlock) {
+        if (thenBlock == elseBlock) {
+            return thenBlock;
+        }
+        if (thenBlock == null || elseBlock == null) {
+            return null;
+        }
 
-		BlockNode thenBlock = currentIf.getThenBlock();
-		if (thenBlock == null) {
-			// empty then block, not normal, but maybe correct
-			ifRegion.setThenRegion(new Region(ifRegion));
-		} else {
-			ifRegion.setThenRegion(regionMaker.makeRegion(thenBlock));
-		}
-		BlockNode elseBlock = currentIf.getElseBlock();
-		if (elseBlock == null || stack.containsExit(elseBlock)) {
-			ifRegion.setElseRegion(null);
-		} else {
-			ifRegion.setElseRegion(regionMaker.makeRegion(elseBlock));
-		}
+        BitSet thenDomFrontier = newBlocksBitSet(mth);
+        thenDomFrontier.or(thenBlock.getDomFrontier());
+        thenDomFrontier.set(thenBlock.getPos());
 
-		// insert edge insns in new 'else' branch
-		if (ifRegion.getElseRegion() == null && outBlock != null) {
-			List<EdgeInsnAttr> edgeInsnAttrs = outBlock.getAll(AType.EDGE_INSN);
-			if (!edgeInsnAttrs.isEmpty()) {
-				List<InsnNode> instructions = new ArrayList<>();
-				for (EdgeInsnAttr edgeInsnAttr : edgeInsnAttrs) {
-					if (edgeInsnAttr.getEnd().equals(outBlock)) {
-						if (currentIf.getMergedBlocks().contains(followEmptyPath(edgeInsnAttr.getStart(), true))) {
-							instructions.add(edgeInsnAttr.getInsn());
-						}
-					}
-				}
+        BitSet elseDomFrontier = newBlocksBitSet(mth);
+        elseDomFrontier.or(elseBlock.getDomFrontier());
+        elseDomFrontier.set(elseBlock.getPos());
 
-				if (!instructions.isEmpty()) {
-					Region elseRegion = new Region(ifRegion);
-					InsnContainer newBlock = new InsnContainer(instructions);
-					elseRegion.add(newBlock);
-					ifRegion.setElseRegion(elseRegion);
-				}
-			}
-		}
+        BitSet intersection = newBlocksBitSet(mth);
+        intersection.or(thenDomFrontier);
+        intersection.and(elseDomFrontier);
 
-		stack.pop();
-		return outBlock;
-	}
+        intersection.clear(mth.getExitBlock().getPos());
+        BlockNode oneBlock = bitSetToOneBlock(mth, intersection);
 
-	@NotNull
-	IfInfo buildIfInfo(LoopRegion loopRegion) {
-		IfInfo condInfo = makeIfInfo(mth, loopRegion.getHeader());
-		condInfo = searchNestedIf(condInfo);
-		confirmMerge(condInfo);
-		return condInfo;
-	}
+        // Attempt one: there's a unique block in the intersection of dom frontiers, and no path from
+        // then->else or else->then
+        if (oneBlock != null) {
+            return oneBlock;
+        }
 
-	@Nullable
-	static IfInfo makeIfInfo(MethodNode mth, BlockNode ifBlock) {
-		InsnNode lastInsn = BlockUtils.getLastInsn(ifBlock);
-		if (lastInsn == null || lastInsn.getType() != InsnType.IF) {
-			return null;
-		}
-		IfNode ifNode = (IfNode) lastInsn;
-		IfCondition condition = IfCondition.fromIfNode(ifNode);
-		IfInfo info = new IfInfo(mth, condition, ifNode.getThenBlock(), ifNode.getElseBlock());
-		info.getMergedBlocks().add(ifBlock);
-		return info;
-	}
+        BitSet union = newBlocksBitSet(mth);
+        union.or(thenBlock.getDomFrontier());
+        union.or(elseBlock.getDomFrontier());
+        union.clear(mth.getExitBlock().getPos());
 
-	static IfInfo searchNestedIf(IfInfo info) {
-		IfInfo next = mergeNestedIfNodes(info);
-		if (next != null) {
-			return next;
-		}
-		return info;
-	}
+        // Attempt two: look for a suitable block in the union.
+        BitSet candidates = newBlocksBitSet(mth);
+        for (BlockNode candidate : bitSetToBlocks(mth, union)) {
+            if (isCandidateForOutBlock(mth, thenBlock, elseBlock, candidate)) {
+                candidates.set(candidate.getPos());
+            }
+        }
 
-	IfInfo restructureIf(BlockNode block, IfInfo info) {
-		BlockNode thenBlock = info.getThenBlock();
-		BlockNode elseBlock = info.getElseBlock();
+        BlockNode bottom = getBottomBlock(bitSetToBlocks(mth, candidates), true);
+        if (bottom != null) {
+            return bottom;
+        }
 
-		if (Objects.equals(thenBlock, elseBlock)) {
-			IfInfo ifInfo = new IfInfo(info, null, null);
-			ifInfo.setOutBlock(thenBlock);
-			return ifInfo;
-		}
+        // Attempt three: fallback to path cross again
+        return getPathCross(mth, thenBlock, elseBlock);
+    }
 
-		// select 'then', 'else' and 'exit' blocks
-		if (thenBlock.contains(AFlag.RETURN) && elseBlock.contains(AFlag.RETURN)) {
-			info.setOutBlock(null);
-			return info;
-		}
-		// init outblock, which will be used in isBadBranchBlock to compare with branch block
-		info.setOutBlock(findOutBlock(mth, thenBlock, elseBlock));
+    static boolean isCandidateForOutBlock(MethodNode mth, BlockNode thenBlock, BlockNode elseBlock, BlockNode candidate) {
+        // a candidate block requires:
+        // - >1 predecessor
+        // - each predecessor has a clean path from elseBlock or thenBlock, and there exist predecessors
+        // covering both cases
+        // - inside the union of the two dom frontiers
 
-		boolean badThen = isBadBranchBlock(info, thenBlock);
-		boolean badElse = isBadBranchBlock(info, elseBlock);
-		if (badThen && badElse) {
-			if (false) {
-				LOG.debug("Stop processing blocks after 'if': {}, method: {}", info.getMergedBlocks(), mth);
-			}
-			return null;
-		}
-		if (badElse) {
-			info = new IfInfo(info, thenBlock, null);
-			info.setOutBlock(elseBlock);
-		} else if (badThen) {
-			info = IfInfo.invert(info);
-			info = new IfInfo(info, elseBlock, null);
-			info.setOutBlock(thenBlock);
-		}
+        if (candidate.getPredecessors().size() < 2) {
+            return false; // block has only one pred, and so can't be the outblock
+        }
 
-		// getPathCross may not find outBlock (e.g. one branch has return, outBlock definitely is
-		// null), so should check further
-		if (info.getOutBlock() == null) {
-			BlockNode scopeOutBlockThen = findScopeOutBlock(info.getThenBlock());
-			BlockNode scopeOutBlockElse = findScopeOutBlock(info.getElseBlock());
-			if (scopeOutBlockThen == null && scopeOutBlockElse != null) {
-				info.setOutBlock(scopeOutBlockElse);
-			} else if (scopeOutBlockThen != null && scopeOutBlockElse == null) {
-				info.setOutBlock(scopeOutBlockThen);
-			} else if (scopeOutBlockThen != null && scopeOutBlockThen == scopeOutBlockElse) {
-				info.setOutBlock(scopeOutBlockThen);
-			}
-		}
+        BitSet coverageThenPreds = newBlocksBitSet(mth);
+        BitSet coverageElsePreds = newBlocksBitSet(mth);
 
-		if (BlockUtils.isBackEdge(block, info.getOutBlock())) {
-			info.setOutBlock(null);
-		}
-		return info;
-	}
+        if (candidate == elseBlock) {
+            coverageElsePreds.set(candidate.getPos());
+        }
+        if (candidate == thenBlock) {
+            coverageThenPreds.set(candidate.getPos());
+        }
 
-	static @Nullable BlockNode findOutBlock(MethodNode mth, BlockNode thenBlock, BlockNode elseBlock) {
-		if (thenBlock == elseBlock) {
-			return thenBlock;
-		}
-		if (thenBlock == null || elseBlock == null) {
-			return null;
-		}
+        for (BlockNode pred : candidate.getPredecessors()) {
+            if (isPathExists(thenBlock, pred)) {
+                coverageThenPreds.set(pred.getPos());
+            }
 
-		BitSet thenDomFrontier = newBlocksBitSet(mth);
-		thenDomFrontier.or(thenBlock.getDomFrontier());
-		thenDomFrontier.set(thenBlock.getPos());
+            if (isPathExists(elseBlock, pred)) {
+                coverageElsePreds.set(pred.getPos());
+            }
+        }
+        if (coverageElsePreds.cardinality() == 0 || coverageThenPreds.cardinality() == 0) {
+            return false; // block has no path to both the then and else blocks
+        }
 
-		BitSet elseDomFrontier = newBlocksBitSet(mth);
-		elseDomFrontier.or(elseBlock.getDomFrontier());
-		elseDomFrontier.set(elseBlock.getPos());
+        BlockNode coverageElsePred = bitSetToOneBlock(mth, coverageElsePreds);
+        BlockNode coverageThenPred = bitSetToOneBlock(mth, coverageThenPreds);
+        if (coverageElsePred != null && coverageElsePred == coverageThenPred) {
+            return false; // the only paths from else and then go through the same block
+        }
 
-		BitSet intersection = newBlocksBitSet(mth);
-		intersection.or(thenDomFrontier);
-		intersection.and(elseDomFrontier);
+        return true;
+    }
 
-		intersection.clear(mth.getExitBlock().getPos());
-		BlockNode oneBlock = bitSetToOneBlock(mth, intersection);
+    private static boolean isBadBranchBlock(IfInfo info, BlockNode block) {
+        // check if block at end of loop edge
+        if (block.contains(AFlag.LOOP_START) && block.getPredecessors().size() == 1) {
+            BlockNode pred = block.getPredecessors().get(0);
+            if (pred.contains(AFlag.LOOP_END)) {
+                List<LoopInfo> startLoops = block.getAll(AType.LOOP);
+                List<LoopInfo> endLoops = pred.getAll(AType.LOOP);
+                // search for same loop
+                for (LoopInfo startLoop : startLoops) {
+                    for (LoopInfo endLoop : endLoops) {
+                        if (startLoop == endLoop) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        // if branch block itself is outblock
+        if (info.getOutBlock() != null) {
+            return block == info.getOutBlock();
+        }
+        return !allPathsFromIf(block, info);
+    }
 
-		// Attempt one: there's a unique block in the intersection of dom frontiers, and no path from
-		// then->else or else->then
-		if (oneBlock != null) {
-			return oneBlock;
-		}
+    private static boolean allPathsFromIf(BlockNode block, IfInfo info) {
+        List<BlockNode> preds = block.getPredecessors();
+        BlockSet ifBlocks = info.getMergedBlocks();
+        for (BlockNode pred : preds) {
+            if (pred.contains(AFlag.LOOP_END)) {
+                // ignore loop back edge
+                continue;
+            }
+            BlockNode top = BlockUtils.skipSyntheticPredecessor(pred);
+            if (!ifBlocks.contains(top)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-		BitSet union = newBlocksBitSet(mth);
-		union.or(thenBlock.getDomFrontier());
-		union.or(elseBlock.getDomFrontier());
-		union.clear(mth.getExitBlock().getPos());
+    static IfInfo mergeNestedIfNodes(IfInfo currentIf) {
+        BlockNode curThen = currentIf.getThenBlock();
+        BlockNode curElse = currentIf.getElseBlock();
+        if (curThen == curElse) {
+            return null;
+        }
+        if (BlockUtils.isFollowBackEdge(curThen)
+                || BlockUtils.isFollowBackEdge(curElse)) {
+            return null;
+        }
+        boolean followThenBranch;
+        IfInfo nextIf = getNextIf(currentIf, curThen);
+        if (nextIf != null) {
+            followThenBranch = true;
+        } else {
+            nextIf = getNextIf(currentIf, curElse);
+            if (nextIf != null) {
+                followThenBranch = false;
+            } else {
+                return null;
+            }
+        }
 
-		// Attempt two: look for a suitable block in the union.
-		BitSet candidates = newBlocksBitSet(mth);
-		for (BlockNode candidate : bitSetToBlocks(mth, union)) {
-			if (isCandidateForOutBlock(mth, thenBlock, elseBlock, candidate)) {
-				candidates.set(candidate.getPos());
-			}
-		}
+        boolean assignInlineNeeded = !nextIf.getForceInlineInsns().isEmpty();
+        if (assignInlineNeeded) {
+            for (BlockNode mergedBlock : currentIf.getMergedBlocks()) {
+                if (mergedBlock.contains(AFlag.LOOP_START)) {
+                    // don't inline assigns into loop condition
+                    return currentIf;
+                }
+            }
+        }
 
-		BlockNode bottom = getBottomBlock(bitSetToBlocks(mth, candidates), true);
-		if (bottom != null) {
-			return bottom;
-		}
+        if (isInversionNeeded(currentIf, nextIf)) {
+            // invert current node for match pattern
+            nextIf = IfInfo.invert(nextIf);
+        }
+        boolean thenPathSame = isEqualPaths(curThen, nextIf.getThenBlock());
+        boolean elsePathSame = isEqualPaths(curElse, nextIf.getElseBlock());
+        if (!thenPathSame && !elsePathSame) {
+            // complex condition, run additional checks
+            if (checkConditionBranches(curThen, curElse)
+                    || checkConditionBranches(curElse, curThen)) {
+                return null;
+            }
+            BlockNode otherBranchBlock = followThenBranch ? curElse : curThen;
+            otherBranchBlock = BlockUtils.followEmptyPath(otherBranchBlock);
+            if (!isPathExists(nextIf.getFirstIfBlock(), otherBranchBlock)) {
+                return checkForTernaryInCondition(currentIf);
+            }
 
-		// Attempt three: fallback to path cross again
-		return getPathCross(mth, thenBlock, elseBlock);
-	}
+            // this is nested conditions with different mode (i.e (a && b) || c),
+            // search next condition for merge, get null if failed
+            IfInfo tmpIf = mergeNestedIfNodes(nextIf);
+            if (tmpIf != null) {
+                nextIf = tmpIf;
+                if (isInversionNeeded(currentIf, nextIf)) {
+                    nextIf = IfInfo.invert(nextIf);
+                }
+                if (!canMerge(currentIf, nextIf, followThenBranch)) {
+                    return currentIf;
+                }
+            } else {
+                return currentIf;
+            }
+        } else {
+            if (assignInlineNeeded) {
+                boolean sameOuts = (thenPathSame && !followThenBranch) || (elsePathSame && followThenBranch);
+                if (!sameOuts) {
+                    // don't inline assigns inside simple condition
+                    currentIf.resetForceInlineInsns();
+                    return currentIf;
+                }
+            }
+        }
 
-	static boolean isCandidateForOutBlock(MethodNode mth, BlockNode thenBlock, BlockNode elseBlock, BlockNode candidate) {
-		// a candidate block requires:
-		// - >1 predecessor
-		// - each predecessor has a clean path from elseBlock or thenBlock, and there exist predecessors
-		// covering both cases
-		// - inside the union of the two dom frontiers
+        IfInfo result = mergeIfInfo(currentIf, nextIf, followThenBranch);
+        // search next nested if block
+        return searchNestedIf(result);
+    }
 
-		if (candidate.getPredecessors().size() < 2) {
-			return false; // block has only one pred, and so can't be the outblock
-		}
+    private static IfInfo checkForTernaryInCondition(IfInfo currentIf) {
+        IfInfo nextThen = getNextIf(currentIf, currentIf.getThenBlock());
+        IfInfo nextElse = getNextIf(currentIf, currentIf.getElseBlock());
+        if (nextThen == null || nextElse == null) {
+            return null;
+        }
+        if (!nextThen.getFirstIfBlock().getDomFrontier().equals(nextElse.getFirstIfBlock().getDomFrontier())) {
+            return null;
+        }
+        nextThen = searchNestedIf(nextThen);
+        nextElse = searchNestedIf(nextElse);
+        if (nextThen.getThenBlock() == nextElse.getThenBlock()
+                && nextThen.getElseBlock() == nextElse.getElseBlock()) {
+            return mergeTernaryConditions(currentIf, nextThen, nextElse);
+        }
+        if (nextThen.getThenBlock() == nextElse.getElseBlock()
+                && nextThen.getElseBlock() == nextElse.getThenBlock()) {
+            nextElse = IfInfo.invert(nextElse);
+            return mergeTernaryConditions(currentIf, nextThen, nextElse);
+        }
+        return null;
+    }
 
-		BitSet coverageThenPreds = newBlocksBitSet(mth);
-		BitSet coverageElsePreds = newBlocksBitSet(mth);
+    private static IfInfo mergeTernaryConditions(IfInfo currentIf, IfInfo nextThen, IfInfo nextElse) {
+        IfCondition newCondition = IfCondition.ternary(currentIf.getCondition(),
+                nextThen.getCondition(), nextElse.getCondition());
+        IfInfo result = new IfInfo(currentIf.getMth(), newCondition, nextThen.getThenBlock(), nextThen.getElseBlock());
+        result.merge(currentIf, nextThen, nextElse);
+        confirmMerge(result);
+        return result;
+    }
 
-		if (candidate == elseBlock) {
-			coverageElsePreds.set(candidate.getPos());
-		}
-		if (candidate == thenBlock) {
-			coverageThenPreds.set(candidate.getPos());
-		}
+    private static boolean isInversionNeeded(IfInfo currentIf, IfInfo nextIf) {
+        return isEqualPaths(currentIf.getElseBlock(), nextIf.getThenBlock())
+                || isEqualPaths(currentIf.getThenBlock(), nextIf.getElseBlock());
+    }
 
-		for (BlockNode pred : candidate.getPredecessors()) {
-			if (isPathExists(thenBlock, pred)) {
-				coverageThenPreds.set(pred.getPos());
-			}
+    private static boolean canMerge(IfInfo a, IfInfo b, boolean followThenBranch) {
+        if (followThenBranch) {
+            return isEqualPaths(a.getElseBlock(), b.getElseBlock());
+        } else {
+            return isEqualPaths(a.getThenBlock(), b.getThenBlock());
+        }
+    }
 
-			if (isPathExists(elseBlock, pred)) {
-				coverageElsePreds.set(pred.getPos());
-			}
-		}
-		if (coverageElsePreds.cardinality() == 0 || coverageThenPreds.cardinality() == 0) {
-			return false; // block has no path to both the then and else blocks
-		}
+    private static boolean checkConditionBranches(BlockNode from, BlockNode to) {
+        return from.getCleanSuccessors().size() == 1 && from.getCleanSuccessors().contains(to);
+    }
 
-		BlockNode coverageElsePred = bitSetToOneBlock(mth, coverageElsePreds);
-		BlockNode coverageThenPred = bitSetToOneBlock(mth, coverageThenPreds);
-		if (coverageElsePred != null && coverageElsePred == coverageThenPred) {
-			return false; // the only paths from else and then go through the same block
-		}
+    static IfInfo mergeIfInfo(IfInfo first, IfInfo second, boolean followThenBranch) {
+        MethodNode mth = first.getMth();
+        Set<BlockNode> skipBlocks = first.getSkipBlocks();
+        BlockNode thenBlock;
+        BlockNode elseBlock;
+        if (followThenBranch) {
+            thenBlock = second.getThenBlock();
+            elseBlock = getBranchBlock(first.getElseBlock(), second.getElseBlock(), skipBlocks, mth);
+        } else {
+            thenBlock = getBranchBlock(first.getThenBlock(), second.getThenBlock(), skipBlocks, mth);
+            elseBlock = second.getElseBlock();
+        }
+        IfCondition.Mode mergeOperation = followThenBranch ? IfCondition.Mode.AND : IfCondition.Mode.OR;
+        IfCondition condition = IfCondition.merge(mergeOperation, first.getCondition(), second.getCondition());
+        IfInfo result = new IfInfo(mth, condition, thenBlock, elseBlock);
+        result.merge(first, second);
+        return result;
+    }
 
-		return true;
-	}
+    private static BlockNode getBranchBlock(BlockNode first, BlockNode second, Set<BlockNode> skipBlocks, MethodNode mth) {
+        if (first == second) {
+            return second;
+        }
+        if (isEqualReturnBlocks(first, second)) {
+            skipBlocks.add(first);
+            return second;
+        }
+        if (BlockUtils.isDuplicateBlockPath(first, second)) {
+            first.add(AFlag.REMOVE);
+            skipBlocks.add(first);
+            return second;
+        }
+        BlockNode cross = BlockUtils.getPathCross(mth, first, second);
+        if (cross != null) {
+            BlockUtils.visitBlocksOnPath(mth, first, cross, skipBlocks::add);
+            BlockUtils.visitBlocksOnPath(mth, second, cross, skipBlocks::add);
+            skipBlocks.remove(cross);
+            return cross;
+        }
+        BlockNode firstSkip = BlockUtils.followEmptyPath(first);
+        BlockNode secondSkip = BlockUtils.followEmptyPath(second);
+        if (firstSkip.equals(secondSkip) || isEqualReturnBlocks(firstSkip, secondSkip)) {
+            skipBlocks.add(first);
+            skipBlocks.add(second);
+            BlockUtils.visitBlocksOnEmptyPath(first, skipBlocks::add);
+            BlockUtils.visitBlocksOnEmptyPath(second, skipBlocks::add);
+            return secondSkip;
+        }
+        throw new JadxRuntimeException("Unexpected merge pattern");
+    }
 
-	private static boolean isBadBranchBlock(IfInfo info, BlockNode block) {
-		// check if block at end of loop edge
-		if (block.contains(AFlag.LOOP_START) && block.getPredecessors().size() == 1) {
-			BlockNode pred = block.getPredecessors().get(0);
-			if (pred.contains(AFlag.LOOP_END)) {
-				List<LoopInfo> startLoops = block.getAll(AType.LOOP);
-				List<LoopInfo> endLoops = pred.getAll(AType.LOOP);
-				// search for same loop
-				for (LoopInfo startLoop : startLoops) {
-					for (LoopInfo endLoop : endLoops) {
-						if (startLoop == endLoop) {
-							return true;
-						}
-					}
-				}
-			}
-		}
-		// if branch block itself is outblock
-		if (info.getOutBlock() != null) {
-			return block == info.getOutBlock();
-		}
-		return !allPathsFromIf(block, info);
-	}
+    static void confirmMerge(IfInfo info) {
+        if (info.getMergedBlocks().size() > 1) {
+            for (BlockNode block : info.getMergedBlocks()) {
+                if (block != info.getFirstIfBlock()) {
+                    block.add(AFlag.ADDED_TO_REGION);
+                }
+            }
+        }
+        if (!info.getSkipBlocks().isEmpty()) {
+            for (BlockNode block : info.getSkipBlocks()) {
+                block.add(AFlag.ADDED_TO_REGION);
+            }
+            info.getSkipBlocks().clear();
+        }
+        for (InsnNode forceInlineInsn : info.getForceInlineInsns()) {
+            forceInlineInsn.add(AFlag.FORCE_ASSIGN_INLINE);
+        }
+    }
 
-	private static boolean allPathsFromIf(BlockNode block, IfInfo info) {
-		List<BlockNode> preds = block.getPredecessors();
-		BlockSet ifBlocks = info.getMergedBlocks();
-		for (BlockNode pred : preds) {
-			if (pred.contains(AFlag.LOOP_END)) {
-				// ignore loop back edge
-				continue;
-			}
-			BlockNode top = BlockUtils.skipSyntheticPredecessor(pred);
-			if (!ifBlocks.contains(top)) {
-				return false;
-			}
-		}
-		return true;
-	}
+    private static IfInfo getNextIf(IfInfo info, BlockNode block) {
+        if (!canSelectNext(info, block)) {
+            return null;
+        }
+        return getNextIfNodeInfo(info, block);
+    }
 
-	/**
-	 * if startBlock is in a (try) scope, find the scope end as outBlock
-	 */
-	private @Nullable BlockNode findScopeOutBlock(BlockNode startBlock) {
-		if (startBlock == null) {
-			return null;
-		}
-		List<BlockNode> domFrontiers = BlockUtils.bitSetToBlocks(mth, startBlock.getDomFrontier());
-		BlockNode scopeOutBlock = null;
+    private static boolean canSelectNext(IfInfo info, BlockNode block) {
+        if (block.getPredecessors().size() == 1) {
+            return true;
+        }
+        return info.getMergedBlocks().containsAll(block.getPredecessors());
+    }
 
-		// find handler from domFrontier(could be scope end), if domFrontier is handler
-		// and its topSplitter dominates branch block, then branch should end
-		for (BlockNode domFrontier : domFrontiers) {
-			ExcHandlerAttr handler = domFrontier.get(AType.EXC_HANDLER);
-			if (handler == null) {
-				continue;
-			}
-			BlockNode topSplitter = handler.getTryBlock().getTopSplitter();
-			if (startBlock.isDominator(topSplitter)) {
-				scopeOutBlock = BlockUtils.getTryAndHandlerCrossBlock(mth, handler.getHandler());
-				break;
-			}
-		}
-		if (scopeOutBlock != null) {
-			// check if out block still inside scope limited by 'exit' blocks
-			for (BlockNode exit : regionMaker.getStack().getExits()) {
-				if (BlockUtils.isPathExists(exit, scopeOutBlock)) {
-					return null;
-				}
-			}
-		}
-		return scopeOutBlock;
-	}
+    private static IfInfo getNextIfNodeInfo(IfInfo info, BlockNode block) {
+        if (block == null || block.contains(AType.LOOP) || block.contains(AFlag.ADDED_TO_REGION)) {
+            return null;
+        }
+        InsnNode lastInsn = BlockUtils.getLastInsn(block);
+        if (lastInsn != null && lastInsn.getType() == InsnType.IF) {
+            return makeIfInfo(info.getMth(), block);
+        }
+        BlockNode next = getNextBlockInIfSuccessorChain(block);
+        if (next == null) {
+            return null;
+        }
+        if (next.getPredecessors().size() != 1 || next.contains(AFlag.ADDED_TO_REGION)) {
+            return null;
+        }
+        List<InsnNode> forceInlineInsns = new ArrayList<>();
+        if (!checkInsnsInline(block, next, forceInlineInsns)) {
+            return null;
+        }
+        IfInfo nextInfo = makeIfInfo(info.getMth(), next);
+        if (nextInfo == null) {
+            return getNextIfNodeInfo(info, next);
+        }
+        nextInfo.addInsnsForForcedInline(forceInlineInsns);
+        return nextInfo;
+    }
 
-	static IfInfo mergeNestedIfNodes(IfInfo currentIf) {
-		BlockNode curThen = currentIf.getThenBlock();
-		BlockNode curElse = currentIf.getElseBlock();
-		if (curThen == curElse) {
-			return null;
-		}
-		if (BlockUtils.isFollowBackEdge(curThen)
-				|| BlockUtils.isFollowBackEdge(curElse)) {
-			return null;
-		}
-		boolean followThenBranch;
-		IfInfo nextIf = getNextIf(currentIf, curThen);
-		if (nextIf != null) {
-			followThenBranch = true;
-		} else {
-			nextIf = getNextIf(currentIf, curElse);
-			if (nextIf != null) {
-				followThenBranch = false;
-			} else {
-				return null;
-			}
-		}
+    /**
+     * Allow singular successor to block or 2 successors where one is a EXC_BOTTOM_SPLITTER
+     */
+    private static @Nullable BlockNode getNextBlockInIfSuccessorChain(BlockNode block) {
 
-		boolean assignInlineNeeded = !nextIf.getForceInlineInsns().isEmpty();
-		if (assignInlineNeeded) {
-			for (BlockNode mergedBlock : currentIf.getMergedBlocks()) {
-				if (mergedBlock.contains(AFlag.LOOP_START)) {
-					// don't inline assigns into loop condition
-					return currentIf;
-				}
-			}
-		}
+        // skip this block and search in successors chain
+        List<BlockNode> successors = block.getSuccessors();
+        if (successors.size() > 2 || successors.size() == 0) {
+            return null;
+        }
+        // We might have the next IF and a EXC_BOTTOM_SPLITTER block to delimit a try region
+        BlockNode first = successors.get(0);
+        if (successors.size() == 1) {
+            return first;
+        }
+        BlockNode second = successors.get(1);
+        boolean firstIsHandlerPath = first.contains(AFlag.EXC_BOTTOM_SPLITTER);
+        boolean secondIsHandlerPath = second.contains(AFlag.EXC_BOTTOM_SPLITTER);
+        if (!firstIsHandlerPath && !secondIsHandlerPath) {
+            // unknown case
+            return null;
+        }
+        if (firstIsHandlerPath && secondIsHandlerPath) {
+            // unknown case
+            return null;
+        }
+        BlockNode candidate = firstIsHandlerPath ? second : first;
 
-		if (isInversionNeeded(currentIf, nextIf)) {
-			// invert current node for match pattern
-			nextIf = IfInfo.invert(nextIf);
-		}
-		boolean thenPathSame = isEqualPaths(curThen, nextIf.getThenBlock());
-		boolean elsePathSame = isEqualPaths(curElse, nextIf.getElseBlock());
-		if (!thenPathSame && !elsePathSame) {
-			// complex condition, run additional checks
-			if (checkConditionBranches(curThen, curElse)
-					|| checkConditionBranches(curElse, curThen)) {
-				return null;
-			}
-			BlockNode otherBranchBlock = followThenBranch ? curElse : curThen;
-			otherBranchBlock = BlockUtils.followEmptyPath(otherBranchBlock);
-			if (!isPathExists(nextIf.getFirstIfBlock(), otherBranchBlock)) {
-				return checkForTernaryInCondition(currentIf);
-			}
+        // Continue to recurse through blocks as long as none of them have any instructions
+        if (candidate.getInstructions().isEmpty()) {
+            return getNextBlockInIfSuccessorChain(candidate);
+        }
 
-			// this is nested conditions with different mode (i.e (a && b) || c),
-			// search next condition for merge, get null if failed
-			IfInfo tmpIf = mergeNestedIfNodes(nextIf);
-			if (tmpIf != null) {
-				nextIf = tmpIf;
-				if (isInversionNeeded(currentIf, nextIf)) {
-					nextIf = IfInfo.invert(nextIf);
-				}
-				if (!canMerge(currentIf, nextIf, followThenBranch)) {
-					return currentIf;
-				}
-			} else {
-				return currentIf;
-			}
-		} else {
-			if (assignInlineNeeded) {
-				boolean sameOuts = (thenPathSame && !followThenBranch) || (elsePathSame && followThenBranch);
-				if (!sameOuts) {
-					// don't inline assigns inside simple condition
-					currentIf.resetForceInlineInsns();
-					return currentIf;
-				}
-			}
-		}
+        return candidate;
+    }
 
-		IfInfo result = mergeIfInfo(currentIf, nextIf, followThenBranch);
-		// search next nested if block
-		return searchNestedIf(result);
-	}
+    /**
+     * Check that all instructions can be inlined
+     */
+    private static boolean checkInsnsInline(BlockNode block, BlockNode next, List<InsnNode> forceInlineInsns) {
+        List<InsnNode> insns = block.getInstructions();
+        if (insns.isEmpty()) {
+            return true;
+        }
+        boolean pass = true;
+        for (InsnNode insn : insns) {
+            RegisterArg res = insn.getResult();
+            if (res == null) {
+                return false;
+            }
+            List<RegisterArg> useList = res.getSVar().getUseList();
+            int useCount = useList.size();
+            if (useCount == 0) {
+                // TODO?
+                return false;
+            }
+            InsnArg arg = useList.get(0);
+            InsnNode usePlace = arg.getParentInsn();
+            if (!BlockUtils.blockContains(block, usePlace)
+                    && !BlockUtils.blockContains(next, usePlace)) {
+                return false;
+            }
+            if (useCount > 1) {
+                forceInlineInsns.add(insn);
+            } else {
+                // allow only forced assign inline
+                pass = false;
+            }
+        }
+        return pass;
+    }
 
-	private static IfInfo checkForTernaryInCondition(IfInfo currentIf) {
-		IfInfo nextThen = getNextIf(currentIf, currentIf.getThenBlock());
-		IfInfo nextElse = getNextIf(currentIf, currentIf.getElseBlock());
-		if (nextThen == null || nextElse == null) {
-			return null;
-		}
-		if (!nextThen.getFirstIfBlock().getDomFrontier().equals(nextElse.getFirstIfBlock().getDomFrontier())) {
-			return null;
-		}
-		nextThen = searchNestedIf(nextThen);
-		nextElse = searchNestedIf(nextElse);
-		if (nextThen.getThenBlock() == nextElse.getThenBlock()
-				&& nextThen.getElseBlock() == nextElse.getElseBlock()) {
-			return mergeTernaryConditions(currentIf, nextThen, nextElse);
-		}
-		if (nextThen.getThenBlock() == nextElse.getElseBlock()
-				&& nextThen.getElseBlock() == nextElse.getThenBlock()) {
-			nextElse = IfInfo.invert(nextElse);
-			return mergeTernaryConditions(currentIf, nextThen, nextElse);
-		}
-		return null;
-	}
+    @Nullable
+    BlockNode process(IRegion currentRegion, BlockNode block, IfNode ifnode, RegionStack stack) {
+        if (block.contains(AFlag.ADDED_TO_REGION)) {
+            // block already included in other 'if' region
+            return ifnode.getThenBlock();
+        }
+        IfInfo currentIf = makeIfInfo(mth, block);
+        if (currentIf == null) {
+            return null;
+        }
+        IfInfo mergedIf = mergeNestedIfNodes(currentIf);
+        if (mergedIf != null) {
+            currentIf = mergedIf;
+        } else {
+            // invert simple condition (compiler often do it)
+            // ensure that we only ever invert once, because if multiple regions contain this block
+            // we'll change the block after it's already been included in a region, which can cause
+            // other regions containing the block to believe the condition has been flipped when it
+            // has not, or vice versa.
+            if (!block.contains(AFlag.DONT_INVERT)) {
+                currentIf = IfInfo.invert(currentIf);
+                block.add(AFlag.DONT_INVERT);
+            }
+        }
+        IfInfo modifiedIf = restructureIf(block, currentIf);
+        if (modifiedIf != null) {
+            currentIf = modifiedIf;
+        } else {
+            if (currentIf.getMergedBlocks().size() <= 1) {
+                return null;
+            }
+            currentIf = makeIfInfo(mth, block);
+            currentIf = restructureIf(block, currentIf);
+            if (currentIf == null) {
+                // all attempts failed
+                return null;
+            }
+        }
+        confirmMerge(currentIf);
 
-	private static IfInfo mergeTernaryConditions(IfInfo currentIf, IfInfo nextThen, IfInfo nextElse) {
-		IfCondition newCondition = IfCondition.ternary(currentIf.getCondition(),
-				nextThen.getCondition(), nextElse.getCondition());
-		IfInfo result = new IfInfo(currentIf.getMth(), newCondition, nextThen.getThenBlock(), nextThen.getElseBlock());
-		result.merge(currentIf, nextThen, nextElse);
-		confirmMerge(result);
-		return result;
-	}
+        IfRegion ifRegion = new IfRegion(currentRegion);
+        ifRegion.updateCondition(currentIf);
+        currentRegion.getSubBlocks().add(ifRegion);
 
-	private static boolean isInversionNeeded(IfInfo currentIf, IfInfo nextIf) {
-		return isEqualPaths(currentIf.getElseBlock(), nextIf.getThenBlock())
-				|| isEqualPaths(currentIf.getThenBlock(), nextIf.getElseBlock());
-	}
+        BlockNode outBlock = currentIf.getOutBlock();
+        stack.push(ifRegion);
+        stack.addExit(outBlock);
 
-	private static boolean canMerge(IfInfo a, IfInfo b, boolean followThenBranch) {
-		if (followThenBranch) {
-			return isEqualPaths(a.getElseBlock(), b.getElseBlock());
-		} else {
-			return isEqualPaths(a.getThenBlock(), b.getThenBlock());
-		}
-	}
+        BlockNode thenBlock = currentIf.getThenBlock();
+        if (thenBlock == null) {
+            // empty then block, not normal, but maybe correct
+            ifRegion.setThenRegion(new Region(ifRegion));
+        } else {
+            ifRegion.setThenRegion(regionMaker.makeRegion(thenBlock));
+        }
+        BlockNode elseBlock = currentIf.getElseBlock();
+        if (elseBlock == null || stack.containsExit(elseBlock)) {
+            ifRegion.setElseRegion(null);
+        } else {
+            ifRegion.setElseRegion(regionMaker.makeRegion(elseBlock));
+        }
 
-	private static boolean checkConditionBranches(BlockNode from, BlockNode to) {
-		return from.getCleanSuccessors().size() == 1 && from.getCleanSuccessors().contains(to);
-	}
+        // insert edge insns in new 'else' branch
+        if (ifRegion.getElseRegion() == null && outBlock != null) {
+            List<EdgeInsnAttr> edgeInsnAttrs = outBlock.getAll(AType.EDGE_INSN);
+            if (!edgeInsnAttrs.isEmpty()) {
+                List<InsnNode> instructions = new ArrayList<>();
+                for (EdgeInsnAttr edgeInsnAttr : edgeInsnAttrs) {
+                    if (edgeInsnAttr.getEnd().equals(outBlock)) {
+                        if (currentIf.getMergedBlocks().contains(followEmptyPath(edgeInsnAttr.getStart(), true))) {
+                            instructions.add(edgeInsnAttr.getInsn());
+                        }
+                    }
+                }
 
-	static IfInfo mergeIfInfo(IfInfo first, IfInfo second, boolean followThenBranch) {
-		MethodNode mth = first.getMth();
-		Set<BlockNode> skipBlocks = first.getSkipBlocks();
-		BlockNode thenBlock;
-		BlockNode elseBlock;
-		if (followThenBranch) {
-			thenBlock = second.getThenBlock();
-			elseBlock = getBranchBlock(first.getElseBlock(), second.getElseBlock(), skipBlocks, mth);
-		} else {
-			thenBlock = getBranchBlock(first.getThenBlock(), second.getThenBlock(), skipBlocks, mth);
-			elseBlock = second.getElseBlock();
-		}
-		IfCondition.Mode mergeOperation = followThenBranch ? IfCondition.Mode.AND : IfCondition.Mode.OR;
-		IfCondition condition = IfCondition.merge(mergeOperation, first.getCondition(), second.getCondition());
-		IfInfo result = new IfInfo(mth, condition, thenBlock, elseBlock);
-		result.merge(first, second);
-		return result;
-	}
+                if (!instructions.isEmpty()) {
+                    Region elseRegion = new Region(ifRegion);
+                    InsnContainer newBlock = new InsnContainer(instructions);
+                    elseRegion.add(newBlock);
+                    ifRegion.setElseRegion(elseRegion);
+                }
+            }
+        }
 
-	private static BlockNode getBranchBlock(BlockNode first, BlockNode second, Set<BlockNode> skipBlocks, MethodNode mth) {
-		if (first == second) {
-			return second;
-		}
-		if (isEqualReturnBlocks(first, second)) {
-			skipBlocks.add(first);
-			return second;
-		}
-		if (BlockUtils.isDuplicateBlockPath(first, second)) {
-			first.add(AFlag.REMOVE);
-			skipBlocks.add(first);
-			return second;
-		}
-		BlockNode cross = BlockUtils.getPathCross(mth, first, second);
-		if (cross != null) {
-			BlockUtils.visitBlocksOnPath(mth, first, cross, skipBlocks::add);
-			BlockUtils.visitBlocksOnPath(mth, second, cross, skipBlocks::add);
-			skipBlocks.remove(cross);
-			return cross;
-		}
-		BlockNode firstSkip = BlockUtils.followEmptyPath(first);
-		BlockNode secondSkip = BlockUtils.followEmptyPath(second);
-		if (firstSkip.equals(secondSkip) || isEqualReturnBlocks(firstSkip, secondSkip)) {
-			skipBlocks.add(first);
-			skipBlocks.add(second);
-			BlockUtils.visitBlocksOnEmptyPath(first, skipBlocks::add);
-			BlockUtils.visitBlocksOnEmptyPath(second, skipBlocks::add);
-			return secondSkip;
-		}
-		throw new JadxRuntimeException("Unexpected merge pattern");
-	}
+        stack.pop();
+        return outBlock;
+    }
 
-	static void confirmMerge(IfInfo info) {
-		if (info.getMergedBlocks().size() > 1) {
-			for (BlockNode block : info.getMergedBlocks()) {
-				if (block != info.getFirstIfBlock()) {
-					block.add(AFlag.ADDED_TO_REGION);
-				}
-			}
-		}
-		if (!info.getSkipBlocks().isEmpty()) {
-			for (BlockNode block : info.getSkipBlocks()) {
-				block.add(AFlag.ADDED_TO_REGION);
-			}
-			info.getSkipBlocks().clear();
-		}
-		for (InsnNode forceInlineInsn : info.getForceInlineInsns()) {
-			forceInlineInsn.add(AFlag.FORCE_ASSIGN_INLINE);
-		}
-	}
+    @NotNull
+    IfInfo buildIfInfo(LoopRegion loopRegion) {
+        IfInfo condInfo = makeIfInfo(mth, loopRegion.getHeader());
+        condInfo = searchNestedIf(condInfo);
+        confirmMerge(condInfo);
+        return condInfo;
+    }
 
-	private static IfInfo getNextIf(IfInfo info, BlockNode block) {
-		if (!canSelectNext(info, block)) {
-			return null;
-		}
-		return getNextIfNodeInfo(info, block);
-	}
+    IfInfo restructureIf(BlockNode block, IfInfo info) {
+        BlockNode thenBlock = info.getThenBlock();
+        BlockNode elseBlock = info.getElseBlock();
 
-	private static boolean canSelectNext(IfInfo info, BlockNode block) {
-		if (block.getPredecessors().size() == 1) {
-			return true;
-		}
-		return info.getMergedBlocks().containsAll(block.getPredecessors());
-	}
+        if (Objects.equals(thenBlock, elseBlock)) {
+            IfInfo ifInfo = new IfInfo(info, null, null);
+            ifInfo.setOutBlock(thenBlock);
+            return ifInfo;
+        }
 
-	private static IfInfo getNextIfNodeInfo(IfInfo info, BlockNode block) {
-		if (block == null || block.contains(AType.LOOP) || block.contains(AFlag.ADDED_TO_REGION)) {
-			return null;
-		}
-		InsnNode lastInsn = BlockUtils.getLastInsn(block);
-		if (lastInsn != null && lastInsn.getType() == InsnType.IF) {
-			return makeIfInfo(info.getMth(), block);
-		}
-		BlockNode next = getNextBlockInIfSuccessorChain(block);
-		if (next == null) {
-			return null;
-		}
-		if (next.getPredecessors().size() != 1 || next.contains(AFlag.ADDED_TO_REGION)) {
-			return null;
-		}
-		List<InsnNode> forceInlineInsns = new ArrayList<>();
-		if (!checkInsnsInline(block, next, forceInlineInsns)) {
-			return null;
-		}
-		IfInfo nextInfo = makeIfInfo(info.getMth(), next);
-		if (nextInfo == null) {
-			return getNextIfNodeInfo(info, next);
-		}
-		nextInfo.addInsnsForForcedInline(forceInlineInsns);
-		return nextInfo;
-	}
+        // select 'then', 'else' and 'exit' blocks
+        if (thenBlock.contains(AFlag.RETURN) && elseBlock.contains(AFlag.RETURN)) {
+            info.setOutBlock(null);
+            return info;
+        }
+        // init outblock, which will be used in isBadBranchBlock to compare with branch block
+        info.setOutBlock(findOutBlock(mth, thenBlock, elseBlock));
 
-	/**
-	 * Allow singular successor to block or 2 successors where one is a EXC_BOTTOM_SPLITTER
-	 */
-	private static @Nullable BlockNode getNextBlockInIfSuccessorChain(BlockNode block) {
+        boolean badThen = isBadBranchBlock(info, thenBlock);
+        boolean badElse = isBadBranchBlock(info, elseBlock);
+        if (badThen && badElse) {
+            if (false) {
+                LOG.debug("Stop processing blocks after 'if': {}, method: {}", info.getMergedBlocks(), mth);
+            }
+            return null;
+        }
+        if (badElse) {
+            info = new IfInfo(info, thenBlock, null);
+            info.setOutBlock(elseBlock);
+        } else if (badThen) {
+            info = IfInfo.invert(info);
+            info = new IfInfo(info, elseBlock, null);
+            info.setOutBlock(thenBlock);
+        }
 
-		// skip this block and search in successors chain
-		List<BlockNode> successors = block.getSuccessors();
-		if (successors.size() > 2 || successors.size() == 0) {
-			return null;
-		}
-		// We might have the next IF and a EXC_BOTTOM_SPLITTER block to delimit a try region
-		BlockNode first = successors.get(0);
-		if (successors.size() == 1) {
-			return first;
-		}
-		BlockNode second = successors.get(1);
-		boolean firstIsHandlerPath = first.contains(AFlag.EXC_BOTTOM_SPLITTER);
-		boolean secondIsHandlerPath = second.contains(AFlag.EXC_BOTTOM_SPLITTER);
-		if (!firstIsHandlerPath && !secondIsHandlerPath) {
-			// unknown case
-			return null;
-		}
-		if (firstIsHandlerPath && secondIsHandlerPath) {
-			// unknown case
-			return null;
-		}
-		BlockNode candidate = firstIsHandlerPath ? second : first;
+        // getPathCross may not find outBlock (e.g. one branch has return, outBlock definitely is
+        // null), so should check further
+        if (info.getOutBlock() == null) {
+            BlockNode scopeOutBlockThen = findScopeOutBlock(info.getThenBlock());
+            BlockNode scopeOutBlockElse = findScopeOutBlock(info.getElseBlock());
+            if (scopeOutBlockThen == null && scopeOutBlockElse != null) {
+                info.setOutBlock(scopeOutBlockElse);
+            } else if (scopeOutBlockThen != null && scopeOutBlockElse == null) {
+                info.setOutBlock(scopeOutBlockThen);
+            } else if (scopeOutBlockThen != null && scopeOutBlockThen == scopeOutBlockElse) {
+                info.setOutBlock(scopeOutBlockThen);
+            }
+        }
 
-		// Continue to recurse through blocks as long as none of them have any instructions
-		if (candidate.getInstructions().isEmpty()) {
-			return getNextBlockInIfSuccessorChain(candidate);
-		}
+        if (BlockUtils.isBackEdge(block, info.getOutBlock())) {
+            info.setOutBlock(null);
+        }
+        return info;
+    }
 
-		return candidate;
-	}
+    /**
+     * if startBlock is in a (try) scope, find the scope end as outBlock
+     */
+    private @Nullable BlockNode findScopeOutBlock(BlockNode startBlock) {
+        if (startBlock == null) {
+            return null;
+        }
+        List<BlockNode> domFrontiers = BlockUtils.bitSetToBlocks(mth, startBlock.getDomFrontier());
+        BlockNode scopeOutBlock = null;
 
-	/**
-	 * Check that all instructions can be inlined
-	 */
-	private static boolean checkInsnsInline(BlockNode block, BlockNode next, List<InsnNode> forceInlineInsns) {
-		List<InsnNode> insns = block.getInstructions();
-		if (insns.isEmpty()) {
-			return true;
-		}
-		boolean pass = true;
-		for (InsnNode insn : insns) {
-			RegisterArg res = insn.getResult();
-			if (res == null) {
-				return false;
-			}
-			List<RegisterArg> useList = res.getSVar().getUseList();
-			int useCount = useList.size();
-			if (useCount == 0) {
-				// TODO?
-				return false;
-			}
-			InsnArg arg = useList.get(0);
-			InsnNode usePlace = arg.getParentInsn();
-			if (!BlockUtils.blockContains(block, usePlace)
-					&& !BlockUtils.blockContains(next, usePlace)) {
-				return false;
-			}
-			if (useCount > 1) {
-				forceInlineInsns.add(insn);
-			} else {
-				// allow only forced assign inline
-				pass = false;
-			}
-		}
-		return pass;
-	}
+        // find handler from domFrontier(could be scope end), if domFrontier is handler
+        // and its topSplitter dominates branch block, then branch should end
+        for (BlockNode domFrontier : domFrontiers) {
+            ExcHandlerAttr handler = domFrontier.get(AType.EXC_HANDLER);
+            if (handler == null) {
+                continue;
+            }
+            BlockNode topSplitter = handler.getTryBlock().getTopSplitter();
+            if (startBlock.isDominator(topSplitter)) {
+                scopeOutBlock = BlockUtils.getTryAndHandlerCrossBlock(mth, handler.getHandler());
+                break;
+            }
+        }
+        if (scopeOutBlock != null) {
+            // check if out block still inside scope limited by 'exit' blocks
+            for (BlockNode exit : regionMaker.getStack().getExits()) {
+                if (BlockUtils.isPathExists(exit, scopeOutBlock)) {
+                    return null;
+                }
+            }
+        }
+        return scopeOutBlock;
+    }
 }

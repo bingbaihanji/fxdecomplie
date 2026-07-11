@@ -1,8 +1,8 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data;
 
-import java.util.List;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
+
+import java.util.List;
 
 /**
  * 字段数据接口。
@@ -12,17 +12,17 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
  */
 public interface IFieldData extends IFieldRef {
 
-	/**
-	 * 获取字段的访问标志（access flags）。
-	 *
-	 * @return 访问标志位掩码
-	 */
-	int getAccessFlags();
+    /**
+     * 获取字段的访问标志（access flags）。
+     *
+     * @return 访问标志位掩码
+     */
+    int getAccessFlags();
 
-	/**
-	 * 获取该字段上附加的属性列表（如注解、常量值、签名等）。
-	 *
-	 * @return 字段属性列表
-	 */
-	List<IJadxAttribute> getAttributes();
+    /**
+     * 获取该字段上附加的属性列表（如注解、常量值、签名等）。
+     *
+     * @return 字段属性列表
+     */
+    List<IJadxAttribute> getAttributes();
 }

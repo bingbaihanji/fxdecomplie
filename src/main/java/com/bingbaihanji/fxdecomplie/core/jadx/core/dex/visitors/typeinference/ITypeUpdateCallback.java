@@ -8,12 +8,12 @@ import org.jetbrains.annotations.Nullable;
 @FunctionalInterface
 public interface ITypeUpdateCallback {
 
-	/**
-	 * Called on type update result being calculated
-	 *
-	 * @param result - type update result
-	 * @return modified result, can be null - will keep callback and wait for another result
-	 */
-	@Nullable
-	TypeUpdateResult updateCallback(TypeUpdateResult result);
+    /**
+     * Called on type update result being calculated
+     *
+     * @param result - type update result
+     * @return modified result, can be null - will keep callback and wait for another result
+     */
+    @Nullable
+    TypeUpdateResult updateCallback(TypeUpdateResult result);
 }

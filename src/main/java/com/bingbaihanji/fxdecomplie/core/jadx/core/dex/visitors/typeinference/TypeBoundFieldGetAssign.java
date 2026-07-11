@@ -12,72 +12,72 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
  * Bound type calculated using instance generic type.
  */
 public final class TypeBoundFieldGetAssign implements ITypeBoundDynamic {
-	private final RootNode root;
-	private final IndexInsnNode getNode;
-	private final FieldInfo fieldInfo;
-	private final ArgType initType;
+    private final RootNode root;
+    private final IndexInsnNode getNode;
+    private final FieldInfo fieldInfo;
+    private final ArgType initType;
 
-	public TypeBoundFieldGetAssign(RootNode root, IndexInsnNode getNode, ArgType initType) {
-		this.root = root;
-		this.getNode = getNode;
-		this.fieldInfo = (FieldInfo) getNode.getIndex();
-		this.initType = initType;
-	}
+    public TypeBoundFieldGetAssign(RootNode root, IndexInsnNode getNode, ArgType initType) {
+        this.root = root;
+        this.getNode = getNode;
+        this.fieldInfo = (FieldInfo) getNode.getIndex();
+        this.initType = initType;
+    }
 
-	@Override
-	public BoundEnum getBound() {
-		return BoundEnum.ASSIGN;
-	}
+    @Override
+    public BoundEnum getBound() {
+        return BoundEnum.ASSIGN;
+    }
 
-	@Override
-	public ArgType getType(TypeUpdateInfo updateInfo) {
-		return getResultType(updateInfo.getType(getInstanceArg()));
-	}
+    @Override
+    public ArgType getType(TypeUpdateInfo updateInfo) {
+        return getResultType(updateInfo.getType(getInstanceArg()));
+    }
 
-	@Override
-	public ArgType getType() {
-		return getResultType(getInstanceArg().getType());
-	}
+    @Override
+    public ArgType getType() {
+        return getResultType(getInstanceArg().getType());
+    }
 
-	private ArgType getResultType(ArgType instanceType) {
-		ArgType resultGeneric = root.getTypeUtils().replaceClassGenerics(instanceType, initType);
-		if (resultGeneric != null && !resultGeneric.isWildcard()) {
-			return resultGeneric;
-		}
-		return initType; // TODO: check if this type is allowed in current scope
-	}
+    private ArgType getResultType(ArgType instanceType) {
+        ArgType resultGeneric = root.getTypeUtils().replaceClassGenerics(instanceType, initType);
+        if (resultGeneric != null && !resultGeneric.isWildcard()) {
+            return resultGeneric;
+        }
+        return initType; // TODO: check if this type is allowed in current scope
+    }
 
-	private InsnArg getInstanceArg() {
-		return getNode.getArg(0);
-	}
+    private InsnArg getInstanceArg() {
+        return getNode.getArg(0);
+    }
 
-	@Override
-	public RegisterArg getArg() {
-		return getNode.getResult();
-	}
+    @Override
+    public RegisterArg getArg() {
+        return getNode.getResult();
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		TypeBoundFieldGetAssign that = (TypeBoundFieldGetAssign) o;
-		return getNode.equals(that.getNode);
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TypeBoundFieldGetAssign that = (TypeBoundFieldGetAssign) o;
+        return getNode.equals(that.getNode);
+    }
 
-	@Override
-	public int hashCode() {
-		return getNode.hashCode();
-	}
+    @Override
+    public int hashCode() {
+        return getNode.hashCode();
+    }
 
-	@Override
-	public String toString() {
-		return "FieldGetAssign{" + fieldInfo
-				+ ", type=" + getType()
-				+ ", instanceArg=" + getInstanceArg()
-				+ '}';
-	}
+    @Override
+    public String toString() {
+        return "FieldGetAssign{" + fieldInfo
+                + ", type=" + getType()
+                + ", instanceArg=" + getInstanceArg()
+                + '}';
+    }
 }

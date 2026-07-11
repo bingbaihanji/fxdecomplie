@@ -1,74 +1,73 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.CentralityState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.TraverserStateFactory;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.handlers.AbstractBlockPathTraverserHandler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.handlers.BaseBlockTraverserHandler;
+import org.jetbrains.annotations.Nullable;
 
 public final class NewBlockTraverserState extends TraverserState {
 
-	public static TraverserStateFactory<NewBlockTraverserState> getFactory(CentralityState centralityState,
-			TraverserBlockInfo blockInsnInfo) {
-		return new NewBlockStateFactory(centralityState, blockInsnInfo);
-	}
+    private final CentralityState centralityState;
+    private final @Nullable TraverserBlockInfo blockInsnInfo;
 
-	private static class NewBlockStateFactory extends TraverserStateFactory<NewBlockTraverserState> {
-		private final CentralityState centralityState;
-		private final TraverserBlockInfo blockInsnInfo;
+    public NewBlockTraverserState(TraverserActivePathState state, CentralityState centralityState, TraverserBlockInfo blockInsnInfo) {
+        super(state);
+        this.centralityState = centralityState;
+        this.blockInsnInfo = blockInsnInfo;
+    }
 
-		public NewBlockStateFactory(CentralityState centralityState, TraverserBlockInfo blockInsnInfo) {
-			this.centralityState = centralityState;
-			this.blockInsnInfo = blockInsnInfo;
-		}
+    public static TraverserStateFactory<NewBlockTraverserState> getFactory(CentralityState centralityState,
+                                                                           TraverserBlockInfo blockInsnInfo) {
+        return new NewBlockStateFactory(centralityState, blockInsnInfo);
+    }
 
-		@Override
-		public NewBlockTraverserState generateInternalState(TraverserActivePathState state) {
-			return new NewBlockTraverserState(state, centralityState, blockInsnInfo);
-		}
-	}
+    @Override
+    public ComparisonState getCompareState() {
+        return ComparisonState.NOT_READY;
+    }
 
-	private final CentralityState centralityState;
-	private final @Nullable TraverserBlockInfo blockInsnInfo;
+    @Override
+    public boolean isTerminal() {
+        return false;
+    }
 
-	public NewBlockTraverserState(TraverserActivePathState state, CentralityState centralityState, TraverserBlockInfo blockInsnInfo) {
-		super(state);
-		this.centralityState = centralityState;
-		this.blockInsnInfo = blockInsnInfo;
-	}
+    @Override
+    public @Nullable AbstractBlockPathTraverserHandler getNextHandler() {
+        // We have no data on this block, so we'll give it the base block handler to gain
+        // information about it to gather more state information regarding the block.
+        return new BaseBlockTraverserHandler(this);
+    }
 
-	@Override
-	public ComparisonState getCompareState() {
-		return ComparisonState.NOT_READY;
-	}
+    @Override
+    protected @Nullable CentralityState getUnderlyingCentralityState() {
+        return centralityState;
+    }
 
-	@Override
-	public boolean isTerminal() {
-		return false;
-	}
+    @Override
+    protected @Nullable TraverserBlockInfo getUnderlyingBlockInsnInfo() {
+        return blockInsnInfo;
+    }
 
-	@Override
-	public @Nullable AbstractBlockPathTraverserHandler getNextHandler() {
-		// We have no data on this block, so we'll give it the base block handler to gain
-		// information about it to gather more state information regarding the block.
-		return new BaseBlockTraverserHandler(this);
-	}
+    @Override
+    protected TraverserState duplicateInternalState(TraverserActivePathState comparatorState) {
+        CentralityState dCentralityState = centralityState.duplicate();
+        TraverserBlockInfo dBlockInsnInfo = blockInsnInfo.duplicate();
+        return new NewBlockTraverserState(comparatorState, dCentralityState, dBlockInsnInfo);
+    }
 
-	@Override
-	protected @Nullable CentralityState getUnderlyingCentralityState() {
-		return centralityState;
-	}
+    private static class NewBlockStateFactory extends TraverserStateFactory<NewBlockTraverserState> {
+        private final CentralityState centralityState;
+        private final TraverserBlockInfo blockInsnInfo;
 
-	@Override
-	protected @Nullable TraverserBlockInfo getUnderlyingBlockInsnInfo() {
-		return blockInsnInfo;
-	}
+        public NewBlockStateFactory(CentralityState centralityState, TraverserBlockInfo blockInsnInfo) {
+            this.centralityState = centralityState;
+            this.blockInsnInfo = blockInsnInfo;
+        }
 
-	@Override
-	protected TraverserState duplicateInternalState(TraverserActivePathState comparatorState) {
-		CentralityState dCentralityState = centralityState.duplicate();
-		TraverserBlockInfo dBlockInsnInfo = blockInsnInfo.duplicate();
-		return new NewBlockTraverserState(comparatorState, dCentralityState, dBlockInsnInfo);
-	}
+        @Override
+        public NewBlockTraverserState generateInternalState(TraverserActivePathState state) {
+            return new NewBlockTraverserState(state, centralityState, blockInsnInfo);
+        }
+    }
 }

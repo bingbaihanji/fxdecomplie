@@ -6,9 +6,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.AccessInfo;
 
 public interface ICodeNode extends IDexNode, IAttributeNode, IUsageInfoNode, ICodeNodeRef {
 
-	ClassNode getDeclaringClass();
+    ClassNode getDeclaringClass();
 
-	AccessInfo getAccessFlags();
+    AccessInfo getAccessFlags();
 
-	void setAccessFlags(AccessInfo newAccessFlags);
+    void setAccessFlags(AccessInfo newAccessFlags);
 }

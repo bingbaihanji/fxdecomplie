@@ -5,15 +5,15 @@ import java.io.InputStream;
 
 public interface IResTableParser {
 
-	void decode(InputStream inputStream) throws IOException;
+    void decode(InputStream inputStream) throws IOException;
 
-	ResContainer decodeFiles();
+    ResContainer decodeFiles();
 
-	ResourceStorage getResStorage();
+    ResourceStorage getResStorage();
 
-	BinaryXMLStrings getStrings();
+    BinaryXMLStrings getStrings();
 
-	default void setBaseFileName(String fileName) {
-		// optional
-	}
+    default void setBaseFileName(String fileName) {
+        // optional
+    }
 }

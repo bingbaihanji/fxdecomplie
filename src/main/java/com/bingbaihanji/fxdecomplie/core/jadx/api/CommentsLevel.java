@@ -1,14 +1,14 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api;
 
 public enum CommentsLevel {
-	NONE,
-	USER_ONLY,
-	ERROR,
-	WARN,
-	INFO,
-	DEBUG;
+    NONE,
+    USER_ONLY,
+    ERROR,
+    WARN,
+    INFO,
+    DEBUG;
 
-	public boolean filter(CommentsLevel limit) {
-		return this.ordinal() <= limit.ordinal();
-	}
+    public boolean filter(CommentsLevel limit) {
+        return this.ordinal() <= limit.ordinal();
+    }
 }

@@ -1,46 +1,46 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.visitors;
 
-import java.util.List;
-import java.util.ListIterator;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserBlockInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state.TraverserState;
 
+import java.util.List;
+import java.util.ListIterator;
+
 public final class ImplicitInsnBlockTraverserVisitor extends AbstractBlockTraverserVisitor {
 
-	public static boolean isInstructionImplicit(InsnNode node) {
-		// An instruction is implicit if it can be safely skipped for comparison when traversing in reverse
-		// order.
-		// The presence of a GOTO should be reflected in the structure of a block graph.
-		// i.e. a GOTO should be the last instruction of a block with a single successor.
-		// Another example might be NOP.
-		return node.getType() == InsnType.GOTO;
-	}
+    public ImplicitInsnBlockTraverserVisitor(TraverserState state) {
+        super(state);
+    }
 
-	public ImplicitInsnBlockTraverserVisitor(TraverserState state) {
-		super(state);
-	}
+    public static boolean isInstructionImplicit(InsnNode node) {
+        // An instruction is implicit if it can be safely skipped for comparison when traversing in reverse
+        // order.
+        // The presence of a GOTO should be reflected in the structure of a block graph.
+        // i.e. a GOTO should be the last instruction of a block with a single successor.
+        // Another example might be NOP.
+        return node.getType() == InsnType.GOTO;
+    }
 
-	@Override
-	public TraverserState visit(BlockNode block) {
-		TraverserBlockInfo insnInfo = getState().getBlockInsnInfo();
-		List<InsnNode> insns = insnInfo.getInsnsSlice();
-		ListIterator<InsnNode> insnsIterator = insns.listIterator(insns.size());
+    @Override
+    public TraverserState visit(BlockNode block) {
+        TraverserBlockInfo insnInfo = getState().getBlockInsnInfo();
+        List<InsnNode> insns = insnInfo.getInsnsSlice();
+        ListIterator<InsnNode> insnsIterator = insns.listIterator(insns.size());
 
-		// The number of instructions that have been identified as "implicit" instructions.
-		int bottomDelta = 0;
-		while (insnsIterator.hasPrevious()) {
-			InsnNode insn = insnsIterator.previous();
-			if (!isInstructionImplicit(insn)) {
-				break;
-			}
-			bottomDelta++;
-		}
-		insnInfo.setBottomOffset(insnInfo.getBottomOffset() + bottomDelta);
-		insnInfo.setBottomImplicitOffset(insnInfo.getBottomImplicitCount() + bottomDelta);
-		return getState();
-	}
+        // The number of instructions that have been identified as "implicit" instructions.
+        int bottomDelta = 0;
+        while (insnsIterator.hasPrevious()) {
+            InsnNode insn = insnsIterator.previous();
+            if (!isInstructionImplicit(insn)) {
+                break;
+            }
+            bottomDelta++;
+        }
+        insnInfo.setBottomOffset(insnInfo.getBottomOffset() + bottomDelta);
+        insnInfo.setBottomImplicitOffset(insnInfo.getBottomImplicitCount() + bottomDelta);
+        return getState();
+    }
 }

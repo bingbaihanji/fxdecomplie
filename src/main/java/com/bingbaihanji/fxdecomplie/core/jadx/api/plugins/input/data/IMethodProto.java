@@ -10,17 +10,17 @@ import java.util.List;
  */
 public interface IMethodProto {
 
-	/**
-	 * 获取方法的返回类型。
-	 *
-	 * @return 返回类型的描述符字符串
-	 */
-	String getReturnType();
+    /**
+     * 获取方法的返回类型。
+     *
+     * @return 返回类型的描述符字符串
+     */
+    String getReturnType();
 
-	/**
-	 * 获取方法的参数类型列表。
-	 *
-	 * @return 按声明顺序排列的参数类型描述符列表
-	 */
-	List<String> getArgTypes();
+    /**
+     * 获取方法的参数类型列表。
+     *
+     * @return 按声明顺序排列的参数类型描述符列表
+     */
+    List<String> getArgTypes();
 }

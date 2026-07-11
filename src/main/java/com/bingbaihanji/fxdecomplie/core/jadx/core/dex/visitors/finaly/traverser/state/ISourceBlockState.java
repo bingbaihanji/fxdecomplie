@@ -4,5 +4,5 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 
 public interface ISourceBlockState {
 
-	BlockNode getSourceBlock();
+    BlockNode getSourceBlock();
 }

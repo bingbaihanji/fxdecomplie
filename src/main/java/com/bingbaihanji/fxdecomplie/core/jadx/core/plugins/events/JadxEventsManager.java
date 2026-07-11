@@ -1,5 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.events;
 
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.events.IJadxEvent;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.events.JadxEventType;
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -11,68 +15,63 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.jetbrains.annotations.NotNull;
-
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.events.IJadxEvent;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.events.JadxEventType;
-
 /**
  * Handle events sending and receiving
  */
 public class JadxEventsManager {
 
-	private final Map<JadxEventType<?>, List<Consumer<IJadxEvent>>> listeners = new IdentityHashMap<>();
+    private final Map<JadxEventType<?>, List<Consumer<IJadxEvent>>> listeners = new IdentityHashMap<>();
 
-	private final ExecutorService eventsThreadPool;
+    private final ExecutorService eventsThreadPool;
 
-	public JadxEventsManager() {
-		// TODO: allow to change threading strategy
-		this.eventsThreadPool = Executors.newSingleThreadExecutor(makeThreadFactory());
-	}
+    public JadxEventsManager() {
+        // TODO: allow to change threading strategy
+        this.eventsThreadPool = Executors.newSingleThreadExecutor(makeThreadFactory());
+    }
 
-	@SuppressWarnings("unchecked")
-	public synchronized <E extends IJadxEvent> void addListener(JadxEventType<E> eventType, Consumer<E> listener) {
-		listeners.computeIfAbsent(eventType, et -> new ArrayList<>())
-				.add((Consumer<IJadxEvent>) listener);
-	}
+    private static ThreadFactory makeThreadFactory() {
+        return new ThreadFactory() {
+            private final AtomicInteger threadNumber = new AtomicInteger(0);
 
-	public synchronized <E extends IJadxEvent> boolean removeListener(JadxEventType<E> eventType, Consumer<E> listener) {
-		List<Consumer<IJadxEvent>> eventListeners = listeners.get(eventType);
-		if (eventListeners != null) {
-			return eventListeners.remove(listener);
-		}
-		return false;
-	}
+            @Override
+            public Thread newThread(@NotNull Runnable r) {
+                return new Thread(r, "jadx-events-thread-" + threadNumber.incrementAndGet());
+            }
+        };
+    }
 
-	public synchronized void send(IJadxEvent event) {
-		List<Consumer<IJadxEvent>> consumers = listeners.get(event.getType());
-		if (consumers != null) {
-			for (Consumer<IJadxEvent> consumer : consumers) {
-				eventsThreadPool.execute(() -> consumer.accept(event));
-			}
-		}
-	}
+    @SuppressWarnings("unchecked")
+    public synchronized <E extends IJadxEvent> void addListener(JadxEventType<E> eventType, Consumer<E> listener) {
+        listeners.computeIfAbsent(eventType, et -> new ArrayList<>())
+                .add((Consumer<IJadxEvent>) listener);
+    }
 
-	public synchronized void reset() {
-		listeners.clear();
-	}
+    public synchronized <E extends IJadxEvent> boolean removeListener(JadxEventType<E> eventType, Consumer<E> listener) {
+        List<Consumer<IJadxEvent>> eventListeners = listeners.get(eventType);
+        if (eventListeners != null) {
+            return eventListeners.remove(listener);
+        }
+        return false;
+    }
 
-	private static ThreadFactory makeThreadFactory() {
-		return new ThreadFactory() {
-			private final AtomicInteger threadNumber = new AtomicInteger(0);
+    public synchronized void send(IJadxEvent event) {
+        List<Consumer<IJadxEvent>> consumers = listeners.get(event.getType());
+        if (consumers != null) {
+            for (Consumer<IJadxEvent> consumer : consumers) {
+                eventsThreadPool.execute(() -> consumer.accept(event));
+            }
+        }
+    }
 
-			@Override
-			public Thread newThread(@NotNull Runnable r) {
-				return new Thread(r, "jadx-events-thread-" + threadNumber.incrementAndGet());
-			}
-		};
-	}
+    public synchronized void reset() {
+        listeners.clear();
+    }
 
-	public String listenersDebugStats() {
-		return listeners.entrySet()
-				.stream()
-				.filter(p -> !p.getValue().isEmpty())
-				.map(p -> p.getKey() + ":" + p.getValue().size())
-				.collect(Collectors.joining(", ", "[", "]"));
-	}
+    public String listenersDebugStats() {
+        return listeners.entrySet()
+                .stream()
+                .filter(p -> !p.getValue().isEmpty())
+                .map(p -> p.getKey() + ":" + p.getValue().size())
+                .collect(Collectors.joining(", ", "[", "]"));
+    }
 }

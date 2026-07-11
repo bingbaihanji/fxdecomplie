@@ -1,0 +1,51 @@
+{
+  "name": "IntelliJ Light",
+  "type": "light",
+  "colors": {
+    "editor.background": "#ffffff",
+    "editor.foreground": "#000000",
+    "editorLineNumber.foreground": "#bababa"
+  },
+  "tokenColors": [
+    {
+      "scope": "keyword",
+      "settings": { "foreground": "#000080", "fontStyle": "bold" }
+    },
+    {
+      "scope": ["string", "string.quoted"],
+      "settings": { "foreground": "#008000" }
+    },
+    {
+      "scope": "comment",
+      "settings": { "foreground": "#808080", "fontStyle": "italic" }
+    },
+    {
+      "scope": ["keyword.other.annotation", "storage.type.annotation"],
+      "settings": { "foreground": "#808000" }
+    },
+    {
+      "scope": "constant.numeric",
+      "settings": { "foreground": "#0000ff" }
+    },
+    {
+      "scope": ["variable.other.object", "entity.name.field"],
+      "settings": { "foreground": "#660e7a" }
+    },
+    {
+      "scope": ["variable.parameter", "entity.name.parameter"],
+      "settings": { "foreground": "#000000" }
+    },
+    {
+      "scope": ["entity.name.function", "support.function"],
+      "settings": { "foreground": "#871f38" }
+    },
+    {
+      "scope": ["entity.name.type", "storage.type.class", "support.class"],
+      "settings": { "foreground": "#871f38" }
+    },
+    {
+      "scope": "variable",
+      "settings": { "foreground": "#000000" }
+    }
+  ]
+}

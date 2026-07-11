@@ -1,31 +1,31 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.impl;
 
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ISeqConsumer;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ISeqConsumer;
-
 public class ListConsumer<T, R> implements ISeqConsumer<T> {
-	private final Function<T, R> convert;
-	private List<R> list = new ArrayList<>();
+    private final Function<T, R> convert;
+    private List<R> list = new ArrayList<>();
 
-	public ListConsumer(Function<T, R> convert) {
-		this.convert = convert;
-	}
+    public ListConsumer(Function<T, R> convert) {
+        this.convert = convert;
+    }
 
-	@Override
-	public void init(int count) {
-		list = count == 0 ? Collections.emptyList() : new ArrayList<>(count);
-	}
+    @Override
+    public void init(int count) {
+        list = count == 0 ? Collections.emptyList() : new ArrayList<>(count);
+    }
 
-	@Override
-	public void accept(T t) {
-		list.add(convert.apply(t));
-	}
+    @Override
+    public void accept(T t) {
+        list.add(convert.apply(t));
+    }
 
-	public List<R> getResult() {
-		return list;
-	}
+    public List<R> getResult() {
+        return list;
+    }
 }

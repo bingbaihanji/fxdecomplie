@@ -7,25 +7,25 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 
 public class DebugChecksPass extends AbstractVisitor {
 
-	private final String visitorName;
+    private final String visitorName;
 
-	public DebugChecksPass(String visitorName) {
-		this.visitorName = visitorName;
-	}
+    public DebugChecksPass(String visitorName) {
+        this.visitorName = visitorName;
+    }
 
-	@Override
-	public String getName() {
-		return "Checks-for-" + visitorName;
-	}
+    @Override
+    public String getName() {
+        return "Checks-for-" + visitorName;
+    }
 
-	@Override
-	public void visit(MethodNode mth) throws JadxException {
-		if (!mth.contains(AType.JADX_ERROR)) {
-			try {
-				DebugChecks.runChecksAfterVisitor(mth, visitorName);
-			} catch (Exception e) {
-				mth.addError("Check error", e);
-			}
-		}
-	}
+    @Override
+    public void visit(MethodNode mth) throws JadxException {
+        if (!mth.contains(AType.JADX_ERROR)) {
+            try {
+                DebugChecks.runChecksAfterVisitor(mth, visitorName);
+            } catch (Exception e) {
+                mth.addError("Check error", e);
+            }
+        }
+    }
 }

@@ -6,23 +6,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 
 public class SourceFileAttr extends PinnedAttribute {
 
-	private final String fileName;
+    private final String fileName;
 
-	public SourceFileAttr(String fileName) {
-		this.fileName = fileName;
-	}
+    public SourceFileAttr(String fileName) {
+        this.fileName = fileName;
+    }
 
-	public String getFileName() {
-		return fileName;
-	}
+    public String getFileName() {
+        return fileName;
+    }
 
-	@Override
-	public IJadxAttrType<SourceFileAttr> getAttrType() {
-		return JadxAttrType.SOURCE_FILE;
-	}
+    @Override
+    public IJadxAttrType<SourceFileAttr> getAttrType() {
+        return JadxAttrType.SOURCE_FILE;
+    }
 
-	@Override
-	public String toString() {
-		return "SOURCE:" + fileName;
-	}
+    @Override
+    public String toString() {
+        return "SOURCE:" + fileName;
+    }
 }

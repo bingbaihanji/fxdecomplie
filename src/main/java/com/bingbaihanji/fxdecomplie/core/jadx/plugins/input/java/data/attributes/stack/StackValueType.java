@@ -9,9 +9,9 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attribute
  */
 public enum StackValueType {
 
-	/** 窄类型：int、float、short、引用等占一个槽位的类型 */
-	NARROW,
+    /** 窄类型：int、float、short、引用等占一个槽位的类型 */
+    NARROW,
 
-	/** 宽类型：long、double 等占两个槽位的类型 */
-	WIDE,
+    /** 宽类型：long、double 等占两个槽位的类型 */
+    WIDE,
 }

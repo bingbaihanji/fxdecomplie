@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverse
 
 public class TraverserException extends Exception {
 
-	public TraverserException(String msg) {
-		super(msg);
-	}
+    public TraverserException(String msg) {
+        super(msg);
+    }
 }

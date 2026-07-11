@@ -5,18 +5,18 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.args;
  */
 public enum ResourceNameSource {
 
-	/**
-	 * Automatically select best name (default)
-	 */
-	AUTO,
+    /**
+     * Automatically select best name (default)
+     */
+    AUTO,
 
-	/**
-	 * Force use resources provided names
-	 */
-	RESOURCES,
+    /**
+     * Force use resources provided names
+     */
+    RESOURCES,
 
-	/**
-	 * Force use resources names from R class
-	 */
-	CODE,
+    /**
+     * Force use resources names from R class
+     */
+    CODE,
 }

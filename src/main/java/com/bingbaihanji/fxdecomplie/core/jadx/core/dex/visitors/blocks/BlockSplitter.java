@@ -1,14 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.JumpInfo;
@@ -26,441 +17,442 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
+import java.util.*;
+
 public class BlockSplitter extends AbstractVisitor {
 
-	/**
-	 * Leave these instructions alone in the block node
-	 */
-	private static final Set<InsnType> SEPARATE_INSNS = EnumSet.of(
-			InsnType.RETURN,
-			InsnType.IF,
-			InsnType.SWITCH,
-			InsnType.MONITOR_ENTER,
-			InsnType.MONITOR_EXIT,
-			InsnType.THROW,
-			InsnType.MOVE_EXCEPTION);
+    /**
+     * Leave these instructions alone in the block node
+     */
+    private static final Set<InsnType> SEPARATE_INSNS = EnumSet.of(
+            InsnType.RETURN,
+            InsnType.IF,
+            InsnType.SWITCH,
+            InsnType.MONITOR_ENTER,
+            InsnType.MONITOR_EXIT,
+            InsnType.THROW,
+            InsnType.MOVE_EXCEPTION);
+    /**
+     * Split without connecting to the next block
+     */
+    private static final Set<InsnType> SPLIT_WITHOUT_CONNECT = EnumSet.of(
+            InsnType.RETURN,
+            InsnType.THROW,
+            InsnType.GOTO,
+            InsnType.IF,
+            InsnType.SWITCH,
+            InsnType.JAVA_JSR,
+            InsnType.JAVA_RET);
 
-	public static boolean isSeparate(InsnType insnType) {
-		return SEPARATE_INSNS.contains(insnType);
-	}
+    public static boolean isSeparate(InsnType insnType) {
+        return SEPARATE_INSNS.contains(insnType);
+    }
 
-	/**
-	 * Split without connecting to the next block
-	 */
-	private static final Set<InsnType> SPLIT_WITHOUT_CONNECT = EnumSet.of(
-			InsnType.RETURN,
-			InsnType.THROW,
-			InsnType.GOTO,
-			InsnType.IF,
-			InsnType.SWITCH,
-			InsnType.JAVA_JSR,
-			InsnType.JAVA_RET);
+    private static Map<Integer, BlockNode> splitBasicBlocks(MethodNode mth) {
+        BlockNode enterBlock = startNewBlock(mth, -1);
+        enterBlock.add(AFlag.MTH_ENTER_BLOCK);
+        mth.setEnterBlock(enterBlock);
 
-	@Override
-	public void visit(MethodNode mth) {
-		if (mth.isNoCode()) {
-			return;
-		}
-		mth.initBasicBlocks();
-		Map<Integer, BlockNode> blocksMap = splitBasicBlocks(mth);
-		setupConnectionsFromJumps(mth, blocksMap);
-		initBlocksInTargetNodes(mth);
+        BlockNode exitBlock = startNewBlock(mth, -1);
+        exitBlock.add(AFlag.MTH_EXIT_BLOCK);
+        mth.setExitBlock(exitBlock);
 
-		expandMoveMulti(mth);
-		if (mth.contains(AFlag.RESOLVE_JAVA_JSR)) {
-			ResolveJavaJSR.process(mth);
-		}
+        Map<Integer, BlockNode> blocksMap = new HashMap<>();
+        BlockNode curBlock = enterBlock;
+        InsnNode prevInsn = null;
+        for (InsnNode insn : mth.getInstructions()) {
+            if (insn == null) {
+                continue;
+            }
+            if (insn.getType() == InsnType.NOP && insn.isAttrStorageEmpty()) {
+                continue;
+            }
+            int insnOffset = insn.getOffset();
+            if (prevInsn == null) {
+                // first block after method enter block
+                curBlock = connectNewBlock(mth, curBlock, insnOffset);
+            } else {
+                InsnType prevType = prevInsn.getType();
+                if (SPLIT_WITHOUT_CONNECT.contains(prevType)) {
+                    curBlock = startNewBlock(mth, insnOffset);
+                } else if (isSeparate(prevType)
+                        || isSeparate(insn.getType())
+                        || insn.contains(AFlag.TRY_ENTER)
+                        || prevInsn.contains(AFlag.TRY_LEAVE)
+                        || insn.contains(AType.EXC_HANDLER)
+                        || isSplitByJump(prevInsn, insn)
+                        || isDoWhile(blocksMap, curBlock, insn)) {
+                    curBlock = connectNewBlock(mth, curBlock, insnOffset);
+                }
+            }
+            blocksMap.put(insnOffset, curBlock);
+            curBlock.getInstructions().add(insn);
+            prevInsn = insn;
+        }
+        return blocksMap;
+    }
 
-		removeJumpAttr(mth);
-		removeInsns(mth);
-		removeEmptyDetachedBlocks(mth);
-		mth.getBasicBlocks().removeIf(BlockSplitter::removeEmptyBlock);
+    /**
+     * Init 'then' and 'else' blocks for 'if' instruction.
+     */
+    private static void initBlocksInTargetNodes(MethodNode mth) {
+        mth.getBasicBlocks().forEach(block -> {
+            InsnNode lastInsn = BlockUtils.getLastInsn(block);
+            if (lastInsn instanceof TargetInsnNode) {
+                ((TargetInsnNode) lastInsn).initBlocks(block);
+            }
+        });
+    }
 
-		addTempConnectionsForExcHandlers(mth, blocksMap);
-		setupExitConnections(mth);
+    static BlockNode connectNewBlock(MethodNode mth, BlockNode block, int offset) {
+        BlockNode newBlock = startNewBlock(mth, offset);
+        connect(block, newBlock);
+        return newBlock;
+    }
 
-		mth.updateBlockPositions();
-		mth.unloadInsnArr();
-	}
+    static BlockNode startNewBlock(MethodNode mth, int offset) {
+        List<BlockNode> blocks = mth.getBasicBlocks();
+        BlockNode block = new BlockNode(mth.getNextBlockCId(), blocks.size(), offset);
+        blocks.add(block);
+        return block;
+    }
 
-	private static Map<Integer, BlockNode> splitBasicBlocks(MethodNode mth) {
-		BlockNode enterBlock = startNewBlock(mth, -1);
-		enterBlock.add(AFlag.MTH_ENTER_BLOCK);
-		mth.setEnterBlock(enterBlock);
+    public static void connect(BlockNode from, BlockNode to) {
+        if (!from.getSuccessors().contains(to)) {
+            from.getSuccessors().add(to);
+        }
+        if (!to.getPredecessors().contains(from)) {
+            to.getPredecessors().add(from);
+        }
+    }
 
-		BlockNode exitBlock = startNewBlock(mth, -1);
-		exitBlock.add(AFlag.MTH_EXIT_BLOCK);
-		mth.setExitBlock(exitBlock);
+    public static void removeConnection(BlockNode from, BlockNode to) {
+        from.getSuccessors().remove(to);
+        to.getPredecessors().remove(from);
+    }
 
-		Map<Integer, BlockNode> blocksMap = new HashMap<>();
-		BlockNode curBlock = enterBlock;
-		InsnNode prevInsn = null;
-		for (InsnNode insn : mth.getInstructions()) {
-			if (insn == null) {
-				continue;
-			}
-			if (insn.getType() == InsnType.NOP && insn.isAttrStorageEmpty()) {
-				continue;
-			}
-			int insnOffset = insn.getOffset();
-			if (prevInsn == null) {
-				// first block after method enter block
-				curBlock = connectNewBlock(mth, curBlock, insnOffset);
-			} else {
-				InsnType prevType = prevInsn.getType();
-				if (SPLIT_WITHOUT_CONNECT.contains(prevType)) {
-					curBlock = startNewBlock(mth, insnOffset);
-				} else if (isSeparate(prevType)
-						|| isSeparate(insn.getType())
-						|| insn.contains(AFlag.TRY_ENTER)
-						|| prevInsn.contains(AFlag.TRY_LEAVE)
-						|| insn.contains(AType.EXC_HANDLER)
-						|| isSplitByJump(prevInsn, insn)
-						|| isDoWhile(blocksMap, curBlock, insn)) {
-					curBlock = connectNewBlock(mth, curBlock, insnOffset);
-				}
-			}
-			blocksMap.put(insnOffset, curBlock);
-			curBlock.getInstructions().add(insn);
-			prevInsn = insn;
-		}
-		return blocksMap;
-	}
+    public static void removePredecessors(BlockNode block) {
+        for (BlockNode pred : block.getPredecessors()) {
+            pred.getSuccessors().remove(block);
+        }
+        block.getPredecessors().clear();
+    }
 
-	/**
-	 * Init 'then' and 'else' blocks for 'if' instruction.
-	 */
-	private static void initBlocksInTargetNodes(MethodNode mth) {
-		mth.getBasicBlocks().forEach(block -> {
-			InsnNode lastInsn = BlockUtils.getLastInsn(block);
-			if (lastInsn instanceof TargetInsnNode) {
-				((TargetInsnNode) lastInsn).initBlocks(block);
-			}
-		});
-	}
+    public static void replaceConnection(BlockNode source, BlockNode oldDest, BlockNode newDest) {
+        removeConnection(source, oldDest);
+        connect(source, newDest);
+        replaceTarget(source, oldDest, newDest);
+    }
 
-	static BlockNode connectNewBlock(MethodNode mth, BlockNode block, int offset) {
-		BlockNode newBlock = startNewBlock(mth, offset);
-		connect(block, newBlock);
-		return newBlock;
-	}
+    public static BlockNode insertBlockBetween(MethodNode mth, BlockNode source, BlockNode target) {
+        BlockNode newBlock = startNewBlock(mth, target.getStartOffset());
+        newBlock.add(AFlag.SYNTHETIC);
+        removeConnection(source, target);
+        connect(source, newBlock);
+        connect(newBlock, target);
+        replaceTarget(source, target, newBlock);
+        source.updateCleanSuccessors();
+        newBlock.updateCleanSuccessors();
+        return newBlock;
+    }
 
-	static BlockNode startNewBlock(MethodNode mth, int offset) {
-		List<BlockNode> blocks = mth.getBasicBlocks();
-		BlockNode block = new BlockNode(mth.getNextBlockCId(), blocks.size(), offset);
-		blocks.add(block);
-		return block;
-	}
+    static BlockNode blockSplitTop(MethodNode mth, BlockNode block) {
+        BlockNode newBlock = startNewBlock(mth, block.getStartOffset());
+        for (BlockNode pred : new ArrayList<>(block.getPredecessors())) {
+            replaceConnection(pred, block, newBlock);
+            pred.updateCleanSuccessors();
+        }
+        connect(newBlock, block);
+        newBlock.updateCleanSuccessors();
+        return newBlock;
+    }
 
-	public static void connect(BlockNode from, BlockNode to) {
-		if (!from.getSuccessors().contains(to)) {
-			from.getSuccessors().add(to);
-		}
-		if (!to.getPredecessors().contains(from)) {
-			to.getPredecessors().add(from);
-		}
-	}
+    static void copyBlockData(BlockNode from, BlockNode to) {
+        List<InsnNode> toInsns = to.getInstructions();
+        for (InsnNode insn : from.getInstructions()) {
+            toInsns.add(insn.copyWithoutSsa());
+        }
+        to.copyAttributesFrom(from);
+    }
 
-	public static void removeConnection(BlockNode from, BlockNode to) {
-		from.getSuccessors().remove(to);
-		to.getPredecessors().remove(from);
-	}
+    static List<BlockNode> copyBlocksTree(MethodNode mth, List<BlockNode> blocks) {
+        List<BlockNode> copyBlocks = new ArrayList<>(blocks.size());
+        Map<BlockNode, BlockNode> map = new HashMap<>();
+        for (BlockNode block : blocks) {
+            BlockNode newBlock = startNewBlock(mth, block.getStartOffset());
+            copyBlockData(block, newBlock);
+            copyBlocks.add(newBlock);
+            map.put(block, newBlock);
+        }
+        for (BlockNode block : blocks) {
+            BlockNode newBlock = getNewBlock(block, map);
+            for (BlockNode successor : block.getSuccessors()) {
+                BlockNode newSuccessor = getNewBlock(successor, map);
+                BlockSplitter.connect(newBlock, newSuccessor);
+            }
+        }
+        return copyBlocks;
+    }
 
-	public static void removePredecessors(BlockNode block) {
-		for (BlockNode pred : block.getPredecessors()) {
-			pred.getSuccessors().remove(block);
-		}
-		block.getPredecessors().clear();
-	}
+    private static BlockNode getNewBlock(BlockNode block, Map<BlockNode, BlockNode> map) {
+        BlockNode newBlock = map.get(block);
+        if (newBlock == null) {
+            throw new JadxRuntimeException("Copy blocks tree failed. Missing block for connection: " + block);
+        }
+        return newBlock;
+    }
 
-	public static void replaceConnection(BlockNode source, BlockNode oldDest, BlockNode newDest) {
-		removeConnection(source, oldDest);
-		connect(source, newDest);
-		replaceTarget(source, oldDest, newDest);
-	}
+    static void replaceTarget(BlockNode source, BlockNode oldTarget, BlockNode newTarget) {
+        InsnNode lastInsn = BlockUtils.getLastInsn(source);
+        if (lastInsn instanceof TargetInsnNode) {
+            ((TargetInsnNode) lastInsn).replaceTargetBlock(oldTarget, newTarget);
+        }
+    }
 
-	public static BlockNode insertBlockBetween(MethodNode mth, BlockNode source, BlockNode target) {
-		BlockNode newBlock = startNewBlock(mth, target.getStartOffset());
-		newBlock.add(AFlag.SYNTHETIC);
-		removeConnection(source, target);
-		connect(source, newBlock);
-		connect(newBlock, target);
-		replaceTarget(source, target, newBlock);
-		source.updateCleanSuccessors();
-		newBlock.updateCleanSuccessors();
-		return newBlock;
-	}
+    private static void setupConnectionsFromJumps(MethodNode mth, Map<Integer, BlockNode> blocksMap) {
+        for (BlockNode block : mth.getBasicBlocks()) {
+            for (InsnNode insn : block.getInstructions()) {
+                List<JumpInfo> jumps = insn.getAll(AType.JUMP);
+                for (JumpInfo jump : jumps) {
+                    BlockNode srcBlock = getBlock(jump.getSrc(), blocksMap);
+                    BlockNode thisBlock = getBlock(jump.getDest(), blocksMap);
+                    connect(srcBlock, thisBlock);
+                }
+            }
+        }
+    }
 
-	static BlockNode blockSplitTop(MethodNode mth, BlockNode block) {
-		BlockNode newBlock = startNewBlock(mth, block.getStartOffset());
-		for (BlockNode pred : new ArrayList<>(block.getPredecessors())) {
-			replaceConnection(pred, block, newBlock);
-			pred.updateCleanSuccessors();
-		}
-		connect(newBlock, block);
-		newBlock.updateCleanSuccessors();
-		return newBlock;
-	}
+    /**
+     * Connect exception handlers to the throw block.
+     * This temporary connection is necessary to build close to a final dominator tree.
+     * Will be used and removed in {@code jadx.core.dex.visitors.blocks.BlockExceptionHandler}
+     */
+    private static void addTempConnectionsForExcHandlers(MethodNode mth, Map<Integer, BlockNode> blocksMap) {
+        if (mth.isNoExceptionHandlers()) {
+            return;
+        }
+        for (BlockNode block : mth.getBasicBlocks()) {
+            for (InsnNode insn : block.getInstructions()) {
+                CatchAttr catchAttr = insn.get(AType.EXC_CATCH);
+                if (catchAttr == null) {
+                    continue;
+                }
+                for (ExceptionHandler handler : catchAttr.getHandlers()) {
+                    BlockNode handlerBlock = getBlock(handler.getHandlerOffset(), blocksMap);
+                    if (!handlerBlock.contains(AType.TMP_EDGE)) {
+                        List<BlockNode> preds = block.getPredecessors();
+                        if (preds.isEmpty()) {
+                            throw new JadxRuntimeException("Unexpected missing predecessor for block: " + block);
+                        }
+                        BlockNode start = preds.size() == 1 ? preds.get(0) : block;
+                        if (!start.getSuccessors().contains(handlerBlock)) {
+                            connect(start, handlerBlock);
+                            handlerBlock.addAttr(new TmpEdgeAttr(start));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-	static void copyBlockData(BlockNode from, BlockNode to) {
-		List<InsnNode> toInsns = to.getInstructions();
-		for (InsnNode insn : from.getInstructions()) {
-			toInsns.add(insn.copyWithoutSsa());
-		}
-		to.copyAttributesFrom(from);
-	}
+    private static void setupExitConnections(MethodNode mth) {
+        BlockNode exitBlock = mth.getExitBlock();
+        for (BlockNode block : mth.getBasicBlocks()) {
+            if (block.getSuccessors().isEmpty() && block != exitBlock) {
+                connect(block, exitBlock);
+                if (BlockUtils.checkLastInsnType(block, InsnType.RETURN)) {
+                    block.add(AFlag.RETURN);
+                }
+            }
+        }
+    }
 
-	static List<BlockNode> copyBlocksTree(MethodNode mth, List<BlockNode> blocks) {
-		List<BlockNode> copyBlocks = new ArrayList<>(blocks.size());
-		Map<BlockNode, BlockNode> map = new HashMap<>();
-		for (BlockNode block : blocks) {
-			BlockNode newBlock = startNewBlock(mth, block.getStartOffset());
-			copyBlockData(block, newBlock);
-			copyBlocks.add(newBlock);
-			map.put(block, newBlock);
-		}
-		for (BlockNode block : blocks) {
-			BlockNode newBlock = getNewBlock(block, map);
-			for (BlockNode successor : block.getSuccessors()) {
-				BlockNode newSuccessor = getNewBlock(successor, map);
-				BlockSplitter.connect(newBlock, newSuccessor);
-			}
-		}
-		return copyBlocks;
-	}
+    private static boolean isSplitByJump(InsnNode prevInsn, InsnNode currentInsn) {
+        List<JumpInfo> pJumps = prevInsn.getAll(AType.JUMP);
+        for (JumpInfo jump : pJumps) {
+            if (jump.getSrc() == prevInsn.getOffset()) {
+                return true;
+            }
+        }
+        List<JumpInfo> cJumps = currentInsn.getAll(AType.JUMP);
+        for (JumpInfo jump : cJumps) {
+            if (jump.getDest() == currentInsn.getOffset()) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	private static BlockNode getNewBlock(BlockNode block, Map<BlockNode, BlockNode> map) {
-		BlockNode newBlock = map.get(block);
-		if (newBlock == null) {
-			throw new JadxRuntimeException("Copy blocks tree failed. Missing block for connection: " + block);
-		}
-		return newBlock;
-	}
+    private static boolean isDoWhile(Map<Integer, BlockNode> blocksMap, BlockNode curBlock, InsnNode insn) {
+        // split 'do-while' block (last instruction: 'if', target this block)
+        if (insn.getType() != InsnType.IF) {
+            return false;
+        }
+        IfNode ifs = (IfNode) insn;
+        BlockNode targetBlock = blocksMap.get(ifs.getTarget());
+        return targetBlock == curBlock;
+    }
 
-	static void replaceTarget(BlockNode source, BlockNode oldTarget, BlockNode newTarget) {
-		InsnNode lastInsn = BlockUtils.getLastInsn(source);
-		if (lastInsn instanceof TargetInsnNode) {
-			((TargetInsnNode) lastInsn).replaceTargetBlock(oldTarget, newTarget);
-		}
-	}
+    private static BlockNode getBlock(int offset, Map<Integer, BlockNode> blocksMap) {
+        BlockNode block = blocksMap.get(offset);
+        if (block == null) {
+            throw new JadxRuntimeException("Missing block: " + offset);
+        }
+        return block;
+    }
 
-	private static void setupConnectionsFromJumps(MethodNode mth, Map<Integer, BlockNode> blocksMap) {
-		for (BlockNode block : mth.getBasicBlocks()) {
-			for (InsnNode insn : block.getInstructions()) {
-				List<JumpInfo> jumps = insn.getAll(AType.JUMP);
-				for (JumpInfo jump : jumps) {
-					BlockNode srcBlock = getBlock(jump.getSrc(), blocksMap);
-					BlockNode thisBlock = getBlock(jump.getDest(), blocksMap);
-					connect(srcBlock, thisBlock);
-				}
-			}
-		}
-	}
+    private static void expandMoveMulti(MethodNode mth) {
+        for (BlockNode block : mth.getBasicBlocks()) {
+            List<InsnNode> insnsList = block.getInstructions();
+            int len = insnsList.size();
+            for (int i = 0; i < len; i++) {
+                InsnNode insn = insnsList.get(i);
+                if (insn.getType() == InsnType.MOVE_MULTI) {
+                    int mvCount = insn.getArgsCount() / 2;
+                    for (int j = 0; j < mvCount; j++) {
+                        InsnNode mv = new InsnNode(InsnType.MOVE, 1);
+                        int startArg = j * 2;
+                        mv.setResult((RegisterArg) insn.getArg(startArg));
+                        mv.addArg(insn.getArg(startArg + 1));
+                        mv.copyAttributesFrom(insn);
+                        if (j == 0) {
+                            mv.setOffset(insn.getOffset());
+                            insnsList.set(i, mv);
+                        } else {
+                            insnsList.add(i + j, mv);
+                        }
+                    }
+                    i += mvCount - 1;
+                    len = insnsList.size();
+                }
+            }
+        }
+    }
 
-	/**
-	 * Connect exception handlers to the throw block.
-	 * This temporary connection is necessary to build close to a final dominator tree.
-	 * Will be used and removed in {@code jadx.core.dex.visitors.blocks.BlockExceptionHandler}
-	 */
-	private static void addTempConnectionsForExcHandlers(MethodNode mth, Map<Integer, BlockNode> blocksMap) {
-		if (mth.isNoExceptionHandlers()) {
-			return;
-		}
-		for (BlockNode block : mth.getBasicBlocks()) {
-			for (InsnNode insn : block.getInstructions()) {
-				CatchAttr catchAttr = insn.get(AType.EXC_CATCH);
-				if (catchAttr == null) {
-					continue;
-				}
-				for (ExceptionHandler handler : catchAttr.getHandlers()) {
-					BlockNode handlerBlock = getBlock(handler.getHandlerOffset(), blocksMap);
-					if (!handlerBlock.contains(AType.TMP_EDGE)) {
-						List<BlockNode> preds = block.getPredecessors();
-						if (preds.isEmpty()) {
-							throw new JadxRuntimeException("Unexpected missing predecessor for block: " + block);
-						}
-						BlockNode start = preds.size() == 1 ? preds.get(0) : block;
-						if (!start.getSuccessors().contains(handlerBlock)) {
-							connect(start, handlerBlock);
-							handlerBlock.addAttr(new TmpEdgeAttr(start));
-						}
-					}
-				}
-			}
-		}
-	}
+    private static void removeJumpAttr(MethodNode mth) {
+        for (BlockNode block : mth.getBasicBlocks()) {
+            for (InsnNode insn : block.getInstructions()) {
+                insn.remove(AType.JUMP);
+            }
+        }
+    }
 
-	private static void setupExitConnections(MethodNode mth) {
-		BlockNode exitBlock = mth.getExitBlock();
-		for (BlockNode block : mth.getBasicBlocks()) {
-			if (block.getSuccessors().isEmpty() && block != exitBlock) {
-				connect(block, exitBlock);
-				if (BlockUtils.checkLastInsnType(block, InsnType.RETURN)) {
-					block.add(AFlag.RETURN);
-				}
-			}
-		}
-	}
+    private static void removeInsns(MethodNode mth) {
+        for (BlockNode block : mth.getBasicBlocks()) {
+            block.getInstructions().removeIf(insn -> {
+                if (!insn.isAttrStorageEmpty()) {
+                    return false;
+                }
+                InsnType insnType = insn.getType();
+                return insnType == InsnType.GOTO || insnType == InsnType.NOP;
+            });
+        }
+    }
 
-	private static boolean isSplitByJump(InsnNode prevInsn, InsnNode currentInsn) {
-		List<JumpInfo> pJumps = prevInsn.getAll(AType.JUMP);
-		for (JumpInfo jump : pJumps) {
-			if (jump.getSrc() == prevInsn.getOffset()) {
-				return true;
-			}
-		}
-		List<JumpInfo> cJumps = currentInsn.getAll(AType.JUMP);
-		for (JumpInfo jump : cJumps) {
-			if (jump.getDest() == currentInsn.getOffset()) {
-				return true;
-			}
-		}
-		return false;
-	}
+    public static void detachMarkedBlocks(MethodNode mth) {
+        for (BlockNode block : mth.getBasicBlocks()) {
+            if (block.contains(AFlag.REMOVE)) {
+                detachBlock(block);
+            }
+        }
+    }
 
-	private static boolean isDoWhile(Map<Integer, BlockNode> blocksMap, BlockNode curBlock, InsnNode insn) {
-		// split 'do-while' block (last instruction: 'if', target this block)
-		if (insn.getType() != InsnType.IF) {
-			return false;
-		}
-		IfNode ifs = (IfNode) insn;
-		BlockNode targetBlock = blocksMap.get(ifs.getTarget());
-		return targetBlock == curBlock;
-	}
+    static boolean removeEmptyDetachedBlocks(MethodNode mth) {
+        return mth.getBasicBlocks().removeIf(block -> block.getInstructions().isEmpty()
+                && block.getPredecessors().isEmpty()
+                && block.getSuccessors().isEmpty()
+                && !block.contains(AFlag.MTH_ENTER_BLOCK)
+                && !block.contains(AFlag.MTH_EXIT_BLOCK));
+    }
 
-	private static BlockNode getBlock(int offset, Map<Integer, BlockNode> blocksMap) {
-		BlockNode block = blocksMap.get(offset);
-		if (block == null) {
-			throw new JadxRuntimeException("Missing block: " + offset);
-		}
-		return block;
-	}
+    static boolean removeEmptyBlock(BlockNode block) {
+        if (canRemoveBlock(block)) {
+            if (block.getSuccessors().size() == 1) {
+                BlockNode successor = block.getSuccessors().get(0);
+                block.getPredecessors().forEach(pred -> {
+                    pred.getSuccessors().remove(block);
+                    BlockSplitter.connect(pred, successor);
+                    BlockSplitter.replaceTarget(pred, block, successor);
+                    pred.updateCleanSuccessors();
+                });
+                BlockSplitter.removeConnection(block, successor);
+            } else {
+                block.getPredecessors().forEach(pred -> {
+                    pred.getSuccessors().remove(block);
+                    pred.updateCleanSuccessors();
+                });
+            }
+            block.add(AFlag.REMOVE);
+            block.getSuccessors().clear();
+            block.getPredecessors().clear();
+            return true;
+        }
+        return false;
+    }
 
-	private static void expandMoveMulti(MethodNode mth) {
-		for (BlockNode block : mth.getBasicBlocks()) {
-			List<InsnNode> insnsList = block.getInstructions();
-			int len = insnsList.size();
-			for (int i = 0; i < len; i++) {
-				InsnNode insn = insnsList.get(i);
-				if (insn.getType() == InsnType.MOVE_MULTI) {
-					int mvCount = insn.getArgsCount() / 2;
-					for (int j = 0; j < mvCount; j++) {
-						InsnNode mv = new InsnNode(InsnType.MOVE, 1);
-						int startArg = j * 2;
-						mv.setResult((RegisterArg) insn.getArg(startArg));
-						mv.addArg(insn.getArg(startArg + 1));
-						mv.copyAttributesFrom(insn);
-						if (j == 0) {
-							mv.setOffset(insn.getOffset());
-							insnsList.set(i, mv);
-						} else {
-							insnsList.add(i + j, mv);
-						}
-					}
-					i += mvCount - 1;
-					len = insnsList.size();
-				}
-			}
-		}
-	}
+    private static boolean canRemoveBlock(BlockNode block) {
+        return block.getInstructions().isEmpty()
+                && block.isAttrStorageEmpty()
+                && block.getSuccessors().size() <= 1
+                && !block.getPredecessors().isEmpty()
+                && !block.contains(AFlag.MTH_ENTER_BLOCK)
+                && !block.contains(AFlag.MTH_EXIT_BLOCK)
+                && !block.getSuccessors().contains(block); // no self loop
+    }
 
-	private static void removeJumpAttr(MethodNode mth) {
-		for (BlockNode block : mth.getBasicBlocks()) {
-			for (InsnNode insn : block.getInstructions()) {
-				insn.remove(AType.JUMP);
-			}
-		}
-	}
+    static void collectSuccessors(BlockNode startBlock, BlockNode methodEnterBlock, Set<BlockNode> toRemove) {
+        Deque<BlockNode> stack = new ArrayDeque<>();
+        stack.add(startBlock);
+        while (!stack.isEmpty()) {
+            BlockNode block = stack.pop();
+            if (!toRemove.contains(block)) {
+                toRemove.add(block);
+                for (BlockNode successor : block.getSuccessors()) {
+                    if (successor != methodEnterBlock && toRemove.containsAll(successor.getPredecessors())) {
+                        stack.push(successor);
+                    }
+                }
+            }
+        }
+    }
 
-	private static void removeInsns(MethodNode mth) {
-		for (BlockNode block : mth.getBasicBlocks()) {
-			block.getInstructions().removeIf(insn -> {
-				if (!insn.isAttrStorageEmpty()) {
-					return false;
-				}
-				InsnType insnType = insn.getType();
-				return insnType == InsnType.GOTO || insnType == InsnType.NOP;
-			});
-		}
-	}
+    static void detachBlock(BlockNode block) {
+        for (BlockNode pred : block.getPredecessors()) {
+            pred.getSuccessors().remove(block);
+            pred.updateCleanSuccessors();
+        }
+        for (BlockNode successor : block.getSuccessors()) {
+            successor.getPredecessors().remove(block);
+        }
+        block.add(AFlag.REMOVE);
+        block.getPredecessors().clear();
+        block.getSuccessors().clear();
+    }
 
-	public static void detachMarkedBlocks(MethodNode mth) {
-		for (BlockNode block : mth.getBasicBlocks()) {
-			if (block.contains(AFlag.REMOVE)) {
-				detachBlock(block);
-			}
-		}
-	}
+    @Override
+    public void visit(MethodNode mth) {
+        if (mth.isNoCode()) {
+            return;
+        }
+        mth.initBasicBlocks();
+        Map<Integer, BlockNode> blocksMap = splitBasicBlocks(mth);
+        setupConnectionsFromJumps(mth, blocksMap);
+        initBlocksInTargetNodes(mth);
 
-	static boolean removeEmptyDetachedBlocks(MethodNode mth) {
-		return mth.getBasicBlocks().removeIf(block -> block.getInstructions().isEmpty()
-				&& block.getPredecessors().isEmpty()
-				&& block.getSuccessors().isEmpty()
-				&& !block.contains(AFlag.MTH_ENTER_BLOCK)
-				&& !block.contains(AFlag.MTH_EXIT_BLOCK));
-	}
+        expandMoveMulti(mth);
+        if (mth.contains(AFlag.RESOLVE_JAVA_JSR)) {
+            ResolveJavaJSR.process(mth);
+        }
 
-	static boolean removeEmptyBlock(BlockNode block) {
-		if (canRemoveBlock(block)) {
-			if (block.getSuccessors().size() == 1) {
-				BlockNode successor = block.getSuccessors().get(0);
-				block.getPredecessors().forEach(pred -> {
-					pred.getSuccessors().remove(block);
-					BlockSplitter.connect(pred, successor);
-					BlockSplitter.replaceTarget(pred, block, successor);
-					pred.updateCleanSuccessors();
-				});
-				BlockSplitter.removeConnection(block, successor);
-			} else {
-				block.getPredecessors().forEach(pred -> {
-					pred.getSuccessors().remove(block);
-					pred.updateCleanSuccessors();
-				});
-			}
-			block.add(AFlag.REMOVE);
-			block.getSuccessors().clear();
-			block.getPredecessors().clear();
-			return true;
-		}
-		return false;
-	}
+        removeJumpAttr(mth);
+        removeInsns(mth);
+        removeEmptyDetachedBlocks(mth);
+        mth.getBasicBlocks().removeIf(BlockSplitter::removeEmptyBlock);
 
-	private static boolean canRemoveBlock(BlockNode block) {
-		return block.getInstructions().isEmpty()
-				&& block.isAttrStorageEmpty()
-				&& block.getSuccessors().size() <= 1
-				&& !block.getPredecessors().isEmpty()
-				&& !block.contains(AFlag.MTH_ENTER_BLOCK)
-				&& !block.contains(AFlag.MTH_EXIT_BLOCK)
-				&& !block.getSuccessors().contains(block); // no self loop
-	}
+        addTempConnectionsForExcHandlers(mth, blocksMap);
+        setupExitConnections(mth);
 
-	static void collectSuccessors(BlockNode startBlock, BlockNode methodEnterBlock, Set<BlockNode> toRemove) {
-		Deque<BlockNode> stack = new ArrayDeque<>();
-		stack.add(startBlock);
-		while (!stack.isEmpty()) {
-			BlockNode block = stack.pop();
-			if (!toRemove.contains(block)) {
-				toRemove.add(block);
-				for (BlockNode successor : block.getSuccessors()) {
-					if (successor != methodEnterBlock && toRemove.containsAll(successor.getPredecessors())) {
-						stack.push(successor);
-					}
-				}
-			}
-		}
-	}
-
-	static void detachBlock(BlockNode block) {
-		for (BlockNode pred : block.getPredecessors()) {
-			pred.getSuccessors().remove(block);
-			pred.updateCleanSuccessors();
-		}
-		for (BlockNode successor : block.getSuccessors()) {
-			successor.getPredecessors().remove(block);
-		}
-		block.add(AFlag.REMOVE);
-		block.getPredecessors().clear();
-		block.getSuccessors().clear();
-	}
+        mth.updateBlockPositions();
+        mth.unloadInsnArr();
+    }
 }

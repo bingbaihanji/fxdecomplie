@@ -14,44 +14,44 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
  */
 public interface IDexTreeVisitor {
 
-	/**
-	 * 获取访问者的简短标识名称。
-	 *
-	 * @return 访问者的名称标识
-	 */
-	String getName();
+    /**
+     * 获取访问者的简短标识名称。
+     *
+     * @return 访问者的名称标识
+     */
+    String getName();
 
-	/**
-	 * 初始化回调，在 DEX 树加载完成后、访问者遍历开始前调用。
-	 * <p>
-	 * 可用于执行前置准备工作，例如初始化数据结构或解析依赖信息。
-	 * </p>
-	 *
-	 * @param root DEX 树的根节点
-	 * @throws JadxException 初始化过程中发生异常时抛出
-	 */
-	void init(RootNode root) throws JadxException;
+    /**
+     * 初始化回调，在 DEX 树加载完成后、访问者遍历开始前调用。
+     * <p>
+     * 可用于执行前置准备工作，例如初始化数据结构或解析依赖信息。
+     * </p>
+     *
+     * @param root DEX 树的根节点
+     * @throws JadxException 初始化过程中发生异常时抛出
+     */
+    void init(RootNode root) throws JadxException;
 
-	/**
-	 * 访问类节点。
-	 * <p>
-	 * 遍历过程中遇到类节点时调用。可通过返回值控制是否继续遍历该类的子方法和内部类。
-	 * </p>
-	 *
-	 * @param cls 待访问的类节点
-	 * @return {@code true} 继续遍历子方法和内部类；{@code false} 跳过该类的子节点遍历
-	 * @throws JadxException 访问过程中发生异常时抛出
-	 */
-	boolean visit(ClassNode cls) throws JadxException;
+    /**
+     * 访问类节点。
+     * <p>
+     * 遍历过程中遇到类节点时调用。可通过返回值控制是否继续遍历该类的子方法和内部类。
+     * </p>
+     *
+     * @param cls 待访问的类节点
+     * @return {@code true} 继续遍历子方法和内部类；{@code false} 跳过该类的子节点遍历
+     * @throws JadxException 访问过程中发生异常时抛出
+     */
+    boolean visit(ClassNode cls) throws JadxException;
 
-	/**
-	 * 访问方法节点。
-	 * <p>
-	 * 遍历过程中遇到方法节点时调用，可对该方法执行自定义处理逻辑。
-	 * </p>
-	 *
-	 * @param mth 待访问的方法节点
-	 * @throws JadxException 访问过程中发生异常时抛出
-	 */
-	void visit(MethodNode mth) throws JadxException;
+    /**
+     * 访问方法节点。
+     * <p>
+     * 遍历过程中遇到方法节点时调用，可对该方法执行自定义处理逻辑。
+     * </p>
+     *
+     * @param mth 待访问的方法节点
+     * @throws JadxException 访问过程中发生异常时抛出
+     */
+    void visit(MethodNode mth) throws JadxException;
 }

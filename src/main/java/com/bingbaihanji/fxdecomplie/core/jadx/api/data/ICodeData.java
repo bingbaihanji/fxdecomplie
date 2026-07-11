@@ -10,24 +10,24 @@ import java.util.List;
  */
 public interface ICodeData {
 
-	/**
-	 * 获取所有代码注释列表。
-	 *
-	 * @return 代码注释列表，若无注释则返回空列表
-	 */
-	List<ICodeComment> getComments();
+    /**
+     * 获取所有代码注释列表。
+     *
+     * @return 代码注释列表，若无注释则返回空列表
+     */
+    List<ICodeComment> getComments();
 
-	/**
-	 * 获取所有重命名信息列表。
-	 *
-	 * @return 重命名列表，若无重命名则返回空列表
-	 */
-	List<ICodeRename> getRenames();
+    /**
+     * 获取所有重命名信息列表。
+     *
+     * @return 重命名列表，若无重命名则返回空列表
+     */
+    List<ICodeRename> getRenames();
 
-	/**
-	 * 判断当前代码数据是否为空（不包含任何注释或重命名信息）。
-	 *
-	 * @return 若不包含任何数据则返回 {@code true}，否则返回 {@code false}
-	 */
-	boolean isEmpty();
+    /**
+     * 判断当前代码数据是否为空（不包含任何注释或重命名信息）。
+     *
+     * @return 若不包含任何数据则返回 {@code true}，否则返回 {@code false}
+     */
+    boolean isEmpty();
 }

@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data;
 
 public interface ICatch {
-	String[] getTypes();
+    String[] getTypes();
 
-	int[] getHandlers();
+    int[] getHandlers();
 
-	int getCatchAllHandler();
+    int getCatchAllHandler();
 }

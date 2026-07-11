@@ -12,37 +12,37 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AttrNode;
  */
 public abstract class Typed extends AttrNode {
 
-	/** 节点的类型信息 */
-	protected ArgType type;
+    /** 节点的类型信息 */
+    protected ArgType type;
 
-	/**
-	 * 获取当前节点的类型。
-	 *
-	 * @return 类型信息
-	 */
-	public ArgType getType() {
-		return type;
-	}
+    /**
+     * 获取当前节点的类型。
+     *
+     * @return 类型信息
+     */
+    public ArgType getType() {
+        return type;
+    }
 
-	/**
-	 * 设置当前节点的类型。
-	 *
-	 * @param type 类型信息
-	 */
-	public void setType(ArgType type) {
-		this.type = type;
-	}
+    /**
+     * 设置当前节点的类型。
+     *
+     * @param type 类型信息
+     */
+    public void setType(ArgType type) {
+        this.type = type;
+    }
 
-	/**
-	 * 判断当前节点的类型是否不可变。
-	 * <p>
-	 * 默认返回 {@code false}，表示类型可以被修改。
-	 * 子类可重写此方法以声明类型不可变。
-	 * </p>
-	 *
-	 * @return 类型不可变时返回 true
-	 */
-	public boolean isTypeImmutable() {
-		return false;
-	}
+    /**
+     * 判断当前节点的类型是否不可变。
+     * <p>
+     * 默认返回 {@code false}，表示类型可以被修改。
+     * 子类可重写此方法以声明类型不可变。
+     * </p>
+     *
+     * @return 类型不可变时返回 true
+     */
+    public boolean isTypeImmutable() {
+        return false;
+    }
 }

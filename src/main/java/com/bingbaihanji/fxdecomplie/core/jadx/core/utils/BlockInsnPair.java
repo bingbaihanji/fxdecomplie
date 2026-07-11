@@ -1,46 +1,46 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.utils;
 
-import java.util.Objects;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 
+import java.util.Objects;
+
 public class BlockInsnPair {
-	private final IBlock block;
-	private final InsnNode insn;
+    private final IBlock block;
+    private final InsnNode insn;
 
-	public BlockInsnPair(IBlock block, InsnNode insn) {
-		this.block = block;
-		this.insn = insn;
-	}
+    public BlockInsnPair(IBlock block, InsnNode insn) {
+        this.block = block;
+        this.insn = insn;
+    }
 
-	public IBlock getBlock() {
-		return block;
-	}
+    public IBlock getBlock() {
+        return block;
+    }
 
-	public InsnNode getInsn() {
-		return insn;
-	}
+    public InsnNode getInsn() {
+        return insn;
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (!(o instanceof BlockInsnPair)) {
-			return false;
-		}
-		BlockInsnPair that = (BlockInsnPair) o;
-		return block.equals(that.block) && insn.equals(that.insn);
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BlockInsnPair)) {
+            return false;
+        }
+        BlockInsnPair that = (BlockInsnPair) o;
+        return block.equals(that.block) && insn.equals(that.insn);
+    }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(block, insn);
-	}
+    @Override
+    public int hashCode() {
+        return Objects.hash(block, insn);
+    }
 
-	@Override
-	public String toString() {
-		return "BlockInsnPair{" + block + ": " + insn + '}';
-	}
+    @Override
+    public String toString() {
+        return "BlockInsnPair{" + block + ": " + insn + '}';
+    }
 }

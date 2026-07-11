@@ -1,35 +1,35 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.zip.security;
 
-import java.io.File;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.IZipEntry;
+
+import java.io.File;
 
 public class DisabledZipSecurity implements IJadxZipSecurity {
 
-	public static final DisabledZipSecurity INSTANCE = new DisabledZipSecurity();
+    public static final DisabledZipSecurity INSTANCE = new DisabledZipSecurity();
 
-	@Override
-	public boolean isValidEntry(IZipEntry entry) {
-		return true;
-	}
+    @Override
+    public boolean isValidEntry(IZipEntry entry) {
+        return true;
+    }
 
-	@Override
-	public boolean isValidEntryName(String entryName) {
-		return true;
-	}
+    @Override
+    public boolean isValidEntryName(String entryName) {
+        return true;
+    }
 
-	@Override
-	public boolean isInSubDirectory(File baseDir, File file) {
-		return true;
-	}
+    @Override
+    public boolean isInSubDirectory(File baseDir, File file) {
+        return true;
+    }
 
-	@Override
-	public boolean useLimitedDataStream() {
-		return false;
-	}
+    @Override
+    public boolean useLimitedDataStream() {
+        return false;
+    }
 
-	@Override
-	public int getMaxEntriesCount() {
-		return -1;
-	}
+    @Override
+    public int getMaxEntriesCount() {
+        return -1;
+    }
 }

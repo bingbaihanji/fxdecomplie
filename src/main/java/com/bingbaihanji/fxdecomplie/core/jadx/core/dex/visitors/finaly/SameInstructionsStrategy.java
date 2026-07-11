@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 
 public abstract class SameInstructionsStrategy {
 
-	public abstract boolean sameInsns(InsnNode dupInsn, InsnNode fInsn);
+    public abstract boolean sameInsns(InsnNode dupInsn, InsnNode fInsn);
 
-	public abstract boolean isSameArgs(InsnArg dupArg, InsnArg fArg);
+    public abstract boolean isSameArgs(InsnArg dupArg, InsnArg fArg);
 }

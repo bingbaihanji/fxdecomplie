@@ -3,8 +3,8 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.deco
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.CodeDecodeState;
 
 public interface IJavaInsnDecoder {
-	void decode(CodeDecodeState state);
+    void decode(CodeDecodeState state);
 
-	default void skip(CodeDecodeState state) {
-	}
+    default void skip(CodeDecodeState state) {
+    }
 }

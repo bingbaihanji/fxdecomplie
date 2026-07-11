@@ -1,18 +1,8 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.JumpInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.BaseInvokeNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.FillArrayData;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.FillArrayInsn;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.FilledNewArrayNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.GotoNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.IfNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.SwitchData;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.SwitchInsn;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.*;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.java.JsrNode;
@@ -22,164 +12,165 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks.BlockSpli
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import org.jetbrains.annotations.Nullable;
 
 @JadxVisitor(
-		name = "Process Instructions Visitor",
-		desc = "Init instructions info",
-		runBefore = {
-				BlockSplitter.class
-		}
+        name = "Process Instructions Visitor",
+        desc = "Init instructions info",
+        runBefore = {
+                BlockSplitter.class
+        }
 )
 public class ProcessInstructionsVisitor extends AbstractVisitor {
 
-	@Override
-	public void visit(MethodNode mth) throws JadxException {
-		if (mth.isNoCode()) {
-			return;
-		}
+    private static void initJumps(MethodNode mth, InsnNode[] insnByOffset) {
+        for (int offset = 0; offset < insnByOffset.length; offset++) {
+            InsnNode insn = insnByOffset[offset];
+            if (insn == null) {
+                continue;
+            }
+            switch (insn.getType()) {
+                case SWITCH:
+                    SwitchInsn sw = (SwitchInsn) insn;
+                    if (sw.needData()) {
+                        attachSwitchData(insnByOffset, offset, sw);
+                    }
+                    int defCaseOffset = sw.getDefaultCaseOffset();
+                    if (defCaseOffset != -1) {
+                        addJump(mth, insnByOffset, offset, defCaseOffset);
+                    }
+                    for (int target : sw.getTargets()) {
+                        addJump(mth, insnByOffset, offset, target);
+                    }
+                    break;
 
-		initJumps(mth, mth.getInstructions());
-	}
+                case IF:
+                    int next = getNextInsnOffset(insnByOffset, offset);
+                    if (next != -1) {
+                        addJump(mth, insnByOffset, offset, next);
+                    }
+                    addJump(mth, insnByOffset, offset, ((IfNode) insn).getTarget());
+                    break;
 
-	private static void initJumps(MethodNode mth, InsnNode[] insnByOffset) {
-		for (int offset = 0; offset < insnByOffset.length; offset++) {
-			InsnNode insn = insnByOffset[offset];
-			if (insn == null) {
-				continue;
-			}
-			switch (insn.getType()) {
-				case SWITCH:
-					SwitchInsn sw = (SwitchInsn) insn;
-					if (sw.needData()) {
-						attachSwitchData(insnByOffset, offset, sw);
-					}
-					int defCaseOffset = sw.getDefaultCaseOffset();
-					if (defCaseOffset != -1) {
-						addJump(mth, insnByOffset, offset, defCaseOffset);
-					}
-					for (int target : sw.getTargets()) {
-						addJump(mth, insnByOffset, offset, target);
-					}
-					break;
+                case GOTO:
+                    addJump(mth, insnByOffset, offset, ((GotoNode) insn).getTarget());
+                    break;
 
-				case IF:
-					int next = getNextInsnOffset(insnByOffset, offset);
-					if (next != -1) {
-						addJump(mth, insnByOffset, offset, next);
-					}
-					addJump(mth, insnByOffset, offset, ((IfNode) insn).getTarget());
-					break;
+                case JAVA_JSR:
+                    addJump(mth, insnByOffset, offset, ((JsrNode) insn).getTarget());
+                    int onRet = getNextInsnOffset(insnByOffset, offset);
+                    if (onRet != -1) {
+                        addJump(mth, insnByOffset, offset, onRet);
+                    }
+                    break;
 
-				case GOTO:
-					addJump(mth, insnByOffset, offset, ((GotoNode) insn).getTarget());
-					break;
+                case INVOKE:
+                    if (insn.getResult() == null) {
+                        ArgType retType = ((BaseInvokeNode) insn).getCallMth().getReturnType();
+                        mergeMoveResult(insnByOffset, offset, insn, retType);
+                    }
+                    break;
 
-				case JAVA_JSR:
-					addJump(mth, insnByOffset, offset, ((JsrNode) insn).getTarget());
-					int onRet = getNextInsnOffset(insnByOffset, offset);
-					if (onRet != -1) {
-						addJump(mth, insnByOffset, offset, onRet);
-					}
-					break;
+                case STR_CONCAT:
+                    // invoke-custom with string concatenation translated directly to STR_CONCAT, merge next move-result
+                    if (insn.getResult() == null) {
+                        mergeMoveResult(insnByOffset, offset, insn, ArgType.STRING);
+                    }
+                    break;
 
-				case INVOKE:
-					if (insn.getResult() == null) {
-						ArgType retType = ((BaseInvokeNode) insn).getCallMth().getReturnType();
-						mergeMoveResult(insnByOffset, offset, insn, retType);
-					}
-					break;
+                case FILLED_NEW_ARRAY:
+                    ArgType arrType = ((FilledNewArrayNode) insn).getArrayType();
+                    mergeMoveResult(insnByOffset, offset, insn, arrType);
+                    break;
 
-				case STR_CONCAT:
-					// invoke-custom with string concatenation translated directly to STR_CONCAT, merge next move-result
-					if (insn.getResult() == null) {
-						mergeMoveResult(insnByOffset, offset, insn, ArgType.STRING);
-					}
-					break;
+                case FILL_ARRAY:
+                    FillArrayInsn fillArrayInsn = (FillArrayInsn) insn;
+                    int target = fillArrayInsn.getTarget();
+                    InsnNode arrDataInsn = getInsnAtOffset(insnByOffset, target);
+                    if (arrDataInsn != null && arrDataInsn.getType() == InsnType.FILL_ARRAY_DATA) {
+                        fillArrayInsn.setArrayData((FillArrayData) arrDataInsn);
+                        removeInsn(insnByOffset, arrDataInsn);
+                    } else {
+                        throw new JadxRuntimeException("Payload for fill-array not found at " + InsnUtils.formatOffset(target));
+                    }
+                    break;
 
-				case FILLED_NEW_ARRAY:
-					ArgType arrType = ((FilledNewArrayNode) insn).getArrayType();
-					mergeMoveResult(insnByOffset, offset, insn, arrType);
-					break;
+                default:
+                    break;
+            }
+        }
+    }
 
-				case FILL_ARRAY:
-					FillArrayInsn fillArrayInsn = (FillArrayInsn) insn;
-					int target = fillArrayInsn.getTarget();
-					InsnNode arrDataInsn = getInsnAtOffset(insnByOffset, target);
-					if (arrDataInsn != null && arrDataInsn.getType() == InsnType.FILL_ARRAY_DATA) {
-						fillArrayInsn.setArrayData((FillArrayData) arrDataInsn);
-						removeInsn(insnByOffset, arrDataInsn);
-					} else {
-						throw new JadxRuntimeException("Payload for fill-array not found at " + InsnUtils.formatOffset(target));
-					}
-					break;
+    private static void attachSwitchData(InsnNode[] insnByOffset, int offset, SwitchInsn sw) {
+        int nextInsnOffset = getNextInsnOffset(insnByOffset, offset);
+        int dataTarget = sw.getDataTarget();
+        InsnNode switchDataInsn = getInsnAtOffset(insnByOffset, dataTarget);
+        if (switchDataInsn != null && switchDataInsn.getType() == InsnType.SWITCH_DATA) {
+            SwitchData data = (SwitchData) switchDataInsn;
+            data.fixTargets(offset);
+            sw.attachSwitchData(data, nextInsnOffset);
+            removeInsn(insnByOffset, switchDataInsn);
+        } else {
+            throw new JadxRuntimeException("Payload for switch not found at " + InsnUtils.formatOffset(dataTarget));
+        }
+    }
 
-				default:
-					break;
-			}
-		}
-	}
+    private static void mergeMoveResult(InsnNode[] insnByOffset, int offset, InsnNode insn, ArgType resType) {
+        int nextInsnOffset = getNextInsnOffset(insnByOffset, offset);
+        if (nextInsnOffset == -1) {
+            return;
+        }
+        InsnNode nextInsn = insnByOffset[nextInsnOffset];
+        if (nextInsn.getType() != InsnType.MOVE_RESULT) {
+            return;
+        }
+        RegisterArg moveRes = nextInsn.getResult();
+        insn.setResult(moveRes.duplicate(resType));
+        insn.copyAttributesFrom(nextInsn);
+        removeInsn(insnByOffset, nextInsn);
+    }
 
-	private static void attachSwitchData(InsnNode[] insnByOffset, int offset, SwitchInsn sw) {
-		int nextInsnOffset = getNextInsnOffset(insnByOffset, offset);
-		int dataTarget = sw.getDataTarget();
-		InsnNode switchDataInsn = getInsnAtOffset(insnByOffset, dataTarget);
-		if (switchDataInsn != null && switchDataInsn.getType() == InsnType.SWITCH_DATA) {
-			SwitchData data = (SwitchData) switchDataInsn;
-			data.fixTargets(offset);
-			sw.attachSwitchData(data, nextInsnOffset);
-			removeInsn(insnByOffset, switchDataInsn);
-		} else {
-			throw new JadxRuntimeException("Payload for switch not found at " + InsnUtils.formatOffset(dataTarget));
-		}
-	}
+    private static void addJump(MethodNode mth, InsnNode[] insnByOffset, int offset, int target) {
+        try {
+            insnByOffset[target].addAttr(AType.JUMP, new JumpInfo(offset, target));
+        } catch (Exception e) {
+            mth.addError("Failed to set jump: " + InsnUtils.formatOffset(offset) + " -> " + InsnUtils.formatOffset(target), e);
+        }
+    }
 
-	private static void mergeMoveResult(InsnNode[] insnByOffset, int offset, InsnNode insn, ArgType resType) {
-		int nextInsnOffset = getNextInsnOffset(insnByOffset, offset);
-		if (nextInsnOffset == -1) {
-			return;
-		}
-		InsnNode nextInsn = insnByOffset[nextInsnOffset];
-		if (nextInsn.getType() != InsnType.MOVE_RESULT) {
-			return;
-		}
-		RegisterArg moveRes = nextInsn.getResult();
-		insn.setResult(moveRes.duplicate(resType));
-		insn.copyAttributesFrom(nextInsn);
-		removeInsn(insnByOffset, nextInsn);
-	}
+    public static int getNextInsnOffset(InsnNode[] insnByOffset, int offset) {
+        int len = insnByOffset.length;
+        for (int i = offset + 1; i < len; i++) {
+            InsnNode insnNode = insnByOffset[i];
+            if (insnNode != null && insnNode.getType() != InsnType.NOP) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
-	private static void addJump(MethodNode mth, InsnNode[] insnByOffset, int offset, int target) {
-		try {
-			insnByOffset[target].addAttr(AType.JUMP, new JumpInfo(offset, target));
-		} catch (Exception e) {
-			mth.addError("Failed to set jump: " + InsnUtils.formatOffset(offset) + " -> " + InsnUtils.formatOffset(target), e);
-		}
-	}
+    @Nullable
+    private static InsnNode getInsnAtOffset(InsnNode[] insnByOffset, int offset) {
+        int len = insnByOffset.length;
+        for (int i = offset; i < len; i++) {
+            InsnNode insnNode = insnByOffset[i];
+            if (insnNode != null && insnNode.getType() != InsnType.NOP) {
+                return insnNode;
+            }
+        }
+        return null;
+    }
 
-	public static int getNextInsnOffset(InsnNode[] insnByOffset, int offset) {
-		int len = insnByOffset.length;
-		for (int i = offset + 1; i < len; i++) {
-			InsnNode insnNode = insnByOffset[i];
-			if (insnNode != null && insnNode.getType() != InsnType.NOP) {
-				return i;
-			}
-		}
-		return -1;
-	}
+    private static void removeInsn(InsnNode[] insnByOffset, InsnNode insn) {
+        insnByOffset[insn.getOffset()] = null;
+    }
 
-	@Nullable
-	private static InsnNode getInsnAtOffset(InsnNode[] insnByOffset, int offset) {
-		int len = insnByOffset.length;
-		for (int i = offset; i < len; i++) {
-			InsnNode insnNode = insnByOffset[i];
-			if (insnNode != null && insnNode.getType() != InsnType.NOP) {
-				return insnNode;
-			}
-		}
-		return null;
-	}
+    @Override
+    public void visit(MethodNode mth) throws JadxException {
+        if (mth.isNoCode()) {
+            return;
+        }
 
-	private static void removeInsn(InsnNode[] insnByOffset, InsnNode insn) {
-		insnByOffset[insn.getOffset()] = null;
-	}
+        initJumps(mth, mth.getInstructions());
+    }
 }

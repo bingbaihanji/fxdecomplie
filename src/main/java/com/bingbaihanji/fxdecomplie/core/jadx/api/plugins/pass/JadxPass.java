@@ -9,17 +9,17 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.types.JadxPassTyp
  * 均需实现此接口，以提供通道信息和通道类型。
  */
 public interface JadxPass {
-	/**
-	 * 获取该通道的元信息（名称、描述等）。
-	 *
-	 * @return 通道信息对象
-	 */
-	JadxPassInfo getInfo();
+    /**
+     * 获取该通道的元信息（名称、描述等）。
+     *
+     * @return 通道信息对象
+     */
+    JadxPassInfo getInfo();
 
-	/**
-	 * 获取该通道的类型标识。
-	 *
-	 * @return 通道类型
-	 */
-	JadxPassType getPassType();
+    /**
+     * 获取该通道的类型标识。
+     *
+     * @return 通道类型
+     */
+    JadxPassType getPassType();
 }

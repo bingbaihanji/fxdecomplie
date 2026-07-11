@@ -1,12 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code;
 
-import org.jetbrains.annotations.Nullable;
-
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICallSite;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldRef;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodHandle;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodProto;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.*;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.InsnData;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.InsnIndexType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.Opcode;
@@ -14,257 +8,258 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.custom.ICu
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.ConstPoolReader;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.DataReader;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.decoders.IJavaInsnDecoder;
+import org.jetbrains.annotations.Nullable;
 
 public class JavaInsnData implements InsnData {
 
-	private final CodeDecodeState state;
+    private final CodeDecodeState state;
 
-	private JavaInsnInfo insnInfo;
-	private Opcode opcode;
-	private boolean decoded;
-	private int opcodeUnit;
-	private int payloadSize;
-	private int insnStart;
-	private int offset;
-	private int regsCount;
-	private int[] argsReg = new int[16];
-	private int resultReg;
-	private long literal;
-	private int target;
-	private int index;
-	@Nullable
-	private ICustomPayload payload;
+    private JavaInsnInfo insnInfo;
+    private Opcode opcode;
+    private boolean decoded;
+    private int opcodeUnit;
+    private int payloadSize;
+    private int insnStart;
+    private int offset;
+    private int regsCount;
+    private int[] argsReg = new int[16];
+    private int resultReg;
+    private long literal;
+    private int target;
+    private int index;
+    @Nullable
+    private ICustomPayload payload;
 
-	public JavaInsnData(CodeDecodeState state) {
-		this.state = state;
-	}
+    public JavaInsnData(CodeDecodeState state) {
+        this.state = state;
+    }
 
-	@Override
-	public void decode() {
-		IJavaInsnDecoder decoder = insnInfo.getDecoder();
-		if (decoder != null) {
-			decoder.decode(state);
-			state.decoded();
-		}
-		decoded = true;
-	}
+    @Override
+    public void decode() {
+        IJavaInsnDecoder decoder = insnInfo.getDecoder();
+        if (decoder != null) {
+            decoder.decode(state);
+            state.decoded();
+        }
+        decoded = true;
+    }
 
-	public void skip() {
-		IJavaInsnDecoder decoder = insnInfo.getDecoder();
-		if (decoder != null) {
-			decoder.skip(state);
-		}
-	}
+    public void skip() {
+        IJavaInsnDecoder decoder = insnInfo.getDecoder();
+        if (decoder != null) {
+            decoder.skip(state);
+        }
+    }
 
-	@Override
-	public int getOffset() {
-		return offset;
-	}
+    @Override
+    public int getOffset() {
+        return offset;
+    }
 
-	@Override
-	public int getFileOffset() {
-		return insnStart;
-	}
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
 
-	@Override
-	public Opcode getOpcode() {
-		return opcode;
-	}
+    @Override
+    public int getFileOffset() {
+        return insnStart;
+    }
 
-	public void setOpcode(Opcode opcode) {
-		this.opcode = opcode;
-	}
+    @Override
+    public Opcode getOpcode() {
+        return opcode;
+    }
 
-	@Override
-	public String getOpcodeMnemonic() {
-		return insnInfo.getName();
-	}
+    public void setOpcode(Opcode opcode) {
+        this.opcode = opcode;
+    }
 
-	@Override
-	public byte[] getByteCode() {
-		DataReader reader = state.reader();
-		int startOffset = reader.getOffset();
-		try {
-			reader.absPos(insnStart);
-			return reader.readBytes(1 + payloadSize);
-		} finally {
-			reader.absPos(startOffset);
-		}
-	}
+    @Override
+    public String getOpcodeMnemonic() {
+        return insnInfo.getName();
+    }
 
-	@Override
-	public InsnIndexType getIndexType() {
-		return insnInfo.getIndexType();
-	}
+    @Override
+    public byte[] getByteCode() {
+        DataReader reader = state.reader();
+        int startOffset = reader.getOffset();
+        try {
+            reader.absPos(insnStart);
+            return reader.readBytes(1 + payloadSize);
+        } finally {
+            reader.absPos(startOffset);
+        }
+    }
 
-	@Override
-	public int getRawOpcodeUnit() {
-		return opcodeUnit;
-	}
+    @Override
+    public InsnIndexType getIndexType() {
+        return insnInfo.getIndexType();
+    }
 
-	@Override
-	public int getRegsCount() {
-		return regsCount;
-	}
+    @Override
+    public int getRawOpcodeUnit() {
+        return opcodeUnit;
+    }
 
-	@Override
-	public int getReg(int argNum) {
-		return argsReg[argNum];
-	}
+    @Override
+    public int getRegsCount() {
+        return regsCount;
+    }
 
-	@Override
-	public int getResultReg() {
-		return resultReg;
-	}
+    public void setRegsCount(int regsCount) {
+        this.regsCount = regsCount;
+        if (argsReg.length < regsCount) {
+            argsReg = new int[regsCount];
+        }
+    }
 
-	public void setResultReg(int resultReg) {
-		this.resultReg = resultReg;
-	}
+    @Override
+    public int getReg(int argNum) {
+        return argsReg[argNum];
+    }
 
-	@Override
-	public long getLiteral() {
-		return literal;
-	}
+    @Override
+    public int getResultReg() {
+        return resultReg;
+    }
 
-	@Override
-	public int getTarget() {
-		return target;
-	}
+    public void setResultReg(int resultReg) {
+        this.resultReg = resultReg;
+    }
 
-	@Override
-	public int getIndex() {
-		return index;
-	}
+    @Override
+    public long getLiteral() {
+        return literal;
+    }
 
-	public int getPayloadSize() {
-		return payloadSize;
-	}
+    public void setLiteral(long literal) {
+        this.literal = literal;
+    }
 
-	@Override
-	public String getIndexAsString() {
-		return constPoolReader().getUtf8(index);
-	}
+    @Override
+    public int getTarget() {
+        return target;
+    }
 
-	@Override
-	public String getIndexAsType() {
-		if (insnInfo.getOpcode() == 0xbc) { // newarray
-			return ArrayType.byValue(index);
-		}
-		return constPoolReader().getClass(index);
-	}
+    public void setTarget(int target) {
+        this.target = target;
+    }
 
-	@Override
-	public IFieldRef getIndexAsField() {
-		return constPoolReader().getFieldRef(index);
-	}
+    @Override
+    public int getIndex() {
+        return index;
+    }
 
-	@Override
-	public IMethodRef getIndexAsMethod() {
-		return constPoolReader().getMethodRef(index);
-	}
+    public void setIndex(int index) {
+        this.index = index;
+    }
 
-	@Override
-	public ICallSite getIndexAsCallSite() {
-		return constPoolReader().getCallSite(index);
-	}
+    public int getPayloadSize() {
+        return payloadSize;
+    }
 
-	@Override
-	public IMethodProto getIndexAsProto(int protoIndex) {
-		return null;
-	}
+    public void setPayloadSize(int payloadSize) {
+        this.payloadSize = payloadSize;
+    }
 
-	@Override
-	public IMethodHandle getIndexAsMethodHandle() {
-		return null;
-	}
+    @Override
+    public String getIndexAsString() {
+        return constPoolReader().getUtf8(index);
+    }
 
-	@Override
-	public @Nullable ICustomPayload getPayload() {
-		return payload;
-	}
+    @Override
+    public String getIndexAsType() {
+        if (insnInfo.getOpcode() == 0xbc) { // newarray
+            return ArrayType.byValue(index);
+        }
+        return constPoolReader().getClass(index);
+    }
 
-	public void setInsnInfo(JavaInsnInfo insnInfo) {
-		this.insnInfo = insnInfo;
-	}
+    @Override
+    public IFieldRef getIndexAsField() {
+        return constPoolReader().getFieldRef(index);
+    }
 
-	public boolean isDecoded() {
-		return decoded;
-	}
+    @Override
+    public IMethodRef getIndexAsMethod() {
+        return constPoolReader().getMethodRef(index);
+    }
 
-	public void setDecoded(boolean decoded) {
-		this.decoded = decoded;
-	}
+    @Override
+    public ICallSite getIndexAsCallSite() {
+        return constPoolReader().getCallSite(index);
+    }
 
-	public void setOpcodeUnit(int opcodeUnit) {
-		this.opcodeUnit = opcodeUnit;
-	}
+    @Override
+    public IMethodProto getIndexAsProto(int protoIndex) {
+        return null;
+    }
 
-	public void setPayloadSize(int payloadSize) {
-		this.payloadSize = payloadSize;
-	}
+    @Override
+    public IMethodHandle getIndexAsMethodHandle() {
+        return null;
+    }
 
-	public void setInsnStart(int insnStart) {
-		this.insnStart = insnStart;
-	}
+    @Override
+    public @Nullable ICustomPayload getPayload() {
+        return payload;
+    }
 
-	public void setOffset(int offset) {
-		this.offset = offset;
-	}
+    public void setPayload(ICustomPayload payload) {
+        this.payload = payload;
+    }
 
-	public void setArgReg(int arg, int reg) {
-		this.argsReg[arg] = reg;
-	}
+    public void setInsnInfo(JavaInsnInfo insnInfo) {
+        this.insnInfo = insnInfo;
+    }
 
-	public void setRegsCount(int regsCount) {
-		this.regsCount = regsCount;
-		if (argsReg.length < regsCount) {
-			argsReg = new int[regsCount];
-		}
-	}
+    public boolean isDecoded() {
+        return decoded;
+    }
 
-	public int[] getRegsArray() {
-		return argsReg;
-	}
+    public void setDecoded(boolean decoded) {
+        this.decoded = decoded;
+    }
 
-	public void setLiteral(long literal) {
-		this.literal = literal;
-	}
+    public void setOpcodeUnit(int opcodeUnit) {
+        this.opcodeUnit = opcodeUnit;
+    }
 
-	public void setTarget(int target) {
-		this.target = target;
-	}
+    public void setInsnStart(int insnStart) {
+        this.insnStart = insnStart;
+    }
 
-	public void setIndex(int index) {
-		this.index = index;
-	}
+    public void setArgReg(int arg, int reg) {
+        this.argsReg[arg] = reg;
+    }
 
-	public void setPayload(ICustomPayload payload) {
-		this.payload = payload;
-	}
+    public int[] getRegsArray() {
+        return argsReg;
+    }
 
-	public ConstPoolReader constPoolReader() {
-		return state.clsData().getConstPoolReader();
-	}
+    public ConstPoolReader constPoolReader() {
+        return state.clsData().getConstPoolReader();
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("0x%04X", offset));
-		sb.append(": ").append(getOpcode());
-		if (insnInfo == null) {
-			sb.append(String.format("(0x%04X)", opcodeUnit));
-		} else {
-			int regsCount = getRegsCount();
-			if (isDecoded()) {
-				sb.append(' ');
-				for (int i = 0; i < regsCount; i++) {
-					if (i != 0) {
-						sb.append(", ");
-					}
-					sb.append("r").append(argsReg[i]);
-				}
-			}
-		}
-		return sb.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("0x%04X", offset));
+        sb.append(": ").append(getOpcode());
+        if (insnInfo == null) {
+            sb.append(String.format("(0x%04X)", opcodeUnit));
+        } else {
+            int regsCount = getRegsCount();
+            if (isDecoded()) {
+                sb.append(' ');
+                for (int i = 0; i < regsCount; i++) {
+                    if (i != 0) {
+                        sb.append(", ");
+                    }
+                    sb.append("r").append(argsReg[i]);
+                }
+            }
+        }
+        return sb.toString();
+    }
 }

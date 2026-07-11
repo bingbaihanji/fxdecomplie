@@ -7,15 +7,15 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.CodegenExcep
 
 public interface IContainer extends IAttributeNode {
 
-	/**
-	 * Unique id for use in 'toString()' method
-	 */
-	String baseString();
+    /**
+     * Unique id for use in 'toString()' method
+     */
+    String baseString();
 
-	/**
-	 * Dispatch to needed generate method in RegionGen
-	 */
-	default void generate(RegionGen regionGen, ICodeWriter code) throws CodegenException {
-		throw new CodegenException("Code generate not implemented for container: " + getClass().getSimpleName());
-	}
+    /**
+     * Dispatch to needed generate method in RegionGen
+     */
+    default void generate(RegionGen regionGen, ICodeWriter code) throws CodegenException {
+        throw new CodegenException("Code generate not implemented for container: " + getClass().getSimpleName());
+    }
 }

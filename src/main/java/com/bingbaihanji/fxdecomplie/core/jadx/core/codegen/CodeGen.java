@@ -1,7 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen;
 
-import java.util.concurrent.Callable;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.SimpleCodeInfo;
@@ -10,53 +8,55 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
+import java.util.concurrent.Callable;
+
 public class CodeGen {
 
-	public static ICodeInfo generate(ClassNode cls) {
-		if (cls.contains(AFlag.DONT_GENERATE)) {
-			return ICodeInfo.EMPTY;
-		}
-		JadxArgs args = cls.root().getArgs();
-		switch (args.getOutputFormat()) {
-			case JAVA:
-				return generateJavaCode(cls, args);
+    private CodeGen() {
+    }
 
-			case JSON:
-				return generateJson(cls);
+    public static ICodeInfo generate(ClassNode cls) {
+        if (cls.contains(AFlag.DONT_GENERATE)) {
+            return ICodeInfo.EMPTY;
+        }
+        JadxArgs args = cls.root().getArgs();
+        switch (args.getOutputFormat()) {
+            case JAVA:
+                return generateJavaCode(cls, args);
 
-			default:
-				throw new JadxRuntimeException("Unknown output format");
-		}
-	}
+            case JSON:
+                return generateJson(cls);
 
-	private static ICodeInfo generateJavaCode(ClassNode cls, JadxArgs args) {
-		ClassGen clsGen = new ClassGen(cls, args);
-		return wrapCodeGen(cls, clsGen::makeClass);
-	}
+            default:
+                throw new JadxRuntimeException("Unknown output format");
+        }
+    }
 
-	private static ICodeInfo generateJson(ClassNode cls) {
-		JsonCodeGen codeGen = new JsonCodeGen(cls);
-		String clsJson = wrapCodeGen(cls, codeGen::process);
-		return new SimpleCodeInfo(clsJson);
-	}
+    private static ICodeInfo generateJavaCode(ClassNode cls, JadxArgs args) {
+        ClassGen clsGen = new ClassGen(cls, args);
+        return wrapCodeGen(cls, clsGen::makeClass);
+    }
 
-	private static <R> R wrapCodeGen(ClassNode cls, Callable<R> codeGenFunc) {
-		try {
-			return codeGenFunc.call();
-		} catch (Exception e) {
-			if (cls.contains(AFlag.RESTART_CODEGEN)) {
-				cls.remove(AFlag.RESTART_CODEGEN);
-				try {
-					return codeGenFunc.call();
-				} catch (Exception ex) {
-					throw new JadxRuntimeException("Code generation error after restart", ex);
-				}
-			} else {
-				throw new JadxRuntimeException("Code generation error", e);
-			}
-		}
-	}
+    private static ICodeInfo generateJson(ClassNode cls) {
+        JsonCodeGen codeGen = new JsonCodeGen(cls);
+        String clsJson = wrapCodeGen(cls, codeGen::process);
+        return new SimpleCodeInfo(clsJson);
+    }
 
-	private CodeGen() {
-	}
+    private static <R> R wrapCodeGen(ClassNode cls, Callable<R> codeGenFunc) {
+        try {
+            return codeGenFunc.call();
+        } catch (Exception e) {
+            if (cls.contains(AFlag.RESTART_CODEGEN)) {
+                cls.remove(AFlag.RESTART_CODEGEN);
+                try {
+                    return codeGenFunc.call();
+                } catch (Exception ex) {
+                    throw new JadxRuntimeException("Code generation error after restart", ex);
+                }
+            } else {
+                throw new JadxRuntimeException("Code generation error", e);
+            }
+        }
+    }
 }

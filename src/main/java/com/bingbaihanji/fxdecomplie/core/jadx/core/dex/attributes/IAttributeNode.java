@@ -1,48 +1,48 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes;
 
-import java.util.List;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.IAnnotation;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
 
+import java.util.List;
+
 public interface IAttributeNode {
 
-	void add(AFlag flag);
+    void add(AFlag flag);
 
-	void addAttr(IJadxAttribute attr);
+    void addAttr(IJadxAttribute attr);
 
-	void addAttrs(List<IJadxAttribute> list);
+    void addAttrs(List<IJadxAttribute> list);
 
-	<T> void addAttr(IJadxAttrType<AttrList<T>> type, T obj);
+    <T> void addAttr(IJadxAttrType<AttrList<T>> type, T obj);
 
-	void copyAttributesFrom(AttrNode attrNode);
+    void copyAttributesFrom(AttrNode attrNode);
 
-	<T extends IJadxAttribute> void copyAttributeFrom(AttrNode attrNode, AType<T> attrType);
+    <T extends IJadxAttribute> void copyAttributeFrom(AttrNode attrNode, AType<T> attrType);
 
-	<T extends IJadxAttribute> void rewriteAttributeFrom(AttrNode attrNode, AType<T> attrType);
+    <T extends IJadxAttribute> void rewriteAttributeFrom(AttrNode attrNode, AType<T> attrType);
 
-	boolean contains(AFlag flag);
+    boolean contains(AFlag flag);
 
-	<T extends IJadxAttribute> boolean contains(IJadxAttrType<T> type);
+    <T extends IJadxAttribute> boolean contains(IJadxAttrType<T> type);
 
-	<T extends IJadxAttribute> T get(IJadxAttrType<T> type);
+    <T extends IJadxAttribute> T get(IJadxAttrType<T> type);
 
-	IAnnotation getAnnotation(String cls);
+    IAnnotation getAnnotation(String cls);
 
-	<T> List<T> getAll(IJadxAttrType<AttrList<T>> type);
+    <T> List<T> getAll(IJadxAttrType<AttrList<T>> type);
 
-	void remove(AFlag flag);
+    void remove(AFlag flag);
 
-	<T extends IJadxAttribute> void remove(IJadxAttrType<T> type);
+    <T extends IJadxAttribute> void remove(IJadxAttrType<T> type);
 
-	void removeAttr(IJadxAttribute attr);
+    void removeAttr(IJadxAttribute attr);
 
-	void clearAttributes();
+    void clearAttributes();
 
-	List<String> getAttributesStringsList();
+    List<String> getAttributesStringsList();
 
-	String getAttributesString();
+    String getAttributesString();
 
-	boolean isAttrStorageEmpty();
+    boolean isAttrStorageEmpty();
 }

@@ -2,5 +2,5 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.events;
 
 public interface IJadxEvent {
 
-	JadxEventType<? extends IJadxEvent> getType();
+    JadxEventType<? extends IJadxEvent> getType();
 }

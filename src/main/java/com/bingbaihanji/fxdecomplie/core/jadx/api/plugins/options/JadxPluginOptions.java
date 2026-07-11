@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface JadxPluginOptions {
 
-	void setOptions(Map<String, String> options);
+    void setOptions(Map<String, String> options);
 
-	List<OptionDescription> getOptionsDescriptions();
+    List<OptionDescription> getOptionsDescriptions();
 }

@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data;
 
 public interface IFieldRef {
-	String getParentClassType();
+    String getParentClassType();
 
-	String getName();
+    String getName();
 
-	String getType();
+    String getType();
 }

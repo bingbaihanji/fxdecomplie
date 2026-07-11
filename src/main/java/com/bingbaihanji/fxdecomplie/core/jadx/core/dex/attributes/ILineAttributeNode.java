@@ -1,11 +1,11 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes;
 
 public interface ILineAttributeNode {
-	int getSourceLine();
+    int getSourceLine();
 
-	void setSourceLine(int sourceLine);
+    void setSourceLine(int sourceLine);
 
-	int getDefPosition();
+    int getDefPosition();
 
-	void setDefPosition(int pos);
+    void setDefPosition(int pos);
 }

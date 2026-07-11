@@ -6,17 +6,17 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes
 
 public class ConstValueAttr implements IJavaAttribute {
 
-	private final EncodedValue value;
+    private final EncodedValue value;
 
-	public ConstValueAttr(EncodedValue value) {
-		this.value = value;
-	}
+    public ConstValueAttr(EncodedValue value) {
+        this.value = value;
+    }
 
-	public EncodedValue getValue() {
-		return value;
-	}
+    public static IJavaAttributeReader reader() {
+        return (clsData, reader) -> new ConstValueAttr(clsData.getConstPoolReader().readAsEncodedValue(reader.readU2()));
+    }
 
-	public static IJavaAttributeReader reader() {
-		return (clsData, reader) -> new ConstValueAttr(clsData.getConstPoolReader().readAsEncodedValue(reader.readU2()));
-	}
+    public EncodedValue getValue() {
+        return value;
+    }
 }

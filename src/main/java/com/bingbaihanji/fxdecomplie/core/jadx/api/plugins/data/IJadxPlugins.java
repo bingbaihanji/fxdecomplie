@@ -4,9 +4,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.JadxPlugin;
 
 public interface IJadxPlugins {
 
-	JadxPluginRuntimeData getById(String pluginId);
+    JadxPluginRuntimeData getById(String pluginId);
 
-	JadxPluginRuntimeData getProviding(String provideId);
+    JadxPluginRuntimeData getProviding(String provideId);
 
-	<P extends JadxPlugin> P getInstance(Class<P> pluginCls);
+    <P extends JadxPlugin> P getInstance(Class<P> pluginCls);
 }

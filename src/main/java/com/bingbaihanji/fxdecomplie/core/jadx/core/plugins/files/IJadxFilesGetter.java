@@ -4,9 +4,9 @@ import java.nio.file.Path;
 
 public interface IJadxFilesGetter {
 
-	Path getConfigDir();
+    Path getConfigDir();
 
-	Path getCacheDir();
+    Path getCacheDir();
 
-	Path getTempDir();
+    Path getTempDir();
 }

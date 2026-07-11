@@ -12,10 +12,10 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.IDexTreeVisitor;
  */
 public interface IPassWrapperVisitor extends IDexTreeVisitor {
 
-	/**
-	 * 获取被包装的 Pass。
-	 *
-	 * @return 被此访问器包装的 {@link JadxPass} 实例
-	 */
-	JadxPass getPass();
+    /**
+     * 获取被包装的 Pass。
+     *
+     * @return 被此访问器包装的 {@link JadxPass} 实例
+     */
+    JadxPass getPass();
 }

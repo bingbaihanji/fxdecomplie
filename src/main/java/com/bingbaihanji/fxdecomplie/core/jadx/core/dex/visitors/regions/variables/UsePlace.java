@@ -1,47 +1,47 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.variables;
 
-import java.util.Objects;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IBlock;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
 
+import java.util.Objects;
+
 public class UsePlace {
-	public final IRegion region;
-	public final IBlock block;
+    public final IRegion region;
+    public final IBlock block;
 
-	public UsePlace(IRegion region, IBlock block) {
-		this.region = region;
-		this.block = block;
-	}
+    public UsePlace(IRegion region, IBlock block) {
+        this.region = region;
+        this.block = block;
+    }
 
-	public IRegion getRegion() {
-		return region;
-	}
+    public IRegion getRegion() {
+        return region;
+    }
 
-	public IBlock getBlock() {
-		return block;
-	}
+    public IBlock getBlock() {
+        return block;
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		UsePlace usePlace = (UsePlace) o;
-		return Objects.equals(region, usePlace.region)
-				&& Objects.equals(block, usePlace.block);
-	}
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        UsePlace usePlace = (UsePlace) o;
+        return Objects.equals(region, usePlace.region)
+                && Objects.equals(block, usePlace.block);
+    }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(region, block);
-	}
+    @Override
+    public int hashCode() {
+        return Objects.hash(region, block);
+    }
 
-	@Override
-	public String toString() {
-		return "UsePlace{region=" + region + ", block=" + block + '}';
-	}
+    @Override
+    public String toString() {
+        return "UsePlace{region=" + region + ", block=" + block + '}';
+    }
 }

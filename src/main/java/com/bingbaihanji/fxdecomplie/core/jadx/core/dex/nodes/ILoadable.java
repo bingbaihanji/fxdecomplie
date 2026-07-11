@@ -4,13 +4,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.DecodeExcept
 
 public interface ILoadable {
 
-	/**
-	 * On demand loading
-	 */
-	void load() throws DecodeException;
+    /**
+     * On demand loading
+     */
+    void load() throws DecodeException;
 
-	/**
-	 * Free resources
-	 */
-	void unload();
+    /**
+     * Free resources
+     */
+    void unload();
 }

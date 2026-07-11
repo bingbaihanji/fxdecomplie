@@ -7,7 +7,7 @@ import java.util.function.Consumer;
  */
 public interface ISeqConsumer<T> extends Consumer<T> {
 
-	default void init(int count) {
-		// no-op implementation
-	}
+    default void init(int count) {
+        // no-op implementation
+    }
 }

@@ -23,84 +23,84 @@ import java.io.IOException;
  * @author Ryszard Wiśniewski "brut.alll@gmail.com"
  */
 public abstract class DataInputDelegate implements DataInput {
-	protected final DataInput mDelegate;
+    protected final DataInput mDelegate;
 
-	public DataInputDelegate(DataInput delegate) {
-		this.mDelegate = delegate;
-	}
+    public DataInputDelegate(DataInput delegate) {
+        this.mDelegate = delegate;
+    }
 
-	@Override
+    @Override
     public int skipBytes(int n) throws IOException {
-		return mDelegate.skipBytes(n);
-	}
+        return mDelegate.skipBytes(n);
+    }
 
-	@Override
+    @Override
     public int readUnsignedShort() throws IOException {
-		return mDelegate.readUnsignedShort();
-	}
+        return mDelegate.readUnsignedShort();
+    }
 
-	@Override
+    @Override
     public int readUnsignedByte() throws IOException {
-		return mDelegate.readUnsignedByte();
-	}
+        return mDelegate.readUnsignedByte();
+    }
 
-	@Override
+    @Override
     public String readUTF() throws IOException {
-		return mDelegate.readUTF();
-	}
+        return mDelegate.readUTF();
+    }
 
-	@Override
+    @Override
     public short readShort() throws IOException {
-		return mDelegate.readShort();
-	}
+        return mDelegate.readShort();
+    }
 
-	@Override
+    @Override
     public long readLong() throws IOException {
-		return mDelegate.readLong();
-	}
+        return mDelegate.readLong();
+    }
 
-	@Override
+    @Override
     public String readLine() throws IOException {
-		return mDelegate.readLine();
-	}
+        return mDelegate.readLine();
+    }
 
-	@Override
+    @Override
     public int readInt() throws IOException {
-		return mDelegate.readInt();
-	}
+        return mDelegate.readInt();
+    }
 
-	@Override
+    @Override
     public void readFully(byte[] b, int off, int len) throws IOException {
-		mDelegate.readFully(b, off, len);
-	}
+        mDelegate.readFully(b, off, len);
+    }
 
-	@Override
+    @Override
     public void readFully(byte[] b) throws IOException {
-		mDelegate.readFully(b);
-	}
+        mDelegate.readFully(b);
+    }
 
-	@Override
+    @Override
     public float readFloat() throws IOException {
-		return mDelegate.readFloat();
-	}
+        return mDelegate.readFloat();
+    }
 
-	@Override
+    @Override
     public double readDouble() throws IOException {
-		return mDelegate.readDouble();
-	}
+        return mDelegate.readDouble();
+    }
 
-	@Override
+    @Override
     public char readChar() throws IOException {
-		return mDelegate.readChar();
-	}
+        return mDelegate.readChar();
+    }
 
-	@Override
+    @Override
     public byte readByte() throws IOException {
-		return mDelegate.readByte();
-	}
+        return mDelegate.readByte();
+    }
 
-	@Override
+    @Override
     public boolean readBoolean() throws IOException {
-		return mDelegate.readBoolean();
-	}
+        return mDelegate.readBoolean();
+    }
 }

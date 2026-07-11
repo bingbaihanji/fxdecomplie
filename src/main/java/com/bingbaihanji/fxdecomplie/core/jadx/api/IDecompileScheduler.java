@@ -10,14 +10,14 @@ import java.util.List;
  * 分批策略（如按类数量、按依赖关系等）。
  */
 public interface IDecompileScheduler {
-	/**
-	 * 将类列表构建为反编译批次。
-	 * <p>
-	 * 每个内部列表代表一个独立的批次，调度器可以并行处理
-	 * 每个批次中的类，同时保证批次间的顺序满足依赖关系。
-	 *
-	 * @param classes 待反编译的类列表
-	 * @return 分批后的类列表，每个内部列表为一个批次
-	 */
-	List<List<JavaClass>> buildBatches(List<JavaClass> classes);
+    /**
+     * 将类列表构建为反编译批次。
+     * <p>
+     * 每个内部列表代表一个独立的批次，调度器可以并行处理
+     * 每个批次中的类，同时保证批次间的顺序满足依赖关系。
+     *
+     * @param classes 待反编译的类列表
+     * @return 分批后的类列表，每个内部列表为一个批次
+     */
+    List<List<JavaClass>> buildBatches(List<JavaClass> classes);
 }

@@ -12,25 +12,25 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.events.JadxEvents;
  */
 public class ReloadProject implements IJadxEvent {
 
-	/** 全局唯一的重新加载项目事件实例 */
-	public static final ReloadProject EVENT = new ReloadProject();
+    /** 全局唯一的重新加载项目事件实例 */
+    public static final ReloadProject EVENT = new ReloadProject();
 
-	private ReloadProject() {
-		// 单例
-	}
+    private ReloadProject() {
+        // 单例
+    }
 
-	/**
-	 * 获取事件类型。
-	 *
-	 * @return 重新加载项目事件的类型 {@link JadxEvents#RELOAD_PROJECT}
-	 */
-	@Override
-	public JadxEventType<ReloadProject> getType() {
-		return JadxEvents.RELOAD_PROJECT;
-	}
+    /**
+     * 获取事件类型。
+     *
+     * @return 重新加载项目事件的类型 {@link JadxEvents#RELOAD_PROJECT}
+     */
+    @Override
+    public JadxEventType<ReloadProject> getType() {
+        return JadxEvents.RELOAD_PROJECT;
+    }
 
-	@Override
-	public String toString() {
-		return "RELOAD_PROJECT";
-	}
+    @Override
+    public String toString() {
+        return "RELOAD_PROJECT";
+    }
 }

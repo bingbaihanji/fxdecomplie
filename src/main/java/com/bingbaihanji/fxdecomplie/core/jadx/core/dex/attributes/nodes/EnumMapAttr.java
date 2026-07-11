@@ -1,62 +1,61 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.jetbrains.annotations.Nullable;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class EnumMapAttr implements IJadxAttribute {
 
-	public static class KeyValueMap {
-		private final Map<Object, Object> map = new HashMap<>();
+    @Nullable
+    private Map<FieldNode, KeyValueMap> fieldsMap;
 
-		public Object get(Object key) {
-			return map.get(key);
-		}
+    @Nullable
+    public KeyValueMap getMap(FieldNode field) {
+        if (fieldsMap == null) {
+            return null;
+        }
+        return fieldsMap.get(field);
+    }
 
-		void put(Object key, Object value) {
-			map.put(key, value);
-		}
-	}
+    public void add(FieldNode field, Object key, Object value) {
+        KeyValueMap map = getMap(field);
+        if (map == null) {
+            map = new KeyValueMap();
+            if (fieldsMap == null) {
+                fieldsMap = new HashMap<>();
+            }
+            fieldsMap.put(field, map);
+        }
+        map.put(key, value);
+    }
 
-	@Nullable
-	private Map<FieldNode, KeyValueMap> fieldsMap;
+    public boolean isEmpty() {
+        return fieldsMap == null || fieldsMap.isEmpty();
+    }
 
-	@Nullable
-	public KeyValueMap getMap(FieldNode field) {
-		if (fieldsMap == null) {
-			return null;
-		}
-		return fieldsMap.get(field);
-	}
+    @Override
+    public AType<EnumMapAttr> getAttrType() {
+        return AType.ENUM_MAP;
+    }
 
-	public void add(FieldNode field, Object key, Object value) {
-		KeyValueMap map = getMap(field);
-		if (map == null) {
-			map = new KeyValueMap();
-			if (fieldsMap == null) {
-				fieldsMap = new HashMap<>();
-			}
-			fieldsMap.put(field, map);
-		}
-		map.put(key, value);
-	}
+    @Override
+    public String toString() {
+        return "Enum fields map: " + fieldsMap;
+    }
 
-	public boolean isEmpty() {
-		return fieldsMap == null || fieldsMap.isEmpty();
-	}
+    public static class KeyValueMap {
+        private final Map<Object, Object> map = new HashMap<>();
 
-	@Override
-	public AType<EnumMapAttr> getAttrType() {
-		return AType.ENUM_MAP;
-	}
+        public Object get(Object key) {
+            return map.get(key);
+        }
 
-	@Override
-	public String toString() {
-		return "Enum fields map: " + fieldsMap;
-	}
+        void put(Object key, Object value) {
+            map.put(key, value);
+        }
+    }
 }

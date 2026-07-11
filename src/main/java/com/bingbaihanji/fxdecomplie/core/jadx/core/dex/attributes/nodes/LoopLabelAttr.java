@@ -5,23 +5,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 
 public class LoopLabelAttr implements IJadxAttribute {
 
-	private final LoopInfo loop;
+    private final LoopInfo loop;
 
-	public LoopLabelAttr(LoopInfo loop) {
-		this.loop = loop;
-	}
+    public LoopLabelAttr(LoopInfo loop) {
+        this.loop = loop;
+    }
 
-	public LoopInfo getLoop() {
-		return loop;
-	}
+    public LoopInfo getLoop() {
+        return loop;
+    }
 
-	@Override
-	public AType<LoopLabelAttr> getAttrType() {
-		return AType.LOOP_LABEL;
-	}
+    @Override
+    public AType<LoopLabelAttr> getAttrType() {
+        return AType.LOOP_LABEL;
+    }
 
-	@Override
-	public String toString() {
-		return "LOOP_LABEL: " + loop;
-	}
+    @Override
+    public String toString() {
+        return "LOOP_LABEL: " + loop;
+    }
 }

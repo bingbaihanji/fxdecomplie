@@ -11,41 +11,41 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrin
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 
 @JadxVisitor(
-		name = "RegionMakerVisitor",
-		desc = "Pack blocks into regions for code generation"
+        name = "RegionMakerVisitor",
+        desc = "Pack blocks into regions for code generation"
 )
 public class RegionMakerVisitor extends AbstractVisitor {
 
-	@Override
-	public void visit(MethodNode mth) throws JadxException {
-		if (mth.isNoCode() || mth.getBasicBlocks().isEmpty()) {
-			return;
-		}
-		RegionMaker rm = new RegionMaker(mth);
-		mth.setRegion(rm.makeMthRegion());
-		if (!mth.isNoExceptionHandlers()) {
-			new ExcHandlersRegionMaker(mth, rm).process();
-		}
-		processForceInlineInsns(mth);
-		ProcessTryCatchRegions.process(mth);
-		PostProcessRegions.process(mth);
-		CleanRegions.process(mth);
-		if (mth.getAccessFlags().isSynchronized()) {
-			SynchronizedRegionMaker.removeSynchronized(mth);
-		}
-	}
+    private static void processForceInlineInsns(MethodNode mth) {
+        boolean needShrink = mth.getBasicBlocks().stream()
+                .flatMap(block -> block.getInstructions().stream())
+                .anyMatch(insn -> insn.contains(AFlag.FORCE_ASSIGN_INLINE));
+        if (needShrink) {
+            CodeShrinkVisitor.shrinkMethod(mth);
+        }
+    }
 
-	private static void processForceInlineInsns(MethodNode mth) {
-		boolean needShrink = mth.getBasicBlocks().stream()
-				.flatMap(block -> block.getInstructions().stream())
-				.anyMatch(insn -> insn.contains(AFlag.FORCE_ASSIGN_INLINE));
-		if (needShrink) {
-			CodeShrinkVisitor.shrinkMethod(mth);
-		}
-	}
+    @Override
+    public void visit(MethodNode mth) throws JadxException {
+        if (mth.isNoCode() || mth.getBasicBlocks().isEmpty()) {
+            return;
+        }
+        RegionMaker rm = new RegionMaker(mth);
+        mth.setRegion(rm.makeMthRegion());
+        if (!mth.isNoExceptionHandlers()) {
+            new ExcHandlersRegionMaker(mth, rm).process();
+        }
+        processForceInlineInsns(mth);
+        ProcessTryCatchRegions.process(mth);
+        PostProcessRegions.process(mth);
+        CleanRegions.process(mth);
+        if (mth.getAccessFlags().isSynchronized()) {
+            SynchronizedRegionMaker.removeSynchronized(mth);
+        }
+    }
 
-	@Override
-	public String getName() {
-		return "RegionMakerVisitor";
-	}
+    @Override
+    public String getName() {
+        return "RegionMakerVisitor";
+    }
 }

@@ -12,47 +12,47 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
  */
 public final class ConstClassNode extends InsnNode {
 
-	/** 该指令引用的类类型 */
-	private final ArgType clsType;
+    /** 该指令引用的类类型 */
+    private final ArgType clsType;
 
-	/**
-	 * 构造一个 const-class 指令节点。
-	 *
-	 * @param clsType 引用的类类型
-	 */
-	public ConstClassNode(ArgType clsType) {
-		super(InsnType.CONST_CLASS, 0);
-		this.clsType = clsType;
-	}
+    /**
+     * 构造一个 const-class 指令节点。
+     *
+     * @param clsType 引用的类类型
+     */
+    public ConstClassNode(ArgType clsType) {
+        super(InsnType.CONST_CLASS, 0);
+        this.clsType = clsType;
+    }
 
-	/**
-	 * 获取该指令引用的类类型。
-	 *
-	 * @return 类 ArgType
-	 */
-	public ArgType getClsType() {
-		return clsType;
-	}
+    /**
+     * 获取该指令引用的类类型。
+     *
+     * @return 类 ArgType
+     */
+    public ArgType getClsType() {
+        return clsType;
+    }
 
-	@Override
-	public InsnNode copy() {
-		return copyCommonParams(new ConstClassNode(clsType));
-	}
+    @Override
+    public InsnNode copy() {
+        return copyCommonParams(new ConstClassNode(clsType));
+    }
 
-	@Override
-	public boolean isSame(InsnNode obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (!(obj instanceof ConstClassNode) || !super.isSame(obj)) {
-			return false;
-		}
-		ConstClassNode other = (ConstClassNode) obj;
-		return clsType.equals(other.clsType);
-	}
+    @Override
+    public boolean isSame(InsnNode obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof ConstClassNode) || !super.isSame(obj)) {
+            return false;
+        }
+        ConstClassNode other = (ConstClassNode) obj;
+        return clsType.equals(other.clsType);
+    }
 
-	@Override
-	public String toString() {
-		return super.toString() + ' ' + clsType + ".class";
-	}
+    @Override
+    public String toString() {
+        return super.toString() + ' ' + clsType + ".class";
+    }
 }

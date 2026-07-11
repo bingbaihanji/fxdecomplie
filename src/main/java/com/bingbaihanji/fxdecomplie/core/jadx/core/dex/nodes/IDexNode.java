@@ -4,9 +4,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.data.IRenameNode;
 
 public interface IDexNode extends IRenameNode {
 
-	String typeName();
+    String typeName();
 
-	RootNode root();
+    RootNode root();
 
-	String getInputFileName();
+    String getInputFileName();
 }

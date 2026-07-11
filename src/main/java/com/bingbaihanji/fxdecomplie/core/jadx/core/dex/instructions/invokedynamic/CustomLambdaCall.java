@@ -1,9 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.invokedynamic;
 
-import java.util.List;
-
-import org.jetbrains.annotations.NotNull;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodHandle;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodProto;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodRef;
@@ -25,131 +21,134 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public class CustomLambdaCall {
 
-	/**
-	 * Expect LambdaMetafactory.metafactory method
-	 */
-	public static boolean isLambdaInvoke(List<EncodedValue> values) {
-		if (values.size() < 6) {
-			return false;
-		}
-		EncodedValue mthRef = values.get(0);
-		if (mthRef.getType() != EncodedType.ENCODED_METHOD_HANDLE) {
-			return false;
-		}
-		IMethodHandle methodHandle = (IMethodHandle) mthRef.getValue();
-		if (methodHandle.getType() != MethodHandleType.INVOKE_STATIC) {
-			return false;
-		}
-		IMethodRef methodRef = methodHandle.getMethodRef();
-		if (!"Ljava/lang/invoke/LambdaMetafactory;".equals(methodRef.getParentClassType())) {
-			return false;
-		}
-		String mthName = methodRef.getName();
-		return "metafactory".equals(mthName) || "altMetafactory".equals(mthName);
-	}
+    /**
+     * Expect LambdaMetafactory.metafactory method
+     */
+    public static boolean isLambdaInvoke(List<EncodedValue> values) {
+        if (values.size() < 6) {
+            return false;
+        }
+        EncodedValue mthRef = values.get(0);
+        if (mthRef.getType() != EncodedType.ENCODED_METHOD_HANDLE) {
+            return false;
+        }
+        IMethodHandle methodHandle = (IMethodHandle) mthRef.getValue();
+        if (methodHandle.getType() != MethodHandleType.INVOKE_STATIC) {
+            return false;
+        }
+        IMethodRef methodRef = methodHandle.getMethodRef();
+        if (!"Ljava/lang/invoke/LambdaMetafactory;".equals(methodRef.getParentClassType())) {
+            return false;
+        }
+        String mthName = methodRef.getName();
+        return "metafactory".equals(mthName) || "altMetafactory".equals(mthName);
+    }
 
-	public static InvokeCustomNode buildLambdaMethodCall(MethodNode mth, InsnData insn, boolean isRange, List<EncodedValue> values) {
-		IMethodHandle callMthHandle = (IMethodHandle) values.get(4).getValue();
-		if (callMthHandle.getType().isField()) {
-			throw new JadxRuntimeException("Not yet supported");
-		}
-		InvokeCustomNode resNode = buildMethodCall(mth, insn, isRange, values, callMthHandle);
-		int resReg = insn.getResultReg();
-		if (resReg != -1) {
-			resNode.setResult(InsnArg.reg(resReg, mth.getReturnType()));
-		}
-		return resNode;
-	}
+    public static InvokeCustomNode buildLambdaMethodCall(MethodNode mth, InsnData insn, boolean isRange, List<EncodedValue> values) {
+        IMethodHandle callMthHandle = (IMethodHandle) values.get(4).getValue();
+        if (callMthHandle.getType().isField()) {
+            throw new JadxRuntimeException("Not yet supported");
+        }
+        InvokeCustomNode resNode = buildMethodCall(mth, insn, isRange, values, callMthHandle);
+        int resReg = insn.getResultReg();
+        if (resReg != -1) {
+            resNode.setResult(InsnArg.reg(resReg, mth.getReturnType()));
+        }
+        return resNode;
+    }
 
-	@NotNull
-	private static InvokeCustomNode buildMethodCall(MethodNode mth, InsnData insn, boolean isRange,
-			List<EncodedValue> values, IMethodHandle callMthHandle) {
-		RootNode root = mth.root();
-		IMethodProto lambdaProto = (IMethodProto) values.get(2).getValue();
-		MethodInfo lambdaInfo = MethodInfo.fromMethodProto(root, mth.getParentClass().getClassInfo(), "", lambdaProto);
+    @NotNull
+    private static InvokeCustomNode buildMethodCall(MethodNode mth, InsnData insn, boolean isRange,
+                                                    List<EncodedValue> values, IMethodHandle callMthHandle) {
+        RootNode root = mth.root();
+        IMethodProto lambdaProto = (IMethodProto) values.get(2).getValue();
+        MethodInfo lambdaInfo = MethodInfo.fromMethodProto(root, mth.getParentClass().getClassInfo(), "", lambdaProto);
 
-		MethodHandleType methodHandleType = callMthHandle.getType();
-		InvokeCustomNode invokeCustomNode = new InvokeCustomNode(lambdaInfo, insn, false, isRange);
-		invokeCustomNode.setHandleType(methodHandleType);
+        MethodHandleType methodHandleType = callMthHandle.getType();
+        InvokeCustomNode invokeCustomNode = new InvokeCustomNode(lambdaInfo, insn, false, isRange);
+        invokeCustomNode.setHandleType(methodHandleType);
 
-		ClassInfo implCls = ClassInfo.fromType(root, lambdaInfo.getReturnType());
-		String implName = (String) values.get(1).getValue();
-		IMethodProto implProto = (IMethodProto) values.get(3).getValue();
-		MethodInfo implMthInfo = MethodInfo.fromMethodProto(root, implCls, implName, implProto);
-		invokeCustomNode.setImplMthInfo(implMthInfo);
+        ClassInfo implCls = ClassInfo.fromType(root, lambdaInfo.getReturnType());
+        String implName = (String) values.get(1).getValue();
+        IMethodProto implProto = (IMethodProto) values.get(3).getValue();
+        MethodInfo implMthInfo = MethodInfo.fromMethodProto(root, implCls, implName, implProto);
+        invokeCustomNode.setImplMthInfo(implMthInfo);
 
-		MethodInfo callMthInfo = MethodInfo.fromRef(root, callMthHandle.getMethodRef());
-		InvokeNode invokeNode = buildInvokeNode(methodHandleType, invokeCustomNode, callMthInfo);
+        MethodInfo callMthInfo = MethodInfo.fromRef(root, callMthHandle.getMethodRef());
+        InvokeNode invokeNode = buildInvokeNode(methodHandleType, invokeCustomNode, callMthInfo);
 
-		if (methodHandleType == MethodHandleType.INVOKE_CONSTRUCTOR) {
-			ConstructorInsn ctrInsn = new ConstructorInsn(mth, invokeNode);
-			invokeCustomNode.setCallInsn(ctrInsn);
-		} else {
-			invokeCustomNode.setCallInsn(invokeNode);
-		}
+        if (methodHandleType == MethodHandleType.INVOKE_CONSTRUCTOR) {
+            ConstructorInsn ctrInsn = new ConstructorInsn(mth, invokeNode);
+            invokeCustomNode.setCallInsn(ctrInsn);
+        } else {
+            invokeCustomNode.setCallInsn(invokeNode);
+        }
 
-		MethodNode callMth = root.resolveMethod(callMthInfo);
-		if (callMth != null) {
-			invokeCustomNode.getCallInsn().addAttr(callMth);
-			if (callMth.getAccessFlags().isSynthetic()
-					&& callMth.getParentClass().equals(mth.getParentClass())) {
-				// inline only synthetic methods from same class
-				callMth.add(AFlag.DONT_GENERATE);
-				invokeCustomNode.setInlineInsn(true);
-			}
-		}
-		if (!invokeCustomNode.isInlineInsn()) {
-			IMethodProto effectiveMthProto = (IMethodProto) values.get(5).getValue();
-			List<ArgType> args = Utils.collectionMap(effectiveMthProto.getArgTypes(), ArgType::parse);
-			boolean sameArgs = args.equals(callMthInfo.getArgumentsTypes());
-			invokeCustomNode.setUseRef(sameArgs);
-		}
+        MethodNode callMth = root.resolveMethod(callMthInfo);
+        if (callMth != null) {
+            invokeCustomNode.getCallInsn().addAttr(callMth);
+            if (callMth.getAccessFlags().isSynthetic()
+                    && callMth.getParentClass().equals(mth.getParentClass())) {
+                // inline only synthetic methods from same class
+                callMth.add(AFlag.DONT_GENERATE);
+                invokeCustomNode.setInlineInsn(true);
+            }
+        }
+        if (!invokeCustomNode.isInlineInsn()) {
+            IMethodProto effectiveMthProto = (IMethodProto) values.get(5).getValue();
+            List<ArgType> args = Utils.collectionMap(effectiveMthProto.getArgTypes(), ArgType::parse);
+            boolean sameArgs = args.equals(callMthInfo.getArgumentsTypes());
+            invokeCustomNode.setUseRef(sameArgs);
+        }
 
-		// prevent args inlining into not generated invoke custom node
-		for (InsnArg arg : invokeCustomNode.getArguments()) {
-			arg.add(AFlag.DONT_INLINE);
-		}
-		return invokeCustomNode;
-	}
+        // prevent args inlining into not generated invoke custom node
+        for (InsnArg arg : invokeCustomNode.getArguments()) {
+            arg.add(AFlag.DONT_INLINE);
+        }
+        return invokeCustomNode;
+    }
 
-	@NotNull
-	private static InvokeNode buildInvokeNode(MethodHandleType methodHandleType, InvokeCustomNode invokeCustomNode,
-			MethodInfo callMthInfo) {
-		InvokeType invokeType = InvokeCustomUtils.convertInvokeType(methodHandleType);
-		int callArgsCount = callMthInfo.getArgsCount();
-		boolean instanceCall = invokeType != InvokeType.STATIC;
-		if (instanceCall) {
-			callArgsCount++;
-		}
-		InvokeNode invokeNode = new InvokeNode(callMthInfo, invokeType, callArgsCount);
+    @NotNull
+    private static InvokeNode buildInvokeNode(MethodHandleType methodHandleType, InvokeCustomNode invokeCustomNode,
+                                              MethodInfo callMthInfo) {
+        InvokeType invokeType = InvokeCustomUtils.convertInvokeType(methodHandleType);
+        int callArgsCount = callMthInfo.getArgsCount();
+        boolean instanceCall = invokeType != InvokeType.STATIC;
+        if (instanceCall) {
+            callArgsCount++;
+        }
+        InvokeNode invokeNode = new InvokeNode(callMthInfo, invokeType, callArgsCount);
 
-		// copy insn args
-		int argsCount = invokeCustomNode.getArgsCount();
-		for (int i = 0; i < argsCount; i++) {
-			InsnArg arg = invokeCustomNode.getArg(i);
-			invokeNode.addArg(arg.duplicate());
-		}
-		if (callArgsCount > argsCount) {
-			// fill remaining args with NamedArg
-			int callArgNum = argsCount;
-			if (instanceCall) {
-				callArgNum--; // start from instance type
-			}
-			List<ArgType> callArgTypes = callMthInfo.getArgumentsTypes();
-			for (int i = argsCount; i < callArgsCount; i++) {
-				ArgType argType;
-				if (callArgNum < 0) {
-					// instance arg type
-					argType = callMthInfo.getDeclClass().getType();
-				} else {
-					argType = callArgTypes.get(callArgNum++);
-				}
-				invokeNode.addArg(new NamedArg("v" + i, argType));
-			}
-		}
-		return invokeNode;
-	}
+        // copy insn args
+        int argsCount = invokeCustomNode.getArgsCount();
+        for (int i = 0; i < argsCount; i++) {
+            InsnArg arg = invokeCustomNode.getArg(i);
+            invokeNode.addArg(arg.duplicate());
+        }
+        if (callArgsCount > argsCount) {
+            // fill remaining args with NamedArg
+            int callArgNum = argsCount;
+            if (instanceCall) {
+                callArgNum--; // start from instance type
+            }
+            List<ArgType> callArgTypes = callMthInfo.getArgumentsTypes();
+            for (int i = argsCount; i < callArgsCount; i++) {
+                ArgType argType;
+                if (callArgNum < 0) {
+                    // instance arg type
+                    argType = callMthInfo.getDeclClass().getType();
+                } else {
+                    argType = callArgTypes.get(callArgNum++);
+                }
+                invokeNode.addArg(new NamedArg("v" + i, argType));
+            }
+        }
+        return invokeNode;
+    }
 }

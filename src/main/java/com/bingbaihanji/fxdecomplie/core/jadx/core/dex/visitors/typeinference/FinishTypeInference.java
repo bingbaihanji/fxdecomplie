@@ -11,33 +11,33 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
  * 并为未设置类型的代码变量设置默认未知类型。
  */
 @JadxVisitor(
-		name = "Finish Type Inference",
-		desc = "Check used types",
-		runAfter = {
-				TypeInferenceVisitor.class
-		}
+        name = "Finish Type Inference",
+        desc = "Check used types",
+        runAfter = {
+                TypeInferenceVisitor.class
+        }
 )
 public final class FinishTypeInference extends AbstractVisitor {
 
-	@Override
-	public void visit(MethodNode mth) {
-		if (mth.isNoCode() || mth.getSVars().isEmpty()) {
-			return;
-		}
-		mth.getSVars().forEach(var -> {
-			ArgType type = var.getTypeInfo().getType();
-			if (!type.isTypeKnown()) {
-				mth.addWarnComment("Type inference failed for: " + var.getDetailedVarInfo(mth));
-			}
-			ArgType codeVarType = var.getCodeVar().getType();
-			if (codeVarType == null) {
-				var.getCodeVar().setType(ArgType.UNKNOWN);
-			}
-		});
-	}
+    @Override
+    public void visit(MethodNode mth) {
+        if (mth.isNoCode() || mth.getSVars().isEmpty()) {
+            return;
+        }
+        mth.getSVars().forEach(var -> {
+            ArgType type = var.getTypeInfo().getType();
+            if (!type.isTypeKnown()) {
+                mth.addWarnComment("Type inference failed for: " + var.getDetailedVarInfo(mth));
+            }
+            ArgType codeVarType = var.getCodeVar().getType();
+            if (codeVarType == null) {
+                var.getCodeVar().setType(ArgType.UNKNOWN);
+            }
+        });
+    }
 
-	@Override
-	public String getName() {
-		return "FinishTypeInference";
-	}
+    @Override
+    public String getName() {
+        return "FinishTypeInference";
+    }
 }

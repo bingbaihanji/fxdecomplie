@@ -1,8 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.fixaccessmodifiers;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.AccessFlags;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -19,103 +16,106 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.ModVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @JadxVisitor(
-		name = "FixAccessModifiers",
-		desc = "Change class and method access modifiers if needed",
-		runAfter = ModVisitor.class
+        name = "FixAccessModifiers",
+        desc = "Change class and method access modifiers if needed",
+        runAfter = ModVisitor.class
 )
 public class FixAccessModifiers extends AbstractVisitor {
 
-	private VisibilityUtils visibilityUtils;
+    private VisibilityUtils visibilityUtils;
 
-	private boolean respectAccessModifiers;
+    private boolean respectAccessModifiers;
 
-	@Override
-	public void init(RootNode root) {
-		this.visibilityUtils = new VisibilityUtils(root);
-		this.respectAccessModifiers = root.getArgs().isRespectBytecodeAccModifiers();
-	}
+    public static void changeVisibility(NotificationAttrNode node, int newVisFlag) {
+        AccessInfo accessFlags = node.getAccessFlags();
+        AccessInfo newAccFlags = accessFlags.changeVisibility(newVisFlag);
+        if (newAccFlags != accessFlags) {
+            node.setAccessFlags(newAccFlags);
+            node.addInfoComment("Access modifiers changed from: " + accessFlags.visibilityName());
+        }
+    }
 
-	@Override
-	public boolean visit(ClassNode cls) throws JadxException {
-		if (respectAccessModifiers) {
-			return true;
-		}
+    @Override
+    public void init(RootNode root) {
+        this.visibilityUtils = new VisibilityUtils(root);
+        this.respectAccessModifiers = root.getArgs().isRespectBytecodeAccModifiers();
+    }
 
-		fixClassVisibility(cls);
-		return true;
-	}
+    @Override
+    public boolean visit(ClassNode cls) throws JadxException {
+        if (respectAccessModifiers) {
+            return true;
+        }
 
-	@Override
-	public void visit(MethodNode mth) {
-		if (respectAccessModifiers || mth.contains(AFlag.DONT_GENERATE)) {
-			return;
-		}
+        fixClassVisibility(cls);
+        return true;
+    }
 
-		fixMethodVisibility(mth);
-	}
+    @Override
+    public void visit(MethodNode mth) {
+        if (respectAccessModifiers || mth.contains(AFlag.DONT_GENERATE)) {
+            return;
+        }
 
-	private void fixClassVisibility(ClassNode cls) {
-		AccessInfo accessFlags = cls.getAccessFlags();
-		if (cls.isTopClass() && accessFlags.isPublic()) {
-			return;
-		}
+        fixMethodVisibility(mth);
+    }
 
-		if (cls.isTopClass() && (accessFlags.isPrivate() || accessFlags.isProtected())) {
-			changeVisibility(cls, AccessFlags.PUBLIC);
-			return;
-		}
+    private void fixClassVisibility(ClassNode cls) {
+        AccessInfo accessFlags = cls.getAccessFlags();
+        if (cls.isTopClass() && accessFlags.isPublic()) {
+            return;
+        }
 
-		for (ClassNode useCls : cls.getUseIn()) {
-			visibilityUtils.checkVisibility(cls, useCls, (node, visFlag) -> {
-				changeVisibility((NotificationAttrNode) node, visFlag);
-			});
-		}
+        if (cls.isTopClass() && (accessFlags.isPrivate() || accessFlags.isProtected())) {
+            changeVisibility(cls, AccessFlags.PUBLIC);
+            return;
+        }
 
-		for (MethodNode useMth : cls.getUseInMth()) {
-			MethodInlineAttr inlineAttr = useMth.get(AType.METHOD_INLINE);
-			boolean isInline = inlineAttr != null && !inlineAttr.notNeeded();
-			boolean isCandidateForInline = useMth.contains(AFlag.METHOD_CANDIDATE_FOR_INLINE);
+        for (ClassNode useCls : cls.getUseIn()) {
+            visibilityUtils.checkVisibility(cls, useCls, (node, visFlag) -> {
+                changeVisibility((NotificationAttrNode) node, visFlag);
+            });
+        }
 
-			if (isInline || isCandidateForInline) {
-				Set<ClassNode> usedInClss = useMth.getUseIn().stream()
-						.map(MethodNode::getParentClass)
-						.collect(Collectors.toSet());
+        for (MethodNode useMth : cls.getUseInMth()) {
+            MethodInlineAttr inlineAttr = useMth.get(AType.METHOD_INLINE);
+            boolean isInline = inlineAttr != null && !inlineAttr.notNeeded();
+            boolean isCandidateForInline = useMth.contains(AFlag.METHOD_CANDIDATE_FOR_INLINE);
 
-				for (ClassNode useCls : usedInClss) {
-					visibilityUtils.checkVisibility(cls, useCls, (node, visFlag) -> {
-						changeVisibility((NotificationAttrNode) node, visFlag);
-					});
-				}
-			}
-		}
-	}
+            if (isInline || isCandidateForInline) {
+                Set<ClassNode> usedInClss = useMth.getUseIn().stream()
+                        .map(MethodNode::getParentClass)
+                        .collect(Collectors.toSet());
 
-	private void fixMethodVisibility(MethodNode mth) {
-		AccessInfo accessFlags = mth.getAccessFlags();
-		MethodOverrideAttr overrideAttr = mth.get(AType.METHOD_OVERRIDE);
-		if (overrideAttr != null && !overrideAttr.getOverrideList().isEmpty()) {
-			// visibility can't be weaker
-			IMethodDetails parentMD = overrideAttr.getOverrideList().get(0);
-			AccessInfo parentAccInfo = new AccessInfo(parentMD.getRawAccessFlags(), AccessInfo.AFType.METHOD);
-			if (accessFlags.isVisibilityWeakerThan(parentAccInfo)) {
-				changeVisibility(mth, parentAccInfo.getVisibility().rawValue());
-			}
-		}
+                for (ClassNode useCls : usedInClss) {
+                    visibilityUtils.checkVisibility(cls, useCls, (node, visFlag) -> {
+                        changeVisibility((NotificationAttrNode) node, visFlag);
+                    });
+                }
+            }
+        }
+    }
 
-		for (MethodNode useMth : mth.getUseIn()) {
-			visibilityUtils.checkVisibility(mth, useMth, (node, visFlag) -> {
-				changeVisibility((NotificationAttrNode) node, visFlag);
-			});
-		}
-	}
+    private void fixMethodVisibility(MethodNode mth) {
+        AccessInfo accessFlags = mth.getAccessFlags();
+        MethodOverrideAttr overrideAttr = mth.get(AType.METHOD_OVERRIDE);
+        if (overrideAttr != null && !overrideAttr.getOverrideList().isEmpty()) {
+            // visibility can't be weaker
+            IMethodDetails parentMD = overrideAttr.getOverrideList().get(0);
+            AccessInfo parentAccInfo = new AccessInfo(parentMD.getRawAccessFlags(), AccessInfo.AFType.METHOD);
+            if (accessFlags.isVisibilityWeakerThan(parentAccInfo)) {
+                changeVisibility(mth, parentAccInfo.getVisibility().rawValue());
+            }
+        }
 
-	public static void changeVisibility(NotificationAttrNode node, int newVisFlag) {
-		AccessInfo accessFlags = node.getAccessFlags();
-		AccessInfo newAccFlags = accessFlags.changeVisibility(newVisFlag);
-		if (newAccFlags != accessFlags) {
-			node.setAccessFlags(newAccFlags);
-			node.addInfoComment("Access modifiers changed from: " + accessFlags.visibilityName());
-		}
-	}
+        for (MethodNode useMth : mth.getUseIn()) {
+            visibilityUtils.checkVisibility(mth, useMth, (node, visFlag) -> {
+                changeVisibility((NotificationAttrNode) node, visFlag);
+            });
+        }
+    }
 }

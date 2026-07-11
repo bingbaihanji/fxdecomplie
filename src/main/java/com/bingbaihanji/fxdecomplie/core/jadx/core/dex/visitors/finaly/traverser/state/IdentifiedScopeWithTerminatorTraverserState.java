@@ -1,14 +1,13 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state;
 
-import java.util.List;
-
-import org.jetbrains.annotations.Nullable;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.CentralityState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.TraverserStateFactory;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.handlers.AbstractBlockTraverserHandler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.handlers.MergePathActivePathTraverserHandler;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * 已识别作用域（含终止节点）的遍历状态。
@@ -21,122 +20,121 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser
  */
 public final class IdentifiedScopeWithTerminatorTraverserState extends TraverserState {
 
-	/**
-	 * 创建该状态对应的状态工厂。
-	 *
-	 * @param centralityState 中心性状态
-	 * @param roots           作用域内的根基本块列表
-	 * @param scopeTerminator 作用域的终止基本块
-	 * @return 状态工厂实例
-	 */
-	public static TraverserStateFactory<IdentifiedScopeWithTerminatorTraverserState> getFactory(CentralityState centralityState,
-			List<BlockNode> roots, BlockNode scopeTerminator) {
-		return new IdentifiedScopeWithTerminatorStateFactory(centralityState, roots, scopeTerminator);
-	}
+    /** 中心性状态 */
+    private final CentralityState centralityState;
+    /** 作用域内的根基本块列表 */
+    private final List<BlockNode> roots;
+    /** 作用域的终止基本块 */
+    private final BlockNode scopeTerminator;
+    /**
+     * 构造已识别作用域（含终止节点）的遍历状态。
+     *
+     * @param state           底层的活动路径状态
+     * @param centralityState 中心性状态
+     * @param roots           作用域内的根基本块列表
+     * @param scopeTerminator 作用域的终止基本块
+     */
+    public IdentifiedScopeWithTerminatorTraverserState(TraverserActivePathState state, CentralityState centralityState,
+                                                       List<BlockNode> roots, BlockNode scopeTerminator) {
+        super(state);
+        this.roots = roots;
+        this.scopeTerminator = scopeTerminator;
+        this.centralityState = centralityState;
+    }
 
-	private static final class IdentifiedScopeWithTerminatorStateFactory
-			extends TraverserStateFactory<IdentifiedScopeWithTerminatorTraverserState> {
+    /**
+     * 创建该状态对应的状态工厂。
+     *
+     * @param centralityState 中心性状态
+     * @param roots           作用域内的根基本块列表
+     * @param scopeTerminator 作用域的终止基本块
+     * @return 状态工厂实例
+     */
+    public static TraverserStateFactory<IdentifiedScopeWithTerminatorTraverserState> getFactory(CentralityState centralityState,
+                                                                                                List<BlockNode> roots, BlockNode scopeTerminator) {
+        return new IdentifiedScopeWithTerminatorStateFactory(centralityState, roots, scopeTerminator);
+    }
 
-		private final CentralityState centralityState;
-		private final List<BlockNode> roots;
-		private final BlockNode scopeTerminator;
+    /**
+     * 获取下一个待执行的处理器。
+     *
+     * @return 用于合并路径的 {@link MergePathActivePathTraverserHandler} 处理器
+     */
+    @Override
+    public @Nullable AbstractBlockTraverserHandler getNextHandler() {
+        return new MergePathActivePathTraverserHandler(getComparatorState());
+    }
 
-		public IdentifiedScopeWithTerminatorStateFactory(CentralityState centralityState, List<BlockNode> roots,
-				BlockNode scopeTerminator) {
-			this.centralityState = centralityState;
-			this.roots = roots;
-			this.scopeTerminator = scopeTerminator;
-		}
+    /**
+     * 获取比较状态。
+     *
+     * @return 始终返回 {@link ComparisonState#READY_TO_COMPARE}，表示已准备好比较
+     */
+    @Override
+    public ComparisonState getCompareState() {
+        return ComparisonState.READY_TO_COMPARE;
+    }
 
-		@Override
-		public IdentifiedScopeWithTerminatorTraverserState generateInternalState(TraverserActivePathState state) {
-			return new IdentifiedScopeWithTerminatorTraverserState(state, centralityState, roots, scopeTerminator);
-		}
-	}
+    /**
+     * 判断当前状态是否为终端状态。
+     *
+     * @return 始终返回 {@code false}，该状态非终端状态
+     */
+    @Override
+    public boolean isTerminal() {
+        return false;
+    }
 
-	/** 中心性状态 */
-	private final CentralityState centralityState;
-	/** 作用域内的根基本块列表 */
-	private final List<BlockNode> roots;
-	/** 作用域的终止基本块 */
-	private final BlockNode scopeTerminator;
+    @Override
+    protected @Nullable CentralityState getUnderlyingCentralityState() {
+        return centralityState;
+    }
 
-	/**
-	 * 构造已识别作用域（含终止节点）的遍历状态。
-	 *
-	 * @param state           底层的活动路径状态
-	 * @param centralityState 中心性状态
-	 * @param roots           作用域内的根基本块列表
-	 * @param scopeTerminator 作用域的终止基本块
-	 */
-	public IdentifiedScopeWithTerminatorTraverserState(TraverserActivePathState state, CentralityState centralityState,
-			List<BlockNode> roots, BlockNode scopeTerminator) {
-		super(state);
-		this.roots = roots;
-		this.scopeTerminator = scopeTerminator;
-		this.centralityState = centralityState;
-	}
+    @Override
+    protected @Nullable TraverserBlockInfo getUnderlyingBlockInsnInfo() {
+        return null;
+    }
 
-	/**
-	 * 获取下一个待执行的处理器。
-	 *
-	 * @return 用于合并路径的 {@link MergePathActivePathTraverserHandler} 处理器
-	 */
-	@Override
-	public @Nullable AbstractBlockTraverserHandler getNextHandler() {
-		return new MergePathActivePathTraverserHandler(getComparatorState());
-	}
+    @Override
+    protected TraverserState duplicateInternalState(TraverserActivePathState comparatorState) {
+        return new IdentifiedScopeWithTerminatorTraverserState(comparatorState, centralityState, roots, scopeTerminator);
+    }
 
-	/**
-	 * 获取比较状态。
-	 *
-	 * @return 始终返回 {@link ComparisonState#READY_TO_COMPARE}，表示已准备好比较
-	 */
-	@Override
-	public ComparisonState getCompareState() {
-		return ComparisonState.READY_TO_COMPARE;
-	}
+    /**
+     * 获取作用域的终止基本块。
+     *
+     * @return 作用域终止节点
+     */
+    public BlockNode getTerminus() {
+        return scopeTerminator;
+    }
 
-	/**
-	 * 判断当前状态是否为终端状态。
-	 *
-	 * @return 始终返回 {@code false}，该状态非终端状态
-	 */
-	@Override
-	public boolean isTerminal() {
-		return false;
-	}
+    /**
+     * 获取作用域内的根基本块列表。
+     *
+     * @return 根基本块列表
+     */
+    public List<BlockNode> getRoots() {
+        return roots;
+    }
 
-	@Override
-	protected @Nullable CentralityState getUnderlyingCentralityState() {
-		return centralityState;
-	}
+    private static final class IdentifiedScopeWithTerminatorStateFactory
+            extends TraverserStateFactory<IdentifiedScopeWithTerminatorTraverserState> {
 
-	@Override
-	protected @Nullable TraverserBlockInfo getUnderlyingBlockInsnInfo() {
-		return null;
-	}
+        private final CentralityState centralityState;
+        private final List<BlockNode> roots;
+        private final BlockNode scopeTerminator;
 
-	@Override
-	protected TraverserState duplicateInternalState(TraverserActivePathState comparatorState) {
-		return new IdentifiedScopeWithTerminatorTraverserState(comparatorState, centralityState, roots, scopeTerminator);
-	}
+        public IdentifiedScopeWithTerminatorStateFactory(CentralityState centralityState, List<BlockNode> roots,
+                                                         BlockNode scopeTerminator) {
+            this.centralityState = centralityState;
+            this.roots = roots;
+            this.scopeTerminator = scopeTerminator;
+        }
 
-	/**
-	 * 获取作用域的终止基本块。
-	 *
-	 * @return 作用域终止节点
-	 */
-	public BlockNode getTerminus() {
-		return scopeTerminator;
-	}
-
-	/**
-	 * 获取作用域内的根基本块列表。
-	 *
-	 * @return 根基本块列表
-	 */
-	public List<BlockNode> getRoots() {
-		return roots;
-	}
+        @Override
+        public IdentifiedScopeWithTerminatorTraverserState generateInternalState(TraverserActivePathState state) {
+            return new IdentifiedScopeWithTerminatorTraverserState(state, centralityState, roots, scopeTerminator);
+        }
+    }
 }

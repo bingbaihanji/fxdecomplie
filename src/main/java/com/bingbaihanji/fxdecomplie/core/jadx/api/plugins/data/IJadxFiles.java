@@ -4,18 +4,18 @@ import java.nio.file.Path;
 
 public interface IJadxFiles {
 
-	/**
-	 * Plugin cache directory.
-	 */
-	Path getPluginCacheDir();
+    /**
+     * Plugin cache directory.
+     */
+    Path getPluginCacheDir();
 
-	/**
-	 * Plugin config directory.
-	 */
-	Path getPluginConfigDir();
+    /**
+     * Plugin config directory.
+     */
+    Path getPluginConfigDir();
 
-	/**
-	 * Plugin temp directory.
-	 */
-	Path getPluginTempDir();
+    /**
+     * Plugin temp directory.
+     */
+    Path getPluginTempDir();
 }

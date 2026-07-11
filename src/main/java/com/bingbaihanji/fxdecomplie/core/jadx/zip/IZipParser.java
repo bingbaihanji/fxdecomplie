@@ -5,5 +5,5 @@ import java.io.IOException;
 
 public interface IZipParser extends Closeable {
 
-	ZipContent open() throws IOException;
+    ZipContent open() throws IOException;
 }

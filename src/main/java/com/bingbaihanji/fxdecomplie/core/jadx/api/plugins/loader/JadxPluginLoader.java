@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.loader;
 
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.JadxPlugin;
+
 import java.io.Closeable;
 import java.util.List;
-
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.JadxPlugin;
 
 /**
  * Jadx 插件加载器接口。
@@ -19,14 +19,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.JadxPlugin;
  */
 public interface JadxPluginLoader extends Closeable {
 
-	/**
-	 * 加载并返回所有可用的 Jadx 插件列表。
-	 * <p>
-	 * 该方法负责扫描指定来源，发现并实例化所有可用的插件。返回的插件列表可能为空，
-	 * 但不会返回 {@code null}。
-	 * </p>
-	 *
-	 * @return 已加载的 {@link JadxPlugin} 实例列表，不会为 {@code null}
-	 */
-	List<JadxPlugin> load();
+    /**
+     * 加载并返回所有可用的 Jadx 插件列表。
+     * <p>
+     * 该方法负责扫描指定来源，发现并实例化所有可用的插件。返回的插件列表可能为空，
+     * 但不会返回 {@code null}。
+     * </p>
+     *
+     * @return 已加载的 {@link JadxPlugin} 实例列表，不会为 {@code null}
+     */
+    List<JadxPlugin> load();
 }

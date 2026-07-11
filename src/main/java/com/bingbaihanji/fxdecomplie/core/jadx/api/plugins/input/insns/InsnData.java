@@ -1,60 +1,56 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ICallSite;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IFieldRef;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodHandle;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodProto;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IMethodRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.*;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.custom.ICustomPayload;
 
 public interface InsnData {
 
-	void decode();
+    void decode();
 
-	int getOffset(); // offset within method
+    int getOffset(); // offset within method
 
-	int getFileOffset(); // offset within dex file
+    int getFileOffset(); // offset within dex file
 
-	Opcode getOpcode();
+    Opcode getOpcode();
 
-	String getOpcodeMnemonic();
+    String getOpcodeMnemonic();
 
-	byte[] getByteCode();
+    byte[] getByteCode();
 
-	InsnIndexType getIndexType();
+    InsnIndexType getIndexType();
 
-	int getRawOpcodeUnit();
+    int getRawOpcodeUnit();
 
-	int getRegsCount();
+    int getRegsCount();
 
-	int getReg(int argNum);
+    int getReg(int argNum);
 
-	/**
-	 * Workaround to set result reg without additional move-result insn
-	 *
-	 * @return result reg number or -1 if not needed
-	 */
-	int getResultReg();
+    /**
+     * Workaround to set result reg without additional move-result insn
+     *
+     * @return result reg number or -1 if not needed
+     */
+    int getResultReg();
 
-	long getLiteral();
+    long getLiteral();
 
-	int getTarget();
+    int getTarget();
 
-	int getIndex();
+    int getIndex();
 
-	String getIndexAsString();
+    String getIndexAsString();
 
-	String getIndexAsType();
+    String getIndexAsType();
 
-	IFieldRef getIndexAsField();
+    IFieldRef getIndexAsField();
 
-	IMethodRef getIndexAsMethod();
+    IMethodRef getIndexAsMethod();
 
-	ICallSite getIndexAsCallSite();
+    ICallSite getIndexAsCallSite();
 
-	IMethodProto getIndexAsProto(int protoIndex);
+    IMethodProto getIndexAsProto(int protoIndex);
 
-	IMethodHandle getIndexAsMethodHandle();
+    IMethodHandle getIndexAsMethodHandle();
 
-	ICustomPayload getPayload();
+    ICustomPayload getPayload();
 }

@@ -3,32 +3,32 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attribute
 import org.jetbrains.annotations.Nullable;
 
 public class JavaAttrStorage {
-	public static final JavaAttrStorage EMPTY = new JavaAttrStorage();
+    public static final JavaAttrStorage EMPTY = new JavaAttrStorage();
 
-	private final IJavaAttribute[] map = new IJavaAttribute[JavaAttrType.size()];
+    private final IJavaAttribute[] map = new IJavaAttribute[JavaAttrType.size()];
 
-	public void add(JavaAttrType<?> type, IJavaAttribute value) {
-		map[type.getId()] = value;
-	}
+    public void add(JavaAttrType<?> type, IJavaAttribute value) {
+        map[type.getId()] = value;
+    }
 
-	@SuppressWarnings("unchecked")
-	@Nullable
-	public <A extends IJavaAttribute> A get(JavaAttrType<A> type) {
-		return (A) map[type.getId()];
-	}
+    @SuppressWarnings("unchecked")
+    @Nullable
+    public <A extends IJavaAttribute> A get(JavaAttrType<A> type) {
+        return (A) map[type.getId()];
+    }
 
-	public int size() {
-		int size = 0;
-		for (IJavaAttribute attr : map) {
-			if (attr != null) {
-				size++;
-			}
-		}
-		return size;
-	}
+    public int size() {
+        int size = 0;
+        for (IJavaAttribute attr : map) {
+            if (attr != null) {
+                size++;
+            }
+        }
+        return size;
+    }
 
-	@Override
-	public String toString() {
-		return "AttributesStorage{size=" + size() + '}';
-	}
+    @Override
+    public String toString() {
+        return "AttributesStorage{size=" + size() + '}';
+    }
 }

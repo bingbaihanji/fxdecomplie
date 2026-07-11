@@ -1,7 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
 
-import java.util.List;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
@@ -11,55 +9,57 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.Region;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 
+import java.util.List;
+
 public class CleanRegions extends AbstractVisitor {
-	private static final IRegionVisitor REMOVE_REGION_VISITOR = new RemoveRegionVisitor();
+    private static final IRegionVisitor REMOVE_REGION_VISITOR = new RemoveRegionVisitor();
 
-	@Override
-	public void visit(MethodNode mth) {
-		process(mth);
-	}
+    public static void process(MethodNode mth) {
+        if (mth.isNoCode() || mth.getBasicBlocks().isEmpty()) {
+            return;
+        }
+        DepthRegionTraversal.traverse(mth, REMOVE_REGION_VISITOR);
+    }
 
-	public static void process(MethodNode mth) {
-		if (mth.isNoCode() || mth.getBasicBlocks().isEmpty()) {
-			return;
-		}
-		DepthRegionTraversal.traverse(mth, REMOVE_REGION_VISITOR);
-	}
+    @Override
+    public void visit(MethodNode mth) {
+        process(mth);
+    }
 
-	private static class RemoveRegionVisitor extends AbstractRegionVisitor {
-		@Override
-		public boolean enterRegion(MethodNode mth, IRegion region) {
-			if (region instanceof Region) {
-				region.getSubBlocks().removeIf(RemoveRegionVisitor::canRemoveRegion);
-			}
-			return true;
-		}
+    private static class RemoveRegionVisitor extends AbstractRegionVisitor {
+        private static boolean canRemoveRegion(IContainer container) {
+            if (container.contains(AFlag.DONT_GENERATE)) {
+                return true;
+            }
+            if (container instanceof BlockNode) {
+                BlockNode block = (BlockNode) container;
+                return block.getInstructions().isEmpty();
+            }
+            if (container instanceof LoopRegion) {
+                LoopRegion loopRegion = (LoopRegion) container;
+                if (loopRegion.isEndless()) {
+                    // keep empty endless loops
+                    return false;
+                }
+            }
+            if (container instanceof IRegion) {
+                List<IContainer> subBlocks = ((IRegion) container).getSubBlocks();
+                for (IContainer subBlock : subBlocks) {
+                    if (!canRemoveRegion(subBlock)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
 
-		private static boolean canRemoveRegion(IContainer container) {
-			if (container.contains(AFlag.DONT_GENERATE)) {
-				return true;
-			}
-			if (container instanceof BlockNode) {
-				BlockNode block = (BlockNode) container;
-				return block.getInstructions().isEmpty();
-			}
-			if (container instanceof LoopRegion) {
-				LoopRegion loopRegion = (LoopRegion) container;
-				if (loopRegion.isEndless()) {
-					// keep empty endless loops
-					return false;
-				}
-			}
-			if (container instanceof IRegion) {
-				List<IContainer> subBlocks = ((IRegion) container).getSubBlocks();
-				for (IContainer subBlock : subBlocks) {
-					if (!canRemoveRegion(subBlock)) {
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
-		}
-	}
+        @Override
+        public boolean enterRegion(MethodNode mth, IRegion region) {
+            if (region instanceof Region) {
+                region.getSubBlocks().removeIf(RemoveRegionVisitor::canRemoveRegion);
+            }
+            return true;
+        }
+    }
 }

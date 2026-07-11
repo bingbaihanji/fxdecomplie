@@ -1,131 +1,125 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
 
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxOverflowException;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 final class RegionStack {
-	private static final Logger LOG = LoggerFactory.getLogger(RegionStack.class);
-	private static final boolean DEBUG = false;
+    private static final Logger LOG = LoggerFactory.getLogger(RegionStack.class);
+    private static final boolean DEBUG = false;
 
-	private static final int REGIONS_STACK_LIMIT = 1000;
+    private static final int REGIONS_STACK_LIMIT = 1000;
 
-	static {
-		if (DEBUG) {
-			LOG.debug("Debug enabled for {}", RegionStack.class);
-		}
-	}
+    static {
+        if (DEBUG) {
+            LOG.debug("Debug enabled for {}", RegionStack.class);
+        }
+    }
 
-	private static final class State {
-		final Set<BlockNode> exits;
-		IRegion region;
+    private final Deque<State> stack;
+    private State curState;
+    public RegionStack(MethodNode mth) {
+        if (DEBUG) {
+            LOG.debug("New RegionStack: {}", mth);
+        }
+        this.stack = new ArrayDeque<>();
+        this.curState = new State();
+    }
 
-		public State() {
-			exits = new HashSet<>();
-		}
+    public void push(IRegion region) {
+        stack.push(curState);
+        if (stack.size() > REGIONS_STACK_LIMIT) {
+            throw new JadxOverflowException("Regions stack size limit reached");
+        }
+        curState = curState.copyWith(region);
+        if (DEBUG) {
+            LOG.debug("Stack push: {}: {}", size(), curState);
+        }
+    }
 
-		private State(State c, IRegion region) {
-			this.exits = new HashSet<>(c.exits);
-			this.region = region;
-		}
+    public void pop() {
+        curState = stack.pop();
+        if (DEBUG) {
+            LOG.debug("Stack  pop: {}: {}", size(), curState);
+        }
+    }
 
-		public State copyWith(IRegion region) {
-			return new State(this, region);
-		}
+    /**
+     * Add boundary(exit) node for current stack frame
+     *
+     * @param exit boundary node, null will be ignored
+     */
+    public void addExit(@Nullable BlockNode exit) {
+        if (exit != null) {
+            curState.exits.add(exit);
+        }
+    }
 
-		@Override
-		public String toString() {
-			return "Region: " + region + ", exits: " + exits;
-		}
-	}
+    public void addExits(Collection<BlockNode> exits) {
+        for (BlockNode exit : exits) {
+            addExit(exit);
+        }
+    }
 
-	private final Deque<State> stack;
-	private State curState;
+    public void removeExit(@Nullable BlockNode exit) {
+        if (exit != null) {
+            curState.exits.remove(exit);
+        }
+    }
 
-	public RegionStack(MethodNode mth) {
-		if (DEBUG) {
-			LOG.debug("New RegionStack: {}", mth);
-		}
-		this.stack = new ArrayDeque<>();
-		this.curState = new State();
-	}
+    public boolean containsExit(BlockNode exit) {
+        return curState.exits.contains(exit);
+    }
 
-	public void push(IRegion region) {
-		stack.push(curState);
-		if (stack.size() > REGIONS_STACK_LIMIT) {
-			throw new JadxOverflowException("Regions stack size limit reached");
-		}
-		curState = curState.copyWith(region);
-		if (DEBUG) {
-			LOG.debug("Stack push: {}: {}", size(), curState);
-		}
-	}
+    public Iterable<BlockNode> getExits() {
+        return curState.exits;
+    }
 
-	public void pop() {
-		curState = stack.pop();
-		if (DEBUG) {
-			LOG.debug("Stack  pop: {}: {}", size(), curState);
-		}
-	}
+    public IRegion peekRegion() {
+        return curState.region;
+    }
 
-	/**
-	 * Add boundary(exit) node for current stack frame
-	 *
-	 * @param exit boundary node, null will be ignored
-	 */
-	public void addExit(@Nullable BlockNode exit) {
-		if (exit != null) {
-			curState.exits.add(exit);
-		}
-	}
+    public int size() {
+        return stack.size();
+    }
 
-	public void addExits(Collection<BlockNode> exits) {
-		for (BlockNode exit : exits) {
-			addExit(exit);
-		}
-	}
+    public RegionStack clear() {
+        stack.clear();
+        curState = new State();
+        return this;
+    }
 
-	public void removeExit(@Nullable BlockNode exit) {
-		if (exit != null) {
-			curState.exits.remove(exit);
-		}
-	}
+    @Override
+    public String toString() {
+        return "Region stack size: " + size() + ", last: " + curState;
+    }
 
-	public boolean containsExit(BlockNode exit) {
-		return curState.exits.contains(exit);
-	}
+    private static final class State {
+        final Set<BlockNode> exits;
+        IRegion region;
 
-	public Iterable<BlockNode> getExits() {
-		return curState.exits;
-	}
+        public State() {
+            exits = new HashSet<>();
+        }
 
-	public IRegion peekRegion() {
-		return curState.region;
-	}
+        private State(State c, IRegion region) {
+            this.exits = new HashSet<>(c.exits);
+            this.region = region;
+        }
 
-	public int size() {
-		return stack.size();
-	}
+        public State copyWith(IRegion region) {
+            return new State(this, region);
+        }
 
-	public RegionStack clear() {
-		stack.clear();
-		curState = new State();
-		return this;
-	}
-
-	@Override
-	public String toString() {
-		return "Region stack size: " + size() + ", last: " + curState;
-	}
+        @Override
+        public String toString() {
+            return "Region: " + region + ", exits: " + exits;
+        }
+    }
 }

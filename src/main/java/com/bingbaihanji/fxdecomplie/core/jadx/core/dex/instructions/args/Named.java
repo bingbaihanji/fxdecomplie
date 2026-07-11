@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args;
 
 public interface Named {
 
-	String getName();
+    String getName();
 
-	void setName(String name);
+    void setName(String name);
 }

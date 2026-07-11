@@ -6,20 +6,20 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 
 public class InvokeCustomUtils {
 
-	public static InvokeType convertInvokeType(MethodHandleType type) {
-		switch (type) {
-			case INVOKE_STATIC:
-				return InvokeType.STATIC;
-			case INVOKE_INSTANCE:
-				return InvokeType.VIRTUAL;
-			case INVOKE_DIRECT:
-			case INVOKE_CONSTRUCTOR:
-				return InvokeType.DIRECT;
-			case INVOKE_INTERFACE:
-				return InvokeType.INTERFACE;
+    public static InvokeType convertInvokeType(MethodHandleType type) {
+        switch (type) {
+            case INVOKE_STATIC:
+                return InvokeType.STATIC;
+            case INVOKE_INSTANCE:
+                return InvokeType.VIRTUAL;
+            case INVOKE_DIRECT:
+            case INVOKE_CONSTRUCTOR:
+                return InvokeType.DIRECT;
+            case INVOKE_INTERFACE:
+                return InvokeType.INTERFACE;
 
-			default:
-				throw new JadxRuntimeException("Unsupported method handle type: " + type);
-		}
-	}
+            default:
+                throw new JadxRuntimeException("Unsupported method handle type: " + type);
+        }
+    }
 }

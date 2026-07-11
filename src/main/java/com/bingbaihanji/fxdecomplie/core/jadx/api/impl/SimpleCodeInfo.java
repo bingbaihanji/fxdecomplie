@@ -12,54 +12,54 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeMetadata;
  */
 public class SimpleCodeInfo implements ICodeInfo {
 
-	private final String code;
+    private final String code;
 
-	/**
-	 * 使用指定的代码字符串构造 SimpleCodeInfo 实例。
-	 *
-	 * @param code 反编译后的代码字符串
-	 */
-	public SimpleCodeInfo(String code) {
-		this.code = code;
-	}
+    /**
+     * 使用指定的代码字符串构造 SimpleCodeInfo 实例。
+     *
+     * @param code 反编译后的代码字符串
+     */
+    public SimpleCodeInfo(String code) {
+        this.code = code;
+    }
 
-	/**
-	 * 获取代码字符串。
-	 *
-	 * @return 反编译后的代码字符串
-	 */
-	@Override
-	public String getCodeStr() {
-		return code;
-	}
+    /**
+     * 获取代码字符串。
+     *
+     * @return 反编译后的代码字符串
+     */
+    @Override
+    public String getCodeStr() {
+        return code;
+    }
 
-	/**
-	 * 获取代码元数据。该简单实现始终返回空元数据。
-	 *
-	 * @return 空的 {@link ICodeMetadata} 实例
-	 */
-	@Override
-	public ICodeMetadata getCodeMetadata() {
-		return ICodeMetadata.EMPTY;
-	}
+    /**
+     * 获取代码元数据。该简单实现始终返回空元数据。
+     *
+     * @return 空的 {@link ICodeMetadata} 实例
+     */
+    @Override
+    public ICodeMetadata getCodeMetadata() {
+        return ICodeMetadata.EMPTY;
+    }
 
-	/**
-	 * 判断是否包含元数据。该简单实现始终返回 false。
-	 *
-	 * @return 始终返回 {@code false}
-	 */
-	@Override
-	public boolean hasMetadata() {
-		return false;
-	}
+    /**
+     * 判断是否包含元数据。该简单实现始终返回 false。
+     *
+     * @return 始终返回 {@code false}
+     */
+    @Override
+    public boolean hasMetadata() {
+        return false;
+    }
 
-	/**
-	 * 返回代码字符串。
-	 *
-	 * @return 反编译后的代码字符串
-	 */
-	@Override
-	public String toString() {
-		return code;
-	}
+    /**
+     * 返回代码字符串。
+     *
+     * @return 反编译后的代码字符串
+     */
+    @Override
+    public String toString() {
+        return code;
+    }
 }

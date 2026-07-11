@@ -1,14 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.kotlin;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs.UseKotlinMethodsForVarNames;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper;
@@ -24,12 +15,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InvokeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnWrapArg;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.RegisterArg;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.InitCodeVariables;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
@@ -37,197 +23,205 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.debuginfo.DebugI
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.rename.CodeRenameVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @JadxVisitor(
-		name = "ProcessKotlinInternals",
-		desc = "Use variable names from Kotlin intrinsic1 methods",
-		runAfter = {
-				InitCodeVariables.class,
-				DebugInfoApplyVisitor.class
-		},
-		runBefore = {
-				CodeRenameVisitor.class
-		}
+        name = "ProcessKotlinInternals",
+        desc = "Use variable names from Kotlin intrinsic1 methods",
+        runAfter = {
+                InitCodeVariables.class,
+                DebugInfoApplyVisitor.class
+        },
+        runBefore = {
+                CodeRenameVisitor.class
+        }
 )
 public class ProcessKotlinInternals extends AbstractVisitor {
-	private static final Logger LOG = LoggerFactory.getLogger(ProcessKotlinInternals.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ProcessKotlinInternals.class);
 
-	private static final String KOTLIN_INTERNAL_PKG = "kotlin.jvm.internal.";
-	private static final String KOTLIN_INTRINSICS_CLS_SHORT_NAME = "Intrinsics";
-	private static final String KOTLIN_INTRINSICS_CLS = KOTLIN_INTERNAL_PKG + KOTLIN_INTRINSICS_CLS_SHORT_NAME;
-	private static final String KOTLIN_VARNAME_SOURCE_MTH1 = "(Ljava/lang/Object;Ljava/lang/String;)V";
-	private static final String KOTLIN_VARNAME_SOURCE_MTH2 = "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V";
+    private static final String KOTLIN_INTERNAL_PKG = "kotlin.jvm.internal.";
+    private static final String KOTLIN_INTRINSICS_CLS_SHORT_NAME = "Intrinsics";
+    private static final String KOTLIN_INTRINSICS_CLS = KOTLIN_INTERNAL_PKG + KOTLIN_INTRINSICS_CLS_SHORT_NAME;
+    private static final String KOTLIN_VARNAME_SOURCE_MTH1 = "(Ljava/lang/Object;Ljava/lang/String;)V";
+    private static final String KOTLIN_VARNAME_SOURCE_MTH2 = "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V";
 
-	private @Nullable ClassInfo kotlinIntrinsicsCls;
-	private Set<MethodInfo> kotlinVarNameSourceMethods;
-	private boolean hideInsns;
+    private @Nullable ClassInfo kotlinIntrinsicsCls;
+    private Set<MethodInfo> kotlinVarNameSourceMethods;
+    private boolean hideInsns;
 
-	@Override
-	public void init(RootNode root) throws JadxException {
-		ClassNode kotlinCls = searchKotlinIntrinsicsClass(root);
-		if (kotlinCls != null) {
-			kotlinIntrinsicsCls = kotlinCls.getClassInfo();
-			kotlinVarNameSourceMethods = collectMethods(kotlinCls);
-			LOG.debug("Kotlin Intrinsics class: {}, methods: {}", kotlinCls, kotlinVarNameSourceMethods.size());
-		} else {
-			kotlinIntrinsicsCls = null;
-			LOG.debug("Kotlin Intrinsics class not found");
-		}
-		hideInsns = root.getArgs().getUseKotlinMethodsForVarNames() == UseKotlinMethodsForVarNames.APPLY_AND_HIDE;
-	}
+    @Nullable
+    private static ClassNode searchKotlinIntrinsicsClass(RootNode root) {
+        ClassNode kotlinCls = root.resolveClass(KOTLIN_INTRINSICS_CLS);
+        if (kotlinCls != null) {
+            return kotlinCls;
+        }
+        List<ClassNode> candidates = new ArrayList<>();
+        for (ClassNode cls : root.getClasses()) {
+            if (isKotlinIntrinsicsClass(cls)) {
+                candidates.add(cls);
+            }
+        }
+        return Utils.getOne(candidates);
+    }
 
-	@Override
-	public boolean visit(ClassNode cls) {
-		if (kotlinIntrinsicsCls == null) {
-			return false;
-		}
-		for (MethodNode mth : cls.getMethods()) {
-			processMth(mth);
-		}
-		return true;
-	}
+    private static boolean isKotlinIntrinsicsClass(ClassNode cls) {
+        ClassInfo clsInfo = cls.getClassInfo();
+        if (clsInfo.getAliasShortName().equals(KOTLIN_INTRINSICS_CLS_SHORT_NAME)
+                && clsInfo.getAliasFullName().equals(KOTLIN_INTRINSICS_CLS)) {
+            return true;
+        }
+        if (!clsInfo.getFullName().startsWith(KOTLIN_INTERNAL_PKG)) {
+            return false;
+        }
+        if (cls.getMethods().size() < 5) {
+            return false;
+        }
+        int mthCount = 0;
+        for (MethodNode mth : cls.getMethods()) {
+            if (mth.getAccessFlags().isStatic()
+                    && mth.getMethodInfo().getShortId().endsWith(KOTLIN_VARNAME_SOURCE_MTH1)) {
+                mthCount++;
+            }
+        }
+        return mthCount > 2;
+    }
 
-	private void processMth(MethodNode mth) {
-		if (mth.isNoCode() || mth.contains(AType.JADX_ERROR)) {
-			return;
-		}
-		for (BlockNode block : mth.getBasicBlocks()) {
-			for (InsnNode insn : block.getInstructions()) {
-				if (insn.getType() == InsnType.INVOKE) {
-					try {
-						processInvoke(mth, insn);
-					} catch (Exception e) {
-						mth.addWarnComment("Failed to extract var names", e);
-					}
-				}
-			}
-		}
-	}
+    @Override
+    public void init(RootNode root) throws JadxException {
+        ClassNode kotlinCls = searchKotlinIntrinsicsClass(root);
+        if (kotlinCls != null) {
+            kotlinIntrinsicsCls = kotlinCls.getClassInfo();
+            kotlinVarNameSourceMethods = collectMethods(kotlinCls);
+            LOG.debug("Kotlin Intrinsics class: {}, methods: {}", kotlinCls, kotlinVarNameSourceMethods.size());
+        } else {
+            kotlinIntrinsicsCls = null;
+            LOG.debug("Kotlin Intrinsics class not found");
+        }
+        hideInsns = root.getArgs().getUseKotlinMethodsForVarNames() == UseKotlinMethodsForVarNames.APPLY_AND_HIDE;
+    }
 
-	private void processInvoke(MethodNode mth, InsnNode insn) {
-		int argsCount = insn.getArgsCount();
-		if (argsCount < 2) {
-			return;
-		}
-		MethodInfo invokeMth = ((InvokeNode) insn).getCallMth();
-		if (!kotlinVarNameSourceMethods.contains(invokeMth)) {
-			return;
-		}
-		InsnArg firstArg = insn.getArg(0);
-		if (!firstArg.isRegister()) {
-			return;
-		}
-		RegisterArg varArg = (RegisterArg) firstArg;
-		boolean renamed = false;
-		if (argsCount == 2) {
-			String str = getConstString(mth, insn, 1);
-			if (str != null) {
-				renamed = checkAndRename(varArg, str);
-			}
-		} else if (argsCount == 3) {
-			// TODO: use second arg for rename class
-			String str = getConstString(mth, insn, 2);
-			if (str != null) {
-				renamed = checkAndRename(varArg, str);
-			}
-		}
-		if (renamed && hideInsns) {
-			insn.add(AFlag.DONT_GENERATE);
-		}
-	}
+    @Override
+    public boolean visit(ClassNode cls) {
+        if (kotlinIntrinsicsCls == null) {
+            return false;
+        }
+        for (MethodNode mth : cls.getMethods()) {
+            processMth(mth);
+        }
+        return true;
+    }
 
-	private boolean checkAndRename(RegisterArg arg, String str) {
-		String name = trimName(str);
-		if (NameMapper.isValidAndPrintable(name)) {
-			arg.getSVar().getCodeVar().setName(name);
-			return true;
-		}
-		return false;
-	}
+    private void processMth(MethodNode mth) {
+        if (mth.isNoCode() || mth.contains(AType.JADX_ERROR)) {
+            return;
+        }
+        for (BlockNode block : mth.getBasicBlocks()) {
+            for (InsnNode insn : block.getInstructions()) {
+                if (insn.getType() == InsnType.INVOKE) {
+                    try {
+                        processInvoke(mth, insn);
+                    } catch (Exception e) {
+                        mth.addWarnComment("Failed to extract var names", e);
+                    }
+                }
+            }
+        }
+    }
 
-	@Nullable
-	private String getConstString(MethodNode mth, InsnNode insn, int arg) {
-		InsnArg strArg = insn.getArg(arg);
-		if (!strArg.isInsnWrap()) {
-			return null;
-		}
-		InsnNode constInsn = ((InsnWrapArg) strArg).getWrapInsn();
-		InsnType insnType = constInsn.getType();
-		if (insnType == InsnType.CONST_STR) {
-			return ((ConstStringNode) constInsn).getString();
-		}
-		if (insnType == InsnType.SGET) {
-			// revert const field inline :(
-			FieldInfo fieldInfo = (FieldInfo) ((IndexInsnNode) constInsn).getIndex();
-			FieldNode fieldNode = mth.root().resolveField(fieldInfo);
-			if (fieldNode != null) {
-				String str = (String) fieldNode.get(JadxAttrType.CONSTANT_VALUE).getValue();
-				InsnArg newArg = InsnArg.wrapArg(new ConstStringNode(str));
-				insn.replaceArg(strArg, newArg);
-				return str;
-			}
-		}
-		return null;
-	}
+    private void processInvoke(MethodNode mth, InsnNode insn) {
+        int argsCount = insn.getArgsCount();
+        if (argsCount < 2) {
+            return;
+        }
+        MethodInfo invokeMth = ((InvokeNode) insn).getCallMth();
+        if (!kotlinVarNameSourceMethods.contains(invokeMth)) {
+            return;
+        }
+        InsnArg firstArg = insn.getArg(0);
+        if (!firstArg.isRegister()) {
+            return;
+        }
+        RegisterArg varArg = (RegisterArg) firstArg;
+        boolean renamed = false;
+        if (argsCount == 2) {
+            String str = getConstString(mth, insn, 1);
+            if (str != null) {
+                renamed = checkAndRename(varArg, str);
+            }
+        } else if (argsCount == 3) {
+            // TODO: use second arg for rename class
+            String str = getConstString(mth, insn, 2);
+            if (str != null) {
+                renamed = checkAndRename(varArg, str);
+            }
+        }
+        if (renamed && hideInsns) {
+            insn.add(AFlag.DONT_GENERATE);
+        }
+    }
 
-	private String trimName(String str) {
-		if (str.startsWith("$this$")) {
-			return str.substring(6);
-		}
-		if (str.startsWith("$")) {
-			return str.substring(1);
-		}
-		return str;
-	}
+    private boolean checkAndRename(RegisterArg arg, String str) {
+        String name = trimName(str);
+        if (NameMapper.isValidAndPrintable(name)) {
+            arg.getSVar().getCodeVar().setName(name);
+            return true;
+        }
+        return false;
+    }
 
-	@Nullable
-	private static ClassNode searchKotlinIntrinsicsClass(RootNode root) {
-		ClassNode kotlinCls = root.resolveClass(KOTLIN_INTRINSICS_CLS);
-		if (kotlinCls != null) {
-			return kotlinCls;
-		}
-		List<ClassNode> candidates = new ArrayList<>();
-		for (ClassNode cls : root.getClasses()) {
-			if (isKotlinIntrinsicsClass(cls)) {
-				candidates.add(cls);
-			}
-		}
-		return Utils.getOne(candidates);
-	}
+    @Nullable
+    private String getConstString(MethodNode mth, InsnNode insn, int arg) {
+        InsnArg strArg = insn.getArg(arg);
+        if (!strArg.isInsnWrap()) {
+            return null;
+        }
+        InsnNode constInsn = ((InsnWrapArg) strArg).getWrapInsn();
+        InsnType insnType = constInsn.getType();
+        if (insnType == InsnType.CONST_STR) {
+            return ((ConstStringNode) constInsn).getString();
+        }
+        if (insnType == InsnType.SGET) {
+            // revert const field inline :(
+            FieldInfo fieldInfo = (FieldInfo) ((IndexInsnNode) constInsn).getIndex();
+            FieldNode fieldNode = mth.root().resolveField(fieldInfo);
+            if (fieldNode != null) {
+                String str = (String) fieldNode.get(JadxAttrType.CONSTANT_VALUE).getValue();
+                InsnArg newArg = InsnArg.wrapArg(new ConstStringNode(str));
+                insn.replaceArg(strArg, newArg);
+                return str;
+            }
+        }
+        return null;
+    }
 
-	private static boolean isKotlinIntrinsicsClass(ClassNode cls) {
-		ClassInfo clsInfo = cls.getClassInfo();
-		if (clsInfo.getAliasShortName().equals(KOTLIN_INTRINSICS_CLS_SHORT_NAME)
-				&& clsInfo.getAliasFullName().equals(KOTLIN_INTRINSICS_CLS)) {
-			return true;
-		}
-		if (!clsInfo.getFullName().startsWith(KOTLIN_INTERNAL_PKG)) {
-			return false;
-		}
-		if (cls.getMethods().size() < 5) {
-			return false;
-		}
-		int mthCount = 0;
-		for (MethodNode mth : cls.getMethods()) {
-			if (mth.getAccessFlags().isStatic()
-					&& mth.getMethodInfo().getShortId().endsWith(KOTLIN_VARNAME_SOURCE_MTH1)) {
-				mthCount++;
-			}
-		}
-		return mthCount > 2;
-	}
+    private String trimName(String str) {
+        if (str.startsWith("$this$")) {
+            return str.substring(6);
+        }
+        if (str.startsWith("$")) {
+            return str.substring(1);
+        }
+        return str;
+    }
 
-	private Set<MethodInfo> collectMethods(ClassNode kotlinCls) {
-		Set<MethodInfo> set = new HashSet<>();
-		for (MethodNode mth : kotlinCls.getMethods()) {
-			if (!mth.getAccessFlags().isStatic()) {
-				continue;
-			}
-			String shortId = mth.getMethodInfo().getShortId();
-			if (shortId.endsWith(KOTLIN_VARNAME_SOURCE_MTH1) || shortId.endsWith(KOTLIN_VARNAME_SOURCE_MTH2)) {
-				set.add(mth.getMethodInfo());
-			}
-		}
-		return set;
-	}
+    private Set<MethodInfo> collectMethods(ClassNode kotlinCls) {
+        Set<MethodInfo> set = new HashSet<>();
+        for (MethodNode mth : kotlinCls.getMethods()) {
+            if (!mth.getAccessFlags().isStatic()) {
+                continue;
+            }
+            String shortId = mth.getMethodInfo().getShortId();
+            if (shortId.endsWith(KOTLIN_VARNAME_SOURCE_MTH1) || shortId.endsWith(KOTLIN_VARNAME_SOURCE_MTH2)) {
+                set.add(mth.getMethodInfo());
+            }
+        }
+        return set;
+    }
 }

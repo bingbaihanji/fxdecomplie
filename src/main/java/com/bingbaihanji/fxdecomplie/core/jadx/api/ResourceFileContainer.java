@@ -3,15 +3,15 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResContainer;
 
 public class ResourceFileContainer extends ResourceFile {
-	private final ResContainer container;
+    private final ResContainer container;
 
-	public ResourceFileContainer(String name, ResourceType type, ResContainer container) {
-		super(null, name, type);
-		this.container = container;
-	}
+    public ResourceFileContainer(String name, ResourceType type, ResContainer container) {
+        super(null, name, type);
+        this.container = container;
+    }
 
-	@Override
-	public ResContainer loadContent() {
-		return container;
-	}
+    @Override
+    public ResContainer loadContent() {
+        return container;
+    }
 }

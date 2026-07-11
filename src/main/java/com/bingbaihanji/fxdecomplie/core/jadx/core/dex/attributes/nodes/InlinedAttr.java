@@ -7,23 +7,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 
 public class InlinedAttr implements IJadxAttribute {
 
-	private final ClassNode inlineCls;
+    private final ClassNode inlineCls;
 
-	public InlinedAttr(ClassNode inlineCls) {
-		this.inlineCls = inlineCls;
-	}
+    public InlinedAttr(ClassNode inlineCls) {
+        this.inlineCls = inlineCls;
+    }
 
-	public ClassNode getInlineCls() {
-		return inlineCls;
-	}
+    public ClassNode getInlineCls() {
+        return inlineCls;
+    }
 
-	@Override
-	public IJadxAttrType<InlinedAttr> getAttrType() {
-		return AType.INLINED;
-	}
+    @Override
+    public IJadxAttrType<InlinedAttr> getAttrType() {
+        return AType.INLINED;
+    }
 
-	@Override
-	public String toString() {
-		return "INLINED: " + inlineCls;
-	}
+    @Override
+    public String toString() {
+        return "INLINED: " + inlineCls;
+    }
 }

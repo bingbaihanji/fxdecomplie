@@ -7,42 +7,42 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.code.JavaI
 
 public class TableSwitchDecoder implements IJavaInsnDecoder {
 
-	@Override
-	public void decode(CodeDecodeState state) {
-		read(state, false);
-	}
+    private static void read(CodeDecodeState state, boolean skip) {
+        DataReader reader = state.reader();
+        JavaInsnData insn = state.insn();
+        int dataOffset = reader.getOffset();
+        int insnOffset = insn.getOffset();
+        reader.skip(3 - insnOffset % 4);
+        int defTarget = insnOffset + reader.readS4();
+        int low = reader.readS4();
+        int high = reader.readS4();
+        int count = high - low + 1;
+        if (skip) {
+            reader.skip(count * 4);
+        } else {
+            state.pop(0);
+            int[] keys = new int[count];
+            int[] targets = new int[count];
+            for (int i = 0; i < count; i++) {
+                int target = insnOffset + reader.readS4();
+                keys[i] = low + i;
+                targets[i] = target;
+                state.registerJump(target);
+            }
+            insn.setTarget(defTarget);
+            state.registerJump(defTarget);
+            insn.setPayload(new SwitchPayload(count, keys, targets));
+        }
+        insn.setPayloadSize(reader.getOffset() - dataOffset);
+    }
 
-	@Override
-	public void skip(CodeDecodeState state) {
-		read(state, true);
-	}
+    @Override
+    public void decode(CodeDecodeState state) {
+        read(state, false);
+    }
 
-	private static void read(CodeDecodeState state, boolean skip) {
-		DataReader reader = state.reader();
-		JavaInsnData insn = state.insn();
-		int dataOffset = reader.getOffset();
-		int insnOffset = insn.getOffset();
-		reader.skip(3 - insnOffset % 4);
-		int defTarget = insnOffset + reader.readS4();
-		int low = reader.readS4();
-		int high = reader.readS4();
-		int count = high - low + 1;
-		if (skip) {
-			reader.skip(count * 4);
-		} else {
-			state.pop(0);
-			int[] keys = new int[count];
-			int[] targets = new int[count];
-			for (int i = 0; i < count; i++) {
-				int target = insnOffset + reader.readS4();
-				keys[i] = low + i;
-				targets[i] = target;
-				state.registerJump(target);
-			}
-			insn.setTarget(defTarget);
-			state.registerJump(defTarget);
-			insn.setPayload(new SwitchPayload(count, keys, targets));
-		}
-		insn.setPayloadSize(reader.getOffset() - dataOffset);
-	}
+    @Override
+    public void skip(CodeDecodeState state) {
+        read(state, true);
+    }
 }

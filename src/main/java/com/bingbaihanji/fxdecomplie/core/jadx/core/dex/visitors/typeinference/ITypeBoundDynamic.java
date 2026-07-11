@@ -8,9 +8,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType
  */
 public interface ITypeBoundDynamic extends ITypeBound {
 
-	/**
-	 * This method will be executed instead of {@link ITypeBound#getType()}
-	 * if {@link TypeUpdateInfo} is available.
-	 */
-	ArgType getType(TypeUpdateInfo updateInfo);
+    /**
+     * This method will be executed instead of {@link ITypeBound#getType()}
+     * if {@link TypeUpdateInfo} is available.
+     */
+    ArgType getType(TypeUpdateInfo updateInfo);
 }

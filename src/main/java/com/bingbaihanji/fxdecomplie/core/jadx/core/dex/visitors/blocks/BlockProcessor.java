@@ -1,19 +1,5 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -34,6 +20,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks.BlockSplitter.connect;
 
@@ -42,863 +34,863 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks.Bl
  * 主要职责包括：计算支配树、识别循环结构、拆分和合并基本块、消除不可达块等。
  */
 public class BlockProcessor extends AbstractVisitor {
-	private static final Logger LOG = LoggerFactory.getLogger(BlockProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BlockProcessor.class);
 
-	private static final boolean DEBUG_MODS = false;
+    private static final boolean DEBUG_MODS = false;
 
-	/**
-	 * 访问方法节点，对包含代码的方法执行基本块处理流程。
-	 */
-	@Override
-	public void visit(MethodNode mth) {
-		if (mth.isNoCode() || mth.getBasicBlocks().isEmpty()) {
-			return;
-		}
-		processBlocksTree(mth);
-	}
+    /**
+     * 处理基本块树的主流程，包括：移除不可达块、计算支配树、修复多入口循环、
+     * 迭代修改块树（合并常量返回、拆分循环等）、注册循环信息、计算后支配树。
+     */
+    private static void processBlocksTree(MethodNode mth) {
+        removeUnreachableBlocks(mth);
 
-	/**
-	 * 处理基本块树的主流程，包括：移除不可达块、计算支配树、修复多入口循环、
-	 * 迭代修改块树（合并常量返回、拆分循环等）、注册循环信息、计算后支配树。
-	 */
-	private static void processBlocksTree(MethodNode mth) {
-		removeUnreachableBlocks(mth);
+        computeDominators(mth);
+        if (independentBlockTreeMod(mth)) {
+            checkForUnreachableBlocks(mth);
+            computeDominators(mth);
+        }
+        if (FixMultiEntryLoops.process(mth)) {
+            computeDominators(mth);
+        }
+        updateCleanSuccessors(mth);
 
-		computeDominators(mth);
-		if (independentBlockTreeMod(mth)) {
-			checkForUnreachableBlocks(mth);
-			computeDominators(mth);
-		}
-		if (FixMultiEntryLoops.process(mth)) {
-			computeDominators(mth);
-		}
-		updateCleanSuccessors(mth);
+        int blocksCount = mth.getBasicBlocks().size();
+        int modLimit = Math.max(100, blocksCount);
+        if (DEBUG_MODS) {
+            mth.addAttr(new DebugModAttr());
+        }
+        int i = 0;
+        while (modifyBlocksTree(mth)) {
+            computeDominators(mth);
+            if (i++ > modLimit) {
+                mth.addWarn("CFG modification limit reached, blocks count: " + blocksCount);
+                break;
+            }
+        }
+        if (DEBUG_MODS && i != 0) {
+            String stats = "CFG modifications count: " + i
+                    + ", blocks count: " + blocksCount + '\n'
+                    + mth.get(DebugModAttr.TYPE).formatStats() + '\n';
+            mth.addDebugComment(stats);
+            LOG.debug("Method: {}\n{}", mth, stats);
+            mth.remove(DebugModAttr.TYPE);
+        }
+        checkForUnreachableBlocks(mth);
 
-		int blocksCount = mth.getBasicBlocks().size();
-		int modLimit = Math.max(100, blocksCount);
-		if (DEBUG_MODS) {
-			mth.addAttr(new DebugModAttr());
-		}
-		int i = 0;
-		while (modifyBlocksTree(mth)) {
-			computeDominators(mth);
-			if (i++ > modLimit) {
-				mth.addWarn("CFG modification limit reached, blocks count: " + blocksCount);
-				break;
-			}
-		}
-		if (DEBUG_MODS && i != 0) {
-			String stats = "CFG modifications count: " + i
-					+ ", blocks count: " + blocksCount + '\n'
-					+ mth.get(DebugModAttr.TYPE).formatStats() + '\n';
-			mth.addDebugComment(stats);
-			LOG.debug("Method: {}\n{}", mth, stats);
-			mth.remove(DebugModAttr.TYPE);
-		}
-		checkForUnreachableBlocks(mth);
+        DominatorTree.computeDominanceFrontier(mth);
+        registerLoops(mth);
+        processNestedLoops(mth);
 
-		DominatorTree.computeDominanceFrontier(mth);
-		registerLoops(mth);
-		processNestedLoops(mth);
+        PostDominatorTree.compute(mth);
 
-		PostDominatorTree.compute(mth);
+        updateCleanSuccessors(mth);
+    }
 
-		updateCleanSuccessors(mth);
-	}
+    /**
+     * 重新计算附加在基本块上的所有额外信息：
+     *
+     * <pre>
+     * - 支配节点
+     * - 支配边界
+     * - 后支配节点（仅当方法添加了 {@link AFlag#COMPUTE_POST_DOM} 标志时）
+     * - 循环及嵌套循环信息
+     * </pre>
+     * <p>
+     * 在 {@link BlockFinisher} 之前的自定义处理阶段修改块树后，应调用此方法。
+     */
+    public static void updateBlocksData(MethodNode mth) {
+        clearBlocksState(mth);
+        DominatorTree.compute(mth);
+        markLoops(mth);
 
-	/**
-	 * 重新计算附加在基本块上的所有额外信息：
-	 *
-	 * <pre>
-	 * - 支配节点
-	 * - 支配边界
-	 * - 后支配节点（仅当方法添加了 {@link AFlag#COMPUTE_POST_DOM} 标志时）
-	 * - 循环及嵌套循环信息
-	 * </pre>
-	 * <p>
-	 * 在 {@link BlockFinisher} 之前的自定义处理阶段修改块树后，应调用此方法。
-	 */
-	public static void updateBlocksData(MethodNode mth) {
-		clearBlocksState(mth);
-		DominatorTree.compute(mth);
-		markLoops(mth);
+        DominatorTree.computeDominanceFrontier(mth);
+        registerLoops(mth);
+        processNestedLoops(mth);
 
-		DominatorTree.computeDominanceFrontier(mth);
-		registerLoops(mth);
-		processNestedLoops(mth);
+        PostDominatorTree.compute(mth);
 
-		PostDominatorTree.compute(mth);
+        updateCleanSuccessors(mth);
+    }
 
-		updateCleanSuccessors(mth);
-	}
+    /**
+     * 更新所有基本块的干净后继列表（排除合成块等）。
+     */
+    static void updateCleanSuccessors(MethodNode mth) {
+        mth.getBasicBlocks().forEach(BlockNode::updateCleanSuccessors);
+    }
 
-	/**
-	 * 更新所有基本块的干净后继列表（排除合成块等）。
-	 */
-	static void updateCleanSuccessors(MethodNode mth) {
-		mth.getBasicBlocks().forEach(BlockNode::updateCleanSuccessors);
-	}
+    private static void checkForUnreachableBlocks(MethodNode mth) {
+        while (true) {
+            boolean fixed = false;
+            for (BlockNode block : mth.getBasicBlocks()) {
+                if (block.getPredecessors().isEmpty() && block != mth.getEnterBlock()) {
+                    // 有时拆分交叉块在创建后，其所有前驱节点会被移到其他位置。
+                    // 这种情况通常在创建时就能检测到，但在某些边缘情况下很难做到。
+                    // 在这些情况下，此处会将其与关联的底部分割器一起干净地移除。
+                    if (block.contains(AType.EXC_SPLIT_CROSS) && fixUnreachableSplitCross(mth, block)) {
+                        mth.addInfoComment("Removed unreachable split cross block " + block);
+                        fixed = true;
+                        break;
+                    }
+                    throw new JadxRuntimeException("Unreachable block: " + block);
+                }
+            }
+            if (!fixed) {
+                break;
+            }
+        }
+    }
 
-	private static void checkForUnreachableBlocks(MethodNode mth) {
-		while (true) {
-			boolean fixed = false;
-			for (BlockNode block : mth.getBasicBlocks()) {
-				if (block.getPredecessors().isEmpty() && block != mth.getEnterBlock()) {
-					// 有时拆分交叉块在创建后，其所有前驱节点会被移到其他位置。
-					// 这种情况通常在创建时就能检测到，但在某些边缘情况下很难做到。
-					// 在这些情况下，此处会将其与关联的底部分割器一起干净地移除。
-					if (block.contains(AType.EXC_SPLIT_CROSS) && fixUnreachableSplitCross(mth, block)) {
-						mth.addInfoComment("Removed unreachable split cross block " + block);
-						fixed = true;
-						break;
-					}
-					throw new JadxRuntimeException("Unreachable block: " + block);
-				}
-			}
-			if (!fixed) {
-				break;
-			}
-		}
-	}
+    /**
+     * 尝试移除之前添加的不可达合成拆分交叉块，以及关联的底部分割器。
+     *
+     * @param mth        包含不可达块的方法
+     * @param splitCross 不可达的基本块
+     * @return 如果操作成功返回 true，如果前置条件不满足且未做任何更改则返回 false。
+     */
+    private static boolean fixUnreachableSplitCross(MethodNode mth, BlockNode splitCross) {
+        BlockNode bottomSplitter = null;
+        for (BlockNode succ : splitCross.getSuccessors()) {
+            if (succ.contains(AFlag.EXC_BOTTOM_SPLITTER)) {
+                bottomSplitter = succ;
+                break;
+            }
+        }
+        if (bottomSplitter == null || bottomSplitter.getPredecessors().size() != 1) {
+            return false;
+        }
+        Set<BlockNode> removeSet = new HashSet<>();
+        removeSet.add(bottomSplitter);
+        removeSet.add(splitCross);
+        removeFromMethod(removeSet, mth);
+        return true;
+    }
 
-	/**
-	 * 尝试移除之前添加的不可达合成拆分交叉块，以及关联的底部分割器。
-	 *
-	 * @param mth        包含不可达块的方法
-	 * @param splitCross 不可达的基本块
-	 * @return 如果操作成功返回 true，如果前置条件不满足且未做任何更改则返回 false。
-	 */
-	private static boolean fixUnreachableSplitCross(MethodNode mth, BlockNode splitCross) {
-		BlockNode bottomSplitter = null;
-		for (BlockNode succ : splitCross.getSuccessors()) {
-			if (succ.contains(AFlag.EXC_BOTTOM_SPLITTER)) {
-				bottomSplitter = succ;
-				break;
-			}
-		}
-		if (bottomSplitter == null || bottomSplitter.getPredecessors().size() != 1) {
-			return false;
-		}
-		Set<BlockNode> removeSet = new HashSet<>();
-		removeSet.add(bottomSplitter);
-		removeSet.add(splitCross);
-		removeFromMethod(removeSet, mth);
-		return true;
-	}
+    /**
+     * 对循环起始或结束块进行指令去重。如果所有前驱块的末尾包含相同的指令序列，
+     * 则将这些重复指令提取到当前块的开头，以减少代码冗余。
+     */
+    private static boolean deduplicateBlockInsns(MethodNode mth, BlockNode block) {
+        if (block.contains(AFlag.LOOP_START) || block.contains(AFlag.LOOP_END)) {
+            // 在所有前驱块的末尾搜索相同的指令
+            List<BlockNode> predecessors = block.getPredecessors();
+            int predsCount = predecessors.size();
+            if (predsCount > 1) {
+                InsnNode lastInsn = BlockUtils.getLastInsn(block);
+                if (lastInsn != null && lastInsn.getType() == InsnType.IF) {
+                    return false;
+                }
+                if (BlockUtils.checkFirstInsn(block, insn -> insn.contains(AType.EXC_HANDLER))) {
+                    return false;
+                }
+                // TODO: 实现将指令提取到单独块中，以支持部分前驱的情况
+                int sameInsnCount = getSameLastInsnCount(predecessors);
+                if (sameInsnCount > 0) {
+                    List<InsnNode> insns = getLastInsns(predecessors.get(0), sameInsnCount);
+                    insertAtStart(block, insns);
+                    predecessors.forEach(pred -> getLastInsns(pred, sameInsnCount).clear());
+                    mth.addDebugComment("Move duplicate insns, count: " + sameInsnCount + " to block " + block);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-	/**
-	 * 对循环起始或结束块进行指令去重。如果所有前驱块的末尾包含相同的指令序列，
-	 * 则将这些重复指令提取到当前块的开头，以减少代码冗余。
-	 */
-	private static boolean deduplicateBlockInsns(MethodNode mth, BlockNode block) {
-		if (block.contains(AFlag.LOOP_START) || block.contains(AFlag.LOOP_END)) {
-			// 在所有前驱块的末尾搜索相同的指令
-			List<BlockNode> predecessors = block.getPredecessors();
-			int predsCount = predecessors.size();
-			if (predsCount > 1) {
-				InsnNode lastInsn = BlockUtils.getLastInsn(block);
-				if (lastInsn != null && lastInsn.getType() == InsnType.IF) {
-					return false;
-				}
-				if (BlockUtils.checkFirstInsn(block, insn -> insn.contains(AType.EXC_HANDLER))) {
-					return false;
-				}
-				// TODO: 实现将指令提取到单独块中，以支持部分前驱的情况
-				int sameInsnCount = getSameLastInsnCount(predecessors);
-				if (sameInsnCount > 0) {
-					List<InsnNode> insns = getLastInsns(predecessors.get(0), sameInsnCount);
-					insertAtStart(block, insns);
-					predecessors.forEach(pred -> getLastInsns(pred, sameInsnCount).clear());
-					mth.addDebugComment("Move duplicate insns, count: " + sameInsnCount + " to block " + block);
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+    private static List<InsnNode> getLastInsns(BlockNode blockNode, int sameInsnCount) {
+        List<InsnNode> instructions = blockNode.getInstructions();
+        int size = instructions.size();
+        return instructions.subList(size - sameInsnCount, size);
+    }
 
-	private static List<InsnNode> getLastInsns(BlockNode blockNode, int sameInsnCount) {
-		List<InsnNode> instructions = blockNode.getInstructions();
-		int size = instructions.size();
-		return instructions.subList(size - sameInsnCount, size);
-	}
+    private static void insertAtStart(BlockNode block, List<InsnNode> insns) {
+        List<InsnNode> blockInsns = block.getInstructions();
 
-	private static void insertAtStart(BlockNode block, List<InsnNode> insns) {
-		List<InsnNode> blockInsns = block.getInstructions();
+        List<InsnNode> newInsnList = new ArrayList<>(insns.size() + blockInsns.size());
+        newInsnList.addAll(insns);
+        newInsnList.addAll(blockInsns);
 
-		List<InsnNode> newInsnList = new ArrayList<>(insns.size() + blockInsns.size());
-		newInsnList.addAll(insns);
-		newInsnList.addAll(blockInsns);
+        blockInsns.clear();
+        blockInsns.addAll(newInsnList);
+    }
 
-		blockInsns.clear();
-		blockInsns.addAll(newInsnList);
-	}
+    private static int getSameLastInsnCount(List<BlockNode> predecessors) {
+        int sameInsnCount = 0;
+        while (true) {
+            InsnNode insn = null;
+            for (BlockNode pred : predecessors) {
+                InsnNode curInsn = getInsnsFromEnd(pred, sameInsnCount);
+                if (curInsn == null) {
+                    return sameInsnCount;
+                }
+                if (insn == null) {
+                    insn = curInsn;
+                } else {
+                    if (!isSame(insn, curInsn)) {
+                        return sameInsnCount;
+                    }
+                }
+            }
+            sameInsnCount++;
+        }
+    }
 
-	private static int getSameLastInsnCount(List<BlockNode> predecessors) {
-		int sameInsnCount = 0;
-		while (true) {
-			InsnNode insn = null;
-			for (BlockNode pred : predecessors) {
-				InsnNode curInsn = getInsnsFromEnd(pred, sameInsnCount);
-				if (curInsn == null) {
-					return sameInsnCount;
-				}
-				if (insn == null) {
-					insn = curInsn;
-				} else {
-					if (!isSame(insn, curInsn)) {
-						return sameInsnCount;
-					}
-				}
-			}
-			sameInsnCount++;
-		}
-	}
+    private static boolean isSame(InsnNode insn, InsnNode curInsn) {
+        return isInsnsEquals(insn, curInsn) && insn.canReorder();
+    }
 
-	private static boolean isSame(InsnNode insn, InsnNode curInsn) {
-		return isInsnsEquals(insn, curInsn) && insn.canReorder();
-	}
+    private static boolean isInsnsEquals(InsnNode insn, InsnNode otherInsn) {
+        if (insn == otherInsn) {
+            return true;
+        }
+        if (insn.isSame(otherInsn)
+                && sameArgs(insn.getResult(), otherInsn.getResult())) {
+            int argsCount = insn.getArgsCount();
+            for (int i = 0; i < argsCount; i++) {
+                if (!sameArgs(insn.getArg(i), otherInsn.getArg(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
-	private static boolean isInsnsEquals(InsnNode insn, InsnNode otherInsn) {
-		if (insn == otherInsn) {
-			return true;
-		}
-		if (insn.isSame(otherInsn)
-				&& sameArgs(insn.getResult(), otherInsn.getResult())) {
-			int argsCount = insn.getArgsCount();
-			for (int i = 0; i < argsCount; i++) {
-				if (!sameArgs(insn.getArg(i), otherInsn.getArg(i))) {
-					return false;
-				}
-			}
-			return true;
-		}
-		return false;
-	}
+    private static boolean sameArgs(@Nullable InsnArg arg, @Nullable InsnArg otherArg) {
+        if (arg == otherArg) {
+            return true;
+        }
+        if (arg == null || otherArg == null) {
+            return false;
+        }
+        if (arg.getClass().equals(otherArg.getClass())) {
+            if (arg.isRegister()) {
+                return ((RegisterArg) arg).getRegNum() == ((RegisterArg) otherArg).getRegNum();
+            }
+            if (arg.isLiteral()) {
+                return ((LiteralArg) arg).getLiteral() == ((LiteralArg) otherArg).getLiteral();
+            }
+            throw new JadxRuntimeException("Unexpected InsnArg types: " + arg + " and " + otherArg);
+        }
+        return false;
+    }
 
-	private static boolean sameArgs(@Nullable InsnArg arg, @Nullable InsnArg otherArg) {
-		if (arg == otherArg) {
-			return true;
-		}
-		if (arg == null || otherArg == null) {
-			return false;
-		}
-		if (arg.getClass().equals(otherArg.getClass())) {
-			if (arg.isRegister()) {
-				return ((RegisterArg) arg).getRegNum() == ((RegisterArg) otherArg).getRegNum();
-			}
-			if (arg.isLiteral()) {
-				return ((LiteralArg) arg).getLiteral() == ((LiteralArg) otherArg).getLiteral();
-			}
-			throw new JadxRuntimeException("Unexpected InsnArg types: " + arg + " and " + otherArg);
-		}
-		return false;
-	}
+    private static InsnNode getInsnsFromEnd(BlockNode block, int number) {
+        List<InsnNode> instructions = block.getInstructions();
+        int insnCount = instructions.size();
+        if (insnCount <= number) {
+            return null;
+        }
+        return instructions.get(insnCount - number - 1);
+    }
 
-	private static InsnNode getInsnsFromEnd(BlockNode block, int number) {
-		List<InsnNode> instructions = block.getInstructions();
-		int insnCount = instructions.size();
-		if (insnCount <= number) {
-			return null;
-		}
-		return instructions.get(insnCount - number - 1);
-	}
+    private static void computeDominators(MethodNode mth) {
+        clearBlocksState(mth);
+        DominatorTree.compute(mth);
+        markLoops(mth);
+    }
 
-	private static void computeDominators(MethodNode mth) {
-		clearBlocksState(mth);
-		DominatorTree.compute(mth);
-		markLoops(mth);
-	}
+    private static void markLoops(MethodNode mth) {
+        mth.getBasicBlocks().forEach(block -> {
+            // 支配其前驱的每个后继节点都是循环头，block -> successor 是一条回边。
+            block.getSuccessors().forEach(successor -> {
+                if (block.getDoms().get(successor.getPos()) || block == successor) {
+                    successor.add(AFlag.LOOP_START);
+                    block.add(AFlag.LOOP_END);
 
-	private static void markLoops(MethodNode mth) {
-		mth.getBasicBlocks().forEach(block -> {
-			// 支配其前驱的每个后继节点都是循环头，block -> successor 是一条回边。
-			block.getSuccessors().forEach(successor -> {
-				if (block.getDoms().get(successor.getPos()) || block == successor) {
-					successor.add(AFlag.LOOP_START);
-					block.add(AFlag.LOOP_END);
+                    Set<BlockNode> loopBlocks = BlockUtils.getAllPathsBlocks(successor, block);
+                    LoopInfo loop = new LoopInfo(successor, block, loopBlocks);
+                    successor.addAttr(AType.LOOP, loop);
+                    block.addAttr(AType.LOOP, loop);
+                }
+            });
+        });
+    }
 
-					Set<BlockNode> loopBlocks = BlockUtils.getAllPathsBlocks(successor, block);
-					LoopInfo loop = new LoopInfo(successor, block, loopBlocks);
-					successor.addAttr(AType.LOOP, loop);
-					block.addAttr(AType.LOOP, loop);
-				}
-			});
-		});
-	}
+    private static void registerLoops(MethodNode mth) {
+        mth.resetLoops();
+        mth.getBasicBlocks().forEach(block -> {
+            if (block.contains(AFlag.LOOP_START)) {
+                block.getAll(AType.LOOP).forEach(mth::registerLoop);
+            }
+        });
+    }
 
-	private static void registerLoops(MethodNode mth) {
-		mth.resetLoops();
-		mth.getBasicBlocks().forEach(block -> {
-			if (block.contains(AFlag.LOOP_START)) {
-				block.getAll(AType.LOOP).forEach(mth::registerLoop);
-			}
-		});
-	}
+    private static void processNestedLoops(MethodNode mth) {
+        if (mth.getLoopsCount() == 0) {
+            return;
+        }
+        for (LoopInfo outLoop : mth.getLoops()) {
+            for (LoopInfo innerLoop : mth.getLoops()) {
+                if (outLoop == innerLoop) {
+                    continue;
+                }
+                if (outLoop.getLoopBlocks().containsAll(innerLoop.getLoopBlocks())) {
+                    LoopInfo parentLoop = innerLoop.getParentLoop();
+                    if (parentLoop != null) {
+                        if (parentLoop.getLoopBlocks().containsAll(outLoop.getLoopBlocks())) {
+                            outLoop.setParentLoop(parentLoop);
+                            innerLoop.setParentLoop(outLoop);
+                        } else {
+                            parentLoop.setParentLoop(outLoop);
+                        }
+                    } else {
+                        innerLoop.setParentLoop(outLoop);
+                    }
+                }
+            }
+        }
+    }
 
-	private static void processNestedLoops(MethodNode mth) {
-		if (mth.getLoopsCount() == 0) {
-			return;
-		}
-		for (LoopInfo outLoop : mth.getLoops()) {
-			for (LoopInfo innerLoop : mth.getLoops()) {
-				if (outLoop == innerLoop) {
-					continue;
-				}
-				if (outLoop.getLoopBlocks().containsAll(innerLoop.getLoopBlocks())) {
-					LoopInfo parentLoop = innerLoop.getParentLoop();
-					if (parentLoop != null) {
-						if (parentLoop.getLoopBlocks().containsAll(outLoop.getLoopBlocks())) {
-							outLoop.setParentLoop(parentLoop);
-							innerLoop.setParentLoop(outLoop);
-						} else {
-							parentLoop.setParentLoop(outLoop);
-						}
-					} else {
-						innerLoop.setParentLoop(outLoop);
-					}
-				}
-			}
-		}
-	}
+    private static boolean modifyBlocksTree(MethodNode mth) {
+        for (BlockNode block : mth.getBasicBlocks()) {
+            if (checkLoops(mth, block)) {
+                return true;
+            }
+        }
+        if (mergeConstReturn(mth)) {
+            return true;
+        }
+        if (CodeFeaturesAttr.contains(mth, CodeFeaturesAttr.CodeFeature.SWITCH)) {
+            for (BlockNode basicBlock : mth.getBasicBlocks()) {
+                if (duplicateSimpleMoveBlock(mth, basicBlock)) {
+                    return true;
+                }
+            }
+        }
+        return splitExitBlocks(mth);
+    }
 
-	private static boolean modifyBlocksTree(MethodNode mth) {
-		for (BlockNode block : mth.getBasicBlocks()) {
-			if (checkLoops(mth, block)) {
-				return true;
-			}
-		}
-		if (mergeConstReturn(mth)) {
-			return true;
-		}
-		if (CodeFeaturesAttr.contains(mth, CodeFeaturesAttr.CodeFeature.SWITCH)) {
-			for (BlockNode basicBlock : mth.getBasicBlocks()) {
-				if (duplicateSimpleMoveBlock(mth, basicBlock)) {
-					return true;
-				}
-			}
-		}
-		return splitExitBlocks(mth);
-	}
+    private static boolean mergeConstReturn(MethodNode mth) {
+        if (mth.isVoidReturn()) {
+            return false;
+        }
+        boolean changed = false;
+        for (BlockNode retBlock : new ArrayList<>(mth.getPreExitBlocks())) {
+            BlockNode pred = Utils.getOne(retBlock.getPredecessors());
+            if (pred != null) {
+                InsnNode constInsn = Utils.getOne(pred.getInstructions());
+                if (constInsn != null && constInsn.isConstInsn()) {
+                    RegisterArg constArg = constInsn.getResult();
+                    InsnNode returnInsn = BlockUtils.getLastInsn(retBlock);
+                    if (returnInsn != null && returnInsn.getType() == InsnType.RETURN) {
+                        InsnArg retArg = returnInsn.getArg(0);
+                        if (constArg.sameReg(retArg)) {
+                            mergeConstAndReturnBlocks(mth, retBlock, pred);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+        if (changed) {
+            removeMarkedBlocks(mth);
+            if (DEBUG_MODS) {
+                mth.get(DebugModAttr.TYPE).addEvent("Merge const return");
+            }
+        }
+        return changed;
+    }
 
-	private static boolean mergeConstReturn(MethodNode mth) {
-		if (mth.isVoidReturn()) {
-			return false;
-		}
-		boolean changed = false;
-		for (BlockNode retBlock : new ArrayList<>(mth.getPreExitBlocks())) {
-			BlockNode pred = Utils.getOne(retBlock.getPredecessors());
-			if (pred != null) {
-				InsnNode constInsn = Utils.getOne(pred.getInstructions());
-				if (constInsn != null && constInsn.isConstInsn()) {
-					RegisterArg constArg = constInsn.getResult();
-					InsnNode returnInsn = BlockUtils.getLastInsn(retBlock);
-					if (returnInsn != null && returnInsn.getType() == InsnType.RETURN) {
-						InsnArg retArg = returnInsn.getArg(0);
-						if (constArg.sameReg(retArg)) {
-							mergeConstAndReturnBlocks(mth, retBlock, pred);
-							changed = true;
-						}
-					}
-				}
-			}
-		}
-		if (changed) {
-			removeMarkedBlocks(mth);
-			if (DEBUG_MODS) {
-				mth.get(DebugModAttr.TYPE).addEvent("Merge const return");
-			}
-		}
-		return changed;
-	}
+    private static void mergeConstAndReturnBlocks(MethodNode mth, BlockNode retBlock, BlockNode pred) {
+        pred.getInstructions().addAll(retBlock.getInstructions());
+        pred.copyAttributesFrom(retBlock);
+        BlockSplitter.removeConnection(pred, retBlock);
+        retBlock.getInstructions().clear();
+        retBlock.add(AFlag.REMOVE);
+        BlockNode exitBlock = mth.getExitBlock();
+        BlockSplitter.removeConnection(retBlock, exitBlock);
+        BlockSplitter.connect(pred, exitBlock);
+        pred.updateCleanSuccessors();
+    }
 
-	private static void mergeConstAndReturnBlocks(MethodNode mth, BlockNode retBlock, BlockNode pred) {
-		pred.getInstructions().addAll(retBlock.getInstructions());
-		pred.copyAttributesFrom(retBlock);
-		BlockSplitter.removeConnection(pred, retBlock);
-		retBlock.getInstructions().clear();
-		retBlock.add(AFlag.REMOVE);
-		BlockNode exitBlock = mth.getExitBlock();
-		BlockSplitter.removeConnection(retBlock, exitBlock);
-		BlockSplitter.connect(pred, exitBlock);
-		pred.updateCleanSuccessors();
-	}
+    private static boolean independentBlockTreeMod(MethodNode mth) {
+        boolean changed = false;
+        List<BlockNode> basicBlocks = mth.getBasicBlocks();
+        for (BlockNode basicBlock : basicBlocks) {
+            if (deduplicateBlockInsns(mth, basicBlock)) {
+                changed = true;
+            }
+        }
+        if (BlockExceptionHandler.process(mth)) {
+            changed = true;
+        }
+        for (BlockNode basicBlock : basicBlocks) {
+            if (BlockSplitter.removeEmptyBlock(basicBlock)) {
+                changed = true;
+            }
+        }
+        if (BlockSplitter.removeEmptyDetachedBlocks(mth)) {
+            changed = true;
+        }
+        return changed;
+    }
 
-	private static boolean independentBlockTreeMod(MethodNode mth) {
-		boolean changed = false;
-		List<BlockNode> basicBlocks = mth.getBasicBlocks();
-		for (BlockNode basicBlock : basicBlocks) {
-			if (deduplicateBlockInsns(mth, basicBlock)) {
-				changed = true;
-			}
-		}
-		if (BlockExceptionHandler.process(mth)) {
-			changed = true;
-		}
-		for (BlockNode basicBlock : basicBlocks) {
-			if (BlockSplitter.removeEmptyBlock(basicBlock)) {
-				changed = true;
-			}
-		}
-		if (BlockSplitter.removeEmptyDetachedBlocks(mth)) {
-			changed = true;
-		}
-		return changed;
-	}
+    /**
+     * 如果基本块仅包含一条 'move' 指令且所有前驱都是 'switch' 或 'if' 块，则复制该块。
+     * 由于这类 move 块可能被编译器去重，复制它有助于解析 switch 分支顺序并检测 fallthrough（贯穿）。
+     */
+    private static boolean duplicateSimpleMoveBlock(MethodNode mth, BlockNode block) {
+        List<InsnNode> insns = block.getInstructions();
+        if (insns.size() == 1 && block.getSuccessors().size() == 1) {
+            InsnNode insn = insns.get(0);
+            if (insn.getType() == InsnType.MOVE) {
+                List<BlockNode> preds = block.getPredecessors();
+                int predSize = preds.size();
+                if (predSize >= 3 && onlySwitchAndIfInLastInsns(preds)) {
+                    // 确认满足条件，复制该块
+                    BlockNode successor = block.getSuccessors().get(0);
+                    List<BlockNode> predsCopy = new ArrayList<>(preds);
+                    for (int i = 1; i < predSize; i++) {
+                        BlockNode pred = predsCopy.get(i);
+                        BlockNode newBlock = BlockSplitter.startNewBlock(mth, -1);
+                        newBlock.add(AFlag.SYNTHETIC);
+                        for (InsnNode oldInsn : block.getInstructions()) {
+                            InsnNode copyInsn = oldInsn.copyWithoutSsa();
+                            copyInsn.add(AFlag.SYNTHETIC);
+                            newBlock.getInstructions().add(copyInsn);
+                        }
+                        newBlock.copyAttributesFrom(block);
+                        BlockSplitter.replaceConnection(pred, block, newBlock);
+                        BlockSplitter.connect(newBlock, successor);
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-	/**
-	 * 如果基本块仅包含一条 'move' 指令且所有前驱都是 'switch' 或 'if' 块，则复制该块。
-	 * 由于这类 move 块可能被编译器去重，复制它有助于解析 switch 分支顺序并检测 fallthrough（贯穿）。
-	 */
-	private static boolean duplicateSimpleMoveBlock(MethodNode mth, BlockNode block) {
-		List<InsnNode> insns = block.getInstructions();
-		if (insns.size() == 1 && block.getSuccessors().size() == 1) {
-			InsnNode insn = insns.get(0);
-			if (insn.getType() == InsnType.MOVE) {
-				List<BlockNode> preds = block.getPredecessors();
-				int predSize = preds.size();
-				if (predSize >= 3 && onlySwitchAndIfInLastInsns(preds)) {
-					// 确认满足条件，复制该块
-					BlockNode successor = block.getSuccessors().get(0);
-					List<BlockNode> predsCopy = new ArrayList<>(preds);
-					for (int i = 1; i < predSize; i++) {
-						BlockNode pred = predsCopy.get(i);
-						BlockNode newBlock = BlockSplitter.startNewBlock(mth, -1);
-						newBlock.add(AFlag.SYNTHETIC);
-						for (InsnNode oldInsn : block.getInstructions()) {
-							InsnNode copyInsn = oldInsn.copyWithoutSsa();
-							copyInsn.add(AFlag.SYNTHETIC);
-							newBlock.getInstructions().add(copyInsn);
-						}
-						newBlock.copyAttributesFrom(block);
-						BlockSplitter.replaceConnection(pred, block, newBlock);
-						BlockSplitter.connect(newBlock, successor);
-					}
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+    private static boolean onlySwitchAndIfInLastInsns(List<BlockNode> preds) {
+        boolean hasSwitch = false;
+        boolean hasIf = false;
+        for (BlockNode pred : preds) {
+            InsnNode lastInsn = BlockUtils.getLastInsn(pred);
+            if (lastInsn == null) {
+                return false;
+            }
+            InsnType insnType = lastInsn.getType();
+            switch (insnType) {
+                case SWITCH:
+                    hasSwitch = true;
+                    break;
+                case IF:
+                    hasIf = true;
+                    break;
+                default:
+                    return false;
+            }
+        }
+        return hasSwitch && hasIf;
+    }
 
-	private static boolean onlySwitchAndIfInLastInsns(List<BlockNode> preds) {
-		boolean hasSwitch = false;
-		boolean hasIf = false;
-		for (BlockNode pred : preds) {
-			InsnNode lastInsn = BlockUtils.getLastInsn(pred);
-			if (lastInsn == null) {
-				return false;
-			}
-			InsnType insnType = lastInsn.getType();
-			switch (insnType) {
-				case SWITCH:
-					hasSwitch = true;
-					break;
-				case IF:
-					hasIf = true;
-					break;
-				default:
-					return false;
-			}
-		}
-		return hasSwitch && hasIf;
-	}
+    /**
+     * 简化循环结束块：当循环结束块存在多个后继时，插入一个仅指向循环头的合成块，
+     * 使循环结束块成为简单的路径块。
+     */
+    private static boolean simplifyLoopEnd(MethodNode mth, LoopInfo loop) {
+        BlockNode loopEnd = loop.getEnd();
+        if (loopEnd.getSuccessors().size() <= 1) {
+            return false;
+        }
+        // 将循环结束块改造为简单的路径块
+        BlockNode newLoopEnd = BlockSplitter.startNewBlock(mth, -1);
+        newLoopEnd.add(AFlag.SYNTHETIC);
+        newLoopEnd.add(AFlag.LOOP_END);
+        BlockNode loopStart = loop.getStart();
+        BlockSplitter.replaceConnection(loopEnd, loopStart, newLoopEnd);
+        BlockSplitter.connect(newLoopEnd, loopStart);
+        if (DEBUG_MODS) {
+            mth.get(DebugModAttr.TYPE).addEvent("Simplify loop end");
+        }
+        return true;
+    }
 
-	/**
-	 * 简化循环结束块：当循环结束块存在多个后继时，插入一个仅指向循环头的合成块，
-	 * 使循环结束块成为简单的路径块。
-	 */
-	private static boolean simplifyLoopEnd(MethodNode mth, LoopInfo loop) {
-		BlockNode loopEnd = loop.getEnd();
-		if (loopEnd.getSuccessors().size() <= 1) {
-			return false;
-		}
-		// 将循环结束块改造为简单的路径块
-		BlockNode newLoopEnd = BlockSplitter.startNewBlock(mth, -1);
-		newLoopEnd.add(AFlag.SYNTHETIC);
-		newLoopEnd.add(AFlag.LOOP_END);
-		BlockNode loopStart = loop.getStart();
-		BlockSplitter.replaceConnection(loopEnd, loopStart, newLoopEnd);
-		BlockSplitter.connect(newLoopEnd, loopStart);
-		if (DEBUG_MODS) {
-			mth.get(DebugModAttr.TYPE).addEvent("Simplify loop end");
-		}
-		return true;
-	}
+    private static boolean checkLoops(MethodNode mth, BlockNode block) {
+        if (!block.contains(AFlag.LOOP_START)) {
+            return false;
+        }
+        List<LoopInfo> loops = block.getAll(AType.LOOP);
+        int loopsCount = loops.size();
+        if (loopsCount == 0) {
+            return false;
+        }
+        for (LoopInfo loop : loops) {
+            if (insertBlocksForBreak(mth, loop)) {
+                return true;
+            }
+        }
+        if (loopsCount > 1 && splitLoops(mth, block, loops)) {
+            return true;
+        }
+        if (loopsCount == 1) {
+            LoopInfo loop = loops.get(0);
+            return insertBlocksForContinue(mth, loop)
+                    || insertPreHeader(mth, loop)
+                    || simplifyLoopEnd(mth, loop);
+        }
+        return false;
+    }
 
-	private static boolean checkLoops(MethodNode mth, BlockNode block) {
-		if (!block.contains(AFlag.LOOP_START)) {
-			return false;
-		}
-		List<LoopInfo> loops = block.getAll(AType.LOOP);
-		int loopsCount = loops.size();
-		if (loopsCount == 0) {
-			return false;
-		}
-		for (LoopInfo loop : loops) {
-			if (insertBlocksForBreak(mth, loop)) {
-				return true;
-			}
-		}
-		if (loopsCount > 1 && splitLoops(mth, block, loops)) {
-			return true;
-		}
-		if (loopsCount == 1) {
-			LoopInfo loop = loops.get(0);
-			return insertBlocksForContinue(mth, loop)
-					|| insertPreHeader(mth, loop)
-					|| simplifyLoopEnd(mth, loop);
-		}
-		return false;
-	}
+    /**
+     * 在循环头之前插入一个简单的路径块（前置头块 pre-header）。
+     */
+    private static boolean insertPreHeader(MethodNode mth, LoopInfo loop) {
+        BlockNode start = loop.getStart();
+        List<BlockNode> preds = start.getPredecessors();
+        int predsCount = preds.size() - 1; // 不计入回边
+        if (predsCount == 1) {
+            return false;
+        }
+        if (predsCount == 0) {
+            if (!start.contains(AFlag.MTH_ENTER_BLOCK)) {
+                mth.addWarnComment("Unexpected block without predecessors: " + start);
+            }
+            BlockNode newEnterBlock = BlockSplitter.startNewBlock(mth, -1);
+            newEnterBlock.add(AFlag.SYNTHETIC);
+            newEnterBlock.add(AFlag.MTH_ENTER_BLOCK);
+            mth.setEnterBlock(newEnterBlock);
+            start.remove(AFlag.MTH_ENTER_BLOCK);
+            BlockSplitter.connect(newEnterBlock, start);
+        } else {
+            // 多个前驱节点
+            BlockNode preHeader = BlockSplitter.startNewBlock(mth, -1);
+            preHeader.add(AFlag.SYNTHETIC);
+            BlockNode loopEnd = loop.getEnd();
+            for (BlockNode pred : new ArrayList<>(preds)) {
+                if (pred != loopEnd) {
+                    BlockSplitter.replaceConnection(pred, start, preHeader);
+                }
+            }
+            BlockSplitter.connect(preHeader, start);
+        }
+        if (DEBUG_MODS) {
+            mth.get(DebugModAttr.TYPE).addEvent("Insert loop pre header");
+        }
+        return true;
+    }
 
-	/**
-	 * 在循环头之前插入一个简单的路径块（前置头块 pre-header）。
-	 */
-	private static boolean insertPreHeader(MethodNode mth, LoopInfo loop) {
-		BlockNode start = loop.getStart();
-		List<BlockNode> preds = start.getPredecessors();
-		int predsCount = preds.size() - 1; // 不计入回边
-		if (predsCount == 1) {
-			return false;
-		}
-		if (predsCount == 0) {
-			if (!start.contains(AFlag.MTH_ENTER_BLOCK)) {
-				mth.addWarnComment("Unexpected block without predecessors: " + start);
-			}
-			BlockNode newEnterBlock = BlockSplitter.startNewBlock(mth, -1);
-			newEnterBlock.add(AFlag.SYNTHETIC);
-			newEnterBlock.add(AFlag.MTH_ENTER_BLOCK);
-			mth.setEnterBlock(newEnterBlock);
-			start.remove(AFlag.MTH_ENTER_BLOCK);
-			BlockSplitter.connect(newEnterBlock, start);
-		} else {
-			// 多个前驱节点
-			BlockNode preHeader = BlockSplitter.startNewBlock(mth, -1);
-			preHeader.add(AFlag.SYNTHETIC);
-			BlockNode loopEnd = loop.getEnd();
-			for (BlockNode pred : new ArrayList<>(preds)) {
-				if (pred != loopEnd) {
-					BlockSplitter.replaceConnection(pred, start, preHeader);
-				}
-			}
-			BlockSplitter.connect(preHeader, start);
-		}
-		if (DEBUG_MODS) {
-			mth.get(DebugModAttr.TYPE).addEvent("Insert loop pre header");
-		}
-		return true;
-	}
+    /**
+     * 插入额外的块，以便后续可能插入 'break' 语句。
+     */
+    private static boolean insertBlocksForBreak(MethodNode mth, LoopInfo loop) {
+        boolean change = false;
+        List<Edge> edges = loop.getExitEdges();
+        if (!edges.isEmpty()) {
+            for (Edge edge : edges) {
+                BlockNode target = edge.getTarget();
+                BlockNode source = edge.getSource();
+                if (!target.contains(AFlag.SYNTHETIC) && !source.contains(AFlag.SYNTHETIC)) {
+                    BlockSplitter.insertBlockBetween(mth, source, target);
+                    change = true;
+                }
+            }
+        }
+        if (DEBUG_MODS && change) {
+            mth.get(DebugModAttr.TYPE).addEvent("Insert loop break blocks");
+        }
+        return change;
+    }
 
-	/**
-	 * 插入额外的块，以便后续可能插入 'break' 语句。
-	 */
-	private static boolean insertBlocksForBreak(MethodNode mth, LoopInfo loop) {
-		boolean change = false;
-		List<Edge> edges = loop.getExitEdges();
-		if (!edges.isEmpty()) {
-			for (Edge edge : edges) {
-				BlockNode target = edge.getTarget();
-				BlockNode source = edge.getSource();
-				if (!target.contains(AFlag.SYNTHETIC) && !source.contains(AFlag.SYNTHETIC)) {
-					BlockSplitter.insertBlockBetween(mth, source, target);
-					change = true;
-				}
-			}
-		}
-		if (DEBUG_MODS && change) {
-			mth.get(DebugModAttr.TYPE).addEvent("Insert loop break blocks");
-		}
-		return change;
-	}
+    /**
+     * 插入额外的块，以便后续可能插入 'continue' 语句。
+     */
+    private static boolean insertBlocksForContinue(MethodNode mth, LoopInfo loop) {
+        BlockNode loopEnd = loop.getEnd();
+        boolean change = false;
+        List<BlockNode> preds = loopEnd.getPredecessors();
+        if (preds.size() > 1) {
+            for (BlockNode pred : new ArrayList<>(preds)) {
+                if (!pred.contains(AFlag.SYNTHETIC)) {
+                    BlockSplitter.insertBlockBetween(mth, pred, loopEnd);
+                    change = true;
+                }
+            }
+        }
+        if (DEBUG_MODS && change) {
+            mth.get(DebugModAttr.TYPE).addEvent("Insert loop continue block");
+        }
+        return change;
+    }
 
-	/**
-	 * 插入额外的块，以便后续可能插入 'continue' 语句。
-	 */
-	private static boolean insertBlocksForContinue(MethodNode mth, LoopInfo loop) {
-		BlockNode loopEnd = loop.getEnd();
-		boolean change = false;
-		List<BlockNode> preds = loopEnd.getPredecessors();
-		if (preds.size() > 1) {
-			for (BlockNode pred : new ArrayList<>(preds)) {
-				if (!pred.contains(AFlag.SYNTHETIC)) {
-					BlockSplitter.insertBlockBetween(mth, pred, loopEnd);
-					change = true;
-				}
-			}
-		}
-		if (DEBUG_MODS && change) {
-			mth.get(DebugModAttr.TYPE).addEvent("Insert loop continue block");
-		}
-		return change;
-	}
+    /**
+     * 拆分循环：当多条回边连接到同一个循环头时，创建一个额外的合成块统一承接这些回边。
+     */
+    private static boolean splitLoops(MethodNode mth, BlockNode block, List<LoopInfo> loops) {
+        boolean oneHeader = true;
+        for (LoopInfo loop : loops) {
+            if (loop.getStart() != block) {
+                oneHeader = false;
+                break;
+            }
+        }
+        if (!oneHeader) {
+            return false;
+        }
+        // 多条回边连接到同一个循环头 => 创建额外的块
+        BlockNode newLoopEnd = BlockSplitter.startNewBlock(mth, block.getStartOffset());
+        newLoopEnd.add(AFlag.SYNTHETIC);
+        connect(newLoopEnd, block);
+        for (LoopInfo la : loops) {
+            BlockSplitter.replaceConnection(la.getEnd(), block, newLoopEnd);
+        }
+        if (DEBUG_MODS) {
+            mth.get(DebugModAttr.TYPE).addEvent("Split loops");
+        }
+        return true;
+    }
 
-	/**
-	 * 拆分循环：当多条回边连接到同一个循环头时，创建一个额外的合成块统一承接这些回边。
-	 */
-	private static boolean splitLoops(MethodNode mth, BlockNode block, List<LoopInfo> loops) {
-		boolean oneHeader = true;
-		for (LoopInfo loop : loops) {
-			if (loop.getStart() != block) {
-				oneHeader = false;
-				break;
-			}
-		}
-		if (!oneHeader) {
-			return false;
-		}
-		// 多条回边连接到同一个循环头 => 创建额外的块
-		BlockNode newLoopEnd = BlockSplitter.startNewBlock(mth, block.getStartOffset());
-		newLoopEnd.add(AFlag.SYNTHETIC);
-		connect(newLoopEnd, block);
-		for (LoopInfo la : loops) {
-			BlockSplitter.replaceConnection(la.getEnd(), block, newLoopEnd);
-		}
-		if (DEBUG_MODS) {
-			mth.get(DebugModAttr.TYPE).addEvent("Split loops");
-		}
-		return true;
-	}
+    /**
+     * 拆分退出块：对每个前置退出块尝试拆分返回块或抛出块，并在发生变更后更新退出块连接。
+     */
+    private static boolean splitExitBlocks(MethodNode mth) {
+        boolean changed = false;
+        for (BlockNode preExitBlock : mth.getPreExitBlocks()) {
+            if (splitReturn(mth, preExitBlock)) {
+                changed = true;
+            } else if (splitThrow(mth, preExitBlock)) {
+                changed = true;
+            }
+        }
+        if (changed) {
+            updateExitBlockConnections(mth);
+            if (DEBUG_MODS) {
+                mth.get(DebugModAttr.TYPE).addEvent("Split exit block");
+            }
+        }
+        return changed;
+    }
 
-	/**
-	 * 拆分退出块：对每个前置退出块尝试拆分返回块或抛出块，并在发生变更后更新退出块连接。
-	 */
-	private static boolean splitExitBlocks(MethodNode mth) {
-		boolean changed = false;
-		for (BlockNode preExitBlock : mth.getPreExitBlocks()) {
-			if (splitReturn(mth, preExitBlock)) {
-				changed = true;
-			} else if (splitThrow(mth, preExitBlock)) {
-				changed = true;
-			}
-		}
-		if (changed) {
-			updateExitBlockConnections(mth);
-			if (DEBUG_MODS) {
-				mth.get(DebugModAttr.TYPE).addEvent("Split exit block");
-			}
-		}
-		return changed;
-	}
+    private static void updateExitBlockConnections(MethodNode mth) {
+        BlockNode exitBlock = mth.getExitBlock();
+        BlockSplitter.removePredecessors(exitBlock);
+        for (BlockNode block : mth.getBasicBlocks()) {
+            if (block != exitBlock
+                    && block.getSuccessors().isEmpty()
+                    && !block.contains(AFlag.REMOVE)) {
+                BlockSplitter.connect(block, exitBlock);
+            }
+        }
+    }
 
-	private static void updateExitBlockConnections(MethodNode mth) {
-		BlockNode exitBlock = mth.getExitBlock();
-		BlockSplitter.removePredecessors(exitBlock);
-		for (BlockNode block : mth.getBasicBlocks()) {
-			if (block != exitBlock
-					&& block.getSuccessors().isEmpty()
-					&& !block.contains(AFlag.REMOVE)) {
-				BlockSplitter.connect(block, exitBlock);
-			}
-		}
-	}
+    /**
+     * 当返回块存在多个前驱时，拆分（复制）该返回块。
+     */
+    private static boolean splitReturn(MethodNode mth, BlockNode returnBlock) {
+        if (returnBlock.contains(AFlag.SYNTHETIC)
+                || returnBlock.contains(AFlag.ORIG_RETURN)
+                || returnBlock.contains(AType.EXC_HANDLER)) {
+            return false;
+        }
+        List<BlockNode> preds = returnBlock.getPredecessors();
+        if (preds.size() < 2) {
+            return false;
+        }
+        InsnNode returnInsn = BlockUtils.getLastInsn(returnBlock);
+        if (returnInsn == null) {
+            return false;
+        }
+        if (returnInsn.getArgsCount() == 1
+                && returnBlock.getInstructions().size() == 1
+                && !isArgAssignInPred(preds, returnInsn.getArg(0))) {
+            return false;
+        }
 
-	/**
-	 * 当返回块存在多个前驱时，拆分（复制）该返回块。
-	 */
-	private static boolean splitReturn(MethodNode mth, BlockNode returnBlock) {
-		if (returnBlock.contains(AFlag.SYNTHETIC)
-				|| returnBlock.contains(AFlag.ORIG_RETURN)
-				|| returnBlock.contains(AType.EXC_HANDLER)) {
-			return false;
-		}
-		List<BlockNode> preds = returnBlock.getPredecessors();
-		if (preds.size() < 2) {
-			return false;
-		}
-		InsnNode returnInsn = BlockUtils.getLastInsn(returnBlock);
-		if (returnInsn == null) {
-			return false;
-		}
-		if (returnInsn.getArgsCount() == 1
-				&& returnBlock.getInstructions().size() == 1
-				&& !isArgAssignInPred(preds, returnInsn.getArg(0))) {
-			return false;
-		}
+        boolean first = true;
+        for (BlockNode pred : new ArrayList<>(preds)) {
+            if (first) {
+                returnBlock.add(AFlag.ORIG_RETURN);
+                first = false;
+            } else {
+                BlockNode newRetBlock = BlockSplitter.startNewBlock(mth, -1);
+                newRetBlock.add(AFlag.SYNTHETIC);
+                newRetBlock.add(AFlag.RETURN);
+                for (InsnNode oldInsn : returnBlock.getInstructions()) {
+                    InsnNode copyInsn = oldInsn.copyWithoutSsa();
+                    copyInsn.add(AFlag.SYNTHETIC);
+                    newRetBlock.getInstructions().add(copyInsn);
+                }
+                BlockSplitter.replaceConnection(pred, returnBlock, newRetBlock);
+            }
+        }
+        return true;
+    }
 
-		boolean first = true;
-		for (BlockNode pred : new ArrayList<>(preds)) {
-			if (first) {
-				returnBlock.add(AFlag.ORIG_RETURN);
-				first = false;
-			} else {
-				BlockNode newRetBlock = BlockSplitter.startNewBlock(mth, -1);
-				newRetBlock.add(AFlag.SYNTHETIC);
-				newRetBlock.add(AFlag.RETURN);
-				for (InsnNode oldInsn : returnBlock.getInstructions()) {
-					InsnNode copyInsn = oldInsn.copyWithoutSsa();
-					copyInsn.add(AFlag.SYNTHETIC);
-					newRetBlock.getInstructions().add(copyInsn);
-				}
-				BlockSplitter.replaceConnection(pred, returnBlock, newRetBlock);
-			}
-		}
-		return true;
-	}
+    /**
+     * 当抛出块（throw）关联多个不同的异常处理器时，拆分（复制）该抛出块，
+     * 使每个异常处理器拥有独立的抛出块。
+     */
+    private static boolean splitThrow(MethodNode mth, BlockNode exitBlock) {
+        if (exitBlock.contains(AFlag.IGNORE_THROW_SPLIT)) {
+            return false;
+        }
+        List<BlockNode> preds = exitBlock.getPredecessors();
+        if (preds.size() < 2) {
+            return false;
+        }
+        InsnNode throwInsn = BlockUtils.getLastInsn(exitBlock);
+        if (throwInsn == null || throwInsn.getType() != InsnType.THROW) {
+            return false;
+        }
+        // 仅当存在多个异常处理器时才进行拆分
+        // 向上遍历前驱直到到达异常处理器
+        Map<BlockNode, ExcHandlerAttr> handlersMap = new HashMap<>(preds.size());
+        Set<BlockNode> handlers = new HashSet<>(preds.size());
+        for (BlockNode pred : preds) {
+            BlockUtils.visitPredecessorsUntil(mth, pred, block -> {
+                ExcHandlerAttr excHandlerAttr = block.get(AType.EXC_HANDLER);
+                if (excHandlerAttr == null) {
+                    return false;
+                }
+                boolean correctHandler = excHandlerAttr.getHandler().getBlocks().contains(block);
+                if (correctHandler && isArgAssignInPred(Collections.singletonList(block), throwInsn.getArg(0))) {
+                    handlersMap.put(pred, excHandlerAttr);
+                    handlers.add(block);
+                }
+                return correctHandler;
+            });
+        }
+        if (handlers.size() == 1) {
+            exitBlock.add(AFlag.IGNORE_THROW_SPLIT);
+            return false;
+        }
 
-	/**
-	 * 当抛出块（throw）关联多个不同的异常处理器时，拆分（复制）该抛出块，
-	 * 使每个异常处理器拥有独立的抛出块。
-	 */
-	private static boolean splitThrow(MethodNode mth, BlockNode exitBlock) {
-		if (exitBlock.contains(AFlag.IGNORE_THROW_SPLIT)) {
-			return false;
-		}
-		List<BlockNode> preds = exitBlock.getPredecessors();
-		if (preds.size() < 2) {
-			return false;
-		}
-		InsnNode throwInsn = BlockUtils.getLastInsn(exitBlock);
-		if (throwInsn == null || throwInsn.getType() != InsnType.THROW) {
-			return false;
-		}
-		// 仅当存在多个异常处理器时才进行拆分
-		// 向上遍历前驱直到到达异常处理器
-		Map<BlockNode, ExcHandlerAttr> handlersMap = new HashMap<>(preds.size());
-		Set<BlockNode> handlers = new HashSet<>(preds.size());
-		for (BlockNode pred : preds) {
-			BlockUtils.visitPredecessorsUntil(mth, pred, block -> {
-				ExcHandlerAttr excHandlerAttr = block.get(AType.EXC_HANDLER);
-				if (excHandlerAttr == null) {
-					return false;
-				}
-				boolean correctHandler = excHandlerAttr.getHandler().getBlocks().contains(block);
-				if (correctHandler && isArgAssignInPred(Collections.singletonList(block), throwInsn.getArg(0))) {
-					handlersMap.put(pred, excHandlerAttr);
-					handlers.add(block);
-				}
-				return correctHandler;
-			});
-		}
-		if (handlers.size() == 1) {
-			exitBlock.add(AFlag.IGNORE_THROW_SPLIT);
-			return false;
-		}
+        boolean first = true;
+        for (BlockNode pred : new ArrayList<>(preds)) {
+            if (first) {
+                first = false;
+            } else {
+                BlockNode newThrowBlock = BlockSplitter.startNewBlock(mth, -1);
+                newThrowBlock.add(AFlag.SYNTHETIC);
+                for (InsnNode oldInsn : exitBlock.getInstructions()) {
+                    InsnNode copyInsn = oldInsn.copyWithoutSsa();
+                    copyInsn.add(AFlag.SYNTHETIC);
+                    newThrowBlock.getInstructions().add(copyInsn);
+                }
+                newThrowBlock.copyAttributesFrom(exitBlock);
+                ExcHandlerAttr excHandlerAttr = handlersMap.get(pred);
+                if (excHandlerAttr != null) {
+                    excHandlerAttr.getHandler().addBlock(newThrowBlock);
+                }
+                BlockSplitter.replaceConnection(pred, exitBlock, newThrowBlock);
+            }
+        }
+        return true;
+    }
 
-		boolean first = true;
-		for (BlockNode pred : new ArrayList<>(preds)) {
-			if (first) {
-				first = false;
-			} else {
-				BlockNode newThrowBlock = BlockSplitter.startNewBlock(mth, -1);
-				newThrowBlock.add(AFlag.SYNTHETIC);
-				for (InsnNode oldInsn : exitBlock.getInstructions()) {
-					InsnNode copyInsn = oldInsn.copyWithoutSsa();
-					copyInsn.add(AFlag.SYNTHETIC);
-					newThrowBlock.getInstructions().add(copyInsn);
-				}
-				newThrowBlock.copyAttributesFrom(exitBlock);
-				ExcHandlerAttr excHandlerAttr = handlersMap.get(pred);
-				if (excHandlerAttr != null) {
-					excHandlerAttr.getHandler().addBlock(newThrowBlock);
-				}
-				BlockSplitter.replaceConnection(pred, exitBlock, newThrowBlock);
-			}
-		}
-		return true;
-	}
+    private static boolean isArgAssignInPred(List<BlockNode> preds, InsnArg arg) {
+        if (arg.isRegister()) {
+            int regNum = ((RegisterArg) arg).getRegNum();
+            for (BlockNode pred : preds) {
+                for (InsnNode insnNode : pred.getInstructions()) {
+                    RegisterArg result = insnNode.getResult();
+                    if (result != null && result.getRegNum() == regNum) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
-	private static boolean isArgAssignInPred(List<BlockNode> preds, InsnArg arg) {
-		if (arg.isRegister()) {
-			int regNum = ((RegisterArg) arg).getRegNum();
-			for (BlockNode pred : preds) {
-				for (InsnNode insnNode : pred.getInstructions()) {
-					RegisterArg result = insnNode.getResult();
-					if (result != null && result.getRegNum() == regNum) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
+    public static void removeMarkedBlocks(MethodNode mth) {
+        boolean removed = mth.getBasicBlocks().removeIf(block -> {
+            if (block.contains(AFlag.REMOVE)) {
+                if (!block.getPredecessors().isEmpty() || !block.getSuccessors().isEmpty()) {
+                    LOG.warn("Block {} not deleted, method: {}", block, mth);
+                } else {
+                    TryCatchBlockAttr tryBlockAttr = block.get(AType.TRY_BLOCK);
+                    if (tryBlockAttr != null) {
+                        tryBlockAttr.removeBlock(block);
+                    }
+                    return true;
+                }
+            }
+            return false;
+        });
+        if (removed) {
+            mth.updateBlockPositions();
+        }
+    }
 
-	public static void removeMarkedBlocks(MethodNode mth) {
-		boolean removed = mth.getBasicBlocks().removeIf(block -> {
-			if (block.contains(AFlag.REMOVE)) {
-				if (!block.getPredecessors().isEmpty() || !block.getSuccessors().isEmpty()) {
-					LOG.warn("Block {} not deleted, method: {}", block, mth);
-				} else {
-					TryCatchBlockAttr tryBlockAttr = block.get(AType.TRY_BLOCK);
-					if (tryBlockAttr != null) {
-						tryBlockAttr.removeBlock(block);
-					}
-					return true;
-				}
-			}
-			return false;
-		});
-		if (removed) {
-			mth.updateBlockPositions();
-		}
-	}
+    private static void removeUnreachableBlocks(MethodNode mth) {
+        Set<BlockNode> toRemove = new LinkedHashSet<>();
+        for (BlockNode block : mth.getBasicBlocks()) {
+            computeUnreachableFromBlock(toRemove, block, mth);
+        }
+        removeFromMethod(toRemove, mth);
+    }
 
-	private static void removeUnreachableBlocks(MethodNode mth) {
-		Set<BlockNode> toRemove = new LinkedHashSet<>();
-		for (BlockNode block : mth.getBasicBlocks()) {
-			computeUnreachableFromBlock(toRemove, block, mth);
-		}
-		removeFromMethod(toRemove, mth);
-	}
+    public static void removeUnreachableBlock(BlockNode blockToRemove, MethodNode mth) {
+        Set<BlockNode> toRemove = new LinkedHashSet<>();
+        computeUnreachableFromBlock(toRemove, blockToRemove, mth);
+        removeFromMethod(toRemove, mth);
+    }
 
-	public static void removeUnreachableBlock(BlockNode blockToRemove, MethodNode mth) {
-		Set<BlockNode> toRemove = new LinkedHashSet<>();
-		computeUnreachableFromBlock(toRemove, blockToRemove, mth);
-		removeFromMethod(toRemove, mth);
-	}
+    private static void computeUnreachableFromBlock(Set<BlockNode> toRemove, BlockNode block, MethodNode mth) {
+        if (block.getPredecessors().isEmpty() && block != mth.getEnterBlock()) {
+            BlockSplitter.collectSuccessors(block, mth.getEnterBlock(), toRemove);
+        }
+    }
 
-	private static void computeUnreachableFromBlock(Set<BlockNode> toRemove, BlockNode block, MethodNode mth) {
-		if (block.getPredecessors().isEmpty() && block != mth.getEnterBlock()) {
-			BlockSplitter.collectSuccessors(block, mth.getEnterBlock(), toRemove);
-		}
-	}
+    private static void removeFromMethod(Set<BlockNode> toRemove, MethodNode mth) {
+        if (toRemove.isEmpty()) {
+            return;
+        }
 
-	private static void removeFromMethod(Set<BlockNode> toRemove, MethodNode mth) {
-		if (toRemove.isEmpty()) {
-			return;
-		}
+        long notEmptyBlocks = toRemove.stream().filter(block -> !block.getInstructions().isEmpty()).count();
+        if (notEmptyBlocks != 0) {
+            int insnsCount = toRemove.stream().mapToInt(block -> block.getInstructions().size()).sum();
+            mth.addWarnComment("Unreachable blocks removed: " + notEmptyBlocks + ", instructions: " + insnsCount);
+        }
 
-		long notEmptyBlocks = toRemove.stream().filter(block -> !block.getInstructions().isEmpty()).count();
-		if (notEmptyBlocks != 0) {
-			int insnsCount = toRemove.stream().mapToInt(block -> block.getInstructions().size()).sum();
-			mth.addWarnComment("Unreachable blocks removed: " + notEmptyBlocks + ", instructions: " + insnsCount);
-		}
+        toRemove.forEach(BlockSplitter::detachBlock);
+        mth.getBasicBlocks().removeAll(toRemove);
+        mth.updateBlockPositions();
+    }
 
-		toRemove.forEach(BlockSplitter::detachBlock);
-		mth.getBasicBlocks().removeAll(toRemove);
-		mth.updateBlockPositions();
-	}
+    private static void clearBlocksState(MethodNode mth) {
+        mth.getBasicBlocks().forEach(block -> {
+            block.remove(AType.LOOP);
+            block.remove(AFlag.LOOP_START);
+            block.remove(AFlag.LOOP_END);
+            block.setDoms(null);
+            block.setIDom(null);
+            block.setDomFrontier(null);
+            block.getDominatesOn().clear();
+        });
+    }
 
-	private static void clearBlocksState(MethodNode mth) {
-		mth.getBasicBlocks().forEach(block -> {
-			block.remove(AType.LOOP);
-			block.remove(AFlag.LOOP_START);
-			block.remove(AFlag.LOOP_END);
-			block.setDoms(null);
-			block.setIDom(null);
-			block.setDomFrontier(null);
-			block.getDominatesOn().clear();
-		});
-	}
+    /**
+     * 访问方法节点，对包含代码的方法执行基本块处理流程。
+     */
+    @Override
+    public void visit(MethodNode mth) {
+        if (mth.isNoCode() || mth.getBasicBlocks().isEmpty()) {
+            return;
+        }
+        processBlocksTree(mth);
+    }
 
-	private static final class DebugModAttr implements IJadxAttribute {
-		static final IJadxAttrType<DebugModAttr> TYPE = IJadxAttrType.create("DebugModAttr");
+    private static final class DebugModAttr implements IJadxAttribute {
+        static final IJadxAttrType<DebugModAttr> TYPE = IJadxAttrType.create("DebugModAttr");
 
-		private final Map<String, Integer> statMap = new HashMap<>();
+        private final Map<String, Integer> statMap = new HashMap<>();
 
-		public void addEvent(String name) {
-			statMap.merge(name, 1, Integer::sum);
-		}
+        public void addEvent(String name) {
+            statMap.merge(name, 1, Integer::sum);
+        }
 
-		public String formatStats() {
-			return statMap.entrySet().stream()
-					.map(entry -> " " + entry.getKey() + ": " + entry.getValue())
-					.collect(Collectors.joining("\n"));
-		}
+        public String formatStats() {
+            return statMap.entrySet().stream()
+                    .map(entry -> " " + entry.getKey() + ": " + entry.getValue())
+                    .collect(Collectors.joining("\n"));
+        }
 
-		@Override
-		public IJadxAttrType<DebugModAttr> getAttrType() {
-			return TYPE;
-		}
-	}
+        @Override
+        public IJadxAttrType<DebugModAttr> getAttrType() {
+            return TYPE;
+        }
+    }
 }

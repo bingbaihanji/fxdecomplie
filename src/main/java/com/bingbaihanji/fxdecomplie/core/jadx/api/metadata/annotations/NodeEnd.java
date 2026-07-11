@@ -4,18 +4,18 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeAnnotation;
 
 public class NodeEnd implements ICodeAnnotation {
 
-	public static final NodeEnd VALUE = new NodeEnd();
+    public static final NodeEnd VALUE = new NodeEnd();
 
-	private NodeEnd() {
-	}
+    private NodeEnd() {
+    }
 
-	@Override
-	public AnnType getAnnType() {
-		return AnnType.END;
-	}
+    @Override
+    public AnnType getAnnType() {
+        return AnnType.END;
+    }
 
-	@Override
-	public String toString() {
-		return "END";
-	}
+    @Override
+    public String toString() {
+        return "END";
+    }
 }

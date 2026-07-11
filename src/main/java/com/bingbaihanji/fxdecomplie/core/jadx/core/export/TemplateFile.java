@@ -1,20 +1,12 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.export;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-
-import org.jetbrains.annotations.Nullable;
-
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
 /**
  * Simple template engine
@@ -24,147 +16,145 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
  */
 public class TemplateFile {
 
-	private enum State {
-		NONE, START, VARIABLE, END
-	}
+    private final String templateName;
+    private final InputStream template;
+    private final Map<String, String> values = new HashMap<>();
+    private @Nullable Function<String, String> valueSanitizer;
+    private TemplateFile(String name, InputStream in) {
+        this.templateName = name;
+        this.template = in;
+    }
 
-	private static class ParserState {
-		private State state = State.NONE;
-		private StringBuilder curVariable;
-		private boolean skip;
-	}
+    public static TemplateFile fromResources(String path) throws FileNotFoundException {
+        InputStream res = TemplateFile.class.getResourceAsStream(path);
+        if (res == null) {
+            throw new FileNotFoundException("Resource not found: " + path);
+        }
+        return new TemplateFile(path, res);
+    }
 
-	private final String templateName;
-	private final InputStream template;
-	private final Map<String, String> values = new HashMap<>();
+    public void add(String name, @Nullable Object value) {
+        values.put(name, String.valueOf(value));
+    }
 
-	private @Nullable Function<String, String> valueSanitizer;
+    public String build() throws IOException {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            process(out);
+            return out.toString();
+        }
+    }
 
-	public static TemplateFile fromResources(String path) throws FileNotFoundException {
-		InputStream res = TemplateFile.class.getResourceAsStream(path);
-		if (res == null) {
-			throw new FileNotFoundException("Resource not found: " + path);
-		}
-		return new TemplateFile(path, res);
-	}
+    public void save(File outFile) throws IOException {
+        try (OutputStream out = new FileOutputStream(outFile)) {
+            process(out);
+        }
+    }
 
-	private TemplateFile(String name, InputStream in) {
-		this.templateName = name;
-		this.template = in;
-	}
+    public void setValueSanitizer(@Nullable Function<String, String> valueSanitizer) {
+        this.valueSanitizer = valueSanitizer;
+    }
 
-	public void add(String name, @Nullable Object value) {
-		values.put(name, String.valueOf(value));
-	}
+    private void process(OutputStream out) throws IOException {
+        if (template.available() == 0) {
+            throw new IOException("Template already processed");
+        }
+        try (InputStream in = new BufferedInputStream(template)) {
+            ParserState state = new ParserState();
+            while (true) {
+                int ch = in.read();
+                if (ch == -1) {
+                    break;
+                }
+                String str = process(state, (char) ch);
+                if (str != null) {
+                    out.write(str.getBytes());
+                } else if (!state.skip) {
+                    out.write(ch);
+                }
+            }
+        }
+    }
 
-	public String build() throws IOException {
-		try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-			process(out);
-			return out.toString();
-		}
-	}
+    @Nullable
+    private String process(ParserState parser, char ch) {
+        State state = parser.state;
+        switch (ch) {
+            case '{':
+                switch (state) {
+                    case START:
+                        parser.state = State.VARIABLE;
+                        parser.curVariable = new StringBuilder();
+                        break;
 
-	public void save(File outFile) throws IOException {
-		try (OutputStream out = new FileOutputStream(outFile)) {
-			process(out);
-		}
-	}
+                    default:
+                        parser.state = State.START;
+                        break;
+                }
+                parser.skip = true;
+                return null;
 
-	public void setValueSanitizer(@Nullable Function<String, String> valueSanitizer) {
-		this.valueSanitizer = valueSanitizer;
-	}
+            case '}':
+                switch (state) {
+                    case VARIABLE:
+                        parser.state = State.END;
+                        parser.skip = true;
+                        return null;
 
-	private void process(OutputStream out) throws IOException {
-		if (template.available() == 0) {
-			throw new IOException("Template already processed");
-		}
-		try (InputStream in = new BufferedInputStream(template)) {
-			ParserState state = new ParserState();
-			while (true) {
-				int ch = in.read();
-				if (ch == -1) {
-					break;
-				}
-				String str = process(state, (char) ch);
-				if (str != null) {
-					out.write(str.getBytes());
-				} else if (!state.skip) {
-					out.write(ch);
-				}
-			}
-		}
-	}
+                    case END:
+                        parser.state = State.NONE;
+                        String varName = parser.curVariable.toString();
+                        parser.curVariable = new StringBuilder();
+                        boolean rawValue = varName.startsWith("!!");
+                        if (rawValue) {
+                            varName = varName.substring(2);
+                        }
+                        return processVar(varName, rawValue);
+                }
+                break;
 
-	@Nullable
-	private String process(ParserState parser, char ch) {
-		State state = parser.state;
-		switch (ch) {
-			case '{':
-				switch (state) {
-					case START:
-						parser.state = State.VARIABLE;
-						parser.curVariable = new StringBuilder();
-						break;
+            default:
+                switch (state) {
+                    case VARIABLE:
+                        parser.curVariable.append(ch);
+                        parser.skip = true;
+                        return null;
 
-					default:
-						parser.state = State.START;
-						break;
-				}
-				parser.skip = true;
-				return null;
+                    case START:
+                        parser.state = State.NONE;
+                        return "{" + ch;
 
-			case '}':
-				switch (state) {
-					case VARIABLE:
-						parser.state = State.END;
-						parser.skip = true;
-						return null;
+                    case END:
+                        throw new JadxRuntimeException("Expected variable end: '" + parser.curVariable
+                                + "' (missing second '}')");
+                }
+                break;
+        }
+        parser.skip = false;
+        return null;
+    }
 
-					case END:
-						parser.state = State.NONE;
-						String varName = parser.curVariable.toString();
-						parser.curVariable = new StringBuilder();
-						boolean rawValue = varName.startsWith("!!");
-						if (rawValue) {
-							varName = varName.substring(2);
-						}
-						return processVar(varName, rawValue);
-				}
-				break;
+    private String processVar(String varName, boolean rawValue) {
+        String str = values.get(varName);
+        if (str == null) {
+            throw new JadxRuntimeException("Unknown variable: '" + varName
+                    + "' in template: " + templateName);
+        }
+        if (!rawValue) {
+            Function<String, String> sanitizer = valueSanitizer;
+            if (sanitizer != null) {
+                return sanitizer.apply(str);
+            }
+        }
+        return str;
+    }
 
-			default:
-				switch (state) {
-					case VARIABLE:
-						parser.curVariable.append(ch);
-						parser.skip = true;
-						return null;
+    private enum State {
+        NONE, START, VARIABLE, END
+    }
 
-					case START:
-						parser.state = State.NONE;
-						return "{" + ch;
-
-					case END:
-						throw new JadxRuntimeException("Expected variable end: '" + parser.curVariable
-								+ "' (missing second '}')");
-				}
-				break;
-		}
-		parser.skip = false;
-		return null;
-	}
-
-	private String processVar(String varName, boolean rawValue) {
-		String str = values.get(varName);
-		if (str == null) {
-			throw new JadxRuntimeException("Unknown variable: '" + varName
-					+ "' in template: " + templateName);
-		}
-		if (!rawValue) {
-			Function<String, String> sanitizer = valueSanitizer;
-			if (sanitizer != null) {
-				return sanitizer.apply(str);
-			}
-		}
-		return str;
-	}
+    private static class ParserState {
+        private State state = State.NONE;
+        private StringBuilder curVariable;
+        private boolean skip;
+    }
 }

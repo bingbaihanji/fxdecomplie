@@ -6,11 +6,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.data.attributes
 
 public class JavaSignatureAttr extends SignatureAttr implements IJavaAttribute {
 
-	public JavaSignatureAttr(String signature) {
-		super(signature);
-	}
+    public JavaSignatureAttr(String signature) {
+        super(signature);
+    }
 
-	public static IJavaAttributeReader reader() {
-		return (clsData, reader) -> new JavaSignatureAttr(clsData.getConstPoolReader().getUtf8(reader.readU2()));
-	}
+    public static IJavaAttributeReader reader() {
+        return (clsData, reader) -> new JavaSignatureAttr(clsData.getConstPoolReader().getUtf8(reader.readU2()));
+    }
 }
