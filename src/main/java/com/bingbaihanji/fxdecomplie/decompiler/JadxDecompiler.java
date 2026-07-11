@@ -5,11 +5,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.JavaClass;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.ICodeLoader;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaClassReader;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaLoadResult;
+import com.bingbaihanji.fxdecomplie.util.JadxOptionsBridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * jadx 反编译引擎适配器
@@ -68,8 +70,8 @@ public class JadxDecompiler implements Decompiler {
             // 创建 ICodeLoader
             ICodeLoader codeLoader = new JavaLoadResult(classReaders);
 
-            // 配置 jadx 参数
-            JadxArgs args = createJadxArgs();
+            // 从上下文读取引擎选项，不再硬编码
+            JadxArgs args = createJadxArgs(effectiveContext.options());
 
             // 创建 jadx 实例并加载
             try (com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler jadx = new com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler(args)) {
@@ -123,19 +125,21 @@ public class JadxDecompiler implements Decompiler {
     // ==================== 内部方法 ====================
 
     /**
-     * 创建 jadx 反编译参数
-     * 配置为单类反编译优化模式
+     * 创建 jadx 反编译参数，先设置默认值，再通过 JadxOptionsBridge 应用用户配置覆盖。
      */
-    private JadxArgs createJadxArgs() {
+    private JadxArgs createJadxArgs(Map<String, String> engineOptions) {
         JadxArgs args = new JadxArgs();
-        args.setSkipResources(true);           // 跳过资源文件
-        args.setDebugInfo(true);               // 保留调试信息
-        args.setUseImports(true);              // 使用 import 语句
-        args.setInlineMethods(true);           // 内联方法
-        args.setInlineAnonymousClasses(true);  // 内联匿名类
-        args.setExtractFinally(true);          // 提取 finally 块
-        args.setDeobfuscationOn(false);        // 不启用去混淆
-        args.setShowInconsistentCode(true);    // 显示不一致的代码
+        // 单类反编译模式默认值
+        args.setSkipResources(true);
+        args.setDebugInfo(true);
+        args.setUseImports(true);
+        args.setInlineMethods(true);
+        args.setInlineAnonymousClasses(true);
+        args.setExtractFinally(true);
+        args.setDeobfuscationOn(false);
+        args.setShowInconsistentCode(true);
+        // 应用用户配置覆盖默认值
+        JadxOptionsBridge.apply(args, engineOptions);
         return args;
     }
 
