@@ -95,7 +95,7 @@ public class NumberUtil {
             if (end > 0) {
                 text = text.substring(0, end);
             }
-            return Float.parseFloat(text.substring(0, end));
+            return Float.parseFloat(text);
         } else if (text.endsWith("D") || text.contains(".")) {
             int end = text.indexOf("D");
             if (end > 0) {
@@ -480,7 +480,7 @@ public class NumberUtil {
      * @return {@code true} when they have the same sign.
      */
     public static boolean haveSameSign(int a, int b) {
-        return a * b > 0;
+        return (a > 0 && b > 0) || (a < 0 && b < 0);
     }
 
     /**

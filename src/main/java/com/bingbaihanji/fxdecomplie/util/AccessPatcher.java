@@ -32,15 +32,16 @@ public class AccessPatcher {
      * Patches JDK access restrictions.
      */
     public static void patch() {
-        if (patched) return;
+        if (patched) {
+            return;
+        }
         try {
             openPackages();
             patchReflectionFilters();
-        } catch (Throwable t) {
-//			logger.error("Failed access patching on Java " + SystemInformation.JAVA_VERSION +
-//					"(" + SystemInformation.JAVA_VM_VENDOR + ")", t);
-        } finally {
             patched = true;
+            logger.debug("Access patching completed successfully");
+        } catch (Throwable t) {
+            logger.error("Failed access patching — some reflection operations may be restricted", t);
         }
     }
 
@@ -53,11 +54,13 @@ public class AccessPatcher {
             Set<Module> modules = new ArraySet<>();
             Module base = context.getModule();
             ModuleLayer baseLayer = base.getLayer();
-            if (baseLayer != null)
+            if (baseLayer != null) {
                 modules.addAll(baseLayer.modules());
+            }
             modules.addAll(ModuleLayer.boot().modules());
-            for (ClassLoader cl = context.getClassLoader(); cl != null; cl = cl.getParent())
+            for (ClassLoader cl = context.getClassLoader(); cl != null; cl = cl.getParent()) {
                 modules.add(cl.getUnnamedModule());
+            }
             MethodHandle export = ReflectUtils.lookup().findVirtual(Module.class, "implAddOpens", MethodType.methodType(void.class, String.class));
             for (Module module : modules) {
                 for (String name : module.getPackages()) {

@@ -52,9 +52,14 @@ public class DeobfPresets {
         if (deobfMapFile != null) {
             return deobfMapFile.toPath();
         }
-        Path inputFilePath = jadxArgs.getInputFiles().get(0).toPath().toAbsolutePath();
-        String baseName = IoUtils.getPathBaseName(inputFilePath);
-        return inputFilePath.getParent().resolve(baseName + ".jobf");
+        List<File> inputFiles = jadxArgs.getInputFiles();
+        if (!inputFiles.isEmpty()) {
+            Path inputFilePath = inputFiles.get(0).toPath().toAbsolutePath();
+            String baseName = IoUtils.getPathBaseName(inputFilePath);
+            return inputFilePath.getParent().resolve(baseName + ".jobf");
+        }
+        // 无输入文件时（如直接反编译内存中的类），回退到输出目录
+        return jadxArgs.getOutDir().toPath().toAbsolutePath().resolve("default.jobf");
     }
 
     private static String[] splitAndTrim(String str) {

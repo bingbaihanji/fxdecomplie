@@ -111,7 +111,8 @@ public final class Streams {
         });
         try {
             countDown.await();
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         Throwable thrown = throwable.get();
         if (thrown != null) {

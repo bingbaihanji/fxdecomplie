@@ -25,39 +25,73 @@ public final class JadxOptionsBridge {
         BooleanValue v;
 
         v = bool(options, "showInconsistentCode");
-        if (v.set) args.setShowInconsistentCode(v.value);
+        if (v.set) {
+            args.setShowInconsistentCode(v.value);
+        }
         v = bool(options, "useImports");
-        if (v.set) args.setUseImports(v.value);
+        if (v.set) {
+            args.setUseImports(v.value);
+        }
         v = bool(options, "debugInfo");
-        if (v.set) args.setDebugInfo(v.value);
+        if (v.set) {
+            args.setDebugInfo(v.value);
+        }
         v = bool(options, "extractFinally");
-        if (v.set) args.setExtractFinally(v.value);
+        if (v.set) {
+            args.setExtractFinally(v.value);
+        }
         v = bool(options, "inlineAnonymousClasses");
-        if (v.set) args.setInlineAnonymousClasses(v.value);
+        if (v.set) {
+            args.setInlineAnonymousClasses(v.value);
+        }
         v = bool(options, "inlineMethods");
-        if (v.set) args.setInlineMethods(v.value);
+        if (v.set) {
+            args.setInlineMethods(v.value);
+        }
         v = bool(options, "moveInnerClasses");
-        if (v.set) args.setMoveInnerClasses(v.value);
+        if (v.set) {
+            args.setMoveInnerClasses(v.value);
+        }
         v = bool(options, "deobfuscationOn");
-        if (v.set) args.setDeobfuscationOn(v.value);
+        if (v.set) {
+            args.setDeobfuscationOn(v.value);
+        }
         v = bool(options, "restoreSwitchOverString");
-        if (v.set) args.setRestoreSwitchOverString(v.value);
+        if (v.set) {
+            args.setRestoreSwitchOverString(v.value);
+        }
         v = bool(options, "replaceConsts");
-        if (v.set) args.setReplaceConsts(v.value);
+        if (v.set) {
+            args.setReplaceConsts(v.value);
+        }
         v = bool(options, "skipResources");
-        if (v.set) args.setSkipResources(v.value);
+        if (v.set) {
+            args.setSkipResources(v.value);
+        }
         v = bool(options, "skipSources");
-        if (v.set) args.setSkipSources(v.value);
+        if (v.set) {
+            args.setSkipSources(v.value);
+        }
         v = bool(options, "insertDebugLines");
-        if (v.set) args.setInsertDebugLines(v.value);
+        if (v.set) {
+            args.setInsertDebugLines(v.value);
+        }
         v = bool(options, "allowInlineKotlinLambda");
-        if (v.set) args.setAllowInlineKotlinLambda(v.value);
+        if (v.set) {
+            args.setAllowInlineKotlinLambda(v.value);
+        }
         v = bool(options, "escapeUnicode");
-        if (v.set) args.setEscapeUnicode(v.value);
+        if (v.set) {
+            args.setEscapeUnicode(v.value);
+        }
         v = bool(options, "respectBytecodeAccModifiers");
-        if (v.set) args.setRespectBytecodeAccModifiers(v.value);
+        if (v.set) {
+            args.setRespectBytecodeAccModifiers(v.value);
+        }
         v = bool(options, "skipXmlPrettyPrint");
-        if (v.set) args.setSkipXmlPrettyPrint(v.value);
+        if (v.set) {
+            args.setSkipXmlPrettyPrint(v.value);
+        }
 
         intValue(options, "threadsCount").ifSet(args::setThreadsCount);
         intValue(options, "deobfuscationMinLength").ifSet(args::setDeobfuscationMinLength);
@@ -72,17 +106,24 @@ public final class JadxOptionsBridge {
 
     private static BooleanValue bool(Map<String, String> m, String key) {
         String v = m.get(key);
-        if (v == null) return new BooleanValue(false, false);
+        if (v == null) {
+            return new BooleanValue(false, false);
+        }
         return new BooleanValue(true, "true".equalsIgnoreCase(v) || "1".equals(v));
     }
 
     private record IntValue(boolean set, int value) {
-        void ifSet(java.util.function.IntConsumer c) { if (set) c.accept(value); }
+        void ifSet(java.util.function.IntConsumer c) { if (set) {
+            c.accept(value);
+        }
+        }
     }
 
     private static IntValue intValue(Map<String, String> m, String key) {
         String v = m.get(key);
-        if (v == null || v.isEmpty()) return new IntValue(false, 0);
+        if (v == null || v.isEmpty()) {
+            return new IntValue(false, 0);
+        }
         try {
             return new IntValue(true, Integer.parseInt(v));
         } catch (NumberFormatException e) {

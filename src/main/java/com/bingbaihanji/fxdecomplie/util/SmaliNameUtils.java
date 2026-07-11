@@ -13,7 +13,9 @@ public final class SmaliNameUtils {
 
     /** "Ljava/lang/String;" → "java.lang.String" */
     public static String smaliToJava(String obj) {
-        if (obj == null || obj.isEmpty()) return obj;
+        if (obj == null || obj.isEmpty()) {
+            return obj;
+        }
         if (obj.charAt(0) == 'L') {
             int last = obj.length() - 1;
             if (obj.charAt(last) == ';') {
@@ -25,7 +27,9 @@ public final class SmaliNameUtils {
 
     /** "Ljava/lang/String;" → "java/lang/String" (去 L; 前后缀) */
     public static String smaliToInternal(String obj) {
-        if (obj == null || obj.isEmpty()) return obj;
+        if (obj == null || obj.isEmpty()) {
+            return obj;
+        }
         if (obj.charAt(0) == 'L') {
             return obj.substring(1, obj.length() - 1);
         }
@@ -34,13 +38,17 @@ public final class SmaliNameUtils {
 
     /** "java.lang.String" → "Ljava/lang/String;" */
     public static String javaToSmali(String obj) {
-        if (obj == null || obj.isEmpty()) return obj;
+        if (obj == null || obj.isEmpty()) {
+            return obj;
+        }
         return 'L' + obj.replace('.', '/') + ';';
     }
 
     /** "I" → "int", "[[B" → "byte[][]", "Ljava/lang/String;" → "java.lang.String" */
     public static String descriptorToJava(String desc) {
-        if (desc == null || desc.isEmpty()) return desc;
+        if (desc == null || desc.isEmpty()) {
+            return desc;
+        }
         return switch (desc.charAt(0)) {
             case 'V' -> "void";
             case 'Z' -> "boolean";
@@ -59,7 +67,9 @@ public final class SmaliNameUtils {
 
     /** "int" → "I", "java.lang.String" → "Ljava/lang/String;", "byte[][]" → "[[B" */
     public static String javaToDescriptor(String desc) {
-        if (desc == null || desc.isEmpty()) return desc;
+        if (desc == null || desc.isEmpty()) {
+            return desc;
+        }
         if (desc.endsWith("[]")) {
             return "[" + javaToDescriptor(desc.substring(0, desc.length() - 2));
         }
@@ -79,7 +89,9 @@ public final class SmaliNameUtils {
 
     /** 判断描述符是否代表基本类型 */
     public static boolean isPrimitiveDescriptor(String desc) {
-        if (desc == null || desc.isEmpty()) return false;
+        if (desc == null || desc.isEmpty()) {
+            return false;
+        }
         return switch (desc.charAt(0)) {
             case 'V', 'Z', 'C', 'B', 'S', 'I', 'F', 'J', 'D' -> true;
             default -> false;

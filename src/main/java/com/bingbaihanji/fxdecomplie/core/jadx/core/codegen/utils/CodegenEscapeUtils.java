@@ -72,8 +72,11 @@ public class CodegenEscapeUtils {
         for (int i = 0; i < len; i++) {
             char c = str.charAt(i);
             String replace = escapeXmlChar(c);
-            if (replace != null) sb.append(replace);
-            else sb.append(c);
+            if (replace != null) {
+                sb.append(replace);
+            } else {
+                sb.append(c);
+            }
         }
         return sb.toString();
     }
@@ -102,7 +105,9 @@ public class CodegenEscapeUtils {
     }
 
     private static @Nullable String escapeXmlChar(char c) {
-        if (c <= 0x1F) return "\\" + (int) c;
+        if (c <= 0x1F) {
+            return "\\" + (int) c;
+        }
         switch (c) {
             case '&': return "&amp;";
             case '<': return "&lt;";
@@ -127,16 +132,23 @@ public class CodegenEscapeUtils {
 
     private static void commonEscapeAndAppend(StringBuilder sb, char c) {
         String replace = escapeWhiteSpaceChar(c);
-        if (replace == null) replace = escapeXmlChar(c);
-        if (replace != null) sb.append(replace);
-        else sb.append(c);
+        if (replace == null) {
+            replace = escapeXmlChar(c);
+        }
+        if (replace != null) {
+            sb.append(replace);
+        } else {
+            sb.append(c);
+        }
     }
 
     // -- unescape (instance methods, depend on JadxArgs) ---
 
     public String unescapeString(String str) {
         int len = str.length();
-        if (len == 0) return "\"\"";
+        if (len == 0) {
+            return "\"\"";
+        }
         StringBuilder res = new StringBuilder();
         res.append('"');
         visitCodePoints(str, codePoint -> processCodePoint(codePoint, res));
@@ -155,18 +167,32 @@ public class CodegenEscapeUtils {
     }
 
     private boolean isEscapeNeededForCodePoint(int codePoint) {
-        if (codePoint < 32) return true;
-        if (codePoint < 127) return false;
-        if (escapeUnicode) return true;
+        if (codePoint < 32) {
+            return true;
+        }
+        if (codePoint < 127) {
+            return false;
+        }
+        if (escapeUnicode) {
+            return true;
+        }
         return !NameMapper.isPrintableCodePoint(codePoint);
     }
 
     public String unescapeChar(char c, boolean explicitCast) {
-        if (c == '\'') return "'\\''";
+        if (c == '\'') {
+            return "'\\''";
+        }
         String str = getSpecialStringForCodePoint(c);
-        if (str != null) return '\'' + str + '\'';
-        if (c >= 127 && escapeUnicode) return String.format("'\\u%04x'", (int) c);
-        if (NameMapper.isPrintableChar(c)) return "'" + c + '\'';
+        if (str != null) {
+            return '\'' + str + '\'';
+        }
+        if (c >= 127 && escapeUnicode) {
+            return String.format("'\\u%04x'", (int) c);
+        }
+        if (NameMapper.isPrintableChar(c)) {
+            return "'" + c + '\'';
+        }
         String intStr = Integer.toString(c);
         return explicitCast ? "(char) " + intStr : intStr;
     }
@@ -214,7 +240,9 @@ public class CodegenEscapeUtils {
             cast = true;
         }
         if (cast) {
-            if (bytesLen == 8) return numStr + 'L';
+            if (bytesLen == 8) {
+                return numStr + 'L';
+            }
             return getCastStr(bytesLen) + numStr;
         }
         return numStr;
@@ -251,8 +279,12 @@ public class CodegenEscapeUtils {
     }
     public String formatLong(long l, boolean cast) {
         if (integerFormat == IntegerFormat.AUTO) {
-            if (l == Long.MAX_VALUE) return "Long.MAX_VALUE";
-            if (l == Long.MIN_VALUE) return "Long.MIN_VALUE";
+            if (l == Long.MAX_VALUE) {
+                return "Long.MAX_VALUE";
+            }
+            if (l == Long.MIN_VALUE) {
+                return "Long.MIN_VALUE";
+            }
         }
         return formatNumber(l, 8, cast);
     }
@@ -260,38 +292,68 @@ public class CodegenEscapeUtils {
     // -- utility statics that are codegen-specific ---
 
     public static String formatDouble(double d) {
-        if (Double.isNaN(d)) return "Double.NaN";
-        if (d == Double.NEGATIVE_INFINITY) return "Double.NEGATIVE_INFINITY";
-        if (d == Double.POSITIVE_INFINITY) return "Double.POSITIVE_INFINITY";
-        if (d == Double.MIN_VALUE) return "Double.MIN_VALUE";
-        if (d == Double.MAX_VALUE) return "Double.MAX_VALUE";
-        if (d == Double.MIN_NORMAL) return "Double.MIN_NORMAL";
+        if (Double.isNaN(d)) {
+            return "Double.NaN";
+        }
+        if (d == Double.NEGATIVE_INFINITY) {
+            return "Double.NEGATIVE_INFINITY";
+        }
+        if (d == Double.POSITIVE_INFINITY) {
+            return "Double.POSITIVE_INFINITY";
+        }
+        if (d == Double.MIN_VALUE) {
+            return "Double.MIN_VALUE";
+        }
+        if (d == Double.MAX_VALUE) {
+            return "Double.MAX_VALUE";
+        }
+        if (d == Double.MIN_NORMAL) {
+            return "Double.MIN_NORMAL";
+        }
         return Double.toString(d) + 'd';
     }
 
     public static String formatFloat(float f) {
-        if (Float.isNaN(f)) return "Float.NaN";
-        if (f == Float.NEGATIVE_INFINITY) return "Float.NEGATIVE_INFINITY";
-        if (f == Float.POSITIVE_INFINITY) return "Float.POSITIVE_INFINITY";
-        if (f == Float.MIN_VALUE) return "Float.MIN_VALUE";
-        if (f == Float.MAX_VALUE) return "Float.MAX_VALUE";
-        if (f == Float.MIN_NORMAL) return "Float.MIN_NORMAL";
+        if (Float.isNaN(f)) {
+            return "Float.NaN";
+        }
+        if (f == Float.NEGATIVE_INFINITY) {
+            return "Float.NEGATIVE_INFINITY";
+        }
+        if (f == Float.POSITIVE_INFINITY) {
+            return "Float.POSITIVE_INFINITY";
+        }
+        if (f == Float.MIN_VALUE) {
+            return "Float.MIN_VALUE";
+        }
+        if (f == Float.MAX_VALUE) {
+            return "Float.MAX_VALUE";
+        }
+        if (f == Float.MIN_NORMAL) {
+            return "Float.MIN_NORMAL";
+        }
         return Float.toString(f) + 'f';
     }
 
     public static String capitalizeFirstChar(String str) {
-        if (str == null || str.isEmpty()) return str;
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
         return Character.toUpperCase(str.charAt(0)) + str.substring(1);
     }
 
     public static String removeSuffix(String str, String suffix) {
-        if (str.endsWith(suffix)) return str.substring(0, str.length() - suffix.length());
+        if (str.endsWith(suffix)) {
+            return str.substring(0, str.length() - suffix.length());
+        }
         return str;
     }
 
     public static @Nullable String getPrefix(String str, String delim) {
         int idx = str.indexOf(delim);
-        if (idx != -1) return str.substring(0, idx);
+        if (idx != -1) {
+            return str.substring(0, idx);
+        }
         return null;
     }
 
@@ -304,12 +366,16 @@ public class CodegenEscapeUtils {
     }
 
     public static int countLinesByPos(String content, int pos, int start) {
-        if (start >= pos) return 0;
+        if (start >= pos) {
+            return 0;
+        }
         int count = 0;
         int tempPos = start;
         do {
             tempPos = content.indexOf("\n", tempPos);
-            if (tempPos == -1 || tempPos >= pos) break;
+            if (tempPos == -1 || tempPos >= pos) {
+                break;
+            }
             count += 1;
             tempPos += 1;
         } while (tempPos < content.length());
@@ -317,16 +383,24 @@ public class CodegenEscapeUtils {
     }
 
     public static String getLine(String content, int pos, int end) {
-        if (pos >= content.length()) return "";
+        if (pos >= content.length()) {
+            return "";
+        }
         if (end != -1) {
-            if (end > content.length()) end = content.length() - 1;
+            if (end > content.length()) {
+                end = content.length() - 1;
+            }
         } else {
             end = pos + 1;
         }
         int headPos = content.lastIndexOf("\n", pos);
-        if (headPos == -1) headPos = 0;
+        if (headPos == -1) {
+            headPos = 0;
+        }
         int endPos = content.indexOf("\n", end);
-        if (endPos == -1) endPos = content.length();
+        if (endPos == -1) {
+            endPos = content.length();
+        }
         return content.substring(headPos, endPos);
     }
 
@@ -337,7 +411,9 @@ public class CodegenEscapeUtils {
 
     public static String removeChar(String str, char ch) {
         int pos = str.indexOf(ch);
-        if (pos == -1) return str;
+        if (pos == -1) {
+            return str;
+        }
         StringBuilder sb = new StringBuilder(str.length());
         int cur = 0;
         int next = pos;
@@ -351,7 +427,9 @@ public class CodegenEscapeUtils {
     }
 
     public static int countMatches(String str, String subStr) {
-        if (str == null || str.isEmpty() || subStr == null || subStr.isEmpty()) return 0;
+        if (str == null || str.isEmpty() || subStr == null || subStr.isEmpty()) {
+            return 0;
+        }
         int subStrLen = subStr.length();
         int count = 0;
         int idx = 0;
@@ -360,7 +438,9 @@ public class CodegenEscapeUtils {
     }
 
     public static java.util.List<String> splitByFixedString(String content, String splitStr) {
-        if (isEmpty(content)) return java.util.Collections.emptyList();
+        if (isEmpty(content)) {
+            return java.util.Collections.emptyList();
+        }
         java.util.List<String> parts = new java.util.ArrayList<>();
         int splitLen = splitStr.length();
         int pos = 0;

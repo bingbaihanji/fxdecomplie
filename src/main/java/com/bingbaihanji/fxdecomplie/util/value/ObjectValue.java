@@ -44,7 +44,7 @@ public non-sealed interface ObjectValue extends ReValue {
         if (text.isEmpty()) {
             return StringValue.VAL_STRING_EMPTY;
         }
-        if (text.equals(" ")) {
+        if (" ".equals(text)) {
             return StringValue.VAL_STRING_SPACE;
         }
         return new StringValueImpl(text);

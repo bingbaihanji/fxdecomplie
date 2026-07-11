@@ -384,6 +384,8 @@ public final class DecompilerRunner {
                 || trimmed.startsWith("// Vineflower Error:")
                 || trimmed.startsWith("// CFR Error:")
                 || trimmed.startsWith("// Procyon Error:")
+                || trimmed.startsWith("// jadx Error:")
+                || trimmed.startsWith("// jadx decompile failed")
                 || trimmed.startsWith("// Decompile failed")
                 || trimmed.startsWith("// 反编译失败")
                 || isJdFailureOutput(source);
@@ -397,6 +399,7 @@ public final class DecompilerRunner {
         int errorIndex = findFirst(normalized,
                 "Vineflower Error:", "CFR Error:", "Procyon Error:",
                 "JD-Core Error:", "JD-Core decompile failed",
+                "jadx Error:", "jadx decompile failed",
                 "CFR decompile failed", "Procyon decompile failed",
                 "Vineflower decompile failed", "Decompile failed", "反编译失败");
         String reason = errorIndex >= 0 ? normalized.substring(errorIndex) : normalized;

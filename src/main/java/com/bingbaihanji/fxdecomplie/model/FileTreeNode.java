@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -159,12 +160,14 @@ public class FileTreeNode {
         return nodeType == NodeTypeEnum.BINARY;
     }
 
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of(
+            ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".ico", ".webp");
+
     /** @return 是否为图片文件 */
     public boolean isImageFile() {
         String name = getName().toLowerCase();
-        return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg")
-                || name.endsWith(".gif") || name.endsWith(".bmp") || name.endsWith(".svg")
-                || name.endsWith(".ico") || name.endsWith(".webp");
+        int dot = name.lastIndexOf('.');
+        return dot >= 0 && IMAGE_EXTENSIONS.contains(name.substring(dot));
     }
 
     @Override

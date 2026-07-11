@@ -908,16 +908,6 @@ public class Utils {
     }
 
     /**
-     * 创建一个带命名前缀的简单线程工厂
-     *
-     * @param name 线程名称前缀
-     * @return 线程工厂实例
-     */
-    public static ThreadFactory simpleThreadFactory(String name) {
-        return new SimpleThreadFactory(name);
-    }
-
-    /**
      * 读取布尔类型的环境变量
      *
      * @param varName  环境变量名
@@ -1123,46 +1113,5 @@ public class Utils {
             return false;
         }
         return Objects.equals(list.get(0), obj);
-    }
-
-    /**
-     * 简单线程工厂实现，为线程设置统一的命名规则和未捕获异常处理器
-     */
-    private static final class SimpleThreadFactory implements ThreadFactory {
-        private static final AtomicInteger POOL = new AtomicInteger(0);
-        private static final Thread.UncaughtExceptionHandler EXC_HANDLER = new SimpleUncaughtExceptionHandler();
-
-        private final AtomicInteger number = new AtomicInteger(0);
-        private final String name;
-
-        SimpleThreadFactory(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public Thread newThread(@NotNull Runnable r) {
-            Thread thread = new Thread(r, "jadx-" + name
-                    + '-' + POOL.incrementAndGet()
-                    + '-' + number.incrementAndGet());
-            thread.setUncaughtExceptionHandler(EXC_HANDLER);
-            return thread;
-        }
-
-        /**
-         * 未捕获异常处理器，对内存溢出错误强制中断线程，其他异常仅记录日志
-         */
-        private static class SimpleUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
-            private static final Logger LOG = LoggerFactory.getLogger(SimpleUncaughtExceptionHandler.class);
-
-            @Override
-            public void uncaughtException(Thread thread, Throwable e) {
-                if (e instanceof OutOfMemoryError) {
-                    thread.interrupt();
-                    LOG.error("OutOfMemoryError in thread: {}, forcing interrupt", thread.getName());
-                } else {
-                    LOG.error("Uncaught thread exception, thread: {}", thread.getName(), e);
-                }
-            }
-        }
     }
 }

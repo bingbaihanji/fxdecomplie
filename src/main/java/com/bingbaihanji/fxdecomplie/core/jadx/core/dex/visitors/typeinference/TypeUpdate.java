@@ -377,7 +377,7 @@ public final class TypeUpdate {
                 return false;
 
             case UNKNOWN:
-                LOG.warn("Can't compare types, unknown hierarchy: {} and {}", candidateType, boundType);
+                LOG.debug("Can't compare types, unknown hierarchy: {} and {}", candidateType, boundType);
                 comparator.compareTypes(candidateType, boundType);
                 return true;
 

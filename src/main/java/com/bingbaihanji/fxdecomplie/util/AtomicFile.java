@@ -1,11 +1,12 @@
 package com.bingbaihanji.fxdecomplie.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * 用于对文件执行原子操作的辅助类：先写入一个新文件,写入成功完成后将其重命名为原始文件
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
  * 调用者负责在访问文件时确保适当的互斥不变量
  */
 public class AtomicFile {
-    private static final Logger LOGGER = Logger.getLogger(AtomicFile.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(AtomicFile.class);
 
     private final File mBaseName;
     private final File mNewName;
@@ -42,10 +43,11 @@ public class AtomicFile {
      *
      * @param baseName  基础文件对象
      * @param commitTag 提交标签(用于日志,当前实现忽略该参数)
+     * @deprecated commitTag 参数未被使用，请使用 {@link #AtomicFile(File)}
      */
+    @Deprecated
     public AtomicFile(File baseName, String commitTag) {
         this(baseName);
-        // commitTag 仅用于日志记录,本实现保留但未使用,可自定义扩展
     }
 
     /**
@@ -91,13 +93,13 @@ public class AtomicFile {
         // 如果目标是目录,则先删除(兼容旧错误用法)
         if (target.isDirectory()) {
             if (!target.delete()) {
-                LOGGER.warning("Failed to delete file which is a directory " + target);
+                log.warn("Failed to delete file which is a directory " + target);
             }
         }
         try {
             Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to rename " + source + " to " + target, e);
+            log.warn("Failed to rename {} to {}", source, target, e);
         }
     }
 
@@ -171,12 +173,12 @@ public class AtomicFile {
             return;
         }
         if (!sync(str)) {
-            LOGGER.warning("Failed to sync file output stream");
+            log.warn("Failed to sync file output stream");
         }
         try {
             str.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to close file output stream", e);
+            log.warn("Failed to close file output stream", e);
         }
         rename(mNewName, mBaseName);
     }
@@ -192,15 +194,15 @@ public class AtomicFile {
             return;
         }
         if (!sync(str)) {
-            LOGGER.warning("Failed to sync file output stream");
+            log.warn("Failed to sync file output stream");
         }
         try {
             str.close();
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Failed to close file output stream", e);
+            log.warn("Failed to close file output stream", e);
         }
         if (!mNewName.delete()) {
-            LOGGER.warning("Failed to delete new file " + mNewName);
+            log.warn("Failed to delete new file " + mNewName);
         }
     }
 
@@ -245,7 +247,7 @@ public class AtomicFile {
         // 此时删除 .new 文件,保证读取的是稳定的基础文件
         if (mNewName.exists() && mBaseName.exists()) {
             if (!mNewName.delete()) {
-                LOGGER.warning("Failed to delete outdated new file " + mNewName);
+                log.warn("Failed to delete outdated new file " + mNewName);
             }
         }
         return new FileInputStream(mBaseName);

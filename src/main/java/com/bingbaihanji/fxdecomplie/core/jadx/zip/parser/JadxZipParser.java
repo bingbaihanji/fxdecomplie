@@ -184,23 +184,29 @@ public final class JadxZipParser implements IZipParser {
             return;
         }
         RandomAccessFile raFile = new RandomAccessFile(zipFile, "r");
-        long size = raFile.length();
-        if (size >= Integer.MAX_VALUE) {
-            throw new IOException("Zip file is too big");
-        }
-        int fileLen = (int) size;
-        if (fileLen < 100 * 1024 * 1024) {
-            // load files smaller than 100MB directly into memory
-            byte[] bytes = new byte[fileLen];
-            raFile.readFully(bytes);
-            byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
-            raFile.close();
-        } else {
-            // for big files - use a memory mapped file
-            file = raFile;
-            fileChannel = raFile.getChannel();
-            byteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
-            byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        try {
+            long size = raFile.length();
+            if (size >= Integer.MAX_VALUE) {
+                throw new IOException("Zip file is too big");
+            }
+            int fileLen = (int) size;
+            if (fileLen < 100 * 1024 * 1024) {
+                // load files smaller than 100MB directly into memory
+                byte[] bytes = new byte[fileLen];
+                raFile.readFully(bytes);
+                byteBuffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
+            } else {
+                // for big files - use a memory mapped file
+                file = raFile;
+                fileChannel = raFile.getChannel();
+                byteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size());
+                byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            }
+        } finally {
+            // 小文件路径：关闭 RAF；大文件路径：file 字段持有引用，延迟关闭
+            if (file != raFile) {
+                raFile.close();
+            }
         }
     }
 

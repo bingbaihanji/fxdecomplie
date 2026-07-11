@@ -69,6 +69,8 @@ public final class BracketHighlighter {
     private volatile boolean isMatched;
     /** 已销毁标志：dispose 后不再恢复旧装饰器 */
     private volatile boolean disposed;
+    /** 光标位置监听器引用，用于 dispose 时移除，防止内存泄漏 */
+    private javafx.beans.value.ChangeListener<TextPos> caretListener;
 
     /**
      * @param codeArea         目标 CodeArea
@@ -270,17 +272,22 @@ public final class BracketHighlighter {
 
     /** 安装光标监听器 */
     public void install() {
-        codeArea.caretPositionProperty().addListener((obs, oldVal, newVal) -> {
+        caretListener = (obs, oldVal, newVal) -> {
             if (newVal != null) {
                 debounce.playFromStart();
             }
-        });
+        };
+        codeArea.caretPositionProperty().addListener(caretListener);
     }
 
     /** 停止监听并清除高亮 */
     public void dispose() {
         disposed = true;
         debounce.stop();
+        if (caretListener != null) {
+            codeArea.caretPositionProperty().removeListener(caretListener);
+            caretListener = null;
+        }
         matchedOpenPos = -1;
         matchedClosePos = -1;
         isMatched = false;
