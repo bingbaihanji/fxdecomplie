@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
-import com.bingbaihanji.fxdecomplie.service.ClassTabOpener;
+import com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener;
 import com.bingbaihanji.fxdecomplie.service.CommentManager;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.ui.IconHelper;

@@ -17,7 +17,7 @@ import java.util.zip.ZipFile;
  * @author bingbaihanji
  * @date 2026-07-07
  */
-final class WorkspaceByteReader {
+public final class WorkspaceByteReader {
 
     private WorkspaceByteReader() {
         throw new AssertionError("utility class");
@@ -28,7 +28,7 @@ final class WorkspaceByteReader {
      *
      * @param cacheNode 读取成功后是否回存到节点缓存
      */
-    static byte[] readNodeBytes(Workspace workspace, FileTreeNode node, boolean cacheNode)
+    public static byte[] readNodeBytes(Workspace workspace, FileTreeNode node, boolean cacheNode)
             throws IOException {
         if (node == null) {
             return null;

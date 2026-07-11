@@ -227,7 +227,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 委托 ClassTabOpener 计算 L2 缓存工作区键,确保跨组件缓存复用 */
     private static String workspaceKey(Workspace workspace) {
-        return com.bingbaihanji.fxdecomplie.service.ClassTabOpener.computeWorkspaceKey(workspace);
+        return com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener.computeWorkspaceKey(workspace);
     }
 
     /** 将项目文件中保存的引擎名字符串还原为枚举值,非法值回退到默认引擎 */

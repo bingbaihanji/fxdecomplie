@@ -1,12 +1,12 @@
-package com.bingbaihanji.fxdecomplie.service;
+package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.service.*;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
