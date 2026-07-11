@@ -10,8 +10,8 @@ import java.util.Map;
 import static com.bingbaihanji.fxdecomplie.core.jadx.api.resources.ResourceContentType.*;
 
 /**
- * 资源文件类型枚举。
- * 根据文件扩展名对资源进行分类，用于确定文件的内容类型（二进制/文本/未知）。
+ * 资源文件类型枚举
+ * 根据文件扩展名对资源进行分类，用于确定文件的内容类型（二进制/文本/未知）
  */
 public enum ResourceType {
     /** 代码文件：DEX 字节码、JAR 归档、Java 类文件 */
@@ -71,8 +71,8 @@ public enum ResourceType {
     }
 
     /**
-     * 根据文件名推断资源类型。
-     * 优先识别 {@code resources.pb}（视为 ARSC），并对 {@code AndroidManifest.xml} 做特殊处理（视为 MANIFEST）。
+     * 根据文件名推断资源类型
+     * 优先识别 {@code resources.pb}（视为 ARSC），并对 {@code AndroidManifest.xml} 做特殊处理（视为 MANIFEST）
      *
      * @param fileName 文件名
      * @return 匹配到的资源类型，无法识别时返回 {@link #UNKNOWN}
@@ -96,7 +96,7 @@ public enum ResourceType {
     }
 
     /**
-     * 获取该资源类型的内容类型（二进制/文本/未知）。
+     * 获取该资源类型的内容类型（二进制/文本/未知）
      *
      * @return 资源内容类型
      */
@@ -105,7 +105,7 @@ public enum ResourceType {
     }
 
     /**
-     * 获取该资源类型对应的所有文件扩展名。
+     * 获取该资源类型对应的所有文件扩展名
      *
      * @return 扩展名数组
      */

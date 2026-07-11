@@ -10,8 +10,8 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExcHandlerAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.TryCatchBlockAttr;
 
 /**
- * 属性类型枚举。
- * 使用泛型类型，以便在调用 'AttributeStorage.get' 方法后省略强制类型转换。
+ * 属性类型枚举
+ * 使用泛型类型，以便在调用 'AttributeStorage.get' 方法后省略强制类型转换
  *
  * @param <T> 属性类的具体实现类型
  */

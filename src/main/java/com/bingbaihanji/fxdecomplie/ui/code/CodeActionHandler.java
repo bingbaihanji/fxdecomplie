@@ -19,7 +19,7 @@ public interface CodeActionHandler {
     /**
      * 跳转到声明(右键菜单)
      *
-     * <p>默认仍按行级 metadata 跳转；实现方可以结合当前 token 和工作区索引做兜底解析</p>
+     * <p>默认仍按行级 metadata 跳转 实现方可以结合当前 token 和工作区索引做兜底解析</p>
      */
     default void goToDeclaration(CodeViewContext context, int lineNumber, String token) {
         if (context == null || context.metadata() == null) {

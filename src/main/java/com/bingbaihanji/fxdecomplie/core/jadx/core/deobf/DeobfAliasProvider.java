@@ -1,10 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.deobf;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IAliasProvider;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 
 public class DeobfAliasProvider implements IAliasProvider {
 

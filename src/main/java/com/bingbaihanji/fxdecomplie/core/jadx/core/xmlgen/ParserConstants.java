@@ -209,6 +209,7 @@ public class ParserConstants {
         PLURALS_MAP.put(ATTR_FEW, "few");
         PLURALS_MAP.put(ATTR_MANY, "many");
     }
+
     protected ParserConstants() {
     }
 

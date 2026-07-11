@@ -15,6 +15,7 @@ public final class MemoizedFunctions {
     private MemoizedFunctions() {
         throw new AssertionError("utility class");
     }
+
     public static <Key, Value> Function<Key, Value> memoize(Function<Key, Value> function) {
         return new MemoizedFunction<>(function);
     }

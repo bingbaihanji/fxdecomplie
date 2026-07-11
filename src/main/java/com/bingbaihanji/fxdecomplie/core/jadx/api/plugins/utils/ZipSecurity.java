@@ -2,7 +2,6 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.utils;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.JadxPluginContext;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.IZipEntry;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.io.LimitedInputStream;
@@ -30,17 +29,15 @@ public class ZipSecurity {
     private static final boolean DISABLE_CHECKS = "true".equalsIgnoreCase(System.getenv("JADX_DISABLE_ZIP_SECURITY"));
 
     private static final int MAX_ENTRIES_COUNT = parseEnvInt("JADX_ZIP_MAX_ENTRIES_COUNT", 100_000);
+    private static final IJadxZipSecurity ZIP_SECURITY = buildZipSecurity();
+    private static final ZipReader ZIP_READER = new ZipReader(ZIP_SECURITY);
+
+    private ZipSecurity() {
+    }
 
     private static int parseEnvInt(String name, int def) {
         String v = System.getenv(name);
         return v != null ? Integer.parseInt(v) : def;
-    }
-
-    private static final IJadxZipSecurity ZIP_SECURITY = buildZipSecurity();
-
-    private static final ZipReader ZIP_READER = new ZipReader(ZIP_SECURITY);
-
-    private ZipSecurity() {
     }
 
     private static IJadxZipSecurity buildZipSecurity() {

@@ -7,9 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * 最小化的 class 文件解析器,用于元数据路径,
@@ -91,7 +89,7 @@ public final class ClassFileParser {
             skipAttributes(in);
 
             return new ClassFileMetadata(minor, major, accessFlags, internalName, superName,
-                    interfaces, constantPoolCount, fields, methods);
+                    interfaces, referencedClassNames(constantPool), constantPoolCount, fields, methods);
         }
     }
 
@@ -215,6 +213,36 @@ public final class ClassFileParser {
             skipAttributes(in);
         }
         return members;
+    }
+
+    /**
+     * 从常量池提取直接类引用,保持出现顺序并去重。
+     */
+    private static List<String> referencedClassNames(Object[] cp) {
+        Set<String> refs = new LinkedHashSet<>();
+        for (Object entry : cp) {
+            if (entry instanceof ClassRef ref) {
+                try {
+                    String className = utf(cp, ref.nameIndex());
+                    if (isLoadableClassReference(className)) {
+                        refs.add(className);
+                    }
+                } catch (ClassFormatException ignored) {
+                    // 单个引用损坏不影响主体元数据读取
+                }
+            }
+        }
+        return List.copyOf(refs);
+    }
+
+    /**
+     * 过滤数组、方法句柄等非普通内部类名引用。
+     */
+    private static boolean isLoadableClassReference(String className) {
+        return className != null
+                && !className.isBlank()
+                && className.indexOf('[') < 0
+                && className.indexOf(';') < 0;
     }
 
     /**

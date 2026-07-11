@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.theme;
 
-import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ public final class ThemeManager {
 
     /** @return themes 目录路径,首次调用时自动创建 */
     public static Path themesDir() {
-        Path dir = AppConfig.appDir().resolve("themes");
+        Path dir = AppPaths.themesDir();
         try {
             Files.createDirectories(dir);
         } catch (IOException e) {
@@ -147,7 +147,7 @@ public final class ThemeManager {
 
     /**
      * 导出主题为 VS Code 格式 JSON 文件
-     * 内置主题直接复制 classpath 资源；外部主题直接复制源文件
+     * 内置主题直接复制 classpath 资源 外部主题直接复制源文件
      *
      * @param themeName 主题名称
      * @param targetFile 目标文件路径

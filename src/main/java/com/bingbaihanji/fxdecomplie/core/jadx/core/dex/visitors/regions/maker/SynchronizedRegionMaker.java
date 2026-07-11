@@ -1,5 +1,4 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
-import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ConstClassNode;
@@ -13,10 +12,10 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.CleanReg
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;

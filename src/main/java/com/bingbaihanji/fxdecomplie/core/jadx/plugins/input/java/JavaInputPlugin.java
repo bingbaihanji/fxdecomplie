@@ -16,15 +16,15 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * Java 输入插件。
+ * Java 输入插件
  * <p>
  * 负责加载 {@code .class} 与 {@code .jar} 文件，将其中的类读取为
- * {@link JavaClassReader} 并封装成可供反编译器消费的 {@link ICodeLoader}。
+ * {@link JavaClassReader} 并封装成可供反编译器消费的 {@link ICodeLoader}
  */
 public class JavaInputPlugin implements JadxPlugin {
 
     /**
-     * 加载指定的一组 class/jar 文件。
+     * 加载指定的一组 class/jar 文件
      *
      * @param inputFiles 待加载的文件路径列表
      * @return 代码加载器，无可加载类时返回空加载器
@@ -34,7 +34,7 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 加载指定的一组 class/jar 文件，并可关联一个在关闭时一并释放的资源。
+     * 加载指定的一组 class/jar 文件，并可关联一个在关闭时一并释放的资源
      *
      * @param inputFiles 待加载的文件路径列表
      * @param closeable  加载器关闭时需要一并关闭的资源，可为 {@code null}
@@ -49,7 +49,7 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 通过 {@link JavaInputLoader} 的加载方法提供多个输入来源。
+     * 通过 {@link JavaInputLoader} 的加载方法提供多个输入来源
      *
      * @param loader 使用 {@link JavaInputLoader} 生成类读取器列表的函数
      * @return 包装后的代码加载器
@@ -59,10 +59,10 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 从输入流加载 class 文件或 jar 的便捷方法。
+     * 从输入流加载 class 文件或 jar 的便捷方法
      * <p>
-     * 每个 JadxDecompiler 实例只应调用一次；如需多次加载，请使用
-     * {@link JavaInputPlugin#load(Function)} 方法。
+     * 每个 JadxDecompiler 实例只应调用一次 如需多次加载，请使用
+     * {@link JavaInputPlugin#load(Function)} 方法
      *
      * @param in       输入流
      * @param fileName 文件名
@@ -77,10 +77,10 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 通过字节内容加载单个 class 文件的便捷方法。
+     * 通过字节内容加载单个 class 文件的便捷方法
      * <p>
-     * 每个 JadxDecompiler 实例只应调用一次；如需多次加载，请使用
-     * {@link JavaInputPlugin#load(Function)} 方法。
+     * 每个 JadxDecompiler 实例只应调用一次 如需多次加载，请使用
+     * {@link JavaInputPlugin#load(Function)} 方法
      *
      * @param content  class 文件的字节内容
      * @param fileName 文件名
@@ -92,7 +92,7 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 将类读取器列表包装为代码加载器。
+     * 将类读取器列表包装为代码加载器
      *
      * @param readers 类读取器列表
      * @return 代码加载器，列表为空时返回空加载器
@@ -105,7 +105,7 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 返回该插件的基本信息（唯一标识、显示名称、描述）。
+     * 返回该插件的基本信息（唯一标识、显示名称、描述）
      *
      * @return 插件信息
      */
@@ -115,9 +115,9 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 初始化插件，向上下文注册代码输入处理器。
+     * 初始化插件，向上下文注册代码输入处理器
      * <p>
-     * 处理器收集输入文件中的类读取器，若无任何类则返回空加载结果。
+     * 处理器收集输入文件中的类读取器，若无任何类则返回空加载结果
      *
      * @param context 插件上下文
      */

@@ -18,11 +18,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 代码变量初始化访问器。
+ * 代码变量初始化访问器
  * <p>
  * 在 SSA 转换（{@link SSATransform}）之后运行，为方法中的 {@link SSAVar} 创建并初始化
  * 对应的代码变量（{@link CodeVar}），处理 this 引用、方法参数标记，并通过 Phi 指令
- * 将相互连接的 SSA 变量合并到同一个代码变量上，从而在反编译输出中还原源码级的局部变量。
+ * 将相互连接的 SSA 变量合并到同一个代码变量上，从而在反编译输出中还原源码级的局部变量
  */
 @JadxVisitor(
         name = "InitCodeVariables",
@@ -32,9 +32,9 @@ import java.util.stream.Collectors;
 public class InitCodeVariables extends AbstractVisitor {
 
     /**
-     * 重新初始化方法的代码变量。
+     * 重新初始化方法的代码变量
      * <p>
-     * 先重置所有 SSA 变量的类型与代码变量信息，再重新执行初始化流程。
+     * 先重置所有 SSA 变量的类型与代码变量信息，再重新执行初始化流程
      *
      * @param mth 目标方法节点
      */
@@ -59,9 +59,9 @@ public class InitCodeVariables extends AbstractVisitor {
     }
 
     /**
-     * 为寄存器参数所对应的 SSA 变量初始化代码变量。
+     * 为寄存器参数所对应的 SSA 变量初始化代码变量
      * <p>
-     * 若该寄存器参数尚未关联 SSA 变量，则先为其创建一个新的 SSA 变量。
+     * 若该寄存器参数尚未关联 SSA 变量，则先为其创建一个新的 SSA 变量
      *
      * @param mth    所属方法节点
      * @param regArg 寄存器参数
@@ -75,10 +75,10 @@ public class InitCodeVariables extends AbstractVisitor {
     }
 
     /**
-     * 为指定的 SSA 变量初始化其代码变量。
+     * 为指定的 SSA 变量初始化其代码变量
      * <p>
-     * 若代码变量已设置则直接返回；否则根据赋值参数上的标志设置 this、名称、
-     * 以及是否为已声明（方法参数或自定义声明）等属性。
+     * 若代码变量已设置则直接返回 否则根据赋值参数上的标志设置 this、名称、
+     * 以及是否为已声明（方法参数或自定义声明）等属性
      *
      * @param ssaVar 目标 SSA 变量
      */

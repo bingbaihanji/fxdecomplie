@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
-import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.AtomicFile;
 import org.slf4j.Logger;
@@ -26,7 +26,7 @@ public final class DiskCodeCache {
 
     private static final Logger log = LoggerFactory.getLogger(DiskCodeCache.class);
 
-    private static final Path CACHE_ROOT = AppConfig.appDir().resolve("cache");
+    private static final Path CACHE_ROOT = AppPaths.cacheDir();
 
     private static final long MAX_CACHE_SIZE_BYTES = 500L * 1024 * 1024; // 500 MB
     private static final int CACHE_SCHEMA_VERSION = 2;

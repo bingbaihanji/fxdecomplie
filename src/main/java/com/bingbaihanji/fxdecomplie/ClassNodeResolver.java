@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 
-/** 类名/令牌 → 文件树节点的多策略解析器（无状态,从 NavigationController 抽取,便于单测）。 */
+/** 类名/令牌 → 文件树节点的多策略解析器（无状态,从 NavigationController 抽取,便于单测） */
 public final class ClassNodeResolver {
 
     private ClassNodeResolver() {
@@ -133,7 +133,7 @@ public final class ClassNodeResolver {
 
     /** 通过重命名/反混淆映射反向查找原类名对应的树节点 */
     private static FileTreeNode findNodeFromRenameDisplayIndex(Workspace workspace, String token,
-                                                              String currentInternalName) {
+                                                               String currentInternalName) {
         if (workspace == null || token == null || token.isBlank()) {
             return null;
         }
@@ -163,7 +163,7 @@ public final class ClassNodeResolver {
 
     /** 从原始类名候选列表中选择最佳匹配的树节点(优先同包) */
     private static FileTreeNode bestNodeForOriginalCandidates(Workspace workspace, List<String> originals,
-                                                             String currentInternalName) {
+                                                              String currentInternalName) {
         if (workspace == null || originals == null || originals.isEmpty()) {
             return null;
         }
@@ -187,7 +187,7 @@ public final class ClassNodeResolver {
 
     /** 通过解析源码中的 import 语句解析 token 对应的类节点 */
     private static FileTreeNode findNodeFromSourceImports(Workspace workspace, String token,
-                                                         String currentClassName, String sourceCode) {
+                                                          String currentClassName, String sourceCode) {
         if (workspace == null || token == null || token.isBlank()) {
             return null;
         }

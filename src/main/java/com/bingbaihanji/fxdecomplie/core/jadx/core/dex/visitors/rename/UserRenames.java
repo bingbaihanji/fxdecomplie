@@ -4,11 +4,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.data.ICodeData;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.data.ICodeRename;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.data.IJavaCodeRef;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.data.IJavaNodeRef;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.InfoStorage;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

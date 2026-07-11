@@ -1,11 +1,11 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch;
-import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
-import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -19,6 +19,7 @@ public final class TryEdgeScopeGroupMap implements Map<TryEdge, Map<TryEdge, Blo
     private final List<Pair<TryEdge, TryEdge>> mergedEdges = new ArrayList<>();
     private final TryCatchBlockAttr tryCatch;
     private final Map<TryEdge, Map<TryEdge, BlockNode>> underlyingMap;
+
     public TryEdgeScopeGroupMap(MethodNode mth, TryCatchBlockAttr tryCatch, int initialCapacity) {
         this.tryCatch = tryCatch;
         underlyingMap = new ArrayMap<>(initialCapacity);

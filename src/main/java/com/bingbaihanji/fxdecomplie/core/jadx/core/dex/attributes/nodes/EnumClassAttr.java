@@ -14,6 +14,7 @@ public class EnumClassAttr implements IJadxAttribute {
 
     private final List<EnumField> fields;
     private MethodNode staticMethod;
+
     public EnumClassAttr(List<EnumField> fields) {
         this.fields = fields;
     }

@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 
 public final class ConstStringNode extends InsnNode {
 

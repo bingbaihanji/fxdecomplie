@@ -8,9 +8,9 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * catch 捕获属性。
- * 作为附加在指令上的属性，用于记录该指令可能触发的异常处理器（catch 分支）列表。
- * 处理器按其偏移量排序。
+ * catch 捕获属性
+ * 作为附加在指令上的属性，用于记录该指令可能触发的异常处理器（catch 分支）列表
+ * 处理器按其偏移量排序
  */
 public class CatchAttr implements IJadxAttribute {
 
@@ -22,7 +22,7 @@ public class CatchAttr implements IJadxAttribute {
     }
 
     /**
-     * 构建 catch 属性。处理器列表将按处理器偏移量升序排序。
+     * 构建 catch 属性处理器列表将按处理器偏移量升序排序
      *
      * @param handlers 异常处理器列表
      * @return 构建好的 catch 属性

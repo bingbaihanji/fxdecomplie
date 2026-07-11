@@ -64,7 +64,7 @@ public final class InheritanceService {
      * 构建继承树rootBytes 用于当前打开 class 的即时构图,避免为了一个弹窗等待完整工作区索引
      *
      * @param fullPath 目标类全路径,如 "com/example/MyClass.class"
-     * @param index 当前工作区索引,可为空；有索引时补充父类链和完整子类树
+     * @param index 当前工作区索引,可为空 有索引时补充父类链和完整子类树
      * @param rootBytes 当前目标类字节码,优先于 index 读取
      * @return 继承树根节点,失败返回 null
      */

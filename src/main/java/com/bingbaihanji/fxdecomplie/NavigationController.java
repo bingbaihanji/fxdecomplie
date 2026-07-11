@@ -1,8 +1,12 @@
 package com.bingbaihanji.fxdecomplie;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
 import com.bingbaihanji.fxdecomplie.util.text.JavaSourceAnalyzer;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.control.Tab;
@@ -13,10 +17,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * 代码导航控制器：Ctrl+Click 跳转声明、引用解析、类名/令牌到文件树节点的多策略查找。
+ * 代码导航控制器：Ctrl+Click 跳转声明、引用解析、类名/令牌到文件树节点的多策略查找
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）。
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化。
+ * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）
+ * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */

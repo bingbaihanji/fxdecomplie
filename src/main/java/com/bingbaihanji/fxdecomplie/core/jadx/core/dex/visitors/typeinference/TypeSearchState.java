@@ -15,11 +15,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 类型搜索状态。
+ * 类型搜索状态
  * <p>
  * 在类型推断的搜索过程中，维护方法内每个 SSA 变量（{@link SSAVar}）
  * 到其类型搜索信息（{@link TypeSearchVarInfo}）的映射，
- * 并提供按解析状态查询变量的能力。
+ * 并提供按解析状态查询变量的能力
  */
 public class TypeSearchState {
 
@@ -27,7 +27,7 @@ public class TypeSearchState {
     private final Map<SSAVar, TypeSearchVarInfo> varInfoMap;
 
     /**
-     * 构造类型搜索状态，为方法内所有 SSA 变量初始化类型搜索信息。
+     * 构造类型搜索状态，为方法内所有 SSA 变量初始化类型搜索信息
      *
      * @param mth 目标方法节点
      */
@@ -40,7 +40,7 @@ public class TypeSearchState {
     }
 
     /**
-     * 获取指定 SSA 变量的类型搜索信息。
+     * 获取指定 SSA 变量的类型搜索信息
      *
      * @param var SSA 变量
      * @return 对应的类型搜索信息
@@ -56,9 +56,9 @@ public class TypeSearchState {
     }
 
     /**
-     * 获取指令参数当前的类型。
+     * 获取指令参数当前的类型
      * <p>
-     * 如果参数是寄存器，则返回其 SSA 变量当前的类型；否则返回参数自身的类型。
+     * 如果参数是寄存器，则返回其 SSA 变量当前的类型 否则返回参数自身的类型
      *
      * @param arg 指令参数
      * @return 参数当前的类型
@@ -72,7 +72,7 @@ public class TypeSearchState {
     }
 
     /**
-     * 获取所有变量的类型搜索信息。
+     * 获取所有变量的类型搜索信息
      *
      * @return 所有变量信息的列表
      */
@@ -81,7 +81,7 @@ public class TypeSearchState {
     }
 
     /**
-     * 获取所有类型尚未解析的变量。
+     * 获取所有类型尚未解析的变量
      *
      * @return 未解析类型的变量信息列表
      */
@@ -92,7 +92,7 @@ public class TypeSearchState {
     }
 
     /**
-     * 获取所有类型已解析的变量。
+     * 获取所有类型已解析的变量
      *
      * @return 已解析类型的变量信息列表
      */

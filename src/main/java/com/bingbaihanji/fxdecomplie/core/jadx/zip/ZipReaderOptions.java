@@ -9,6 +9,7 @@ public class ZipReaderOptions {
 
     private final IJadxZipSecurity zipSecurity;
     private final Set<ZipReaderFlags> flags;
+
     public ZipReaderOptions(IJadxZipSecurity zipSecurity, Set<ZipReaderFlags> flags) {
         this.zipSecurity = zipSecurity;
         this.flags = flags;

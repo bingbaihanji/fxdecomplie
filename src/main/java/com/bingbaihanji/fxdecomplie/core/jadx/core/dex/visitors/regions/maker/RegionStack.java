@@ -1,15 +1,18 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.maker;
-import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxOverflowException;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.Set;
 
 final class RegionStack {
     private static final Logger LOG = LoggerFactory.getLogger(RegionStack.class);
@@ -25,6 +28,7 @@ final class RegionStack {
 
     private final Deque<State> stack;
     private State curState;
+
     public RegionStack(MethodNode mth) {
         if (DEBUG) {
             LOG.debug("New RegionStack: {}", mth);

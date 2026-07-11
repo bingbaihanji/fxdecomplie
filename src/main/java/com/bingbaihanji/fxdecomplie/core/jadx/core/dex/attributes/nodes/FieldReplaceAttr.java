@@ -9,6 +9,7 @@ public class FieldReplaceAttr extends PinnedAttribute {
 
     private final ReplaceWith replaceType;
     private final Object replaceObj;
+
     public FieldReplaceAttr(ClassInfo cls) {
         this.replaceType = ReplaceWith.CLASS_INSTANCE;
         this.replaceObj = cls;

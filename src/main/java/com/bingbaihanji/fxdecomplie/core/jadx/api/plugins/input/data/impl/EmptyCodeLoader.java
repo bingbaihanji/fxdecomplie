@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
- * 空代码加载器实现，表示没有任何代码可供加载。
- * 所有方法均为空操作，用于占位或表示空结果。
+ * 空代码加载器实现，表示没有任何代码可供加载
+ * 所有方法均为空操作，用于占位或表示空结果
  */
 public class EmptyCodeLoader implements ICodeLoader {
 
@@ -24,14 +24,14 @@ public class EmptyCodeLoader implements ICodeLoader {
     }
 
     /**
-     * 无任何类可供访问，方法体为空。
+     * 无任何类可供访问，方法体为空
      */
     @Override
     public void visitClasses(Consumer<IClassData> consumer) {
     }
 
     /**
-     * 无需关闭任何资源。
+     * 无需关闭任何资源
      */
     @Override
     public void close() throws IOException {

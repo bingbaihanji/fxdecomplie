@@ -1,10 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes;
 
 /**
- * 属性标志枚举。
- * 用于标记节点（方法、基本块、指令等）的二进制状态标志（设置或未设置）。
+ * 属性标志枚举
+ * 用于标记节点（方法、基本块、指令等）的二进制状态标志（设置或未设置）
  * 每个标志以 {@link java.util.EnumSet} 形式存储在 {@link AttributeStorage} 中，
- * 使用一个 long 值即可容纳所有标志（最多 64 个）。
+ * 使用一个 long 值即可容纳所有标志（最多 64 个）
  */
 public enum AFlag {
     /** 方法入口基本块 */

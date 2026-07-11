@@ -1,11 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.settings;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.decompiler.CfrParameters;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.decompiler.JadxParameters;
-import com.bingbaihanji.fxdecomplie.decompiler.ProcyonParameters;
-import com.bingbaihanji.fxdecomplie.decompiler.VineflowerParameters;
+import com.bingbaihanji.fxdecomplie.decompiler.*;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
@@ -47,6 +43,7 @@ public final class SettingsDialog {
         dialog.setHeaderText(null);
         DialogHelper.applyNativeStyle(dialog);
 
+        AppConfig draft = config.copy();
         TabPane tabPane = new TabPane();
 
         // ── 反编译器标签页 ──
@@ -56,7 +53,7 @@ public final class SettingsDialog {
         // 默认引擎选择(现有控件,保持不变)
         ComboBox<String> engineCombo = new ComboBox<>();
         engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD", "JADX");
-        engineCombo.setValue(config.decompiler().defaultEngine().name());
+        engineCombo.setValue(draft.decompiler().defaultEngine().name());
 
         // 引擎选项 JSON 编辑器(移到独立 TitledPane 中,默认折叠)
         Label engineOptionsLabel = new Label(I18nUtil.getString("settings.decompiler.engineOptions"));
@@ -69,7 +66,7 @@ public final class SettingsDialog {
                 + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px;");
 
         // 初始化 JSON
-        refreshEngineOptionsJson(config, engineOptionsArea);
+        refreshEngineOptionsJson(draft, engineOptionsArea);
         boolean[] jsonDirty = {false};
         engineOptionsArea.textProperty().addListener((obs, old, value) -> {
             if (engineOptionsArea.isFocused()) {
@@ -90,25 +87,25 @@ public final class SettingsDialog {
         // CFR 面板
         Tab cfrTab = new Tab("CFR");
         cfrTab.setClosable(false);
-        cfrTab.setContent(buildEngineParameterPanel(config, "CFR", CfrParameters.PARAMETERS,
+        cfrTab.setContent(buildEngineParameterPanel(draft, "CFR", CfrParameters.PARAMETERS,
                 engineOptionsArea, engineControlMaps.get("CFR")));
 
         // Procyon 面板
         Tab procyonTab = new Tab("Procyon");
         procyonTab.setClosable(false);
-        procyonTab.setContent(buildEngineParameterPanel(config, "PROCYON", ProcyonParameters.PARAMETERS,
+        procyonTab.setContent(buildEngineParameterPanel(draft, "PROCYON", ProcyonParameters.PARAMETERS,
                 engineOptionsArea, engineControlMaps.get("PROCYON")));
 
         // Vineflower 面板
         Tab vfTab = new Tab("Vineflower");
         vfTab.setClosable(false);
-        vfTab.setContent(buildEngineParameterPanel(config, "VINEFLOWER", VineflowerParameters.PARAMETERS,
+        vfTab.setContent(buildEngineParameterPanel(draft, "VINEFLOWER", VineflowerParameters.PARAMETERS,
                 engineOptionsArea, engineControlMaps.get("VINEFLOWER")));
 
         // jadx 面板
         Tab jadxTab = new Tab("jadx");
         jadxTab.setClosable(false);
-        jadxTab.setContent(buildEngineParameterPanel(config, "JADX", JadxParameters.PARAMETERS,
+        jadxTab.setContent(buildEngineParameterPanel(draft, "JADX", JadxParameters.PARAMETERS,
                 engineOptionsArea, engineControlMaps.get("JADX")));
 
         engineTabPane.getTabs().addAll(cfrTab, procyonTab, vfTab, jadxTab);
@@ -152,12 +149,12 @@ public final class SettingsDialog {
         Tab uiTab = new Tab(I18nUtil.getString("settings.ui"));
         uiTab.setClosable(false);
         CheckBox lineNumCheck = new CheckBox(I18nUtil.getString("settings.lineNumbers"));
-        lineNumCheck.setSelected(config.decompiler().lineNumbersEnabled());
+        lineNumCheck.setSelected(draft.decompiler().lineNumbersEnabled());
         CheckBox wrapCheck = new CheckBox(I18nUtil.getString("settings.wordWrap"));
-        wrapCheck.setSelected(config.decompiler().wrapText());
+        wrapCheck.setSelected(draft.decompiler().wrapText());
 
         Spinner<Integer> fontSizeSpinner = new Spinner<>(8, 48,
-                Math.clamp(config.theme().fontSize(), 8, 48), 1);
+                Math.clamp(draft.theme().fontSize(), 8, 48), 1);
         fontSizeSpinner.setEditable(true);
         fontSizeSpinner.getEditor().setTextFormatter(
                 new javafx.scene.control.TextFormatter<>(change -> {
@@ -175,15 +172,15 @@ public final class SettingsDialog {
                 "Source Code Pro", "Courier New", "Monaco", "Menlo",
                 "DejaVu Sans Mono", "Microsoft YaHei Mono"
         );
-        fontFamilyCombo.setValue(config.theme().fontFamily() != null
-                && !config.theme().fontFamily().isBlank()
-                ? config.theme().fontFamily() : "Consolas");
+        fontFamilyCombo.setValue(draft.theme().fontFamily() != null
+                && !draft.theme().fontFamily().isBlank()
+                ? draft.theme().fontFamily() : "Consolas");
         fontFamilyCombo.setEditable(true);
 
         // 编辑器配色下拉框
         ComboBox<String> editorThemeCombo = new ComboBox<>();
         editorThemeCombo.getItems().addAll(ThemeManager.getAllThemes());
-        String currentEditorTheme = config.theme().editorTheme();
+        String currentEditorTheme = draft.theme().editorTheme();
         if (currentEditorTheme == null || currentEditorTheme.isBlank()) {
             currentEditorTheme = "Dark+";
         }
@@ -285,9 +282,9 @@ public final class SettingsDialog {
         Tab searchTab = new Tab(I18nUtil.getString("settings.search"));
         searchTab.setClosable(false);
         CheckBox fullSourceSearchCheck = new CheckBox(I18nUtil.getString("settings.search.fullSource"));
-        fullSourceSearchCheck.setSelected(config.search().fullSourceSearch());
+        fullSourceSearchCheck.setSelected(draft.search().fullSourceSearch());
         Spinner<Integer> resultLimitSpinner = new Spinner<>(50, 2000,
-                Math.clamp(config.search().resultLimit(), 50, 2000), 50);
+                Math.clamp(draft.search().resultLimit(), 50, 2000), 50);
         resultLimitSpinner.setEditable(true);
         // 验证数字输入,防止 NumberFormatException
         resultLimitSpinner.getEditor().setTextFormatter(
@@ -308,16 +305,16 @@ public final class SettingsDialog {
         exportTab.setClosable(false);
         ComboBox<String> exportEngineCombo = new ComboBox<>();
         exportEngineCombo.getItems().addAll(exportEngineOptions());
-        exportEngineCombo.setValue(exportEngineValue(config.export().defaultEngine()));
+        exportEngineCombo.setValue(exportEngineValue(draft.export().defaultEngine()));
         ComboBox<String> exportFormatCombo = new ComboBox<>();
         exportFormatCombo.getItems().addAll("DIR", "ZIP");
-        exportFormatCombo.setValue(config.export().defaultFormat());
+        exportFormatCombo.setValue(draft.export().defaultFormat());
         ComboBox<String> conflictCombo = new ComboBox<>();
         conflictCombo.getItems().addAll("SKIP", "OVERWRITE", "RENAME");
-        conflictCombo.setValue(config.export().conflictPolicy());
+        conflictCombo.setValue(draft.export().conflictPolicy());
         CheckBox exportResourcesCheck = new CheckBox(I18nUtil.getString("settings.export.resources"));
-        exportResourcesCheck.setSelected(config.export().exportResources());
-        TextField exportPathField = new TextField(config.export().lastPath());
+        exportResourcesCheck.setSelected(draft.export().exportResources());
+        TextField exportPathField = new TextField(draft.export().lastPath());
         exportPathField.setPromptText(I18nUtil.getString("settings.export.path"));
         exportTab.setContent(new VBox(10,
                 new Label(I18nUtil.getString("dialog.export.engine")), exportEngineCombo,
@@ -381,21 +378,21 @@ public final class SettingsDialog {
 
         var result = dialog.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.APPLY) {
-            config.decompiler().defaultEngine(DecompilerTypeEnum.valueOf(engineCombo.getValue()));
-            config.decompiler().lineNumbersEnabled(lineNumCheck.isSelected());
-            config.decompiler().wrapText(wrapCheck.isSelected());
-            config.theme().fontSize(fontSizeSpinner.getValue());
-            config.theme().fontFamily(fontFamilyCombo.getValue());
-            config.search().fullSourceSearch(fullSourceSearchCheck.isSelected());
-            config.search().resultLimit(resultLimitSpinner.getValue());
-            config.export().defaultEngine("FOLLOW_CURRENT".equals(exportEngineCombo.getValue())
+            draft.decompiler().defaultEngine(DecompilerTypeEnum.valueOf(engineCombo.getValue()));
+            draft.decompiler().lineNumbersEnabled(lineNumCheck.isSelected());
+            draft.decompiler().wrapText(wrapCheck.isSelected());
+            draft.theme().fontSize(fontSizeSpinner.getValue());
+            draft.theme().fontFamily(fontFamilyCombo.getValue());
+            draft.search().fullSourceSearch(fullSourceSearchCheck.isSelected());
+            draft.search().resultLimit(resultLimitSpinner.getValue());
+            draft.export().defaultEngine("FOLLOW_CURRENT".equals(exportEngineCombo.getValue())
                     ? "" : exportEngineCombo.getValue());
-            config.export().defaultFormat(safeEnum(exportFormatCombo.getValue(),
+            draft.export().defaultFormat(safeEnum(exportFormatCombo.getValue(),
                     ExportConfig.Format.DIR).name());
-            config.export().conflictPolicy(safeEnum(conflictCombo.getValue(),
+            draft.export().conflictPolicy(safeEnum(conflictCombo.getValue(),
                     ExportConfig.ConflictPolicy.OVERWRITE).name());
-            config.export().exportResources(exportResourcesCheck.isSelected());
-            config.export().lastPath(exportPathField.getText() == null
+            draft.export().exportResources(exportResourcesCheck.isSelected());
+            draft.export().lastPath(exportPathField.getText() == null
                     ? "" : exportPathField.getText());
 
             // 保存引擎选项(已通过面板控件实时更新到 engineControlMaps + engineOptions Map)
@@ -409,7 +406,7 @@ public final class SettingsDialog {
 
                 for (var engineEntry : engineControlMaps.entrySet()) {
                     String engName = engineEntry.getKey();
-                    Map<String, String> engOpts = config.decompiler().engineOptions()
+                    Map<String, String> engOpts = draft.decompiler().engineOptions()
                             .computeIfAbsent(engName, k -> new LinkedHashMap<>());
                     engOpts.clear();
                     if (jsonOpts != null && jsonOpts.get(engName) != null) {
@@ -430,15 +427,16 @@ public final class SettingsDialog {
 
             // 保存编辑器配色
             if (editorThemeCombo.getValue() != null) {
-                config.theme().editorTheme(editorThemeCombo.getValue());
+                draft.theme().editorTheme(editorThemeCombo.getValue());
             }
 
             // 应用语言变更
             int langIdx = langCombo.getSelectionModel().getSelectedIndex();
             Locale newLocale = (langIdx == 1) ? Locale.ENGLISH : Locale.SIMPLIFIED_CHINESE;
-            config.language(langIdx == 1 ? "en" : "zh-CN");
+            draft.language(langIdx == 1 ? "en" : "zh-CN");
             I18nUtil.switchLocale(newLocale);
 
+            config.copyFrom(draft);
             config.save();
             onApply.accept(config);
         }

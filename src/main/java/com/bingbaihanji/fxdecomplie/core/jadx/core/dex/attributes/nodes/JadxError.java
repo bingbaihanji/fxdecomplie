@@ -6,10 +6,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Objects;
 
 /**
- * 表示 jadx 反编译过程中产生的错误信息。
+ * 表示 jadx 反编译过程中产生的错误信息
  * <p>
  * 此类封装了错误描述字符串和可选的异常原因，实现 {@link Comparable} 接口，
- * 以便按错误描述进行排序和去重。
+ * 以便按错误描述进行排序和去重
  * </p>
  */
 public class JadxError implements Comparable<JadxError> {
@@ -20,7 +20,7 @@ public class JadxError implements Comparable<JadxError> {
     private final Throwable cause;
 
     /**
-     * 构造一个 JadxError 实例。
+     * 构造一个 JadxError 实例
      *
      * @param error 错误描述，不能为空
      * @param cause 导致错误的异常，可为空
@@ -31,7 +31,7 @@ public class JadxError implements Comparable<JadxError> {
     }
 
     /**
-     * 获取错误描述信息。
+     * 获取错误描述信息
      *
      * @return 错误描述字符串
      */
@@ -40,7 +40,7 @@ public class JadxError implements Comparable<JadxError> {
     }
 
     /**
-     * 获取导致此错误的异常。
+     * 获取导致此错误的异常
      *
      * @return 异常对象，可能为空
      */
@@ -49,7 +49,7 @@ public class JadxError implements Comparable<JadxError> {
     }
 
     /**
-     * 按错误描述字符串进行字典序比较。
+     * 按错误描述字符串进行字典序比较
      *
      * @param o 要比较的另一个 JadxError
      * @return 比较结果
@@ -60,7 +60,7 @@ public class JadxError implements Comparable<JadxError> {
     }
 
     /**
-     * 基于错误描述字符串判断两个 JadxError 是否相等。
+     * 基于错误描述字符串判断两个 JadxError 是否相等
      */
     @Override
     public boolean equals(Object o) {
@@ -75,7 +75,7 @@ public class JadxError implements Comparable<JadxError> {
     }
 
     /**
-     * 基于错误描述字符串计算哈希码。
+     * 基于错误描述字符串计算哈希码
      */
     @Override
     public int hashCode() {
@@ -83,7 +83,7 @@ public class JadxError implements Comparable<JadxError> {
     }
 
     /**
-     * 返回包含错误描述和异常堆栈的字符串表示。
+     * 返回包含错误描述和异常堆栈的字符串表示
      */
     @Override
     public String toString() {

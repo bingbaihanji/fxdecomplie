@@ -662,12 +662,35 @@ public final class WorkspaceTabManager {
         outerTabPane.getTabs().remove(tab);
     }
 
+    /** 用户请求关闭指定工作区标签页,关闭前执行统一确认逻辑 */
+    public void requestCloseWorkspaceTab(Tab tab) {
+        if (tab == null || !workspaceViews.containsKey(tab)) {
+            return;
+        }
+        if (confirmWorkspaceClose()) {
+            closeWorkspaceTab(tab);
+        }
+    }
+
     /** 关闭除 keepTab 外的所有工作区标签页 */
     public void closeOtherWorkspaces(Tab keepTab) {
         outerTabPane.getTabs().stream()
                 .filter(tab -> tab != keepTab)
                 .toList()
                 .forEach(this::closeWorkspaceTab);
+    }
+
+    /** 用户请求关闭除 keepTab 外的所有工作区标签页,关闭前执行一次统一确认逻辑 */
+    public void requestCloseOtherWorkspaces(Tab keepTab) {
+        var targets = outerTabPane.getTabs().stream()
+                .filter(tab -> tab != keepTab && workspaceViews.containsKey(tab))
+                .toList();
+        if (targets.isEmpty()) {
+            return;
+        }
+        if (confirmWorkspaceClose()) {
+            targets.forEach(this::closeWorkspaceTab);
+        }
     }
 
     /** 获取当前选中标签页对应的工作区视图,无选中时返回 null */

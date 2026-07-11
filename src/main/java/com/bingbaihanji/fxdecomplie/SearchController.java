@@ -1,11 +1,16 @@
 package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
-import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
+import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
+import com.bingbaihanji.fxdecomplie.service.SearchService;
+import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
+import com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.search.*;
 import com.bingbaihanji.fxdecomplie.ui.usage.FindUsageDialog;
 import com.bingbaihanji.util.I18nUtil;
@@ -21,10 +26,10 @@ import java.util.function.Consumer;
 
 /**
  * 搜索与用法查找控制器：工作区搜索对话框、Find Usages、包搜索、
- * 全文源码缓存构建与工作区索引就绪等待。
+ * 全文源码缓存构建与工作区索引就绪等待
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）。
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化。
+ * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）
+ * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */
@@ -211,7 +216,7 @@ public final class SearchController {
     }
 
     /**
-     * 确保工作区索引可用后执行回调若索引已就绪则同步回调；否则触发后台构建并异步等待
+     * 确保工作区索引可用后执行回调若索引已就绪则同步回调 否则触发后台构建并异步等待
      * 工作区关闭后不再执行回调,避免操作已释放的 UI
      */
     public void withWorkspaceIndex(Workspace workspace, Consumer<WorkspaceIndex> onReady) {

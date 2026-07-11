@@ -110,7 +110,7 @@ public final class ClassIndexEntry {
     /**
      * 懒加载并缓存字节码文本表示
      *
-     * <p>使用双重检查锁定保证线程安全仅缓存成功结果；
+     * <p>使用双重检查锁定保证线程安全仅缓存成功结果 
      * 加载失败时不缓存(返回回退摘要),允许后续调用重试</p>
      *
      * @return ASM Textifier 格式的字节码文本,失败时返回 ClassFileParser 摘要

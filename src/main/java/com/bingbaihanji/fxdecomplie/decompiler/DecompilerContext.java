@@ -98,7 +98,7 @@ public final class DecompilerContext implements AutoCloseable {
 
     /**
      * 核心工厂方法：校验参数并按规则创建上下文
-     * 若 bytecodeProvider 为 null 且传入了 closeable,则立即关闭 closeable 并抛出异常(参数无效)；
+     * 若 bytecodeProvider 为 null 且传入了 closeable,则立即关闭 closeable 并抛出异常(参数无效) 
      * 若仅 bytecodeProvider 为 null,则回退为仅带选项的上下文
      */
     private static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,

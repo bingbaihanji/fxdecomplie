@@ -24,12 +24,12 @@ import java.util.Objects;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getNextBlock;
 
 /**
- * 区域构建器。
+ * 区域构建器
  * <p>
  * 负责将方法的基本块（{@link BlockNode}）转换为结构化的区域（{@link Region}）树，
- * 作为反编译流程中控制流重建的核心组件。内部委托 {@link IfRegionMaker}、
+ * 作为反编译流程中控制流重建的核心组件内部委托 {@link IfRegionMaker}、
  * {@link LoopRegionMaker}、{@link SwitchRegionMaker}、{@link SynchronizedRegionMaker}
- * 等子构建器处理各类控制流结构。
+ * 等子构建器处理各类控制流结构
  * </p>
  */
 public class RegionMaker {
@@ -45,7 +45,7 @@ public class RegionMaker {
     private int regionsCount;
 
     /**
-     * 构造区域构建器。
+     * 构造区域构建器
      *
      * @param mth 当前正在处理的方法节点
      */
@@ -59,7 +59,7 @@ public class RegionMaker {
     }
 
     /**
-     * 从方法入口块开始构建方法级区域。
+     * 从方法入口块开始构建方法级区域
      *
      * @return 方法对应的顶层 {@link Region}
      */
@@ -68,10 +68,10 @@ public class RegionMaker {
     }
 
     /**
-     * 从指定的基本块开始构建区域。
+     * 从指定的基本块开始构建区域
      * <p>
-     * 如果起始块已在退出集合中，则插入边界指令并返回；如果起始块已被处理过，
-     * 则标记为代码重复（指令会在反编译输出中被复制），并允许继续处理。
+     * 如果起始块已在退出集合中，则插入边界指令并返回 如果起始块已被处理过，
+     * 则标记为代码重复（指令会在反编译输出中被复制），并允许继续处理
      * </p>
      *
      * @param startBlock 区域构建的起始基本块
@@ -103,7 +103,7 @@ public class RegionMaker {
     }
 
     /**
-     * 从指定块开始递归遍历所有基本块，直到遇到退出集合中的块为止。
+     * 从指定块开始递归遍历所有基本块，直到遇到退出集合中的块为止
      *
      * @param r     当前区域
      * @param block 当前正在遍历的基本块
@@ -165,10 +165,10 @@ public class RegionMaker {
     }
 
     /**
-     * 向区域中插入边界指令（如 {@code break}、{@code continue}）。
+     * 向区域中插入边界指令（如 {@code break}、{@code continue}）
      * <p>
      * 当遍历到达退出块时，将块上携带的边界指令按类型（先 break 后 continue）
-     * 插入到区域中，以保证控制流语义正确。
+     * 插入到区域中，以保证控制流语义正确
      * </p>
      *
      * @param region    目标区域
@@ -186,7 +186,7 @@ public class RegionMaker {
     }
 
     /**
-     * 从边界指令列表中提取指定类型的指令并添加到结果列表中（每种类型最多添加一条）。
+     * 从边界指令列表中提取指定类型的指令并添加到结果列表中（每种类型最多添加一条）
      *
      * @param insns      结果指令列表
      * @param edgeInsns  边界指令属性列表
@@ -203,7 +203,7 @@ public class RegionMaker {
     }
 
     /**
-     * 获取当前的区域栈。
+     * 获取当前的区域栈
      *
      * @return 区域栈实例
      */
@@ -212,7 +212,7 @@ public class RegionMaker {
     }
 
     /**
-     * 判断指定基本块是否已被处理过。
+     * 判断指定基本块是否已被处理过
      *
      * @param block 待检查的基本块
      * @return 如果该块已被处理返回 {@code true}
@@ -222,7 +222,7 @@ public class RegionMaker {
     }
 
     /**
-     * 清除指定基本块的已处理状态，使其可被重新处理。
+     * 清除指定基本块的已处理状态，使其可被重新处理
      *
      * @param block 待清除处理状态的基本块
      */

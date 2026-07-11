@@ -33,7 +33,7 @@ import java.util.Map;
  * 此类不允许使用 null 作为键或值 从 {@link #get}、{@link #put} 或 {@link #remove}
  * 返回 null 是明确的：表示该键不在缓存中 
  * <p>
- * 此类源自 Android 3.1(Honeycomb MR1)；对于早期版本,可作为 Android 支持库的一部分使用 
+ * 此类源自 Android 3.1(Honeycomb MR1) 对于早期版本,可作为 Android 支持库的一部分使用 
  *
  * @author bingbaihanji
  * @date 2026-07-10 14:31:39
@@ -54,7 +54,7 @@ public class LruCache<K, V> {
     private int missCount;
 
     /**
-     * @param maxSize 对于未重写 {@link #sizeOf} 的缓存,此为缓存的最大条目数；
+     * @param maxSize 对于未重写 {@link #sizeOf} 的缓存,此为缓存的最大条目数 
      *                对于其他缓存,此为缓存中所有条目大小的最大总和 
      */
     public LruCache(int maxSize) {
@@ -248,10 +248,10 @@ public class LruCache<K, V> {
      *
      * <p>此方法在无同步的情况下调用：其他线程可能在此方法执行期间访问缓存 
      *
-     * @param evicted  如果条目正被移除以腾出空间则为 true；
+     * @param evicted  如果条目正被移除以腾出空间则为 true 
      *                 如果移除是由 {@link #put} 或 {@link #remove} 引起的则为 false 
      * @param newValue 如果存在,则为 {@code key} 的新值 如果非 null,则此次移除是由
-     *                 {@link #put} 或 {@link #get} 引起的；否则是由逐出或 {@link #remove} 引起的 
+     *                 {@link #put} 或 {@link #get} 引起的 否则是由逐出或 {@link #remove} 引起的 
      */
     protected void entryRemoved(boolean evicted, K key, V oldValue, V newValue) {
     }
@@ -296,7 +296,7 @@ public class LruCache<K, V> {
     }
 
     /**
-     * 对于未重写 {@link #sizeOf} 的缓存,返回缓存中的条目数；
+     * 对于未重写 {@link #sizeOf} 的缓存,返回缓存中的条目数 
      * 对于其他缓存,返回缓存中所有条目大小的总和 
      */
     public synchronized final int size() {
@@ -304,7 +304,7 @@ public class LruCache<K, V> {
     }
 
     /**
-     * 对于未重写 {@link #sizeOf} 的缓存,返回缓存的最大条目数；
+     * 对于未重写 {@link #sizeOf} 的缓存,返回缓存的最大条目数 
      * 对于其他缓存,返回缓存中所有条目大小的最大总和 
      */
     public synchronized final int maxSize() {

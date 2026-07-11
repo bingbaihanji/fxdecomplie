@@ -20,6 +20,7 @@ public final class IfCondition extends AttrNode {
     private final Mode mode;
     private final List<IfCondition> args;
     private final Compare compare;
+
     private IfCondition(Compare compare) {
         this.mode = Mode.COMPARE;
         this.compare = compare;

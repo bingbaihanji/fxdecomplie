@@ -53,7 +53,7 @@ public class Object2LongMap<K> extends AbstractObjectKeyMap<K> {
 
     /**
      * 将指定键与值放入映射中 
-     * 若键已存在,则替换旧值并返回旧值；否则插入新键值对并返回 -1 
+     * 若键已存在,则替换旧值并返回旧值 否则插入新键值对并返回 -1 
      *
      * @param key   键(不允许为 null)
      * @param value 值

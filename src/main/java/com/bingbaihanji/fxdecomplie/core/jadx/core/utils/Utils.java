@@ -5,24 +5,19 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.DepthTraversal;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * 通用工具类，提供字符串处理、集合操作、堆栈跟踪、线程工具等常用功能。
+ * 通用工具类，提供字符串处理、集合操作、堆栈跟踪、线程工具等常用功能
  */
 public class Utils {
 
@@ -655,7 +650,7 @@ public class Utils {
     }
 
     /**
-     * 合并两个 Map，返回一个新的 HashMap。第二个 Map 的值会覆盖第一个 Map 中的同名键。
+     * 合并两个 Map，返回一个新的 HashMap第二个 Map 的值会覆盖第一个 Map 中的同名键
      *
      * @param first  第一个 Map
      * @param second 第二个 Map
@@ -913,8 +908,8 @@ public class Utils {
      * @param varName  环境变量名
      * @param defValue 默认值
      * @return 环境变量的布尔值，未设置时返回默认值
-     * @deprecated 核心模块中不应使用环境变量。
-     *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置。
+     * @deprecated 核心模块中不应使用环境变量
+     *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置
      */
     @Deprecated
     public static boolean getEnvVarBool(String varName, boolean defValue) {
@@ -931,8 +926,8 @@ public class Utils {
      * @param varName  环境变量名
      * @param defValue 默认值
      * @return 环境变量的整数值，未设置时返回默认值
-     * @deprecated 核心模块中不应使用环境变量。
-     *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置。
+     * @deprecated 核心模块中不应使用环境变量
+     *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置
      */
     @Deprecated
     public static int getEnvVarInt(String varName, int defValue) {

@@ -125,7 +125,7 @@ final class GrowingArrayUtils {
      * 在指定下标处插入一个元素,容量不足时自动扩容
      *
      * <p>
-     * 若数组仍有空闲容量,则原地后移 [index, currentSize) 区间并写入；否则分配扩容数组并分两段复制
+     * 若数组仍有空闲容量,则原地后移 [index, currentSize) 区间并写入 否则分配扩容数组并分两段复制
      *
      * @param array 原数组,前 currentSize 个槽位有效
      * @param currentSize 当前有效元素数量

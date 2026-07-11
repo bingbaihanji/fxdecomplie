@@ -16,8 +16,8 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinfer
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.isEmpty;
 
 /**
- * 类型比较器，用于比较两个类型之间的关系（相等、更窄、更宽或冲突）。
- * 支持基本类型、对象类型、数组类型、泛型类型和通配符类型的比较。
+ * 类型比较器，用于比较两个类型之间的关系（相等、更窄、更宽或冲突）
+ * 支持基本类型、对象类型、数组类型、泛型类型和通配符类型的比较
  */
 public class TypeCompare {
     private static final Logger LOG = LoggerFactory.getLogger(TypeCompare.class);
@@ -408,8 +408,8 @@ public class TypeCompare {
     }
 
     /**
-     * 返回基本类型对应的宽度序号，用于宽窄比较（BYTE 最小，DOUBLE 最大）。
-     * 对于 BOOLEAN、OBJECT、ARRAY、VOID 等不参与宽窄比较的类型抛出异常。
+     * 返回基本类型对应的宽度序号，用于宽窄比较（BYTE 最小，DOUBLE 最大）
+     * 对于 BOOLEAN、OBJECT、ARRAY、VOID 等不参与宽窄比较的类型抛出异常
      *
      * @param type 基本类型
      * @return 类型宽度序号
@@ -459,8 +459,8 @@ public class TypeCompare {
     }
 
     /**
-     * 基于 {@link #compareTypes(ArgType, ArgType)} 结果实现的 {@link ArgType} 比较器。
-     * 冲突返回 -2，更宽返回 -1，更窄返回 1，相等返回 0。
+     * 基于 {@link #compareTypes(ArgType, ArgType)} 结果实现的 {@link ArgType} 比较器
+     * 冲突返回 -2，更宽返回 -1，更窄返回 1，相等返回 0
      */
     private final class ArgTypeComparator implements Comparator<ArgType> {
         @Override

@@ -2,7 +2,8 @@ package com.bingbaihanji.fxdecomplie.rename;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
-import com.bingbaihanji.fxdecomplie.config.AppConfig;
+import com.bingbaihanji.fxdecomplie.constants.AppPaths;
+import com.bingbaihanji.fxdecomplie.constants.RenameTypes;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
@@ -45,11 +46,11 @@ import java.util.stream.Stream;
 public final class RenameService {
 
     // ---- 重命名类型常量 ----
-    public static final String TYPE_CLASS = "class";
-    public static final String TYPE_METHOD = "method";
-    public static final String TYPE_FIELD = "field";
-    public static final String TYPE_PARAM = "param";
-    public static final String TYPE_IDENTIFIER = "identifier";
+    public static final String TYPE_CLASS = RenameTypes.CLASS;
+    public static final String TYPE_METHOD = RenameTypes.METHOD;
+    public static final String TYPE_FIELD = RenameTypes.FIELD;
+    public static final String TYPE_PARAM = RenameTypes.PARAM;
+    public static final String TYPE_IDENTIFIER = RenameTypes.IDENTIFIER;
 
     private static final Logger log = LoggerFactory.getLogger(RenameService.class);
     /** Gson 实例：注册了 RenameEntryAdapter 用于 JSON 序列化/反序列化 */
@@ -129,7 +130,7 @@ public final class RenameService {
     }
 
     private static Path getRootDir() {
-        return rootDir != null ? rootDir : AppConfig.appDir().resolve("fxdecomplie").resolve("renames");
+        return rootDir != null ? rootDir : AppPaths.renamesDir();
     }
 
     public static void setRootDir(Path dir) {
@@ -137,10 +138,10 @@ public final class RenameService {
     }
 
     /**
-     * 释放指定工作区占用的内存缓存与锁条目。
+     * 释放指定工作区占用的内存缓存与锁条目
      * <p>
-     * 三个静态缓存均以 workspaceHash 为键，条目生命周期应与工作区一致。
-     * 工作区关闭时调用本方法，避免长会话中缓存随打开过的工作区数量单调增长。
+     * 三个静态缓存均以 workspaceHash 为键，条目生命周期应与工作区一致
+     * 工作区关闭时调用本方法，避免长会话中缓存随打开过的工作区数量单调增长
      *
      * @param workspaceHash 工作区 hash（与 load/save 使用的键一致）
      */
@@ -791,7 +792,7 @@ public final class RenameService {
         return replaceDeclaredClassName(sourceCode, oldName, newName);
     }
 
-    /** 返回源码 offset 处的 Java 标识符；offset 位于标识符末尾后一位时也能识别 */
+    /** 返回源码 offset 处的 Java 标识符 offset 位于标识符末尾后一位时也能识别 */
     public static String identifierAt(String sourceCode, int offset) {
         Token token = tokenAt(sourceCode, offset);
         return token == null ? "" : token.name();
@@ -1691,7 +1692,7 @@ public final class RenameService {
         for (RenameEntry entry : entries) {
             if (entry.oldName().equals(oldName)
                     && (TYPE_METHOD.equals(entry.type()) || TYPE_FIELD.equals(entry.type())
-                    || TYPE_PARAM.equals(entry.type()) || TYPE_IDENTIFIER.equals(entry.type()))
+                    || TYPE_IDENTIFIER.equals(entry.type()))
                     && appliesToClass(entry, currentClass)
                     && !(TYPE_FIELD.equals(entry.type())
                     && fieldBlockedByMethodLocal(scope, qualified, oldName))) {
@@ -2667,7 +2668,7 @@ public final class RenameService {
         }
         originalClass = normalizeInternalName(originalClass);
         String originalLeaf = visibleClassLeaf(originalClass);
-        // 如果叶子名不变,保持原条目；否则更新 oldName 为原始叶子名
+        // 如果叶子名不变,保持原条目 否则更新 oldName 为原始叶子名
         if (originalLeaf.isBlank() || originalLeaf.equals(normalized.oldName())) {
             return originalClass.equals(normalized.className()) ? normalized
                     : new RenameEntry(normalized.type(), originalClass,

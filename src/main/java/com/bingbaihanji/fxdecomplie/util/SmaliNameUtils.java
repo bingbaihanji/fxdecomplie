@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.util;
 
 /**
- * Smali 格式与 Java 格式类型/类名互转工具。
+ * Smali 格式与 Java 格式类型/类名互转工具
  * <p>
- * 纯函数风格，不做状态缓存。
+ * 纯函数风格，不做状态缓存
  */
 public final class SmaliNameUtils {
 

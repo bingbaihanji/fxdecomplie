@@ -99,7 +99,7 @@ public class Workspace implements AutoCloseable {
     }
 
     /**
-     * 获取完整索引；如果异步索引还未完成,则在当前线程上构建一次
+     * 获取完整索引 如果异步索引还未完成,则在当前线程上构建一次
      *
      * @return 可用于搜索、导出和导航分析的完整工作区索引
      */
@@ -259,11 +259,11 @@ public class Workspace implements AutoCloseable {
     }
 
     /**
-     * 基于 sourceFile 比较工作区实例。
+     * 基于 sourceFile 比较工作区实例
      * <p>
      * <b>设计意图</b>：同一源文件的多个 Workspace 实例在集合中视为相等，
-     * 仅在 {@link #hashCode()} 和 {@link #equals(Object)} 中使用 sourceFile。
-     * 此设计基于"一个源头文件 = 一个工作区"的语义约定。
+     * 仅在 {@link #hashCode()} 和 {@link #equals(Object)} 中使用 sourceFile
+     * 此设计基于"一个源头文件 = 一个工作区"的语义约定
      * </p>
      */
     @Override

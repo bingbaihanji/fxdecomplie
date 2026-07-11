@@ -20,11 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 常量池读取器。
+ * 常量池读取器
  * <p>
  * 依据 {@link ClassOffsets} 记录的各常量池项偏移，从 class 文件的字节数据中
  * 按索引读取常量池条目，包括类引用、字段引用、方法引用、调用点、方法句柄
- * 以及各类字面量常量，并将其转换为上层需要的数据结构。
+ * 以及各类字面量常量，并将其转换为上层需要的数据结构
  */
 public class ConstPoolReader {
     /** 所属的类读取器 */
@@ -37,7 +37,7 @@ public class ConstPoolReader {
     private final ClassOffsets offsets;
 
     /**
-     * 构造常量池读取器。
+     * 构造常量池读取器
      *
      * @param clsReader     所属的类读取器
      * @param javaClassData 所属的类数据
@@ -52,7 +52,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的类常量，返回其规范化后的类型描述符。
+     * 读取指定索引处的类常量，返回其规范化后的类型描述符
      *
      * @param idx 常量池索引
      * @return 类型描述符，索引对应的名称为空时返回 {@code null}
@@ -65,7 +65,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的字段引用。
+     * 读取指定索引处的字段引用
      *
      * @param idx 常量池索引
      * @return 字段引用数据
@@ -86,7 +86,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处字段引用的类型描述符。
+     * 读取指定索引处字段引用的类型描述符
      *
      * @param idx 常量池索引
      * @return 字段类型描述符
@@ -102,7 +102,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的方法引用。
+     * 读取指定索引处的方法引用
      *
      * @param idx 常量池索引
      * @return 方法引用数据
@@ -124,7 +124,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的调用点（invokedynamic）。
+     * 读取指定索引处的调用点（invokedynamic）
      *
      * @param idx 常量池索引
      * @return 调用点数据
@@ -148,7 +148,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 根据引导方法及名称/描述符解析出方法调用点。
+     * 根据引导方法及名称/描述符解析出方法调用点
      *
      * @param bootstrapMthIdx 引导方法索引
      * @param nameIdx         名称常量索引
@@ -174,7 +174,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的方法句柄。
+     * 读取指定索引处的方法句柄
      *
      * @param idx 常量池索引
      * @return 方法句柄，字段类型句柄返回 {@link FieldRefHandle}，否则返回 {@link MethodRefHandle}
@@ -191,7 +191,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将 class 文件中的方法句柄种类（reference_kind）转换为 {@link MethodHandleType}。
+     * 将 class 文件中的方法句柄种类（reference_kind）转换为 {@link MethodHandleType}
      *
      * @param kind 方法句柄种类值（1-9）
      * @return 对应的方法句柄类型
@@ -223,7 +223,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的 UTF-8 字符串常量。
+     * 读取指定索引处的 UTF-8 字符串常量
      *
      * @param idx 常量池索引，为 0 时表示无值
      * @return 字符串内容，索引为 0 时返回 {@code null}
@@ -237,7 +237,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 跳转到指定索引的常量条目并读取其标签，返回常量类型。
+     * 跳转到指定索引的常量条目并读取其标签，返回常量类型
      *
      * @param idx 常量池索引
      * @return 该常量的类型
@@ -248,7 +248,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 从当前位置读取一个带长度前缀的 Modified UTF-8 字符串。
+     * 从当前位置读取一个带长度前缀的 Modified UTF-8 字符串
      *
      * @return 解析出的字符串
      */
@@ -259,7 +259,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 从当前位置读取一个无符号 2 字节整数。
+     * 从当前位置读取一个无符号 2 字节整数
      *
      * @return 读取到的值
      */
@@ -268,7 +268,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 从当前位置读取一个无符号 4 字节整数。
+     * 从当前位置读取一个无符号 4 字节整数
      *
      * @return 读取到的值
      */
@@ -277,7 +277,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 从当前位置读取一个无符号 8 字节整数。
+     * 从当前位置读取一个无符号 8 字节整数
      *
      * @return 读取到的值
      */
@@ -286,7 +286,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的 Integer 常量。
+     * 读取指定索引处的 Integer 常量
      *
      * @param idx 常量池索引
      * @return int 值
@@ -297,7 +297,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的 Long 常量。
+     * 读取指定索引处的 Long 常量
      *
      * @param idx 常量池索引
      * @return long 值
@@ -308,7 +308,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的 Double 常量。
+     * 读取指定索引处的 Double 常量
      *
      * @param idx 常量池索引
      * @return double 值
@@ -319,7 +319,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的 Float 常量。
+     * 读取指定索引处的 Float 常量
      *
      * @param idx 常量池索引
      * @return float 值
@@ -330,7 +330,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将指定索引处的常量读取为编码值（{@link EncodedValue}）。
+     * 将指定索引处的常量读取为编码值（{@link EncodedValue}）
      *
      * @param idx 常量池索引
      * @return 对应的编码值
@@ -364,7 +364,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将 Modified UTF-8 字节解码为字符串。
+     * 将 Modified UTF-8 字节解码为字符串
      *
      * @param bytes 字节内容
      * @return 解码后的字符串
@@ -375,10 +375,10 @@ public class ConstPoolReader {
     }
 
     /**
-     * 规范化类名，使其成为合法的类型描述符。
+     * 规范化类名，使其成为合法的类型描述符
      * <p>
-     * 数组类型（以 {@code [} 开头）原样返回；已带 {@code L}/{@code T} 前缀且以
-     * {@code ;} 结尾的原样返回；其余情况补全为 {@code L<类名>;} 形式。
+     * 数组类型（以 {@code [} 开头）原样返回 已带 {@code L}/{@code T} 前缀且以
+     * {@code ;} 结尾的原样返回 其余情况补全为 {@code L<类名>;} 形式
      *
      * @param clsName 原始类名
      * @return 规范化后的类型描述符
@@ -399,7 +399,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将读取位置跳转到指定索引常量条目的数据起始处。
+     * 将读取位置跳转到指定索引常量条目的数据起始处
      *
      * @param idx 常量池索引
      */
@@ -408,7 +408,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将读取位置跳转到指定索引常量条目的标签处（数据起始前 1 字节）。
+     * 将读取位置跳转到指定索引常量条目的标签处（数据起始前 1 字节）
      *
      * @param idx 常量池索引
      */

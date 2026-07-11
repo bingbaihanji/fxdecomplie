@@ -3,9 +3,11 @@ package com.bingbaihanji.fxdecomplie;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.rename.RenameEntry;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
-import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeActionHandler;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.text.JavaSourceAnalyzer;
 import javafx.scene.control.Tab;
@@ -13,13 +15,11 @@ import javafx.scene.control.TabPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 /**
- * 光标处重命名控制器：光标处标识符/类重命名、类重命名目标推断、重命名后标签页与文件树刷新。
+ * 光标处重命名控制器：光标处标识符/类重命名、类重命名目标推断、重命名后标签页与文件树刷新
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）。
- * 反混淆/ProGuard 映射/快照恢复已拆分至 {@link DeobfuscationController}。
+ * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）
+ * 反混淆/ProGuard 映射/快照恢复已拆分至 {@link DeobfuscationController}
  *
  * @author bingbaihanji
  */

@@ -5,9 +5,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import java.nio.file.Path;
 
 /**
- * 将所有 jadx 文件统一存放在同一个基础目录下的文件目录提供者。
+ * 将所有 jadx 文件统一存放在同一个基础目录下的文件目录提供者
  * <p>
- * 配置、缓存与临时文件分别对应基础目录下的 {@code config}、{@code cache}、{@code temp} 子目录。
+ * 配置、缓存与临时文件分别对应基础目录下的 {@code config}、{@code cache}、{@code temp} 子目录
  * </p>
  */
 public class SingleDirFilesGetter implements IJadxFilesGetter {
@@ -15,7 +15,7 @@ public class SingleDirFilesGetter implements IJadxFilesGetter {
     private final Path baseDir;
 
     /**
-     * 构造文件目录提供者。
+     * 构造文件目录提供者
      *
      * @param baseDir 存放所有 jadx 文件的基础目录
      */
@@ -54,7 +54,7 @@ public class SingleDirFilesGetter implements IJadxFilesGetter {
     }
 
     /**
-     * 在基础目录下创建（若不存在）并返回指定名称的子目录。
+     * 在基础目录下创建（若不存在）并返回指定名称的子目录
      *
      * @param subDir 子目录名称
      * @return 已确保存在的子目录路径

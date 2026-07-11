@@ -1,5 +1,4 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.variables;
-import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -20,6 +19,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.Ty
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.RegionUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -29,10 +29,10 @@ import java.util.*;
 import java.util.Map.Entry;
 
 /**
- * 变量处理访问者。
+ * 变量处理访问者
  * <p>
  * 负责在反编译过程中处理方法中的局部变量：移除未使用的指令结果、收集并合并代码变量、
- * 校验变量类型，并为每个代码变量确定合适的声明位置。
+ * 校验变量类型，并为每个代码变量确定合适的声明位置
  */
 public class ProcessVariables extends AbstractVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessVariables.class);

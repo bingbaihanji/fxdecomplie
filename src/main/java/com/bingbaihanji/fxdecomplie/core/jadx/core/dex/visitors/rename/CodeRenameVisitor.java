@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 代码重命名访问器，负责将外部传入的重命名数据应用到方法中的变量和参数上。
+ * 代码重命名访问器，负责将外部传入的重命名数据应用到方法中的变量和参数上
  * <p>
  * 该访问器在变量初始化和调试信息应用之后执行，通过 {@link ICodeRename} 数据将
- * 变量、方法参数等实体重命名为指定的新名称。
+ * 变量、方法参数等实体重命名为指定的新名称
  * </p>
  */
 @JadxVisitor(
@@ -43,15 +43,15 @@ public class CodeRenameVisitor extends AbstractVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(CodeRenameVisitor.class);
 
     /**
-     * 以类全限定名为键、该类的所有重命名列表为值的映射表。
+     * 以类全限定名为键、该类的所有重命名列表为值的映射表
      */
     private Map<String, List<ICodeRename>> clsRenamesMap;
 
     /**
-     * 为指定类逐个应用重命名规则。
+     * 为指定类逐个应用重命名规则
      * <p>
      * 当前仅支持方法级别的代码引用重命名（{@code RefType.METHOD}），
-     * 通过方法的短 ID 查找对应的方法节点，然后调用 {@link #processRename} 执行实际重命名。
+     * 通过方法的短 ID 查找对应的方法节点，然后调用 {@link #processRename} 执行实际重命名
      * </p>
      *
      * @param cls     目标类节点
@@ -75,13 +75,13 @@ public class CodeRenameVisitor extends AbstractVisitor {
     }
 
     /**
-     * 根据代码引用的附加类型执行具体的重命名操作。
+     * 根据代码引用的附加类型执行具体的重命名操作
      * <p>
      * 支持两种重命名类型：
      * <ul>
-     *   <li><b>MTH_ARG</b> —— 方法参数重命名，通过参数索引定位。</li>
-     *   <li><b>VAR</b> —— 局部变量重命名，通过寄存器编号和 SSA 版本号联合定位。
-     *       其中 index 的高 16 位为寄存器编号，低 16 位为 SSA 版本。</li>
+     *   <li><b>MTH_ARG</b> —— 方法参数重命名，通过参数索引定位</li>
+     *   <li><b>VAR</b> —— 局部变量重命名，通过寄存器编号和 SSA 版本号联合定位
+     *       其中 index 的高 16 位为寄存器编号，低 16 位为 SSA 版本</li>
      * </ul>
      *
      * @param mth     目标方法节点
@@ -120,7 +120,7 @@ public class CodeRenameVisitor extends AbstractVisitor {
     }
 
     /**
-     * 初始化访问器，从根节点的参数中加载重命名数据，并注册数据变更监听器。
+     * 初始化访问器，从根节点的参数中加载重命名数据，并注册数据变更监听器
      *
      * @param root AST 根节点
      * @throws JadxException 初始化过程中可能抛出的异常
@@ -132,7 +132,7 @@ public class CodeRenameVisitor extends AbstractVisitor {
     }
 
     /**
-     * 访问类节点，对其应用重命名规则，并递归处理内部类。
+     * 访问类节点，对其应用重命名规则，并递归处理内部类
      *
      * @param cls 待处理的类节点
      * @return 始终返回 false，表示继续遍历
@@ -148,7 +148,7 @@ public class CodeRenameVisitor extends AbstractVisitor {
     }
 
     /**
-     * 获取指定类对应的重命名规则列表。
+     * 获取指定类对应的重命名规则列表
      *
      * @param cls 类节点
      * @return 该类的重命名规则列表，若不存在则返回空列表
@@ -165,10 +165,10 @@ public class CodeRenameVisitor extends AbstractVisitor {
     }
 
     /**
-     * 从外部传入的代码数据中更新重命名映射表。
+     * 从外部传入的代码数据中更新重命名映射表
      * <p>
      * 将 {@link ICodeData} 中的所有重命名条目按声明类分组，
-     * 并过滤掉不包含代码引用的条目（即仅保留需要实际重命名变量/参数的条目）。
+     * 并过滤掉不包含代码引用的条目（即仅保留需要实际重命名变量/参数的条目）
      * </p>
      *
      * @param data 外部代码数据，可能为 null（表示无重命名数据）

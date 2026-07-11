@@ -1,14 +1,9 @@
 package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
-import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
-import com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener;
-import com.bingbaihanji.fxdecomplie.service.CommentManager;
-import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
+import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.ui.IconHelper;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
-import com.bingbaihanji.windows.jfx.WindowToolkit;
 import com.bingbaihanji.windows.platform.WindowAppearance;
 import com.bingbaihanji.windows.platform.WindowCornerPreference;
 import javafx.application.Application;
@@ -37,8 +32,7 @@ public final class FxDecompilerApp {
     /** 抑制预览警告属性名 */
     private static final String JAVAFX_SUPPRESS_PREVIEW_WARNING_PROPERTY = "javafx.suppressPreviewWarning";
     /** 启动错误日志文件路径(位于应用根目录 logs 子目录下) */
-    private static final Path STARTUP_ERROR_LOG =
-            AppConfig.appDir().resolve("logs").resolve("startup-error.log");
+    private static final Path STARTUP_ERROR_LOG = AppPaths.startupErrorLog();
 
     static {
         System.setProperty("fxdecomplie.appDir", resolveAppDirForLogging().toString());
@@ -193,12 +187,8 @@ public final class FxDecompilerApp {
         private void startApplication(Stage stage) {
             primaryStage = stage;
             log.info("FxDecompiler 启动构建版本: headerBar-2026-06-17");
-            config = AppConfig.load();
+            config = AppContext.getInstance().start();
             DefaultWindowTheme.configure(windowAppearance(config));
-            DiskCodeCache.cleanIfNeeded();
-            CommentManager.setRootDir(AppConfig.appDir().resolve("fxdecomplie").resolve("comments"));
-            com.bingbaihanji.fxdecomplie.rename.RenameService.setRootDir(
-                    AppConfig.appDir().resolve("fxdecomplie").resolve("renames"));
             applyConfiguredLocale();
 
             IconHelper.setStageIcon(stage);
@@ -274,13 +264,10 @@ public final class FxDecompilerApp {
                 }
                 config.save();
             }
-            BackgroundTasks.shutdown();
-            ClassTabOpener.shutdown();
             if (window != null) {
                 window.shutdownResources();
             }
-            WindowToolkit.shutdown();
-            DecompilerFactory.cleanup();
+            AppContext.getInstance().shutdown();
         }
 
         /**

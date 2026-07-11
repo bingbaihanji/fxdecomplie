@@ -105,7 +105,7 @@ public final class ByteUtils {
     }
 
     /**
-     * 将单个字节值转换为补零的两位十六进制字符串。
+     * 将单个字节值转换为补零的两位十六进制字符串
      * @param value 字节值（仅取低 8 位）
      * @return 两位十六进制字符串
      */
@@ -116,7 +116,7 @@ public final class ByteUtils {
     }
 
     /**
-     * 将 int 值转换为补零的 8 位十六进制字符串。
+     * 将 int 值转换为补零的 8 位十六进制字符串
      * @param value 整数值
      * @return 8 位十六进制字符串
      */
@@ -131,7 +131,7 @@ public final class ByteUtils {
     }
 
     /**
-     * 计算字节数组的 MD5 哈希值。
+     * 计算字节数组的 MD5 哈希值
      * @param data 输入字节数组
      * @return 十六进制表示的 MD5 值
      */
@@ -147,7 +147,7 @@ public final class ByteUtils {
     }
 
     /**
-     * 计算字符串（UTF-8 编码）的 MD5 哈希值。
+     * 计算字符串（UTF-8 编码）的 MD5 哈希值
      * @param str 输入字符串
      * @return 十六进制表示的 MD5 值
      */
@@ -157,7 +157,7 @@ public final class ByteUtils {
     }
 
     /**
-     * 通过文件魔数（PK\03\04）判断文件是否为 ZIP 格式。
+     * 通过文件魔数（PK\03\04）判断文件是否为 ZIP 格式
      * @param file 待检测的文件
      * @return 是 ZIP 文件返回 true
      */

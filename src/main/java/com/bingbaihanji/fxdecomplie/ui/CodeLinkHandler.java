@@ -55,7 +55,7 @@ public final class CodeLinkHandler {
      *
      * @param codeArea        代码编辑区域
      * @param metadata        代码元数据(行到引用的映射)
-     * @param onTokenNavigate token 级导航回调,接收行号和标识符；传入 null 则仅使用 metadata
+     * @param onTokenNavigate token 级导航回调,接收行号和标识符 传入 null 则仅使用 metadata
      * @param onNavigate      行级导航回调,接收点击处的引用
      */
     public static void install(CodeArea codeArea, CodeMetadata metadata,

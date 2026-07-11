@@ -22,11 +22,11 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.isEmpty;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.notEmpty;
 
 /**
- * 类型工具类。
+ * 类型工具类
  * <p>
  * 提供泛型类型相关的辅助能力，包括获取类的泛型参数、解析类型变量、
- * 展开类型变量的边界、以及在实例类型与泛型声明之间进行类型变量替换等。
- * 主要服务于反编译过程中的泛型还原与类型推断。
+ * 展开类型变量的边界、以及在实例类型与泛型声明之间进行类型变量替换等
+ * 主要服务于反编译过程中的泛型还原与类型推断
  * </p>
  */
 public class TypeUtils {
@@ -84,8 +84,8 @@ public class TypeUtils {
     }
 
     /**
-     * 获取指定类型对应类声明的泛型类型参数列表。
-     * 优先从已解析的 {@link ClassNode} 获取，否则回退到类路径信息 {@link ClspClass}。
+     * 获取指定类型对应类声明的泛型类型参数列表
+     * 优先从已解析的 {@link ClassNode} 获取，否则回退到类路径信息 {@link ClspClass}
      *
      * @param type 目标类型
      * @return 泛型类型参数列表，若无泛型参数则返回空列表
@@ -104,11 +104,11 @@ public class TypeUtils {
     }
 
     /**
-     * 获取指定类型的类级类型变量属性 {@link ClassTypeVarsAttr}。
-     * 若属性尚未构建则会即时构建并缓存到对应的 {@link ClassNode}。
+     * 获取指定类型的类级类型变量属性 {@link ClassTypeVarsAttr}
+     * 若属性尚未构建则会即时构建并缓存到对应的 {@link ClassNode}
      *
      * @param type 目标类型
-     * @return 类型变量属性；若无法解析对应类则返回 {@code null}
+     * @return 类型变量属性 若无法解析对应类则返回 {@code null}
      */
     @Nullable
     public ClassTypeVarsAttr getClassTypeVars(ArgType type) {
@@ -124,7 +124,7 @@ public class TypeUtils {
     }
 
     /**
-     * 在类的上下文中展开类型中的类型变量，为其补充已知的边界（extends）信息。
+     * 在类的上下文中展开类型中的类型变量，为其补充已知的边界（extends）信息
      *
      * @param cls  提供类型变量上下文的类
      * @param type 待展开的类型
@@ -138,7 +138,7 @@ public class TypeUtils {
     }
 
     /**
-     * 在方法的上下文中展开类型中的类型变量，为其补充已知的边界（extends）信息。
+     * 在方法的上下文中展开类型中的类型变量，为其补充已知的边界（extends）信息
      *
      * @param mth  提供类型变量上下文的方法
      * @param type 待展开的类型
@@ -181,8 +181,8 @@ public class TypeUtils {
     }
 
     /**
-     * 获取方法上下文中所有已知的类型变量（包含所属类及其父类、以及方法自身声明的类型变量）。
-     * 结果会缓存到方法的 {@link MethodTypeVarsAttr} 属性中。
+     * 获取方法上下文中所有已知的类型变量（包含所属类及其父类、以及方法自身声明的类型变量）
+     * 结果会缓存到方法的 {@link MethodTypeVarsAttr} 属性中
      *
      * @param mth 目标方法
      * @return 已知类型变量集合
@@ -199,9 +199,9 @@ public class TypeUtils {
     }
 
     /**
-     * 在当前方法中查找未知的类型变量，仅返回第一个。
+     * 在当前方法中查找未知的类型变量，仅返回第一个
      *
-     * @return 未知的类型变量；若未找到则返回 {@code null}
+     * @return 未知的类型变量 若未找到则返回 {@code null}
      */
     @Nullable
     public ArgType checkForUnknownTypeVars(MethodNode mth, ArgType checkType) {
@@ -215,7 +215,7 @@ public class TypeUtils {
     }
 
     /**
-     * 判断指定类型在给定方法上下文中是否包含未知的类型变量。
+     * 判断指定类型在给定方法上下文中是否包含未知的类型变量
      *
      * @param mth  目标方法
      * @param type 待检查的类型
@@ -226,7 +226,7 @@ public class TypeUtils {
     }
 
     /**
-     * 使用实例类型中的实际类型替换 {@code typeWithGeneric} 中的泛型类型。
+     * 使用实例类型中的实际类型替换 {@code typeWithGeneric} 中的泛型类型
      * <br>
      * 示例：
      * <ul>
@@ -237,7 +237,7 @@ public class TypeUtils {
      *
      * @param instanceType    携带实际泛型实参的实例类型
      * @param typeWithGeneric 含有待替换泛型变量的类型
-     * @return 替换后的类型；若无法替换则返回 {@code null}
+     * @return 替换后的类型 若无法替换则返回 {@code null}
      */
     @Nullable
     public ArgType replaceClassGenerics(ArgType instanceType, ArgType typeWithGeneric) {
@@ -245,13 +245,13 @@ public class TypeUtils {
     }
 
     /**
-     * 使用实例类型中的实际类型替换 {@code typeWithGeneric} 中的泛型类型。
-     * 相比 {@link #replaceClassGenerics(ArgType, ArgType)}，可单独指定提供泛型映射的源类型。
+     * 使用实例类型中的实际类型替换 {@code typeWithGeneric} 中的泛型类型
+     * 相比 {@link #replaceClassGenerics(ArgType, ArgType)}，可单独指定提供泛型映射的源类型
      *
      * @param instanceType      携带实际泛型实参的实例类型
      * @param genericSourceType 提供类型变量映射的源类型
      * @param typeWithGeneric   含有待替换泛型变量的类型
-     * @return 替换后的类型；若无法替换则返回 {@code null}
+     * @return 替换后的类型 若无法替换则返回 {@code null}
      */
     @Nullable
     public ArgType replaceClassGenerics(ArgType instanceType, ArgType genericSourceType, ArgType typeWithGeneric) {
@@ -273,11 +273,11 @@ public class TypeUtils {
     }
 
     /**
-     * 构建泛型类型的类型变量到实际类型的映射。
-     * 例如对 {@code Map<String, Integer>}，返回 {@code K -> String, V -> Integer}。
+     * 构建泛型类型的类型变量到实际类型的映射
+     * 例如对 {@code Map<String, Integer>}，返回 {@code K -> String, V -> Integer}
      *
      * @param clsType 携带实际泛型实参的类型
-     * @return 类型变量到实际类型的映射；无法构建时返回空映射
+     * @return 类型变量到实际类型的映射 无法构建时返回空映射
      */
     public Map<ArgType, ArgType> getTypeVariablesMapping(ArgType clsType) {
         if (!clsType.isGeneric()) {
@@ -309,11 +309,11 @@ public class TypeUtils {
     }
 
     /**
-     * 根据方法调用指令，构建其类型变量到实际类型的映射。
-     * 映射来源包括返回值以及各实参与形参类型的对应关系。
+     * 根据方法调用指令，构建其类型变量到实际类型的映射
+     * 映射来源包括返回值以及各实参与形参类型的对应关系
      *
      * @param invokeInsn 方法调用指令
-     * @return 类型变量到实际类型的映射；无方法详情时返回空映射
+     * @return 类型变量到实际类型的映射 无方法详情时返回空映射
      */
     public Map<ArgType, ArgType> getTypeVarMappingForInvoke(BaseInvokeNode invokeInsn) {
         IMethodDetails mthDetails = root.getMethodUtils().getMethodDetails(invokeInsn);
@@ -330,12 +330,12 @@ public class TypeUtils {
     }
 
     /**
-     * 根据方法调用的实参类型，替换方法泛型返回类型中的类型变量。
+     * 根据方法调用的实参类型，替换方法泛型返回类型中的类型变量
      *
      * @param invokeInsn      方法调用指令
      * @param details         方法详情
      * @param typeWithGeneric 含有待替换类型变量的类型
-     * @return 替换后的类型；若无法替换则返回 {@code null}
+     * @return 替换后的类型 若无法替换则返回 {@code null}
      */
     @Nullable
     public ArgType replaceMethodGenerics(BaseInvokeNode invokeInsn, IMethodDetails details, ArgType typeWithGeneric) {
@@ -361,12 +361,12 @@ public class TypeUtils {
     }
 
     /**
-     * 依据给定的类型变量映射，递归替换类型中的所有类型变量。
-     * 支持数组、通配符、外层泛型以及带泛型实参的类型等结构。
+     * 依据给定的类型变量映射，递归替换类型中的所有类型变量
+     * 支持数组、通配符、外层泛型以及带泛型实参的类型等结构
      *
      * @param replaceType 待替换的类型
      * @param replaceMap  类型变量到实际类型的映射
-     * @return 替换后的类型；若无可替换内容或映射为空则返回 {@code null}
+     * @return 替换后的类型 若无可替换内容或映射为空则返回 {@code null}
      */
     @Nullable
     public ArgType replaceTypeVariablesUsingMap(ArgType replaceType, Map<ArgType, ArgType> replaceMap) {
@@ -446,8 +446,8 @@ public class TypeUtils {
     }
 
     /**
-     * 遍历指定类型的所有父类型（父类与接口），对每一对 (子类型, 父类型) 调用回调。
-     * 已解析的类委托给 {@link ClassNode#visitSuperTypes}，否则基于类路径信息递归遍历。
+     * 遍历指定类型的所有父类型（父类与接口），对每一对 (子类型, 父类型) 调用回调
+     * 已解析的类委托给 {@link ClassNode#visitSuperTypes}，否则基于类路径信息递归遍历
      *
      * @param type     起始类型
      * @param consumer 接收 (子类型, 父类型) 的回调

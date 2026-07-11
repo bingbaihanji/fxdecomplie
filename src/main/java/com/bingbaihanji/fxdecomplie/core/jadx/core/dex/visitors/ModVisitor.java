@@ -41,12 +41,12 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.repla
 import static com.bingbaihanji.fxdecomplie.util.collection.ListUtils.allMatch;
 
 /**
- * 方法指令修改访问器。
+ * 方法指令修改访问器
  * <p>
  * 负责对方法内的指令进行修改（删除、替换、处理异常处理器等），
  * 例如：将常量替换为常量字段引用、内联 CMP 指令、移除多余的类型转换、
- * 将 new-array + fill-array 合并为填充数组指令、处理 move-exception 等。
- * 该访问器在 {@link CodeShrinkVisitor} 与 {@link ProcessVariables} 之前运行。
+ * 将 new-array + fill-array 合并为填充数组指令、处理 move-exception 等
+ * 该访问器在 {@link CodeShrinkVisitor} 与 {@link ProcessVariables} 之前运行
  */
 @JadxVisitor(
         name = "ModVisitor",
@@ -134,7 +134,7 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 如果字段在使用处不可见，则将实例转换（cast）为其声明所在的原始类。
+     * 如果字段在使用处不可见，则将实例转换（cast）为其声明所在的原始类
      */
     private static void fixFieldUsage(MethodNode mth, IndexInsnNode insn) {
         InsnArg instanceArg = insn.getArg(insn.getType() == InsnType.IGET ? 0 : 1);
@@ -276,7 +276,7 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 将 CMP 指令内联到 'if' 指令中，以便于条件合并。
+     * 将 CMP 指令内联到 'if' 指令中，以便于条件合并
      */
     private static void inlineCMPInsns(MethodNode mth, BlockNode block, int i, InsnNode insn, InsnRemover remover) {
         RegisterArg resArg = insn.getResult();
@@ -353,7 +353,7 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 移除不必要的指令。
+     * 移除不必要的指令
      */
     private static void removeStep(MethodNode mth, InsnRemover remover) {
         for (BlockNode block : mth.getBasicBlocks()) {
@@ -442,8 +442,8 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 返回参数的第一个使用指令。
-     * 如果只被使用一次，则尝试沿 move 链继续追踪。
+     * 返回参数的第一个使用指令
+     * 如果只被使用一次，则尝试沿 move 链继续追踪
      */
     @Nullable
     private static InsnNode getFirstUseSkipMove(RegisterArg arg) {

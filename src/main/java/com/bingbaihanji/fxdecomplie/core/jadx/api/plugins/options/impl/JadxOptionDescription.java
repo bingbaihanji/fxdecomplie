@@ -15,6 +15,7 @@ public class JadxOptionDescription implements OptionDescription {
     private final List<String> values;
     private final OptionType type;
     private final Set<OptionFlag> flags = EnumSet.noneOf(OptionFlag.class);
+
     public JadxOptionDescription(String name, String desc, @Nullable String defaultValue, List<String> values) {
         this(name, desc, defaultValue, values, OptionType.STRING);
     }

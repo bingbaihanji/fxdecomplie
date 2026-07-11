@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 代码读取器接口，用于读取单个方法的 Dalvik 字节码指令及相关元数据。
+ * 代码读取器接口，用于读取单个方法的 Dalvik 字节码指令及相关元数据
  */
 public interface ICodeReader {
     /** 创建当前代码读取器的副本 */

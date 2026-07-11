@@ -18,6 +18,7 @@ public record ClassFileMetadata(
         String internalName,
         String superName,
         List<String> interfaces,
+        List<String> referencedClasses,
         int constantPoolCount,
         List<MemberInfo> fields,
         List<MemberInfo> methods
@@ -30,6 +31,7 @@ public record ClassFileMetadata(
     public ClassFileMetadata {
         Objects.requireNonNull(internalName, "internalName");
         interfaces = List.copyOf(interfaces);
+        referencedClasses = List.copyOf(referencedClasses);
         fields = List.copyOf(fields);
         methods = List.copyOf(methods);
     }

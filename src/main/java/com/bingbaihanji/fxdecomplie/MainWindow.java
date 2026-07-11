@@ -2,17 +2,18 @@ package com.bingbaihanji.fxdecomplie;
 
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
-import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
+import com.bingbaihanji.fxdecomplie.service.CommentManager;
+import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentDialog;
 import com.bingbaihanji.fxdecomplie.ui.menu.MainMenuBar;
-import com.bingbaihanji.fxdecomplie.ui.search.*;
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.toolbar.MainToolBar;
@@ -21,7 +22,9 @@ import com.bingbaihanji.util.I18nUtil;
 import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -31,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
 
 /**
  * FxDecompiler 应用窗口的中央控制器
@@ -51,6 +54,24 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private final boolean useHeaderBar;
     /** HostServices,用于打开外部浏览器链接 */
     private final HostServices hostServices;
+    /** 编辑器动作控制器（剪贴板/缩放/行号/工具窗口） */
+    private final EditorActionsController editorActions = new EditorActionsController(this);
+    /** 代码导航控制器（Ctrl+Click 跳转/引用解析/类节点查找） */
+    private final NavigationController navigationController = new NavigationController(this);
+    /** 重命名与反混淆控制器（重命名/ProGuard 映射/反混淆预览/快照恢复） */
+    private final RenameController renameController = new RenameController(this);
+    /** 反混淆与 ProGuard 映射控制器（自动反混淆/映射导入导出/快照恢复） */
+    private final DeobfuscationController deobfuscationController = new DeobfuscationController(this);
+    /** 搜索与用法查找控制器（搜索对话框/Find Usages/包搜索/全文缓存/索引等待） */
+    private final SearchController searchController = new SearchController(this);
+    /** 引擎切换与图形展示控制器（引擎切换/标签页刷新/继承图/CFG/方法图/引擎对比） */
+    private final EngineController engineController = new EngineController(this);
+    /** 设置控制器（设置对话框/配置应用） */
+    private final SettingsController settingsController = new SettingsController(this);
+    /** 导出控制器（批量导出/子树导出/导出配置持久化/导出结果对话框） */
+    private final ExportController exportController = new ExportController(this);
+    /** 工作区控制器（打开文件/目录/项目、保存项目、关闭工作区、快速打开、最近文件、工作区加载） */
+    private final WorkspaceController workspaceController = new WorkspaceController(this);
     /** 编辑器当前主题数据(语法高亮颜色等) */
     private VsCodeThemeLoader.ThemeData editorTheme;
     /** 主窗口 Stage 引用 */
@@ -71,63 +92,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private MainToolBar toolBar;
     /** 主菜单栏 */
     private MainMenuBar menuBar;
-    /** 编辑器动作控制器（剪贴板/缩放/行号/工具窗口） */
-    private final EditorActionsController editorActions = new EditorActionsController(this);
-    /** 代码导航控制器（Ctrl+Click 跳转/引用解析/类节点查找） */
-    private final NavigationController navigationController = new NavigationController(this);
-    /** 重命名与反混淆控制器（重命名/ProGuard 映射/反混淆预览/快照恢复） */
-    private final RenameController renameController = new RenameController(this);
-    /** 反混淆与 ProGuard 映射控制器（自动反混淆/映射导入导出/快照恢复） */
-    private final DeobfuscationController deobfuscationController = new DeobfuscationController(this);
-    /** 搜索与用法查找控制器（搜索对话框/Find Usages/包搜索/全文缓存/索引等待） */
-    private final SearchController searchController = new SearchController(this);
-    /** 引擎切换与图形展示控制器（引擎切换/标签页刷新/继承图/CFG/方法图/引擎对比） */
-    private final EngineController engineController = new EngineController(this);
-    /** 设置控制器（设置对话框/配置应用） */
-    private final SettingsController settingsController = new SettingsController(this);
-    /** 导出控制器（批量导出/子树导出/导出配置持久化/导出结果对话框） */
-    private final ExportController exportController = new ExportController(this);
-    /** 工作区控制器（打开文件/目录/项目、保存项目、关闭工作区、快速打开、最近文件、工作区加载） */
-    private final WorkspaceController workspaceController = new WorkspaceController(this);
-
-    // --- 供控制器访问共享状态的包级私有访问器（Mediator 模式）---
-    AppConfig config() { return config; }
-
-    WorkspaceTabManager tabManager() { return tabManager; }
-
-    MainToolBar toolBar() { return toolBar; }
-
-    boolean lineNumbersEnabled() { return lineNumbersEnabled; }
-
-    void setLineNumbersEnabled(boolean enabled) { this.lineNumbersEnabled = enabled; }
-
-    ClassTabOpener classTabOpener() { return classTabOpener; }
-
-    StatusBar statusBar() { return statusBar; }
-
-    DecompilerTypeEnum currentEngine() { return currentEngine; }
-
-    void setCurrentEngine(DecompilerTypeEnum engine) { this.currentEngine = engine; }
-
-    MainMenuBar menuBar() { return menuBar; }
-
-    Stage stage() { return stage; }
-
-    HostServices hostServices() { return hostServices; }
-
-    NavigationController navigationController() { return navigationController; }
-
-    SearchController searchController() { return searchController; }
-
-    EngineController engineController() { return engineController; }
-
-    ExportController exportController() { return exportController; }
-
-    TabPane outerTabPane() { return outerTabPane; }
-
-    VsCodeThemeLoader.ThemeData editorTheme() { return editorTheme; }
-
-    void setEditorTheme(VsCodeThemeLoader.ThemeData theme) { this.editorTheme = theme; }
 
     /** 使用全局配置构造主窗口 */
     public MainWindow(AppConfig config) {
@@ -156,6 +120,83 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         String name = file.getName().toLowerCase(java.util.Locale.ROOT);
         return name.endsWith(".jar") || name.endsWith(".zip")
                 || name.endsWith(".war") || name.endsWith(".class");
+    }
+
+    // --- 供控制器访问共享状态的包级私有访问器（Mediator 模式）---
+    AppConfig config() {
+        return config;
+    }
+
+    WorkspaceTabManager tabManager() {
+        return tabManager;
+    }
+
+    MainToolBar toolBar() {
+        return toolBar;
+    }
+
+    boolean lineNumbersEnabled() {
+        return lineNumbersEnabled;
+    }
+
+    void setLineNumbersEnabled(boolean enabled) {
+        this.lineNumbersEnabled = enabled;
+    }
+
+    ClassTabOpener classTabOpener() {
+        return classTabOpener;
+    }
+
+    StatusBar statusBar() {
+        return statusBar;
+    }
+
+    DecompilerTypeEnum currentEngine() {
+        return currentEngine;
+    }
+
+    void setCurrentEngine(DecompilerTypeEnum engine) {
+        this.currentEngine = engine;
+    }
+
+    MainMenuBar menuBar() {
+        return menuBar;
+    }
+
+    Stage stage() {
+        return stage;
+    }
+
+    HostServices hostServices() {
+        return hostServices;
+    }
+
+    NavigationController navigationController() {
+        return navigationController;
+    }
+
+    SearchController searchController() {
+        return searchController;
+    }
+
+    EngineController engineController() {
+        return engineController;
+    }
+
+    ExportController exportController() {
+        return exportController;
+    }
+
+    TabPane outerTabPane() {
+        return outerTabPane;
+    }
+
+    VsCodeThemeLoader.ThemeData editorTheme() {
+        return editorTheme;
+    }
+
+    void setEditorTheme(VsCodeThemeLoader.ThemeData theme) {
+        this.editorTheme = theme;
     }
 
     /** 显示主窗口 */
@@ -303,10 +344,6 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 退出应用 */
     @Override
     public void exit() {
-        BackgroundTasks.shutdown();
-        ClassTabOpener.shutdown();
-        shutdownResources();
-        DecompilerFactory.cleanup();
         javafx.stage.Window.getWindows().stream()
                 .filter(w -> w instanceof javafx.stage.Stage && w != stage)
                 .forEach(w -> ((javafx.stage.Stage) w).close());
@@ -777,8 +814,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     /**
-     * 返回当前工作区视图；若无打开的工作区,弹出警告并返回 {@code null}。
-     * 用于收敛各控制器中重复的 "view == null → 警告 → return" 守卫。
+     * 返回当前工作区视图 若无打开的工作区,弹出警告并返回 {@code null}
+     * 用于收敛各控制器中重复的 "view == null → 警告 → return" 守卫
      *
      * @param warnTitle   警告标题(i18n 已解析)
      * @param warnMessage 警告内容(i18n 已解析)

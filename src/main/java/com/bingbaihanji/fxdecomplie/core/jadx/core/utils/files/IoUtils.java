@@ -17,10 +17,10 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * 精简的 I/O 工具方法，供 jadx 内部使用。
+ * 精简的 I/O 工具方法，供 jadx 内部使用
  * <p>
  * 原 FileUtils 中可替换为 ByteUtils/JDK API 的方法已移除，
- * 此处仅保留目录管理、临时文件、文件名处理等 jadx 专属逻辑。
+ * 此处仅保留目录管理、临时文件、文件名处理等 jadx 专属逻辑
  */
 public final class IoUtils {
     /** 读取缓冲区大小：8KB */

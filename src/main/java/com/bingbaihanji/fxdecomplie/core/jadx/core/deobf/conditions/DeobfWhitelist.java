@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 反混淆白名单条件。
+ * 反混淆白名单条件
  * <p>
  * 对处于白名单中的包或类禁止重命名（反混淆），常用于保留 Android 支持库、
- * AndroidX 等已知库的原始名称。白名单项支持以 {@code .*} 结尾表示整个包。
+ * AndroidX 等已知库的原始名称白名单项支持以 {@code .*} 结尾表示整个包
  */
 public class DeobfWhitelist extends AbstractDeobfCondition {
 
@@ -37,7 +37,7 @@ public class DeobfWhitelist extends AbstractDeobfCondition {
 
     /**
      * 初始化白名单条件，从根节点参数中读取反混淆白名单配置，
-     * 并将各项分类到包集合或类集合中。
+     * 并将各项分类到包集合或类集合中
      *
      * @param root 根节点
      */
@@ -57,7 +57,7 @@ public class DeobfWhitelist extends AbstractDeobfCondition {
     }
 
     /**
-     * 检查给定包是否处于白名单中。
+     * 检查给定包是否处于白名单中
      *
      * @param pkg 待检查的包节点
      * @return 若在白名单中则返回禁止重命名，否则返回无操作
@@ -71,7 +71,7 @@ public class DeobfWhitelist extends AbstractDeobfCondition {
     }
 
     /**
-     * 检查给定类是否处于白名单中。
+     * 检查给定类是否处于白名单中
      *
      * @param cls 待检查的类节点
      * @return 若在白名单中则返回禁止重命名，否则返回无操作

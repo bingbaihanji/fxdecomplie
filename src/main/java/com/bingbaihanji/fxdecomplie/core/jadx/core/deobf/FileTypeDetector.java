@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.deobf;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.FileSignature;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.FileSignature;
 import org.w3c.dom.Document;
 
 import javax.xml.parsers.DocumentBuilder;

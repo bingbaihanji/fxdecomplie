@@ -46,9 +46,9 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState.NOT_LOADED;
 
 /**
- * 类节点，表示 DEX 文件中的一个类。
- * 负责管理类的字段、方法、内部类、泛型信息以及反编译缓存等。
- * 实现了加载/卸载生命周期、代码生成、依赖管理和包更新通知等功能。
+ * 类节点，表示 DEX 文件中的一个类
+ * 负责管理类的字段、方法、内部类、泛型信息以及反编译缓存等
+ * 实现了加载/卸载生命周期、代码生成、依赖管理和包更新通知等功能
  */
 public class ClassNode extends NotificationAttrNode
         implements ILoadable, ICodeNode, IPackageUpdate, Comparable<ClassNode> {
@@ -109,7 +109,7 @@ public class ClassNode extends NotificationAttrNode
     private JavaClass javaNode;
 
     /**
-     * 从类数据构建类节点。
+     * 从类数据构建类节点
      *
      * @param root 根节点
      * @param cls  类数据
@@ -123,7 +123,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 创建空类（私有构造，仅供合成类使用）。
+     * 创建空类（私有构造，仅供合成类使用）
      */
     private ClassNode(RootNode root, ClassInfo clsInfo, int accessFlags) {
         this.root = root;
@@ -137,7 +137,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 处理特殊类，如 package-info 类（标记为不重命名）。
+     * 处理特殊类，如 package-info 类（标记为不重命名）
      */
     private static void processSpecialClasses(ClassNode cls) {
         if ("package-info".equals(cls.getName()) && cls.getFields().isEmpty() && cls.getMethods().isEmpty()) {
@@ -147,7 +147,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 处理类的特殊属性，将 AnnotationDefault 从类级别移动到方法级别，并检查源文件属性。
+     * 处理类的特殊属性，将 AnnotationDefault 从类级别移动到方法级别，并检查源文件属性
      */
     private static void processAttributes(ClassNode cls) {
         // 将 AnnotationDefault 从类移动到方法（DEX 特有）
@@ -171,7 +171,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 添加一个合成类（由 jadx 内部生成，非原始输入中的类）。
+     * 添加一个合成类（由 jadx 内部生成，非原始输入中的类）
      *
      * @param root        根节点
      * @param name        类全名
@@ -197,7 +197,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 将代码中找到的节点定义位置保存到对应节点，并校验变量引用的有效性。
+     * 将代码中找到的节点定义位置保存到对应节点，并校验变量引用的有效性
      */
     private static void processDefinitionAnnotations(ICodeInfo codeInfo) {
         Map<Integer, ICodeAnnotation> annotations = codeInfo.getCodeMetadata().getAsMap();
@@ -230,7 +230,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 从类数据加载类信息，包括访问标志、父类、接口、字段和方法等。
+     * 从类数据加载类信息，包括访问标志、父类、接口、字段和方法等
      *
      * @param cls       类数据
      * @param reloading 是否为重新加载（重新加载时会恢复使用信息）
@@ -266,7 +266,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 恢复类的使用信息数据（重新加载时调用）。
+     * 恢复类的使用信息数据（重新加载时调用）
      */
     private void restoreUsageData() {
         IUsageInfoData usageInfoData = root.getArgs().getUsageInfoCache().get(root);
@@ -278,8 +278,8 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 检查并获取父类类型。
-     * java.lang.Object 和 module-info 没有父类。
+     * 检查并获取父类类型
+     * java.lang.Object 和 module-info 没有父类
      */
     private ArgType checkSuperType(IClassData cls) {
         String superType = cls.getSuperType();
@@ -298,7 +298,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 更新类的泛型数据（泛型参数、父类类型、接口类型）。
+     * 更新类的泛型数据（泛型参数、父类类型、接口类型）
      */
     public void updateGenericClsData(List<ArgType> generics, ArgType superClass, List<ArgType> interfaces) {
         this.generics = generics;
@@ -307,7 +307,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 获取类的访问标志，优先使用内部类属性中定义的标志。
+     * 获取类的访问标志，优先使用内部类属性中定义的标志
      */
     private int getAccessFlags(IClassData cls) {
         InnerClassesAttr innerClassesAttr = get(JadxAttrType.INNER_CLASSES);
@@ -321,9 +321,9 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 初始化静态字段的默认值。
-     * 字节码可能省略对 0 值的字段初始化，此处为所有静态 final 字段添加显式初始化。
-     * 如果在类初始化方法中找到赋值语句，错误的初始化将被移除。
+     * 初始化静态字段的默认值
+     * 字节码可能省略对 0 值的字段初始化，此处为所有静态 final 字段添加显式初始化
+     * 如果在类初始化方法中找到赋值语句，错误的初始化将被移除
      */
     private void initStaticValues(List<FieldNode> fields) {
         if (fields.isEmpty()) {
@@ -338,7 +338,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 检查源文件名属性是否有效。无效的源文件名（如默认名、与类名重复等）将被移除。
+     * 检查源文件名属性是否有效无效的源文件名（如默认名、与类名重复等）将被移除
      *
      * @return true 如果源文件名有效，false 如果应该被移除
      */
@@ -378,14 +378,14 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 检查顶级父类是否已完成处理。
+     * 检查顶级父类是否已完成处理
      */
     public boolean checkProcessed() {
         return getTopParentClass().getState().isProcessComplete();
     }
 
     /**
-     * 确保类已处理完成，否则抛出异常。
+     * 确保类已处理完成，否则抛出异常
      */
     public void ensureProcessed() {
         if (!checkProcessed()) {
@@ -396,14 +396,14 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 反编译本类，优先从缓存获取结果。
+     * 反编译本类，优先从缓存获取结果
      */
     public ICodeInfo decompile() {
         return decompile(true);
     }
 
     /**
-     * 使用指定的反编译模式反编译本类。
+     * 使用指定的反编译模式反编译本类
      * 警告：慢速操作！请谨慎使用！
      *
      * @param mode 反编译模式
@@ -433,14 +433,14 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 获取本类的反编译代码（优先使用缓存）。
+     * 获取本类的反编译代码（优先使用缓存）
      */
     public ICodeInfo getCode() {
         return decompile(true);
     }
 
     /**
-     * 强制重新反编译本类（深度重载，不使用缓存）。
+     * 强制重新反编译本类（深度重载，不使用缓存）
      */
     public ICodeInfo reloadCode() {
         add(AFlag.CLASS_DEEP_RELOAD);
@@ -448,7 +448,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 卸载本类的代码，从缓存中移除并释放已加载的数据。
+     * 卸载本类的代码，从缓存中移除并释放已加载的数据
      */
     public void unloadCode() {
         if (state == NOT_LOADED) {
@@ -460,7 +460,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 深度卸载本类及其所有内部类，清除属性并从原始类数据重新加载。
+     * 深度卸载本类及其所有内部类，清除属性并从原始类数据重新加载
      */
     public void deepUnload() {
         if (clsData == null) {
@@ -517,7 +517,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 从代码缓存中获取本类的反编译结果。
+     * 从代码缓存中获取本类的反编译结果
      *
      * @return 缓存的代码信息，若缓存为空则返回 null
      */
@@ -533,7 +533,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 加载本类：依次加载所有方法和内部类，并将状态设置为已加载。
+     * 加载本类：依次加载所有方法和内部类，并将状态设置为已加载
      */
     @Override
     public void load() {
@@ -551,7 +551,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 卸载本类：卸载所有方法、内部类、字段及属性，并重置状态为未加载。
+     * 卸载本类：卸载所有方法、内部类、字段及属性，并重置状态为未加载
      */
     @Override
     public void unload() {
@@ -590,7 +590,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 获取类的类型，若存在泛型参数则返回带泛型的类型。
+     * 获取类的类型，若存在泛型参数则返回带泛型的类型
      */
     public ArgType getType() {
         ArgType clsType = clsInfo.getType();
@@ -677,8 +677,8 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 按原始短名称返回第一个匹配的方法。
-     * 注意：方法名不是唯一的（同一个类可能有多个同名但签名不同的方法）。
+     * 按原始短名称返回第一个匹配的方法
+     * 注意：方法名不是唯一的（同一个类可能有多个同名但签名不同的方法）
      */
     @Nullable
     public MethodNode searchMethodByShortName(String name) {
@@ -705,9 +705,9 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 修改类名及包名（如果提供了全限定名）。
-     * 使用前导点号可将类移动到默认包。
-     * 内部类的包名不可修改。
+     * 修改类名及包名（如果提供了全限定名）
+     * 使用前导点号可将类移动到默认包
+     * 内部类的包名不可修改
      */
     @Override
     public void rename(String newName) {
@@ -814,7 +814,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 递归获取所有内部类及被内联的类。
+     * 递归获取所有内部类及被内联的类
      *
      * @param resultClassesSet 所有识别到的内部类和内联类都将添加到该集合中
      */
@@ -917,7 +917,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 内部类信息（请勿在代码生成和外部 API 中使用）。
+     * 内部类信息（请勿在代码生成和外部 API 中使用）
      */
     public ClassInfo getClassInfo() {
         return clsInfo;
@@ -932,7 +932,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 已废弃。请使用 {@link #getAlias()}
+     * 已废弃请使用 {@link #getAlias()}
      */
     @Deprecated
     public String getShortName() {
@@ -948,7 +948,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 获取本类及其所有内部类、内联类的 smali 反汇编代码（结果会被缓存）。
+     * 获取本类及其所有内部类、内联类的 smali 反汇编代码（结果会被缓存）
      */
     public String getDisassembledCode() {
         if (smali == null) {
@@ -979,7 +979,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 底层类数据访问。
+     * 底层类数据访问
      *
      * @return 对于 jadx 生成的类返回 null
      */

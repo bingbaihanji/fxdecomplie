@@ -57,7 +57,7 @@ public class Int2ObjectMap<V> extends AbstractIntKeyMap {
 
     /**
      * 将指定键与值放入映射中 
-     * 若键已存在,则替换旧值并返回旧值；否则插入新键值对并返回 null 
+     * 若键已存在,则替换旧值并返回旧值 否则插入新键值对并返回 null 
      *
      * @param key   键
      * @param value 值(允许为 null)

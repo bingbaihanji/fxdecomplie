@@ -7,13 +7,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 代码变量。
+ * 代码变量
  * 表示反编译生成代码中的一个变量，可关联多个 SSA 变量，
- * 并携带名称、类型及 final/this/已声明等标记信息。
+ * 并携带名称、类型及 final/this/已声明等标记信息
  */
 public class CodeVar {
     private String name;
-    /** 变量类型；在类型推断之前可能为 null，仅对不可变类型提前设置 */
+    /** 变量类型 在类型推断之前可能为 null，仅对不可变类型提前设置 */
     private ArgType type;
     private List<SSAVar> ssaVars = Collections.emptyList();
 
@@ -21,7 +21,7 @@ public class CodeVar {
     private boolean isThis;
     private boolean isDeclared;
 
-    /** 缓存的变量节点；在代码生成阶段设置和使用 */
+    /** 缓存的变量节点 在代码生成阶段设置和使用 */
     private VarNode cachedVarNode;
 
     /** 由方法参数寄存器创建代码变量，可选是否关联寄存器对应的 SSA 变量 */
@@ -78,7 +78,7 @@ public class CodeVar {
         }
     }
 
-    /** 获取任意一个关联的 SSA 变量；若无则抛出异常 */
+    /** 获取任意一个关联的 SSA 变量 若无则抛出异常 */
     public SSAVar getAnySsaVar() {
         if (ssaVars.isEmpty()) {
             throw new IllegalStateException("CodeVar without SSA variables attached: " + this);

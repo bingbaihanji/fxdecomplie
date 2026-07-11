@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 /**
  * 对方法节点（{@link MethodNode}）的对外封装，向 API 使用者提供方法的名称、
- * 参数、返回类型、引用关系等信息。
+ * 参数、返回类型、引用关系等信息
  */
 public final class JavaMethod implements JavaNode {
     /** 被封装的底层方法节点 */

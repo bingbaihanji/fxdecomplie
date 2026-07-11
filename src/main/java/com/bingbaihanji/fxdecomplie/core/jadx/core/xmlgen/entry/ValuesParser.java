@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 资源值解析器。
+ * 资源值解析器
  * <p>
  * 负责将资源表（resources.arsc）中的原始数据（数据类型 + 数据值）解码为可读的字符串表示，
  * 支持字符串、整型、布尔、浮点、颜色、尺寸、分数以及资源引用、属性引用等各类数据类型，
- * 同时可解析简单值、命名值列表以及资源名称引用。
+ * 同时可解析简单值、命名值列表以及资源名称引用
  */
 public class ValuesParser extends ParserConstants {
     private static final Logger LOG = LoggerFactory.getLogger(ValuesParser.class);
@@ -35,9 +35,9 @@ public class ValuesParser extends ParserConstants {
     }
 
     /**
-     * 获取资源条目的简单值字符串。
+     * 获取资源条目的简单值字符串
      * <p>
-     * 优先返回 proto 值，否则解码其简单原始值。
+     * 优先返回 proto 值，否则解码其简单原始值
      *
      * @param ri 资源条目
      * @return 简单值字符串，若不存在则返回 {@code null}
@@ -56,9 +56,9 @@ public class ValuesParser extends ParserConstants {
     }
 
     /**
-     * 获取资源条目的完整值字符串。
+     * 获取资源条目的完整值字符串
      * <p>
-     * 依次处理 proto 值、简单值和命名值列表：命名值以 {@code name=value} 形式拼接为列表。
+     * 依次处理 proto 值、简单值和命名值列表：命名值以 {@code name=value} 形式拼接为列表
      *
      * @param ri 资源条目
      * @return 值字符串，若不存在则返回 {@code null}
@@ -100,7 +100,7 @@ public class ValuesParser extends ParserConstants {
     }
 
     /**
-     * 解码原始值对象。
+     * 解码原始值对象
      *
      * @param value 原始值（包含数据类型与数据）
      * @return 解码后的字符串，若为空类型则返回 {@code null}
@@ -113,7 +113,7 @@ public class ValuesParser extends ParserConstants {
     }
 
     /**
-     * 根据数据类型解码资源数据值。
+     * 根据数据类型解码资源数据值
      *
      * @param dataType 数据类型（TYPE_* 常量）
      * @param data     原始数据值
@@ -186,7 +186,7 @@ public class ValuesParser extends ParserConstants {
     }
 
     /**
-     * 解码名称引用，将资源 ID 引用还原为资源名称。
+     * 解码名称引用，将资源 ID 引用还原为资源名称
      *
      * @param nameRef 名称引用 ID
      * @return 解码后的名称（以 '.' 分隔），无法解析时返回十六进制表示

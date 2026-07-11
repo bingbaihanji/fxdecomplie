@@ -17,8 +17,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * DEX 指令节点，表示反编译过程中的单条指令。
- * 继承自 {@link LineAttrNode}，包含指令类型、结果寄存器、参数列表和偏移量等信息。
+ * DEX 指令节点，表示反编译过程中的单条指令
+ * 继承自 {@link LineAttrNode}，包含指令类型、结果寄存器、参数列表和偏移量等信息
  */
 public class InsnNode extends LineAttrNode {
     /** 指令类型 */
@@ -31,7 +31,7 @@ public class InsnNode extends LineAttrNode {
     private RegisterArg result;
 
     /**
-     * 构造指定类型和参数数量的指令节点。
+     * 构造指定类型和参数数量的指令节点
      *
      * @param type      指令类型
      * @param argsCount 参数数量
@@ -41,7 +41,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 构造指定类型和参数列表的指令节点。
+     * 构造指定类型和参数列表的指令节点
      *
      * @param type 指令类型
      * @param args 参数列表
@@ -56,7 +56,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 将单个参数包装为 ONE_ARG 类型的指令节点。
+     * 将单个参数包装为 ONE_ARG 类型的指令节点
      *
      * @param arg 需要包装的参数
      * @return 包装后的指令节点
@@ -68,7 +68,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制指令参数（若参数为 null 则返回 null）。
+     * 复制指令参数（若参数为 null 则返回 null）
      *
      * @param arg 需要复制的参数
      * @param <T> 参数类型
@@ -83,7 +83,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 向指令添加参数。
+     * 向指令添加参数
      *
      * @param arg 要添加的参数
      */
@@ -93,7 +93,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 替换指定索引位置的参数。
+     * 替换指定索引位置的参数
      *
      * @param n   参数索引
      * @param arg 新的参数
@@ -104,7 +104,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 将参数绑定到当前指令，并更新 SSA 变量的使用信息。
+     * 将参数绑定到当前指令，并更新 SSA 变量的使用信息
      *
      * @param arg 需要绑定的参数
      */
@@ -120,7 +120,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取指令类型。
+     * 获取指令类型
      *
      * @return 指令类型
      */
@@ -129,7 +129,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取指令的结果寄存器参数。
+     * 获取指令的结果寄存器参数
      *
      * @return 结果寄存器参数，可能为 null
      */
@@ -138,7 +138,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 设置指令的结果寄存器参数。如果结果参数关联了 SSA 变量，则更新其赋值信息。
+     * 设置指令的结果寄存器参数如果结果参数关联了 SSA 变量，则更新其赋值信息
      *
      * @param res 结果寄存器参数，可为 null
      */
@@ -154,7 +154,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取指令参数的可迭代视图。
+     * 获取指令参数的可迭代视图
      *
      * @return 参数的可迭代集合
      */
@@ -163,7 +163,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取指令参数列表。
+     * 获取指令参数列表
      *
      * @return 参数列表
      */
@@ -172,7 +172,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取参数数量。
+     * 获取参数数量
      *
      * @return 参数数量
      */
@@ -181,7 +181,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取指定索引位置的参数。
+     * 获取指定索引位置的参数
      *
      * @param n 参数索引
      * @return 指定位置的参数
@@ -191,7 +191,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 检查指令是否包含指定参数（通过引用比较）。
+     * 检查指令是否包含指定参数（通过引用比较）
      *
      * @param arg 要检查的参数
      * @return 如果包含该参数则返回 true
@@ -209,7 +209,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 检查指令是否包含指定的寄存器变量。
+     * 检查指令是否包含指定的寄存器变量
      *
      * @param arg 要检查的寄存器参数
      * @return 如果包含该变量则返回 true
@@ -222,7 +222,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 使用递归搜索将指令参数替换为另一个参数。
+     * 使用递归搜索将指令参数替换为另一个参数
      *
      * @param from 原参数
      * @param to   新参数
@@ -245,7 +245,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 从指令中移除指定的参数（通过引用查找）。
+     * 从指令中移除指定的参数（通过引用查找）
      *
      * @param arg 要移除的参数
      * @return 如果找到并移除成功则返回 true
@@ -260,7 +260,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 从指令中移除指定索引位置的参数，并解绑其变量使用信息。
+     * 从指令中移除指定索引位置的参数，并解绑其变量使用信息
      *
      * @param index 要移除的参数索引
      * @return 被移除的参数
@@ -273,7 +273,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取指定参数在参数列表中的索引（通过引用比较）。
+     * 获取指定参数在参数列表中的索引（通过引用比较）
      *
      * @param arg 要查找的参数
      * @return 参数索引，未找到则返回 -1
@@ -289,7 +289,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 添加一个寄存器参数（从指令数据读取指定索引的寄存器）。
+     * 添加一个寄存器参数（从指令数据读取指定索引的寄存器）
      *
      * @param insn 指令数据
      * @param i    寄存器索引
@@ -300,7 +300,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 添加一个指定寄存器编号的寄存器参数。
+     * 添加一个指定寄存器编号的寄存器参数
      *
      * @param regNum 寄存器编号
      * @param type   参数类型
@@ -310,7 +310,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 添加一个字面量参数。
+     * 添加一个字面量参数
      *
      * @param literal 字面量值
      * @param type    参数类型
@@ -320,7 +320,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 添加一个从指令数据读取的字面量参数。
+     * 添加一个从指令数据读取的字面量参数
      *
      * @param insn 指令数据
      * @param type 参数类型
@@ -330,7 +330,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 获取指令偏移量。
+     * 获取指令偏移量
      *
      * @return 指令偏移量
      */
@@ -339,7 +339,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 设置指令偏移量。
+     * 设置指令偏移量
      *
      * @param offset 指令偏移量
      */
@@ -348,7 +348,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 递归收集指令中的所有寄存器参数（包括包装指令内部的寄存器参数）。
+     * 递归收集指令中的所有寄存器参数（包括包装指令内部的寄存器参数）
      *
      * @param collection 用于收集结果的集合
      */
@@ -363,7 +363,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断指令是否为常量指令（CONST、CONST_STR 或 CONST_CLASS）。
+     * 判断指令是否为常量指令（CONST、CONST_STR 或 CONST_CLASS）
      *
      * @return 如果是常量指令则返回 true
      */
@@ -380,7 +380,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断指令是否为退出边指令（RETURN、THROW、CONTINUE 或 BREAK）。
+     * 判断指令是否为退出边指令（RETURN、THROW、CONTINUE 或 BREAK）
      *
      * @return 如果是退出边指令则返回 true
      */
@@ -398,7 +398,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断指令的结果是否可以被移除（仅 INVOKE 和 CONSTRUCTOR 允许）。
+     * 判断指令的结果是否可以被移除（仅 INVOKE 和 CONSTRUCTOR 允许）
      *
      * @return 如果结果可以被移除则返回 true
      */
@@ -414,8 +414,8 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断该指令是否可以安全地重新排序（不影响语义）。
-     * 常量、类型转换、算术等无副作用的指令可以重排；字段读取等暂不允许重排。
+     * 判断该指令是否可以安全地重新排序（不影响语义）
+     * 常量、类型转换、算术等无副作用的指令可以重排 字段读取等暂不允许重排
      *
      * @return 如果指令可以重排则返回 true
      */
@@ -464,7 +464,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断指令的参数中是否包含包装指令（InsnWrapArg）。
+     * 判断指令的参数中是否包含包装指令（InsnWrapArg）
      *
      * @return 如果包含包装指令则返回 true
      */
@@ -478,7 +478,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 访问当前指令及其所有内部（被包装的）指令。
+     * 访问当前指令及其所有内部（被包装的）指令
      *
      * @param visitor 指令访问器
      */
@@ -492,8 +492,8 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 访问当前指令及其所有内部（被包装的）指令。
-     * 访问器返回非 null 值时终止访问并返回该值。
+     * 访问当前指令及其所有内部（被包装的）指令
+     * 访问器返回非 null 值时终止访问并返回该值
      *
      * @param visitor 指令访问函数
      * @param <R>     返回值类型
@@ -518,7 +518,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 递归访问所有参数（包括内部指令的参数），但不访问包装参数本身。
+     * 递归访问所有参数（包括内部指令的参数），但不访问包装参数本身
      *
      * @param visitor 参数访问器
      */
@@ -533,8 +533,8 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 递归访问所有参数（包括内部指令的参数），但不访问包装参数本身。
-     * 访问器返回非 null 值时终止访问并返回该值。
+     * 递归访问所有参数（包括内部指令的参数），但不访问包装参数本身
+     * 访问器返回非 null 值时终止访问并返回该值
      *
      * @param visitor 参数访问函数
      * @param <R>     返回值类型
@@ -558,7 +558,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * “软”相等比较：不比较参数，只比较指令类型和参数数量等指令自身的特征。
+     * “软”相等比较：不比较参数，只比较指令类型和参数数量等指令自身的特征
      *
      * @param other 另一条指令
      * @return 如果两条指令“软相等”则返回 true
@@ -593,7 +593,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * “硬”相等比较：比较所有参数（包括结果和参数列表）。
+     * “硬”相等比较：比较所有参数（包括结果和参数列表）
      *
      * @param other 另一条指令
      * @return 如果两条指令完全相等则返回 true
@@ -608,7 +608,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 将当前指令的公共参数（参数列表、属性、源码行、偏移量）复制到目标指令。
+     * 将当前指令的公共参数（参数列表、属性、源码行、偏移量）复制到目标指令
      *
      * @param copy 目标指令
      * @param <T>  指令类型
@@ -627,7 +627,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 从另一条指令复制属性及源码行信息。
+     * 从另一条指令复制属性及源码行信息
      *
      * @param attrNode 源指令
      */
@@ -637,10 +637,10 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制 InsnNode 对象。
+     * 复制 InsnNode 对象
      * <br>
      * 注意：无法复制带结果参数的指令
-     * （同一个 SSA 变量不能用于两个不同的赋值）。
+     * （同一个 SSA 变量不能用于两个不同的赋值）
      * <br>
      * 推荐使用以下方法：
      * <ul>
@@ -659,7 +659,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制指令但不带结果参数。参见 {@link #copy()}。
+     * 复制指令但不带结果参数参见 {@link #copy()}
      *
      * @param <T> 指令类型
      * @return 不带结果的复制指令
@@ -670,7 +670,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制指令并保留结果参数，但要求结果参数未关联 SSA 变量。
+     * 复制指令并保留结果参数，但要求结果参数未关联 SSA 变量
      *
      * @return 不带 SSA 的复制指令
      * @throws JadxRuntimeException 当结果参数已关联 SSA 变量时抛出
@@ -688,7 +688,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制指令并设置新的返回（结果）参数。参见 {@link #copy()}。
+     * 复制指令并设置新的返回（结果）参数参见 {@link #copy()}
      *
      * @param newReturnArg 新的结果参数
      * @return 复制得到的指令
@@ -700,7 +700,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 复制指令，并为结果参数创建新的 SSA 变量。参见 {@link #copy()}。
+     * 复制指令，并为结果参数创建新的 SSA 变量参见 {@link #copy()}
      *
      * @param mth 所属方法节点
      * @return 复制得到的指令
@@ -718,8 +718,8 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 修正寄存器参数中的 SSA 变量信息。
-     * 必须在修改指令之后调用。
+     * 修正寄存器参数中的 SSA 变量信息
+     * 必须在修改指令之后调用
      */
     public void rebindArgs() {
         RegisterArg resArg = getResult();
@@ -743,7 +743,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断该指令是否可能抛出异常。
+     * 判断该指令是否可能抛出异常
      *
      * @return 如果指令可能抛出异常则返回 true
      */
@@ -769,8 +769,8 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 从源指令继承元数据（源码行、代码注释、偏移量等）。
-     * 对 RETURN 指令做特殊处理：合成指令会重写偏移量和注释。
+     * 从源指令继承元数据（源码行、代码注释、偏移量等）
+     * 对 RETURN 指令做特殊处理：合成指令会重写偏移量和注释
      *
      * @param sourceInsn 源指令
      */
@@ -790,7 +790,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 仅按对象标识（引用）比较，计算哈希码。
+     * 仅按对象标识（引用）比较，计算哈希码
      */
     @SuppressWarnings("EmptyMethod")
     @Override
@@ -799,7 +799,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 仅按对象标识（引用）比较是否相等。
+     * 仅按对象标识（引用）比较是否相等
      */
     @Override
     public final boolean equals(Object obj) {
@@ -807,7 +807,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 追加参数内容，若行过长则换行。
+     * 追加参数内容，若行过长则换行
      *
      * @param sb 目标字符串构建器
      * @return 如果参数发生了换行则返回 true
@@ -829,7 +829,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 返回指令属性的字符串表示。
+     * 返回指令属性的字符串表示
      *
      * @return 属性字符串
      */
@@ -840,7 +840,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 将指令属性及源码行信息追加到字符串构建器。
+     * 将指令属性及源码行信息追加到字符串构建器
      *
      * @param sb 目标字符串构建器
      */
@@ -854,7 +854,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 返回指令的基础字符串表示（偏移量、类型、结果和参数）。
+     * 返回指令的基础字符串表示（偏移量、类型、结果和参数）
      *
      * @return 基础字符串
      */
@@ -872,7 +872,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 返回指令的完整字符串表示（基础字符串 + 属性字符串）。
+     * 返回指令的完整字符串表示（基础字符串 + 属性字符串）
      *
      * @return 指令的字符串表示
      */

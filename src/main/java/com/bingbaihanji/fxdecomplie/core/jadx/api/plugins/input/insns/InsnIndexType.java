@@ -1,10 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns;
 
 /**
- * 指令索引类型枚举。
+ * 指令索引类型枚举
  * <p>
  * 表示指令中内嵌索引所引用的常量池条目的类别，
- * 用于确定该索引应解析为哪种引用。
+ * 用于确定该索引应解析为哪种引用
  */
 public enum InsnIndexType {
     /** 无索引引用 */

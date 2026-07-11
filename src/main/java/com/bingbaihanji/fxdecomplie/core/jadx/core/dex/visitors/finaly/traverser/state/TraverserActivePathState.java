@@ -1,6 +1,4 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.state;
-import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
-import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.BlockNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
@@ -9,11 +7,16 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.Centralit
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.SameInstructionsStrategy;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.GlobalTraverserSourceState;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.finaly.traverser.factory.TraverserStateFactory;
-import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
+import com.bingbaihanji.fxdecomplie.util.collection.Pair;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -61,6 +64,7 @@ public class TraverserActivePathState {
         this.finallyCompletionMonitor = new BlockCompletionMonitorMap();
         this.candidateCompletionMonitor = new BlockCompletionMonitorMap();
     }
+
     /**
      * Creates a new instance of a traversal active path. This constructor is used to duplicate a
      * state between a previous traverser controller and is a liaison for initialising non-null

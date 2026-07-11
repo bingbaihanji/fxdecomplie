@@ -34,11 +34,11 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * 插件上下文，作为单个插件运行时的核心载体。
+ * 插件上下文，作为单个插件运行时的核心载体
  * <p>
  * 同时实现 {@link JadxPluginContext}（提供给插件访问反编译器能力的接口）与
  * {@link JadxPluginRuntimeData}（对外暴露插件运行时数据），并负责在正确的类加载器下
- * 初始化/卸载插件、注册代码输入、处理选项与输入哈希等。
+ * 初始化/卸载插件、注册代码输入、处理选项与输入哈希等
  */
 public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, Comparable<PluginContext> {
     /** 所属的反编译器实例 */
@@ -64,7 +64,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     private boolean initialized;
 
     /**
-     * 构造插件上下文。
+     * 构造插件上下文
      *
      * @param decompiler  所属反编译器实例
      * @param pluginsData 全局插件数据
@@ -79,7 +79,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 初始化插件（在插件类加载器上下文中调用 {@link JadxPlugin#init}），并标记为已初始化。
+     * 初始化插件（在插件类加载器上下文中调用 {@link JadxPlugin#init}），并标记为已初始化
      */
     public void init() {
         classLoaderWrap(() -> {
@@ -89,7 +89,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 卸载插件；仅当插件已初始化时才执行卸载逻辑。
+     * 卸载插件 仅当插件已初始化时才执行卸载逻辑
      */
     public void unload() {
         if (initialized) {
@@ -98,7 +98,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 在插件类加载器作为线程上下文类加载器的环境下执行给定任务，执行完成后恢复原有类加载器。
+     * 在插件类加载器作为线程上下文类加载器的环境下执行给定任务，执行完成后恢复原有类加载器
      *
      * @param task 需要在插件类加载器上下文中执行的任务
      */
@@ -113,43 +113,43 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         }
     }
 
-    /** 插件是否已初始化。 */
+    /** 插件是否已初始化 */
     @Override
     public boolean isInitialized() {
         return initialized;
     }
 
-    /** 获取反编译参数。 */
+    /** 获取反编译参数 */
     @Override
     public JadxArgs getArgs() {
         return decompiler.getArgs();
     }
 
-    /** 获取所属的反编译器实例。 */
+    /** 获取所属的反编译器实例 */
     @Override
     public JadxDecompiler getDecompiler() {
         return decompiler;
     }
 
-    /** 向反编译器注册一个自定义 pass。 */
+    /** 向反编译器注册一个自定义 pass */
     @Override
     public void addPass(JadxPass pass) {
         decompiler.addCustomPass(pass);
     }
 
-    /** 注册一个代码输入。 */
+    /** 注册一个代码输入 */
     @Override
     public void addCodeInput(JadxCodeInput codeInput) {
         this.codeInputs.add(codeInput);
     }
 
-    /** 获取插件注册的所有代码输入。 */
+    /** 获取插件注册的所有代码输入 */
     @Override
     public List<JadxCodeInput> getCodeInputs() {
         return codeInputs;
     }
 
-    /** 注册插件选项，并将当前已有的插件选项值应用到其中。 */
+    /** 注册插件选项，并将当前已有的插件选项值应用到其中 */
     @Override
     public void registerOptions(JadxPluginOptions options) {
         try {
@@ -160,14 +160,14 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         }
     }
 
-    /** 注册输入哈希提供者，用于自定义计算插件输入的哈希值。 */
+    /** 注册输入哈希提供者，用于自定义计算插件输入的哈希值 */
     @Override
     public void registerInputsHashSupplier(Supplier<String> supplier) {
         this.inputsHashSupplier = supplier;
     }
 
     /**
-     * 获取插件输入哈希：若注册了自定义提供者则使用之，否则回退到基于选项的默认哈希。
+     * 获取插件输入哈希：若注册了自定义提供者则使用之，否则回退到基于选项的默认哈希
      */
     @Override
     public String getInputsHash() {
@@ -182,8 +182,8 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 计算基于插件选项的默认哈希；仅统计会影响代码生成的选项
-     * （跳过带有 {@link OptionFlag#NOT_CHANGING_CODE} 标志的选项）。
+     * 计算基于插件选项的默认哈希 仅统计会影响代码生成的选项
+     * （跳过带有 {@link OptionFlag#NOT_CHANGING_CODE} 标志的选项）
      */
     private String defaultOptionsHash() {
         if (options == null) {
@@ -199,72 +199,72 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         return ByteUtils.md5Sum(sb.toString());
     }
 
-    /** 获取事件总线。 */
+    /** 获取事件总线 */
     @Override
     public IJadxEvents events() {
         return decompiler.events();
     }
 
-    /** 获取资源加载器。 */
+    /** 获取资源加载器 */
     @Override
     public IResourcesLoader getResourcesLoader() {
         return decompiler.getResourcesLoader();
     }
 
-    /** 获取应用级上下文。 */
+    /** 获取应用级上下文 */
     public AppContext getAppContext() {
         return appContext;
     }
 
-    /** 设置应用级上下文。 */
+    /** 设置应用级上下文 */
     public void setAppContext(AppContext appContext) {
         this.appContext = appContext;
     }
 
-    /** 获取 GUI 上下文（在非 GUI 环境下可能为空）。 */
+    /** 获取 GUI 上下文（在非 GUI 环境下可能为空） */
     @Override
     public @Nullable JadxGuiContext getGuiContext() {
         return appContext.getGuiContext();
     }
 
-    /** 获取当前插件实例。 */
+    /** 获取当前插件实例 */
     @Override
     public JadxPlugin getPluginInstance() {
         return plugin;
     }
 
-    /** 获取当前插件的元信息。 */
+    /** 获取当前插件的元信息 */
     @Override
     public JadxPluginInfo getPluginInfo() {
         return pluginInfo;
     }
 
-    /** 获取插件 ID。 */
+    /** 获取插件 ID */
     @Override
     public String getPluginId() {
         return pluginInfo.getPluginId();
     }
 
-    /** 获取插件注册的选项（可能为空）。 */
+    /** 获取插件注册的选项（可能为空） */
     @Override
     public @Nullable JadxPluginOptions getOptions() {
         return options;
     }
 
-    /** 获取所有插件的集合视图。 */
+    /** 获取所有插件的集合视图 */
     @Override
     public IJadxPlugins plugins() {
         return pluginsData;
     }
 
-    /** 获取当前插件对应的文件数据访问接口。 */
+    /** 获取当前插件对应的文件数据访问接口 */
     @Override
     public IJadxFiles files() {
         return new JadxFilesData(pluginInfo, appContext.getFilesGetter());
     }
 
     /**
-     * 加载给定的代码文件，将所有已注册代码输入的加载结果合并为一个代码加载器。
+     * 加载给定的代码文件，将所有已注册代码输入的加载结果合并为一个代码加载器
      *
      * @param files     待加载的文件路径列表
      * @param closeable 加载完成后需要关闭的资源（可能为空）
@@ -277,13 +277,13 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
                 closeable);
     }
 
-    /** 获取 ZIP 读取器。 */
+    /** 获取 ZIP 读取器 */
     @Override
     public ZipReader getZipReader() {
         return decompiler.getZipReader();
     }
 
-    /** 基于插件 ID 判断两个插件上下文是否相等。 */
+    /** 基于插件 ID 判断两个插件上下文是否相等 */
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -295,19 +295,19 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         return this.getPluginId().equals(((PluginContext) other).getPluginId());
     }
 
-    /** 基于插件 ID 计算哈希值。 */
+    /** 基于插件 ID 计算哈希值 */
     @Override
     public int hashCode() {
         return getPluginId().hashCode();
     }
 
-    /** 基于插件 ID 进行比较（用于排序）。 */
+    /** 基于插件 ID 进行比较（用于排序） */
     @Override
     public int compareTo(PluginContext other) {
         return this.getPluginId().compareTo(other.getPluginId());
     }
 
-    /** 返回插件 ID 作为字符串表示。 */
+    /** 返回插件 ID 作为字符串表示 */
     @Override
     public String toString() {
         return getPluginId();

@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
+import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxAdapterOptions;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter.Category;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter.ParamType;
@@ -39,7 +40,10 @@ public final class JadxParameters {
             ofInt("deobfuscationMinLength", "0"),
             ofInt("deobfuscationMaxLength", "2147483647"),
             ofInt("sourceNameRepeatLimit", "10"),
-            ofInt("typeUpdatesLimitCount", "10")
+            ofInt("typeUpdatesLimitCount", "10"),
+            adv(JadxAdapterOptions.LOAD_WORKSPACE_DEPENDENCIES, "true"),
+            ofInt(JadxAdapterOptions.WORKSPACE_DEPENDENCY_LIMIT, "96"),
+            ofInt(JadxAdapterOptions.WORKSPACE_DEPENDENCY_DEPTH, "1")
     );
 
     /** 私有构造器,防止实例化常量类 */
@@ -56,6 +60,12 @@ public final class JadxParameters {
     /** 创建一个分类为 {@link Category#ADVANCED} 的整数型参数 */
     private static DecompilerParameter ofInt(String key, String defaultValue) {
         return new DecompilerParameter(key, ParamType.INTEGER, defaultValue,
+                "engine.jadx." + key, "engine.jadx." + key + ".help", Category.ADVANCED, null);
+    }
+
+    /** 创建一个分类为 {@link Category#ADVANCED} 的布尔型参数 */
+    private static DecompilerParameter adv(String key, String defaultValue) {
+        return new DecompilerParameter(key, ParamType.BOOLEAN, defaultValue,
                 "engine.jadx." + key, "engine.jadx." + key + ".help", Category.ADVANCED, null);
     }
 }

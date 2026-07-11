@@ -191,7 +191,7 @@ final class DotGraphRenderer {
                     key -> new ArrayList<>()).add(node);
         }
 
-        // BT 表示自底向上,主轴为垂直；其余按 LR 水平处理
+        // BT 表示自底向上,主轴为垂直 其余按 LR 水平处理
         boolean leftToRight = !"BT".equalsIgnoreCase(graph.rankDir());
 
         double maxWidth = graph.nodes().stream()
@@ -228,7 +228,7 @@ final class DotGraphRenderer {
     /**
      * 拓扑排序 + BFS 计算节点层级
      *
-     * <p>入度为 0 的节点为第 0 层每处理一个节点,其后继的入度减 1；
+     * <p>入度为 0 的节点为第 0 层每处理一个节点,其后继的入度减 1 
      * 入度归零时加入队列,层级 = 前驱层级 + 1若有环则环内节点按 BFS
      * 实际遍历顺序确定层级</p>
      *
@@ -472,7 +472,7 @@ final class DotGraphRenderer {
     /**
      * 根据背景色智能选择文字颜色
      *
-     * <p>若用户指定了 fontColor 且为合法 CSS 颜色,直接使用；否则根据填充色的
+     * <p>若用户指定了 fontColor 且为合法 CSS 颜色,直接使用 否则根据填充色的
      * BT.601 相对亮度自动选择：亮底黑字 / 暗底白字</p>
      */
     private static String chooseTextColor(String fill, String configured) {

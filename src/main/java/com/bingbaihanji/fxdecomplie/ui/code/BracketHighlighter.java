@@ -382,7 +382,7 @@ public final class BracketHighlighter {
     /**
      * 组合括号高亮的 {@link SyntaxDecorator} 实现
      *
-     * <p>对于不包含括号的段落完整委托给 {@link RegexHighlighter}；
+     * <p>对于不包含括号的段落完整委托给 {@link RegexHighlighter}
      * 对于包含括号的段落,使用相同的分词策略重新构建 RichParagraph,
      * 通过 {@link RegexHighlighter#classifyToken} 获取每个 token 的正确样式,
      * 仅在括号字符位置覆盖为高亮样式</p>
@@ -464,7 +464,7 @@ public final class BracketHighlighter {
             return offset;
         }
 
-        /** 若文档偏移 p 在 [rangeStart, rangeEnd) 内,返回局部偏移；否则返回 -1 */
+        /** 若文档偏移 p 在 [rangeStart, rangeEnd) 内,返回局部偏移 否则返回 -1 */
         private static int toLocal(int p, int rangeStart, int rangeEnd) {
             if (p >= rangeStart && p < rangeEnd) {
                 return p - rangeStart;
@@ -473,7 +473,7 @@ public final class BracketHighlighter {
         }
 
         /**
-         * 创建段落的高亮样式若当前段落包含括号位置,则重新分词并叠加括号高亮；
+         * 创建段落的高亮样式若当前段落包含括号位置,则重新分词并叠加括号高亮 
          * 否则完整委托给底层 {@link RegexHighlighter}
          */
         @Override

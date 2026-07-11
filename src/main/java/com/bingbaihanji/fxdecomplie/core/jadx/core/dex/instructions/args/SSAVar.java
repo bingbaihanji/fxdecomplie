@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args;
 
+import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.RegDebugInfoAttr;
@@ -8,7 +9,6 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.PhiInsn;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeInfo;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,11 +19,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * SSA（静态单赋值）变量表示类。
+ * SSA（静态单赋值）变量表示类
  * <p>
  * 每个 SSA 变量由寄存器编号（regNum）和版本号（version）唯一标识，
  * 记录了变量的赋值点（assign）和所有使用点（useList），
- * 并维护类型推断信息（typeInfo）和关联的代码变量（codeVar）。
+ * 并维护类型推断信息（typeInfo）和关联的代码变量（codeVar）
  * </p>
  */
 public class SSAVar implements Comparable<SSAVar> {
@@ -80,7 +80,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 设置新的赋值点。如果存在旧赋值点且与新赋值点不同，
+     * 设置新的赋值点如果存在旧赋值点且与新赋值点不同，
      * 会先重置旧赋值点的 SSA 变量引用
      *
      * @param assign 新的赋值点寄存器参数
@@ -111,7 +111,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 如果类型已标记为不可变，则返回赋值点的初始类型；否则返回 null
+     * 如果类型已标记为不可变，则返回赋值点的初始类型 否则返回 null
      */
     @Nullable
     public ArgType getImmutableType() {
@@ -127,7 +127,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 将该 SSA 变量的类型标记为不可变。如果指定类型与当前初始类型不同，会强制更新类型
+     * 将该 SSA 变量的类型标记为不可变如果指定类型与当前初始类型不同，会强制更新类型
      *
      * @param type 要标记为不可变的类型
      */
@@ -143,7 +143,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 设置变量类型。如果类型已标记为不可变且新类型不同，则抛出异常
+     * 设置变量类型如果类型已标记为不可变且新类型不同，则抛出异常
      *
      * @param type 要设置的类型
      * @throws JadxRuntimeException 当尝试更改不可变类型时
@@ -170,7 +170,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 注册一个使用点。如果该参数之前关联了其他 SSA 变量，会先从旧变量的使用列表中移除
+     * 注册一个使用点如果该参数之前关联了其他 SSA 变量，会先从旧变量的使用列表中移除
      *
      * @param arg 引用该 SSA 变量的寄存器参数
      */
@@ -319,7 +319,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 设置关联的代码变量，并将自身注册到该代码变量中；
+     * 设置关联的代码变量，并将自身注册到该代码变量中 
      * 若类型为不可变则同步设置代码变量类型
      *
      * @param codeVar 要关联的代码变量

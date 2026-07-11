@@ -16,8 +16,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 常量存储器，用于管理类中的常量字段信息。
- * 支持全局常量和按类隔离的常量存储，可用于常量替换优化。
+ * 常量存储器，用于管理类中的常量字段信息
+ * 支持全局常量和按类隔离的常量存储，可用于常量替换优化
  */
 public class ConstStorage {
 
@@ -31,7 +31,7 @@ public class ConstStorage {
     private Map<Integer, String> resourcesNames = new HashMap<>();
 
     /**
-     * 构造常量存储器。
+     * 构造常量存储器
      *
      * @param args Jadx 配置参数，决定是否启用常量替换
      */
@@ -40,7 +40,7 @@ public class ConstStorage {
     }
 
     /**
-     * 添加常量字段。根据可见性决定存储到全局或类级别。
+     * 添加常量字段根据可见性决定存储到全局或类级别
      *
      * @param fld     字段节点
      * @param value   常量值
@@ -55,7 +55,7 @@ public class ConstStorage {
     }
 
     /**
-     * 添加全局常量字段。
+     * 添加全局常量字段
      *
      * @param fld   字段引用
      * @param value 常量值
@@ -65,7 +65,7 @@ public class ConstStorage {
     }
 
     /**
-     * 移除指定类的所有常量记录，包括类级别和全局中属于该类的条目。
+     * 移除指定类的所有常量记录，包括类级别和全局中属于该类的条目
      *
      * @param cls 要移除的类节点
      */
@@ -80,9 +80,9 @@ public class ConstStorage {
     }
 
     /**
-     * 查找与给定值匹配的常量字段。
-     * 按以下优先级查找：资源字段 -> 当前类及父类 -> 全局常量。
-     * 如果值在全局中存在重复，则不进行替换以避免歧义。
+     * 查找与给定值匹配的常量字段
+     * 按以下优先级查找：资源字段 -> 当前类及父类 -> 全局常量
+     * 如果值在全局中存在重复，则不进行替换以避免歧义
      *
      * @param cls          当前类节点
      * @param value        要查找的常量值
@@ -129,8 +129,8 @@ public class ConstStorage {
     }
 
     /**
-     * 根据资源 ID 查找对应的资源字段。
-     * 从资源名称映射中解析类型名和字段名，然后在应用资源类的内部类中查找。
+     * 根据资源 ID 查找对应的资源字段
+     * 从资源名称映射中解析类型名和字段名，然后在应用资源类的内部类中查找
      *
      * @param value 资源 ID
      * @param root  根节点
@@ -162,10 +162,10 @@ public class ConstStorage {
     }
 
     /**
-     * 根据字面量参数查找对应的常量字段。
+     * 根据字面量参数查找对应的常量字段
      * 根据参数的原始类型（boolean、char、byte、short、int、long、float、double）
-     * 将字面量转换为对应类型的值，然后委托 {@link #getConstField} 查找。
-     * 对于较小的绝对值，不搜索全局常量以减少误匹配。
+     * 将字面量转换为对应类型的值，然后委托 {@link #getConstField} 查找
+     * 对于较小的绝对值，不搜索全局常量以减少误匹配
      *
      * @param cls 当前类节点
      * @param arg 字面量参数
@@ -206,7 +206,7 @@ public class ConstStorage {
     }
 
     /**
-     * 获取资源 ID 到资源名称的映射。
+     * 获取资源 ID 到资源名称的映射
      *
      * @return 资源 ID 到资源名称的映射
      */
@@ -215,7 +215,7 @@ public class ConstStorage {
     }
 
     /**
-     * 设置资源 ID 到资源名称的映射。
+     * 设置资源 ID 到资源名称的映射
      *
      * @param resourcesNames 资源 ID 到资源名称的映射
      */
@@ -224,7 +224,7 @@ public class ConstStorage {
     }
 
     /**
-     * 获取全局常量字段映射（值到字段引用）。
+     * 获取全局常量字段映射（值到字段引用）
      *
      * @return 全局常量字段映射
      */
@@ -233,7 +233,7 @@ public class ConstStorage {
     }
 
     /**
-     * 判断是否启用了常量替换优化。
+     * 判断是否启用了常量替换优化
      *
      * @return 启用返回 true，否则返回 false
      */
@@ -242,8 +242,8 @@ public class ConstStorage {
     }
 
     /**
-     * 值存储，维护值到字段引用的映射关系。
-     * 当同一个值对应多个字段时，标记为重复值并移除映射，以避免歧义替换。
+     * 值存储，维护值到字段引用的映射关系
+     * 当同一个值对应多个字段时，标记为重复值并移除映射，以避免歧义替换
      */
     private static final class ValueStorage {
         private final Map<Object, IFieldInfoRef> values = new ConcurrentHashMap<>();
@@ -260,8 +260,8 @@ public class ConstStorage {
         }
 
         /**
-         * 存储值与字段的映射关系。
-         * 如果该值已存在重复记录，或插入时发现冲突，则标记为重复值并移除映射。
+         * 存储值与字段的映射关系
+         * 如果该值已存在重复记录，或插入时发现冲突，则标记为重复值并移除映射
          *
          * @return 如果该值是重复值（即多个字段拥有相同的常量值）则返回 true
          */

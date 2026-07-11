@@ -1,5 +1,4 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
-import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeWriter;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.SimpleCodeWriter;
@@ -12,10 +11,10 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.CodegenException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public class CheckRegions extends AbstractVisitor {

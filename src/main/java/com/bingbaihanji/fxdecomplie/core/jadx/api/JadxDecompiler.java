@@ -45,9 +45,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Jadx 反编译器的核心入口类，提供加载、反编译和保存功能。
+ * Jadx 反编译器的核心入口类，提供加载、反编译和保存功能
  * <p>
- * 实现了 {@link Closeable} 接口，支持 try-with-resources 自动释放资源。
+ * 实现了 {@link Closeable} 接口，支持 try-with-resources 自动释放资源
  * <p>
  * Jadx API 使用示例：
  *
@@ -127,7 +127,7 @@ public final class JadxDecompiler implements Closeable {
     }
 
     /**
-     * 加载并初始化反编译器。
+     * 加载并初始化反编译器
      * <p>
      * 执行流程：重置状态 -> 验证参数 -> 加载插件 -> 加载输入文件 -> 初始化根节点 ->
      * 加载类和资源 -> 初始化类路径 -> 合并处理阶段 -> 运行预反编译阶段 -> 初始化各处理阶段
@@ -155,9 +155,9 @@ public final class JadxDecompiler implements Closeable {
     }
 
     /**
-     * 重新加载处理阶段和插件，但不重新处理类和输入文件。
+     * 重新加载处理阶段和插件，但不重新处理类和输入文件
      * <p>
-     * 适用于需要在不重新加载输入文件的情况下刷新插件和处理逻辑的场景。
+     * 适用于需要在不重新加载输入文件的情况下刷新插件和处理逻辑的场景
      */
     public void reloadPasses() {
         LOG.info("reloading (passes only) ...");

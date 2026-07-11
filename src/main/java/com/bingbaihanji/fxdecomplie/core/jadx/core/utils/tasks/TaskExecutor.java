@@ -2,8 +2,6 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.utils.tasks;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.utils.tasks.ITaskExecutor;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
-import com.bingbaihanji.fxdecomplie.util.NamedThreadFactory;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -19,9 +17,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 任务执行器实现，负责调度和执行分阶段的任务。
- * 支持并行和顺序两种执行模式（类似 fork-join 模式）。
- * 任务按阶段顺序执行，每个阶段可以是并行或顺序执行。
+ * 任务执行器实现，负责调度和执行分阶段的任务
+ * 支持并行和顺序两种执行模式（类似 fork-join 模式）
+ * 任务按阶段顺序执行，每个阶段可以是并行或顺序执行
  */
 public class TaskExecutor implements ITaskExecutor {
     private static final Logger LOG = LoggerFactory.getLogger(TaskExecutor.class);
@@ -45,9 +43,9 @@ public class TaskExecutor implements ITaskExecutor {
     private @Nullable Error terminateError;
 
     /**
-     * 等待指定执行器终止。
+     * 等待指定执行器终止
      * <p>
-     * 最长等待 10 天，超时抛出运行时异常；等待被中断时恢复当前线程的中断状态。
+     * 最长等待 10 天，超时抛出运行时异常 等待被中断时恢复当前线程的中断状态
      *
      * @param executor 待等待的执行器服务
      * @throws JadxRuntimeException 如果在超时时间内仍未终止
@@ -64,8 +62,8 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 添加一个并行执行阶段。该阶段内的所有任务会在多个线程上并行执行。
-     * 空列表将被忽略。
+     * 添加一个并行执行阶段该阶段内的所有任务会在多个线程上并行执行
+     * 空列表将被忽略
      *
      * @param parallelTasks 需要并行执行的任务列表
      */
@@ -79,8 +77,8 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 添加一个顺序执行阶段。该阶段内的所有任务会在单线程上按顺序依次执行。
-     * 空列表将被忽略。
+     * 添加一个顺序执行阶段该阶段内的所有任务会在单线程上按顺序依次执行
+     * 空列表将被忽略
      *
      * @param seqTasks 需要顺序执行的任务列表
      */
@@ -94,7 +92,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 添加单个顺序执行任务，作为独立阶段追加到执行队列。
+     * 添加单个顺序执行任务，作为独立阶段追加到执行队列
      *
      * @param seqTask 需要顺序执行的单个任务
      */
@@ -104,7 +102,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 获取当前并行执行的线程数。
+     * 获取当前并行执行的线程数
      *
      * @return 线程数
      */
@@ -114,7 +112,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 设置并行执行的线程数。
+     * 设置并行执行的线程数
      *
      * @param count 线程数
      */
@@ -124,7 +122,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 获取已注册的任务总数。
+     * 获取已注册的任务总数
      *
      * @return 任务总数
      */
@@ -134,7 +132,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 获取当前已完成的任务数量（执行进度）。
+     * 获取当前已完成的任务数量（执行进度）
      *
      * @return 已完成的任务数
      */
@@ -144,9 +142,9 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 启动执行器。
+     * 启动执行器
      * <p>
-     * 创建单线程调度器并在其中异步运行所有阶段。若执行器已在运行则抛出异常。
+     * 创建单线程调度器并在其中异步运行所有阶段若执行器已在运行则抛出异常
      *
      * @throws IllegalStateException 如果执行器已经在运行
      */
@@ -165,7 +163,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 停止执行：重置运行标志、置终止标志并关闭内部执行器。
+     * 停止执行：重置运行标志、置终止标志并关闭内部执行器
      */
     private void stopExecution() {
         synchronized (executorSync) {
@@ -179,9 +177,9 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 阻塞等待执行结束。
+     * 阻塞等待执行结束
      * <p>
-     * 若执行过程中记录了错误（{@link Error}），等待结束后将其重新抛出。
+     * 若执行过程中记录了错误（{@link Error}），等待结束后将其重新抛出
      */
     @Override
     public void awaitTermination() {
@@ -196,7 +194,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 请求终止执行。设置终止标志，后续任务将不再执行。
+     * 请求终止执行设置终止标志，后续任务将不再执行
      */
     @Override
     public void terminate() {
@@ -204,8 +202,8 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 因发生错误而终止执行：记录错误信息、置终止标志并立即关闭执行器。
-     * 错误将在 {@link #awaitTermination()} 时重新抛出。
+     * 因发生错误而终止执行：记录错误信息、置终止标志并立即关闭执行器
+     * 错误将在 {@link #awaitTermination()} 时重新抛出
      *
      * @param error 触发终止的错误
      */
@@ -220,7 +218,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 判断执行器是否正在终止。
+     * 判断执行器是否正在终止
      *
      * @return 正在终止返回 true
      */
@@ -230,7 +228,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 判断执行器是否正在运行。
+     * 判断执行器是否正在运行
      *
      * @return 正在运行返回 true
      */
@@ -240,7 +238,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 获取内部使用的执行器服务实例。
+     * 获取内部使用的执行器服务实例
      *
      * @return 内部执行器，未启动时可能为 null
      */
@@ -250,10 +248,10 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 逐阶段运行所有任务。
+     * 逐阶段运行所有任务
      * <p>
-     * 顺序阶段（或线程数为 1 时）在当前线程逐个执行；并行阶段创建固定大小线程池并发执行，
-     * 并等待其全部完成。任一阶段后若检测到终止标志则提前退出。执行结束时统一停止执行器。
+     * 顺序阶段（或线程数为 1 时）在当前线程逐个执行 并行阶段创建固定大小线程池并发执行，
+     * 并等待其全部完成任一阶段后若检测到终止标志则提前退出执行结束时统一停止执行器
      */
     private void runStages() {
         try {
@@ -282,10 +280,10 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 包装并执行单个任务。
+     * 包装并执行单个任务
      * <p>
-     * 若已处于终止状态则跳过；正常完成后递增进度计数；捕获 {@link Error} 触发错误终止，
-     * 捕获 {@link Exception} 仅记录日志而不中断整体执行。
+     * 若已处于终止状态则跳过 正常完成后递增进度计数 捕获 {@link Error} 触发错误终止，
+     * 捕获 {@link Exception} 仅记录日志而不中断整体执行
      *
      * @param task 待执行的任务
      */
@@ -310,7 +308,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 执行阶段，封装一组任务及其执行类型。
+     * 执行阶段，封装一组任务及其执行类型
      */
     private static final class ExecStage {
         private final ExecType type;

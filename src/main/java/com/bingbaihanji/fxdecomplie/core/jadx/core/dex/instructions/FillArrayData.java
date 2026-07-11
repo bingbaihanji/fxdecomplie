@@ -13,10 +13,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * 表示 Dex 字节码中的 fill-array-data 指令。
+ * 表示 Dex 字节码中的 fill-array-data 指令
  * <p>
  * 该指令用于填充数组的初始数据，根据元素大小（1/2/4/8 字节）推断元素类型，
- * 并支持将原始字节数组数据转换为字面量参数列表。
+ * 并支持将原始字节数组数据转换为字面量参数列表
  * </p>
  */
 public final class FillArrayData extends InsnNode {
@@ -40,7 +40,7 @@ public final class FillArrayData extends InsnNode {
     private ArgType elemType;
 
     /**
-     * 根据输入载荷构造填充数组数据指令。
+     * 根据输入载荷构造填充数组数据指令
      *
      * @param payload 数组数据载荷
      */
@@ -49,7 +49,7 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 根据原始数据、元素个数和元素大小构造填充数组数据指令。
+     * 根据原始数据、元素个数和元素大小构造填充数组数据指令
      *
      * @param data    原始数组数据
      * @param size    元素个数
@@ -64,7 +64,7 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 根据元素宽度（字节数）推断对应的元素类型。
+     * 根据元素宽度（字节数）推断对应的元素类型
      *
      * @param elementWidthUnit 元素宽度（0/1/2/4/8 字节）
      * @return 推断出的 ArgType
@@ -87,7 +87,7 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 获取数组原始数据对象。
+     * 获取数组原始数据对象
      *
      * @return 原始数据（byte[]/short[]/int[]/long[] 之一）
      */
@@ -96,7 +96,7 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 获取数组元素个数。
+     * 获取数组元素个数
      *
      * @return 元素数量
      */
@@ -105,7 +105,7 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 获取数组元素类型。
+     * 获取数组元素类型
      *
      * @return 元素 ArgType
      */
@@ -114,9 +114,9 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 将数组原始数据转换为指定类型的字面量参数列表。
+     * 将数组原始数据转换为指定类型的字面量参数列表
      * <p>
-     * 根据元素大小遍历底层数组，将每个元素包装为 LiteralArg。
+     * 根据元素大小遍历底层数组，将每个元素包装为 LiteralArg
      * </p>
      *
      * @param type 目标类型
@@ -173,7 +173,7 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 将数组数据转换为可读字符串。
+     * 将数组数据转换为可读字符串
      *
      * @return 数组数据的字符串表示
      */

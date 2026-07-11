@@ -6,9 +6,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
 
 /**
- * 完成类型推断的访问器，在 {@link TypeInferenceVisitor} 之后运行。
+ * 完成类型推断的访问器，在 {@link TypeInferenceVisitor} 之后运行
  * 检查每个变量的类型推断结果，对类型推断失败的变量添加警告注释，
- * 并为未设置类型的代码变量设置默认未知类型。
+ * 并为未设置类型的代码变量设置默认未知类型
  */
 @JadxVisitor(
         name = "Finish Type Inference",

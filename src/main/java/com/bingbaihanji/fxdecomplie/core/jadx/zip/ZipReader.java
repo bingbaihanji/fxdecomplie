@@ -17,7 +17,7 @@ import java.util.function.Function;
 
 /**
  * Jadx 的 Zip 读取器包装类，提供自定义的 Zip 解析器（{@link JadxZipParser}），
- * 当自定义解析器无法处理时，自动回退到 Java 默认实现。
+ * 当自定义解析器无法处理时，自动回退到 Java 默认实现
  */
 public class ZipReader {
     private final ZipReaderOptions options;
@@ -43,8 +43,8 @@ public class ZipReader {
     }
 
     /**
-     * 打开指定的 Zip 文件并返回其内容。
-     * 优先使用自定义解析器，若失败则根据配置回退到默认实现。
+     * 打开指定的 Zip 文件并返回其内容
+     * 优先使用自定义解析器，若失败则根据配置回退到默认实现
      *
      * @param zipFile 要打开的 Zip 文件
      * @return Zip 文件的内容对象
@@ -71,8 +71,8 @@ public class ZipReader {
     }
 
     /**
-     * 遍历 Zip 文件中的所有有效条目。
-     * 访问者返回非 null 值时将停止遍历并返回该值。
+     * 遍历 Zip 文件中的所有有效条目
+     * 访问者返回非 null 值时将停止遍历并返回该值
      *
      * @param file    要遍历的 Zip 文件
      * @param visitor 条目访问者函数
@@ -94,7 +94,7 @@ public class ZipReader {
     }
 
     /**
-     * 读取 Zip 文件中的所有非目录条目，并通过访问者处理每个条目及其输入流。
+     * 读取 Zip 文件中的所有非目录条目，并通过访问者处理每个条目及其输入流
      *
      * @param file    要读取的 Zip 文件
      * @param visitor 条目和输入流的消费者
@@ -118,10 +118,10 @@ public class ZipReader {
     }
 
     /**
-     * 根据文件类型和配置标志选择合适的 Zip 解析器。
+     * 根据文件类型和配置标志选择合适的 Zip 解析器
      * <p>
-     * 对于 .apk 文件或设置了禁用回退标志时，始终使用 Jadx 自定义解析器；
-     * 当自定义解析器无法打开文件，或配置了以回退解析器为默认时，使用回退解析器。
+     * 对于 .apk 文件或设置了禁用回退标志时，始终使用 Jadx 自定义解析器 
+     * 当自定义解析器无法打开文件，或配置了以回退解析器为默认时，使用回退解析器
      *
      * @param zipFile    要解析的 Zip 文件
      * @param jadxParser Jadx 自定义解析器实例

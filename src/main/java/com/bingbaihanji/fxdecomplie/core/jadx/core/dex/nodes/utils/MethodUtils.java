@@ -22,11 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 方法工具类。
+ * 方法工具类
  * <p>
  * 提供与方法相关的辅助能力，包括解析方法详情与方法节点、判断被跳过的参数、
- * 在类继承体系中查找重载方法、获取方法的重写基方法及原始声明类等。
- * 主要服务于反编译过程中的方法调用解析与类型推断。
+ * 在类继承体系中查找重载方法、获取方法的重写基方法及原始声明类等
+ * 主要服务于反编译过程中的方法调用解析与类型推断
  * </p>
  */
 public class MethodUtils {
@@ -37,11 +37,11 @@ public class MethodUtils {
     }
 
     /**
-     * 获取方法调用指令对应的方法详情。
-     * 优先读取指令上已附加的 {@link AType#METHOD_DETAILS} 属性，否则回退到被调用方法的解析。
+     * 获取方法调用指令对应的方法详情
+     * 优先读取指令上已附加的 {@link AType#METHOD_DETAILS} 属性，否则回退到被调用方法的解析
      *
      * @param invokeNode 方法调用指令
-     * @return 方法详情；无法解析时返回 {@code null}
+     * @return 方法详情 无法解析时返回 {@code null}
      */
     @Nullable
     public IMethodDetails getMethodDetails(BaseInvokeNode invokeNode) {
@@ -53,11 +53,11 @@ public class MethodUtils {
     }
 
     /**
-     * 根据方法信息获取方法详情。
-     * 优先解析为工程内的 {@link MethodNode}，否则回退到类路径信息中的方法详情。
+     * 根据方法信息获取方法详情
+     * 优先解析为工程内的 {@link MethodNode}，否则回退到类路径信息中的方法详情
      *
      * @param callMth 被调用方法的信息
-     * @return 方法详情；无法解析时返回 {@code null}
+     * @return 方法详情 无法解析时返回 {@code null}
      */
     @Nullable
     public IMethodDetails getMethodDetails(MethodInfo callMth) {
@@ -69,10 +69,10 @@ public class MethodUtils {
     }
 
     /**
-     * 将方法调用指令解析为工程内的方法节点。
+     * 将方法调用指令解析为工程内的方法节点
      *
      * @param invokeNode 方法调用指令
-     * @return 对应的 {@link MethodNode}；若目标不是工程内方法则返回 {@code null}
+     * @return 对应的 {@link MethodNode} 若目标不是工程内方法则返回 {@code null}
      */
     @Nullable
     public MethodNode resolveMethod(BaseInvokeNode invokeNode) {
@@ -84,7 +84,7 @@ public class MethodUtils {
     }
 
     /**
-     * 判断方法调用中的某个参数是否应被跳过（不生成到反编译源码中）。
+     * 判断方法调用中的某个参数是否应被跳过（不生成到反编译源码中）
      *
      * @param invokeNode 方法调用指令
      * @param arg        待判断的参数
@@ -104,8 +104,8 @@ public class MethodUtils {
     }
 
     /**
-     * 从 {@code startCls} 开始，在类继承体系中查找同名且参数个数相同的方法（即是否存在重载）。
-     * 注意：{@code startCls} 可能与 {@code mthInfo.getDeclClass()} 不同。
+     * 从 {@code startCls} 开始，在类继承体系中查找同名且参数个数相同的方法（即是否存在重载）
+     * 注意：{@code startCls} 可能与 {@code mthInfo.getDeclClass()} 不同
      *
      * @param startCls 查找的起始类类型
      * @param mthInfo  待检查的方法信息
@@ -116,7 +116,7 @@ public class MethodUtils {
     }
 
     /**
-     * 从 {@code startCls} 开始，在类继承体系中收集所有与给定方法构成重载的方法详情。
+     * 从 {@code startCls} 开始，在类继承体系中收集所有与给定方法构成重载的方法详情
      *
      * @param startCls 查找的起始类类型
      * @param mthInfo  待检查的方法信息
@@ -129,10 +129,10 @@ public class MethodUtils {
     }
 
     /**
-     * 获取方法调用的泛型返回类型。
+     * 获取方法调用的泛型返回类型
      *
      * @param invokeNode 方法调用指令
-     * @return 含有泛型信息的返回类型；若返回类型不含泛型或无法解析则返回 {@code null}
+     * @return 含有泛型信息的返回类型 若返回类型不含泛型或无法解析则返回 {@code null}
      */
     @Nullable
     public ArgType getMethodGenericReturnType(BaseInvokeNode invokeNode) {
@@ -203,10 +203,10 @@ public class MethodUtils {
     }
 
     /**
-     * 获取方法所重写的基方法（若存在重写关系）。
+     * 获取方法所重写的基方法（若存在重写关系）
      *
      * @param mth 目标方法
-     * @return 被重写的基方法详情；若不存在重写关系则返回 {@code null}
+     * @return 被重写的基方法详情 若不存在重写关系则返回 {@code null}
      */
     @Nullable
     public IMethodDetails getOverrideBaseMth(MethodNode mth) {
@@ -218,9 +218,9 @@ public class MethodUtils {
     }
 
     /**
-     * 获取方法的原始声明类。
-     * 若方法为重写方法则返回其基方法的声明类；若为桥接方法则递归追溯被桥接方法的声明类；
-     * 否则返回方法自身的声明类。
+     * 获取方法的原始声明类
+     * 若方法为重写方法则返回其基方法的声明类 若为桥接方法则递归追溯被桥接方法的声明类 
+     * 否则返回方法自身的声明类
      *
      * @param mth 目标方法
      * @return 方法的原始声明类信息

@@ -58,7 +58,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      * 结构性修改次数,用于支持 fail-fast 迭代器
      *
      * <p>
-     * 新增、删除、清空属于结构性修改；仅替换已有 key 的 value 不属于结构性修改
+     * 新增、删除、清空属于结构性修改 仅替换已有 key 的 value 不属于结构性修改
      */
     private transient int modCount;
 
@@ -277,7 +277,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      * 返回 value 所在下标
      *
      * <p>
-     * value 没有排序信息,因此只能线性扫描；多个 key 映射到同一 value 时只返回其中一个
+     * value 没有排序信息,因此只能线性扫描 多个 key 映射到同一 value 时只返回其中一个
      *
      * @param value value
      * @return 存在时返回下标,不存在时返回 -1
@@ -383,7 +383,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      *
      * <p>
      * 该方法对应 Android 的 {@code append},用于「已知按 key 的 hash 升序批量灌入」的场景当新增 key 的 hash
-     * 不小于当前最后一个 hash 时,直接追加到末尾,跳过二分定位；若顺序条件不满足,则退化为 {@link #put(Object, Object)}
+     * 不小于当前最后一个 hash 时,直接追加到末尾,跳过二分定位 若顺序条件不满足,则退化为 {@link #put(Object, Object)}
      *
      * <p>
      * <b>注意：</b>与 {@link #put(Object, Object)} 不同,本方法在追加分支<b>不做去重检查</b>,因此有可能写入重复 key
@@ -685,7 +685,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      * 用函数结果替换所有 value
      *
      * <p>
-     * 替换 value 本身不是结构性修改；如果函数执行过程中改变了 Map 结构,则抛出 {@link ConcurrentModificationException}
+     * 替换 value 本身不是结构性修改 如果函数执行过程中改变了 Map 结构,则抛出 {@link ConcurrentModificationException}
      *
      * @param function 替换函数,不能为 null
      */

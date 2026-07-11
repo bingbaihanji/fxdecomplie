@@ -10,6 +10,7 @@ public class SpecialEdgeAttr implements IJadxAttribute {
     private final SpecialEdgeType type;
     private final BlockNode start;
     private final BlockNode end;
+
     public SpecialEdgeAttr(SpecialEdgeType type, BlockNode start, BlockNode end) {
         this.type = type;
         this.start = start;

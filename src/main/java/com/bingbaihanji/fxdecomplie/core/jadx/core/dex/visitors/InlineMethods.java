@@ -31,17 +31,17 @@ import java.util.List;
         runBefore = ModVisitor.class
 )
 /**
- * 方法内联访问器。
+ * 方法内联访问器
  * <p>
  * 将此前在 {@link MarkMethodsForInline} 中标记为可内联的方法调用替换为方法体本身，
- * 从而在反编译结果中消除多余的间接调用（如简单的 getter/setter 访问器）。
- * 内联过程中会完成寄存器重映射、结果值处理，并同步更新方法/字段/类的使用（usage）信息。
+ * 从而在反编译结果中消除多余的间接调用（如简单的 getter/setter 访问器）
+ * 内联过程中会完成寄存器重映射、结果值处理，并同步更新方法/字段/类的使用（usage）信息
  */
 public class InlineMethods extends AbstractVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(InlineMethods.class);
 
     /**
-     * 遍历方法的所有基本块，处理其中的 INVOKE 指令，尝试对其进行内联。
+     * 遍历方法的所有基本块，处理其中的 INVOKE 指令，尝试对其进行内联
      *
      * @param mth 待处理的方法节点
      */

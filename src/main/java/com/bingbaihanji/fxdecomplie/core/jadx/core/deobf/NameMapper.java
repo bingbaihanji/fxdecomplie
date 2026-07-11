@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils.notEmpty;
 
 /**
- * 名称映射工具类，提供 Java 标识符验证、可打印字符检查以及无效字符移除等功能。
+ * 名称映射工具类，提供 Java 标识符验证、可打印字符检查以及无效字符移除等功能
  */
 public class NameMapper {
 
@@ -85,7 +85,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否为 Java 保留字（关键字）。
+     * 判断给定字符串是否为 Java 保留字（关键字）
      *
      * @param str 待检查的字符串
      * @return 若为保留字则返回 true
@@ -95,7 +95,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否为有效的 Java 标识符（非空、非保留字且符合标识符规则）。
+     * 判断给定字符串是否为有效的 Java 标识符（非空、非保留字且符合标识符规则）
      *
      * @param str 待检查的字符串
      * @return 若为有效标识符则返回 true
@@ -107,7 +107,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否为有效的 Java 全限定标识符（以点号分隔的多段标识符）。
+     * 判断给定字符串是否为有效的 Java 全限定标识符（以点号分隔的多段标识符）
      *
      * @param str 待检查的字符串
      * @return 若为有效的全限定标识符则返回 true
@@ -119,7 +119,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否既是有效标识符又全部由可打印字符组成。
+     * 判断给定字符串是否既是有效标识符又全部由可打印字符组成
      *
      * @param str 待检查的字符串
      * @return 若有效且全部可打印则返回 true
@@ -129,7 +129,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定码点是否可作为 Java 标识符的起始字符。
+     * 判断给定码点是否可作为 Java 标识符的起始字符
      *
      * @param codePoint Unicode 码点
      * @return 若可作为标识符起始字符则返回 true
@@ -139,7 +139,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定码点是否可作为 Java 标识符的组成部分。
+     * 判断给定码点是否可作为 Java 标识符的组成部分
      *
      * @param codePoint Unicode 码点
      * @return 若可作为标识符组成部分则返回 true
@@ -149,7 +149,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符是否为可打印的 ASCII 字符（范围 32~126）。
+     * 判断给定字符是否为可打印的 ASCII 字符（范围 32~126）
      *
      * @param c 待检查的字符
      * @return 若为可打印字符则返回 true
@@ -159,7 +159,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定码点是否为可打印的 ASCII 码点（范围 32~126）。
+     * 判断给定码点是否为可打印的 ASCII 码点（范围 32~126）
      *
      * @param c 待检查的码点
      * @return 若为可打印 ASCII 码点则返回 true
@@ -170,7 +170,7 @@ public class NameMapper {
 
     /**
      * 判断给定码点是否可打印（排除控制字符、格式字符、私有区、代理区及未分配字符，
-     * 空白字符中仅允许标准空格）。
+     * 空白字符中仅允许标准空格）
      *
      * @param codePoint Unicode 码点
      * @return 若可打印则返回 true
@@ -195,7 +195,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否全部由可打印的 ASCII 字符组成。
+     * 判断给定字符串是否全部由可打印的 ASCII 字符组成
      *
      * @param str 待检查的字符串
      * @return 若全部字符可打印则返回 true
@@ -240,9 +240,9 @@ public class NameMapper {
     }
 
     /**
-     * 返回移除无效字符后的字符串，参见 {@link #removeInvalidCharsMiddle}。
+     * 返回移除无效字符后的字符串，参见 {@link #removeInvalidCharsMiddle}
      * <p>
-     * 若首字符不能作为 Java 标识符的起始字符，则在前面加上前缀。
+     * 若首字符不能作为 Java 标识符的起始字符，则在前面加上前缀
      */
     public static String removeInvalidChars(String name, String prefix) {
         String result = removeInvalidCharsMiddle(name);
@@ -256,7 +256,7 @@ public class NameMapper {
     }
 
     /**
-     * 返回移除所有不可打印字符后的字符串（仅保留可打印的 ASCII 字符）。
+     * 返回移除所有不可打印字符后的字符串（仅保留可打印的 ASCII 字符）
      *
      * @param name 原始字符串
      * @return 移除不可打印字符后的字符串

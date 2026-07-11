@@ -17,9 +17,9 @@ import java.util.List;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 
 /**
- * 基本块节点，表示控制流图中的一个基本块。
+ * 基本块节点，表示控制流图中的一个基本块
  * <p>
- * 包含指令列表、前驱/后继节点关系以及支配树相关信息（支配节点、后支配节点、支配边界等）。
+ * 包含指令列表、前驱/后继节点关系以及支配树相关信息（支配节点、后支配节点、支配边界等）
  * </p>
  */
 public final class BlockNode extends AttrNode implements IBlock, Comparable<BlockNode> {
@@ -86,7 +86,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     private List<BlockNode> dominatesOn = new ArrayList<>(3);
 
     /**
-     * 构造一个基本块节点。
+     * 构造一个基本块节点
      *
      * @param cid    常量标识符
      * @param pos    在块列表中的位置
@@ -99,7 +99,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 批量更新块列表中每个块的位置索引，使其与在列表中的下标一致。
+     * 批量更新块列表中每个块的位置索引，使其与在列表中的下标一致
      *
      * @param blocks 待更新位置的块列表
      */
@@ -111,7 +111,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 返回所有非异常处理器且非循环回边目标的后继节点。
+     * 返回所有非异常处理器且非循环回边目标的后继节点
      *
      * @param block 待处理的基本块
      * @return 清理后的后继节点列表
@@ -142,7 +142,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取常量标识符。
+     * 获取常量标识符
      *
      * @return 常量标识符
      */
@@ -151,7 +151,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 已过时，请使用 {@link #getPos()}。
+     * 已过时，请使用 {@link #getPos()}
      */
     @Deprecated
     public int getId() {
@@ -159,7 +159,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取块在列表中的位置。
+     * 获取块在列表中的位置
      *
      * @return 位置索引
      */
@@ -168,7 +168,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 设置块在列表中的位置。
+     * 设置块在列表中的位置
      *
      * @param id 新的位置索引
      */
@@ -177,7 +177,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取前驱节点列表。
+     * 获取前驱节点列表
      *
      * @return 前驱节点列表
      */
@@ -186,7 +186,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取后继节点列表。
+     * 获取后继节点列表
      *
      * @return 后继节点列表
      */
@@ -195,7 +195,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取清理后的后继节点列表（排除异常处理器和循环回边目标）。
+     * 获取清理后的后继节点列表（排除异常处理器和循环回边目标）
      *
      * @return 清理后的后继节点列表
      */
@@ -204,16 +204,16 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 重新计算并更新当前块的清理后后继节点列表。
+     * 重新计算并更新当前块的清理后后继节点列表
      */
     public void updateCleanSuccessors() {
         cleanSuccessors = cleanSuccessors(this);
     }
 
     /**
-     * 锁定当前块，将各类节点列表转换为不可变列表以防止后续修改。
+     * 锁定当前块，将各类节点列表转换为不可变列表以防止后续修改
      * <p>
-     * 若支配边界未设置则抛出异常。
+     * 若支配边界未设置则抛出异常
      * </p>
      */
     public void lock() {
@@ -232,7 +232,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取基本块内的指令列表。
+     * 获取基本块内的指令列表
      *
      * @return 指令列表
      */
@@ -242,7 +242,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取块在方法字节码中的起始偏移量。
+     * 获取块在方法字节码中的起始偏移量
      *
      * @return 起始偏移量
      */
@@ -251,7 +251,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 检查指定块是否支配当前节点。
+     * 检查指定块是否支配当前节点
      *
      * @param block 待检查的块
      * @return 若 {@code block} 支配当前节点则返回 {@code true}
@@ -261,7 +261,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取当前节点的支配节点集合（不包含自身）。
+     * 获取当前节点的支配节点集合（不包含自身）
      *
      * @return 支配节点的位集合
      */
@@ -270,7 +270,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 设置支配节点集合。
+     * 设置支配节点集合
      *
      * @param doms 支配节点的位集合
      */
@@ -279,7 +279,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取后支配节点集合。
+     * 获取后支配节点集合
      *
      * @return 后支配节点的位集合
      */
@@ -288,7 +288,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 设置后支配节点集合。
+     * 设置后支配节点集合
      *
      * @param postDoms 后支配节点的位集合
      */
@@ -297,7 +297,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取支配边界。
+     * 获取支配边界
      *
      * @return 支配边界的位集合
      */
@@ -306,7 +306,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 设置支配边界。
+     * 设置支配边界
      *
      * @param domFrontier 支配边界的位集合
      */
@@ -315,7 +315,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取直接支配节点。
+     * 获取直接支配节点
      *
      * @return 直接支配节点
      */
@@ -324,7 +324,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 设置直接支配节点。
+     * 设置直接支配节点
      *
      * @param idom 直接支配节点
      */
@@ -333,7 +333,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取直接后支配节点。
+     * 获取直接后支配节点
      *
      * @return 直接后支配节点
      */
@@ -342,7 +342,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 设置直接后支配节点。
+     * 设置直接后支配节点
      *
      * @param iPostDom 直接后支配节点
      */
@@ -351,7 +351,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取当前块所直接支配的节点集合。
+     * 获取当前块所直接支配的节点集合
      *
      * @return 被支配的节点列表
      */
@@ -360,7 +360,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 向当前块的直接支配节点集合中添加一个块。
+     * 向当前块的直接支配节点集合中添加一个块
      *
      * @param block 被当前块直接支配的块
      */
@@ -369,7 +369,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 判断当前块是否为合成块。
+     * 判断当前块是否为合成块
      *
      * @return 若为合成块则返回 {@code true}
      */
@@ -378,7 +378,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 判断当前块是否为返回块。
+     * 判断当前块是否为返回块
      *
      * @return 若为返回块则返回 {@code true}
      */
@@ -387,7 +387,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 判断当前块是否为方法出口块。
+     * 判断当前块是否为方法出口块
      *
      * @return 若为方法出口块则返回 {@code true}
      */
@@ -396,7 +396,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 判断当前块是否不包含任何指令。
+     * 判断当前块是否不包含任何指令
      *
      * @return 若无指令则返回 {@code true}
      */

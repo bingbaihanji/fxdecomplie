@@ -78,7 +78,7 @@ public final class SearchDialog {
      * @param owner                   父窗口
      * @param searchService           搜索服务(聚合多个 SearchProvider)
      * @param sourceCache             已反编译的源码缓存(类路径 → 源码文本)
-     * @param fullSourceLoader        全量源码加载器(用于搜索所有类)；为 null 则禁用全量搜索选项
+     * @param fullSourceLoader        全量源码加载器(用于搜索所有类) 为 null 则禁用全量搜索选项
      * @param defaultFullSourceSearch 是否默认选中全量源码搜索
      * @param maxResults              最大返回结果数(限制在 50~2000 之间)
      * @param initialQuery            初始搜索关键词(可为空字符串)

@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 类路径图中的方法节点。
+ * 类路径图中的方法节点
  * <p>
  * 表示在类路径图上解析到的一个方法，包含方法信息、参数类型、返回类型、
  * 泛型类型参数、异常抛出列表以及访问标志，实现 {@link IMethodDetails}
- * 以提供方法细节，并支持按方法信息排序。
+ * 以提供方法细节，并支持按方法信息排序
  */
 public class ClspMethod implements IMethodDetails, Comparable<ClspMethod> {
 
@@ -33,7 +33,7 @@ public class ClspMethod implements IMethodDetails, Comparable<ClspMethod> {
     private final int accFlags;
 
     /**
-     * 构造一个类路径方法节点。
+     * 构造一个类路径方法节点
      *
      * @param methodInfo     方法信息
      * @param argTypes       参数类型列表

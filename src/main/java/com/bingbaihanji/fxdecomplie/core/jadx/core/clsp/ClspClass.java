@@ -7,10 +7,10 @@ import org.intellij.lang.annotations.MagicConstant;
 import java.util.*;
 
 /**
- * 类路径图中的类节点。
+ * 类路径图中的类节点
  * <p>
  * 表示在类路径图上解析到的一个类，包含类型信息、访问标志、父类/接口、
- * 方法列表、类型参数等元数据，用于支持类型推断和方法重载解析。
+ * 方法列表、类型参数等元数据，用于支持类型推断和方法重载解析
  */
 public class ClspClass {
 
@@ -30,7 +30,7 @@ public class ClspClass {
     private List<ArgType> typeParameters = Collections.emptyList();
 
     /**
-     * 构造一个类路径类节点。
+     * 构造一个类路径类节点
      *
      * @param clsType  类的类型
      * @param id       唯一标识 ID

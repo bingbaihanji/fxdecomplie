@@ -144,7 +144,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
         };
     }
 
-    /** 根据语法标记列表构建富文本段落；标题行整体高亮,其他行按 token 着色 */
+    /** 根据语法标记列表构建富文本段落 标题行整体高亮,其他行按 token 着色 */
     @Override
     public RichParagraph createRichParagraph(CodeTextModel model, int paragraphIndex) {
         String line = model.getPlainText(paragraphIndex);

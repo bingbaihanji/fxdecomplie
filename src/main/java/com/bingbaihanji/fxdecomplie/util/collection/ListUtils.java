@@ -226,7 +226,7 @@ public final class ListUtils {
 
 
     /**
-     * 创建包含单个元素的可变列表。
+     * 创建包含单个元素的可变列表
      *
      * @param obj 初始元素
      * @return 可变列表
@@ -238,7 +238,7 @@ public final class ListUtils {
     }
 
     /**
-     * 创建包含两个元素的可变列表。
+     * 创建包含两个元素的可变列表
      *
      * @param obj1 第一个元素
      * @param obj2 第二个元素
@@ -252,7 +252,7 @@ public final class ListUtils {
     }
 
     /**
-     * 创建包含指定若干元素的可变列表。
+     * 创建包含指定若干元素的可变列表
      *
      * @param objs 初始元素数组
      * @return 可变列表
@@ -262,7 +262,7 @@ public final class ListUtils {
     }
 
     /**
-     * 判断列表是否恰好只包含一个且等于指定值的元素。
+     * 判断列表是否恰好只包含一个且等于指定值的元素
      *
      * @param list 待检查的列表
      * @param obj  期望的唯一元素
@@ -276,7 +276,7 @@ public final class ListUtils {
     }
 
     /**
-     * 判断两个列表是否包含相同元素（忽略顺序）。
+     * 判断两个列表是否包含相同元素（忽略顺序）
      *
      * @param first  第一个列表
      * @param second 第二个列表
@@ -290,7 +290,7 @@ public final class ListUtils {
     }
 
     /**
-     * 按顺序使用自定义比较器逐一比较两个列表是否相等。
+     * 按顺序使用自定义比较器逐一比较两个列表是否相等
      *
      * @param list1    第一个列表
      * @param list2    第二个列表
@@ -317,11 +317,11 @@ public final class ListUtils {
     }
 
     /**
-     * 将集合的每个元素经映射函数转换后收集为新列表。
+     * 将集合的每个元素经映射函数转换后收集为新列表
      *
      * @param list    源集合
      * @param mapFunc 映射函数
-     * @return 映射后的新列表；源集合为空时返回空列表
+     * @return 映射后的新列表 源集合为空时返回空列表
      */
     public static <T, R> List<R> map(Collection<T> list, Function<T, R> mapFunc) {
         if (list == null || list.isEmpty()) {
@@ -336,7 +336,7 @@ public final class ListUtils {
 
 
     /**
-     * 返回列表的第一个元素，列表为 null 或空时返回 null。
+     * 返回列表的第一个元素，列表为 null 或空时返回 null
      *
      * @param list 列表
      * @return 第一个元素或 null
@@ -350,7 +350,7 @@ public final class ListUtils {
 
 
     /**
-     * 移除并返回列表的最后一个元素，列表为 null 或空时返回 null。
+     * 移除并返回列表的最后一个元素，列表为 null 或空时返回 null
      *
      * @param list 列表
      * @return 被移除的最后一个元素或 null
@@ -367,11 +367,11 @@ public final class ListUtils {
     }
 
     /**
-     * 合并两个已排序列表并去重，返回有序结果。
+     * 合并两个已排序列表并去重，返回有序结果
      *
      * @param first  第一个列表
      * @param second 第二个列表
-     * @return 去重后的有序列表；若一方为空则直接返回另一方
+     * @return 去重后的有序列表 若一方为空则直接返回另一方
      */
     public static <T extends Comparable<T>> List<T> distinctMergeSortedLists(List<T> first, List<T> second) {
         if (first.isEmpty()) {
@@ -386,7 +386,7 @@ public final class ListUtils {
     }
 
     /**
-     * 对列表去重并保持原有顺序。
+     * 对列表去重并保持原有顺序
      *
      * @param list 源列表
      * @return 去重后的新列表
@@ -396,7 +396,7 @@ public final class ListUtils {
     }
 
     /**
-     * 将单个元素与数组拼接为新列表（元素在前）。
+     * 将单个元素与数组拼接为新列表（元素在前）
      *
      * @param first  首元素
      * @param values 后续元素数组
@@ -410,10 +410,10 @@ public final class ListUtils {
     }
 
     /**
-     * 将列表中的旧元素替换为新元素。
+     * 将列表中的旧元素替换为新元素
      * <p>
-     * 支持 null 和由 {@link Collections#emptyList()} 创建的不可变空列表；
-     * 若未找到旧元素则将新元素追加到列表末尾。
+     * 支持 null 和由 {@link Collections#emptyList()} 创建的不可变空列表 
+     * 若未找到旧元素则将新元素追加到列表末尾
      *
      * @param list   源列表
      * @param oldObj 待替换的旧元素
@@ -437,7 +437,7 @@ public final class ListUtils {
     }
 
     /**
-     * 安全移除列表中的元素（对 null 或空列表不做处理）。
+     * 安全移除列表中的元素（对 null 或空列表不做处理）
      *
      * @param list 源列表
      * @param obj  待移除的元素
@@ -449,7 +449,7 @@ public final class ListUtils {
     }
 
     /**
-     * 安全移除元素，若移除后列表为空则返回不可变空列表。
+     * 安全移除元素，若移除后列表为空则返回不可变空列表
      *
      * @param list 源列表
      * @param obj  待移除的元素
@@ -468,7 +468,7 @@ public final class ListUtils {
     }
 
     /**
-     * 安全地向列表添加元素，若列表为 null 或空则新建可变列表。
+     * 安全地向列表添加元素，若列表为 null 或空则新建可变列表
      *
      * @param list 源列表
      * @param obj  待添加的元素
@@ -485,11 +485,11 @@ public final class ListUtils {
     }
 
     /**
-     * 按谓词过滤集合，返回满足条件的元素列表。
+     * 按谓词过滤集合，返回满足条件的元素列表
      *
      * @param list   源集合
      * @param filter 过滤谓词
-     * @return 满足条件的元素列表；源集合为空时返回空列表
+     * @return 满足条件的元素列表 源集合为空时返回空列表
      */
     public static <T> List<T> filter(Collection<T> list, Predicate<T> filter) {
         if (list == null || list.isEmpty()) {
@@ -505,7 +505,7 @@ public final class ListUtils {
     }
 
     /**
-     * 在列表中查找恰好唯一一个满足过滤条件的元素。
+     * 在列表中查找恰好唯一一个满足过滤条件的元素
      *
      * @return 若满足条件的元素不是恰好一个（零个或多个）则返回 null
      */
@@ -528,7 +528,7 @@ public final class ListUtils {
     }
 
     /**
-     * 判断集合中所有元素是否都满足指定条件。
+     * 判断集合中所有元素是否都满足指定条件
      *
      * @param list 源集合
      * @param test 判断谓词
@@ -547,7 +547,7 @@ public final class ListUtils {
     }
 
     /**
-     * 判断集合中是否没有任何元素满足指定条件。
+     * 判断集合中是否没有任何元素满足指定条件
      *
      * @param list 源集合
      * @param test 判断谓词
@@ -558,7 +558,7 @@ public final class ListUtils {
     }
 
     /**
-     * 判断集合中是否存在至少一个元素满足指定条件。
+     * 判断集合中是否存在至少一个元素满足指定条件
      *
      * @param list 源集合
      * @param test 判断谓词
@@ -577,10 +577,10 @@ public final class ListUtils {
     }
 
     /**
-     * 将枚举（{@link Enumeration}）转换为列表。
+     * 将枚举（{@link Enumeration}）转换为列表
      *
      * @param enumeration 源枚举
-     * @return 转换后的列表；枚举为 null 或空时返回空列表
+     * @return 转换后的列表 枚举为 null 或空时返回空列表
      */
     public static <T> List<T> enumerationToList(Enumeration<T> enumeration) {
         if (enumeration == null || enumeration == Collections.emptyEnumeration()) {

@@ -1,6 +1,4 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks;
-import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
-import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -25,6 +23,8 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.blocks.BlockSet;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,16 +36,16 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * 块异常处理器，负责处理方法的 try-catch 块结构。
+ * 块异常处理器，负责处理方法的 try-catch 块结构
  * 主要职责包括：解析异常处理器、构建 try-catch 块关系、
- * 包裹 try 块并连接到对应的处理器块。
+ * 包裹 try 块并连接到对应的处理器块
  */
 public class BlockExceptionHandler {
     private static final Logger LOG = LoggerFactory.getLogger(BlockExceptionHandler.class);
 
     /**
-     * 处理方法的异常处理器，构建 try-catch 块结构。
-     * 如果方法没有异常处理器则直接返回 false。
+     * 处理方法的异常处理器，构建 try-catch 块结构
+     * 如果方法没有异常处理器则直接返回 false
      */
     public static boolean process(MethodNode mth) {
         if (mth.isNoExceptionHandlers()) {
@@ -74,9 +74,9 @@ public class BlockExceptionHandler {
     }
 
     /**
-     * 用顶部/底部分割块包裹 try 块，并将其连接到处理器块。
-     * 有时 try 块本身可能就是处理器块，应在包裹前先进行连接。
-     * 使用队列来推迟处理那些尚未准备好包裹的 try 块。
+     * 用顶部/底部分割块包裹 try 块，并将其连接到处理器块
+     * 有时 try 块本身可能就是处理器块，应在包裹前先进行连接
+     * 使用队列来推迟处理那些尚未准备好包裹的 try 块
      */
     private static void connectExcHandlers(MethodNode mth, List<TryCatchBlockAttr> tryBlocks) {
         if (tryBlocks.isEmpty()) {
@@ -99,7 +99,7 @@ public class BlockExceptionHandler {
 
     /**
      * 处理 catch 属性：移除不应该有 catch 的指令上的 EXC_CATCH 属性，
-     * 并将指令级别一致的 catch 属性提升到块级别。
+     * 并将指令级别一致的 catch 属性提升到块级别
      */
     private static void processCatchAttr(MethodNode mth) {
         for (BlockNode block : mth.getBasicBlocks()) {
@@ -109,7 +109,7 @@ public class BlockExceptionHandler {
                 }
             }
         }
-        // 如果块中所有指令都具有相同的 'catch' 属性 -> 将该属性添加到整个块上。
+        // 如果块中所有指令都具有相同的 'catch' 属性 -> 将该属性添加到整个块上
         for (BlockNode block : mth.getBasicBlocks()) {
             CatchAttr commonCatchAttr = getCommonCatchAttr(block);
             if (commonCatchAttr != null) {
@@ -145,8 +145,8 @@ public class BlockExceptionHandler {
     }
 
     /**
-     * 初始化异常处理器，提取 excHandlerAttr 属性并创建对应的 ExceptionHandler。
-     * 按支配关系收集处理器覆盖的块；若处理器已有前驱块，则创建空处理器块。
+     * 初始化异常处理器，提取 excHandlerAttr 属性并创建对应的 ExceptionHandler
+     * 按支配关系收集处理器覆盖的块 若处理器已有前驱块，则创建空处理器块
      */
     @SuppressWarnings("ForLoopReplaceableByForEach")
     private static void initExcHandlers(MethodNode mth) {
@@ -196,7 +196,7 @@ public class BlockExceptionHandler {
 
     /**
      * 准备 try-catch 块列表：收集 catch 属性中的异常处理器，按处理器分组块，
-     * 合并或标记内外层关系，并进行多重 catch 检查和排序。
+     * 合并或标记内外层关系，并进行多重 catch 检查和排序
      */
     private static List<TryCatchBlockAttr> prepareTryBlocks(MethodNode mth) {
         Map<ExceptionHandler, List<BlockNode>> blocksByHandler = new ArrayMap<>();
@@ -337,8 +337,8 @@ public class BlockExceptionHandler {
     }
 
     /**
-     * 用顶部和底部分割块包裹 try 块，并建立与处理器块之间的连接。
-     * 搜索 try 块的顶部和底部块，必要时进行块分割和边重定向。
+     * 用顶部和底部分割块包裹 try 块，并建立与处理器块之间的连接
+     * 搜索 try 块的顶部和底部块，必要时进行块分割和边重定向
      */
     private static boolean wrapBlocksWithTryCatch(MethodNode mth, TryCatchBlockAttr tryCatchBlock) {
         List<BlockNode> blocks = tryCatchBlock.getBlocks();
@@ -396,10 +396,10 @@ public class BlockExceptionHandler {
         }
         connectSplittersAndHandlers(tryCatchBlock, topSplitterBlock, bottomSplitterBlock);
 
-        // 此时，由于插入了新的底部块，指向原始底部块的交叉边有可能被转变为回边。
-        // 这会引发问题，因为回边通常意味着循环，但这里并非循环。为修复这一点，
+        // 此时，由于插入了新的底部块，指向原始底部块的交叉边有可能被转变为回边
+        // 这会引发问题，因为回边通常意味着循环，但这里并非循环为修复这一点，
         // 那些同时存在从底部块出发路径的底部块前驱，会被重写为指向原始路径交叉点
-        //（即合成块之前的位置）。
+        //（即合成块之前的位置）
         if (bottom != null && bottom.contains(AType.EXC_SPLIT_CROSS)) {
             List<BlockNode> convertBlocks = new ArrayList<>();
             for (BlockNode b : bottom.getPredecessors()) {
@@ -408,7 +408,7 @@ public class BlockExceptionHandler {
                 }
             }
             for (BlockNode b : convertBlocks) {
-                // 连接不能在第一个循环中替换，因为那样会修改前驱列表。
+                // 连接不能在第一个循环中替换，因为那样会修改前驱列表
                 BlockSplitter.replaceConnection(b, bottom, bottom.get(AType.EXC_SPLIT_CROSS).getOriginalPathCross());
             }
         }
@@ -454,7 +454,7 @@ public class BlockExceptionHandler {
         }
         BlockNode topDom = BlockUtils.getCommonDominator(mth, blocks);
         if (topDom != null) {
-            // 支配节点总是返回上一级块；如果 blocks 已包含该支配节点，则改用其后继块
+            // 支配节点总是返回上一级块 如果 blocks 已包含该支配节点，则改用其后继块
             if (topDom.getSuccessors().size() == 1) {
                 BlockNode upBlock = topDom.getSuccessors().get(0);
                 if (blocks.contains(upBlock)) {
@@ -476,7 +476,7 @@ public class BlockExceptionHandler {
 
     /**
      * 搜索 try 块的底部块：先在输入集合内部搜索公共后支配块，
-     * 未找到则在外部搜索公共交叉块，并仅在输入集合范围内进行分割。
+     * 未找到则在外部搜索公共交叉块，并仅在输入集合范围内进行分割
      */
     @Nullable
     private static BlockNode searchBottomBlock(MethodNode mth, List<BlockNode> blocks) {
@@ -498,7 +498,7 @@ public class BlockExceptionHandler {
                 .filter(p -> !BlockUtils.atLeastOnePathExists(blocks, p))
                 .collect(Collectors.toList());
         // 如果没有前驱，或者每个前驱都在集合外部（这意味着插入新的合成块不起任何作用），
-        // 则直接返回已有的路径交叉块。
+        // 则直接返回已有的路径交叉块
         if (outsidePredecessors.isEmpty() || outsidePredecessors.size() == pathCross.getPredecessors().size()) {
             return pathCross;
         }
@@ -576,8 +576,8 @@ public class BlockExceptionHandler {
     }
 
     /**
-     * 尝试将多个 catch 处理器合并为一个多重 catch（multi-catch）。
-     * 条件：每个处理器只有当前异常块，且所有处理器共享同一个后继块和同一个结果寄存器。
+     * 尝试将多个 catch 处理器合并为一个多重 catch（multi-catch）
+     * 条件：每个处理器只有当前异常块，且所有处理器共享同一个后继块和同一个结果寄存器
      */
     private static boolean mergeMultiCatch(MethodNode mth, TryCatchBlockAttr tryCatch) {
         if (tryCatch.getHandlers().size() < 2) {
@@ -627,8 +627,8 @@ public class BlockExceptionHandler {
     }
 
     /**
-     * 按类型层次对异常处理器和 catch 类型进行排序，catch-all 处理器排在最后。
-     * 使用类型比较器的逆序排列，冲突时按类名排序。
+     * 按类型层次对异常处理器和 catch 类型进行排序，catch-all 处理器排在最后
+     * 使用类型比较器的逆序排列，冲突时按类名排序
      */
     private static void sortHandlers(MethodNode mth, List<TryCatchBlockAttr> tryBlocks) {
         TypeCompare typeCompare = mth.root().getTypeCompare();
@@ -664,8 +664,8 @@ public class BlockExceptionHandler {
     }
 
     /**
-     * 移除在连接过程中未被使用的异常处理器。
-     * 先检查这些块是否不可达。
+     * 移除在连接过程中未被使用的异常处理器
+     * 先检查这些块是否不可达
      */
     private static void removeUnusedExcHandlers(MethodNode mth, List<TryCatchBlockAttr> tryBlocks, BlockSet blocks) {
         for (ExceptionHandler eh : mth.getExceptionHandlers()) {

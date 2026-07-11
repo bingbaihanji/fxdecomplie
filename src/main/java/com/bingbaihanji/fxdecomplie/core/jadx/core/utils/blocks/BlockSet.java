@@ -10,10 +10,10 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /**
- * 基于 {@link BitSet} 实现的 {@link BlockNode} 块集合。
+ * 基于 {@link BitSet} 实现的 {@link BlockNode} 块集合
  * <p>
  * 每个块通过其在方法基本块列表中的位置（{@link BlockNode#getPos()}）映射到位图的一位，
- * 从而以极低的内存开销完成集合的增删查、交集、并集等操作。
+ * 从而以极低的内存开销完成集合的增删查、交集、并集等操作
  */
 public class BlockSet implements Iterable<BlockNode> {
 
@@ -23,7 +23,7 @@ public class BlockSet implements Iterable<BlockNode> {
     private final BitSet bs;
 
     /**
-     * 构造块集合。
+     * 构造块集合
      *
      * @param mth 所属方法节点，用于确定位图大小和进行位置到块的映射
      */
@@ -33,7 +33,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 创建一个空的块集合。
+     * 创建一个空的块集合
      *
      * @param mth 所属方法节点
      * @return 新建的空块集合
@@ -43,7 +43,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 根据给定的块集合创建并填充块集合。
+     * 根据给定的块集合创建并填充块集合
      *
      * @param mth    所属方法节点
      * @param blocks 初始包含的块集合
@@ -56,7 +56,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 判断集合是否包含指定块。
+     * 判断集合是否包含指定块
      *
      * @param block 待检查的块
      * @return 若包含则返回 true
@@ -66,7 +66,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 向集合中添加一个块。
+     * 向集合中添加一个块
      *
      * @param block 待添加的块
      */
@@ -75,7 +75,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 批量添加块集合。
+     * 批量添加块集合
      *
      * @param blocks 待添加的块集合
      */
@@ -84,7 +84,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 合并另一个块集合（并集操作）。
+     * 合并另一个块集合（并集操作）
      *
      * @param otherBlockSet 另一个块集合
      */
@@ -93,7 +93,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 从集合中移除一个块。
+     * 从集合中移除一个块
      *
      * @param block 待移除的块
      */
@@ -102,7 +102,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 批量移除块集合。
+     * 批量移除块集合
      *
      * @param blocks 待移除的块集合
      */
@@ -111,7 +111,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 添加块并返回添加前的存在状态。
+     * 添加块并返回添加前的存在状态
      *
      * @param block 待添加的块
      * @return 添加前集合是否已包含该块（true 表示原本已存在）
@@ -124,7 +124,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 判断集合是否包含指定列表中的所有块。
+     * 判断集合是否包含指定列表中的所有块
      *
      * @param blocks 待检查的块列表
      * @return 若全部包含则返回 true
@@ -139,7 +139,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 判断集合是否与指定列表存在交集。
+     * 判断集合是否与指定列表存在交集
      *
      * @param blocks 待检查的块列表
      * @return 若存在至少一个共同块则返回 true
@@ -154,7 +154,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 计算当前集合与指定块列表的交集。
+     * 计算当前集合与指定块列表的交集
      *
      * @param blocks 参与求交的块列表
      * @return 由共同块组成的新块集合
@@ -169,7 +169,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 判断集合是否为空。
+     * 判断集合是否为空
      *
      * @return 若不包含任何块则返回 true
      */
@@ -178,7 +178,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 返回集合中块的数量。
+     * 返回集合中块的数量
      *
      * @return 块的个数
      */
@@ -187,16 +187,16 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 清空集合中的所有块。
+     * 清空集合中的所有块
      */
     public void remove() {
         bs.clear();
     }
 
     /**
-     * 当集合恰好只包含一个块时返回该块。
+     * 当集合恰好只包含一个块时返回该块
      *
-     * @return 唯一的块；若块数量不为 1 则返回 null
+     * @return 唯一的块 若块数量不为 1 则返回 null
      */
     public @Nullable BlockNode getOne() {
         if (bs.cardinality() == 1) {
@@ -206,7 +206,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 返回集合中的第一个块（按位置顺序）。
+     * 返回集合中的第一个块（按位置顺序）
      *
      * @return 位置最靠前的块
      */
@@ -238,9 +238,9 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * 将集合转换为块列表（按位置顺序）。
+     * 将集合转换为块列表（按位置顺序）
      *
-     * @return 包含所有块的列表；集合为空时返回空列表
+     * @return 包含所有块的列表 集合为空时返回空列表
      */
     public List<BlockNode> toList() {
         if (bs == null || bs == EmptyBitSet.EMPTY) {
@@ -264,7 +264,7 @@ public class BlockSet implements Iterable<BlockNode> {
     }
 
     /**
-     * {@link BlockSet} 的迭代器实现，按位图中置位的位置顺序遍历对应的块。
+     * {@link BlockSet} 的迭代器实现，按位图中置位的位置顺序遍历对应的块
      */
     private static final class BlockSetIterator implements Iterator<BlockNode> {
         /** 底层位图 */

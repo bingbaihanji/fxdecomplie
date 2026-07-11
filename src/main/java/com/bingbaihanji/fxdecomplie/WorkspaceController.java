@@ -1,10 +1,15 @@
 package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
-import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.model.DecompilerProject;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.service.ExportService;
+import com.bingbaihanji.fxdecomplie.service.ProjectFileManager;
+import com.bingbaihanji.fxdecomplie.service.WorkspaceLoader;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.scene.control.Tab;
@@ -20,10 +25,10 @@ import java.util.List;
 
 /**
  * 工作区/文件/项目生命周期控制器：打开文件/目录/项目、保存项目、
- * 关闭工作区、保存当前文件、树中定位、快速打开类、最近文件、新窗口及异步工作区加载。
+ * 关闭工作区、保存当前文件、树中定位、快速打开类、最近文件、新窗口及异步工作区加载
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）。
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化。
+ * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）
+ * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */
@@ -42,7 +47,7 @@ public final class WorkspaceController {
         try {
             return DecompilerTypeEnum.valueOf(value);
         } catch (IllegalArgumentException | NullPointerException e) {
-            return fallback == null ? DecompilerTypeEnum.VINEFLOWER : fallback;
+            return fallback == null ? DecompilerTypeEnum.JADX : fallback;
         }
     }
 
@@ -142,7 +147,7 @@ public final class WorkspaceController {
     public void closeCurrentWorkspace() {
         Tab selected = owner.outerTabPane().getSelectionModel().getSelectedItem();
         if (selected != null && owner.tabManager().getWorkspaceViews().containsKey(selected)) {
-            owner.tabManager().closeWorkspaceTab(selected);
+            owner.tabManager().requestCloseWorkspaceTab(selected);
         }
     }
 
@@ -152,7 +157,7 @@ public final class WorkspaceController {
         if (selected == null || !owner.tabManager().getWorkspaceViews().containsKey(selected)) {
             return;
         }
-        owner.tabManager().closeOtherWorkspaces(selected);
+        owner.tabManager().requestCloseOtherWorkspaces(selected);
     }
 
     /** 保存当前代码标签页为 .java 文件 */

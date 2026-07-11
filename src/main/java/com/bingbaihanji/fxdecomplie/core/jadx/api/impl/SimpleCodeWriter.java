@@ -5,7 +5,6 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeWriter;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeAnnotation;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeNodeRef;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,10 +12,10 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
- * 不包含元信息支持的 CodeWriter 实现。
+ * 不包含元信息支持的 CodeWriter 实现
  * <p>
- * 这是一个简化的代码写入器，不支持附加元数据注解（如定义位置、源码行映射等）。
- * 适用于仅需要生成纯文本代码、不关心代码导航和元信息的场景。
+ * 这是一个简化的代码写入器，不支持附加元数据注解（如定义位置、源码行映射等）
+ * 适用于仅需要生成纯文本代码、不关心代码导航和元信息的场景
  * </p>
  */
 public class SimpleCodeWriter implements ICodeWriter {
@@ -39,7 +38,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 应当使用带 JadxArgs 参数的构造函数。
+     * 应当使用带 JadxArgs 参数的构造函数
      */
     @Deprecated
     public SimpleCodeWriter() {
@@ -49,7 +48,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 该实现不支持元数据。
+     * 该实现不支持元数据
      *
      * @return 始终返回 false
      */
@@ -59,7 +58,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 开始新的一行：先换行，再添加当前缩进。
+     * 开始新的一行：先换行，再添加当前缩进
      *
      * @return 当前写入器（便于链式调用）
      */
@@ -71,7 +70,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 开始新的一行并追加一个字符。
+     * 开始新的一行并追加一个字符
      *
      * @param c 要追加的字符
      * @return 当前写入器（便于链式调用）
@@ -84,7 +83,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 开始新的一行并追加一个字符串。
+     * 开始新的一行并追加一个字符串
      *
      * @param str 要追加的字符串
      * @return 当前写入器（便于链式调用）
@@ -97,10 +96,10 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 开始新的一行，并按需附带源码行号。
+     * 开始新的一行，并按需附带源码行号
      * <p>
-     * 当启用了行号插入（{@code insertLineNumbers}）时，会以注释形式写入源码行号；
-     * 否则仅记录源码行映射。
+     * 当启用了行号插入（{@code insertLineNumbers}）时，会以注释形式写入源码行号 
+     * 否则仅记录源码行映射
      * </p>
      *
      * @param sourceLine 源码行号，为 0 时等同于普通 {@link #startLine()}
@@ -129,7 +128,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 添加可能包含多行的字符串，并为其中的每个换行补齐当前缩进。
+     * 添加可能包含多行的字符串，并为其中的每个换行补齐当前缩进
      *
      * @param str 要添加的（可能多行的）字符串
      * @return 当前写入器（便于链式调用）
@@ -145,7 +144,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 追加一个字符串。
+     * 追加一个字符串
      *
      * @param str 要追加的字符串
      * @return 当前写入器（便于链式调用）
@@ -157,7 +156,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 追加一个字符。
+     * 追加一个字符
      *
      * @param c 要追加的字符
      * @return 当前写入器（便于链式调用）
@@ -169,7 +168,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 追加另一个写入器中已有的代码字符串。
+     * 追加另一个写入器中已有的代码字符串
      *
      * @param cw 源代码写入器
      * @return 当前写入器（便于链式调用）
@@ -181,7 +180,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 追加一个换行符。
+     * 追加一个换行符
      *
      * @return 当前写入器（便于链式调用）
      */
@@ -192,7 +191,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 追加一个单位缩进。
+     * 追加一个单位缩进
      *
      * @return 当前写入器（便于链式调用）
      */
@@ -216,7 +215,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 增加一级缩进。
+     * 增加一级缩进
      */
     @Override
     public void incIndent() {
@@ -224,7 +223,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 减少一级缩进。
+     * 减少一级缩进
      */
     @Override
     public void decIndent() {
@@ -246,7 +245,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 获取当前缩进级别。
+     * 获取当前缩进级别
      *
      * @return 当前缩进级别
      */
@@ -256,7 +255,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 设置当前缩进级别。
+     * 设置当前缩进级别
      *
      * @param indent 新的缩进级别
      */
@@ -267,9 +266,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 获取当前行号。
+     * 获取当前行号
      * <p>
-     * 该简化实现不支持行号跟踪。
+     * 该简化实现不支持行号跟踪
      * </p>
      *
      * @return 始终返回 0
@@ -280,9 +279,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 获取当前行的起始位置。
+     * 获取当前行的起始位置
      * <p>
-     * 该简化实现不支持行起始位置跟踪。
+     * 该简化实现不支持行起始位置跟踪
      * </p>
      *
      * @return 始终返回 0
@@ -293,9 +292,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 附加定义引用。
+     * 附加定义引用
      * <p>
-     * 该简化实现不支持元数据，此操作为空操作。
+     * 该简化实现不支持元数据，此操作为空操作
      * </p>
      *
      * @param obj 代码节点引用
@@ -306,9 +305,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 附加注解元数据。
+     * 附加注解元数据
      * <p>
-     * 该简化实现不支持元数据，此操作为空操作。
+     * 该简化实现不支持元数据，此操作为空操作
      * </p>
      *
      * @param obj 代码注解
@@ -319,9 +318,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 附加行级注解元数据。
+     * 附加行级注解元数据
      * <p>
-     * 该简化实现不支持元数据，此操作为空操作。
+     * 该简化实现不支持元数据，此操作为空操作
      * </p>
      *
      * @param obj 代码注解
@@ -332,9 +331,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 附加源码行映射。
+     * 附加源码行映射
      * <p>
-     * 该简化实现不支持元数据，此操作为空操作。
+     * 该简化实现不支持元数据，此操作为空操作
      * </p>
      *
      * @param sourceLine 源码行号
@@ -345,9 +344,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 完成代码写入，去除首空行后返回代码信息对象。
+     * 完成代码写入，去除首空行后返回代码信息对象
      * <p>
-     * 调用此方法后内部缓冲区被清空，此后不应继续使用该写入器。
+     * 调用此方法后内部缓冲区被清空，此后不应继续使用该写入器
      * </p>
      *
      * @return 生成的代码信息对象
@@ -368,7 +367,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 获取当前缓冲区中的代码长度。
+     * 获取当前缓冲区中的代码长度
      *
      * @return 已写入字符数
      */
@@ -378,7 +377,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 获取底层的原始 StringBuilder 缓冲区。
+     * 获取底层的原始 StringBuilder 缓冲区
      *
      * @return 内部缓冲区
      */
@@ -388,9 +387,9 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 获取原始注解映射。
+     * 获取原始注解映射
      * <p>
-     * 该简化实现不支持元数据，始终返回空映射。
+     * 该简化实现不支持元数据，始终返回空映射
      * </p>
      *
      * @return 空的不可变映射
@@ -401,7 +400,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     }
 
     /**
-     * 获取当前已写入的代码字符串。
+     * 获取当前已写入的代码字符串
      *
      * @return 代码字符串
      */

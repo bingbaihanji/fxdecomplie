@@ -6,7 +6,7 @@ import java.util.Objects;
 
 /**
  * 纯 POJO 文件树节点，替代 javafx TreeItem 用于 model/service 层，
- * 使这两层不再依赖 JavaFX。UI 层通过转换器将其构建为 TreeItem。
+ * 使这两层不再依赖 JavaFXUI 层通过转换器将其构建为 TreeItem
  */
 public final class FileTreeModel {
     private final FileTreeNode value;
@@ -17,10 +17,21 @@ public final class FileTreeModel {
         this.value = Objects.requireNonNull(value, "value");
     }
 
-    public FileTreeNode getValue() { return value; }
-    public List<FileTreeModel> getChildren() { return children; }
-    public boolean isExpanded() { return expanded; }
-    public void setExpanded(boolean expanded) { this.expanded = expanded; }
+    public FileTreeNode getValue() {
+        return value;
+    }
+
+    public List<FileTreeModel> getChildren() {
+        return children;
+    }
+
+    public boolean isExpanded() {
+        return expanded;
+    }
+
+    public void setExpanded(boolean expanded) {
+        this.expanded = expanded;
+    }
 
     @Override
     public String toString() {

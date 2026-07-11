@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * 对字段节点（{@link FieldNode}）的对外封装，向 API 使用者提供字段的名称、
- * 类型、访问标志和引用关系等信息。
+ * 类型、访问标志和引用关系等信息
  */
 public final class JavaField implements JavaNode {
 

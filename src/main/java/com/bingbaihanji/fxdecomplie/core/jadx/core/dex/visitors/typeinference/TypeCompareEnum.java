@@ -1,10 +1,10 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference;
 
 /**
- * 类型比较结果枚举。
+ * 类型比较结果枚举
  * <p>
- * 用于描述两个类型在类型推断过程中的比较关系。
- * 当类型推断展开泛型类型时，基本类型相同但泛型参数不同会产生对应的比较结果。
+ * 用于描述两个类型在类型推断过程中的比较关系
+ * 当类型推断展开泛型类型时，基本类型相同但泛型参数不同会产生对应的比较结果
  */
 public enum TypeCompareEnum {
     /** 类型完全相同 */
@@ -25,10 +25,10 @@ public enum TypeCompareEnum {
     UNKNOWN;
 
     /**
-     * 反转比较结果。
+     * 反转比较结果
      * <p>
-     * 如果当前结果是 NARROW，则返回 WIDER；反之亦然。
-     * EQUAL、CONFLICT 和 UNKNOWN 保持不变。
+     * 如果当前结果是 NARROW，则返回 WIDER 反之亦然
+     * EQUAL、CONFLICT 和 UNKNOWN 保持不变
      *
      * @return 反转后的比较结果
      */
@@ -56,7 +56,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断两个类型是否完全相同。
+     * 判断两个类型是否完全相同
      *
      * @return 如果类型相同返回 true
      */
@@ -65,7 +65,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断当前类型是否更宽（包括泛型相关的更宽）。
+     * 判断当前类型是否更宽（包括泛型相关的更宽）
      *
      * @return 如果当前类型更宽返回 true
      */
@@ -74,7 +74,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断当前类型是否相等或更宽。
+     * 判断当前类型是否相等或更宽
      *
      * @return 如果类型相等或更宽返回 true
      */
@@ -83,7 +83,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断当前类型是否更窄（包括泛型相关的更窄）。
+     * 判断当前类型是否更窄（包括泛型相关的更窄）
      *
      * @return 如果当前类型更窄返回 true
      */
@@ -92,7 +92,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断当前类型是否相等或更窄。
+     * 判断当前类型是否相等或更窄
      *
      * @return 如果类型相等或更窄返回 true
      */
@@ -101,7 +101,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断两个类型是否冲突（不兼容）。
+     * 判断两个类型是否冲突（不兼容）
      *
      * @return 如果类型冲突返回 true
      */

@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.util;
 
 /**
- * jadx 反编译引擎中的 JVM 标准类常量，可供所有反编译引擎复用。
+ * jadx 反编译引擎中的 JVM 标准类常量，可供所有反编译引擎复用
  * <p>
- * 本类是一个纯常量容器，不可实例化。
+ * 本类是一个纯常量容器，不可实例化
  */
 public final class JadxConsts {
 

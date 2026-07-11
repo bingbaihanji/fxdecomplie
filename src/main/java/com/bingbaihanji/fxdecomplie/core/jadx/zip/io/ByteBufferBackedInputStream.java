@@ -5,10 +5,10 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 /**
- * 基于 {@link ByteBuffer} 的 {@link InputStream} 实现。
+ * 基于 {@link ByteBuffer} 的 {@link InputStream} 实现
  * <p>
  * 该流将 ByteBuffer 作为底层数据源，支持 mark/reset 操作，
- * 适用于需要以流式方式读取 NIO 缓冲区的场景。
+ * 适用于需要以流式方式读取 NIO 缓冲区的场景
  * </p>
  */
 public class ByteBufferBackedInputStream extends InputStream {
@@ -18,7 +18,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     private int markedPosition = 0;
 
     /**
-     * 使用指定的 ByteBuffer 构造输入流。
+     * 使用指定的 ByteBuffer 构造输入流
      *
      * @param buf 作为数据源的 ByteBuffer，其当前位置作为流的起始位置
      */
@@ -27,7 +27,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     }
 
     /**
-     * 从缓冲区读取一个字节。
+     * 从缓冲区读取一个字节
      *
      * @return 读取到的字节（0-255），如果缓冲区已无剩余数据则返回 -1
      */
@@ -40,7 +40,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     }
 
     /**
-     * 从缓冲区读取多个字节到指定数组。
+     * 从缓冲区读取多个字节到指定数组
      *
      * @param bytes 目标字节数组
      * @param off   目标数组的起始偏移量
@@ -59,7 +59,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     }
 
     /**
-     * 标记流支持 mark/reset 操作。
+     * 标记流支持 mark/reset 操作
      *
      * @return 始终返回 {@code true}
      */
@@ -69,7 +69,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     }
 
     /**
-     * 记录当前读取位置，供后续 {@link #reset()} 恢复。
+     * 记录当前读取位置，供后续 {@link #reset()} 恢复
      *
      * @param unused 标记读取上限（此实现中未使用）
      */
@@ -79,7 +79,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     }
 
     /**
-     * 将读取位置重置为上次 {@link #mark(int)} 记录的位置。
+     * 将读取位置重置为上次 {@link #mark(int)} 记录的位置
      */
     @Override
     public synchronized void reset() {

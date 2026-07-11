@@ -110,7 +110,7 @@ public final class WorkspaceLoader {
 
     /**
      * 计算文件/目录的内容指纹,用于检测工作区内容是否变更
-     * 文件：基于 lastModified + 文件大小；目录：遍历所有文件取最大修改时间、总大小、文件计数
+     * 文件：基于 lastModified + 文件大小 目录：遍历所有文件取最大修改时间、总大小、文件计数
      */
     private static String computeContentStamp(File file) throws IOException {
         if (!file.isDirectory()) {

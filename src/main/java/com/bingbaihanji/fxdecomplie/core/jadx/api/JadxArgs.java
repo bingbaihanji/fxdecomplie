@@ -35,12 +35,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Jadx 反编译器参数配置类。
+ * Jadx 反编译器参数配置类
  * <p>
  * 包含反编译过程中的所有可配置选项，如输入/输出路径、反编译模式、
- * 去混淆设置、代码格式化选项、插件配置等。
+ * 去混淆设置、代码格式化选项、插件配置等
  * <p>
- * 实现 {@link Closeable} 接口，用于释放内部缓存和插件加载器资源。
+ * 实现 {@link Closeable} 接口，用于释放内部缓存和插件加载器资源
  */
 public class JadxArgs implements Closeable {
     /** 默认线程数，取 CPU 核心数的一半（最少为 1） */
@@ -71,8 +71,8 @@ public class JadxArgs implements Closeable {
     /** 代码缓存，用于缓存反编译结果 */
     private ICodeCache codeCache = new InMemoryCodeCache();
     /**
-     * 使用数据缓存。在代码重新加载之间保存类、方法和字段的使用位置信息。
-     * 如果不需要代码重新加载，可以设置为 {@link EmptyUsageInfoCache}。
+     * 使用数据缓存在代码重新加载之间保存类、方法和字段的使用位置信息
+     * 如果不需要代码重新加载，可以设置为 {@link EmptyUsageInfoCache}
      */
     private IUsageInfoCache usageInfoCache = new InMemoryUsageInfoCache();
     /** 反编译使用的线程数 */
@@ -195,8 +195,8 @@ public class JadxArgs implements Closeable {
     /** 整数字面量的输出格式 */
     private IntegerFormat integerFormat = IntegerFormat.AUTO;
     /**
-     * 每条指令在方法中允许的类型更新最大次数。
-     * 值必须大于等于 1，默认值为 10。
+     * 每条指令在方法中允许的类型更新最大次数
+     * 值必须大于等于 1，默认值为 10
      */
     private int typeUpdatesLimitCount = 10;
     /** 是否使用 dx 格式输入（Android Dalvik 可执行文件） */
@@ -204,8 +204,8 @@ public class JadxArgs implements Closeable {
     /** 是否使用 Kotlin 方法名作为变量名 */
     private UseKotlinMethodsForVarNames useKotlinMethodsForVarNames = UseKotlinMethodsForVarNames.APPLY;
     /**
-     * 附加文件结构信息获取器。
-     * 默认使用临时目录。
+     * 附加文件结构信息获取器
+     * 默认使用临时目录
      */
     private IJadxFilesGetter filesGetter = TempFilesGetter.INSTANCE;
     /**
@@ -235,8 +235,8 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 构建插件相关的哈希字符串，作为选项哈希的一部分。
-     * 将所有已解析插件上下文的输入哈希以 ":" 连接。
+     * 构建插件相关的哈希字符串，作为选项哈希的一部分
+     * 将所有已解析插件上下文的输入哈希以 ":" 连接
      *
      * @param decompiler Jadx 反编译器实例（可为 null，此时返回空字符串）
      * @return 插件哈希字符串
@@ -252,7 +252,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置输出根目录，并自动设置源码和资源子目录。
+     * 设置输出根目录，并自动设置源码和资源子目录
      *
      * @param rootDir 输出根目录
      */
@@ -263,8 +263,8 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 关闭并释放所有内部资源，包括代码缓存、使用数据缓存和插件加载器。
-     * 关闭过程中的异常会被记录到日志，不会抛出。
+     * 关闭并释放所有内部资源，包括代码缓存、使用数据缓存和插件加载器
+     * 关闭过程中的异常会被记录到日志，不会抛出
      */
     @Override
     public void close() {
@@ -284,7 +284,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 获取待反编译的输入文件列表。
+     * 获取待反编译的输入文件列表
      *
      * @return 输入文件列表
      */
@@ -293,7 +293,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置输入文件列表，替换已有的输入文件集合。
+     * 设置输入文件列表，替换已有的输入文件集合
      *
      * @param inputFiles 输入文件列表
      */
@@ -302,7 +302,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 向输入文件列表追加一个文件。
+     * 向输入文件列表追加一个文件
      *
      * @param inputFile 待添加的输入文件
      */
@@ -311,7 +311,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置单个输入文件（内部通过追加方式实现，不会清空已有列表）。
+     * 设置单个输入文件（内部通过追加方式实现，不会清空已有列表）
      *
      * @param inputFile 输入文件
      */
@@ -368,7 +368,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 判断当前是否处于回退（fallback）反编译模式。
+     * 判断当前是否处于回退（fallback）反编译模式
      *
      * @return 若反编译模式为 {@link DecompilationMode#FALLBACK} 则返回 true
      */
@@ -515,7 +515,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 判断去混淆映射文件是否为强制保存（覆盖）模式。
+     * 判断去混淆映射文件是否为强制保存（覆盖）模式
      *
      * @return 若映射文件模式为 {@link GeneratedRenamesMappingFileMode#OVERWRITE} 则返回 true
      */
@@ -524,8 +524,8 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置去混淆映射文件是否强制保存（覆盖）。
-     * 传入 true 时会将映射文件模式设为 {@link GeneratedRenamesMappingFileMode#OVERWRITE}。
+     * 设置去混淆映射文件是否强制保存（覆盖）
+     * 传入 true 时会将映射文件模式设为 {@link GeneratedRenamesMappingFileMode#OVERWRITE}
      *
      * @param deobfuscationForceSave 是否强制保存
      */
@@ -657,7 +657,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 判断是否导出为 Gradle 项目。
+     * 判断是否导出为 Gradle 项目
      *
      * @return 若 {@code exportGradleType} 非 null 则返回 true
      */
@@ -666,9 +666,9 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置是否导出为 Gradle 项目。
-     * 传入 true 且当前未指定 Gradle 类型时，默认使用 {@link ExportGradleType#AUTO}；
-     * 传入 false 时清除导出类型。
+     * 设置是否导出为 Gradle 项目
+     * 传入 true 且当前未指定 Gradle 类型时，默认使用 {@link ExportGradleType#AUTO}
+     * 传入 false 时清除导出类型
      *
      * @param exportAsGradleProject 是否导出为 Gradle 项目
      */
@@ -739,7 +739,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 根据开关状态更新重命名标志集合。
+     * 根据开关状态更新重命名标志集合
      *
      * @param enabled 为 true 时添加标志，为 false 时移除标志
      * @param flag    要更新的重命名标志
@@ -769,7 +769,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 判断输出格式是否为 JSON。
+     * 判断输出格式是否为 JSON
      *
      * @return 若输出格式为 {@link OutputFormatEnum#JSON} 则返回 true
      */
@@ -950,8 +950,8 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 计算所有可能影响反编译结果代码的选项的哈希值。
-     * 用于缓存键生成，确保选项变更时能生成不同的缓存键。
+     * 计算所有可能影响反编译结果代码的选项的哈希值
+     * 用于缓存键生成，确保选项变更时能生成不同的缓存键
      *
      * @param decompiler Jadx 反编译器实例（可为 null，此时不包含插件哈希）
      * @return 选项哈希值的 MD5 字符串
@@ -972,7 +972,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 返回包含主要配置选项的字符串表示，主要用于调试和日志输出。
+     * 返回包含主要配置选项的字符串表示，主要用于调试和日志输出
      *
      * @return 描述当前参数配置的字符串
      */
@@ -1025,7 +1025,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 重命名标志枚举，控制去混淆时的重命名行为。
+     * 重命名标志枚举，控制去混淆时的重命名行为
      * <ul>
      *   <li>CASE - 区分大小写</li>
      *   <li>VALID - 仅使用有效标识符字符</li>
@@ -1037,7 +1037,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 输出格式枚举。
+     * 输出格式枚举
      * <ul>
      *   <li>JAVA - Java 源代码格式</li>
      *   <li>JSON - JSON 结构化格式</li>
@@ -1048,7 +1048,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * Kotlin 方法用于变量名的策略枚举。
+     * Kotlin 方法用于变量名的策略枚举
      * <ul>
      *   <li>DISABLE - 不使用 Kotlin 方法名</li>
      *   <li>APPLY - 应用 Kotlin 方法名</li>

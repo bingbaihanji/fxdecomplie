@@ -14,7 +14,7 @@ import java.util.Map;
  * 每个方法的 descriptor/flags/Code 属性(stack/locals/args_size)、
  * 指令 hex 偏移 + 原始字节 + | + 偏移 + 操作码</p>
  *
- * <p>两阶段处理：阶段1 从 raw bytes 解析常量池和 Code 属性文件偏移；
+ * <p>两阶段处理：阶段1 从 raw bytes 解析常量池和 Code 属性文件偏移 
  * 阶段2 用 ASM ClassVisitor 遍历类结构,MethodVisitor 中输出 hex+指令</p>
  *
  * @author bingbaihanji

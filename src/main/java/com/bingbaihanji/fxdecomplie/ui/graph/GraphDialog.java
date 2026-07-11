@@ -299,7 +299,7 @@ public class GraphDialog extends Dialog<Void> {
     /**
      * 切换按钮回调：在图形视图和 DOT 源码视图之间切换
      *
-     * <p>只有两个视图都存在时切换才有意义：当前显示图形 → 切到 DOT 源码；
+     * <p>只有两个视图都存在时切换才有意义：当前显示图形 → 切到 DOT 源码 
      * 当前显示 DOT → 切回图形</p>
      */
     private void toggleView() {

@@ -1,9 +1,13 @@
 package com.bingbaihanji.fxdecomplie;
 
-import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameEntry;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
-import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.util.I18nUtil;
@@ -18,10 +22,10 @@ import java.io.File;
 import java.util.List;
 
 /**
- * 反混淆与 ProGuard 映射控制器：自动反混淆扫描与预览、ProGuard 映射导入/导出、重命名快照恢复。
+ * 反混淆与 ProGuard 映射控制器：自动反混淆扫描与预览、ProGuard 映射导入/导出、重命名快照恢复
  * <p>
- * 从 RenameController 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）。
- * 与 RenameController 共用 {@code owner.refreshWorkspaceTree(...)} 刷新文件树。
+ * 从 RenameController 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）
+ * 与 RenameController 共用 {@code owner.refreshWorkspaceTree(...)} 刷新文件树
  *
  * @author bingbaihanji
  */
@@ -119,7 +123,9 @@ public final class DeobfuscationController {
     /** 导入 ProGuard 映射文件并应用为重命名条目 */
     public void importProGuardMapping() {
         WorkspaceView view = owner.requireWorkspaceOrWarn("Import ProGuard Mapping", I18nUtil.getString("dialog.export.noworkspace"));
-        if (view == null) { return; }
+        if (view == null) {
+            return;
+        }
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Import ProGuard Mapping");
         chooser.getExtensionFilters().addAll(
@@ -156,7 +162,9 @@ public final class DeobfuscationController {
     /** 将当前工作区的重命名映射导出为 ProGuard 映射文件 */
     public void exportProGuardMapping() {
         WorkspaceView view = owner.requireWorkspaceOrWarn("Export ProGuard Mapping", I18nUtil.getString("dialog.export.noworkspace"));
-        if (view == null) { return; }
+        if (view == null) {
+            return;
+        }
         String wsHash = CommentScope.workspaceHash(view.workspace());
         String mapping = RenameService.exportProGuard(wsHash);
         if (mapping.isBlank()) {
@@ -185,7 +193,9 @@ public final class DeobfuscationController {
     /** 恢复当前工作区最近一次重命名快照 */
     public void restoreLastRenameSnapshot() {
         WorkspaceView view = owner.requireWorkspaceOrWarn("Restore Rename Snapshot", I18nUtil.getString("dialog.export.noworkspace"));
-        if (view == null) { return; }
+        if (view == null) {
+            return;
+        }
         Workspace workspace = view.workspace();
         String wsHash = CommentScope.workspaceHash(workspace);
         boolean restored = RenameService
@@ -199,7 +209,7 @@ public final class DeobfuscationController {
         owner.statusBar().setFilePath("Rename snapshot restored, " + reloadTabs + " tabs reloaded");
     }
 
-    /** 反混淆/重命名后统一刷新：清缓存 + 重载已开标签 + 刷新文件树。@return 受影响的标签数 */
+    /** 反混淆/重命名后统一刷新：清缓存 + 重载已开标签 + 刷新文件树@return 受影响的标签数 */
     private int reloadAndRefreshAfterRename(Workspace workspace) {
         workspace.clearSourceSearchCaches();
         int changed = reloadOpenTabsAfterDeobfuscate(workspace);

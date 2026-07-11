@@ -1,12 +1,13 @@
 package com.bingbaihanji.fxdecomplie.util;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
+
 import java.util.Map;
 
 /**
- * 将 {@code Map<String, String>} 选项映射到 {@link JadxArgs} setter 的桥接工具。
+ * 将 {@code Map<String, String>} 选项映射到 {@link JadxArgs} setter 的桥接工具
  * <p>
- * key 名称与 {@link com.bingbaihanji.fxdecomplie.decompiler.JadxParameters} 的定义保持一致。
+ * key 名称与 {@link com.bingbaihanji.fxdecomplie.decompiler.JadxParameters} 的定义保持一致
  */
 public final class JadxOptionsBridge {
 
@@ -15,8 +16,8 @@ public final class JadxOptionsBridge {
     }
 
     /**
-     * 将选项 Map 中的值应用到指定的 JadxArgs 实例。
-     * 未出现在 map 中的 key 保留 JadxArgs 默认值不变。
+     * 将选项 Map 中的值应用到指定的 JadxArgs 实例
+     * 未出现在 map 中的 key 保留 JadxArgs 默认值不变
      */
     public static void apply(JadxArgs args, Map<String, String> options) {
         if (args == null || options == null || options.isEmpty()) {
@@ -102,21 +103,12 @@ public final class JadxOptionsBridge {
 
     // --- helpers ---
 
-    private record BooleanValue(boolean set, boolean value) {}
-
     private static BooleanValue bool(Map<String, String> m, String key) {
         String v = m.get(key);
         if (v == null) {
             return new BooleanValue(false, false);
         }
         return new BooleanValue(true, "true".equalsIgnoreCase(v) || "1".equals(v));
-    }
-
-    private record IntValue(boolean set, int value) {
-        void ifSet(java.util.function.IntConsumer c) { if (set) {
-            c.accept(value);
-        }
-        }
     }
 
     private static IntValue intValue(Map<String, String> m, String key) {
@@ -128,6 +120,17 @@ public final class JadxOptionsBridge {
             return new IntValue(true, Integer.parseInt(v));
         } catch (NumberFormatException e) {
             return new IntValue(false, 0);
+        }
+    }
+
+    private record BooleanValue(boolean set, boolean value) {
+    }
+
+    private record IntValue(boolean set, int value) {
+        void ifSet(java.util.function.IntConsumer c) {
+            if (set) {
+                c.accept(value);
+            }
         }
     }
 }

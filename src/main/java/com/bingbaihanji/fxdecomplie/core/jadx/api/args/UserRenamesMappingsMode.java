@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.args;
 
 /**
- * 用户重命名映射的读写模式枚举。
+ * 用户重命名映射的读写模式枚举
  * <p>
- * 控制反编译器在加载和保存用户自定义重命名映射（如类名、方法名、字段名的手动重命名）时的行为策略。
+ * 控制反编译器在加载和保存用户自定义重命名映射（如类名、方法名、字段名的手动重命名）时的行为策略
  */
 public enum UserRenamesMappingsMode {
 
@@ -28,7 +28,7 @@ public enum UserRenamesMappingsMode {
     IGNORE;
 
     /**
-     * 获取默认的映射读写模式。
+     * 获取默认的映射读写模式
      *
      * @return 默认返回 {@link #READ}，即仅读取、用户手动保存
      */
@@ -37,7 +37,7 @@ public enum UserRenamesMappingsMode {
     }
 
     /**
-     * 判断当前模式是否应读取映射文件。
+     * 判断当前模式是否应读取映射文件
      *
      * @return 当模式不是 {@link #IGNORE} 时返回 {@code true}
      */
@@ -46,7 +46,7 @@ public enum UserRenamesMappingsMode {
     }
 
     /**
-     * 判断当前模式是否应自动写入映射文件。
+     * 判断当前模式是否应自动写入映射文件
      *
      * @return 当模式为 {@link #READ_AND_AUTOSAVE_EVERY_CHANGE} 或
      *         {@link #READ_AND_AUTOSAVE_BEFORE_CLOSING} 时返回 {@code true}

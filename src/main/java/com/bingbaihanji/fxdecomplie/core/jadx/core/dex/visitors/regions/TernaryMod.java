@@ -1,5 +1,4 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions;
-import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
@@ -15,8 +14,8 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfRegi
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.shrink.CodeShrinkVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnList;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

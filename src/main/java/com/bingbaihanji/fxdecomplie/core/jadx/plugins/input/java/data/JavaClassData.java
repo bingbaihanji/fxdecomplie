@@ -17,12 +17,12 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Java 类数据解析器。
+ * Java 类数据解析器
  * <p>
  * 基于 {@link JavaClassReader} 读取到的原始字节，解析 {@code .class} 文件的结构（访问标志、类型、
- * 父类、接口、字段、方法及各类属性），并对外提供 {@link IClassData} 接口所需的访问能力。
+ * 父类、接口、字段、方法及各类属性），并对外提供 {@link IClassData} 接口所需的访问能力
  * 解析过程借助 {@link ClassOffsets} 记录的各段偏移量、{@link ConstPoolReader} 常量池读取器
- * 以及 {@link AttributesReader} 属性读取器完成。
+ * 以及 {@link AttributesReader} 属性读取器完成
  */
 public class JavaClassData implements IClassData {
     /** 底层类字节读取器，提供原始字节及文件名等信息 */
@@ -37,7 +37,7 @@ public class JavaClassData implements IClassData {
     private final AttributesReader attributesReader;
 
     /**
-     * 构造类数据解析器。
+     * 构造类数据解析器
      *
      * @param clsReader 提供类原始字节及文件信息的类读取器
      */
@@ -50,7 +50,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回该类在输入文件中的偏移量（此处使用访问标志的偏移量）。
+     * 返回该类在输入文件中的偏移量（此处使用访问标志的偏移量）
      */
     @Override
     public int getInputFileOffset() {
@@ -58,7 +58,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回当前实例自身作为副本（本实现为不可变解析器，无需真正复制）。
+     * 返回当前实例自身作为副本（本实现为不可变解析器，无需真正复制）
      */
     @Override
     public IClassData copy() {
@@ -66,7 +66,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 读取并返回类的访问标志。
+     * 读取并返回类的访问标志
      */
     @Override
     public int getAccessFlags() {
@@ -74,7 +74,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回当前类的类型（全限定类型描述）。
+     * 返回当前类的类型（全限定类型描述）
      */
     @Override
     public String getType() {
@@ -83,7 +83,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回父类的类型；若无父类（如 {@code java.lang.Object}）则返回 {@code null}。
+     * 返回父类的类型 若无父类（如 {@code java.lang.Object}）则返回 {@code null}
      */
     @Override
     @Nullable
@@ -96,7 +96,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回当前类实现的所有接口类型列表。
+     * 返回当前类实现的所有接口类型列表
      */
     @Override
     public List<String> getInterfacesTypes() {
@@ -105,7 +105,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回该类所属输入文件的文件名。
+     * 返回该类所属输入文件的文件名
      */
     @Override
     public String getInputFileName() {
@@ -113,7 +113,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 依次遍历类中的所有字段和方法，并将其提供给对应的消费者。
+     * 依次遍历类中的所有字段和方法，并将其提供给对应的消费者
      *
      * @param fieldsConsumer 字段消费者
      * @param mthConsumer    方法消费者
@@ -148,7 +148,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 解析单个字段，将访问标志、名称、类型及属性写入给定的字段对象。
+     * 解析单个字段，将访问标志、名称、类型及属性写入给定的字段对象
      *
      * @param reader 定位到字段起始位置的读取器
      * @param field  用于承载解析结果的字段对象（会被复用）
@@ -166,7 +166,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 解析单个方法，构建方法引用并将访问标志、属性写入给定的方法对象。
+     * 解析单个方法，构建方法引用并将访问标志、属性写入给定的方法对象
      *
      * @param reader 定位到方法起始位置的读取器
      * @param method 用于承载解析结果的方法对象（会被复用）
@@ -192,14 +192,14 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回底层的类字节数据读取器。
+     * 返回底层的类字节数据读取器
      */
     public DataReader getData() {
         return data;
     }
 
     /**
-     * 返回类级别的属性列表（如注解、内部类、源文件、签名等）。
+     * 返回类级别的属性列表（如注解、内部类、源文件、签名等）
      */
     @Override
     public List<IJadxAttribute> getAttributes() {
@@ -218,7 +218,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 从类属性段读取并加载指定类型的单个类级别属性。
+     * 从类属性段读取并加载指定类型的单个类级别属性
      *
      * @param reader 读取器
      * @param type   要加载的属性类型
@@ -231,7 +231,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回该类的反汇编代码文本。
+     * 返回该类的反汇编代码文本
      */
     @Override
     public String getDisassembledCode() {
@@ -239,28 +239,28 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回底层的类字节读取器。
+     * 返回底层的类字节读取器
      */
     public JavaClassReader getClsReader() {
         return clsReader;
     }
 
     /**
-     * 返回类文件各结构段的偏移量信息。
+     * 返回类文件各结构段的偏移量信息
      */
     public ClassOffsets getOffsets() {
         return offsets;
     }
 
     /**
-     * 返回常量池读取器。
+     * 返回常量池读取器
      */
     public ConstPoolReader getConstPoolReader() {
         return constPoolReader;
     }
 
     /**
-     * 返回属性读取器。
+     * 返回属性读取器
      */
     public AttributesReader getAttributesReader() {
         return attributesReader;

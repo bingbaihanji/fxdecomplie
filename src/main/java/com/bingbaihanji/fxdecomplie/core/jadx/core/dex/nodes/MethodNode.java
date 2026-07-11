@@ -43,10 +43,10 @@ import java.util.*;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 
 /**
- * 方法节点，表示 DEX 字节码中的一个方法。
+ * 方法节点，表示 DEX 字节码中的一个方法
  * <p>
- * 继承自 {@link NotificationAttrNode}，实现了方法详情、可加载、代码节点等接口。
- * 包含方法的字节码指令、基本块、异常处理器、循环信息、SSA 变量等反编译所需数据。
+ * 继承自 {@link NotificationAttrNode}，实现了方法详情、可加载、代码节点等接口
+ * 包含方法的字节码指令、基本块、异常处理器、循环信息、SSA 变量等反编译所需数据
  * </p>
  */
 public class MethodNode extends NotificationAttrNode implements IMethodDetails, ILoadable, ICodeNode, Comparable<MethodNode> {
@@ -136,7 +136,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 根据方法数据构建方法节点实例。
+     * 根据方法数据构建方法节点实例
      *
      * @param classNode  所属父类节点
      * @param methodData 方法数据（来自输入插件）
@@ -149,7 +149,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 卸载方法的反编译数据，释放内存。返回类型、参数类型和类型参数不会被卸载。
+     * 卸载方法的反编译数据，释放内存返回类型、参数类型和类型参数不会被卸载
      */
     @Override
     public void unload() {
@@ -170,7 +170,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 更新方法的参数类型和返回类型。
+     * 更新方法的参数类型和返回类型
      *
      * @param argTypes 新的参数类型列表
      * @param retType  新的返回类型
@@ -181,7 +181,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 更新方法的泛型类型参数列表。
+     * 更新方法的泛型类型参数列表
      *
      * @param typeParameters 新的类型参数列表
      */
@@ -190,7 +190,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 加载方法的反编译数据，包括指令解码和参数初始化。
+     * 加载方法的反编译数据，包括指令解码和参数初始化
      *
      * @throws DecodeException 如果指令解码失败
      */
@@ -234,7 +234,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 重新加载方法数据，先卸载再加载。
+     * 重新加载方法数据，先卸载再加载
      */
     public void reload() {
         unload();
@@ -246,7 +246,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 初始化方法参数寄存器，包括 this 引用（非静态方法）和方法参数。
+     * 初始化方法参数寄存器，包括 this 引用（非静态方法）和方法参数
      *
      * @param args 参数类型列表
      */
@@ -278,7 +278,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 计算参数在寄存器中的起始位置。
+     * 计算参数在寄存器中的起始位置
      *
      * @param args 参数类型列表
      * @return 参数起始寄存器位置
@@ -310,7 +310,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 更新方法的参数类型，并重新初始化参数寄存器。
+     * 更新方法的参数类型，并重新初始化参数寄存器
      *
      * @param newArgTypes 新的参数类型列表
      * @param comment     调试注释信息
@@ -322,7 +322,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否包含泛型参数（即原始参数类型与当前参数类型不同）。
+     * 判断方法是否包含泛型参数（即原始参数类型与当前参数类型不同）
      *
      * @return 如果包含泛型参数返回 true
      */
@@ -337,7 +337,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 更新方法的返回类型。
+     * 更新方法的返回类型
      *
      * @param type 新的返回类型
      */
@@ -346,7 +346,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法返回类型是否为 void。
+     * 判断方法返回类型是否为 void
      *
      * @return 如果返回类型为 void 返回 true
      */
@@ -355,7 +355,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 收集方法参数的变量节点列表，用于代码元数据映射。
+     * 收集方法参数的变量节点列表，用于代码元数据映射
      *
      * @return 参数变量节点列表
      */
@@ -390,7 +390,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回参数寄存器列表（不含 this）。
+     * 返回参数寄存器列表（不含 this）
      *
      * @return 参数寄存器列表
      * @throws JadxRuntimeException 如果参数寄存器尚未加载
@@ -404,7 +404,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回全部参数寄存器列表，非静态方法会在首位包含 this 参数。
+     * 返回全部参数寄存器列表，非静态方法会在首位包含 this 参数
      *
      * @return 包含 this（如有）的全部参数寄存器列表
      */
@@ -420,7 +420,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回 this 引用寄存器参数，静态方法返回 null。
+     * 返回 this 引用寄存器参数，静态方法返回 null
      *
      * @return this 参数寄存器，静态方法为 null
      */
@@ -430,7 +430,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 标记跳过第一个参数（如合成参数）。
+     * 标记跳过第一个参数（如合成参数）
      */
     public void skipFirstArgument() {
         this.add(AFlag.SKIP_FIRST_ARG);
@@ -442,7 +442,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法原始名称。
+     * 返回方法原始名称
      *
      * @return 方法名
      */
@@ -451,7 +451,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法别名（重命名后使用的名称）。
+     * 返回方法别名（重命名后使用的名称）
      *
      * @return 方法别名
      */
@@ -465,7 +465,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法直接所属的父类节点。
+     * 返回方法直接所属的父类节点
      *
      * @return 父类节点
      */
@@ -474,7 +474,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回最顶层的父类节点（穿透内部类嵌套）。
+     * 返回最顶层的父类节点（穿透内部类嵌套）
      *
      * @return 顶层父类节点
      */
@@ -483,7 +483,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否无代码（抽象方法、接口方法或加载失败）。
+     * 判断方法是否无代码（抽象方法、接口方法或加载失败）
      *
      * @return 无代码返回 true
      */
@@ -492,7 +492,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法解码后的指令数组。
+     * 返回方法解码后的指令数组
      *
      * @return 指令数组，未加载时可能为 null
      */
@@ -501,21 +501,21 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 释放指令数组占用的内存。
+     * 释放指令数组占用的内存
      */
     public void unloadInsnArr() {
         this.instructions = null;
     }
 
     /**
-     * 初始化基本块列表。
+     * 初始化基本块列表
      */
     public void initBasicBlocks() {
         blocks = new ArrayList<>();
     }
 
     /**
-     * 完成基本块构建，锁定基本块和循环信息使其不可变。
+     * 完成基本块构建，锁定基本块和循环信息使其不可变
      */
     public void finishBasicBlocks() {
         blocks = lockList(blocks);
@@ -524,7 +524,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法的基本块列表。
+     * 返回方法的基本块列表
      *
      * @return 基本块列表
      */
@@ -533,7 +533,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置方法的基本块列表并更新块位置。
+     * 设置方法的基本块列表并更新块位置
      *
      * @param blocks 基本块列表
      */
@@ -543,14 +543,14 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 更新基本块的位置索引。
+     * 更新基本块的位置索引
      */
     public void updateBlockPositions() {
         BlockNode.updateBlockPositions(blocks);
     }
 
     /**
-     * 返回下一个基本块的计数 ID 并自增。
+     * 返回下一个基本块的计数 ID 并自增
      *
      * @return 下一个基本块计数 ID
      */
@@ -559,7 +559,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回入口基本块。
+     * 返回入口基本块
      *
      * @return 入口基本块
      */
@@ -568,7 +568,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置入口基本块。
+     * 设置入口基本块
      *
      * @param enterBlock 入口基本块
      */
@@ -577,7 +577,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回出口基本块。
+     * 返回出口基本块
      *
      * @return 出口基本块
      */
@@ -586,7 +586,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置出口基本块。
+     * 设置出口基本块
      *
      * @param exitBlock 出口基本块
      */
@@ -595,7 +595,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回出口块前驱的基本块列表（即方法退出前的块）。
+     * 返回出口块前驱的基本块列表（即方法退出前的块）
      *
      * @return 出口前驱基本块列表
      */
@@ -604,7 +604,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断给定基本块是否为出口前驱块。
+     * 判断给定基本块是否为出口前驱块
      *
      * @param block 待检查的基本块
      * @return 若为出口前驱块返回 true
@@ -618,14 +618,14 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 重置循环信息列表。
+     * 重置循环信息列表
      */
     public void resetLoops() {
         this.loops = new ArrayList<>();
     }
 
     /**
-     * 注册一个循环信息并分配 ID。
+     * 注册一个循环信息并分配 ID
      *
      * @param loop 循环信息
      */
@@ -638,7 +638,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回包含指定基本块的循环（返回首个匹配）。
+     * 返回包含指定基本块的循环（返回首个匹配）
      *
      * @param block 基本块
      * @return 包含该块的循环信息，无则返回 null
@@ -657,7 +657,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回包含指定基本块的所有循环。
+     * 返回包含指定基本块的所有循环
      *
      * @param block 基本块
      * @return 包含该块的所有循环信息列表
@@ -676,7 +676,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法中的循环数量。
+     * 返回方法中的循环数量
      *
      * @return 循环数量
      */
@@ -685,7 +685,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法中所有循环信息的可迭代集合。
+     * 返回方法中所有循环信息的可迭代集合
      *
      * @return 循环信息集合
      */
@@ -694,7 +694,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 添加一个异常处理器。
+     * 添加一个异常处理器
      *
      * @param handler 异常处理器
      * @return 添加的异常处理器
@@ -708,7 +708,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 清除已标记为移除的异常处理器。
+     * 清除已标记为移除的异常处理器
      *
      * @return 若有处理器被移除返回 true
      */
@@ -717,7 +717,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法的异常处理器集合。
+     * 返回方法的异常处理器集合
      *
      * @return 异常处理器集合
      */
@@ -726,7 +726,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否没有异常处理器。
+     * 判断方法是否没有异常处理器
      *
      * @return 无异常处理器返回 true
      */
@@ -735,7 +735,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回异常处理器数量。
+     * 返回异常处理器数量
      *
      * @return 异常处理器数量
      */
@@ -757,7 +757,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断是否存在同名且参数数量相同的方法（即方法被重载）。
+     * 判断是否存在同名且参数数量相同的方法（即方法被重载）
      *
      * @return 若存在重载方法返回 true
      */
@@ -776,7 +776,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否为构造方法。
+     * 判断方法是否为构造方法
      *
      * @return 为构造方法返回 true
      */
@@ -785,7 +785,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否为默认（无参）构造方法。
+     * 判断方法是否为默认（无参）构造方法
      *
      * @return 为默认构造方法返回 true
      */
@@ -807,7 +807,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法使用的寄存器总数。
+     * 返回方法使用的寄存器总数
      *
      * @return 寄存器总数
      */
@@ -816,7 +816,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回参数起始寄存器索引。
+     * 返回参数起始寄存器索引
      *
      * @return 参数起始寄存器索引
      */
@@ -825,7 +825,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 创建一个新的合成（伪造）寄存器参数。
+     * 创建一个新的合成（伪造）寄存器参数
      *
      * @param type 参数类型
      * @return 新建的合成寄存器参数
@@ -840,7 +840,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 创建一个带名称的合成寄存器参数。
+     * 创建一个带名称的合成寄存器参数
      *
      * @param type 参数类型
      * @param name 参数名称
@@ -853,7 +853,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 为指定赋值寄存器参数创建新的 SSA 变量，自动分配版本号。
+     * 为指定赋值寄存器参数创建新的 SSA 变量，自动分配版本号
      *
      * @param assignArg 赋值寄存器参数
      * @return 新建的 SSA 变量
@@ -864,7 +864,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 使用指定寄存器号和版本号创建新的 SSA 变量。
+     * 使用指定寄存器号和版本号创建新的 SSA 变量
      *
      * @param regNum    寄存器号
      * @param version   版本号
@@ -892,7 +892,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 移除指定的 SSA 变量。
+     * 移除指定的 SSA 变量
      *
      * @param var 待移除的 SSA 变量
      */
@@ -901,7 +901,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法的 SSA 变量列表。
+     * 返回方法的 SSA 变量列表
      *
      * @return SSA 变量列表
      */
@@ -925,7 +925,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法反编译后的代码区域。
+     * 返回方法反编译后的代码区域
      *
      * @return 代码区域
      */
@@ -934,7 +934,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置方法反编译后的代码区域。
+     * 设置方法反编译后的代码区域
      *
      * @param region 代码区域
      */
@@ -963,7 +963,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法字节码在文件中的偏移量。
+     * 返回方法字节码在文件中的偏移量
      *
      * @return 代码偏移量，无代码时返回 0
      */
@@ -972,7 +972,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法的调试信息。
+     * 返回方法的调试信息
      *
      * @return 调试信息，无代码时返回 null
      */
@@ -982,7 +982,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 忽略此方法，标记为不生成代码并置为无代码。
+     * 忽略此方法，标记为不生成代码并置为无代码
      */
     public void ignoreMethod() {
         add(AFlag.DONT_GENERATE);
@@ -1002,7 +1002,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 计算当前阶段的指令数量。
+     * 计算当前阶段的指令数量
      *
      * @return 指令数量，无法确定时返回 -1
      */
@@ -1017,7 +1017,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法字节码中的原始指令数量。
+     * 返回方法字节码中的原始指令数量
      *
      * @return 原始指令数量
      */
@@ -1026,7 +1026,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回带注释和注解的方法源码。
+     * 返回带注释和注解的方法源码
      *
      * @return 方法源码字符串
      */
@@ -1040,7 +1040,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法反编译数据是否已加载。
+     * 判断方法反编译数据是否已加载
      *
      * @return 已加载返回 true
      */
@@ -1049,7 +1049,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法的字节码读取器。
+     * 返回方法的字节码读取器
      *
      * @return 字节码读取器，无代码时可能为 null
      */
@@ -1063,7 +1063,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置调用此方法的方法列表（调用者），设置后请勿修改传入列表。
+     * 设置调用此方法的方法列表（调用者），设置后请勿修改传入列表
      *
      * @param useIn 调用者方法列表
      */
@@ -1077,7 +1077,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 添加一个被此方法调用的方法（被调用者）。
+     * 添加一个被此方法调用的方法（被调用者）
      *
      * @param used 被调用的方法
      */
@@ -1088,7 +1088,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回此方法调用的方法集合（被调用者），返回前会剔除无效项。
+     * 返回此方法调用的方法集合（被调用者），返回前会剔除无效项
      *
      * @return 被调用的方法集合
      */
@@ -1098,7 +1098,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置此方法调用的方法集合（被调用者）。
+     * 设置此方法调用的方法集合（被调用者）
      *
      * @param methodsUsed 被调用的方法列表
      */
@@ -1107,7 +1107,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回未解析的调用此方法的方法信息列表。
+     * 返回未解析的调用此方法的方法信息列表
      *
      * @return 未解析的调用者方法信息列表
      */
@@ -1116,7 +1116,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置未解析的调用此方法的方法信息列表。
+     * 设置未解析的调用此方法的方法信息列表
      *
      * @param unresolvedUsed 未解析的调用者方法信息列表
      */
@@ -1125,7 +1125,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置此方法是否包含递归自调用。
+     * 设置此方法是否包含递归自调用
      *
      * @param callsSelf 是否递归自调用
      */
@@ -1134,7 +1134,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断此方法是否包含递归自调用。
+     * 判断此方法是否包含递归自调用
      *
      * @return 包含递归自调用返回 true
      */
@@ -1149,7 +1149,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回关联的 Java API 方法对象。
+     * 返回关联的 Java API 方法对象
      *
      * @return Java 方法对象
      */

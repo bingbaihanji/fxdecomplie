@@ -36,12 +36,12 @@ import java.util.stream.Collectors;
         }
 )
 /**
- * 重写方法访问器。
+ * 重写方法访问器
  * <p>
  * 遍历类的父类型层次结构，标记出属于方法重写（override）的方法，并为其附加
- * {@link MethodOverrideAttr} 属性；同时尝试还原因类型擦除（type erasure）而丢失的
- * 返回值类型与参数类型，使其与基类/接口中的方法签名保持一致。若修正后的签名可能引发
- * 方法冲突，还会进行冲突检测与重命名处理。
+ * {@link MethodOverrideAttr} 属性 同时尝试还原因类型擦除（type erasure）而丢失的
+ * 返回值类型与参数类型，使其与基类/接口中的方法签名保持一致若修正后的签名可能引发
+ * 方法冲突，还会进行冲突检测与重命名处理
  */
 public class OverrideMethodVisitor extends AbstractVisitor {
 
@@ -61,7 +61,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
     }
 
     /**
-     * 收集类的所有父类型信息，并对类中每个方法进行重写检测与类型修正。
+     * 收集类的所有父类型信息，并对类中每个方法进行重写检测与类型修正
      *
      * @param cls 待处理的类节点
      * @return 始终返回 {@code true}，以便继续访问该类的内部结构
@@ -268,8 +268,8 @@ public class OverrideMethodVisitor extends AbstractVisitor {
     }
 
     /**
-     * 检查父类方法在当前类中是否可见。
-     * 注意：此方法为 {@code ModVisitor.isFieldVisibleInMethod} 的简化版。
+     * 检查父类方法在当前类中是否可见
+     * 注意：此方法为 {@code ModVisitor.isFieldVisibleInMethod} 的简化版
      */
     private boolean isMethodVisibleInCls(MethodNode superMth, ClassNode cls) {
         AccessInfo accessFlags = superMth.getAccessFlags();

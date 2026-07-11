@@ -26,10 +26,10 @@ import java.util.function.Supplier;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.*;
 
 /**
- * 类型更新器，负责在类型推断过程中对 SSA 变量及其相关指令参数执行类型检查和类型传播。
+ * 类型更新器，负责在类型推断过程中对 SSA 变量及其相关指令参数执行类型检查和类型传播
  * <p>
  * 当某个变量的类型发生变化时，会通过监听器机制将类型变更传播到所有相关的指令和变量上，
- * 同时通过边界检查和类型比较确保类型更新的正确性。
+ * 同时通过边界检查和类型比较确保类型更新的正确性
  * </p>
  */
 public final class TypeUpdate {
@@ -165,11 +165,11 @@ public final class TypeUpdate {
     }
 
     /**
-     * 为 InsnArg（指令参数）排队一个类型更新请求。
+     * 为 InsnArg（指令参数）排队一个类型更新请求
      *
      * @param callback 当此更新的结果计算完成后执行的回调，
      *                 可以为 null —— 此时回调将原样传递结果不做改变
-     * @return 如果更新已加入队列则返回 null；如果未入队（校验失败）则返回非空结果
+     * @return 如果更新已加入队列则返回 null 如果未入队（校验失败）则返回非空结果
      */
     public @Nullable TypeUpdateResult queueTypeUpdate(TypeUpdateInfo updateInfo,
                                                       InsnArg arg, ArgType candidateType, @Nullable ITypeUpdateCallback callback) {
@@ -191,7 +191,7 @@ public final class TypeUpdate {
     }
 
     /**
-     * 排队一个直接类型更新请求（不经过校验，标记为 direct）。
+     * 排队一个直接类型更新请求（不经过校验，标记为 direct）
      *
      * @param callback 结果计算完成后执行的回调，可以为 null
      * @return 恒返回 null（请求已加入队列）

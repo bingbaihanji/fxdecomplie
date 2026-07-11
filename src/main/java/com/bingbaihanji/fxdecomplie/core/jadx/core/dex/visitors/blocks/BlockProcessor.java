@@ -1,6 +1,4 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks;
-import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
-import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
@@ -22,6 +20,8 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
+import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
+import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks.BlockSplitter.connect;
 
 /**
- * 基本块处理器，负责构建和优化方法的控制流图（CFG）。
- * 主要职责包括：计算支配树、识别循环结构、拆分和合并基本块、消除不可达块等。
+ * 基本块处理器，负责构建和优化方法的控制流图（CFG）
+ * 主要职责包括：计算支配树、识别循环结构、拆分和合并基本块、消除不可达块等
  */
 public class BlockProcessor extends AbstractVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(BlockProcessor.class);
@@ -42,7 +42,7 @@ public class BlockProcessor extends AbstractVisitor {
 
     /**
      * 处理基本块树的主流程，包括：移除不可达块、计算支配树、修复多入口循环、
-     * 迭代修改块树（合并常量返回、拆分循环等）、注册循环信息、计算后支配树。
+     * 迭代修改块树（合并常量返回、拆分循环等）、注册循环信息、计算后支配树
      */
     private static void processBlocksTree(MethodNode mth) {
         removeUnreachableBlocks(mth);
@@ -99,7 +99,7 @@ public class BlockProcessor extends AbstractVisitor {
      * - 循环及嵌套循环信息
      * </pre>
      * <p>
-     * 在 {@link BlockFinisher} 之前的自定义处理阶段修改块树后，应调用此方法。
+     * 在 {@link BlockFinisher} 之前的自定义处理阶段修改块树后，应调用此方法
      */
     public static void updateBlocksData(MethodNode mth) {
         clearBlocksState(mth);
@@ -116,7 +116,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 更新所有基本块的干净后继列表（排除合成块等）。
+     * 更新所有基本块的干净后继列表（排除合成块等）
      */
     static void updateCleanSuccessors(MethodNode mth) {
         mth.getBasicBlocks().forEach(BlockNode::updateCleanSuccessors);
@@ -127,9 +127,9 @@ public class BlockProcessor extends AbstractVisitor {
             boolean fixed = false;
             for (BlockNode block : mth.getBasicBlocks()) {
                 if (block.getPredecessors().isEmpty() && block != mth.getEnterBlock()) {
-                    // 有时拆分交叉块在创建后，其所有前驱节点会被移到其他位置。
-                    // 这种情况通常在创建时就能检测到，但在某些边缘情况下很难做到。
-                    // 在这些情况下，此处会将其与关联的底部分割器一起干净地移除。
+                    // 有时拆分交叉块在创建后，其所有前驱节点会被移到其他位置
+                    // 这种情况通常在创建时就能检测到，但在某些边缘情况下很难做到
+                    // 在这些情况下，此处会将其与关联的底部分割器一起干净地移除
                     if (block.contains(AType.EXC_SPLIT_CROSS) && fixUnreachableSplitCross(mth, block)) {
                         mth.addInfoComment("Removed unreachable split cross block " + block);
                         fixed = true;
@@ -145,11 +145,11 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 尝试移除之前添加的不可达合成拆分交叉块，以及关联的底部分割器。
+     * 尝试移除之前添加的不可达合成拆分交叉块，以及关联的底部分割器
      *
      * @param mth        包含不可达块的方法
      * @param splitCross 不可达的基本块
-     * @return 如果操作成功返回 true，如果前置条件不满足且未做任何更改则返回 false。
+     * @return 如果操作成功返回 true，如果前置条件不满足且未做任何更改则返回 false
      */
     private static boolean fixUnreachableSplitCross(MethodNode mth, BlockNode splitCross) {
         BlockNode bottomSplitter = null;
@@ -170,8 +170,8 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 对循环起始或结束块进行指令去重。如果所有前驱块的末尾包含相同的指令序列，
-     * 则将这些重复指令提取到当前块的开头，以减少代码冗余。
+     * 对循环起始或结束块进行指令去重如果所有前驱块的末尾包含相同的指令序列，
+     * 则将这些重复指令提取到当前块的开头，以减少代码冗余
      */
     private static boolean deduplicateBlockInsns(MethodNode mth, BlockNode block) {
         if (block.contains(AFlag.LOOP_START) || block.contains(AFlag.LOOP_END)) {
@@ -295,7 +295,7 @@ public class BlockProcessor extends AbstractVisitor {
 
     private static void markLoops(MethodNode mth) {
         mth.getBasicBlocks().forEach(block -> {
-            // 支配其前驱的每个后继节点都是循环头，block -> successor 是一条回边。
+            // 支配其前驱的每个后继节点都是循环头，block -> successor 是一条回边
             block.getSuccessors().forEach(successor -> {
                 if (block.getDoms().get(successor.getPos()) || block == successor) {
                     successor.add(AFlag.LOOP_START);
@@ -430,8 +430,8 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 如果基本块仅包含一条 'move' 指令且所有前驱都是 'switch' 或 'if' 块，则复制该块。
-     * 由于这类 move 块可能被编译器去重，复制它有助于解析 switch 分支顺序并检测 fallthrough（贯穿）。
+     * 如果基本块仅包含一条 'move' 指令且所有前驱都是 'switch' 或 'if' 块，则复制该块
+     * 由于这类 move 块可能被编译器去重，复制它有助于解析 switch 分支顺序并检测 fallthrough（贯穿）
      */
     private static boolean duplicateSimpleMoveBlock(MethodNode mth, BlockNode block) {
         List<InsnNode> insns = block.getInstructions();
@@ -489,7 +489,7 @@ public class BlockProcessor extends AbstractVisitor {
 
     /**
      * 简化循环结束块：当循环结束块存在多个后继时，插入一个仅指向循环头的合成块，
-     * 使循环结束块成为简单的路径块。
+     * 使循环结束块成为简单的路径块
      */
     private static boolean simplifyLoopEnd(MethodNode mth, LoopInfo loop) {
         BlockNode loopEnd = loop.getEnd();
@@ -536,7 +536,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 在循环头之前插入一个简单的路径块（前置头块 pre-header）。
+     * 在循环头之前插入一个简单的路径块（前置头块 pre-header）
      */
     private static boolean insertPreHeader(MethodNode mth, LoopInfo loop) {
         BlockNode start = loop.getStart();
@@ -574,7 +574,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 插入额外的块，以便后续可能插入 'break' 语句。
+     * 插入额外的块，以便后续可能插入 'break' 语句
      */
     private static boolean insertBlocksForBreak(MethodNode mth, LoopInfo loop) {
         boolean change = false;
@@ -596,7 +596,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 插入额外的块，以便后续可能插入 'continue' 语句。
+     * 插入额外的块，以便后续可能插入 'continue' 语句
      */
     private static boolean insertBlocksForContinue(MethodNode mth, LoopInfo loop) {
         BlockNode loopEnd = loop.getEnd();
@@ -617,7 +617,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 拆分循环：当多条回边连接到同一个循环头时，创建一个额外的合成块统一承接这些回边。
+     * 拆分循环：当多条回边连接到同一个循环头时，创建一个额外的合成块统一承接这些回边
      */
     private static boolean splitLoops(MethodNode mth, BlockNode block, List<LoopInfo> loops) {
         boolean oneHeader = true;
@@ -644,7 +644,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 拆分退出块：对每个前置退出块尝试拆分返回块或抛出块，并在发生变更后更新退出块连接。
+     * 拆分退出块：对每个前置退出块尝试拆分返回块或抛出块，并在发生变更后更新退出块连接
      */
     private static boolean splitExitBlocks(MethodNode mth) {
         boolean changed = false;
@@ -677,7 +677,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 当返回块存在多个前驱时，拆分（复制）该返回块。
+     * 当返回块存在多个前驱时，拆分（复制）该返回块
      */
     private static boolean splitReturn(MethodNode mth, BlockNode returnBlock) {
         if (returnBlock.contains(AFlag.SYNTHETIC)
@@ -721,7 +721,7 @@ public class BlockProcessor extends AbstractVisitor {
 
     /**
      * 当抛出块（throw）关联多个不同的异常处理器时，拆分（复制）该抛出块，
-     * 使每个异常处理器拥有独立的抛出块。
+     * 使每个异常处理器拥有独立的抛出块
      */
     private static boolean splitThrow(MethodNode mth, BlockNode exitBlock) {
         if (exitBlock.contains(AFlag.IGNORE_THROW_SPLIT)) {
@@ -865,7 +865,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 访问方法节点，对包含代码的方法执行基本块处理流程。
+     * 访问方法节点，对包含代码的方法执行基本块处理流程
      */
     @Override
     public void visit(MethodNode mth) {

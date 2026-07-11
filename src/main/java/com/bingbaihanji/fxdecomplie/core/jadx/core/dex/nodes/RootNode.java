@@ -1,68 +1,37 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.data.ICodeData;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.passes.DecompilePassWrapper;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.passes.PreparePassWrapper;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.ICodeLoader;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.IClassData;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.JadxPass;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.types.JadxDecompilePass;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.types.JadxPassType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.pass.types.JadxPreparePass;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.Jadx;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.ProcessClass;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.clsp.ClspGraph;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AttributeStorage;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.utils.MethodUtils;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.utils.SelectFromDuplicates;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.utils.TypeUtils;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.DepthTraversal;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.IDexTreeVisitor;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeCompare;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdate;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.export.GradleInfoStorage;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidResourcesUtils;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.IResTableParser;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ManifestAttributes;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResourceStorage;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ValuesParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,11 +43,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * DEX 文件的根节点，是整个反编译模型的顶层容器。
+ * DEX 文件的根节点，是整个反编译模型的顶层容器
  * <p>
  * 负责管理所有已加载的类（{@link ClassNode}）、包（{@link PackageNode}）、
- * 类路径图（{@link ClspGraph}）以及反编译遍历器（{@link IDexTreeVisitor}）。
- * 同时持有反编译参数（{@link JadxArgs}）、常量存储、信息存储和缓存等全局资源。
+ * 类路径图（{@link ClspGraph}）以及反编译遍历器（{@link IDexTreeVisitor}）
+ * 同时持有反编译参数（{@link JadxArgs}）、常量存储、信息存储和缓存等全局资源
  */
 public class RootNode {
     private static final Logger LOG = LoggerFactory.getLogger(RootNode.class);
@@ -121,7 +90,7 @@ public class RootNode {
     }
 
     /**
-     * 已废弃。推荐使用 {@link #RootNode(JadxDecompiler)}
+     * 已废弃推荐使用 {@link #RootNode(JadxDecompiler)}
      */
     @Deprecated
     public RootNode(JadxArgs args) {
@@ -141,7 +110,7 @@ public class RootNode {
     }
 
     /**
-     * 初始化根节点。当启用混淆还原或重命名标志时，初始化别名提供器和重命名条件。
+     * 初始化根节点当启用混淆还原或重命名标志时，初始化别名提供器和重命名条件
      */
     public void init() {
         if (args.isDeobfuscationOn() || !args.getRenameFlags().isEmpty()) {
@@ -201,7 +170,7 @@ public class RootNode {
     }
 
     /**
-     * 当类加载失败时，创建一个占位的合成类节点，用于记录错误信息。
+     * 当类加载失败时，创建一个占位的合成类节点，用于记录错误信息
      *
      * @param classData 原始类数据
      * @param exc       加载过程中发生的异常
@@ -229,8 +198,8 @@ public class RootNode {
     }
 
     /**
-     * 修复重复类名问题。当多个输入源中存在相同全限定名的类时，
-     * 通过 {@link SelectFromDuplicates} 策略选择保留其中一个，并移除其余重复项。
+     * 修复重复类名问题当多个输入源中存在相同全限定名的类时，
+     * 通过 {@link SelectFromDuplicates} 策略选择保留其中一个，并移除其余重复项
      */
     private void fixDuplicatedClasses() {
         classes.stream()
@@ -260,7 +229,7 @@ public class RootNode {
     }
 
     /**
-     * 将类节点添加到根节点中，同时更新类信息映射和原始名称映射。
+     * 将类节点添加到根节点中，同时更新类信息映射和原始名称映射
      *
      * @param clsNode 要添加的类节点
      */
@@ -271,8 +240,8 @@ public class RootNode {
     }
 
     /**
-     * 加载并处理 Android 资源文件。解析 resources.arsc 或 resources.pb 文件，
-     * 处理资源存储、更新混淆的资源文件名，并初始化 Manifest 属性。
+     * 加载并处理 Android 资源文件解析 resources.arsc 或 resources.pb 文件，
+     * 处理资源存储、更新混淆的资源文件名，并初始化 Manifest 属性
      *
      * @param resLoader 资源加载器
      * @param resources 资源文件列表
@@ -296,7 +265,7 @@ public class RootNode {
     }
 
     /**
-     * 从资源文件列表中查找 ARSC 类型的资源文件。
+     * 从资源文件列表中查找 ARSC 类型的资源文件
      *
      * @param resources 资源文件列表
      * @return 找到的 ARSC 资源文件，未找到则返回 null
@@ -311,7 +280,7 @@ public class RootNode {
     }
 
     /**
-     * 处理资源存储数据，设置资源名称常量、应用包名，并搜索应用资源类。
+     * 处理资源存储数据，设置资源名称常量、应用包名，并搜索应用资源类
      *
      * @param resStorage 资源存储对象
      */
@@ -322,8 +291,8 @@ public class RootNode {
     }
 
     /**
-     * 初始化类路径图（{@link ClspGraph}）。加载 jadx 类集合文件，
-     * 将应用中的类添加到图中，并初始化缓存。
+     * 初始化类路径图（{@link ClspGraph}）加载 jadx 类集合文件，
+     * 将应用中的类添加到图中，并初始化缓存
      */
     public void initClassPath() {
         try {
@@ -342,8 +311,8 @@ public class RootNode {
     }
 
     /**
-     * 更新混淆的资源文件名。通过资源表中的条目名称匹配资源文件，
-     * 并根据配置设置资源文件的别名（原始名称）。
+     * 更新混淆的资源文件名通过资源表中的条目名称匹配资源文件，
+     * 并根据配置设置资源文件的别名（原始名称）
      *
      * @param parser    资源表解析器
      * @param resources 资源文件列表
@@ -378,8 +347,8 @@ public class RootNode {
     }
 
     /**
-     * 初始化内部类关系。将内部类移动到其父类中，
-     * 并处理无法找到父类的内部类（将其标记为非内部类）。
+     * 初始化内部类关系将内部类移动到其父类中，
+     * 并处理无法找到父类的内部类（将其标记为非内部类）
      */
     private void initInnerClasses() {
         // 移动内部类
@@ -412,9 +381,9 @@ public class RootNode {
     }
 
     /**
-     * 合并自定义遍历器到反编译流程中。对于预定义模式（FALLBACK、SIMPLE），
-     * 忽略自定义遍历器；否则将自定义的准备阶段和反编译阶段遍历器合并到现有流程中。
-     * 同时处理调试检查和禁用遍历器的配置。
+     * 合并自定义遍历器到反编译流程中对于预定义模式（FALLBACK、SIMPLE），
+     * 忽略自定义遍历器 否则将自定义的准备阶段和反编译阶段遍历器合并到现有流程中
+     * 同时处理调试检查和禁用遍历器的配置
      *
      * @param customPasses 按类型分组的自定义遍历器映射
      */
@@ -450,8 +419,8 @@ public class RootNode {
     }
 
     /**
-     * 运行反编译前的准备阶段。遍历所有准备阶段的遍历器，
-     * 对每个非内部类执行深度优先遍历。记录每个遍历器的执行耗时（DEBUG 级别）。
+     * 运行反编译前的准备阶段遍历所有准备阶段的遍历器，
+     * 对每个非内部类执行深度优先遍历记录每个遍历器的执行耗时（DEBUG 级别）
      */
     public void runPreDecompileStage() {
         boolean debugEnabled = LOG.isDebugEnabled();
@@ -476,7 +445,7 @@ public class RootNode {
     }
 
     /**
-     * 为单个类运行反编译前的准备阶段遍历器。
+     * 为单个类运行反编译前的准备阶段遍历器
      *
      * @param cls 要处理的类节点
      */
@@ -489,7 +458,7 @@ public class RootNode {
     // TODO: 为重新加载遍历器列表创建更好的 API
 
     /**
-     * 重置所有遍历器列表为默认状态，用于插件或自定义遍历器变更后重新加载。
+     * 重置所有遍历器列表为默认状态，用于插件或自定义遍历器变更后重新加载
      */
     public void resetPasses() {
         preDecompilePasses.clear();
@@ -500,7 +469,7 @@ public class RootNode {
     }
 
     /**
-     * 重启所有遍历器。卸载所有类的缓存数据，清除属性，并重新运行准备阶段。
+     * 重启所有遍历器卸载所有类的缓存数据，清除属性，并重新运行准备阶段
      */
     public void restartVisitors() {
         for (ClassNode cls : classes) {

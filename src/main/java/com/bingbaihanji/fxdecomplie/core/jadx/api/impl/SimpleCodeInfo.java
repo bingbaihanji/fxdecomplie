@@ -4,10 +4,10 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeMetadata;
 
 /**
- * {@link ICodeInfo} 的简单实现，不包含元数据支持。
+ * {@link ICodeInfo} 的简单实现，不包含元数据支持
  * <p>
- * 该类直接持有一个代码字符串，适用于不需要代码元数据（如行号映射、注解等）的场景。
- * 所有与元数据相关的方法均返回空或 false。
+ * 该类直接持有一个代码字符串，适用于不需要代码元数据（如行号映射、注解等）的场景
+ * 所有与元数据相关的方法均返回空或 false
  * </p>
  */
 public class SimpleCodeInfo implements ICodeInfo {
@@ -15,7 +15,7 @@ public class SimpleCodeInfo implements ICodeInfo {
     private final String code;
 
     /**
-     * 使用指定的代码字符串构造 SimpleCodeInfo 实例。
+     * 使用指定的代码字符串构造 SimpleCodeInfo 实例
      *
      * @param code 反编译后的代码字符串
      */
@@ -24,7 +24,7 @@ public class SimpleCodeInfo implements ICodeInfo {
     }
 
     /**
-     * 获取代码字符串。
+     * 获取代码字符串
      *
      * @return 反编译后的代码字符串
      */
@@ -34,7 +34,7 @@ public class SimpleCodeInfo implements ICodeInfo {
     }
 
     /**
-     * 获取代码元数据。该简单实现始终返回空元数据。
+     * 获取代码元数据该简单实现始终返回空元数据
      *
      * @return 空的 {@link ICodeMetadata} 实例
      */
@@ -44,7 +44,7 @@ public class SimpleCodeInfo implements ICodeInfo {
     }
 
     /**
-     * 判断是否包含元数据。该简单实现始终返回 false。
+     * 判断是否包含元数据该简单实现始终返回 false
      *
      * @return 始终返回 {@code false}
      */
@@ -54,7 +54,7 @@ public class SimpleCodeInfo implements ICodeInfo {
     }
 
     /**
-     * 返回代码字符串。
+     * 返回代码字符串
      *
      * @return 反编译后的代码字符串
      */

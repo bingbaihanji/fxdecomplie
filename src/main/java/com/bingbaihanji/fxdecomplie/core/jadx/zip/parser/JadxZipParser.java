@@ -203,7 +203,7 @@ public final class JadxZipParser implements IZipParser {
                 byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
             }
         } finally {
-            // 小文件路径：关闭 RAF；大文件路径：file 字段持有引用，延迟关闭
+            // 小文件路径：关闭 RAF 大文件路径：file 字段持有引用，延迟关闭
             if (file != raFile) {
                 raFile.close();
             }

@@ -4,9 +4,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 
 /**
- * 异常处理器属性。
+ * 异常处理器属性
  * 作为附加在异常处理器入口块上的属性，用于关联对应的 {@link ExceptionHandler}
- * 及其所属的 try-catch 块（{@link TryCatchBlockAttr}）。
+ * 及其所属的 try-catch 块（{@link TryCatchBlockAttr}）
  */
 public class ExcHandlerAttr implements IJadxAttribute {
 
@@ -14,7 +14,7 @@ public class ExcHandlerAttr implements IJadxAttribute {
     private final ExceptionHandler handler;
 
     /**
-     * 构造异常处理器属性。
+     * 构造异常处理器属性
      *
      * @param handler 关联的异常处理器
      */

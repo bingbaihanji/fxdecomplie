@@ -1,11 +1,15 @@
 package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.model.*;
-import com.bingbaihanji.fxdecomplie.service.*;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
-import com.bingbaihanji.fxdecomplie.ui.code.*;
-import com.bingbaihanji.fxdecomplie.ui.graph.*;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
+import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
+import com.bingbaihanji.fxdecomplie.ui.graph.GraphDialog;
+import com.bingbaihanji.fxdecomplie.ui.graph.GraphService;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceService;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
@@ -15,10 +19,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * 引擎切换与图形展示控制器：反编译引擎切换、当前标签页刷新、
- * 继承图 / 控制流图 / 方法调用图展示、多引擎对比。
+ * 继承图 / 控制流图 / 方法调用图展示、多引擎对比
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）。
- * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化。
+ * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）
+ * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
  *
  * @author bingbaihanji
  */
@@ -266,7 +270,7 @@ public final class EngineController {
 
         owner.statusBar().setFilePath(I18nUtil.getString("status.compareAllEngines", node.getFullPath()));
         DecompilerTypeEnum[] engines = DecompilerTypeEnum.values();
-        // 第一个引擎在主 panel 打开；其余引擎通过 splitRight 分布到不同分屏
+        // 第一个引擎在主 panel 打开 其余引擎通过 splitRight 分布到不同分屏
         for (int i = 0; i < engines.length; i++) {
             final TabPane targetPane;
             if (i == 0) {

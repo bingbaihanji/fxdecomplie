@@ -31,7 +31,7 @@ public final class SplitEditorPane extends StackPane {
     private static final double MIN_CELL_WIDTH = 200.0;
 
     private final SplitPane splitPane;
-    /** 所有 cell(cells[0] 始终存在,其余按需创建；关闭中间 cell 后自动压缩数组) */
+    /** 所有 cell(cells[0] 始终存在,其余按需创建 关闭中间 cell 后自动压缩数组) */
     private final TabPane[] cells = new TabPane[MAX_CELLS];
     /** 外部拖放配置(来自 WorkspaceTabManager) */
     private final AppConfig dragDropConfig;

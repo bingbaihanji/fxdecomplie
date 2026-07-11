@@ -6,15 +6,15 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 指令代码偏移量注解，用于将生成的代码行与原始字节码指令位置关联起来。
- * 实现 {@link ICodeAnnotation} 接口，注解类型为 {@link AnnType#OFFSET}。
+ * 指令代码偏移量注解，用于将生成的代码行与原始字节码指令位置关联起来
+ * 实现 {@link ICodeAnnotation} 接口，注解类型为 {@link AnnType#OFFSET}
  */
 public class InsnCodeOffset implements ICodeAnnotation {
 
     private final int offset;
 
     /**
-     * 构造指令代码偏移量注解。
+     * 构造指令代码偏移量注解
      *
      * @param offset 字节码偏移量
      */
@@ -23,8 +23,8 @@ public class InsnCodeOffset implements ICodeAnnotation {
     }
 
     /**
-     * 将指令节点的字节码偏移量作为行注解附加到代码写入器中。
-     * 如果指令为 null 或代码写入器不支持元数据，则不执行任何操作。
+     * 将指令节点的字节码偏移量作为行注解附加到代码写入器中
+     * 如果指令为 null 或代码写入器不支持元数据，则不执行任何操作
      *
      * @param code 代码写入器
      * @param insn 指令节点
@@ -42,8 +42,8 @@ public class InsnCodeOffset implements ICodeAnnotation {
     }
 
     /**
-     * 将指定的字节码偏移量作为行注解附加到代码写入器中。
-     * 仅当偏移量非负且代码写入器支持元数据时才会附加。
+     * 将指定的字节码偏移量作为行注解附加到代码写入器中
+     * 仅当偏移量非负且代码写入器支持元数据时才会附加
      *
      * @param code   代码写入器
      * @param offset 字节码偏移量
@@ -55,10 +55,10 @@ public class InsnCodeOffset implements ICodeAnnotation {
     }
 
     /**
-     * 根据指令节点创建对应的偏移量注解。
+     * 根据指令节点创建对应的偏移量注解
      *
      * @param insn 指令节点
-     * @return 对应的偏移量注解；若指令偏移量小于 0 则返回 null
+     * @return 对应的偏移量注解 若指令偏移量小于 0 则返回 null
      */
     @Nullable
     public static InsnCodeOffset from(InsnNode insn) {
@@ -70,7 +70,7 @@ public class InsnCodeOffset implements ICodeAnnotation {
     }
 
     /**
-     * 获取字节码偏移量。
+     * 获取字节码偏移量
      *
      * @return 字节码偏移量
      */

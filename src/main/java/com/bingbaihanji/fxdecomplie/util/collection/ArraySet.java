@@ -52,7 +52,7 @@ public final class ArraySet<E> implements Set<E>, Cloneable, Serializable {
      * 结构性修改次数,用于支持 fail-fast 迭代器
      *
      * <p>
-     * 新增、删除、清空属于结构性修改；仅遍历、查询不属于结构性修改
+     * 新增、删除、清空属于结构性修改 仅遍历、查询不属于结构性修改
      */
     private transient int modCount;
 

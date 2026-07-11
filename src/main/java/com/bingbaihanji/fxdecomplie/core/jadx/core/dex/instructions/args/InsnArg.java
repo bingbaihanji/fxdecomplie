@@ -16,14 +16,14 @@ import org.slf4j.LoggerFactory;
 import java.util.Objects;
 
 /**
- * 指令参数。
+ * 指令参数
  * 可以是：寄存器、字面量、指令或名称
  */
 public abstract class InsnArg extends Typed {
 
     private static final Logger LOG = LoggerFactory.getLogger(InsnArg.class);
 
-    /** 所属的父指令；对于方法参数而言为 null */
+    /** 所属的父指令 对于方法参数而言为 null */
     @Nullable("Null for method arguments")
     protected InsnNode parentInsn;
 
@@ -92,9 +92,9 @@ public abstract class InsnArg extends Typed {
     }
 
     /**
-     * 将指令包装为参数。
-     * 对于 CONST/MOVE 指令，若能内联则直接返回其参数并标记不生成代码；
-     * 若不能内联（强制内联标志），则作为包装指令处理。
+     * 将指令包装为参数
+     * 对于 CONST/MOVE 指令，若能内联则直接返回其参数并标记不生成代码 
+     * 若不能内联（强制内联标志），则作为包装指令处理
      */
     @NotNull
     public static InsnArg wrapInsnIntoArg(InsnNode insn) {
@@ -117,9 +117,9 @@ public abstract class InsnArg extends Typed {
     }
 
     /**
-     * 将指令包装为指令参数（内部包装）。
+     * 将指令包装为指令参数（内部包装）
      * <p>
-     * 优先使用 {@link InsnArg#wrapInsnIntoArg(InsnNode)}。
+     * 优先使用 {@link InsnArg#wrapInsnIntoArg(InsnNode)}
      * 本方法不支持 MOVE 和 CONST 指令！
      */
     public static InsnArg wrapArg(InsnNode insn) {
@@ -190,10 +190,10 @@ public abstract class InsnArg extends Typed {
     }
 
     /**
-     * 将指令包装进当前参数所在的位置。
+     * 将指令包装进当前参数所在的位置
      *
      * @param unbind 是否解除当前参数的使用绑定
-     * @return 包装后的参数；若包装失败则返回 null
+     * @return 包装后的参数 若包装失败则返回 null
      */
     @Nullable("if wrap failed")
     public InsnArg wrapInstruction(MethodNode mth, InsnNode insn, boolean unbind) {

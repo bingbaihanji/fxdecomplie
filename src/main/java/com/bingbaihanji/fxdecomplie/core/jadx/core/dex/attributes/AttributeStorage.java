@@ -30,13 +30,14 @@ public class AttributeStorage {
 
     private final Set<AFlag> flags;
     private Map<IJadxAttrType<?>, IJadxAttribute> attributes;
+
     public AttributeStorage() {
         flags = EnumSet.noneOf(AFlag.class);
         attributes = EMPTY_ATTRIBUTES;
     }
 
     /**
-     * 从属性列表创建一个属性存储容器。
+     * 从属性列表创建一个属性存储容器
      *
      * @param list 属性列表
      * @return 包含给定属性的存储容器

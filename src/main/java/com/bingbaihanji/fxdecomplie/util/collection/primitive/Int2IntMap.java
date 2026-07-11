@@ -68,7 +68,7 @@ public class Int2IntMap extends AbstractIntKeyMap {
 
     /**
      * 将指定键与值放入映射中 
-     * 若键已存在,则替换旧值并返回旧值；否则插入新键值对并返回 -1 
+     * 若键已存在,则替换旧值并返回旧值 否则插入新键值对并返回 -1 
      *
      * @param key   键
      * @param value 值

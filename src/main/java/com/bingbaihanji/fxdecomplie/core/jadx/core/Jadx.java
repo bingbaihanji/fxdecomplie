@@ -40,13 +40,13 @@ import java.util.List;
 import java.util.jar.Manifest;
 
 /**
- * Jadx 反编译引擎核心入口类。
+ * Jadx 反编译引擎核心入口类
  * <p>
  * 负责编排反编译流水线（Pass Pipeline）：根据反编译模式（AUTO/SIMPLE/FALLBACK），
  * 依次注册并执行一系列 {@link IDexTreeVisitor} 访问器，将 DEX 字节码逐步转换为
- * 结构化控制流图（CFG）再到中间表示（IR），最终生成可读的 Java 源码。
+ * 结构化控制流图（CFG）再到中间表示（IR），最终生成可读的 Java 源码
  * <p>
- * 同时提供版本号查询功能，通过读取 MANIFEST.MF 中的 jadx-version 属性获取版本信息。
+ * 同时提供版本号查询功能，通过读取 MANIFEST.MF 中的 jadx-version 属性获取版本信息
  */
 public class Jadx {
     /** 开发版本标识：当无法从 MANIFEST.MF 读取到版本号时使用 */
@@ -59,7 +59,7 @@ public class Jadx {
     }
 
     /**
-     * 根据反编译模式获取对应的访问器流水线列表。
+     * 根据反编译模式获取对应的访问器流水线列表
      * <p>
      * 支持四种模式：
      * <ul>
@@ -87,10 +87,10 @@ public class Jadx {
     }
 
     /**
-     * 获取预反编译阶段的访问器流水线列表。
+     * 获取预反编译阶段的访问器流水线列表
      * <p>
      * 这些访问器在正式反编译前执行，负责签名处理、方法重写检测、Android 常量添加、
-     * 重命名与反混淆、使用信息收集、常量值收集以及匿名类和内联方法的预处理。
+     * 重命名与反混淆、使用信息收集、常量值收集以及匿名类和内联方法的预处理
      *
      * @return 预反编译阶段的访问器列表
      */
@@ -114,11 +114,11 @@ public class Jadx {
     }
 
     /**
-     * 获取区域模式（AUTO/RESTRUCTURE）的完整访问器流水线列表。
+     * 获取区域模式（AUTO/RESTRUCTURE）的完整访问器流水线列表
      * <p>
      * 流水线依次经过多个中间表示层：指令 IR → 基本块 IR → 区域 IR，
      * 涵盖 SSA 变换、类型推断、方法内联、控制流区域重建、代码简化等完整流程，
-     * 是反编译质量最高的模式。
+     * 是反编译质量最高的模式
      *
      * @param args 反编译参数配置，决定是否启用调试信息、finally 提取、方法内联、CFG 输出等可选步骤
      * @return 区域模式的访问器列表
@@ -219,10 +219,10 @@ public class Jadx {
     }
 
     /**
-     * 获取简化模式（SIMPLE）的访问器流水线列表。
+     * 获取简化模式（SIMPLE）的访问器流水线列表
      * <p>
      * 相比区域模式，跳过了控制流区域重建及大量优化步骤，仅保留基本块处理、
-     * SSA 变换、类型推断和基础代码简化，反编译速度更快，但输出结构不如区域模式优化。
+     * SSA 变换、类型推断和基础代码简化，反编译速度更快，但输出结构不如区域模式优化
      *
      * @param args 反编译参数配置
      * @return 简化模式的访问器列表
@@ -270,11 +270,11 @@ public class Jadx {
     }
 
     /**
-     * 获取降级模式（FALLBACK）的访问器流水线列表。
+     * 获取降级模式（FALLBACK）的访问器流水线列表
      * <p>
      * 当标准反编译流程失败时使用的兜底模式，仅附加 try-catch 结构、注释
      * 和基础指令处理，然后直接调用 {@link FallbackModeVisitor} 生成代码，
-     * 保证至少能输出某种形式的可读结果。
+     * 保证至少能输出某种形式的可读结果
      *
      * @return 降级模式的访问器列表
      */
@@ -288,9 +288,9 @@ public class Jadx {
     }
 
     /**
-     * 获取 Jadx 版本号（惰性初始化并缓存）。
+     * 获取 Jadx 版本号（惰性初始化并缓存）
      *
-     * @return 版本号字符串；若无法获取则返回 {@link #VERSION_DEV}
+     * @return 版本号字符串 若无法获取则返回 {@link #VERSION_DEV}
      */
     public static String getVersion() {
         if (version == null) {
@@ -300,7 +300,7 @@ public class Jadx {
     }
 
     /**
-     * 判断当前是否为开发版本。
+     * 判断当前是否为开发版本
      *
      * @return 若版本号等于 {@link #VERSION_DEV} 返回 true，否则返回 false
      */
@@ -309,9 +309,9 @@ public class Jadx {
     }
 
     /**
-     * 从类加载器可见的所有 META-INF/MANIFEST.MF 中搜索 jadx-version 属性。
+     * 从类加载器可见的所有 META-INF/MANIFEST.MF 中搜索 jadx-version 属性
      *
-     * @return 找到的版本号；若未找到或发生异常则返回 {@link #VERSION_DEV}
+     * @return 找到的版本号 若未找到或发生异常则返回 {@link #VERSION_DEV}
      */
     private static String searchJadxVersion() {
         try {

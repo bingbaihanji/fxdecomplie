@@ -33,8 +33,12 @@ public class AppConfig {
     private static final Path CONFIG_DIR = APP_DIR.resolve("config");
     /** 配置文件路径 */
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.json");
+    /** 应用进程内唯一配置实例锁 */
+    private static final Object INSTANCE_LOCK = new Object();
     /** 最近文件最大数量 */
     private static final int MAX_RECENT_FILES = 20;
+    /** 应用进程内唯一配置实例 */
+    private static volatile AppConfig instance;
     /** 配置结构版本,用于后续迁移旧配置 */
     private int schemaVersion = 1;
     /** 界面语言: zh-CN / en,空字符串表示跟随系统 */
@@ -109,12 +113,47 @@ public class AppConfig {
         return normalized;
     }
 
+    /** @return 应用进程内唯一配置实例,首次调用时从磁盘加载 */
+    public static AppConfig getInstance() {
+        AppConfig current = instance;
+        if (current != null) {
+            return current;
+        }
+        synchronized (INSTANCE_LOCK) {
+            if (instance == null) {
+                instance = loadFromDisk();
+            }
+            return instance;
+        }
+    }
+
     /**
-     * 加载配置如果配置文件不存在或读取失败,返回默认配置
+     * 加载配置的兼容入口
+     * <p>应用运行期应共享同一份配置对象,避免多个控制器各自持有配置快照</p>
+     *
+     * @return 应用进程内唯一配置实例,永不返回 null
+     */
+    public static AppConfig load() {
+        return getInstance();
+    }
+
+    /**
+     * 重新从磁盘读取配置并替换进程内唯一实例
+     * 主要用于设置迁移或测试场景,普通业务代码应使用 {@link #getInstance()}
+     */
+    public static AppConfig reload() {
+        synchronized (INSTANCE_LOCK) {
+            instance = loadFromDisk();
+            return instance;
+        }
+    }
+
+    /**
+     * 从磁盘加载配置如果配置文件不存在或读取失败,返回默认配置
      *
      * @return 配置对象,永不返回 null
      */
-    public static AppConfig load() {
+    private static AppConfig loadFromDisk() {
         try {
             if (Files.exists(CONFIG_FILE)) {
                 String json = Files.readString(CONFIG_FILE);
@@ -128,7 +167,9 @@ public class AppConfig {
             log.warn("加载配置失败,将备份损坏文件并使用默认配置", e);
             backupCorruptedConfig();
         }
-        return new AppConfig();
+        AppConfig defaults = new AppConfig();
+        defaults.normalize();
+        return defaults;
     }
 
     /** 将损坏的配置文件重命名为 .bak 后缀,便于用户排查与手工恢复 */
@@ -148,12 +189,131 @@ public class AppConfig {
         }
     }
 
+    private static Window copyWindow(Window source) {
+        Window copy = new Window();
+        if (source != null) {
+            copy.width = source.width;
+            copy.height = source.height;
+            copy.x = source.x;
+            copy.y = source.y;
+            copy.maximized = source.maximized;
+        }
+        return copy;
+    }
+
+    private static Theme copyTheme(Theme source) {
+        Theme copy = new Theme();
+        if (source != null) {
+            copy.path = source.path;
+            copy.fontFamily = source.fontFamily;
+            copy.fontSize = source.fontSize;
+            copy.editorTheme = source.editorTheme;
+        }
+        return copy;
+    }
+
+    private static Decompiler copyDecompiler(Decompiler source) {
+        Decompiler copy = new Decompiler();
+        if (source != null) {
+            copy.defaultEngine = source.defaultEngine;
+            copy.lineNumbersEnabled = source.lineNumbersEnabled;
+            copy.wrapText = source.wrapText;
+            copy.engineOptions = deepCopyEngineOptions(source.engineOptions);
+        }
+        return copy;
+    }
+
+    private static Export copyExport(Export source) {
+        Export copy = new Export();
+        if (source != null) {
+            copy.defaultEngine = source.defaultEngine;
+            copy.defaultFormat = source.defaultFormat;
+            copy.conflictPolicy = source.conflictPolicy;
+            copy.exportResources = source.exportResources;
+            copy.lastPath = source.lastPath;
+        }
+        return copy;
+    }
+
+    private static Search copySearch(Search source) {
+        Search copy = new Search();
+        if (source != null) {
+            copy.fullSourceSearch = source.fullSourceSearch;
+            copy.resultLimit = source.resultLimit;
+            copy.excludePatterns = source.excludePatterns == null
+                    ? new ArrayList<>() : new ArrayList<>(source.excludePatterns);
+        }
+        return copy;
+    }
+
+    private static Platform copyPlatform(Platform source) {
+        Platform copy = new Platform();
+        if (source != null) {
+            copy.windowBorderColor = source.windowBorderColor;
+            copy.cornerPreference = source.cornerPreference;
+        }
+        return copy;
+    }
+
+    private static Map<String, Map<String, String>> deepCopyEngineOptions(
+            Map<String, Map<String, String>> source) {
+        Map<String, Map<String, String>> copy = new LinkedHashMap<>();
+        if (source == null) {
+            return copy;
+        }
+        for (var entry : source.entrySet()) {
+            copy.put(entry.getKey(), entry.getValue() == null
+                    ? new LinkedHashMap<>()
+                    : new LinkedHashMap<>(entry.getValue()));
+        }
+        return copy;
+    }
+
     public int schemaVersion() {
         return schemaVersion;
     }
 
     public void schemaVersion(int v) {
         schemaVersion = v;
+    }
+
+    /** @return 当前配置的深拷贝,用于设置对话框等编辑草稿场景 */
+    public AppConfig copy() {
+        synchronized (this) {
+            AppConfig copy = new AppConfig();
+            copy.schemaVersion = schemaVersion;
+            copy.language = language;
+            copy.window = copyWindow(window);
+            copy.theme = copyTheme(theme);
+            copy.decompiler = copyDecompiler(decompiler);
+            copy.export = copyExport(export);
+            copy.search = copySearch(search);
+            copy.platform = copyPlatform(platform);
+            copy.recentFiles = recentFiles == null ? new ArrayList<>() : new ArrayList<>(recentFiles);
+            copy.normalize();
+            return copy;
+        }
+    }
+
+    /** 使用另一份配置的值覆盖当前实例,保留当前对象引用 */
+    public void copyFrom(AppConfig source) {
+        Objects.requireNonNull(source, "source");
+        if (source == this) {
+            return;
+        }
+        AppConfig copy = source.copy();
+        synchronized (this) {
+            schemaVersion = copy.schemaVersion;
+            language = copy.language;
+            window = copy.window;
+            theme = copy.theme;
+            decompiler = copy.decompiler;
+            export = copy.export;
+            search = copy.search;
+            platform = copy.platform;
+            recentFiles = copy.recentFiles;
+            normalize();
+        }
     }
 
     public String language() {
@@ -268,6 +428,10 @@ public class AppConfig {
 
     /** 异步保存,避免阻塞 UI 线程 */
     private void saveAsync() {
+        // 只有应用级单例配置会自动落盘测试或临时配置对象仍可显式调用 save()
+        if (this != instance) {
+            return;
+        }
         Thread.ofVirtual().start(this::save);
     }
 

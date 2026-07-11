@@ -12,7 +12,10 @@ import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1192,14 +1195,14 @@ public final class ClassTabOpener {
             }
         }
 
-        // ---- 提取元数据用于 Ctrl+Click 导航；大源码的链接扫描会被禁用,这里也跳过避免拖慢首屏 ----
+        // ---- 提取元数据用于 Ctrl+Click 导航 大源码的链接扫描会被禁用,这里也跳过避免拖慢首屏 ----
         CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                 ? OutlineParser.extractMetadata(sourceCode, bytes)
                 : new CodeMetadata(Map.of());
         return new DecompileResult(sourceCode, metadata, effectiveEngine);
     }
 
-    /** 强制重新反编译当前类,跳过 L2/L3 读取；成功后用新结果回填缓存 */
+    /** 强制重新反编译当前类,跳过 L2/L3 读取 成功后用新结果回填缓存 */
     private DecompileResult decompileFresh(String internalName, DecompilerTypeEnum engine,
                                            byte[] bytes, FileTreeNode node, Workspace workspace,
                                            BooleanSupplier active) {

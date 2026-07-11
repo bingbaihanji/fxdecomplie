@@ -9,10 +9,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.function.IntConsumer;
 
 /**
- * 代码生成专用的字符串工具类，提供转义、反转义、数字格式化等功能。
+ * 代码生成专用的字符串工具类，提供转义、反转义、数字格式化等功能
  * <p>
- * 从原 StringUtils 提取，保留代码生成（codegen）需要的所有方法。
- * 其余通用方法（isEmpty/notEmpty/containsChar 等）已重定向到 JDK 标准 API。
+ * 从原 StringUtils 提取，保留代码生成（codegen）需要的所有方法
+ * 其余通用方法（isEmpty/notEmpty/containsChar 等）已重定向到 JDK 标准 API
  */
 public class CodegenEscapeUtils {
     private static final CodegenEscapeUtils DEFAULT_INSTANCE = new CodegenEscapeUtils(new JadxArgs());
@@ -50,13 +50,22 @@ public class CodegenEscapeUtils {
         for (int i = 0; i < len; i++) {
             char c = str.charAt(i);
             switch (c) {
-                case '.': case '/': case ';': case '$': case ' ': case ',': case '<':
+                case '.':
+                case '/':
+                case ';':
+                case '$':
+                case ' ':
+                case ',':
+                case '<':
                     sb.append('_');
                     break;
                 case '[':
                     sb.append('A');
                     break;
-                case ']': case '>': case '?': case '*':
+                case ']':
+                case '>':
+                case '?':
+                case '*':
                     break;
                 default:
                     sb.append(c);
@@ -96,9 +105,15 @@ public class CodegenEscapeUtils {
         for (int i = 0; i < len; i++) {
             char c = str.charAt(i);
             switch (c) {
-                case '"':  sb.append("\\\""); break;
-                case '\'': sb.append("\\'"); break;
-                default:   commonEscapeAndAppend(sb, c); break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\'':
+                    sb.append("\\'");
+                    break;
+                default:
+                    commonEscapeAndAppend(sb, c);
+                    break;
             }
         }
         return sb.toString();
@@ -109,24 +124,37 @@ public class CodegenEscapeUtils {
             return "\\" + (int) c;
         }
         switch (c) {
-            case '&': return "&amp;";
-            case '<': return "&lt;";
-            case '>': return "&gt;";
-            case '"': return "&quot;";
-            case '\'': return "&apos;";
-            case '\\': return "\\\\";
-            default: return null;
+            case '&':
+                return "&amp;";
+            case '<':
+                return "&lt;";
+            case '>':
+                return "&gt;";
+            case '"':
+                return "&quot;";
+            case '\'':
+                return "&apos;";
+            case '\\':
+                return "\\\\";
+            default:
+                return null;
         }
     }
 
     private static @Nullable String escapeWhiteSpaceChar(char c) {
         switch (c) {
-            case '\n': return "\\n";
-            case '\r': return "\\r";
-            case '\t': return "\\t";
-            case '\b': return "\\b";
-            case '\f': return "\\f";
-            default: return null;
+            case '\n':
+                return "\\n";
+            case '\r':
+                return "\\r";
+            case '\t':
+                return "\\t";
+            case '\b':
+                return "\\b";
+            case '\f':
+                return "\\f";
+            default:
+                return null;
         }
     }
 
@@ -144,152 +172,20 @@ public class CodegenEscapeUtils {
 
     // -- unescape (instance methods, depend on JadxArgs) ---
 
-    public String unescapeString(String str) {
-        int len = str.length();
-        if (len == 0) {
-            return "\"\"";
-        }
-        StringBuilder res = new StringBuilder();
-        res.append('"');
-        visitCodePoints(str, codePoint -> processCodePoint(codePoint, res));
-        res.append('"');
-        return res.toString();
-    }
-
-    private void processCodePoint(int codePoint, StringBuilder res) {
-        String str = getSpecialStringForCodePoint(codePoint);
-        if (str != null) { res.append(str); return; }
-        if (isEscapeNeededForCodePoint(codePoint)) {
-            res.append("\\u").append(String.format("%04x", codePoint));
-        } else {
-            res.appendCodePoint(codePoint);
-        }
-    }
-
-    private boolean isEscapeNeededForCodePoint(int codePoint) {
-        if (codePoint < 32) {
-            return true;
-        }
-        if (codePoint < 127) {
-            return false;
-        }
-        if (escapeUnicode) {
-            return true;
-        }
-        return !NameMapper.isPrintableCodePoint(codePoint);
-    }
-
-    public String unescapeChar(char c, boolean explicitCast) {
-        if (c == '\'') {
-            return "'\\''";
-        }
-        String str = getSpecialStringForCodePoint(c);
-        if (str != null) {
-            return '\'' + str + '\'';
-        }
-        if (c >= 127 && escapeUnicode) {
-            return String.format("'\\u%04x'", (int) c);
-        }
-        if (NameMapper.isPrintableChar(c)) {
-            return "'" + c + '\'';
-        }
-        String intStr = Integer.toString(c);
-        return explicitCast ? "(char) " + intStr : intStr;
-    }
-
-    public String unescapeChar(char ch) {
-        return unescapeChar(ch, false);
-    }
-
-    @Nullable
-    private String getSpecialStringForCodePoint(int c) {
-        switch (c) {
-            case '\n': return "\\n";
-            case '\r': return "\\r";
-            case '\t': return "\\t";
-            case '\b': return "\\b";
-            case '\f': return "\\f";
-            case '\'': return "'";
-            case '"': return "\\\"";
-            case '\\': return "\\\\";
-            default: return null;
-        }
-    }
-
-    // -- number formatting (instance methods, depend on integerFormat) ---
-
-    public IntegerFormat getIntegerFormat() {
-        return integerFormat;
-    }
-
-    private String formatNumber(long number, int bytesLen, boolean cast) {
-        String numStr;
-        if (integerFormat.isHexadecimal()) {
-            String hexStr = Long.toHexString(number);
-            if (number < 0) {
-                int len = hexStr.length();
-                numStr = "0x" + hexStr.substring(len - bytesLen * 2, len);
-                cast = true;
-            } else {
-                numStr = "0x" + hexStr;
-            }
-        } else {
-            numStr = Long.toString(number);
-        }
-        if (bytesLen == 8 && (number == Long.MIN_VALUE || Math.abs(number) >= Integer.MAX_VALUE)) {
-            cast = true;
-        }
-        if (cast) {
-            if (bytesLen == 8) {
-                return numStr + 'L';
-            }
-            return getCastStr(bytesLen) + numStr;
-        }
-        return numStr;
-    }
-
     private static String getCastStr(int bytesLen) {
         switch (bytesLen) {
-            case 1: return "(byte) ";
-            case 2: return "(short) ";
-            case 4: return "(int) ";
-            case 8: return "(long) ";
-            default: throw new JadxRuntimeException("Unexpected number type length: " + bytesLen);
+            case 1:
+                return "(byte) ";
+            case 2:
+                return "(short) ";
+            case 4:
+                return "(int) ";
+            case 8:
+                return "(long) ";
+            default:
+                throw new JadxRuntimeException("Unexpected number type length: " + bytesLen);
         }
     }
-
-    public String formatByte(long l, boolean cast) { return formatNumber(l, 1, cast); }
-    public String formatShort(long l, boolean cast) {
-        if (integerFormat == IntegerFormat.AUTO) {
-            switch ((short) l) {
-                case Short.MAX_VALUE: return "Short.MAX_VALUE";
-                case Short.MIN_VALUE: return "Short.MIN_VALUE";
-            }
-        }
-        return formatNumber(l, 2, cast);
-    }
-    public String formatInteger(long l, boolean cast) {
-        if (integerFormat == IntegerFormat.AUTO) {
-            switch ((int) l) {
-                case Integer.MAX_VALUE: return "Integer.MAX_VALUE";
-                case Integer.MIN_VALUE: return "Integer.MIN_VALUE";
-            }
-        }
-        return formatNumber(l, 4, cast);
-    }
-    public String formatLong(long l, boolean cast) {
-        if (integerFormat == IntegerFormat.AUTO) {
-            if (l == Long.MAX_VALUE) {
-                return "Long.MAX_VALUE";
-            }
-            if (l == Long.MIN_VALUE) {
-                return "Long.MIN_VALUE";
-            }
-        }
-        return formatNumber(l, 8, cast);
-    }
-
-    // -- utility statics that are codegen-specific ---
 
     public static String formatDouble(double d) {
         if (Double.isNaN(d)) {
@@ -357,6 +253,8 @@ public class CodegenEscapeUtils {
         return null;
     }
 
+    // -- number formatting (instance methods, depend on integerFormat) ---
+
     public static boolean isWhite(char chr) {
         return WHITES.indexOf(chr) != -1;
     }
@@ -404,10 +302,23 @@ public class CodegenEscapeUtils {
         return content.substring(headPos, endPos);
     }
 
-    public static boolean notEmpty(String str) { return str != null && !str.isEmpty(); }
-    public static boolean isEmpty(String str) { return str == null || str.isEmpty(); }
-    public static boolean notBlank(String str) { return notEmpty(str) && !str.trim().isEmpty(); }
-    public static boolean containsChar(String str, char ch) { return str.indexOf(ch) != -1; }
+    public static boolean notEmpty(String str) {
+        return str != null && !str.isEmpty();
+    }
+
+    public static boolean isEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
+
+    public static boolean notBlank(String str) {
+        return notEmpty(str) && !str.trim().isEmpty();
+    }
+
+    // -- utility statics that are codegen-specific ---
+
+    public static boolean containsChar(String str, char ch) {
+        return str.indexOf(ch) != -1;
+    }
 
     public static String removeChar(String str, char ch) {
         int pos = str.indexOf(ch);
@@ -421,7 +332,10 @@ public class CodegenEscapeUtils {
             sb.append(str, cur, next);
             cur = next + 1;
             next = str.indexOf(ch, cur);
-            if (next == -1) { sb.append(str, cur, str.length()); break; }
+            if (next == -1) {
+                sb.append(str, cur, str.length());
+                break;
+            }
         }
         return sb.toString();
     }
@@ -433,7 +347,10 @@ public class CodegenEscapeUtils {
         int subStrLen = subStr.length();
         int count = 0;
         int idx = 0;
-        while ((idx = str.indexOf(subStr, idx)) != -1) { count++; idx += subStrLen; }
+        while ((idx = str.indexOf(subStr, idx)) != -1) {
+            count++;
+            idx += subStrLen;
+        }
         return count;
     }
 
@@ -446,9 +363,166 @@ public class CodegenEscapeUtils {
         int pos = 0;
         while (true) {
             int split = content.indexOf(splitStr, pos);
-            if (split == -1) { parts.add(content.substring(pos)); return parts; }
+            if (split == -1) {
+                parts.add(content.substring(pos));
+                return parts;
+            }
             parts.add(content.substring(pos, split));
             pos = split + splitLen;
         }
+    }
+
+    public String unescapeString(String str) {
+        int len = str.length();
+        if (len == 0) {
+            return "\"\"";
+        }
+        StringBuilder res = new StringBuilder();
+        res.append('"');
+        visitCodePoints(str, codePoint -> processCodePoint(codePoint, res));
+        res.append('"');
+        return res.toString();
+    }
+
+    private void processCodePoint(int codePoint, StringBuilder res) {
+        String str = getSpecialStringForCodePoint(codePoint);
+        if (str != null) {
+            res.append(str);
+            return;
+        }
+        if (isEscapeNeededForCodePoint(codePoint)) {
+            res.append("\\u").append(String.format("%04x", codePoint));
+        } else {
+            res.appendCodePoint(codePoint);
+        }
+    }
+
+    private boolean isEscapeNeededForCodePoint(int codePoint) {
+        if (codePoint < 32) {
+            return true;
+        }
+        if (codePoint < 127) {
+            return false;
+        }
+        if (escapeUnicode) {
+            return true;
+        }
+        return !NameMapper.isPrintableCodePoint(codePoint);
+    }
+
+    public String unescapeChar(char c, boolean explicitCast) {
+        if (c == '\'') {
+            return "'\\''";
+        }
+        String str = getSpecialStringForCodePoint(c);
+        if (str != null) {
+            return '\'' + str + '\'';
+        }
+        if (c >= 127 && escapeUnicode) {
+            return String.format("'\\u%04x'", (int) c);
+        }
+        if (NameMapper.isPrintableChar(c)) {
+            return "'" + c + '\'';
+        }
+        String intStr = Integer.toString(c);
+        return explicitCast ? "(char) " + intStr : intStr;
+    }
+
+    public String unescapeChar(char ch) {
+        return unescapeChar(ch, false);
+    }
+
+    @Nullable
+    private String getSpecialStringForCodePoint(int c) {
+        switch (c) {
+            case '\n':
+                return "\\n";
+            case '\r':
+                return "\\r";
+            case '\t':
+                return "\\t";
+            case '\b':
+                return "\\b";
+            case '\f':
+                return "\\f";
+            case '\'':
+                return "'";
+            case '"':
+                return "\\\"";
+            case '\\':
+                return "\\\\";
+            default:
+                return null;
+        }
+    }
+
+    public IntegerFormat getIntegerFormat() {
+        return integerFormat;
+    }
+
+    private String formatNumber(long number, int bytesLen, boolean cast) {
+        String numStr;
+        if (integerFormat.isHexadecimal()) {
+            String hexStr = Long.toHexString(number);
+            if (number < 0) {
+                int len = hexStr.length();
+                numStr = "0x" + hexStr.substring(len - bytesLen * 2, len);
+                cast = true;
+            } else {
+                numStr = "0x" + hexStr;
+            }
+        } else {
+            numStr = Long.toString(number);
+        }
+        if (bytesLen == 8 && (number == Long.MIN_VALUE || Math.abs(number) >= Integer.MAX_VALUE)) {
+            cast = true;
+        }
+        if (cast) {
+            if (bytesLen == 8) {
+                return numStr + 'L';
+            }
+            return getCastStr(bytesLen) + numStr;
+        }
+        return numStr;
+    }
+
+    public String formatByte(long l, boolean cast) {
+        return formatNumber(l, 1, cast);
+    }
+
+    public String formatShort(long l, boolean cast) {
+        if (integerFormat == IntegerFormat.AUTO) {
+            switch ((short) l) {
+                case Short.MAX_VALUE:
+                    return "Short.MAX_VALUE";
+                case Short.MIN_VALUE:
+                    return "Short.MIN_VALUE";
+            }
+        }
+        return formatNumber(l, 2, cast);
+    }
+
+    public String formatInteger(long l, boolean cast) {
+        if (integerFormat == IntegerFormat.AUTO) {
+            switch ((int) l) {
+                case Integer.MAX_VALUE:
+                    return "Integer.MAX_VALUE";
+                case Integer.MIN_VALUE:
+                    return "Integer.MIN_VALUE";
+            }
+        }
+        return formatNumber(l, 4, cast);
+    }
+
+    public String formatLong(long l, boolean cast) {
+        if (integerFormat == IntegerFormat.AUTO) {
+            if (l == Long.MAX_VALUE) {
+                return "Long.MAX_VALUE";
+            }
+            if (l == Long.MIN_VALUE) {
+                return "Long.MIN_VALUE";
+            }
+        }
+        return formatNumber(l, 8, cast);
     }
 }

@@ -10,7 +10,7 @@ import java.util.*;
  * {@link ConcurrentModificationException}
  *
  * <p>
- * fail-fast 是错误探测机制,不是并发控制机制；并发访问仍应由调用方自行同步
+ * fail-fast 是错误探测机制,不是并发控制机制 并发访问仍应由调用方自行同步
  *
  * @param <K> key 类型
  * @param <V> value 类型

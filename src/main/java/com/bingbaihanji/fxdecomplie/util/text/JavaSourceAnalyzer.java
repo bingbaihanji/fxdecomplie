@@ -3,19 +3,13 @@ package com.bingbaihanji.fxdecomplie.util.text;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 
-import java.util.*;
-import java.util.regex.*;
-import jfx.incubator.scene.control.richtext.TextPos;
+import java.util.regex.Pattern;
 
 /**
- * Java 源码静态分析工具:声明行识别、令牌规范化、类引用判定、偏移换算等。
- * 从 {@code MainWindow} 抽取的纯静态方法集合。
+ * Java 源码静态分析工具:声明行识别、令牌规范化、类引用判定、偏移换算等
+ * 从 {@code MainWindow} 抽取的纯静态方法集合
  */
 public final class JavaSourceAnalyzer {
-
-    private JavaSourceAnalyzer() {
-        throw new AssertionError("utility class");
-    }
 
     /** 用于解析 Java 源码中 import 语句的正则 */
     public static final Pattern IMPORT_PATTERN = Pattern.compile(
@@ -26,6 +20,10 @@ public final class JavaSourceAnalyzer {
     /** 预编译: 判断前缀是否以 @interface 结尾 */
     public static final Pattern ANN_INTERFACE_PATTERN =
             Pattern.compile("(^|\\s)@\\s*interface\\s*$");
+
+    private JavaSourceAnalyzer() {
+        throw new AssertionError("utility class");
+    }
 
     /** 将点分隔的类名转换为内部类路径(首段大写后用 $ 替代 .) */
     public static String toInnerClassPath(String className) {

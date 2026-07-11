@@ -8,10 +8,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * 选项构建器接口，用于以流式方式配置插件选项。
+ * 选项构建器接口，用于以流式方式配置插件选项
  * <p>
  * 所有选项必须提供描述（{@link #description}）、解析器（{@link #parser}）、
- * 格式化器（{@link #formatter}）和设置器（{@link #setter}）。
+ * 格式化器（{@link #formatter}）和设置器（{@link #setter}）
  *
  * @param <T> 选项值的类型
  */

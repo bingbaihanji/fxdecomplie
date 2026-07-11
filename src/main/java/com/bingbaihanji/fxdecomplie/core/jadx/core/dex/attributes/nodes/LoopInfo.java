@@ -11,10 +11,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 描述控制流图中一个循环结构的信息。
+ * 描述控制流图中一个循环结构的信息
  * <p>
  * 包含循环的起始块、结束块以及构成循环体的所有基本块集合，
- * 同时维护循环的编号与父循环引用，用于表示嵌套循环关系。
+ * 同时维护循环的编号与父循环引用，用于表示嵌套循环关系
  * </p>
  */
 public class LoopInfo {
@@ -32,7 +32,7 @@ public class LoopInfo {
     private LoopInfo parentLoop;
 
     /**
-     * 构造一个循环信息对象。
+     * 构造一个循环信息对象
      *
      * @param start      循环起始块
      * @param end        循环结束块
@@ -45,7 +45,7 @@ public class LoopInfo {
     }
 
     /**
-     * 获取循环起始块。
+     * 获取循环起始块
      *
      * @return 循环起始块
      */
@@ -54,7 +54,7 @@ public class LoopInfo {
     }
 
     /**
-     * 获取循环结束块。
+     * 获取循环结束块
      *
      * @return 循环结束块
      */
@@ -63,7 +63,7 @@ public class LoopInfo {
     }
 
     /**
-     * 获取循环体包含的所有基本块。
+     * 获取循环体包含的所有基本块
      *
      * @return 循环块集合
      */
@@ -72,8 +72,8 @@ public class LoopInfo {
     }
 
     /**
-     * 返回退出边的源块。<br>
-     * 退出节点属于循环（包含在 {@code loopBlocks} 中）。
+     * 返回退出边的源块<br>
+     * 退出节点属于循环（包含在 {@code loopBlocks} 中）
      *
      * @return 退出边源块集合
      */
@@ -92,7 +92,7 @@ public class LoopInfo {
     }
 
     /**
-     * 返回循环的退出边。
+     * 返回循环的退出边
      *
      * @return 退出边列表
      */
@@ -110,7 +110,7 @@ public class LoopInfo {
     }
 
     /**
-     * 获取循环的前置头块（pre-header）。
+     * 获取循环的前置头块（pre-header）
      *
      * @return 前置头块
      */
@@ -119,7 +119,7 @@ public class LoopInfo {
     }
 
     /**
-     * 获取循环编号。
+     * 获取循环编号
      *
      * @return 循环编号
      */
@@ -128,7 +128,7 @@ public class LoopInfo {
     }
 
     /**
-     * 设置循环编号。
+     * 设置循环编号
      *
      * @param id 循环编号
      */
@@ -137,7 +137,7 @@ public class LoopInfo {
     }
 
     /**
-     * 获取父循环。
+     * 获取父循环
      *
      * @return 父循环，若无则为 null
      */
@@ -146,7 +146,7 @@ public class LoopInfo {
     }
 
     /**
-     * 设置父循环。
+     * 设置父循环
      *
      * @param parentLoop 父循环
      */
@@ -155,7 +155,7 @@ public class LoopInfo {
     }
 
     /**
-     * 判断指定循环是否为当前循环的祖先循环。
+     * 判断指定循环是否为当前循环的祖先循环
      *
      * @param searchLoop 待查找的循环
      * @return 若 searchLoop 是当前循环的某一级父循环则返回 true，否则返回 false
@@ -174,7 +174,7 @@ public class LoopInfo {
     }
 
     /**
-     * 返回循环的字符串表示。
+     * 返回循环的字符串表示
      */
     @Override
     public String toString() {

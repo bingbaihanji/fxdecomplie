@@ -127,7 +127,7 @@ public class AtomicFile {
      * 而应调用 {@link #finishWrite(FileOutputStream)} 或 {@link #failWrite(FileOutputStream)}
      * <p>
      * 注意：如果另一个线程当前正在执行写入操作,此方法将简单地用当前线程正在写入的新文件
-     * 替换该线程正在写入的内容；当另一个线程完成写入后,新的写入操作将不再安全(或会被丢失)
+     * 替换该线程正在写入的内容 当另一个线程完成写入后,新的写入操作将不再安全(或会被丢失)
      * 您必须自行对 AtomicFile 的访问进行线程保护
      *
      * @return 用于写入新数据的文件输出流

@@ -10,7 +10,6 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.Res9patchStreamDecoder;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.BinaryXMLParser;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.IResTableParser;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResContainer;
@@ -33,8 +32,8 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils.RE
 // TODO: 移动到 core 包
 
 /**
- * 资源加载器，负责加载和解析 Android 应用中的各类资源文件（如二进制 XML、ARSC 资源表、图片等）。
- * 实现了 {@link IResourcesLoader} 接口，支持自定义资源容器工厂和资源表解析器的扩展。
+ * 资源加载器，负责加载和解析 Android 应用中的各类资源文件（如二进制 XML、ARSC 资源表、图片等）
+ * 实现了 {@link IResourcesLoader} 接口，支持自定义资源容器工厂和资源表解析器的扩展
  */
 public final class ResourcesLoader implements IResourcesLoader {
     private static final Logger LOG = LoggerFactory.getLogger(ResourcesLoader.class);
@@ -47,7 +46,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     private BinaryXMLParser binaryXmlParser;
 
     /**
-     * 构造资源加载器实例。
+     * 构造资源加载器实例
      *
      * @param decompiler 反编译器实例
      */
@@ -57,8 +56,8 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 使用指定的解码器解码资源文件的输入流。
-     * 支持从 ZIP 条目或普通文件中读取数据。
+     * 使用指定的解码器解码资源文件的输入流
+     * 支持从 ZIP 条目或普通文件中读取数据
      *
      * @param rf      资源文件
      * @param decoder 资源解码器
@@ -85,8 +84,8 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 加载指定资源文件的内容容器（静态入口）。
-     * 解码失败时不会抛出异常，而是返回一个包含错误信息与堆栈的文本资源容器。
+     * 加载指定资源文件的内容容器（静态入口）
+     * 解码失败时不会抛出异常，而是返回一个包含错误信息与堆栈的文本资源容器
      *
      * @param jadxRef 反编译器实例
      * @param rf      待加载的资源文件
@@ -106,7 +105,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 解码图片资源。对 .9.png 点九图执行专门解码，其余图片以文件链接形式返回。
+     * 解码图片资源对 .9.png 点九图执行专门解码，其余图片以文件链接形式返回
      *
      * @param rf          资源文件
      * @param inputStream 图片输入流
@@ -128,7 +127,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 以 UTF-8 编码将输入流读取为代码信息对象。
+     * 以 UTF-8 编码将输入流读取为代码信息对象
      *
      * @param is 输入流
      * @return 代码信息对象
@@ -139,7 +138,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 以指定字符集将输入流读取为代码信息对象。
+     * 以指定字符集将输入流读取为代码信息对象
      *
      * @param is      输入流
      * @param charset 字符集
@@ -153,7 +152,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 加载所有输入文件中的资源。
+     * 加载所有输入文件中的资源
      *
      * @param root 根节点
      * @return 加载到的资源文件列表
@@ -169,7 +168,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 初始化资源表解析器提供者和资源容器工厂。
+     * 初始化资源表解析器提供者和资源容器工厂
      *
      * @param root 根节点
      */
@@ -191,7 +190,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 添加自定义资源容器工厂。
+     * 添加自定义资源容器工厂
      *
      * @param resContainerFactory 资源容器工厂实例
      */
@@ -201,7 +200,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 添加自定义资源表解析器提供者。
+     * 添加自定义资源表解析器提供者
      *
      * @param resTableParserProvider 资源表解析器提供者实例
      */
@@ -211,8 +210,8 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 根据资源类型将输入流解析为对应的内容容器。
-     * 会优先尝试自定义资源容器工厂，其次按类型（清单/XML、ARSC、图片等）分别处理。
+     * 根据资源类型将输入流解析为对应的内容容器
+     * 会优先尝试自定义资源容器工厂，其次按类型（清单/XML、ARSC、图片等）分别处理
      *
      * @param resFile     资源文件
      * @param inputStream 资源输入流
@@ -244,7 +243,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 解析 ARSC/PB 资源表，返回资源表解析器。
+     * 解析 ARSC/PB 资源表，返回资源表解析器
      *
      * @param resFile 资源文件（类型必须为 {@link ResourceType#ARSC}）
      * @param is      资源表输入流
@@ -272,7 +271,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 加载单个文件的资源。优先尝试自定义资源加载器，若均无法处理则回退到默认加载逻辑。
+     * 加载单个文件的资源优先尝试自定义资源加载器，若均无法处理则回退到默认加载逻辑
      *
      * @param list 资源文件列表（结果收集到此列表）
      * @param file 待加载的文件
@@ -295,7 +294,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 默认的文件加载逻辑。若为 ZIP/压缩包则遍历其条目逐一加入，否则作为单个资源文件加入。
+     * 默认的文件加载逻辑若为 ZIP/压缩包则遍历其条目逐一加入，否则作为单个资源文件加入
      *
      * @param list   资源文件列表（结果收集到此列表）
      * @param file   待加载的文件
@@ -320,7 +319,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 将 ZIP 中的单个条目转换为资源文件并加入列表。目录条目会被跳过。
+     * 将 ZIP 中的单个条目转换为资源文件并加入列表目录条目会被跳过
      *
      * @param list    资源文件列表（结果收集到此列表）
      * @param zipFile 所属的 ZIP 文件
@@ -341,7 +340,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 懒加载并返回二进制 XML 解析器（延迟初始化，线程安全）。
+     * 懒加载并返回二进制 XML 解析器（延迟初始化，线程安全）
      *
      * @return 二进制 XML 解析器实例
      */
@@ -353,7 +352,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 资源解码器接口，用于将输入流解码为指定类型的对象。
+     * 资源解码器接口，用于将输入流解码为指定类型的对象
      *
      * @param <T> 解码后的目标类型
      */

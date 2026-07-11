@@ -18,10 +18,10 @@ import java.util.*;
 // TODO: 移动到 Android 专用模块！
 
 /**
- * 加载并存储 Android Manifest 属性规范。
+ * 加载并存储 Android Manifest 属性规范
  * <p>
  * 从 classpath 中的 attrs.xml 和 attrs_manifest.xml 解析 Android 标准属性定义，
- * 支持对 ENUM（枚举）和 FLAG（标志位）类型的属性值进行解码。
+ * 支持对 ENUM（枚举）和 FLAG（标志位）类型的属性值进行解码
  * </p>
  */
 public class ManifestAttributes {
@@ -31,16 +31,16 @@ public class ManifestAttributes {
     private static final String MANIFEST_ATTR_XML = "/android/attrs_manifest.xml";
     private final IJadxSecurity security;
     /**
-     * 存储默认 Android 资源属性定义的映射表。
+     * 存储默认 Android 资源属性定义的映射表
      * 键为 Android 属性名（例如 "android:layout_width"），
-     * 值为对应的 {@link MAttr} 对象。
+     * 值为对应的 {@link MAttr} 对象
      */
     private final Map<String, MAttr> attrMap = new HashMap<>();
     /** 存储应用自定义属性定义的映射表，键为属性键名，值为对应的 {@link MAttr} 对象 */
     private final Map<String, MAttr> appAttrMap = new HashMap<>();
 
     /**
-     * 构造 Manifest 属性解析器，并立即解析内置的属性定义文件。
+     * 构造 Manifest 属性解析器，并立即解析内置的属性定义文件
      *
      * @param security 安全接口，用于安全地解析 XML
      */
@@ -145,11 +145,11 @@ public class ManifestAttributes {
     }
 
     /**
-     * 将属性的原始数值解码为可读的名称。
+     * 将属性的原始数值解码为可读的名称
      * <p>
-     * 对于 ENUM 类型，直接返回数值对应的名称；
-     * 对于 FLAG 类型，将数值按标志位拆解，返回以 "|" 连接的名称组合。
-     * 查找顺序为先默认属性表，未命中再查应用自定义属性表。
+     * 对于 ENUM 类型，直接返回数值对应的名称 
+     * 对于 FLAG 类型，将数值按标志位拆解，返回以 "|" 连接的名称组合
+     * 查找顺序为先默认属性表，未命中再查应用自定义属性表
      * </p>
      *
      * @param attrName 属性名
@@ -191,10 +191,10 @@ public class ManifestAttributes {
     }
 
     /**
-     * 根据资源表解析器中的资源条目，更新应用自定义属性映射表。
+     * 根据资源表解析器中的资源条目，更新应用自定义属性映射表
      * <p>
      * 遍历所有 "attr" 类型的资源条目，识别其为 FLAG 或 ENUM 类型，
-     * 并将各命名值加入对应的 {@link MAttr} 中，供后续解码使用。
+     * 并将各命名值加入对应的 {@link MAttr} 中，供后续解码使用
      * </p>
      *
      * @param parser 资源表解析器
@@ -239,8 +239,8 @@ public class ManifestAttributes {
     }
 
     /**
-     * 描述单个 Android 属性的可选值集合。
-     * 包含属性类型（枚举或标志位）以及「数值 → 名称」的映射。
+     * 描述单个 Android 属性的可选值集合
+     * 包含属性类型（枚举或标志位）以及「数值 → 名称」的映射
      */
     private static class MAttr {
         private final MAttrType type;

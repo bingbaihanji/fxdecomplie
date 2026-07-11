@@ -5,10 +5,10 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 import org.intellij.lang.annotations.MagicConstant;
 
 /**
- * 访问修饰符信息封装类。
+ * 访问修饰符信息封装类
  * <p>
  * 用于封装类、字段、方法的访问标志（access flags），
- * 提供标志位的判断、修改、可见性比较及字符串表示等功能。
+ * 提供标志位的判断、修改、可见性比较及字符串表示等功能
  * </p>
  */
 public class AccessInfo {
@@ -19,7 +19,7 @@ public class AccessInfo {
     private final AFType type;
 
     /**
-     * 构造访问信息对象。
+     * 构造访问信息对象
      *
      * @param accessFlags 访问标志位值
      * @param type        所属类型（类、字段、方法）
@@ -30,7 +30,7 @@ public class AccessInfo {
     }
 
     /**
-     * 将可见性标志位转换为排序值，用于可见性强弱比较。
+     * 将可见性标志位转换为排序值，用于可见性强弱比较
      * <p>
      * 排序规则：private=1, package-private=2, protected=3, public=4
      * </p>
@@ -55,7 +55,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否包含指定的访问标志位。
+     * 判断是否包含指定的访问标志位
      *
      * @param flag 要检查的标志位
      * @return 如果包含该标志位则返回 {@code true}
@@ -66,7 +66,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否同时包含所有指定的访问标志位。
+     * 判断是否同时包含所有指定的访问标志位
      *
      * @param flags 要检查的标志位数组
      * @return 如果包含所有标志位则返回 {@code true}
@@ -82,8 +82,8 @@ public class AccessInfo {
     }
 
     /**
-     * 移除指定的访问标志位，返回新的 {@link AccessInfo} 实例。
-     * 如果当前不包含该标志位，则返回自身。
+     * 移除指定的访问标志位，返回新的 {@link AccessInfo} 实例
+     * 如果当前不包含该标志位，则返回自身
      *
      * @param flag 要移除的标志位
      * @return 移除标志位后的新实例，或当前实例
@@ -96,8 +96,8 @@ public class AccessInfo {
     }
 
     /**
-     * 添加指定的访问标志位，返回新的 {@link AccessInfo} 实例。
-     * 如果当前已包含该标志位，则返回自身。
+     * 添加指定的访问标志位，返回新的 {@link AccessInfo} 实例
+     * 如果当前已包含该标志位，则返回自身
      *
      * @param flag 要添加的标志位
      * @return 添加标志位后的新实例，或当前实例
@@ -110,9 +110,9 @@ public class AccessInfo {
     }
 
     /**
-     * 更改可见性修饰符，返回新的 {@link AccessInfo} 实例。
-     * 会清除原有的可见性标志位（public/protected/private），然后设置新的可见性。
-     * 如果新可见性与当前相同，则返回自身。
+     * 更改可见性修饰符，返回新的 {@link AccessInfo} 实例
+     * 会清除原有的可见性标志位（public/protected/private），然后设置新的可见性
+     * 如果新可见性与当前相同，则返回自身
      *
      * @param flag 新的可见性标志位
      * @return 更改可见性后的新实例，或当前实例
@@ -127,7 +127,7 @@ public class AccessInfo {
     }
 
     /**
-     * 获取仅包含可见性标志位的 {@link AccessInfo} 实例。
+     * 获取仅包含可见性标志位的 {@link AccessInfo} 实例
      *
      * @return 只保留可见性标志位的新实例
      */
@@ -136,7 +136,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断当前可见性是否弱于另一个 {@link AccessInfo}。
+     * 判断当前可见性是否弱于另一个 {@link AccessInfo}
      * <p>
      * 可见性强弱顺序（从弱到强）：private &lt; package-private &lt; protected &lt; public
      * </p>
@@ -154,7 +154,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 public 访问级别。
+     * 判断是否为 public 访问级别
      *
      * @return 如果是 public 则返回 {@code true}
      */
@@ -163,7 +163,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 protected 访问级别。
+     * 判断是否为 protected 访问级别
      *
      * @return 如果是 protected 则返回 {@code true}
      */
@@ -172,7 +172,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 private 访问级别。
+     * 判断是否为 private 访问级别
      *
      * @return 如果是 private 则返回 {@code true}
      */
@@ -181,8 +181,8 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为包私有（package-private）访问级别。
-     * 即不包含 public、protected、private 任一可见性标志位。
+     * 判断是否为包私有（package-private）访问级别
+     * 即不包含 public、protected、private 任一可见性标志位
      *
      * @return 如果是包私有则返回 {@code true}
      */
@@ -191,7 +191,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 abstract（抽象）。
+     * 判断是否为 abstract（抽象）
      *
      * @return 如果是 abstract 则返回 {@code true}
      */
@@ -200,7 +200,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 interface（接口）。
+     * 判断是否为 interface（接口）
      *
      * @return 如果是 interface 则返回 {@code true}
      */
@@ -209,7 +209,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 annotation（注解）。
+     * 判断是否为 annotation（注解）
      *
      * @return 如果是 annotation 则返回 {@code true}
      */
@@ -218,7 +218,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 native（本地方法）。
+     * 判断是否为 native（本地方法）
      *
      * @return 如果是 native 则返回 {@code true}
      */
@@ -227,7 +227,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 static（静态）。
+     * 判断是否为 static（静态）
      *
      * @return 如果是 static 则返回 {@code true}
      */
@@ -236,7 +236,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 final（不可继承/不可修改）。
+     * 判断是否为 final（不可继承/不可修改）
      *
      * @return 如果是 final 则返回 {@code true}
      */
@@ -245,7 +245,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为构造方法。
+     * 判断是否为构造方法
      *
      * @return 如果是构造方法则返回 {@code true}
      */
@@ -254,7 +254,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 enum（枚举）。
+     * 判断是否为 enum（枚举）
      *
      * @return 如果是 enum 则返回 {@code true}
      */
@@ -263,8 +263,8 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 synthetic（编译器合成）。
-     * 编译器自动生成的成员（如桥接方法、内部类访问方法等）会被标记为 synthetic。
+     * 判断是否为 synthetic（编译器合成）
+     * 编译器自动生成的成员（如桥接方法、内部类访问方法等）会被标记为 synthetic
      *
      * @return 如果是 synthetic 则返回 {@code true}
      */
@@ -273,8 +273,8 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 bridge（桥接方法）。
-     * 编译器为泛型类型擦除生成的桥接方法会被标记为此标志。
+     * 判断是否为 bridge（桥接方法）
+     * 编译器为泛型类型擦除生成的桥接方法会被标记为此标志
      *
      * @return 如果是桥接方法则返回 {@code true}
      */
@@ -283,7 +283,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为可变参数方法。
+     * 判断是否为可变参数方法
      *
      * @return 如果是可变参数方法则返回 {@code true}
      */
@@ -292,8 +292,8 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 synchronized（同步方法）。
-     * 同时检查 {@code SYNCHRONIZED} 和 {@code DECLARED_SYNCHRONIZED} 标志位。
+     * 判断是否为 synchronized（同步方法）
+     * 同时检查 {@code SYNCHRONIZED} 和 {@code DECLARED_SYNCHRONIZED} 标志位
      *
      * @return 如果是同步方法则返回 {@code true}
      */
@@ -302,7 +302,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 transient（瞬态字段，不参与序列化）。
+     * 判断是否为 transient（瞬态字段，不参与序列化）
      *
      * @return 如果是 transient 则返回 {@code true}
      */
@@ -311,7 +311,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 volatile（易变字段，保证多线程可见性）。
+     * 判断是否为 volatile（易变字段，保证多线程可见性）
      *
      * @return 如果是 volatile 则返回 {@code true}
      */
@@ -320,7 +320,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 module-info 模块描述符。
+     * 判断是否为 module-info 模块描述符
      *
      * @return 如果是模块描述符则返回 {@code true}
      */
@@ -329,7 +329,7 @@ public class AccessInfo {
     }
 
     /**
-     * 判断是否为 data（Kotlin data class 标记）。
+     * 判断是否为 data（Kotlin data class 标记）
      *
      * @return 如果是 data class 则返回 {@code true}
      */
@@ -338,7 +338,7 @@ public class AccessInfo {
     }
 
     /**
-     * 获取访问标志所属类型。
+     * 获取访问标志所属类型
      *
      * @return 所属类型（类、字段或方法）
      */
@@ -347,11 +347,11 @@ public class AccessInfo {
     }
 
     /**
-     * 根据访问标志生成 Java 源码风格的修饰符字符串（以空格分隔并带尾随空格）。
+     * 根据访问标志生成 Java 源码风格的修饰符字符串（以空格分隔并带尾随空格）
      * <p>
-     * 会按照类型（方法、字段、类）追加相应的修饰符，例如 synchronized、volatile、strict 等。
+     * 会按照类型（方法、字段、类）追加相应的修饰符，例如 synchronized、volatile、strict 等
      * 当 {@code showHidden} 为 {@code true} 时，还会以注释形式追加隐藏标志，
-     * 如 {@code /* bridge *}{@code /}、{@code /* synthetic *}{@code /} 等。
+     * 如 {@code /* bridge *}{@code /}、{@code /* synthetic *}{@code /} 等
      * </p>
      *
      * @param showHidden 是否输出隐藏的合成、桥接、数据类等标注
@@ -433,7 +433,7 @@ public class AccessInfo {
     }
 
     /**
-     * 获取可见性级别的名称。
+     * 获取可见性级别的名称
      *
      * @return 可见性名称，取值为 {@code "package-private"}、{@code "public"}、
      *         {@code "private"} 或 {@code "protected"}
@@ -456,7 +456,7 @@ public class AccessInfo {
     }
 
     /**
-     * 获取原始的访问标志整型值。
+     * 获取原始的访问标志整型值
      *
      * @return 原始访问标志位
      */
@@ -465,7 +465,7 @@ public class AccessInfo {
     }
 
     /**
-     * 返回访问信息的调试字符串表示，包含所属类型、十六进制标志值及修饰符字符串。
+     * 返回访问信息的调试字符串表示，包含所属类型、十六进制标志值及修饰符字符串
      *
      * @return 调试用字符串
      */
@@ -475,7 +475,7 @@ public class AccessInfo {
     }
 
     /**
-     * 访问标志所属类型枚举。
+     * 访问标志所属类型枚举
      */
     public enum AFType {
         /** 类 */

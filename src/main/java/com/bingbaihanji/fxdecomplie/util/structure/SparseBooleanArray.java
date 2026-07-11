@@ -124,7 +124,7 @@ public class SparseBooleanArray implements Cloneable {
     }
 
     /**
-     * 写入一个键值映射；若键已存在则替换其值
+     * 写入一个键值映射 若键已存在则替换其值
      *
      * @param key 键
      * @param value 值
@@ -219,7 +219,7 @@ public class SparseBooleanArray implements Cloneable {
     }
 
     /**
-     * 返回键对应的下标；键不存在时返回负数
+     * 返回键对应的下标 键不存在时返回负数
      *
      * @param key 键
      * @return {@link #keyAt(int)} 可返回该键的下标,不存在时返回负数
@@ -229,10 +229,10 @@ public class SparseBooleanArray implements Cloneable {
     }
 
     /**
-     * 返回某个值对应的下标；无键映射到该值时返回负数
+     * 返回某个值对应的下标 无键映射到该值时返回负数
      *
      * <p>
-     * 与按键查找不同,这是线性搜索；多个键可能映射到同一值,此处只返回其中一个
+     * 与按键查找不同,这是线性搜索 多个键可能映射到同一值,此处只返回其中一个
      *
      * @param value 值
      * @return 值对应的下标,不存在时返回 -1

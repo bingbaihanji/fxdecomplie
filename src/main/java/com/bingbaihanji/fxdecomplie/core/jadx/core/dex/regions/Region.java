@@ -11,11 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 通用区域节点，用于表示反编译过程中的代码块序列。
+ * 通用区域节点，用于表示反编译过程中的代码块序列
  * <p>
  * Region 是最基础的区域容器，内部维护一个有序的子容器列表（blocks），
  * 按顺序存放多个 {@link IContainer} 子块，最终通过 {@link #generate} 方法
- * 依次生成对应的反编译代码。
+ * 依次生成对应的反编译代码
  * </p>
  */
 public final class Region extends AbstractRegion {
@@ -24,7 +24,7 @@ public final class Region extends AbstractRegion {
     private final List<IContainer> blocks;
 
     /**
-     * 构造一个新的 Region 实例。
+     * 构造一个新的 Region 实例
      *
      * @param parent 父级区域节点
      */
@@ -34,7 +34,7 @@ public final class Region extends AbstractRegion {
     }
 
     /**
-     * 获取该区域包含的所有子容器块列表。
+     * 获取该区域包含的所有子容器块列表
      *
      * @return 子容器的不可变引用列表
      */
@@ -44,7 +44,7 @@ public final class Region extends AbstractRegion {
     }
 
     /**
-     * 向该区域末尾添加一个子容器块，并将其父级设置为当前 Region。
+     * 向该区域末尾添加一个子容器块，并将其父级设置为当前 Region
      *
      * @param region 要添加的子容器
      */
@@ -54,9 +54,9 @@ public final class Region extends AbstractRegion {
     }
 
     /**
-     * 依次为该区域中的每个子容器块生成反编译代码。
+     * 依次为该区域中的每个子容器块生成反编译代码
      * <p>
-     * 遍历所有子容器，委托 {@link RegionGen#makeRegion} 逐个生成代码输出。
+     * 遍历所有子容器，委托 {@link RegionGen#makeRegion} 逐个生成代码输出
      * </p>
      *
      * @param regionGen 区域代码生成器
@@ -71,10 +71,10 @@ public final class Region extends AbstractRegion {
     }
 
     /**
-     * 将该区域中的指定子容器替换为新的容器。
+     * 将该区域中的指定子容器替换为新的容器
      * <p>
      * 查找 oldBlock 在子容器列表中的位置，若存在则替换为 newBlock
-     * 并更新新容器的父级引用。
+     * 并更新新容器的父级引用
      * </p>
      *
      * @param oldBlock 要被替换的旧子容器
@@ -93,9 +93,9 @@ public final class Region extends AbstractRegion {
     }
 
     /**
-     * 生成该区域的唯一标识字符串，格式为 {@code (块数量:子块1|子块2|...)}。
+     * 生成该区域的唯一标识字符串，格式为 {@code (块数量:子块1|子块2|...)}
      * <p>
-     * 用于调试和 toString 实现中的唯一性标识。
+     * 用于调试和 toString 实现中的唯一性标识
      * </p>
      *
      * @return 区域的唯一标识字符串
@@ -115,7 +115,7 @@ public final class Region extends AbstractRegion {
     }
 
     /**
-     * 返回该 Region 的字符串表示，格式为 {@code R(块数量:子块1|子块2|...)}。
+     * 返回该 Region 的字符串表示，格式为 {@code R(块数量:子块1|子块2|...)}
      *
      * @return 以 'R' 为前缀的区域字符串表示
      */

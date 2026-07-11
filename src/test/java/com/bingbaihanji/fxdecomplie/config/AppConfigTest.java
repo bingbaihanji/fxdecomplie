@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.config;
 
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,7 +19,7 @@ class AppConfigTest {
     @Test
     void addRecentFileDeduplicates() {
         AppConfig config = new AppConfig();
-        config.addRecentFile("D:/datangyun/ccx_politics/pigx/pcs/target/pcs.jar");
+        config.addRecentFile("/test/a.jar");
         config.addRecentFile("/test/b.jar");
         config.addRecentFile("/test/a.jar"); // should move to front
         assertEquals(2, config.recentFiles().size());
@@ -46,5 +47,39 @@ class AppConfigTest {
         method.invoke(config);
         assertNotNull(config.window());
         assertNotNull(config.theme());
+    }
+
+    @Test
+    void loadReturnsProcessSingleton() {
+        assertSame(AppConfig.load(), AppConfig.getInstance());
+    }
+
+    @Test
+    void copyDeepCopiesNestedEngineOptions() {
+        AppConfig config = new AppConfig();
+        config.decompiler().engineOptions().put("JADX",
+                new java.util.LinkedHashMap<>(java.util.Map.of("debug-info", "true")));
+
+        AppConfig copy = config.copy();
+        copy.decompiler().engineOptions().get("JADX").put("debug-info", "false");
+        copy.decompiler().defaultEngine(DecompilerTypeEnum.CFR);
+
+        assertEquals("true", config.decompiler().engineOptions().get("JADX").get("debug-info"));
+        assertEquals(DecompilerTypeEnum.JADX, config.decompiler().defaultEngine());
+    }
+
+    @Test
+    void copyFromReplacesValuesWithoutSharingNestedMaps() {
+        AppConfig target = new AppConfig();
+        AppConfig source = new AppConfig();
+        source.theme().fontSize(20);
+        source.decompiler().engineOptions().put("CFR",
+                new java.util.LinkedHashMap<>(java.util.Map.of("decodeenumswitch", "true")));
+
+        target.copyFrom(source);
+        source.decompiler().engineOptions().get("CFR").put("decodeenumswitch", "false");
+
+        assertEquals(20, target.theme().fontSize());
+        assertEquals("true", target.decompiler().engineOptions().get("CFR").get("decodeenumswitch"));
     }
 }

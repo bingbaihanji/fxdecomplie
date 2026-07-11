@@ -51,12 +51,12 @@ public final class TreeUtils {
      * <ol>
      * <li>收集所有节点 ID,用于判断"父节点是否存在"</li>
      * <li>建立 ID → 节点 的映射表</li>
-     * <li>遍历所有节点：若父 ID 为 null 或不在映射中 → 根节点； 否则挂载到对应父节点下</li>
+     * <li>遍历所有节点：若父 ID 为 null 或不在映射中 → 根节点  否则挂载到对应父节点下</li>
      * </ol>
      * @param nodes 扁平节点列表
      * @param <N> 节点类型
      * @param <T> ID 类型
-     * @return 根节点列表(节点可能有多棵独立的树)；列表为空或 null 时返回空列表
+     * @return 根节点列表(节点可能有多棵独立的树) 列表为空或 null 时返回空列表
      */
     public static <T, N extends TreeNode<T, N>> List<N> buildTree(List<N> nodes) {
         if (nodes == null || nodes.isEmpty()) {
@@ -103,7 +103,7 @@ public final class TreeUtils {
      * @param root 树的根节点
      * @param <N> 节点类型
      * @param <T> ID 类型
-     * @return 前序遍历后的扁平列表；root 为 null 时返回空列表
+     * @return 前序遍历后的扁平列表 root 为 null 时返回空列表
      */
     public static <T, N extends TreeNode<T, N>> List<N> flatten(N root) {
         List<N> result = new ArrayList<>();
@@ -150,7 +150,7 @@ public final class TreeUtils {
      * @param map ID → 节点 的映射表(通常由 {@link #flatten} + {@code Collectors.toMap} 生成)
      * @param <N> 节点类型
      * @param <T> ID 类型
-     * @return 从根到目标节点的路径链；找不到目标节点时返回空列表
+     * @return 从根到目标节点的路径链 找不到目标节点时返回空列表
      */
     public static <T, N extends TreeNode<T, N>> List<N> getParentChain(T id, Map<T, N> map) {
         List<N> chain = new ArrayList<>();

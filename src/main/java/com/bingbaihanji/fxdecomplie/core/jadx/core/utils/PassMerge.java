@@ -11,10 +11,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 自定义 Pass 合并器。
+ * 自定义 Pass 合并器
  * <p>
  * 负责将用户自定义的 {@link JadxPass} 按其声明的顺序依赖（runAfter / runBefore）
- * 合并到已有的访问者（{@link IDexTreeVisitor}）列表中的正确位置。
+ * 合并到已有的访问者（{@link IDexTreeVisitor}）列表中的正确位置
  */
 public class PassMerge {
 
@@ -27,7 +27,7 @@ public class PassMerge {
     private Map<IDexTreeVisitor, String> namesMap;
 
     /**
-     * 构造 Pass 合并器。
+     * 构造 Pass 合并器
      *
      * @param visitors 目标访问者列表
      */
@@ -36,10 +36,10 @@ public class PassMerge {
     }
 
     /**
-     * 将依赖关系构建为双向链接。
+     * 将依赖关系构建为双向链接
      * <p>
      * 即若 A 声明 runAfter B，则同时为 B 补充 runBefore A，反之亦然，
-     * 以便后续排序时能够从两个方向感知依赖。
+     * 以便后续排序时能够从两个方向感知依赖
      */
     private static void linkDeps(List<MergePass> mergePasses) {
         Map<String, MergePass> map = mergePasses.stream().collect(Collectors.toMap(MergePass::getName, p -> p));
@@ -60,7 +60,7 @@ public class PassMerge {
     }
 
     /**
-     * 将自定义 Pass 合并到访问者列表中。
+     * 将自定义 Pass 合并到访问者列表中
      *
      * @param customPasses 待合并的自定义 Pass 列表
      * @param wrap         将 {@link JadxPass} 包装为 {@link IDexTreeVisitor} 的转换函数
@@ -90,10 +90,10 @@ public class PassMerge {
     }
 
     /**
-     * 计算指定 Pass 在访问者列表中的插入位置。
+     * 计算指定 Pass 在访问者列表中的插入位置
      *
      * @param pass 待插入的 Pass
-     * @return 插入位置索引；返回 -1 表示追加到末尾
+     * @return 插入位置索引 返回 -1 表示追加到末尾
      */
     private int searchInsertPos(MergePass pass) {
         List<String> runAfter = pass.after();
@@ -160,7 +160,7 @@ public class PassMerge {
     }
 
     /**
-     * 合并过程中使用的 Pass 包装对象，保存原始 Pass、对应的访问者以及可修改的依赖列表。
+     * 合并过程中使用的 Pass 包装对象，保存原始 Pass、对应的访问者以及可修改的依赖列表
      */
     private static final class MergePass {
         private final JadxPass pass;
@@ -209,7 +209,7 @@ public class PassMerge {
     }
 
     /**
-     * 将与访问者存在依赖关系的 Pass 排在其他 Pass 之前。
+     * 将与访问者存在依赖关系的 Pass 排在其他 Pass 之前
      */
     private static class ExtDepsComparator implements Comparator<MergePass> {
         private final Set<String> names;
@@ -238,7 +238,7 @@ public class PassMerge {
     }
 
     /**
-     * 按反向依赖排序，即：若某个 Pass 依赖另一个 Pass，则将其排在被依赖者之前。
+     * 按反向依赖排序，即：若某个 Pass 依赖另一个 Pass，则将其排在被依赖者之前
      */
     private static class InvertedDepsComparator implements Comparator<MergePass> {
         public static final InvertedDepsComparator INSTANCE = new InvertedDepsComparator();

@@ -7,9 +7,9 @@ import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 
 /**
- * 设置控制器：设置对话框的打开与配置应用（引擎切换、行号、字体、主题）。
+ * 设置控制器：设置对话框的打开与配置应用（引擎切换、行号、字体、主题）
  * <p>
- * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）。
+ * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者（Mediator 模式）
  *
  * @author bingbaihanji
  */

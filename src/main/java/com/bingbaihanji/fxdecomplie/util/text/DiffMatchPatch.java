@@ -562,7 +562,7 @@ public final class DiffMatchPatch {
      * 检测两段文本是否共享一个至少为较长文本一半长度的公共子串 此加速可能产生非最优差异结果
      * @param text1 第一段字符串
      * @param text2 第二段字符串
-     * @return 五元素字符串数组,包含 text1 的前缀、text1 的后缀、text2 的前缀、text2 的后缀以及公共中间部分；无匹配时返回 null
+     * @return 五元素字符串数组,包含 text1 的前缀、text1 的后缀、text2 的前缀、text2 的后缀以及公共中间部分 无匹配时返回 null
      */
     public String[] diffHalfMatch(String text1, String text2) {
         if (diffTimeout <= 0) {
@@ -605,7 +605,7 @@ public final class DiffMatchPatch {
      * @param shortText 较短字符串
      * @param i longText 中四分之一长度子串的起始索引
      * @return 五元素字符串数组,包含 longText 的前缀、longText 的后缀、shortText 的前缀、shortText
-     * 的后缀以及公共中间部分；无匹配时返回 null
+     * 的后缀以及公共中间部分 无匹配时返回 null
      */
     private String[] diffHalfMatchI(String longText, String shortText, int i) {
         // 以位置 i 的 1/4 长度子串作为种子
@@ -1426,7 +1426,7 @@ public final class DiffMatchPatch {
         // 空初始化,仅用于满足 Java 编译器
         int[] lastRd = new int[0];
         for (int d = 0; d < pattern.length(); d++) {
-            // 扫描最佳匹配；每次迭代允许增加一个误差
+            // 扫描最佳匹配 每次迭代允许增加一个误差
             // 使用二分查找确定在当前误差级别下可以偏离 loc 多远
             binMin = 0;
             binMid = binMax;

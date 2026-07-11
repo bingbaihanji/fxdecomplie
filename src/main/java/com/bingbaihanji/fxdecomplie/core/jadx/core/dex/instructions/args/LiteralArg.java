@@ -6,8 +6,8 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 字面量指令参数。
- * 以 long 存储原始位值，配合类型（如整型、浮点型、布尔型等）解释其含义。
+ * 字面量指令参数
+ * 以 long 存储原始位值，配合类型（如整型、浮点型、布尔型等）解释其含义
  */
 public final class LiteralArg extends InsnArg {
 
@@ -106,7 +106,7 @@ public final class LiteralArg extends InsnArg {
         return false;
     }
 
-    /** 返回取负后的字面量；若类型不支持取负则返回 null */
+    /** 返回取负后的字面量 若类型不支持取负则返回 null */
     @Nullable
     public LiteralArg negate() {
         long neg;

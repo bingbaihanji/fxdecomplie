@@ -206,7 +206,7 @@ public final class ExportService {
 
     /**
      * 从 TreeItem 树中提取可导出节点的快照(必须在 FX 线程调用)
-     * 仅供遗留 API 和测试使用；新代码应在 FX 线程提取 FileTreeNode 列表后直接调用 exportAll
+     * 仅供遗留 API 和测试使用 新代码应在 FX 线程提取 FileTreeNode 列表后直接调用 exportAll
      */
     @Deprecated
     private static List<FileTreeNode> collectExportableNodes(FileTreeModel root,

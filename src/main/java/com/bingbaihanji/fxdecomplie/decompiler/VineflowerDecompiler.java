@@ -168,7 +168,7 @@ public class VineflowerDecompiler implements Decompiler {
      * @param typeName   类的内部名称(如 {@code com/example/MyClass})
      * @param classBytes 类的原始字节码(会被 clone 一份)
      * @param context    反编译上下文(可为 null,用于解析依赖类字节码和传递选项)
-     * @return 反编译后的 Java 源码字符串；若结果为空则返回带说明的错误注释；异常时返回错误信息注释
+     * @return 反编译后的 Java 源码字符串 若结果为空则返回带说明的错误注释 异常时返回错误信息注释
      */
     @Override
     public String decompileType(String typeName, byte[] classBytes, DecompilerContext context) {

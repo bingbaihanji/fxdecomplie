@@ -19,10 +19,10 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * 抽象参数类型表示类，用于描述 Dalvik 字节码中寄存器、字段、方法参数和返回值的类型。
+ * 抽象参数类型表示类，用于描述 Dalvik 字节码中寄存器、字段、方法参数和返回值的类型
  * <p>
- * 采用不可变设计（{@code @Immutable}），通过静态工厂方法创建各类类型的实例。
- * 支持基本类型、对象类型、数组类型、泛型类型、通配符类型和未知类型等多种类型表示。
+ * 采用不可变设计（{@code @Immutable}），通过静态工厂方法创建各类类型的实例
+ * 支持基本类型、对象类型、数组类型、泛型类型、通配符类型和未知类型等多种类型表示
  * <p>
  * 类型层次结构：
  * <ul>
@@ -154,8 +154,8 @@ public abstract class ArgType {
     }
 
     /**
-     * 根据类名创建对象类型。常用类型（Object、String、Class、Throwable、Exception）
-     * 会返回预定义的常量实例。
+     * 根据类名创建对象类型常用类型（Object、String、Class、Throwable、Exception）
+     * 会返回预定义的常量实例
      *
      * @param obj 类的内部名称（如 "java/lang/String"）
      * @return 对象类型实例
@@ -298,7 +298,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 判断从 {@code from} 类型转换为 {@code to} 类型时是否需要显式强制类型转换。
+     * 判断从 {@code from} 类型转换为 {@code to} 类型时是否需要显式强制类型转换
      *
      * @param root 根节点，提供类型比较能力
      * @param from 源类型
@@ -314,7 +314,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 判断 {@code type} 是否为 {@code of} 的实例（子类型关系）。
+     * 判断 {@code type} 是否为 {@code of} 的实例（子类型关系）
      *
      * @param root 根节点，提供类继承关系查询
      * @param type 待判断类型
@@ -369,7 +369,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 解析类型描述符字符串（如 {@code "Ljava/lang/String;"}、{@code "[I"}、{@code "TT;"}）为 {@link ArgType}。
+     * 解析类型描述符字符串（如 {@code "Ljava/lang/String;"}、{@code "[I"}、{@code "TT;"}）为 {@link ArgType}
      *
      * @param type 类型描述符字符串
      * @return 解析得到的类型
@@ -396,7 +396,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 解析单个基本类型描述符字符（如 {@code 'I'} 对应 int，{@code 'Z'} 对应 boolean）。
+     * 解析单个基本类型描述符字符（如 {@code 'I'} 对应 int，{@code 'Z'} 对应 boolean）
      *
      * @param f 基本类型描述符字符
      * @return 对应的基本类型
@@ -429,7 +429,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 尝试将类型中的类名解析为其别名（如反混淆后的重命名），递归处理数组元素、通配符与泛型实参。
+     * 尝试将类型中的类名解析为其别名（如反混淆后的重命名），递归处理数组元素、通配符与泛型实参
      *
      * @param root 根节点，提供类信息与别名查询
      * @param type 待解析的类型
@@ -466,7 +466,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 批量将类型列表中的类名解析为别名。
+     * 批量将类型列表中的类名解析为别名
      *
      * @param root  根节点，提供类信息与别名查询
      * @param types 待解析的类型列表
@@ -611,7 +611,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 获取该类型占用的寄存器数量：long/double 占 2 个，未知类型占 0 个，其余占 1 个。
+     * 获取该类型占用的寄存器数量：long/double 占 2 个，未知类型占 0 个，其余占 1 个
      */
     public int getRegCount() {
         if (isPrimitive()) {
@@ -681,8 +681,8 @@ public abstract class ArgType {
     }
 
     /**
-     * 递归访问此类型的所有子类型（数组元素、通配符类型、泛型参数）。
-     * 若需提前退出遍历，令 visitor 返回非 null 值即可，该值将作为结果返回。
+     * 递归访问此类型的所有子类型（数组元素、通配符类型、泛型参数）
+     * 若需提前退出遍历，令 visitor 返回非 null 值即可，该值将作为结果返回
      *
      * @param visitor 类型访问器
      * @param <R>     返回值类型
@@ -781,7 +781,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 已知类型基类。所有类型确定（非未知）的子类继承此类。
+     * 已知类型基类所有类型确定（非未知）的子类继承此类
      */
     private abstract static class KnownType extends ArgType {
 
@@ -1130,8 +1130,8 @@ public abstract class ArgType {
     }
 
     /**
-     * 未知类型实现，包含一组可能的类型，用于类型推断阶段。
-     * 当类型推断完成后，应被替换为确定的类型。
+     * 未知类型实现，包含一组可能的类型，用于类型推断阶段
+     * 当类型推断完成后，应被替换为确定的类型
      */
     private static final class UnknownArg extends ArgType {
         private final PrimitiveType[] possibleTypes;

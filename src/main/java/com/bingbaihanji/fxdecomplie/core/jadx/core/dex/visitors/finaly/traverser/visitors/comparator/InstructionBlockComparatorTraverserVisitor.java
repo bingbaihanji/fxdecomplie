@@ -14,11 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 指令块比较遍历访问者。
+ * 指令块比较遍历访问者
  * <p>
  * 用于比较两个遍历路径（finally 路径和候选路径）中对应指令块的指令序列，
- * 判断它们是否匹配，并根据匹配结果生成相应的下一遍历状态。
- * 支持完全匹配、不均匀匹配、块跳过和终止等场景。
+ * 判断它们是否匹配，并根据匹配结果生成相应的下一遍历状态
+ * 支持完全匹配、不均匀匹配、块跳过和终止等场景
  * </p>
  */
 public final class InstructionBlockComparatorTraverserVisitor extends AbstractTraverserComparatorVisitor {
@@ -26,10 +26,10 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
     private final SameInstructionsStrategy sameInstructionsStrategy = new SameInstructionsStrategyImpl();
 
     /**
-     * 为完全匹配场景创建新的活跃路径状态。
+     * 为完全匹配场景创建新的活跃路径状态
      * <p>
      * 当两个块中的所有指令都匹配且没有剩余指令需要比较时调用，
-     * 两个状态都禁止中心节点和非起始节点，继续进入下一组块。
+     * 两个状态都禁止中心节点和非起始节点，继续进入下一组块
      * </p>
      *
      * @param previousState 前一个活跃路径状态
@@ -57,11 +57,11 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
     }
 
     /**
-     * 为不均匀匹配场景创建新的活跃路径状态。
+     * 为不均匀匹配场景创建新的活跃路径状态
      * <p>
-     * 当所有可比较的指令都匹配，但其中一个块的指令数量多于另一个时调用。
+     * 当所有可比较的指令都匹配，但其中一个块的指令数量多于另一个时调用
      * 指令更多的路径使用 DuplicatedTraverserStateFactory 复制状态，
-     * 指令更少的路径（已被完全搜索完毕）使用 NoBlockTraverserState 进入下一组块。
+     * 指令更少的路径（已被完全搜索完毕）使用 NoBlockTraverserState 进入下一组块
      * </p>
      *
      * @param previousState      前一个活跃路径状态
@@ -118,11 +118,11 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
     }
 
     /**
-     * 为块跳过场景创建新的活跃路径状态。
+     * 为块跳过场景创建新的活跃路径状态
      * <p>
-     * 当没有指令匹配但其中一个状态允许跳过非起始节点时调用。
-     * 优先尝试修复 finally 路径（禁止其 non-starting node），复制候选状态继续比较；
-     * 否则禁用候选路径的 non-starting node，复制 finally 状态继续后续迭代。
+     * 当没有指令匹配但其中一个状态允许跳过非起始节点时调用
+     * 优先尝试修复 finally 路径（禁止其 non-starting node），复制候选状态继续比较 
+     * 否则禁用候选路径的 non-starting node，复制 finally 状态继续后续迭代
      * </p>
      *
      * @param previousState  前一个活跃路径状态
@@ -141,7 +141,7 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
         // TODO: 也许可以用控制器逻辑替代此处的判断，以确定是否需要将这些作为路径终点，
         // 然后再合并上方的路径？
 
-        // 优先修复 finally 路径。如果此路径仍然失败，则在后续迭代中检查候选路径是否可修复。
+        // 优先修复 finally 路径如果此路径仍然失败，则在后续迭代中检查候选路径是否可修复
         if (finallyCentralityState.getAllowsNonStartingNode()) {
             finallyCentralityState.setAllowsNonStartingNode(false);
             TraverserStateFactory<NoBlockTraverserState> newFinallyStateProducer =
@@ -158,11 +158,11 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
     }
 
     /**
-     * 为终止场景创建新的活跃路径状态。
+     * 为终止场景创建新的活跃路径状态
      * <p>
      * 当两个块的指令不匹配且无法跳过时调用，
      * 为 finally 和候选路径各生成一个终止状态（终止原因为 NON_MATCHING_INSTRUCTIONS），
-     * 以停止当前搜索路径。
+     * 以停止当前搜索路径
      * </p>
      *
      * @param previousState 前一个活跃路径状态
@@ -178,10 +178,10 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
     }
 
     /**
-     * 访问遍历活跃路径状态，比较 finally 路径和候选路径中当前块的指令序列。
+     * 访问遍历活跃路径状态，比较 finally 路径和候选路径中当前块的指令序列
      * <p>
      * 核心逻辑：从每个块的指令列表中从后往前逐条比较指令是否相同，
-     * 根据匹配结果（完全匹配、不完全匹配、无匹配）决定下一遍历状态。
+     * 根据匹配结果（完全匹配、不完全匹配、无匹配）决定下一遍历状态
      * </p>
      *
      * @param state 当前的遍历活跃路径状态
@@ -241,21 +241,21 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
         TraverserActivePathState newState;
         if (allMatched) {
             if (sameSizedSlices) {
-                // 所有指令都匹配，且两个块中都没有剩余指令需要继续比较。
-                // 继续进入下一组块。
+                // 所有指令都匹配，且两个块中都没有剩余指令需要继续比较
+                // 继续进入下一组块
                 newState = createStateForPerfectMatch(state, finallyBlock, candidateBlock);
             } else {
-                // 所有可比较的指令都匹配，但其中一个块的指令数量多于另一个。
-                // 为指令列表已被完全搜索完毕的处理器继续进入下一组块。
+                // 所有可比较的指令都匹配，但其中一个块的指令数量多于另一个
+                // 为指令列表已被完全搜索完毕的处理器继续进入下一组块
                 newState = createStateForUnevenMatch(state, finallyState, candidateState, finallyBlock, candidateBlock, finallyInsnsSize,
                         candidateInsnsSize);
             }
         } else if (noneMatched && eitherStateAllowsBlockSkip(finallyState, candidateState)) {
             newState = createStateForBlockSkip(state, finallyState, candidateState, finallyBlock, candidateBlock);
         } else {
-            // 如果有任意指令不匹配，说明块的起始指令就不一致。
+            // 如果有任意指令不匹配，说明块的起始指令就不一致
             // 这意味着后续的块也不应被标记为重复指令，
-            // 因此返回终止状态以停止搜索。
+            // 因此返回终止状态以停止搜索
             newState = createStateForTerminatorState(state);
         }
 
@@ -263,7 +263,7 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
     }
 
     /**
-     * 判断 finally 状态或候选状态是否允许跳过非起始节点（即允许块跳过）。
+     * 判断 finally 状态或候选状态是否允许跳过非起始节点（即允许块跳过）
      *
      * @param finallyState  finally 遍历状态
      * @param candidateState 候选遍历状态

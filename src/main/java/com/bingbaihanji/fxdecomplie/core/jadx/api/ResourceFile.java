@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.FileTypeDetector;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.FileTypeDetector;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResContainer;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 
 /**
- * 资源文件类，表示反编译过程中的资源文件。
- * 封装了资源文件的元数据信息，包括文件名、类型、混淆名称以及对应的 ZIP 条目。
+ * 资源文件类，表示反编译过程中的资源文件
+ * 封装了资源文件的元数据信息，包括文件名、类型、混淆名称以及对应的 ZIP 条目
  */
 public class ResourceFile {
     private final JadxDecompiler decompiler;
@@ -23,7 +23,7 @@ public class ResourceFile {
     private String deobfName;
 
     /**
-     * 受保护构造方法，创建资源文件实例。
+     * 受保护构造方法，创建资源文件实例
      *
      * @param decompiler 反编译器实例
      * @param name       资源名称
@@ -36,7 +36,7 @@ public class ResourceFile {
     }
 
     /**
-     * 根据文件对象创建资源文件实例。
+     * 根据文件对象创建资源文件实例
      *
      * @param decompiler 反编译器实例
      * @param file       资源文件对象
@@ -48,8 +48,8 @@ public class ResourceFile {
     }
 
     /**
-     * 根据资源名称创建资源文件实例。
-     * 若名称未通过安全校验（非法条目名），则返回 {@code null}。
+     * 根据资源名称创建资源文件实例
+     * 若名称未通过安全校验（非法条目名），则返回 {@code null}
      *
      * @param decompiler 反编译器实例
      * @param name       资源名称
@@ -64,7 +64,7 @@ public class ResourceFile {
     }
 
     /**
-     * 获取资源的原始名称（未经过混淆处理的名称）。
+     * 获取资源的原始名称（未经过混淆处理的名称）
      *
      * @return 资源原始名称
      */
@@ -73,8 +73,8 @@ public class ResourceFile {
     }
 
     /**
-     * 获取资源的反混淆名称。
-     * 若未设置反混淆名称，则返回原始名称。
+     * 获取资源的反混淆名称
+     * 若未设置反混淆名称，则返回原始名称
      *
      * @return 反混淆名称，未设置时返回原始名称
      */
@@ -83,7 +83,7 @@ public class ResourceFile {
     }
 
     /**
-     * 设置资源的反混淆名称。
+     * 设置资源的反混淆名称
      *
      * @param resFullName 反混淆后的完整资源名称
      */
@@ -92,7 +92,7 @@ public class ResourceFile {
     }
 
     /**
-     * 获取资源类型。
+     * 获取资源类型
      *
      * @return 资源类型
      */
@@ -101,7 +101,7 @@ public class ResourceFile {
     }
 
     /**
-     * 加载并返回该资源文件的内容容器。
+     * 加载并返回该资源文件的内容容器
      *
      * @return 资源内容容器
      */
@@ -110,9 +110,9 @@ public class ResourceFile {
     }
 
     /**
-     * 根据资源条目为该资源设置别名（即反混淆后的规范化路径）。
-     * 当 {@code useHeaders} 为 {@code true} 时，会读取文件头字节以探测真实扩展名；
-     * 否则直接从原始名称提取扩展名。
+     * 根据资源条目为该资源设置别名（即反混淆后的规范化路径）
+     * 当 {@code useHeaders} 为 {@code true} 时，会读取文件头字节以探测真实扩展名 
+     * 否则直接从原始名称提取扩展名
      *
      * @param entry      资源条目
      * @param useHeaders 是否通过文件头字节探测扩展名
@@ -162,8 +162,8 @@ public class ResourceFile {
     }
 
     /**
-     * 从资源名称中提取文件扩展名。
-     * 对经 aapt2 资源压缩后仍保留的 .9.png 点九图做特殊处理。
+     * 从资源名称中提取文件扩展名
+     * 对经 aapt2 资源压缩后仍保留的 .9.png 点九图做特殊处理
      *
      * @param name 资源名称
      * @return 提取到的扩展名（含点号），无扩展名时返回空字符串
@@ -183,7 +183,7 @@ public class ResourceFile {
     }
 
     /**
-     * 获取该资源对应的 ZIP 条目。
+     * 获取该资源对应的 ZIP 条目
      *
      * @return ZIP 条目，若资源来自普通文件则返回 {@code null}
      */
@@ -192,7 +192,7 @@ public class ResourceFile {
     }
 
     /**
-     * 设置该资源对应的 ZIP 条目。
+     * 设置该资源对应的 ZIP 条目
      *
      * @param zipEntry ZIP 条目，可为 {@code null}
      */
@@ -201,7 +201,7 @@ public class ResourceFile {
     }
 
     /**
-     * 获取关联的反编译器实例。
+     * 获取关联的反编译器实例
      *
      * @return 反编译器实例
      */
@@ -210,7 +210,7 @@ public class ResourceFile {
     }
 
     /**
-     * 返回资源文件的字符串表示，包含名称与类型。
+     * 返回资源文件的字符串表示，包含名称与类型
      *
      * @return 字符串表示
      */

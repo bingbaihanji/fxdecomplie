@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * 错误计数器，用于统计和记录反编译过程中发生的错误和警告。
- * 线程安全，支持在多线程环境下累加错误/警告计数。
+ * 错误计数器，用于统计和记录反编译过程中发生的错误和警告
+ * 线程安全，支持在多线程环境下累加错误/警告计数
  */
 public class ErrorsCounter {
     private static final Logger LOG = LoggerFactory.getLogger(ErrorsCounter.class);
@@ -31,7 +31,7 @@ public class ErrorsCounter {
     private int warnsCount;
 
     /**
-     * 记录一个错误，将错误信息附加到指定节点并返回格式化的错误消息。
+     * 记录一个错误，将错误信息附加到指定节点并返回格式化的错误消息
      *
      * @param node    发生错误的节点
      * @param warnMsg 错误描述信息
@@ -43,7 +43,7 @@ public class ErrorsCounter {
     }
 
     /**
-     * 记录一个警告，将警告信息附加到指定节点。
+     * 记录一个警告，将警告信息附加到指定节点
      *
      * @param node    发生警告的节点
      * @param warnMsg 警告描述信息
@@ -53,7 +53,7 @@ public class ErrorsCounter {
     }
 
     /**
-     * 格式化错误/警告消息，包含节点类型、节点名称和输入文件名。
+     * 格式化错误/警告消息，包含节点类型、节点名称和输入文件名
      *
      * @param node 相关的 dex 节点
      * @param msg  原始消息文本
@@ -64,8 +64,8 @@ public class ErrorsCounter {
     }
 
     /**
-     * 向错误计数器添加一条错误记录（线程安全）。
-     * 将错误节点加入集合，累加错误计数，记录日志，并将 {@link JadxError} 属性附加到节点。
+     * 向错误计数器添加一条错误记录（线程安全）
+     * 将错误节点加入集合，累加错误计数，记录日志，并将 {@link JadxError} 属性附加到节点
      *
      * @param node  发生错误的节点
      * @param error 错误描述信息
@@ -103,8 +103,8 @@ public class ErrorsCounter {
     }
 
     /**
-     * 向警告计数器添加一条警告记录（线程安全）。
-     * 将警告节点加入集合，累加警告计数并记录日志。
+     * 向警告计数器添加一条警告记录（线程安全）
+     * 将警告节点加入集合，累加警告计数并记录日志
      *
      * @param node 发生警告的节点
      * @param warn 警告描述信息
@@ -116,8 +116,8 @@ public class ErrorsCounter {
     }
 
     /**
-     * 打印错误与警告的汇总报告。
-     * 输出所有发生错误的节点列表（按名称排序），以及警告的总数与涉及节点数。
+     * 打印错误与警告的汇总报告
+     * 输出所有发生错误的节点列表（按名称排序），以及警告的总数与涉及节点数
      */
     public void printReport() {
         if (getErrorCount() > 0) {

@@ -27,7 +27,7 @@ public class ProcyonDecompiler implements Decompiler {
      * 未知的 key 会被安全忽略</p>
      *
      * @param settings Procyon 反编译器设置对象
-     * @param context  反编译上下文,可能包含额外参数；为 null 或无参数时直接返回
+     * @param context  反编译上下文,可能包含额外参数 为 null 或无参数时直接返回
      */
     private static void applyOptions(DecompilerSettings settings, DecompilerContext context) {
         if (context == null || !context.hasOptions()) {
@@ -124,7 +124,7 @@ public class ProcyonDecompiler implements Decompiler {
      * @param typeName   类型全限定名(内部格式,如 com/example/Foo)
      * @param classBytes 目标类字节码
      * @param context    反编译上下文,可为 null(使用空上下文)
-     * @return 反编译后的 Java 源码；失败时返回以 {@code //} 开头的注释文本
+     * @return 反编译后的 Java 源码 失败时返回以 {@code //} 开头的注释文本
      */
     @Override
     public String decompileType(String typeName, byte[] classBytes,

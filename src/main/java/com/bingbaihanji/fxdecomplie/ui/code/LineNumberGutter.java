@@ -38,7 +38,7 @@ public final class LineNumberGutter {
     /**
      * 设置 CodeArea 是否显示行号
      * <p>
-     * 先关闭 CodeArea 内置行号,避免 JavaFX 默认白色行号与自定义行号同时出现；
+     * 先关闭 CodeArea 内置行号,避免 JavaFX 默认白色行号与自定义行号同时出现 
      * 然后通过 leftDecorator 安装或移除暗色主题行号栏
      *
      * @param area    目标代码编辑区

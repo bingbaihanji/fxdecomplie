@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 方法信息类，表示 DEX 字节码中的一个方法。
- * 包含方法名称、返回类型、参数类型、所属类等元数据信息。
- * 支持方法别名机制和方法签名生成。
+ * 方法信息类，表示 DEX 字节码中的一个方法
+ * 包含方法名称、返回类型、参数类型、所属类等元数据信息
+ * 支持方法别名机制和方法签名生成
  */
 public final class MethodInfo implements Comparable<MethodInfo> {
 
@@ -37,7 +37,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     private String alias;
 
     /**
-     * 构造方法信息对象。
+     * 构造方法信息对象
      *
      * @param declClass 声明该方法的类信息
      * @param name      方法名称
@@ -56,8 +56,8 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 从方法引用创建或获取已缓存的方法信息。
-     * 使用唯一ID进行缓存查找，避免重复解析相同方法。
+     * 从方法引用创建或获取已缓存的方法信息
+     * 使用唯一ID进行缓存查找，避免重复解析相同方法
      *
      * @param root      根节点
      * @param methodRef 方法引用
@@ -86,8 +86,8 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 从详细信息创建方法信息。
-     * 用于已知方法各组成部分的场景。
+     * 从详细信息创建方法信息
+     * 用于已知方法各组成部分的场景
      *
      * @param root      根节点
      * @param declClass 声明类信息
@@ -102,8 +102,8 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 从方法原型接口创建方法信息。
-     * 解析原型中的参数和返回类型后委托给 {@link #fromDetails}。
+     * 从方法原型接口创建方法信息
+     * 解析原型中的参数和返回类型后委托给 {@link #fromDetails}
      *
      * @param root      根节点
      * @param declClass 声明类信息
@@ -118,7 +118,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 生成方法短标识。
+     * 生成方法短标识
      * 格式为：方法名(参数1签名参数2签名...)返回值签名
      *
      * @param name     方法名称
@@ -141,7 +141,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 生成方法签名字符串（使用原始方法名）。
+     * 生成方法签名字符串（使用原始方法名）
      *
      * @param includeRetType 是否包含返回类型
      * @return 方法签名字符串
@@ -151,7 +151,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 生成方法签名字符串。
+     * 生成方法签名字符串
      *
      * @param useAlias       是否使用别名替代原始方法名
      * @param includeRetType 是否包含返回类型
@@ -164,8 +164,8 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 判断指定方法是否为当前方法的重载方法。
-     * 重载方法具有相同名称和参数数量，但参数类型不同。
+     * 判断指定方法是否为当前方法的重载方法
+     * 重载方法具有相同名称和参数数量，但参数类型不同
      *
      * @param otherMthInfo 待比较的方法信息
      * @return 如果是重载方法返回 true
@@ -202,7 +202,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 获取方法短标识，包含方法名和签名。
+     * 获取方法短标识，包含方法名和签名
      * 格式为：方法名(参数签名)返回值签名
      */
     public String getShortId() {
@@ -245,7 +245,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 设置方法别名。
+     * 设置方法别名
      *
      * @param alias 新的别名
      */
@@ -264,8 +264,8 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 计算方法信息的哈希值。
-     * 基于方法短标识和声明类的哈希值组合计算。
+     * 计算方法信息的哈希值
+     * 基于方法短标识和声明类的哈希值组合计算
      *
      * @return 计算得到的哈希值
      */
@@ -294,8 +294,8 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 比较两个方法信息的顺序。
-     * 先按声明类比较，声明类相同时再按方法短标识比较。
+     * 比较两个方法信息的顺序
+     * 先按声明类比较，声明类相同时再按方法短标识比较
      */
     @Override
     public int compareTo(MethodInfo other) {

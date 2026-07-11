@@ -10,6 +10,7 @@ public class AnonymousClassAttr extends PinnedAttribute {
     private final ClassNode outerCls;
     private final ArgType baseType;
     private final InlineType inlineType;
+
     public AnonymousClassAttr(ClassNode outerCls, ArgType baseType, InlineType inlineType) {
         this.outerCls = outerCls;
         this.baseType = baseType;

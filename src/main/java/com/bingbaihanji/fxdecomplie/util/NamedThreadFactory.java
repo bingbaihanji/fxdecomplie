@@ -8,10 +8,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 带命名前缀的简单线程工厂。
+ * 带命名前缀的简单线程工厂
  * <p>
- * 线程名格式：{@code <prefix>-<poolId>-<threadId>}。
- * 配备统一的未捕获异常处理器，OOM 错误会强制中断线程。
+ * 线程名格式：{@code <prefix>-<poolId>-<threadId>}
+ * 配备统一的未捕获异常处理器，OOM 错误会强制中断线程
  */
 public final class NamedThreadFactory implements ThreadFactory {
 

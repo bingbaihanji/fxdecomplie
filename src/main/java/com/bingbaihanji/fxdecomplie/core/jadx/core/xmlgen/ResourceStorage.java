@@ -35,7 +35,7 @@ public class ResourceStorage {
     private String appPackage;
 
     /**
-     * 构造资源存储实例。
+     * 构造资源存储实例
      *
      * @param security 安全接口，用于校验应用包名等
      */
@@ -44,7 +44,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 添加一个资源条目，同时登记到唯一名称集合中。
+     * 添加一个资源条目，同时登记到唯一名称集合中
      *
      * @param resEntry 资源条目
      */
@@ -54,7 +54,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 用新的资源条目替换已存在的旧资源条目。
+     * 用新的资源条目替换已存在的旧资源条目
      *
      * @param prevResEntry 待替换的旧资源条目
      * @param newResEntry  新的资源条目
@@ -68,7 +68,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 为指定资源条目登记重命名（使用其 ID 与键名）。
+     * 为指定资源条目登记重命名（使用其 ID 与键名）
      *
      * @param entry 资源条目
      */
@@ -77,7 +77,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 登记资源 ID 到键名的重命名映射。
+     * 登记资源 ID 到键名的重命名映射
      *
      * @param id      资源 ID
      * @param keyName 键名
@@ -87,7 +87,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 获取指定资源 ID 对应的重命名后的键名。
+     * 获取指定资源 ID 对应的重命名后的键名
      *
      * @param id 资源 ID
      * @return 重命名后的键名，若不存在则返回 {@code null}
@@ -97,7 +97,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 在唯一名称集合中查找与给定资源条目同名（配置 + 类型 + 键名）的条目。
+     * 在唯一名称集合中查找与给定资源条目同名（配置 + 类型 + 键名）的条目
      *
      * @param resourceEntry 待查询的资源条目
      * @return 同名的已存在资源条目，若不存在则返回 {@code null}
@@ -107,7 +107,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 结束资源收集：按资源 ID 升序排序，并清理临时用的唯一名称集合与重命名映射。
+     * 结束资源收集：按资源 ID 升序排序，并清理临时用的唯一名称集合与重命名映射
      */
     public void finish() {
         list.sort(Comparator.comparingInt(ResourceEntry::getId));
@@ -116,7 +116,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 返回已存储的资源条目数量。
+     * 返回已存储的资源条目数量
      *
      * @return 资源条目数量
      */
@@ -125,7 +125,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 返回所有资源条目的可迭代视图。
+     * 返回所有资源条目的可迭代视图
      *
      * @return 资源条目集合
      */
@@ -134,7 +134,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 获取应用包名。
+     * 获取应用包名
      *
      * @return 应用包名
      */
@@ -143,7 +143,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 设置应用包名（经安全接口校验后存储）。
+     * 设置应用包名（经安全接口校验后存储）
      *
      * @param appPackage 应用包名
      */
@@ -152,7 +152,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 构建资源 ID 到「类型名/键名」的名称映射表。
+     * 构建资源 ID 到「类型名/键名」的名称映射表
      *
      * @return 资源 ID 到资源名称的映射
      */

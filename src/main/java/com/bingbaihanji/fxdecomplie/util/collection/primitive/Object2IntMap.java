@@ -75,7 +75,7 @@ public class Object2IntMap<K> extends AbstractObjectKeyMap<K> {
 
     /**
      * 将指定键与值放入映射中 
-     * 若键已存在,则替换旧值并返回旧值；否则插入新键值对并返回 -1 
+     * 若键已存在,则替换旧值并返回旧值 否则插入新键值对并返回 -1 
      *
      * @param key   键(不允许为 null)
      * @param value 值
@@ -99,7 +99,7 @@ public class Object2IntMap<K> extends AbstractObjectKeyMap<K> {
 
     /**
      * 对指定键的值进行增量操作 
-     * 若键不存在,则插入新键值对,值为增量值；若已存在,则将原值增加 delta 
+     * 若键不存在,则插入新键值对,值为增量值 若已存在,则将原值增加 delta 
      *
      * @param key   键(不允许为 null)
      * @param delta 增量(可为负数)

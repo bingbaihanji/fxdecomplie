@@ -315,7 +315,7 @@ public final class UsageSearchService {
 
     /**
      * 判断字节码中的成员(字段/方法)是否匹配搜索目标
-     * 若查询包含 {@code #} 成员部分,则同时校验所有者类和成员名；否则只按简单名模糊匹配
+     * 若查询包含 {@code #} 成员部分,则同时校验所有者类和成员名 否则只按简单名模糊匹配
      */
     private static boolean matchesMember(Target target, String owner, String name) {
         if (name == null || name.isBlank()) {

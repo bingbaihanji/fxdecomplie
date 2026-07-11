@@ -318,7 +318,7 @@ public final class AutoDeobfuscator {
         if (simpleName == null || simpleName.isBlank()) {
             return false;
         }
-        // 内部类：提取最内层名称；匿名内部类(全数字)不重命名
+        // 内部类：提取最内层名称 匿名内部类(全数字)不重命名
         if (simpleName.contains("$")) {
             String inner = simpleName.substring(simpleName.lastIndexOf('$') + 1);
             if (inner.chars().allMatch(Character::isDigit)) {

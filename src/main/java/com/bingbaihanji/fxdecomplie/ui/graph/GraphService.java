@@ -90,7 +90,7 @@ public final class GraphService {
      * 递归为继承树生成边
      *
      * <p>边的方向总是指向父节点(配合 rankdir=BT 实现"自底向上"的继承层次)：
-     * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口,边 parent→child(指向更上层)；
+     * SUPER_CLASS / INTERFACE → child 是 parent 的父/接口,边 parent→child(指向更上层) 
      * SUBCLASS → child 是 parent 的子类,边 child→parent(指向被分析的类)</p>
      */
     private static void appendInheritanceEdges(StringBuilder sb, TreeItem<InheritanceNode> item,
@@ -222,7 +222,7 @@ public final class GraphService {
      * 从全限定类名中提取简短类名(去除包名前缀)
      *
      * @param fullName 全限定类名,如 "java.util.ArrayList"
-     * @return 简短类名,如 "ArrayList"；null 输入返回空串
+     * @return 简短类名,如 "ArrayList" null 输入返回空串
      */
     private static String shortName(String fullName) {
         if (fullName == null) {

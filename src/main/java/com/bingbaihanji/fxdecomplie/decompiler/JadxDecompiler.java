@@ -1,30 +1,20 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.JavaClass;
-import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.ICodeLoader;
-import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaClassReader;
-import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaLoadResult;
-import com.bingbaihanji.fxdecomplie.util.JadxOptionsBridge;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxDecompilerFacade;
+import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxDecompilerRequest;
 
 /**
  * jadx 反编译引擎适配器
- * 每次反编译创建新的 jadx JadxDecompiler 实例，保证无状态和线程安全
+ * <p>
+ * 该类只保留 {@link Decompiler} 接口适配,实际项目状态、输入构建和移植内核调用由
+ * {@link JadxDecompilerFacade} 管理。
  *
  * @author bingbaihanji
  * @date 2026-07-11
  */
 public class JadxDecompiler implements Decompiler {
 
-    private static final Logger log = LoggerFactory.getLogger(JadxDecompiler.class);
-
-    // ==================== Decompiler 接口实现 ====================
+    private final JadxDecompilerFacade facade = JadxDecompilerFacade.getInstance();
 
     @Override
     public String decompile(String classFilePath, byte[] classBytes) {
@@ -52,64 +42,15 @@ public class JadxDecompiler implements Decompiler {
      * @param typeName   类的内部名称(如 {@code com/example/MyClass})
      * @param classBytes 类的原始字节码
      * @param context    反编译上下文(可为 null，用于解析依赖类字节码)
-     * @return 反编译后的 Java 源码字符串；异常时返回错误信息注释
+     * @return 反编译后的 Java 源码字符串 异常时返回错误信息注释
      */
     @Override
     public String decompileType(String typeName, byte[] classBytes, DecompilerContext context) {
-        final DecompilerContext effectiveContext = context == null ? DecompilerContext.EMPTY : context;
-        final String effectiveTypeName = DecompilerContext.normalizeInternalName(typeName);
-
-        log.debug("jadx decompile: class={}", effectiveTypeName);
-        long start = System.currentTimeMillis();
-
-        try {
-            // 构建类数据列表：目标类
-            List<JavaClassReader> classReaders = new ArrayList<>();
-            classReaders.add(new JavaClassReader(0, effectiveTypeName + ".class", classBytes.clone()));
-
-            // 创建 ICodeLoader
-            ICodeLoader codeLoader = new JavaLoadResult(classReaders);
-
-            // 从上下文读取引擎选项，不再硬编码
-            JadxArgs args = createJadxArgs(effectiveContext.options());
-
-            // 创建 jadx 实例并加载
-            try (com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler jadx = new com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler(args)) {
-                // 注册自定义代码加载器
-                jadx.addCustomCodeLoader(codeLoader);
-
-                // 加载并初始化
-                jadx.load();
-
-                // 获取反编译结果
-                List<JavaClass> classes = jadx.getClasses();
-                if (classes.isEmpty()) {
-                    log.warn("jadx decompile: no classes loaded for {}", effectiveTypeName);
-                    return "// jadx decompile failed: no classes loaded\n// Class: " + effectiveTypeName;
-                }
-
-                JavaClass targetClass = findTargetClass(classes, effectiveTypeName);
-                if (targetClass == null) {
-                    targetClass = classes.get(0);
-                }
-
-                String decompiled = targetClass.getCode();
-                long elapsed = System.currentTimeMillis() - start;
-
-                if (decompiled == null || decompiled.isEmpty()) {
-                    log.warn("jadx decompile returned empty: {} ({}ms)", effectiveTypeName, elapsed);
-                    return "// jadx decompile failed\n// Class: " + effectiveTypeName;
-                }
-
-                log.debug("jadx decompile OK: {} ({}ms, {} chars)", effectiveTypeName, elapsed,
-                        decompiled.length());
-                return decompiled;
-            }
-        } catch (Exception e) {
-            long elapsed = System.currentTimeMillis() - start;
-            log.error("jadx decompile exception: {} ({}ms): {}", effectiveTypeName, elapsed, e.getMessage());
-            return "// jadx Error: " + e.getMessage();
-        }
+        return facade.decompile(new JadxDecompilerRequest(
+                DecompilerContext.normalizeInternalName(typeName),
+                typeName,
+                classBytes,
+                context));
     }
 
     @Override
@@ -120,50 +61,5 @@ public class JadxDecompiler implements Decompiler {
     @Override
     public String getName() {
         return "jadx";
-    }
-
-    // ==================== 内部方法 ====================
-
-    /**
-     * 创建 jadx 反编译参数，先设置默认值，再通过 JadxOptionsBridge 应用用户配置覆盖。
-     */
-    private JadxArgs createJadxArgs(Map<String, String> engineOptions) {
-        JadxArgs args = new JadxArgs();
-        // 单类反编译模式默认值
-        args.setSkipResources(true);
-        args.setDebugInfo(true);
-        args.setUseImports(true);
-        args.setInlineMethods(true);
-        args.setInlineAnonymousClasses(true);
-        args.setExtractFinally(true);
-        args.setDeobfuscationOn(false);
-        args.setShowInconsistentCode(true);
-        // 应用用户配置覆盖默认值
-        JadxOptionsBridge.apply(args, engineOptions);
-        return args;
-    }
-
-    /**
-     * 从加载的类列表中查找目标类
-     * 按内部名称匹配，支持包名+类名匹配
-     */
-    private JavaClass findTargetClass(List<JavaClass> classes, String targetName) {
-        String normalizedTarget = targetName.replace('.', '/');
-        for (JavaClass cls : classes) {
-            String clsName = cls.getClassNode().getClassInfo().getFullName();
-            if (clsName.equals(normalizedTarget) || clsName.replace('.', '/').equals(normalizedTarget)) {
-                return cls;
-            }
-        }
-        // 回退：按简单类名匹配
-        String simpleName = normalizedTarget.contains("/")
-                ? normalizedTarget.substring(normalizedTarget.lastIndexOf('/') + 1)
-                : normalizedTarget;
-        for (JavaClass cls : classes) {
-            if (cls.getName().equals(simpleName)) {
-                return cls;
-            }
-        }
-        return null;
     }
 }

@@ -13,9 +13,9 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * if 语句区域。
+ * if 语句区域
  * <p>
- * 表示反编译过程中的 if 条件分支结构，包含条件、then 分支区域和可选的 else 分支区域。
+ * 表示反编译过程中的 if 条件分支结构，包含条件、then 分支区域和可选的 else 分支区域
  */
 public final class IfRegion extends ConditionRegion implements IBranchRegion {
     /** then 分支区域（条件成立时执行的代码块） */
@@ -48,7 +48,7 @@ public final class IfRegion extends ConditionRegion implements IBranchRegion {
     }
 
     /**
-     * 反转当前 if 区域：反转条件，并交换 then 分支与 else 分支。
+     * 反转当前 if 区域：反转条件，并交换 then 分支与 else 分支
      */
     public void invert() {
         invertCondition();

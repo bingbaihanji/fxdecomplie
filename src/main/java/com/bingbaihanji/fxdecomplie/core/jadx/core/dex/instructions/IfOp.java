@@ -3,10 +3,10 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
 /**
- * Dex 字节码中 if 系列指令的比较操作符枚举。
+ * Dex 字节码中 if 系列指令的比较操作符枚举
  * <p>
  * 每种操作符对应一种比较语义和一个符号字符串表示，
- * 并支持通过 {@link #invert()} 获取逻辑反转后的操作符。
+ * 并支持通过 {@link #invert()} 获取逻辑反转后的操作符
  * </p>
  */
 public enum IfOp {
@@ -31,7 +31,7 @@ public enum IfOp {
     }
 
     /**
-     * 获取操作符的符号字符串。
+     * 获取操作符的符号字符串
      *
      * @return 符号字符串，如 "=="、"<" 等
      */
@@ -40,9 +40,9 @@ public enum IfOp {
     }
 
     /**
-     * 获取当前操作符的逻辑反转操作符。
+     * 获取当前操作符的逻辑反转操作符
      * <p>
-     * 例如 EQ 反转得到 NE，LT 反转得到 GE，依此类推。
+     * 例如 EQ 反转得到 NE，LT 反转得到 GE，依此类推
      * </p>
      *
      * @return 反转后的 IfOp

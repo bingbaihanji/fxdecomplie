@@ -15,6 +15,7 @@ public class ResContainer implements Comparable<ResContainer> {
     private final String name;
     private final Object data;
     private final List<ResContainer> subFiles;
+
     private ResContainer(String name, List<ResContainer> subFiles, Object data, DataType dataType) {
         this.name = Objects.requireNonNull(name);
         this.subFiles = Objects.requireNonNull(subFiles);

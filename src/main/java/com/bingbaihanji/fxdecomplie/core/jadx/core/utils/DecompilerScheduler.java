@@ -11,10 +11,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 反编译调度器，负责将待反编译的类分组成批次。
+ * 反编译调度器，负责将待反编译的类分组成批次
  * <p>
- * 根据类之间的依赖关系进行排序和分组，以优化反编译顺序并减少线程间的锁竞争。
- * 实现了 {@link IDecompileScheduler} 接口。
+ * 根据类之间的依赖关系进行排序和分组，以优化反编译顺序并减少线程间的锁竞争
+ * 实现了 {@link IDecompileScheduler} 接口
  */
 public class DecompilerScheduler implements IDecompileScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(DecompilerScheduler.class);
@@ -51,10 +51,10 @@ public class DecompilerScheduler implements IDecompileScheduler {
     }
 
     /**
-     * 构建反编译批次。
+     * 构建反编译批次
      * <p>
-     * 根据类之间的依赖关系将待反编译的类分组成多个批次。构建失败（如栈溢出或其他异常）时，
-     * 会回退到简单的按依赖数排序的单类批次方案。
+     * 根据类之间的依赖关系将待反编译的类分组成多个批次构建失败（如栈溢出或其他异常）时，
+     * 会回退到简单的按依赖数排序的单类批次方案
      *
      * @param classes 待反编译的类列表
      * @return 分组后的批次列表
@@ -81,8 +81,8 @@ public class DecompilerScheduler implements IDecompileScheduler {
     }
 
     /**
-     * 将依赖较多的类排到最后。
-     * 为单个类的依赖构建批次，以避免其它线程对这些依赖类加锁而产生竞争。
+     * 将依赖较多的类排到最后
+     * 为单个类的依赖构建批次，以避免其它线程对这些依赖类加锁而产生竞争
      *
      * @param classes 待反编译的类列表
      * @return 分组后的批次列表
@@ -144,7 +144,7 @@ public class DecompilerScheduler implements IDecompileScheduler {
     }
 
     /**
-     * 依赖信息，记录某个类及其累计依赖数量，用于按依赖数排序。
+     * 依赖信息，记录某个类及其累计依赖数量，用于按依赖数排序
      */
     private static final class DepInfo implements Comparable<DepInfo> {
         private final JavaClass cls;

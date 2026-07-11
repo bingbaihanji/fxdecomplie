@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class FileTreeNode {
 
     private static final Logger log = LoggerFactory.getLogger(FileTreeNode.class);
-
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of(
+            ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".ico", ".webp");
     /** 节点显示名称 */
     private final String name;
     /** 完整内部路径(如 "com/example/Main.class") */
@@ -159,9 +160,6 @@ public class FileTreeNode {
     public boolean isBinaryFile() {
         return nodeType == NodeTypeEnum.BINARY;
     }
-
-    private static final Set<String> IMAGE_EXTENSIONS = Set.of(
-            ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".ico", ".webp");
 
     /** @return 是否为图片文件 */
     public boolean isImageFile() {

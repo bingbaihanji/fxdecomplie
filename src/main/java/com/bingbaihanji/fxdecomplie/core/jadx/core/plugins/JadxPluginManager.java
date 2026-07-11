@@ -16,10 +16,10 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Jadx 插件管理器，负责插件的加载、注册、卸载、解析和初始化。
+ * Jadx 插件管理器，负责插件的加载、注册、卸载、解析和初始化
  * <p>
  * 管理所有插件的生命周期，处理插件间的冲突（通过 {@code provides} 机制），
- * 并维护已解析的插件集合供反编译器使用。
+ * 并维护已解析的插件集合供反编译器使用
  */
 public class JadxPluginManager {
     private static final Logger LOG = LoggerFactory.getLogger(JadxPluginManager.class);
@@ -46,9 +46,9 @@ public class JadxPluginManager {
     }
 
     /**
-     * 添加冲突插件的解决方案建议。
+     * 添加冲突插件的解决方案建议
      * <p>
-     * 当多个插件提供相同的功能（相同 provides 标识）时，通过此方法指定优先使用的插件。
+     * 当多个插件提供相同的功能（相同 provides 标识）时，通过此方法指定优先使用的插件
      *
      * @param provides  提供的功能标识
      * @param pluginId  建议优先使用的插件 ID
@@ -58,9 +58,9 @@ public class JadxPluginManager {
     }
 
     /**
-     * 使用指定的插件加载器加载所有插件。
+     * 使用指定的插件加载器加载所有插件
      * <p>
-     * 加载前会清空已有的插件列表，加载完成后自动执行冲突解析。
+     * 加载前会清空已有的插件列表，加载完成后自动执行冲突解析
      *
      * @param pluginLoader 插件加载器
      */
@@ -74,9 +74,9 @@ public class JadxPluginManager {
     }
 
     /**
-     * 注册单个插件。
+     * 注册单个插件
      * <p>
-     * 如果插件已被禁用，则跳过注册。注册完成后自动执行冲突解析。
+     * 如果插件已被禁用，则跳过注册注册完成后自动执行冲突解析
      *
      * @param plugin 要注册的插件实例
      */
@@ -92,9 +92,9 @@ public class JadxPluginManager {
     }
 
     /**
-     * 添加插件到所有插件集合中。
+     * 添加插件到所有插件集合中
      * <p>
-     * 会检查插件是否被禁用、Jadx 版本是否兼容，以及是否存在重复的插件 ID。
+     * 会检查插件是否被禁用、Jadx 版本是否兼容，以及是否存在重复的插件 ID
      *
      * @param plugin                 要添加的插件
      * @param verifyRequiredVersion  版本验证器
@@ -120,9 +120,9 @@ public class JadxPluginManager {
     }
 
     /**
-     * 根据插件 ID 卸载单个插件。
+     * 根据插件 ID 卸载单个插件
      * <p>
-     * 从所有插件集合中移除匹配的插件，并重新执行冲突解析。
+     * 从所有插件集合中移除匹配的插件，并重新执行冲突解析
      *
      * @param pluginId 要卸载的插件 ID
      * @return 若成功移除插件则返回 true，否则返回 false
@@ -150,12 +150,12 @@ public class JadxPluginManager {
     }
 
     /**
-     * 解析插件冲突。
+     * 解析插件冲突
      * <p>
      * 按 {@code provides} 标识对所有插件分组，每组仅保留一个插件：
-     * 若组内仅有一个插件则直接保留；若存在多个，则优先选择建议插件
-     * （通过 {@link #providesSuggestion}），否则选取组内第一个。
-     * 解析结果写入 {@link #resolvedPlugins}。
+     * 若组内仅有一个插件则直接保留 若存在多个，则优先选择建议插件
+     * （通过 {@link #providesSuggestion}），否则选取组内第一个
+     * 解析结果写入 {@link #resolvedPlugins}
      */
     private synchronized void resolve() {
         Map<String, List<PluginContext>> provides = allPlugins.stream()
@@ -192,10 +192,10 @@ public class JadxPluginManager {
     }
 
     /**
-     * 初始化指定的插件集合。
+     * 初始化指定的插件集合
      * <p>
      * 为未设置应用上下文的插件注入默认上下文并调用其初始化方法，
-     * 随后对提供了选项的插件执行选项合法性校验。单个插件初始化失败不影响其他插件。
+     * 随后对提供了选项的插件执行选项合法性校验单个插件初始化失败不影响其他插件
      *
      * @param pluginContexts 待初始化的插件上下文集合
      */
@@ -230,9 +230,9 @@ public class JadxPluginManager {
     }
 
     /**
-     * 卸载指定的插件集合。
+     * 卸载指定的插件集合
      * <p>
-     * 依次调用每个插件的卸载方法，单个插件卸载失败仅记录警告日志，不影响其他插件。
+     * 依次调用每个插件的卸载方法，单个插件卸载失败仅记录警告日志，不影响其他插件
      *
      * @param pluginContexts 待卸载的插件上下文集合
      */
@@ -255,10 +255,10 @@ public class JadxPluginManager {
     }
 
     /**
-     * 校验插件选项描述的合法性。
+     * 校验插件选项描述的合法性
      * <p>
      * 要求选项描述非空、每个选项名以「插件 ID.」为前缀、描述文本非空、取值列表非空，
-     * 任一条件不满足即抛出异常。
+     * 任一条件不满足即抛出异常
      *
      * @param pluginContext 插件上下文
      * @param options       插件选项
@@ -287,7 +287,7 @@ public class JadxPluginManager {
     }
 
     /**
-     * 汇总所有已解析插件提供的代码输入。
+     * 汇总所有已解析插件提供的代码输入
      *
      * @return 已解析插件的 {@link JadxCodeInput} 列表
      */
@@ -299,9 +299,9 @@ public class JadxPluginManager {
     }
 
     /**
-     * 注册插件添加监听器。
+     * 注册插件添加监听器
      * <p>
-     * 注册后会立即对当前已添加的所有插件执行一次监听器回调。
+     * 注册后会立即对当前已添加的所有插件执行一次监听器回调
      *
      * @param listener 插件添加监听器
      */

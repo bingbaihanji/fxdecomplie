@@ -20,6 +20,7 @@ public class TemplateFile {
     private final InputStream template;
     private final Map<String, String> values = new HashMap<>();
     private @Nullable Function<String, String> valueSanitizer;
+
     private TemplateFile(String name, InputStream in) {
         this.templateName = name;
         this.template = in;

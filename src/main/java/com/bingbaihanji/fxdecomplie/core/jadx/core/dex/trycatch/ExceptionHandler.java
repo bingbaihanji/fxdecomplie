@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 异常处理器类，表示 try-catch 语句中的 catch 处理块。
- * 管理异常捕获类型、处理代码块以及与 try 块的关联关系。
+ * 异常处理器类，表示 try-catch 语句中的 catch 处理块
+ * 管理异常捕获类型、处理代码块以及与 try 块的关联关系
  */
 public class ExceptionHandler {
 

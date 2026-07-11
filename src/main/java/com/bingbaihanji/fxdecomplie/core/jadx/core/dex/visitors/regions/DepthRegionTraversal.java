@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * 区域的深度优先遍历工具类。
+ * 区域的深度优先遍历工具类
  * <p>
  * 提供对方法区域树（{@link IRegion} / {@link IContainer} / {@link IBlock}）的多种遍历方式：
- * 普通遍历、部分遍历（可提前返回结果）以及迭代式遍历（可重复直到访问者不再要求重复）。
+ * 普通遍历、部分遍历（可提前返回结果）以及迭代式遍历（可重复直到访问者不再要求重复）
  */
 public class DepthRegionTraversal {
 
@@ -48,8 +48,8 @@ public class DepthRegionTraversal {
     }
 
     /**
-     * 迭代式遍历：反复遍历方法区域，直到访问者不再要求重复；
-     * 超过次数上限时抛出 {@link JadxRuntimeException}。
+     * 迭代式遍历：反复遍历方法区域，直到访问者不再要求重复 
+     * 超过次数上限时抛出 {@link JadxRuntimeException}
      */
     public static void traverseIterative(MethodNode mth, IRegionIterativeVisitor visitor) {
         boolean repeat;
@@ -67,7 +67,7 @@ public class DepthRegionTraversal {
 
     /**
      * 迭代式遍历（包含异常处理器区域）：先遍历方法区域，若无需重复再依次遍历各异常处理器区域，
-     * 直到访问者不再要求重复；超过次数上限时抛出 {@link JadxRuntimeException}。
+     * 直到访问者不再要求重复 超过次数上限时抛出 {@link JadxRuntimeException}
      */
     public static void traverseIncludingExcHandlers(MethodNode mth, IRegionIterativeVisitor visitor) {
         boolean repeat;
