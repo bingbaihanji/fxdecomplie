@@ -21,7 +21,6 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.resources.IResourcesLo
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.JadxFilesData;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
 import com.bingbaihanji.fxdecomplie.util.ByteUtils;
 import org.jetbrains.annotations.Nullable;

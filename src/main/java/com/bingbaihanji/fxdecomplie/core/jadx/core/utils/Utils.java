@@ -571,7 +571,7 @@ public class Utils {
         if (list.size() == 1) {
             return Collections.singletonList(list.get(0));
         }
-        return new ImmutableList<>(list);
+        return List.copyOf(list);
     }
 
     /**

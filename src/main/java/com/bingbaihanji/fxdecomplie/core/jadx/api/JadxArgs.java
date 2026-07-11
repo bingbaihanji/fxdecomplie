@@ -21,7 +21,6 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.export.ExportGradleType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.PluginContext;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.IJadxFilesGetter;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.TempFilesGetter;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
 import com.bingbaihanji.fxdecomplie.util.ByteUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
