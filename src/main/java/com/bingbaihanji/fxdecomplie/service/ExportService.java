@@ -4,7 +4,6 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
-import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +56,7 @@ public final class ExportService {
      * @return 导出摘要
      * @throws IOException 无法创建输出容器时抛出
      */
-    public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
+    public static ExportResult exportAll(FileTreeModel root, ExportConfig config,
                                          WorkspaceIndex index,
                                          BiConsumer<String, Integer> onProgress)
             throws IOException {
@@ -76,7 +75,7 @@ public final class ExportService {
      * @return 导出摘要
      * @throws IOException 无法创建输出容器时抛出
      */
-    public static ExportResult exportAll(TreeItem<FileTreeNode> root, ExportConfig config,
+    public static ExportResult exportAll(FileTreeModel root, ExportConfig config,
                                          WorkspaceIndex index, CommentScope commentScope,
                                          BiConsumer<String, Integer> onProgress)
             throws IOException {
@@ -137,7 +136,7 @@ public final class ExportService {
      * @param outputDir 输出目录
      * @throws IOException 写入文件失败时抛出
      */
-    public static void exportAllToDir(TreeItem<FileTreeNode> root, DecompilerTypeEnum engine,
+    public static void exportAllToDir(FileTreeModel root, DecompilerTypeEnum engine,
                                       Path outputDir) throws IOException {
         Objects.requireNonNull(root, "root");
         Objects.requireNonNull(engine, "engine");
@@ -152,7 +151,7 @@ public final class ExportService {
      * 导出所有类到目录(带进度回调)
      * @param onProgress 进度回调 0-100
      */
-    public static void exportAllToDir(TreeItem<FileTreeNode> root, DecompilerTypeEnum engine,
+    public static void exportAllToDir(FileTreeModel root, DecompilerTypeEnum engine,
                                       Path outputDir, IntConsumer onProgress)
             throws IOException {
         Objects.requireNonNull(root, "root");
@@ -175,7 +174,7 @@ public final class ExportService {
      * @param zipPath ZIP 输出路径
      * @throws IOException 写入 ZIP 失败时抛出
      */
-    public static void exportAllToZip(TreeItem<FileTreeNode> root, DecompilerTypeEnum engine,
+    public static void exportAllToZip(FileTreeModel root, DecompilerTypeEnum engine,
                                       Path zipPath) throws IOException {
         Objects.requireNonNull(root, "root");
         Objects.requireNonNull(engine, "engine");
@@ -210,7 +209,7 @@ public final class ExportService {
      * 仅供遗留 API 和测试使用；新代码应在 FX 线程提取 FileTreeNode 列表后直接调用 exportAll
      */
     @Deprecated
-    private static List<FileTreeNode> collectExportableNodes(TreeItem<FileTreeNode> root,
+    private static List<FileTreeNode> collectExportableNodes(FileTreeModel root,
                                                              boolean exportResources) {
         List<FileTreeNode> nodes = new ArrayList<>();
         collectExportableNodes(root, exportResources, nodes);
@@ -218,13 +217,13 @@ public final class ExportService {
     }
 
     /** 递归遍历文件树,将可导出的节点收集到列表中 */
-    private static void collectExportableNodes(TreeItem<FileTreeNode> item, boolean exportResources,
+    private static void collectExportableNodes(FileTreeModel item, boolean exportResources,
                                                List<FileTreeNode> nodes) {
         FileTreeNode data = item.getValue();
         if (data != null && shouldExport(data, exportResources)) {
             nodes.add(data);
         }
-        for (TreeItem<FileTreeNode> child : item.getChildren()) {
+        for (FileTreeModel child : item.getChildren()) {
             collectExportableNodes(child, exportResources, nodes);
         }
     }

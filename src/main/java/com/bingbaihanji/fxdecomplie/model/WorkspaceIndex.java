@@ -3,7 +3,6 @@ package com.bingbaihanji.fxdecomplie.model;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
-import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,15 +39,15 @@ public final class WorkspaceIndex {
     /**
      * 从文件树的根节点出发遍历并构建工作区索引
      *
-     * @param root 文件树的根 TreeItem
+     * @param root 文件树的根 FileTreeModel
      * @return 构建完成的工作区索引
      */
-    public static WorkspaceIndex build(TreeItem<FileTreeNode> root) {
+    public static WorkspaceIndex build(FileTreeModel root) {
         List<FileTreeNode> nodes = new ArrayList<>();
-        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+        ArrayDeque<FileTreeModel> queue = new ArrayDeque<>();
         queue.add(root);
         while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeModel item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null) {
                 nodes.add(node);

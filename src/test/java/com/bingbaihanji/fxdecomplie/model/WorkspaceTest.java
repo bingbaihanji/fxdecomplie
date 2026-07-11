@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.model;
 
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -24,9 +23,9 @@ class WorkspaceTest {
             return new byte[]{1, 2, 3};
         });
 
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        root.getChildren().add(new TreeItem<>(clsNode));
+        root.getChildren().add(new FileTreeModel(clsNode));
 
         Workspace workspace = new Workspace("demo", tempDir.toFile(), root,
                 false, WorkspaceIndex.EMPTY);
@@ -47,9 +46,9 @@ class WorkspaceTest {
             return new byte[]{1, 2, 3};
         });
 
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        root.getChildren().add(new TreeItem<>(clsNode));
+        root.getChildren().add(new FileTreeModel(clsNode));
 
         Workspace workspace = new Workspace("demo", tempDir.toFile(), root, false);
 
@@ -61,7 +60,7 @@ class WorkspaceTest {
 
     @Test
     void failedIndexBuildCanBeRetriedWithNewFuture() {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         Workspace workspace = new Workspace("demo", tempDir.toFile(), root, false);
 

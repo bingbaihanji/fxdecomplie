@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import javafx.scene.control.TreeItem;
@@ -19,11 +20,11 @@ class InheritanceServiceTest {
     @TempDir
     Path tempDir;
 
-    private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {
+    private static FileTreeModel classNode(String path, Path classFile) throws Exception {
         String name = path.substring(path.lastIndexOf('/') + 1);
         FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.CLASS_FILE);
         node.setCachedBytes(withMajorVersion(Files.readAllBytes(classFile), 69));
-        return new TreeItem<>(node);
+        return new FileTreeModel(node);
     }
 
     private static byte[] withMajorVersion(byte[] bytes, int majorVersion) {
@@ -53,7 +54,7 @@ class InheritanceServiceTest {
                 sourceDir.resolve("Child.java").toString());
         assertTrue(exit == 0, "test classes should compile");
 
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         root.getChildren().add(classNode("com/example/Parent.class",
                 tempDir.resolve("classes/com/example/Parent.class")));
@@ -94,7 +95,7 @@ class InheritanceServiceTest {
                 sourceDir.resolve("GrandChild.java").toString());
         assertTrue(exit == 0, "test classes should compile");
 
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         root.getChildren().add(classNode("com/example/Parent.class",
                 classesDir.resolve("com/example/Parent.class")));

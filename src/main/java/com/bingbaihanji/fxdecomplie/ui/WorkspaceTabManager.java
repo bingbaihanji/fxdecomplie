@@ -14,6 +14,7 @@ import com.bingbaihanji.fxdecomplie.ui.comment.CommentListPane;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeModelConverter;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import com.bingbaihanji.util.I18nUtil;
 import javafx.application.Platform;
@@ -511,7 +512,7 @@ public final class WorkspaceTabManager {
                                 BiConsumer<FileTreeNode, TabPane> onHexClick) {
         removeWelcomeTab();
 
-        FileTreeView treeView = new FileTreeView(workspace.getTreeRoot());
+        FileTreeView treeView = new FileTreeView(FileTreeModelConverter.toTreeItem(workspace.getTreeRoot()));
         treeView.setPrefWidth(280);
         NavigationService navigationService = new NavigationService();
 
@@ -616,7 +617,7 @@ public final class WorkspaceTabManager {
 
         // 绑定继承树双击打开
         inheritancePane.setOpenHandler(className -> {
-            FileTreeNode node = findClassNode(workspace.getTreeRoot(), className);
+            FileTreeNode node = findClassNode(treeView.getRoot(), className);
             if (node != null) {
                 onClassClick.accept(node, codeTabPane);
             }
@@ -732,8 +733,11 @@ public final class WorkspaceTabManager {
     public void collapseTreeInCurrentWorkspace() {
         WorkspaceView view = currentWorkspaceView();
         if (view != null) {
-            collapse(view.workspace().getTreeRoot());
-            view.workspace().getTreeRoot().setExpanded(true);
+            TreeItem<FileTreeNode> root = view.treeView().getRoot();
+            if (root != null) {
+                collapse(root);
+                root.setExpanded(true);
+            }
         }
     }
 

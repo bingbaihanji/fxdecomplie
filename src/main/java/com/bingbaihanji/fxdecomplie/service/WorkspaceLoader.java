@@ -1,11 +1,10 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import javafx.application.Platform;
-import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +53,7 @@ public final class WorkspaceLoader {
                 log.info("文件扫描完成: {} -> {} 个条目 ({}ms)", name, entries.size(),
                         System.currentTimeMillis() - t1);
                 // ---- 步骤 2: 构建带字节码缓存的层级文件树 ----
-                TreeItem<FileTreeNode> treeRoot = FileTreeBuilder.build(name, entries);
+                FileTreeModel treeRoot = FileTreeBuilder.build(name, entries);
                 // ---- 步骤 3: 创建带空索引的工作区模型 ----
                 boolean isArchive = isArchiveFile(file);
                 String contentStamp = computeContentStamp(file);

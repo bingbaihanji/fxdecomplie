@@ -1,10 +1,10 @@
 package com.bingbaihanji.fxdecomplie.usage;
 
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.UsageResult;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.UsageSearchService;
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -21,11 +21,11 @@ class UsageSearchServiceTest {
     @TempDir
     Path tempDir;
 
-    private static TreeItem<FileTreeNode> classNode(String path, Path classFile) throws Exception {
+    private static FileTreeModel classNode(String path, Path classFile) throws Exception {
         String name = path.substring(path.lastIndexOf('/') + 1);
         FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.CLASS_FILE);
         node.setCachedBytes(Files.readAllBytes(classFile));
-        return new TreeItem<>(node);
+        return new FileTreeModel(node);
     }
 
     @Test
@@ -65,7 +65,7 @@ class UsageSearchServiceTest {
                 sourceDir.resolve("Holder.java").toString());
         assertTrue(exit == 0, "test classes should compile");
 
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         root.getChildren().add(classNode("com/example/Target.class",
                 tempDir.resolve("classes/com/example/Target.class")));

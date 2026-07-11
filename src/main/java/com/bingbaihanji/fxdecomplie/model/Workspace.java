@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.model;
 
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
-import javafx.scene.control.TreeItem;
 
 import java.io.File;
 import java.util.*;
@@ -23,7 +22,7 @@ public class Workspace implements AutoCloseable {
     /** 源文件或目录 */
     private final File sourceFile;
     /** 文件树根节点 */
-    private final TreeItem<FileTreeNode> treeRoot;
+    private final FileTreeModel treeRoot;
     /** 是否为归档文件(JAR/ZIP) */
     private final boolean isArchive;
     /** 工作区加载时的内容指纹,用于反编译缓存键 */
@@ -47,16 +46,16 @@ public class Workspace implements AutoCloseable {
      * @param treeRoot   文件树根节点
      * @param isArchive  是否为归档文件
      */
-    public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot, boolean isArchive) {
+    public Workspace(String name, File sourceFile, FileTreeModel treeRoot, boolean isArchive) {
         this(name, sourceFile, treeRoot, isArchive, WorkspaceIndex.EMPTY, "");
     }
 
-    public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot,
+    public Workspace(String name, File sourceFile, FileTreeModel treeRoot,
                      boolean isArchive, WorkspaceIndex index) {
         this(name, sourceFile, treeRoot, isArchive, index, "");
     }
 
-    public Workspace(String name, File sourceFile, TreeItem<FileTreeNode> treeRoot,
+    public Workspace(String name, File sourceFile, FileTreeModel treeRoot,
                      boolean isArchive, WorkspaceIndex index, String contentStamp) {
         this.name = Objects.requireNonNull(name, "name");
         this.sourceFile = Objects.requireNonNull(sourceFile, "sourceFile");
@@ -71,15 +70,15 @@ public class Workspace implements AutoCloseable {
         }
     }
 
-    private static Map<String, FileTreeNode> buildPathIndex(TreeItem<FileTreeNode> root) {
+    private static Map<String, FileTreeNode> buildPathIndex(FileTreeModel root) {
         if (root == null) {
             return Map.of();
         }
         Map<String, FileTreeNode> result = new LinkedHashMap<>();
-        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+        ArrayDeque<FileTreeModel> queue = new ArrayDeque<>();
         queue.add(root);
         while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeModel item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null && node.getFullPath() != null && !node.getFullPath().isBlank()) {
                 String fullPath = node.getFullPath().replace('\\', '/');
@@ -128,7 +127,7 @@ public class Workspace implements AutoCloseable {
     }
 
     /** @return 文件树根节点 */
-    public TreeItem<FileTreeNode> getTreeRoot() {
+    public FileTreeModel getTreeRoot() {
         return treeRoot;
     }
 
@@ -247,10 +246,10 @@ public class Workspace implements AutoCloseable {
         if (treeRoot == null) {
             return;
         }
-        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+        ArrayDeque<FileTreeModel> queue = new ArrayDeque<>();
         queue.add(treeRoot);
         while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeModel item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null) {
                 node.close();

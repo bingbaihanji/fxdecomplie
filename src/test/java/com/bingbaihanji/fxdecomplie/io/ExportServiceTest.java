@@ -3,10 +3,10 @@ package com.bingbaihanji.fxdecomplie.io;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.model.ExportResult;
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.service.ExportService;
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -37,24 +37,24 @@ class ExportServiceTest {
     }
 
     @SafeVarargs
-    private static TreeItem<FileTreeNode> root(TreeItem<FileTreeNode>... children) {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+    private static FileTreeModel root(FileTreeModel... children) {
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        root.getChildren().addAll(children);
+        java.util.Collections.addAll(root.getChildren(), children);
         return root;
     }
 
-    private static TreeItem<FileTreeNode> resource(String path, String content) {
+    private static FileTreeModel resource(String path, String content) {
         int slash = path.lastIndexOf('/');
         String name = slash >= 0 ? path.substring(slash + 1) : path;
         FileTreeNode node = new FileTreeNode(name, path, FileTreeNode.NodeTypeEnum.RESOURCE);
         node.setCachedBytes(content.getBytes(StandardCharsets.UTF_8));
-        return new TreeItem<>(node);
+        return new FileTreeModel(node);
     }
 
     @Test
     void exportsResourcesToDirectoryWhenEnabled() throws Exception {
-        TreeItem<FileTreeNode> root = root(resource("config/app.properties", "enabled=true"));
+        FileTreeModel root = root(resource("config/app.properties", "enabled=true"));
         Path outputDir = tempDir.resolve("out");
 
         ExportResult result = ExportService.exportAll(root, config(outputDir,
@@ -68,7 +68,7 @@ class ExportServiceTest {
 
     @Test
     void skipsResourcesWhenDisabled() throws Exception {
-        TreeItem<FileTreeNode> root = root(resource("config/app.properties", "enabled=true"));
+        FileTreeModel root = root(resource("config/app.properties", "enabled=true"));
 
         ExportResult result = ExportService.exportAll(root, config(tempDir.resolve("out"),
                 ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.OVERWRITE, false), WorkspaceIndex.build(root), null);
@@ -80,7 +80,7 @@ class ExportServiceTest {
 
     @Test
     void renamesDirectoryConflicts() throws Exception {
-        TreeItem<FileTreeNode> root = root(
+        FileTreeModel root = root(
                 resource("config/app.properties", "first"),
                 resource("config/app.properties", "second"));
         Path outputDir = tempDir.resolve("out");
@@ -96,7 +96,7 @@ class ExportServiceTest {
 
     @Test
     void exportsResourcesToZip() throws Exception {
-        TreeItem<FileTreeNode> root = root(resource("config/app.properties", "enabled=true"));
+        FileTreeModel root = root(resource("config/app.properties", "enabled=true"));
         Path zipPath = tempDir.resolve("out.zip");
 
         ExportResult result = ExportService.exportAll(root, config(zipPath,
@@ -111,7 +111,7 @@ class ExportServiceTest {
 
     @Test
     void rejectsUnsafeRelativePaths() throws Exception {
-        TreeItem<FileTreeNode> root = root(resource("../evil.properties", "bad"));
+        FileTreeModel root = root(resource("../evil.properties", "bad"));
         Path outputDir = tempDir.resolve("out");
 
         ExportResult result = ExportService.exportAll(root, config(outputDir,
@@ -129,7 +129,7 @@ class ExportServiceTest {
 //        BytecodeCache.put("com/example/Missing", new byte[]{1, 2, 3});
 //        FileTreeNode missingClass = new FileTreeNode("Missing.class", "com/example/Missing.class",
 //                FileTreeNode.NodeTypeEnum.CLASS_FILE);
-//        TreeItem<FileTreeNode> root = root(new TreeItem<>(missingClass));
+//        FileTreeModel root = root(new TreeItem<>(missingClass));
 //
 //        ExportResult result = ExportService.exportAll(root, config(tempDir.resolve("out"),
 //                ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.OVERWRITE, false),
@@ -148,7 +148,7 @@ class ExportServiceTest {
         Files.createDirectories(outputDir.resolve("config"));
         Files.writeString(outputDir.resolve("config/app.properties"), "original");
 
-        TreeItem<FileTreeNode> root = root(resource("config/app.properties", "new-content"));
+        FileTreeModel root = root(resource("config/app.properties", "new-content"));
 
         ExportResult result = ExportService.exportAll(root, config(outputDir,
                         ExportConfig.Format.DIR, ExportConfig.ConflictPolicy.SKIP, true),

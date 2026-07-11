@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ class FileTreeBuilderTest {
         entries.add(new ClassDiscoverer.ClassEntry("Bar.class", "com/example/Bar.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE, new byte[]{4, 5, 6}));
 
-        TreeItem<FileTreeNode> root = FileTreeBuilder.build("test.jar", entries);
+        FileTreeModel root = FileTreeBuilder.build("test.jar", entries);
         assertNotNull(root);
         assertEquals("test.jar", root.getValue().getName());
         // Should have one package child "com"
@@ -43,14 +43,14 @@ class FileTreeBuilderTest {
         entries.add(new ClassDiscoverer.ClassEntry("Readme.md", "docs/Readme.md",
                 FileTreeNode.NodeTypeEnum.RESOURCE, "hello".getBytes()));
 
-        TreeItem<FileTreeNode> root = FileTreeBuilder.build("test", entries);
+        FileTreeModel root = FileTreeBuilder.build("test", entries);
         // "docs" package should come before "Zzz.class"
         assertEquals("docs", root.getChildren().get(0).getValue().getName());
     }
 
     @Test
     void emptyEntriesProducesEmptyTree() {
-        TreeItem<FileTreeNode> root = FileTreeBuilder.build("empty", List.of());
+        FileTreeModel root = FileTreeBuilder.build("empty", List.of());
         assertNotNull(root);
         assertTrue(root.getChildren().isEmpty());
     }

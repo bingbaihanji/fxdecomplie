@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.model;
 
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -15,7 +14,7 @@ class PathNodeTest {
 
     @Test
     void resolvesAncestorValuesByType() {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         Workspace workspace = new Workspace("test", tempDir.toFile(), root, false);
         WorkspacePathNode workspacePath = new WorkspacePathNode(workspace);

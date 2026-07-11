@@ -973,11 +973,11 @@ public final class ClassTabOpener {
             return null;
         }
         String suffix = ClassNameUtil.classFilePath(internalName);
-        ArrayDeque<TreeItem<FileTreeNode>> queue =
+        ArrayDeque<FileTreeModel> queue =
                 new ArrayDeque<>();
         queue.add(workspace.getTreeRoot());
         while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeModel item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null && node.isClassFile()) {
                 String path = node.getFullPath().replace('\\', '/');

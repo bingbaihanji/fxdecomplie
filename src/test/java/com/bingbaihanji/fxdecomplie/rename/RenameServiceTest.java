@@ -1,8 +1,8 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -165,9 +165,9 @@ class RenameServiceTest {
         FileTreeNode node = new FileTreeNode("Foo.class", "com/example/Foo.class",
                 FileTreeNode.NodeTypeEnum.CLASS_FILE);
         node.setCachedBytes(bytes);
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        root.getChildren().add(new TreeItem<>(node));
+        root.getChildren().add(new FileTreeModel(node));
         return WorkspaceIndex.build(root);
     }
 

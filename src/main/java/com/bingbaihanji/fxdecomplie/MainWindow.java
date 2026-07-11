@@ -2003,14 +2003,14 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         String currentInternal = normalizeInternalClassName(currentClassName);
         String currentPackage = packageName(currentInternal);
         List<FileTreeNode> matches = new ArrayList<>();
-        TreeItem<FileTreeNode> root = workspace.getTreeRoot();
+        FileTreeModel root = workspace.getTreeRoot();
         if (root == null) {
             return null;
         }
-        ArrayDeque<TreeItem<FileTreeNode>> queue = new ArrayDeque<>();
+        ArrayDeque<FileTreeModel> queue = new ArrayDeque<>();
         queue.add(root);
         while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> item = queue.removeFirst();
+            FileTreeModel item = queue.removeFirst();
             FileTreeNode node = item.getValue();
             if (node != null && node.isClassFile()
                     && !ClassNameUtil.sameInternalName(node.getFullPath(), currentClassName)
@@ -2686,13 +2686,25 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /** 递归收集树节点数据(model 层 FileTreeModel 版本) */
+    private void collectTreeNodes(FileTreeModel item,
+                                  java.util.List<FileTreeNode> result) {
+        FileTreeNode data = item.getValue();
+        if (data != null) {
+            result.add(data);
+        }
+        for (FileTreeModel child : item.getChildren()) {
+            collectTreeNodes(child, result);
+        }
+    }
+
     /** 递归收集文件树中所有 .class 节点的完整路径(用于快速打开对话框) */
-    private void collectClassNames(TreeItem<FileTreeNode> item, java.util.List<String> result) {
+    private void collectClassNames(FileTreeModel item, java.util.List<String> result) {
         FileTreeNode data = item.getValue();
         if (data != null && data.isClassFile()) {
             result.add(data.getFullPath());
         }
-        for (TreeItem<FileTreeNode> child : item.getChildren()) {
+        for (FileTreeModel child : item.getChildren()) {
             collectClassNames(child, result);
         }
     }

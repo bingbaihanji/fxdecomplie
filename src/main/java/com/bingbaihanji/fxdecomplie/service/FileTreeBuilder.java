@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +30,12 @@ public final class FileTreeBuilder {
      * @param entries  扁平条目列表
      * @return 树根节点
      */
-    public static TreeItem<FileTreeNode> build(String rootName, List<ClassDiscoverer.ClassEntry> entries) {
+    public static FileTreeModel build(String rootName, List<ClassDiscoverer.ClassEntry> entries) {
         FileTreeNode rootData = new FileTreeNode(rootName, "", FileTreeNode.NodeTypeEnum.PACKAGE);
-        TreeItem<FileTreeNode> root = new TreeItem<>(rootData);
+        FileTreeModel root = new FileTreeModel(rootData);
         root.setExpanded(true);
 
-        Map<String, TreeItem<FileTreeNode>> pathMap = new HashMap<>();
+        Map<String, FileTreeModel> pathMap = new HashMap<>();
         pathMap.put("", root);
 
         for (ClassDiscoverer.ClassEntry entry : entries) {
@@ -51,8 +51,8 @@ public final class FileTreeBuilder {
                 nodeData.setCleanup(entry.cleanup());
             }
 
-            TreeItem<FileTreeNode> parent = getOrCreateParent(root, entry.fullPath(), pathMap);
-            TreeItem<FileTreeNode> child = new TreeItem<>(nodeData);
+            FileTreeModel parent = getOrCreateParent(root, entry.fullPath(), pathMap);
+            FileTreeModel child = new FileTreeModel(nodeData);
             parent.getChildren().add(child);
         }
 
@@ -62,18 +62,18 @@ public final class FileTreeBuilder {
         return root;
     }
 
-    private static int countNodes(TreeItem<FileTreeNode> node) {
+    private static int countNodes(FileTreeModel node) {
         int count = 1;
-        for (TreeItem<FileTreeNode> child : node.getChildren()) {
+        for (FileTreeModel child : node.getChildren()) {
             count += countNodes(child);
         }
         return count;
     }
 
     /** 获取或创建父节点链,返回目标条目的直接父节点 */
-    private static TreeItem<FileTreeNode> getOrCreateParent(
-            TreeItem<FileTreeNode> root, String fullPath,
-            Map<String, TreeItem<FileTreeNode>> pathMap) {
+    private static FileTreeModel getOrCreateParent(
+            FileTreeModel root, String fullPath,
+            Map<String, FileTreeModel> pathMap) {
         int lastSlash = fullPath.lastIndexOf('/');
         if (lastSlash < 0) {
             return root;
@@ -82,7 +82,7 @@ public final class FileTreeBuilder {
         String parentPath = fullPath.substring(0, lastSlash);
         String[] parts = parentPath.split("/");
 
-        TreeItem<FileTreeNode> current = root;
+        FileTreeModel current = root;
         StringBuilder pathBuilder = new StringBuilder();
 
         for (String part : parts) {
@@ -92,10 +92,10 @@ public final class FileTreeBuilder {
             pathBuilder.append(part);
             String currentPath = pathBuilder.toString();
 
-            final TreeItem<FileTreeNode> parent = current;
+            final FileTreeModel parent = current;
             current = pathMap.computeIfAbsent(currentPath, k -> {
                 FileTreeNode data = new FileTreeNode(part, k, FileTreeNode.NodeTypeEnum.PACKAGE);
-                TreeItem<FileTreeNode> node = new TreeItem<>(data);
+                FileTreeModel node = new FileTreeModel(data);
                 node.setExpanded(false);
                 parent.getChildren().add(node);
                 return node;
@@ -106,11 +106,11 @@ public final class FileTreeBuilder {
     }
 
     /** 递归排序树节点(包在前,文件在后) */
-    private static void sortTree(TreeItem<FileTreeNode> root) {
-        java.util.ArrayDeque<TreeItem<FileTreeNode>> queue = new java.util.ArrayDeque<>();
+    private static void sortTree(FileTreeModel root) {
+        java.util.ArrayDeque<FileTreeModel> queue = new java.util.ArrayDeque<>();
         queue.add(root);
         while (!queue.isEmpty()) {
-            TreeItem<FileTreeNode> node = queue.poll();
+            FileTreeModel node = queue.poll();
             node.getChildren().sort((a, b) -> {
                 FileTreeNode aData = a.getValue();
                 FileTreeNode bData = b.getValue();

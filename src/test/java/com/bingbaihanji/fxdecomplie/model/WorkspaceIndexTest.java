@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.model;
 
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -26,7 +25,7 @@ class WorkspaceIndexTest {
 
     @Test
     void emptyTreeProducesEmptyIndex() {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         WorkspaceIndex index = WorkspaceIndex.build(root);
         assertNotNull(index);
@@ -37,7 +36,7 @@ class WorkspaceIndexTest {
 
     @Test
     void indexesClassNodes() throws Exception {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
 
         FileTreeNode clsNode = new FileTreeNode("Test.class", "com/example/Test.class",
@@ -49,7 +48,7 @@ class WorkspaceIndexTest {
                     public String getValue() { return value; }
                 }
                 """));
-        TreeItem<FileTreeNode> clsItem = new TreeItem<>(clsNode);
+        FileTreeModel clsItem = new FileTreeModel(clsNode);
         root.getChildren().add(clsItem);
 
         WorkspaceIndex index = WorkspaceIndex.build(root);
@@ -64,7 +63,7 @@ class WorkspaceIndexTest {
 
     @Test
     void indexesJava25ClassFileWithoutAsmVersionFailure() throws Exception {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
 
         FileTreeNode clsNode = new FileTreeNode("Test.class", "com/example/Test.class",
@@ -75,7 +74,7 @@ class WorkspaceIndexTest {
                     public void run() {}
                 }
                 """), 69));
-        root.getChildren().add(new TreeItem<>(clsNode));
+        root.getChildren().add(new FileTreeModel(clsNode));
 
         WorkspaceIndex index = WorkspaceIndex.build(root);
         assertEquals(1, index.classes().size());
@@ -87,13 +86,13 @@ class WorkspaceIndexTest {
 
     @Test
     void indexesResourceNodes() {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
 
         FileTreeNode resNode = new FileTreeNode("test.xml", "test.xml",
                 FileTreeNode.NodeTypeEnum.RESOURCE);
         resNode.setCachedBytes("<xml></xml>".getBytes());
-        TreeItem<FileTreeNode> resItem = new TreeItem<>(resNode);
+        FileTreeModel resItem = new FileTreeModel(resNode);
         root.getChildren().add(resItem);
 
         WorkspaceIndex index = WorkspaceIndex.build(root);
@@ -102,7 +101,7 @@ class WorkspaceIndexTest {
 
     @Test
     void skipsLargeResourcesWithoutReadingBytes() {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         FileTreeNode resNode = new FileTreeNode("large.txt", "large.txt",
                 FileTreeNode.NodeTypeEnum.RESOURCE);
@@ -112,7 +111,7 @@ class WorkspaceIndexTest {
             reads.incrementAndGet();
             return "large".getBytes(StandardCharsets.UTF_8);
         });
-        root.getChildren().add(new TreeItem<>(resNode));
+        root.getChildren().add(new FileTreeModel(resNode));
 
         WorkspaceIndex index = WorkspaceIndex.build(root);
 
@@ -122,7 +121,7 @@ class WorkspaceIndexTest {
 
     @Test
     void getClassBytesReturnsNullForMissing() {
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         WorkspaceIndex index = WorkspaceIndex.build(root);
         assertNull(index.getClassBytes("nonexistent"));
@@ -151,9 +150,9 @@ class WorkspaceIndexTest {
             reads.incrementAndGet();
             return bytes;
         });
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
-        root.getChildren().add(new TreeItem<>(clsNode));
+        root.getChildren().add(new FileTreeModel(clsNode));
 
         WorkspaceIndex index = WorkspaceIndex.build(root);
 

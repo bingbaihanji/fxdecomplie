@@ -1,9 +1,9 @@
 package com.bingbaihanji.fxdecomplie.service;
 
+import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.PathNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
-import javafx.scene.control.TreeItem;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -21,7 +21,7 @@ class NavigationServiceTest {
     @Test
     void classPathCreatesValidPathNode() {
         NavigationService nav = new NavigationService();
-        TreeItem<FileTreeNode> root = new TreeItem<>(
+        FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
         Workspace ws = new Workspace("test", new java.io.File("."), root, false);
         FileTreeNode node = new FileTreeNode("Test.class", "Test.class",

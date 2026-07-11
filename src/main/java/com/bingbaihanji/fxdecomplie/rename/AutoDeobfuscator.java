@@ -4,7 +4,6 @@ import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
-import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,9 +186,9 @@ public final class AutoDeobfuscator {
     }
 
     /**
-     * 使用 TreeItem 扫描(从 UI 树中获取子节点)
+     * 使用文件树模型扫描
      */
-    public static List<RenameEntry> scanFromTree(TreeItem<FileTreeNode> root) {
+    public static List<RenameEntry> scanFromTree(FileTreeModel root) {
         if (root == null) {
             return Collections.emptyList();
         }
@@ -210,17 +209,17 @@ public final class AutoDeobfuscator {
         return suggestions;
     }
 
-    private static void collectNodes(TreeItem<FileTreeNode> item, List<FileTreeNode> result) {
+    private static void collectNodes(FileTreeModel item, List<FileTreeNode> result) {
         FileTreeNode node = item.getValue();
         if (node != null) {
             result.add(node);
         }
-        for (TreeItem<FileTreeNode> child : item.getChildren()) {
+        for (FileTreeModel child : item.getChildren()) {
             collectNodes(child, result);
         }
     }
 
-    private static void mergeTreeClassSuggestions(TreeItem<FileTreeNode> root,
+    private static void mergeTreeClassSuggestions(FileTreeModel root,
                                                   WorkspaceIndex index,
                                                   List<RenameEntry> suggestions) {
         if (root == null || suggestions == null) {
