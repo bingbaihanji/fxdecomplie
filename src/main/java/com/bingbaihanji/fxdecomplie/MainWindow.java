@@ -88,6 +88,19 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private MainToolBar toolBar;
     /** 主菜单栏 */
     private MainMenuBar menuBar;
+    /** 编辑器动作控制器（剪贴板/缩放/行号/工具窗口） */
+    private final EditorActionsController editorActions = new EditorActionsController(this);
+
+    // --- 供控制器访问共享状态的包级私有访问器（Mediator 模式）---
+    AppConfig config() { return config; }
+
+    WorkspaceTabManager tabManager() { return tabManager; }
+
+    MainToolBar toolBar() { return toolBar; }
+
+    boolean lineNumbersEnabled() { return lineNumbersEnabled; }
+
+    void setLineNumbersEnabled(boolean enabled) { this.lineNumbersEnabled = enabled; }
 
     /** 使用全局配置构造主窗口 */
     public MainWindow(AppConfig config) {
@@ -110,9 +123,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 复制字符串到系统剪贴板 */
     private static void copyToClipboard(String value) {
-        javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
-        content.putString(value == null ? "" : value);
-        javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
+        EditorActionsController.copyToClipboard(value);
     }
 
     /** 将点分隔的类名转换为内部类路径(首段大写后用 $ 替代 .) */
@@ -354,11 +365,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     /** 根据当前工作区和代码标签页状态刷新工具栏按钮的启用/禁用状态 */
     private void refreshToolbarState() {
-        if (toolBar != null) {
-            boolean hasWorkspace = tabManager != null && tabManager.currentWorkspaceView() != null;
-            boolean hasCodeTab = tabManager != null && tabManager.currentCodeTab() != null;
-            toolBar.refreshState(hasWorkspace, hasCodeTab);
-        }
+        editorActions.refreshToolbarState();
     }
 
     /** 打开 JAR/ZIP/Class 文件 */
@@ -675,81 +682,61 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 复制选中文本 */
     @Override
     public void copySelection() {
-        CodeEditorTab codeTab = tabManager.currentCodeTab();
-        if (codeTab != null) {
-            codeTab.getCodeArea().copy();
-        }
+        editorActions.copySelection();
     }
 
     /** 全选 */
     @Override
     public void selectAll() {
-        CodeEditorTab codeTab = tabManager.currentCodeTab();
-        if (codeTab != null) {
-            codeTab.getCodeArea().selectAll();
-        }
+        editorActions.selectAll();
     }
 
     /** 放大字号 */
     @Override
     public void zoomIn() {
-        CodeEditorTab codeTab = tabManager.currentCodeTab();
-        if (codeTab != null) {
-            codeTab.zoomIn();
-        }
+        editorActions.zoomIn();
     }
 
     /** 缩小字号 */
     @Override
     public void zoomOut() {
-        CodeEditorTab codeTab = tabManager.currentCodeTab();
-        if (codeTab != null) {
-            codeTab.zoomOut();
-        }
+        editorActions.zoomOut();
     }
 
     /** 重置字号 */
     @Override
     public void resetZoom() {
-        CodeEditorTab codeTab = tabManager.currentCodeTab();
-        if (codeTab != null) {
-            codeTab.resetZoom();
-        }
+        editorActions.resetZoom();
     }
 
     /** 切换行号显示 */
     @Override
     public void toggleLineNumbers() {
-        lineNumbersEnabled = !lineNumbersEnabled;
-        config.decompiler().lineNumbersEnabled(lineNumbersEnabled);
-        tabManager.getWorkspaceViews().values().forEach(view ->
-                view.splitEditorPane().forEachTab(
-                        tab -> tab.setLineNumbersEnabled(lineNumbersEnabled))
-        );
+        editorActions.toggleLineNumbers();
     }
 
     /** 折叠当前工作区文件树 */
     @Override
     public void collapseTree() {
-        tabManager.collapseTreeInCurrentWorkspace();
+        editorActions.collapseTree();
     }
 
     /** 显示大纲工具窗口 */
     @Override
     public void showOutline() {
-        tabManager.showOutlineToolWindow();
+        editorActions.showOutline();
     }
 
     /** 显示继承工具窗口 */
     @Override
     public void showInheritance() {
-        tabManager.showInheritanceToolWindow();
+        editorActions.showInheritance();
     }
 
     /** 隐藏底部工具窗口 */
     @Override
     public void hideBottomTools() {
-        tabManager.hideBottomToolWindow();
+        editorActions.hideBottomTools();
     }
 
     /** 切换反编译引擎并重新反编译当前文件 */
