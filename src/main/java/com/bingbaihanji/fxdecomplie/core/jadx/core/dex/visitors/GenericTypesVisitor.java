@@ -22,9 +22,21 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 		runAfter = TypeInferenceVisitor.class,
 		runBefore = { CodeShrinkVisitor.class, MethodInvokeVisitor.class }
 )
+/**
+ * 泛型类型信息访问器。
+ * <p>
+ * 修正并应用构造器指令上的泛型类型信息：对 {@code new} 构造器调用，
+ * 依据其结果变量推断出的泛型类型（如 {@code new ArrayList<String>()}），
+ * 附加 {@link GenericInfoAttr} 属性，以便在反编译输出中还原菱形/显式泛型参数。
+ */
 public class GenericTypesVisitor extends AbstractVisitor {
 	private static final Logger LOG = LoggerFactory.getLogger(GenericTypesVisitor.class);
 
+	/**
+	 * 遍历方法所有基本块中的 CONSTRUCTOR 指令，为其附加泛型类型信息。
+	 *
+	 * @param mth 待处理的方法节点
+	 */
 	@Override
 	public void visit(MethodNode mth) throws JadxException {
 		if (mth.isNoCode()) {

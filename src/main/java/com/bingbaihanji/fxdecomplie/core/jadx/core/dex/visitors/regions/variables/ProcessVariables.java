@@ -37,6 +37,12 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.RegionUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 
+/**
+ * 变量处理访问者。
+ * <p>
+ * 负责在反编译过程中处理方法中的局部变量：移除未使用的指令结果、收集并合并代码变量、
+ * 校验变量类型，并为每个代码变量确定合适的声明位置。
+ */
 public class ProcessVariables extends AbstractVisitor {
 	private static final Logger LOG = LoggerFactory.getLogger(ProcessVariables.class);
 
@@ -52,9 +58,9 @@ public class ProcessVariables extends AbstractVisitor {
 			return;
 		}
 		checkCodeVars(mth, codeVars);
-		// TODO: reduce code vars by name if debug info applied (need checks for variable scopes)
+		// TODO: 若已应用调试信息，则按名称合并代码变量（需要检查变量作用域）
 
-		// collect all variables usage
+		// 收集所有变量的使用情况
 		CollectUsageRegionVisitor usageCollector = new CollectUsageRegionVisitor();
 		DepthRegionTraversal.traverse(mth, usageCollector);
 		Map<SSAVar, VarUsage> ssaUsageMap = usageCollector.getUsageMap();
@@ -82,10 +88,10 @@ public class ProcessVariables extends AbstractVisitor {
 					if (isVarUnused(mth, ssaVar)) {
 						boolean remove = false;
 						if (insn.canRemoveResult()) {
-							// remove unused result
+							// 移除未使用的结果
 							remove = true;
 						} else if (canRemoveInsn(insn)) {
-							// remove whole insn
+							// 移除整条指令
 							insn.add(AFlag.REMOVE);
 							insn.add(AFlag.DONT_GENERATE);
 							remove = true;
@@ -102,7 +108,7 @@ public class ProcessVariables extends AbstractVisitor {
 			}
 
 			/**
-			 * Remove insn if a result is not used
+			 * 当指令结果未被使用时移除该指令
 			 */
 			private boolean canRemoveInsn(InsnNode insn) {
 				if (insn.isConstInsn()) {
@@ -135,7 +141,7 @@ public class ProcessVariables extends AbstractVisitor {
 				if (arg.contains(AFlag.REMOVE)) {
 					return true;
 				}
-				// check constructors for removed args
+				// 检查构造函数中已被移除的参数
 				InsnNode parentInsn = arg.getParentInsn();
 				if (parentInsn != null
 						&& parentInsn.getType() == InsnType.CONSTRUCTOR
@@ -200,13 +206,13 @@ public class ProcessVariables extends AbstractVisitor {
 			return;
 		}
 
-		// check if variable can be declared at one of assigns
+		// 检查变量是否可以在其某个赋值处声明
 		if (checkDeclareAtAssign(usageList, mergedUsage)) {
 			return;
 		}
-		// TODO: search closest region for declare
+		// TODO: 搜索最近的区域用于声明
 
-		// region not found, declare at method start
+		// 未找到合适区域，则在方法起始处声明
 		declareVarInRegion(mth.getRegion(), codeVar);
 	}
 
@@ -269,7 +275,7 @@ public class ProcessVariables extends AbstractVisitor {
 
 	private static boolean canDeclareAt(VarUsage usage, UsePlace usePlace) {
 		IRegion region = usePlace.getRegion();
-		// workaround for declare variables used in several loops
+		// 用于处理在多个循环中使用的变量声明的变通方案
 		if (region instanceof LoopRegion) {
 			for (UsePlace use : usage.getAssigns()) {
 				if (!RegionUtils.isRegionContainsRegion(region, use.getRegion())) {
@@ -277,7 +283,7 @@ public class ProcessVariables extends AbstractVisitor {
 				}
 			}
 		}
-		// can't declare in else-if chain between 'else' and next 'if'
+		// 不能在 else-if 链中的 'else' 与下一个 'if' 之间声明
 		if (region.contains(AFlag.ELSE_IF_CHAIN)) {
 			return false;
 		}
@@ -286,7 +292,7 @@ public class ProcessVariables extends AbstractVisitor {
 	}
 
 	/**
-	 * Check if all {@code usePlaces} are after {@code checkPlace}
+	 * 检查所有 {@code usePlaces} 是否都在 {@code checkPlace} 之后
 	 */
 	private static boolean isAllUseAfter(UsePlace checkPlace, List<UsePlace> usePlaces) {
 
@@ -313,7 +319,7 @@ public class ProcessVariables extends AbstractVisitor {
 			return true;
 		}
 		if (subBlock instanceof IRegion) {
-			// TODO: make index for faster check
+			// TODO: 建立索引以加快检查速度
 			return RegionUtils.isRegionContainsRegion(subBlock, usePlace.getRegion());
 		}
 		return false;

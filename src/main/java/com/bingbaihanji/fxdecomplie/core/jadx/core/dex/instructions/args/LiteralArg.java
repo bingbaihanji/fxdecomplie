@@ -6,16 +6,23 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.TypeGen;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.StringUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
+/**
+ * 字面量指令参数。
+ * 以 long 存储原始位值，配合类型（如整型、浮点型、布尔型等）解释其含义。
+ */
 public final class LiteralArg extends InsnArg {
 
+	/** 创建字面量参数（不修正类型） */
 	public static LiteralArg make(long value, ArgType type) {
 		return new LiteralArg(value, type);
 	}
 
+	/** 创建字面量参数，并根据值修正为合适的类型 */
 	public static LiteralArg makeWithFixedType(long value, ArgType type) {
 		return new LiteralArg(value, fixLiteralType(value, type));
 	}
 
+	/** 根据字面量值推断并修正其类型（用于类型未知的窄类型场景） */
 	private static ArgType fixLiteralType(long value, ArgType type) {
 		if (value == 0 || type.isTypeKnown() || type.contains(PrimitiveType.LONG) || type.contains(PrimitiveType.DOUBLE)) {
 			return type;
@@ -29,14 +36,17 @@ public final class LiteralArg extends InsnArg {
 		return ArgType.NARROW_NUMBERS_NO_BOOL;
 	}
 
+	/** 创建布尔字面量 false */
 	public static LiteralArg litFalse() {
 		return new LiteralArg(0, ArgType.BOOLEAN);
 	}
 
+	/** 创建布尔字面量 true */
 	public static LiteralArg litTrue() {
 		return new LiteralArg(1, ArgType.BOOLEAN);
 	}
 
+	/** 字面量的原始位值 */
 	private final long literal;
 
 	private LiteralArg(long value, ArgType type) {
@@ -47,6 +57,7 @@ public final class LiteralArg extends InsnArg {
 		this.type = type;
 	}
 
+	/** 获取字面量的原始位值 */
 	public long getLiteral() {
 		return literal;
 	}
@@ -66,6 +77,7 @@ public final class LiteralArg extends InsnArg {
 		return literal == 0;
 	}
 
+	/** 是否为整型字面量（int/byte/char/short/long） */
 	public boolean isInteger() {
 		switch (type.getPrimitiveType()) {
 			case INT:
@@ -79,6 +91,7 @@ public final class LiteralArg extends InsnArg {
 		}
 	}
 
+	/** 是否为负数（整型、浮点型或双精度型的负值） */
 	public boolean isNegative() {
 		if (isInteger()) {
 			return literal < 0;
@@ -94,6 +107,7 @@ public final class LiteralArg extends InsnArg {
 		return false;
 	}
 
+	/** 返回取负后的字面量；若类型不支持取负则返回 null */
 	@Nullable
 	public LiteralArg negate() {
 		long neg;
@@ -147,7 +161,7 @@ public final class LiteralArg extends InsnArg {
 			}
 			return '(' + value + ' ' + type + ')';
 		} catch (JadxRuntimeException ex) {
-			// can't convert literal to string
+			// 无法将字面量转换为字符串
 			return "(" + literal + ' ' + type + ')';
 		}
 	}

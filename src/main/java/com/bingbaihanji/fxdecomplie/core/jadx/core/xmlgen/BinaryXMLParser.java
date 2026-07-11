@@ -23,6 +23,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidResource
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ValuesParser;
 
+/**
+ * Android 二进制 XML（AXML）解析器。
+ * <p>
+ * 将编译后的二进制 XML（如 AndroidManifest.xml、layout 等资源）解码还原为可读的文本 XML。
+ * 处理内容包括：字符串池、资源映射表、命名空间、元素与属性、CDATA 等各类数据块，
+ * 并在解码过程中完成属性反混淆、资源引用还原以及类名注解附加等工作。
+ */
 public class BinaryXMLParser extends CommonBinaryParser {
 	private static final Logger LOG = LoggerFactory.getLogger(BinaryXMLParser.class);
 
@@ -61,6 +68,15 @@ public class BinaryXMLParser extends CommonBinaryParser {
 		}
 	}
 
+	/**
+	 * 解析二进制 XML 输入流并生成可读的文本 XML。
+	 * <p>
+	 * 若输入流不是二进制 XML，则直接按普通文本资源加载。
+	 *
+	 * @param inputStream 二进制 XML 输入流
+	 * @return 解码后的代码信息（文本 XML）
+	 * @throws IOException 读取输入流失败时抛出
+	 */
 	public synchronized ICodeInfo parse(InputStream inputStream) throws IOException {
 		resourceIds = null;
 		is = new ParserStream(inputStream);
@@ -77,15 +93,15 @@ public class BinaryXMLParser extends CommonBinaryParser {
 		nsMap = null;
 		definedNamespaces = null;
 		ICodeInfo codeInfo = writer.finish();
-		this.classNameCache = null; // reset class name cache
+		this.classNameCache = null; // 重置类名缓存
 		return codeInfo;
 	}
 
 	private boolean isBinaryXml() throws IOException {
 		is.mark(4);
-		int v = is.readInt16(); // version
-		int h = is.readInt16(); // header size
-		// Some APK Manifest.xml the version is 0
+		int v = is.readInt16(); // 版本号
+		int h = is.readInt16(); // 头部大小
+		// 部分 APK 的 Manifest.xml 版本号为 0
 		if (h == 0x0008) {
 			return true;
 		}
@@ -99,7 +115,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
 			int type = is.readInt16();
 			switch (type) {
 				case RES_NULL_TYPE:
-					// NullType is just doing nothing
+					// 空类型，无需任何处理
 					break;
 				case RES_STRING_POOL_TYPE:
 					strings = parseStringPoolNoType();
@@ -126,7 +142,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
 
 				default:
 					if (namespaceDepth == 0) {
-						// skip padding on file end
+						// 跳过文件末尾的填充字节
 						return;
 					}
 					die("Type: 0x" + Integer.toHexString(type) + " not yet implemented");
@@ -233,13 +249,13 @@ public class BinaryXMLParser extends CommonBinaryParser {
 		if (is.readInt16() != 0x10) {
 			die("ELEMENT HEADER SIZE is not 0x10");
 		}
-		// TODO: Check element chunk size
+		// TODO: 校验元素数据块大小
 		long startPos = is.getPos();
 		int elementSize = is.readInt32();
 		int elementBegLineNumber = is.readInt32();
 		int comment = is.readInt32();
 		int startNS = is.readInt32();
-		int startNSName = is.readInt32(); // actually is elementName...
+		int startNSName = is.readInt32(); // 实际上是元素名称……
 		if (!isLastEnd && !"ERROR".equals(currentTag)) {
 			writer.add('>');
 		}
@@ -303,7 +319,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
 		}
 		String attrName = getValidTagAttributeName(getAttributeName(attributeName));
 		String attrFullName = shortNsName != null ? shortNsName + ":" + attrName : attrName;
-		// do not dump duplicated values
+		// 不输出重复的属性值
 		if (XmlDeobf.isDuplicatedAttr(attrFullName, attrCache)) {
 			return;
 		}
@@ -362,8 +378,8 @@ public class BinaryXMLParser extends CommonBinaryParser {
 				attrName = "ns" + i;
 				if (!nsMapGenerated.contains(attrName) && !nsMap.containsValue(attrName)) {
 					nsMapGenerated.add(attrName);
-					// do not add generated value to nsMap
-					// because attrUrl might be used in a neighbor element, but never defined
+					// 不将生成的值加入 nsMap，
+					// 因为该 attrUrl 可能被相邻元素使用，但从未被真正定义
 					break;
 				}
 			}
@@ -378,14 +394,14 @@ public class BinaryXMLParser extends CommonBinaryParser {
 	}
 
 	private String getAttributeName(int id) {
-		// As the outcome of https://github.com/skylot/jadx/issues/1208
-		// Android seems to favor entries from AndroidResMap and only if
-		// there is no entry uses the values form the XML string pool
+		// 根据 https://github.com/skylot/jadx/issues/1208 的结论：
+		// Android 似乎优先使用 AndroidResMap 中的条目，
+		// 仅当其中不存在对应条目时才使用 XML 字符串池中的值
 		if (resourceIds != null && 0 <= id && id < resourceIds.length) {
 			int resId = resourceIds[id];
 			String str = AndroidResourcesMap.getResName(resId);
 			if (str != null) {
-				// cut type before /
+				// 去掉 '/' 之前的类型前缀
 				int typeEnd = str.indexOf('/');
 				if (typeEnd != -1) {
 					return str.substring(typeEnd + 1);
@@ -410,7 +426,7 @@ public class BinaryXMLParser extends CommonBinaryParser {
 
 	private void decodeAttribute(int attributeNS, int attrValDataType, int attrValData, String attrFullName) {
 		if (attrValDataType == TYPE_REFERENCE) {
-			// reference custom processing
+			// 引用类型的自定义处理
 			String resName = resNames.get(attrValData);
 			if (resName != null) {
 				writer.add('@');

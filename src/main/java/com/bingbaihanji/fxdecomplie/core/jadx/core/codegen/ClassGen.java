@@ -25,7 +25,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.AccessFlags
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodeGenUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -53,21 +53,39 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidResource
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.CodegenException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
+/**
+ * 类代码生成器。
+ * <p>
+ * 负责将 {@link ClassNode} 中间表示生成为 Java 源码文本，包括包声明、导入语句、类声明、
+ * 字段、方法、内部类以及枚举字段等。同时管理导入集合、类型/类名的书写方式（短名或全名）
+ * 与导入冲突检测。内部类通过创建带 parentGen 的子 ClassGen 递归生成，导入统一汇聚到顶层。
+ */
 public class ClassGen {
 
+	/** 当前正在生成的类节点 */
 	private final ClassNode cls;
+	/** 父类生成器（用于内部类场景），顶层类为 null */
 	private final ClassGen parentGen;
+	/** 注解生成器 */
 	private final AnnotationGen annotationGen;
+	/** 是否为回退（fallback）模式，回退模式使用全限定名且不做导入优化 */
 	private final boolean fallback;
+	/** 是否使用 import 简化类名 */
 	private final boolean useImports;
+	/** 是否显示不一致（反编译异常）的代码 */
 	private final boolean showInconsistentCode;
+	/** 整数字面量的输出格式（十进制/十六进制等） */
 	private final IntegerFormat integerFormat;
 
+	/** 当前类收集到的导入集合 */
 	private final Set<ClassInfo> imports = new HashSet<>();
+	/** 类声明结束时在代码写入器中的偏移量，用于判断类体是否为空 */
 	private int clsDeclOffset;
 
+	/** 类体代码是否已开始生成 */
 	private boolean bodyGenStarted;
 
+	/** 外层名称生成器（匿名内部类内联时用于继承外层已用变量名） */
 	@Nullable
 	private NameGen outerNameGen;
 
@@ -96,6 +114,15 @@ public class ClassGen {
 		return cls;
 	}
 
+	/**
+	 * 生成完整的类源码。
+	 * <p>
+	 * 先生成类体，再依次拼接包声明、导入语句和类体，返回带元数据的代码信息。
+	 * 若类为 package-info 则走 {@link #makePackageInfo()} 分支。
+	 *
+	 * @return 生成的代码信息
+	 * @throws CodegenException 代码生成失败时抛出
+	 */
 	public ICodeInfo makeClass() throws CodegenException {
 		if (cls.contains(AFlag.PACKAGE_INFO)) {
 			return makePackageInfo();
@@ -153,20 +180,28 @@ public class ClassGen {
 		if (cls.contains(AFlag.DONT_GENERATE)) {
 			return;
 		}
-		if (Consts.DEBUG_USAGE) {
+		if (false) {
 			addClassUsageInfo(code, cls);
 		}
 		addClassDeclaration(code);
 		addClassBody(code);
 	}
 
+	/**
+	 * 生成类的声明部分。
+	 * <p>
+	 * 包含注释、注解、访问修饰符、class/interface/enum 关键字、类名、泛型参数、
+	 * 父类（extends）与实现接口（implements）等。
+	 *
+	 * @param clsCode 代码写入器
+	 */
 	public void addClassDeclaration(ICodeWriter clsCode) {
 		AccessInfo af = cls.getAccessFlags();
 		if (af.isInterface()) {
 			af = af.remove(AccessFlags.ABSTRACT)
 					.remove(AccessFlags.STATIC);
 		}
-		// 'static' and 'private' modifier not allowed for top classes (not inner)
+		// 顶层类（非内部类）不允许使用 'static' 和 'private' 修饰符
 		if (!cls.getClassInfo().isInner()) {
 			af = af.remove(AccessFlags.STATIC).remove(AccessFlags.PRIVATE);
 		}
@@ -223,6 +258,14 @@ public class ClassGen {
 		}
 	}
 
+	/**
+	 * 生成泛型类型参数列表，形如 {@code <T, K extends A & B>}。
+	 *
+	 * @param code             代码写入器
+	 * @param generics         泛型参数列表
+	 * @param classDeclaration 是否为类声明处（类声明处会为上界类型补充导入）
+	 * @return 若生成了泛型参数返回 true，否则返回 false
+	 */
 	public boolean addGenericTypeParameters(ICodeWriter code, List<ArgType> generics, boolean classDeclaration) {
 		if (generics == null || generics.isEmpty()) {
 			return false;
@@ -264,13 +307,22 @@ public class ClassGen {
 		return true;
 	}
 
+	/**
+	 * 生成类体（花括号内的内容），字段、内部类与方法。
+	 *
+	 * @param clsCode 代码写入器
+	 * @throws CodegenException 代码生成失败时抛出
+	 */
 	public void addClassBody(ICodeWriter clsCode) throws CodegenException {
 		addClassBody(clsCode, false);
 	}
 
 	/**
-	 * @param printClassName allows to print the original class name as comment (e.g. for inlined
-	 *                       classes)
+	 * 生成类体（花括号内的内容）。
+	 *
+	 * @param clsCode        代码写入器
+	 * @param printClassName 是否将原始类名作为注释输出（例如用于内联类）
+	 * @throws CodegenException 代码生成失败时抛出
 	 */
 	public void addClassBody(ICodeWriter clsCode, boolean printClassName) throws CodegenException {
 		clsCode.add('{');
@@ -305,7 +357,7 @@ public class ClassGen {
 		if (fallback) {
 			return false;
 		}
-		if (Consts.DEBUG_ATTRIBUTES) {
+		if (false) {
 			if (node.contains(AType.JADX_COMMENTS)) {
 				return false;
 			}
@@ -354,11 +406,11 @@ public class ClassGen {
 	}
 
 	/**
-	 * Additional checks for inlined methods
+	 * 内联方法的附加检查，判断是否应跳过该方法的代码生成。
 	 */
 	private boolean skipMethod(MethodNode mth) {
 		if (cls.root().getArgs().getDecompilationMode().isSpecial()) {
-			// show all methods for special decompilation modes
+			// 特殊反编译模式下显示所有方法
 			return false;
 		}
 		MethodInlineAttr inlineAttr = mth.get(AType.METHOD_INLINE);
@@ -380,7 +432,7 @@ public class ClassGen {
 			mth.addDebugComment("Method not inlined, still used in: " + useInCompleted);
 			return false;
 		} catch (Exception e) {
-			// check failed => keep method
+			// 检查失败 => 保留该方法
 			mth.addWarnComment("Failed to check method usage", e);
 			return false;
 		}
@@ -395,6 +447,16 @@ public class ClassGen {
 		return false;
 	}
 
+	/**
+	 * 生成单个方法的完整代码（方法定义 + 方法体）。
+	 * <p>
+	 * 无代码的方法（抽象/接口方法）只生成定义并以分号结尾；对于代码异常、回退模式或
+	 * 标记不一致的方法使用回退方式生成方法体。
+	 *
+	 * @param code 代码写入器
+	 * @param mth  方法节点
+	 * @throws CodegenException 代码生成失败时抛出
+	 */
 	public void addMethodCode(ICodeWriter code, MethodNode mth) throws CodegenException {
 		CodeGenUtils.addErrorsAndComments(code, mth);
 		if (mth.isNoCode()) {
@@ -431,6 +493,12 @@ public class ClassGen {
 		}
 	}
 
+	/**
+	 * 生成单个字段的代码，包含注释、注解、访问修饰符、类型、字段名以及初始化值/常量值。
+	 *
+	 * @param code 代码写入器
+	 * @param f    字段节点
+	 */
 	public void addField(ICodeWriter code, FieldNode f) {
 		if (f.contains(AFlag.DONT_GENERATE)) {
 			return;
@@ -441,7 +509,7 @@ public class ClassGen {
 				|| f.getFieldInfo().hasAlias()) {
 			code.newLine();
 		}
-		if (Consts.DEBUG_USAGE) {
+		if (false) {
 			addFieldUsageInfo(code, f);
 		}
 		CodeGenUtils.addComments(code, f);
@@ -485,7 +553,7 @@ public class ClassGen {
 		if (integerFormat != IntegerFormat.DECIMAL && AndroidResourcesUtils.isResourceFieldValue(cls, type)) {
 			return String.format("0x%08x", lit);
 		}
-		// force literal type to be same as field (java bytecode can use different type)
+		// 强制字面量类型与字段类型一致（Java 字节码可能使用不同的类型）
 		return TypeGen.literalToString(lit, type, cls, fallback);
 	}
 
@@ -560,6 +628,12 @@ public class ClassGen {
 		}
 	}
 
+	/**
+	 * 将类型写入代码，自动处理基本类型、对象类型、数组类型与泛型类型。
+	 *
+	 * @param code 代码写入器
+	 * @param type 待写入的类型
+	 */
 	public void useType(ICodeWriter code, ArgType type) {
 		PrimitiveType stype = type.getPrimitiveType();
 		if (stype == null) {
@@ -578,10 +652,22 @@ public class ClassGen {
 		}
 	}
 
+	/**
+	 * 按原始类名（内部形式）写入类引用。
+	 *
+	 * @param code   代码写入器
+	 * @param rawCls 原始类名
+	 */
 	public void useClass(ICodeWriter code, String rawCls) {
 		useClass(code, ArgType.object(rawCls));
 	}
 
+	/**
+	 * 按类型写入类引用，处理外部类、内部类嵌套与泛型信息。
+	 *
+	 * @param code 代码写入器
+	 * @param type 类类型
+	 */
 	public void useClass(ICodeWriter code, ArgType type) {
 		ArgType outerType = type.getOuterType();
 		if (outerType != null) {
@@ -683,7 +769,7 @@ public class ClassGen {
 			return shortName;
 		}
 		if (extClsInfo.getAliasPkg().isEmpty()) {
-			// omit import for default package
+			// 默认包不生成 import
 			return shortName;
 		}
 		if (isClassInnerFor(useCls, extClsInfo)) {
@@ -699,13 +785,13 @@ public class ClassGen {
 		if (isBothClassesInOneTopClass(useCls, extClsInfo)) {
 			return shortName;
 		}
-		// don't add import for top classes from 'java.lang' package (subpackages excluded)
+		// java.lang 包下的顶层类不生成 import（不含子包）
 		if ("java.lang".equals(extClsInfo.getPackage()) && extClsInfo.getParentClass() == null) {
 			return shortName;
 		}
 		if (extClsInfo.getAliasPkg().equals(useCls.getAliasPkg())) {
 			if (!extClsInfo.isInner()) {
-				// don't add import if this class from same package
+				// 同一个包下的类不生成 import
 				return shortName;
 			}
 			fullName = extClsInfo.getAliasNameWithoutPackage();
@@ -744,7 +830,7 @@ public class ClassGen {
 			if (top != extClsInfo) {
 				String usedName = useClassInternal(useCls, top);
 				if (!usedName.equals(top.getAliasShortName())) {
-					// short top name can't be used, use full name as fallback
+					// 无法使用顶层类短名时，回退使用全限定名
 					return extClsInfo.getAliasFullName();
 				}
 			} else {
@@ -776,7 +862,7 @@ public class ClassGen {
 		if (a != null) {
 			return a.equals(b);
 		}
-		// useCls - is a top class
+		// useCls - 本身即为顶层类
 		return useCls.equals(b);
 	}
 
@@ -809,12 +895,12 @@ public class ClassGen {
 	}
 
 	/**
-	 * Check if class with same name exists in current package
+	 * 检查当前包中是否已存在同名的类。
 	 */
 	private static boolean checkInPackageCollision(RootNode root, ClassInfo useCls, ClassInfo searchCls) {
 		String currentPkg = useCls.getAliasPkg();
 		if (currentPkg.equals(searchCls.getAliasPkg())) {
-			// search class already from current package
+			// 待查找的类已经属于当前包
 			return false;
 		}
 		String shortName = searchCls.getAliasShortName();

@@ -66,11 +66,10 @@ public class JadxCodeRef implements IJavaCodeRef {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof JadxCodeRef)) {
+		if (!(o instanceof JadxCodeRef other)) {
 			return false;
 		}
-		JadxCodeRef other = (JadxCodeRef) o;
-		return getIndex() == other.getIndex()
+        return getIndex() == other.getIndex()
 				&& getAttachType() == other.getAttachType();
 	}
 

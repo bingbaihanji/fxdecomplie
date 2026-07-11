@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.clsp.ClspClass;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.ArithNode;
@@ -37,6 +37,13 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinfer
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.REJECT;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeUpdateResult.SAME;
 
+/**
+ * 类型更新器，负责在类型推断过程中对 SSA 变量及其相关指令参数执行类型检查和类型传播。
+ * <p>
+ * 当某个变量的类型发生变化时，会通过监听器机制将类型变更传播到所有相关的指令和变量上，
+ * 同时通过边界检查和类型比较确保类型更新的正确性。
+ * </p>
+ */
 public final class TypeUpdate {
 	private static final Logger LOG = LoggerFactory.getLogger(TypeUpdate.class);
 
@@ -45,6 +52,11 @@ public final class TypeUpdate {
 	private final TypeCompare comparator;
 	private final JadxArgs args;
 
+	/**
+	 * 构造类型更新器
+	 *
+	 * @param root 根节点，提供全局的类路径信息和编译参数
+	 */
 	public TypeUpdate(RootNode root) {
 		this.root = root;
 		this.args = root.getArgs();
@@ -53,26 +65,29 @@ public final class TypeUpdate {
 	}
 
 	/**
-	 * Perform type checking and type propagation for all related variables
+	 * 对所有相关变量执行类型检查和类型传播
 	 */
 	public TypeUpdateResult apply(MethodNode mth, SSAVar ssaVar, ArgType candidateType) {
 		return apply(mth, ssaVar, candidateType, TypeUpdateFlags.FLAGS_EMPTY);
 	}
 
 	/**
-	 * Allow wider types for apply from debug info and some special cases
+	 * 允许更宽泛的类型，用于从调试信息和某些特殊情况中应用类型
 	 */
 	public TypeUpdateResult applyWithWiderAllow(MethodNode mth, SSAVar ssaVar, ArgType candidateType) {
 		return apply(mth, ssaVar, candidateType, TypeUpdateFlags.FLAGS_WIDER);
 	}
 
 	/**
-	 * Force type setting
+	 * 强制设置类型，即使当前类型相同也会重新应用
 	 */
 	public TypeUpdateResult applyWithWiderIgnSame(MethodNode mth, SSAVar ssaVar, ArgType candidateType) {
 		return apply(mth, ssaVar, candidateType, TypeUpdateFlags.FLAGS_WIDER_IGNORE_SAME);
 	}
 
+	/**
+	 * 从调试信息中应用类型，允许更宽泛的类型匹配
+	 */
 	public TypeUpdateResult applyDebugInfo(MethodNode mth, SSAVar ssaVar, ArgType candidateType) {
 		return apply(mth, ssaVar, candidateType, TypeUpdateFlags.FLAGS_APPLY_DEBUG);
 	}
@@ -82,7 +97,7 @@ public final class TypeUpdate {
 			if (candidateType == null || !candidateType.isTypeKnown()) {
 				return REJECT;
 			}
-			if (Consts.DEBUG_TYPE_INFERENCE) {
+			if (false) {
 				LOG.debug("Start type update for {} to {}", ssaVar.toShortString(), candidateType);
 			}
 			TypeUpdateInfo updateInfo = new TypeUpdateInfo(mth, flags, args);
@@ -96,7 +111,7 @@ public final class TypeUpdate {
 			if (updateInfo.isEmpty()) {
 				return SAME;
 			}
-			if (Consts.DEBUG_TYPE_INFERENCE) {
+			if (false) {
 				LOG.debug("Applying type {} to {}:", candidateType, ssaVar.toShortString());
 				updateInfo.getSortedUpdates().forEach(upd -> LOG.debug("  {} -> {} in {}",
 						upd.getType(), upd.getArg().toShortString(), upd.getArg().getParentInsn()));
@@ -127,9 +142,9 @@ public final class TypeUpdate {
 			}
 			updateInfo.saveCallback(request);
 			if (newResult == null) {
-				// no result: continue
+				// 无结果，继续处理下一个请求
 			} else {
-				// propagate result back through callbacks
+				// 将结果通过回调链向上传播
 				result = processCallbacks(updateInfo, newResult);
 			}
 		}
@@ -145,29 +160,29 @@ public final class TypeUpdate {
 			ITypeUpdateCallback callback = Objects.requireNonNull(cbReq.getCallback());
 			current = callback.updateCallback(current);
 			if (current == null) {
-				// no result, put callback back into queue
-				// so it can be executed once result is calculated
+				// 无结果，将回调重新放回队列
+				// 等待结果计算完成后再执行
 				updateInfo.saveCallback(cbReq);
 				return null;
 			}
 			if (current == REJECT) {
 				updateInfo.rollbackUpdate(cbReq.getArg());
 			}
-			// proceed to next callback
+			// 继续处理下一个回调
 		}
 	}
 
 	/**
-	 * Queue type update for InsnArg.
+	 * 为 InsnArg（指令参数）排队一个类型更新请求。
 	 *
-	 * @param callback - will be executed when result for this update is calculated,
-	 *                 can be null - callback will pass result without change
-	 * @return null if update added into queue, non-null result if not queued (verify failed)
+	 * @param callback 当此更新的结果计算完成后执行的回调，
+	 *                 可以为 null —— 此时回调将原样传递结果不做改变
+	 * @return 如果更新已加入队列则返回 null；如果未入队（校验失败）则返回非空结果
 	 */
 	public @Nullable TypeUpdateResult queueTypeUpdate(TypeUpdateInfo updateInfo,
 			InsnArg arg, ArgType candidateType, @Nullable ITypeUpdateCallback callback) {
-		// verify can be done in queue processing before request run, but kept here for faster processing
-		// this might increase code complexity because result should be checked for null every time
+		// 校验本可以在队列处理时、请求运行前完成，但这里提前执行以加快处理速度
+		// 这可能会增加代码复杂度，因为每次都需要检查结果是否为 null
 		TypeUpdateResult res = verifyType(updateInfo, arg, candidateType);
 		if (res != null) {
 			if (callback == null) {
@@ -183,6 +198,12 @@ public final class TypeUpdate {
 		return null;
 	}
 
+	/**
+	 * 排队一个直接类型更新请求（不经过校验，标记为 direct）。
+	 *
+	 * @param callback 结果计算完成后执行的回调，可以为 null
+	 * @return 恒返回 null（请求已加入队列）
+	 */
 	public @Nullable TypeUpdateResult queueDirectTypeUpdate(TypeUpdateInfo updateInfo, InsnArg arg, ArgType candidateType,
 			@Nullable ITypeUpdateCallback callback) {
 		updateInfo.queueRequest(new TypeUpdateRequest(arg, candidateType, true, callback));
@@ -190,7 +211,7 @@ public final class TypeUpdate {
 	}
 
 	private TypeUpdateResult updateTypeForArg(TypeUpdateInfo updateInfo, InsnArg arg, ArgType candidateType) {
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.debug("-> update type for: {} to {}", arg, candidateType);
 		}
 		if (arg instanceof RegisterArg) {
@@ -215,7 +236,7 @@ public final class TypeUpdate {
 			}
 		} else {
 			if (candidateType.isWildcard()) {
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug("Wildcard type rejected for {}: candidate={}, current={}", arg, candidateType, currentType);
 				}
 				return REJECT;
@@ -223,7 +244,7 @@ public final class TypeUpdate {
 
 			TypeCompareEnum compareResult = comparator.compareTypes(candidateType, currentType);
 			if (compareResult.isConflict()) {
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug("Type rejected for {}: candidate={} in conflict with current={}", arg, candidateType, currentType);
 				}
 				return REJECT;
@@ -232,32 +253,32 @@ public final class TypeUpdate {
 				return REJECT;
 			}
 			if (arg.isTypeImmutable() && currentType != ArgType.UNKNOWN) {
-				// don't changed type
+				// 不改变类型
 				if (compareResult == TypeCompareEnum.EQUAL) {
 					return SAME;
 				}
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug("Type rejected for {} due to conflict: candidate={}, current={}", arg, candidateType, currentType);
 				}
 				return REJECT;
 			}
 			if (compareResult == TypeCompareEnum.WIDER_BY_GENERIC && typeUpdateFlags.isKeepGenerics()) {
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug("Type rejected for {}: candidate={} is removing generic from current={}", arg, candidateType, currentType);
 				}
 				return REJECT;
 			}
 			if (compareResult.isWider() && !typeUpdateFlags.isAllowWider()) {
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug("Type rejected for {}: candidate={} is wider than current={}", arg, candidateType, currentType);
 				}
 				return REJECT;
 			}
 			if (candidateType.containsTypeVariable()) {
-				// reject unknown type vars
+				// 拒绝未知的类型变量
 				ArgType unknownTypeVar = root.getTypeUtils().checkForUnknownTypeVars(updateInfo.getMth(), candidateType);
 				if (unknownTypeVar != null) {
-					if (Consts.DEBUG_TYPE_INFERENCE) {
+					if (false) {
 						LOG.debug("Type rejected for {}: candidate: '{}' has unknown type var: '{}'", arg, candidateType, unknownTypeVar);
 					}
 					return REJECT;
@@ -271,7 +292,7 @@ public final class TypeUpdate {
 		TypeInfo typeInfo = ssaVar.getTypeInfo();
 		ArgType immutableType = ssaVar.getImmutableType();
 		if (immutableType != null && !Objects.equals(immutableType, candidateType)) {
-			if (Consts.DEBUG_TYPE_INFERENCE) {
+			if (false) {
 				LOG.info("Reject change immutable type {} to {} for {}", immutableType, candidateType, ssaVar);
 			}
 			return REJECT;
@@ -282,7 +303,7 @@ public final class TypeUpdate {
 		var updateCallback = new ArgsListUpdateCallback<>(this, updateInfo, ssaVar.getUseList(), candidateType, true);
 		updateCallback.setFinalResultCallback(result -> {
 			if (result == REJECT) {
-				// rollback update for all registers in current SSA var
+				// 回滚当前 SSA 变量中所有寄存器的更新
 				updateInfo.rollbackUpdate(ssaVar.getAssign());
 				ssaVar.getUseList().forEach(updateInfo::rollbackUpdate);
 			}
@@ -304,7 +325,7 @@ public final class TypeUpdate {
 		if (listener == null) {
 			return CHANGED;
 		}
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.debug("Run listener for insn: {}, arg: {}, type: {}", insn.getType(), arg, candidateType);
 		}
 		return listener.update(updateInfo, insn, arg, candidateType);
@@ -329,7 +350,7 @@ public final class TypeUpdate {
 				boundType = bound.getType();
 			}
 			if (boundType != null && !checkBound(candidateType, bound, boundType)) {
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug("Reject type '{}' for {} by bound: {} from {}", candidateType, ssaVar, boundType, bound);
 				}
 				return false;
@@ -355,8 +376,8 @@ public final class TypeUpdate {
 
 			case WIDER_BY_GENERIC:
 			case NARROW_BY_GENERIC:
-				// allow replace object to same object with known generic type
-				// due to incomplete information about external methods and fields
+				// 允许将对象替换为带已知泛型类型的同一对象
+				// 因为对外部方法和字段的信息不完整
 				return true;
 
 			case CONFLICT:
@@ -413,7 +434,7 @@ public final class TypeUpdate {
 	private TypeUpdateResult invokeListener(TypeUpdateInfo updateInfo, InsnNode insn, InsnArg arg, ArgType candidateType) {
 		BaseInvokeNode invoke = (BaseInvokeNode) insn;
 		if (isAssign(invoke, arg)) {
-			// TODO: implement backward type propagation (from result to instance)
+			// TODO: 实现反向类型传播（从结果传播到实例）
 			return SAME;
 		}
 		if (invoke.getInstanceArg() == arg) {
@@ -432,11 +453,11 @@ public final class TypeUpdate {
 			Supplier<ArgType> getReturnType;
 			Function<Integer, ArgType> getArgType;
 			if (typeVarsMap.isEmpty()) {
-				// generics can't be resolved => use as is
+				// 泛型无法解析 => 按原样使用
 				getReturnType = () -> returnType;
 				getArgType = argTypes::get;
 			} else {
-				// resolve types before apply
+				// 应用前先解析类型
 				getReturnType = () -> typeUtils.replaceTypeVariablesUsingMap(returnType, typeVarsMap);
 				getArgType = argNum -> typeUtils.replaceClassGenerics(candidateType, argTypes.get(argNum));
 			}
@@ -461,13 +482,13 @@ public final class TypeUpdate {
 		boolean assignChanged = isAssign(insn, arg);
 		InsnArg changeArg = assignChanged ? insn.getArg(0) : insn.getResult();
 
-		// allow result to be wider
+		// 允许结果类型更宽
 		TypeCompareEnum cmp = comparator.compareTypes(candidateType, changeArg.getType());
 		boolean correctType = cmp.isEqual() || (assignChanged ? cmp.isWider() : cmp.isNarrow());
 
 		return queueTypeUpdate(updateInfo, changeArg, candidateType, result -> {
 			if (result == SAME && !correctType) {
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug("Move insn types mismatch: {} -> {}, change arg: {}, insn: {}",
 							candidateType, changeArg.getType(), changeArg, insn);
 				}
@@ -481,13 +502,13 @@ public final class TypeUpdate {
 	}
 
 	/**
-	 * All args must have same types
+	 * 所有参数必须具有相同的类型
 	 */
 	private TypeUpdateResult allSameListener(TypeUpdateInfo updateInfo, InsnNode insn, InsnArg arg, ArgType candidateType) {
 		if (!isAssign(insn, arg)) {
 			return queueTypeUpdate(updateInfo, insn.getResult(), candidateType, null);
 		}
-		// update args with same type
+		// 更新参数为相同类型
 		var updateCallback = new ArgsListUpdateCallback<>(this, updateInfo, insn.getArgList(), candidateType, false);
 		updateCallback.setArgsFilter(a -> a != arg);
 		return updateCallback.runFirstQueue();
@@ -496,14 +517,14 @@ public final class TypeUpdate {
 	private TypeUpdateResult arithListener(TypeUpdateInfo updateInfo, InsnNode insn, InsnArg arg, ArgType candidateType) {
 		ArithNode arithInsn = (ArithNode) insn;
 		if (candidateType == ArgType.BOOLEAN && arithInsn.getOp().isBitOp()) {
-			// force all args to boolean
+			// 强制所有参数为 boolean
 			return allSameListener(updateInfo, insn, arg, candidateType);
 		}
 		return suggestAllSameListener(updateInfo, insn, arg, candidateType);
 	}
 
 	/**
-	 * Try to set candidate type to all args, don't fail on reject
+	 * 尝试将候选类型设置到所有参数上，遇到拒绝时不失败
 	 */
 	private TypeUpdateResult suggestAllSameListener(TypeUpdateInfo updateInfo, InsnNode insn, InsnArg arg, ArgType candidateType) {
 		var updateCallback = new ArgsListUpdateCallback<>(this, updateInfo, insn.getArgList(), candidateType, false);
@@ -512,11 +533,11 @@ public final class TypeUpdate {
 		if (!isAssign(insn, arg)) {
 			RegisterArg resultArg = insn.getResult();
 			if (resultArg != null) {
-				// start with result
+				// 从结果开始
 				return queueTypeUpdate(updateInfo, resultArg, candidateType, updateCallback);
 			}
 		}
-		// start with first arg
+		// 从第一个参数开始
 		return updateCallback.runFirstQueue();
 	}
 
@@ -530,7 +551,7 @@ public final class TypeUpdate {
 		ArgType castType = (ArgType) checkCast.getIndex();
 		TypeCompareEnum res = comparator.compareTypes(candidateType, castType);
 		if (res == TypeCompareEnum.CONFLICT) {
-			// allow casting one interface to another
+			// 允许将一个接口强转为另一个接口
 			if (!isInterfaces(candidateType, castType)) {
 				return REJECT;
 			}
@@ -541,7 +562,7 @@ public final class TypeUpdate {
 			}
 		}
 		if (res == TypeCompareEnum.NARROW_BY_GENERIC && candidateType.containsGeneric()) {
-			// propagate generic type to result
+			// 将泛型类型传播到结果
 			return queueTypeUpdate(updateInfo, checkCast.getResult(), candidateType, null);
 		}
 		ArgType currentType = checkCast.getArg(0).getType();
@@ -574,7 +595,7 @@ public final class TypeUpdate {
 					if (arrType.isTypeKnown() && arrType.isArray() && arrType.getArrayElement().isPrimitive()) {
 						TypeCompareEnum compResult = comparator.compareTypes(candidateType, arrType.getArrayElement());
 						if (compResult == TypeCompareEnum.WIDER) {
-							// allow implicit upcast for primitive types (int a = byteArr[n])
+							// 允许基本类型的隐式向上转型（int a = byteArr[n]）
 							return CHANGED;
 						}
 					}
@@ -594,7 +615,7 @@ public final class TypeUpdate {
 					if (resType.isTypeKnown() && resType.isPrimitive()) {
 						TypeCompareEnum compResult = comparator.compareTypes(resType, arrayElement);
 						if (compResult == TypeCompareEnum.WIDER) {
-							// allow implicit upcast for primitive types (int a = byteArr[n])
+							// 允许基本类型的隐式向上转型（int a = byteArr[n]）
 							return CHANGED;
 						}
 					}
@@ -602,7 +623,7 @@ public final class TypeUpdate {
 				return result;
 			});
 		}
-		// index argument
+		// 索引参数
 		return SAME;
 	}
 
@@ -620,7 +641,7 @@ public final class TypeUpdate {
 					if (putType.isTypeKnown()) {
 						TypeCompareEnum compResult = comparator.compareTypes(arrayElement, putType);
 						if (compResult == TypeCompareEnum.WIDER || compResult == TypeCompareEnum.WIDER_BY_GENERIC) {
-							// allow wider result (i.e. allow put any objects in Object[] or byte in int[])
+							// 允许更宽的结果（即允许把任意对象放入 Object[]，或把 byte 放入 int[]）
 							return CHANGED;
 						}
 					}
@@ -631,7 +652,7 @@ public final class TypeUpdate {
 		if (arrArg == putArg) {
 			return queueTypeUpdate(updateInfo, arrArg, ArgType.array(candidateType), null);
 		}
-		// index
+		// 索引
 		return SAME;
 	}
 
@@ -641,7 +662,7 @@ public final class TypeUpdate {
 		InsnArg updateArg = firstArg == arg ? secondArg : firstArg;
 		return queueTypeUpdate(updateInfo, updateArg, candidateType, result -> {
 			if (result == REJECT) {
-				// soft checks for objects and array - exact type not compared
+				// 对对象和数组做宽松检查 —— 不比较精确类型
 				ArgType updateArgType = updateArg.getType();
 				if (candidateType.isObject() && updateArgType.canBeObject()) {
 					return SAME;
@@ -666,6 +687,11 @@ public final class TypeUpdate {
 		return insn.getResult() == arg;
 	}
 
+	/**
+	 * 返回内部使用的类型比较器
+	 *
+	 * @return {@link TypeCompare} 实例
+	 */
 	public TypeCompare getTypeCompare() {
 		return comparator;
 	}

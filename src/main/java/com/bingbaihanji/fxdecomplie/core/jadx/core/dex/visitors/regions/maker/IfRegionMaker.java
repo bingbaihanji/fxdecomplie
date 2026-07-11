@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.EdgeInsnAttr;
@@ -193,7 +193,7 @@ final class IfRegionMaker {
 		boolean badThen = isBadBranchBlock(info, thenBlock);
 		boolean badElse = isBadBranchBlock(info, elseBlock);
 		if (badThen && badElse) {
-			if (Consts.DEBUG_RESTRUCTURE) {
+			if (false) {
 				LOG.debug("Stop processing blocks after 'if': {}, method: {}", info.getMergedBlocks(), mth);
 			}
 			return null;

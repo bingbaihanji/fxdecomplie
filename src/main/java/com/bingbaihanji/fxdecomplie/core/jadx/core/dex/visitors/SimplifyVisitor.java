@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.TypeGen;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -323,8 +323,8 @@ public class SimplifyVisitor extends AbstractVisitor {
 	private static InsnNode convertInvoke(MethodNode mth, InvokeNode insn) {
 		MethodInfo callMth = insn.getCallMth();
 
-		if (callMth.getDeclClass().getFullName().equals(Consts.CLASS_STRING_BUILDER)
-				&& callMth.getShortId().equals(Consts.MTH_TOSTRING_SIGNATURE)) {
+		if (callMth.getDeclClass().getFullName().equals(JadxConsts.CLASS_STRING_BUILDER)
+				&& callMth.getShortId().equals(JadxConsts.MTH_TOSTRING_SIGNATURE)) {
 			InsnArg instanceArg = insn.getArg(0);
 			if (instanceArg.isInsnWrap()) {
 				// Convert 'new StringBuilder(xxx).append(yyy).append(zzz).toString() to STRING_CONCAT insn
@@ -542,7 +542,7 @@ public class SimplifyVisitor extends AbstractVisitor {
 	private static InsnArg getArgFromAppend(InsnNode chainInsn) {
 		if (chainInsn.getType() == InsnType.INVOKE && chainInsn.getArgsCount() == 2) {
 			MethodInfo callMth = ((InvokeNode) chainInsn).getCallMth();
-			if (callMth.getDeclClass().getFullName().equals(Consts.CLASS_STRING_BUILDER)
+			if (callMth.getDeclClass().getFullName().equals(JadxConsts.CLASS_STRING_BUILDER)
 					&& "append".equals(callMth.getName())) {
 				return chainInsn.getArg(1);
 			}

@@ -8,7 +8,7 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.BaseInvokeNode;
@@ -84,7 +84,7 @@ public class MethodInvokeVisitor extends AbstractVisitor {
 		}
 		IMethodDetails mthDetails = root.getMethodUtils().getMethodDetails(invokeInsn);
 		if (mthDetails == null) {
-			if (Consts.DEBUG) {
+			if (false) {
 				parentMth.addDebugComment("Method info not found: " + callMth);
 			}
 			processUnknown(invokeInsn);
@@ -190,7 +190,7 @@ public class MethodInvokeVisitor extends AbstractVisitor {
 						IndexInsnNode wrapInsn = (IndexInsnNode) ((InsnWrapArg) arg).getWrapInsn();
 						wrapInsn.updateIndex(castType);
 					} else {
-						if (Consts.DEBUG_TYPE_INFERENCE) {
+						if (false) {
 							LOG.info("Insert cast for invoke insn arg: {}, insn: {}", arg, invokeInsn);
 						}
 						InsnNode castInsn = new IndexInsnNode(InsnType.CAST, castType, 1);
@@ -286,7 +286,7 @@ public class MethodInvokeVisitor extends AbstractVisitor {
 		if (argsCount == 1) {
 			return mthDetails.getArgTypes();
 		}
-		if (Consts.DEBUG_OVERLOADED_CASTS) {
+		if (false) {
 			// TODO: try to minimize casts count
 			parentMth.addDebugComment("Failed to find minimal casts for resolve overloaded methods, cast all args instead"
 					+ "\n method: " + mthDetails

@@ -67,17 +67,32 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidResourcesUtils.handleAppResField;
 
+/**
+ * 指令代码生成器。
+ * <p>
+ * 负责将单条 {@link InsnNode} 指令生成为 Java 源码表达式或语句，是代码生成的核心。
+ * 覆盖字段访问、方法调用、构造器、算术/三元/类型转换、数组操作、Lambda/方法引用、
+ * varargs 展开等各种指令类型；对无法在正常模式生成的指令仅在回退（fallback）模式下输出。
+ */
 public class InsnGen {
 	private static final Logger LOG = LoggerFactory.getLogger(InsnGen.class);
 
+	/** 所属方法的代码生成器 */
 	protected final MethodGen mgen;
+	/** 当前方法节点 */
 	protected final MethodNode mth;
+	/** 根节点 */
 	protected final RootNode root;
+	/** 是否为回退（fallback）模式 */
 	protected final boolean fallback;
 
+	/** 指令生成标志 */
 	protected enum Flags {
+		/** 仅生成主体（需要时可加括号包裹） */
 		BODY_ONLY,
+		/** 仅生成主体且不额外包裹括号 */
 		BODY_ONLY_NOWRAP,
+		/** 内联生成 */
 		INLINE
 	}
 
@@ -92,6 +107,13 @@ public class InsnGen {
 		return fallback;
 	}
 
+	/**
+	 * 将参数写入代码，若确实写出了内容则在其后追加一个点号（{@code .}），用于字段/方法访问链。
+	 *
+	 * @param code 代码写入器
+	 * @param arg  参数
+	 * @throws CodegenException 生成失败时抛出
+	 */
 	public void addArgDot(ICodeWriter code, InsnArg arg) throws CodegenException {
 		int len = code.getLength();
 		addArg(code, arg, true);
@@ -100,14 +122,37 @@ public class InsnGen {
 		}
 	}
 
+	/**
+	 * 将参数写入代码（默认允许包裹）。
+	 *
+	 * @param code 代码写入器
+	 * @param arg  参数
+	 * @throws CodegenException 生成失败时抛出
+	 */
 	public void addArg(ICodeWriter code, InsnArg arg) throws CodegenException {
 		addArg(code, arg, true);
 	}
 
+	/**
+	 * 将参数写入代码。
+	 *
+	 * @param code 代码写入器
+	 * @param arg  参数
+	 * @param wrap 是否允许在必要时用括号包裹
+	 * @throws CodegenException 生成失败时抛出
+	 */
 	public void addArg(ICodeWriter code, InsnArg arg, boolean wrap) throws CodegenException {
 		addArg(code, arg, wrap ? BODY_ONLY_FLAG : BODY_ONLY_NOWRAP_FLAGS);
 	}
 
+	/**
+	 * 将参数写入代码，根据参数类型（寄存器/字面量/内联指令/具名）分派处理。
+	 *
+	 * @param code  代码写入器
+	 * @param arg   参数
+	 * @param flags 生成标志
+	 * @throws CodegenException 参数类型未知或生成失败时抛出
+	 */
 	public void addArg(ICodeWriter code, InsnArg arg, Set<Flags> flags) throws CodegenException {
 		if (arg.isRegister()) {
 			RegisterArg reg = (RegisterArg) arg;
@@ -169,7 +214,7 @@ public class InsnGen {
 	}
 
 	/**
-	 * Variable definition without type, only var name
+	 * 变量定义（不含类型），仅输出变量名。
 	 */
 	private void defVar(ICodeWriter code, CodeVar codeVar) {
 		String varName = mgen.getNameGen().assignArg(codeVar);
@@ -241,7 +286,7 @@ public class InsnGen {
 		// TODO
 		boolean fieldFromThisClass = clsGen.getClassNode().getClassInfo().equals(declClass);
 		if (!fieldFromThisClass || !clsGen.isBodyGenStarted()) {
-			// Android specific resources class handler
+			// Android 专用资源类处理
 			if (!handleAppResField(code, clsGen, declClass)) {
 				clsGen.useClass(code, declClass);
 			}
@@ -269,6 +314,13 @@ public class InsnGen {
 		mgen.getClassGen().useType(code, type);
 	}
 
+	/**
+	 * 生成一条指令的代码（默认标志）。
+	 *
+	 * @param insn 指令节点
+	 * @param code 代码写入器
+	 * @throws CodegenException 生成失败时抛出
+	 */
 	public void makeInsn(InsnNode insn, ICodeWriter code) throws CodegenException {
 		makeInsn(insn, code, null);
 	}
@@ -540,7 +592,7 @@ public class InsnGen {
 				addArg(code, insn.getArg(0), state);
 				break;
 
-			/* fallback mode instructions */
+			/* 仅回退模式下的指令 */
 			case IF:
 				fallbackOnlyInsn(insn);
 				IfNode ifInsn = (IfNode) insn;
@@ -593,7 +645,7 @@ public class InsnGen {
 				break;
 
 			case NEW_INSTANCE:
-				// only fallback - make new instance in constructor invoke
+				// 仅回退模式 - 在构造器调用中创建新实例
 				fallbackOnlyInsn(insn);
 				code.add("new ").add(insn.getResult().getInitType().toString());
 				break;
@@ -651,8 +703,10 @@ public class InsnGen {
 	}
 
 	/**
-	 * In most cases must be combined with new array instructions.
-	 * Use one by one array fill (can be replaced with System.arrayCopy)
+	 * 逐个填充数组元素。
+	 * <p>
+	 * 大多数情况下需与 new-array 指令配合使用，采用逐元素赋值的方式填充
+	 * （可用 System.arraycopy 替代）。
 	 */
 	private void fillArray(ICodeWriter code, FillArrayInsn arrayNode) throws CodegenException {
 		if (mth.checkCommentsLevel(CommentsLevel.INFO)) {
@@ -665,7 +719,7 @@ public class InsnGen {
 		if (arrayType.isTypeKnown() && arrayType.isArray()) {
 			elemType = arrayType.getArrayElement();
 		} else {
-			ArgType elementType = arrayNode.getElementType(); // unknown type
+			ArgType elementType = arrayNode.getElementType(); // 未知类型
 			elemType = elementType.selectFirst();
 		}
 		List<LiteralArg> args = arrayNode.getLiteralArgs(elemType);
@@ -752,7 +806,7 @@ public class InsnGen {
 			boolean forceShortName = addOuterClassInstance(insn, code, callMth);
 			code.add("new ");
 			if (refMth == null || refMth.contains(AFlag.DONT_GENERATE)) {
-				// use class reference if constructor method is missing (default constructor)
+				// 构造器方法缺失时使用类引用（默认构造器）
 				code.attachAnnotation(mth.root().resolveClass(insn.getCallMth().getDeclClass()));
 			} else {
 				code.attachAnnotation(refMth);
@@ -794,12 +848,12 @@ public class InsnGen {
 		if (instArg.isThis()) {
 			return false;
 		}
-		// instance arg should be of an outer class type
+		// 实例参数应为外部类类型
 		if (!instArg.getType().equals(ctrCls.getDeclaringClass().getType())) {
 			return false;
 		}
 		addArgDot(code, instArg);
-		// can't use another dot, force short name of class
+		// 无法再使用一个点号，强制使用类的短名
 		return true;
 	}
 
@@ -813,7 +867,7 @@ public class InsnGen {
 					+ " Convert class to inner: " + cls.getClassInfo().getFullName());
 		}
 		ArgType parent = cls.get(AType.ANONYMOUS_CLASS).getBaseType();
-		// hide empty anonymous constructors
+		// 隐藏空的匿名构造器
 		for (MethodNode ctor : cls.getMethods()) {
 			if (ctor.contains(AFlag.ANONYMOUS_CONSTRUCTOR)
 					&& RegionUtils.isEmpty(ctor.getRegion())) {
@@ -825,7 +879,7 @@ public class InsnGen {
 		useClass(code, parent);
 		MethodNode callMth = mth.root().resolveMethod(insn.getCallMth());
 		if (callMth != null) {
-			// copy var names
+			// 复制变量名
 			List<RegisterArg> mthArgs = callMth.getArgRegs();
 			int argsCount = Math.min(insn.getArgsCount(), mthArgs.size());
 			for (int i = 0; i < argsCount; i++) {
@@ -861,7 +915,7 @@ public class InsnGen {
 			return;
 		}
 		if (insn.isPolymorphicCall()) {
-			// add missing cast
+			// 补充缺失的类型转换
 			code.add('(');
 			useType(code, callMth.getReturnType());
 			code.add(") ");
@@ -882,7 +936,7 @@ public class InsnGen {
 
 			case SUPER:
 				callSuper(code, callMth);
-				k++; // use 'super' instead 'this' in 0 arg
+				k++; // 第 0 个参数处用 'super' 代替 'this'
 				code.add('.');
 				break;
 
@@ -935,7 +989,7 @@ public class InsnGen {
 		}
 	}
 
-	// FIXME: add 'this' for equals methods in scope
+	// FIXME: 为作用域内的 equals 方法添加 'this'
 	private boolean needInvokeArg(InsnArg arg) {
 		if (arg.isAnyThis()) {
 			if (arg.isThis()) {
@@ -1055,9 +1109,9 @@ public class InsnGen {
 				code.add(')');
 			}
 		}
-		// force set external arg names into call method args
+		// 强制将外部参数名设置到被调用方法的参数中
 		int extArgsCount = customNode.getArgsCount();
-		int startArg = customNode.getHandleType() == MethodHandleType.INVOKE_STATIC ? 0 : 1; // skip 'this' arg
+		int startArg = customNode.getHandleType() == MethodHandleType.INVOKE_STATIC ? 0 : 1; // 跳过 'this' 参数
 		int callArg = 0;
 		for (int i = startArg; i < extArgsCount; i++) {
 			InsnArg arg = customNode.getArg(i);
@@ -1080,7 +1134,7 @@ public class InsnGen {
 	private void callSuper(ICodeWriter code, MethodInfo callMth) {
 		ClassInfo superCallCls = getClassForSuperCall(callMth);
 		if (superCallCls == null) {
-			// unknown class, add comment to keep that info
+			// 未知类，添加注释以保留该信息
 			code.add("super/*").add(callMth.getDeclClass().getFullName()).add("*/");
 			return;
 		}
@@ -1089,14 +1143,14 @@ public class InsnGen {
 			code.add("super");
 			return;
 		}
-		// use custom class
+		// 使用自定义类
 		useClass(code, superCallCls);
 		code.add(".super");
 	}
 
 	/**
-	 * Search call class in super types of this
-	 * and all parent classes (needed for inlined synthetic calls)
+	 * 在当前类及其所有父类的父类型中查找 super 调用所属的类
+	 * （内联的合成调用需要）。
 	 */
 	@Nullable
 	private ClassInfo getClassForSuperCall(MethodInfo callMth) {
@@ -1109,13 +1163,24 @@ public class InsnGen {
 			}
 			ClassNode nextParent = parentNode.getParentClass();
 			if (nextParent == parentNode) {
-				// no parent, class not found
+				// 无父类，未找到目标类
 				return null;
 			}
 			parentNode = nextParent;
 		}
 	}
 
+	/**
+	 * 生成方法调用的参数列表（含括号）。
+	 * <p>
+	 * 处理 SKIP_FIRST_ARG、SKIP_MTH_ARGS 等跳过标记，以及 varargs 展开。
+	 *
+	 * @param code        代码写入器
+	 * @param insn        调用指令
+	 * @param startArgNum 起始参数索引
+	 * @param mthNode     被调用的方法节点（可为 null）
+	 * @throws CodegenException 生成失败时抛出
+	 */
 	void generateMethodArguments(ICodeWriter code, BaseInvokeNode insn, int startArgNum,
 			@Nullable MethodNode mthNode) throws CodegenException {
 		int k = startArgNum;
@@ -1147,7 +1212,7 @@ public class InsnGen {
 	}
 
 	/**
-	 * Expand varArgs from filled array.
+	 * 将填充数组（filled array）展开为可变参数（varArgs）。
 	 */
 	private boolean processVarArg(ICodeWriter code, BaseInvokeNode invokeInsn, InsnArg lastArg) throws CodegenException {
 		if (!invokeInsn.contains(AFlag.VARARG_CALL)) {
@@ -1198,7 +1263,7 @@ public class InsnGen {
 			makeArithOneArg(insn, code);
 			return;
 		}
-		// wrap insn in brackets for save correct operation order
+		// 用括号包裹指令以保证正确的运算顺序
 		boolean wrap = state.contains(Flags.BODY_ONLY) && !insn.contains(AFlag.DONT_WRAP);
 		if (wrap) {
 			code.add('(');
@@ -1218,7 +1283,7 @@ public class InsnGen {
 		InsnArg resArg = insn.getArg(0);
 		InsnArg arg = insn.getArg(1);
 
-		// "++" or "--"
+		// "++" 或 "--"
 		if (arg.isLiteral() && (op == ArithOp.ADD || op == ArithOp.SUB)) {
 			LiteralArg lit = (LiteralArg) arg;
 			if (lit.getLiteral() == 1 && lit.isInteger()) {

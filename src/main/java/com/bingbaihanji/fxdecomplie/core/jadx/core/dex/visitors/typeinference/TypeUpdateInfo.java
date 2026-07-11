@@ -17,6 +17,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxOverflowException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
+/**
+ * 类型更新信息管理类，负责收集、排队、应用和回滚类型更新。
+ * 维护一个更新映射表，以 IdentityHashMap 按参数对象身份存储待应用的更新，
+ * 并在更新序列超过限制时抛出溢出异常。支持队列化请求和回调处理。
+ */
 public class TypeUpdateInfo {
 	private final MethodNode mth;
 	private final TypeUpdateFlags flags;
@@ -26,6 +31,13 @@ public class TypeUpdateInfo {
 	private final int updatesLimitCount;
 	private int updateSeq = 0;
 
+	/**
+	 * 构造类型更新信息实例。
+	 *
+	 * @param mth   所属方法节点
+	 * @param flags 类型更新标志
+	 * @param args  Jadx 运行参数，用于计算更新次数上限
+	 */
 	public TypeUpdateInfo(MethodNode mth, TypeUpdateFlags flags, JadxArgs args) {
 		this.mth = mth;
 		this.flags = flags;
@@ -50,6 +62,13 @@ public class TypeUpdateInfo {
 		return ListUtils.removeLast(callbackQueue);
 	}
 
+	/**
+	 * 请求对指定参数进行类型更新。记录更新序列号和变更类型，
+	 * 如果同一参数被重复更新则抛出异常，并在达到更新上限时抛出溢出异常。
+	 *
+	 * @param arg        要更新的 InsnArg 参数
+	 * @param changeType 新的类型值
+	 */
 	public void requestUpdate(InsnArg arg, ArgType changeType) {
 		TypeUpdateEntry prev = updateMap.put(arg, new TypeUpdateEntry(updateSeq++, arg, changeType));
 		if (prev != null) {
@@ -62,11 +81,16 @@ public class TypeUpdateInfo {
 					+ " with updateSeq = " + updateSeq + ". Try increasing type updates limit count.");
 		}
 		if (updateSeq % 100 == 0) {
-			// check for interruption sometimes (every update is too often)
+			// 偶尔检查线程中断（每次更新都检查过于频繁）
 			Utils.checkThreadInterrupt();
 		}
 	}
 
+	/**
+	 * 回滚对指定参数的更新，移除此参数及其之后的所有更新（按序列号）。
+	 *
+	 * @param arg 要回滚更新的 InsnArg 参数
+	 */
 	public void rollbackUpdate(InsnArg arg) {
 		TypeUpdateEntry removed = updateMap.remove(arg);
 		if (removed != null) {
@@ -75,6 +99,9 @@ public class TypeUpdateInfo {
 		}
 	}
 
+	/**
+	 * 按更新序列号排序后，将所有待定更新统一应用到对应的参数上。
+	 */
 	public void applyUpdates() {
 		updateMap.values().stream().sorted()
 				.forEach(upd -> upd.getArg().setType(upd.getType()));

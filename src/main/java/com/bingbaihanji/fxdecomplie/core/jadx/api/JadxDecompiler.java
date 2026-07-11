@@ -57,7 +57,11 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResourcesSaver;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
 
 /**
- * Jadx API usage example:
+ * Jadx 反编译器的核心入口类，提供加载、反编译和保存功能。
+ * <p>
+ * 实现了 {@link Closeable} 接口，支持 try-with-resources 自动释放资源。
+ * <p>
+ * Jadx API 使用示例：
  *
  * <pre>
  * <code>
@@ -72,7 +76,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
  * </code>
  * </pre>
  * <p>
- * Instead of 'save()' you can iterate over decompiled classes:
+ * 除了使用 save() 方法保存所有反编译结果外，也可以遍历反编译后的类逐个处理：
  *
  * <pre>
  * <code>
@@ -84,31 +88,48 @@ import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
  * </pre>
  */
 public final class JadxDecompiler implements Closeable {
+	/** 日志记录器 */
 	private static final Logger LOG = LoggerFactory.getLogger(JadxDecompiler.class);
 
+	/** 反编译参数配置 */
 	private final JadxArgs args;
+	/** 插件管理器 */
 	private final JadxPluginManager pluginManager;
+	/** 已加载的代码输入源列表 */
 	private final List<ICodeLoader> loadedInputs = new ArrayList<>();
+	/** ZIP 文件读取器 */
 	private final ZipReader zipReader;
 
+	/** 根节点，包含所有已加载的类和资源信息 */
 	private RootNode root;
+	/** 反编译后的 Java 类列表（缓存） */
 	private List<JavaClass> classes;
+	/** 资源文件列表（缓存） */
 	private List<ResourceFile> resources;
 
+	/** 反编译调度器，用于构建反编译批次 */
 	private final IDecompileScheduler decompileScheduler = new DecompilerScheduler();
+	/** 资源加载器 */
 	private final ResourcesLoader resourcesLoader;
 
+	/** 自定义代码加载器列表 */
 	private final List<ICodeLoader> customCodeLoaders = new ArrayList<>();
+	/** 自定义资源加载器列表 */
 	private final List<CustomResourcesLoader> customResourcesLoaders = new ArrayList<>();
+	/** 自定义处理阶段映射表，按阶段类型分组存储 */
 	private final Map<JadxPassType, List<JadxPass>> customPasses = new HashMap<>();
+	/** 需要在关闭时释放的资源列表 */
 	private final List<Closeable> closeableList = new ArrayList<>();
 
+	/** 事件系统实现 */
 	private IJadxEvents events = new JadxEventsImpl();
 
+	/** 使用默认参数创建 JadxDecompiler 实例 */
 	public JadxDecompiler() {
 		this(new JadxArgs());
 	}
 
+	/** 使用指定参数创建 JadxDecompiler 实例 */
 	public JadxDecompiler(JadxArgs args) {
 		this.args = Objects.requireNonNull(args);
 		this.pluginManager = new JadxPluginManager(this);
@@ -116,6 +137,12 @@ public final class JadxDecompiler implements Closeable {
 		this.zipReader = new ZipReader(args.getSecurity());
 	}
 
+	/**
+	 * 加载并初始化反编译器。
+	 * <p>
+	 * 执行流程：重置状态 -> 验证参数 -> 加载插件 -> 加载输入文件 -> 初始化根节点 ->
+	 * 加载类和资源 -> 初始化类路径 -> 合并处理阶段 -> 运行预反编译阶段 -> 初始化各处理阶段
+	 */
 	public void load() {
 		reset();
 		JadxArgsValidator.validate(this);
@@ -126,12 +153,12 @@ public final class JadxDecompiler implements Closeable {
 
 		root = new RootNode(this);
 		root.init();
-		// load classes and resources
+		// 加载类和资源
 		root.loadClasses(loadedInputs);
 		root.loadResources(resourcesLoader, getResources());
 		root.finishClassLoad();
 		root.initClassPath();
-		// init passes
+		// 初始化处理阶段
 		root.mergePasses(customPasses);
 		root.runPreDecompileStage();
 		root.initPasses();
@@ -139,7 +166,9 @@ public final class JadxDecompiler implements Closeable {
 	}
 
 	/**
-	 * Reload passes and plugins without processing classes and inputs
+	 * 重新加载处理阶段和插件，但不重新处理类和输入文件。
+	 * <p>
+	 * 适用于需要在不重新加载输入文件的情况下刷新插件和处理逻辑的场景。
 	 */
 	public void reloadPasses() {
 		LOG.info("reloading (passes only) ...");
@@ -155,6 +184,7 @@ public final class JadxDecompiler implements Closeable {
 		loadFinished();
 	}
 
+	/** 加载输入文件，通过插件和自定义代码加载器解析输入路径 */
 	private void loadInputFiles() {
 		loadedInputs.clear();
 		List<Path> inputPaths = Utils.collectionMap(args.getInputFiles(), File::toPath);
@@ -178,6 +208,7 @@ public final class JadxDecompiler implements Closeable {
 		}
 	}
 
+	/** 重置反编译器状态，卸载插件并清空根节点、类列表和资源列表 */
 	private void reset() {
 		unloadPlugins();
 		root = null;
@@ -186,6 +217,7 @@ public final class JadxDecompiler implements Closeable {
 		events.reset();
 	}
 
+	/** 关闭反编译器，释放所有已加载的资源和临时文件 */
 	@Override
 	public void close() {
 		reset();
@@ -212,6 +244,7 @@ public final class JadxDecompiler implements Closeable {
 		}
 	}
 
+	/** 加载并初始化插件 */
 	private void loadPlugins() {
 		pluginManager.providesSuggestion("java-input", args.isUseDxInput() ? "java-convert" : "java-input");
 		pluginManager.load(args.getPluginLoader());
@@ -226,10 +259,12 @@ public final class JadxDecompiler implements Closeable {
 		}
 	}
 
+	/** 卸载已解析的插件 */
 	private void unloadPlugins() {
 		pluginManager.unloadResolved();
 	}
 
+	/** 加载完成回调，触发加载后处理阶段的初始化 */
 	private void loadFinished() {
 		LOG.debug("Load finished");
 		List<JadxPass> list = customPasses.get(JadxAfterLoadPass.TYPE);
@@ -240,23 +275,29 @@ public final class JadxDecompiler implements Closeable {
 		}
 	}
 
+	/** 注册自定义插件 */
 	@SuppressWarnings("unused")
 	public void registerPlugin(JadxPlugin plugin) {
 		pluginManager.register(plugin);
 	}
 
+	/** 获取 Jadx 版本号 */
 	public static String getVersion() {
 		return Jadx.getVersion();
 	}
 
+	/** 保存所有反编译结果（源码和资源）到输出目录 */
 	public void save() {
 		save(!args.isSkipSources(), !args.isSkipResources());
 	}
 
+	/** 保存进度监听器接口 */
 	public interface ProgressListener {
+		/** 进度更新回调 */
 		void progress(long done, long total);
 	}
 
+	/** 带进度回调的保存方法，按指定间隔报告进度 */
 	@SuppressWarnings("BusyWait")
 	public void save(int intervalInMillis, ProgressListener listener) {
 		try {
@@ -273,10 +314,12 @@ public final class JadxDecompiler implements Closeable {
 		}
 	}
 
+	/** 仅保存反编译后的源码 */
 	public void saveSources() {
 		save(true, false);
 	}
 
+	/** 仅保存资源文件 */
 	public void saveResources() {
 		save(false, true);
 	}
@@ -321,7 +364,7 @@ public final class JadxDecompiler implements Closeable {
 		TaskExecutor executor = new TaskExecutor();
 		executor.setThreadsCount(args.getThreadsCount());
 		if (saveResources) {
-			// save resources first because decompilation can stop or fail
+			// 先保存资源，因为反编译过程可能会中途停止或失败
 			appendResourcesSaveTasks(executor, outDirs.getResOutDir());
 		}
 		if (saveSources) {
@@ -337,7 +380,7 @@ public final class JadxDecompiler implements Closeable {
 		if (args.isSkipFilesSave()) {
 			return;
 		}
-		// process AndroidManifest.xml first to load complete resource ids table
+		// 优先处理 AndroidManifest.xml 以加载完整的资源 id 表
 		for (ResourceFile resourceFile : getResources()) {
 			if (resourceFile.getType() == ResourceType.MANIFEST) {
 				new ResourcesSaver(this, outDir, resourceFile).run();
@@ -353,17 +396,17 @@ public final class JadxDecompiler implements Closeable {
 		for (ResourceFile resourceFile : getResources()) {
 			ResourceType resType = resourceFile.getType();
 			if (resType == ResourceType.MANIFEST) {
-				// already processed
+				// 已处理过，跳过
 				continue;
 			}
 			String resOriginalName = resourceFile.getOriginalName();
 			if (resType != ResourceType.ARSC && inputFileNames.contains(resOriginalName)) {
-				// ignore resource made from an input file
+				// 忽略由输入文件生成的资源
 				continue;
 			}
 			if (codeSources.contains(resOriginalName)) {
-				// don't output code source resources (.dex, .class, etc)
-				// do not trust file extensions, use only sources set as class inputs
+				// 不输出代码源资源（.dex、.class 等）
+				// 不要信任文件扩展名，仅使用被设置为类输入的源
 				continue;
 			}
 			tasks.add(new ResourcesSaver(this, outDir, resourceFile));
@@ -375,14 +418,14 @@ public final class JadxDecompiler implements Closeable {
 		Set<String> set = new HashSet<>();
 		for (ClassNode cls : root.getClasses(true)) {
 			if (cls.getClsData() == null) {
-				// exclude synthetic classes
+				// 排除合成类
 				continue;
 			}
 			String inputFileName = cls.getInputFileName();
 			if (inputFileName.endsWith(".class")) {
-				// cut .class name to get source .jar file
-				// current template: "<optional input files>:<.jar>:<full class name>"
-				// TODO: add property to set file name or reference to resource name
+				// 截断 .class 名称以获取源 .jar 文件
+				// 当前模板："<可选输入文件>:<.jar>:<完整类名>"
+				// TODO: 添加属性以设置文件名或对资源名的引用
 				int endIdx = inputFileName.lastIndexOf(':');
 				if (endIdx != -1) {
 					int startIdx = inputFileName.lastIndexOf(':', endIdx - 1) + 1;
@@ -498,7 +541,7 @@ public final class JadxDecompiler implements Closeable {
 	}
 
 	/**
-	 * Internal API. Not Stable!
+	 * 内部 API，不稳定，不建议外部使用！
 	 */
 	@ApiStatus.Internal
 	public RootNode getRoot() {
@@ -506,7 +549,7 @@ public final class JadxDecompiler implements Closeable {
 	}
 
 	/**
-	 * Get JavaClass by ClassNode without loading and decompilation
+	 * 根据 ClassNode 获取对应的 JavaClass，不触发加载和反编译
 	 */
 	@ApiStatus.Internal
 	synchronized JavaClass convertClassNode(ClassNode cls) {
@@ -579,7 +622,7 @@ public final class JadxDecompiler implements Closeable {
 				.orElse(null);
 	}
 
-	// returns parent if class contains DONT_GENERATE flag.
+	// 如果类包含 DONT_GENERATE 标志，则返回其父类
 	@Nullable
 	public JavaClass searchJavaClassOrItsParentByOrigFullName(String fullName) {
 		ClassNode node = getRoot().getClasses().stream()
@@ -631,7 +674,7 @@ public final class JadxDecompiler implements Closeable {
 			case VAR_REF:
 				return resolveVarRef(codeInfo, (VarRef) ann);
 			case OFFSET:
-				// offset annotation don't have java node object
+				// 偏移注解没有对应的 Java 节点对象
 				return null;
 			default:
 				throw new JadxRuntimeException("Unknown annotation type: " + ann.getAnnType() + ", class: " + ann.getClass());

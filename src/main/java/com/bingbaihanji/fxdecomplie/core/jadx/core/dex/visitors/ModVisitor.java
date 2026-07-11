@@ -64,8 +64,12 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.repla
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.ListUtils.allMatch;
 
 /**
- * Visitor for modify method instructions
- * (remove, replace, process exception handlers)
+ * 方法指令修改访问器。
+ * <p>
+ * 负责对方法内的指令进行修改（删除、替换、处理异常处理器等），
+ * 例如：将常量替换为常量字段引用、内联 CMP 指令、移除多余的类型转换、
+ * 将 new-array + fill-array 合并为填充数组指令、处理 move-exception 等。
+ * 该访问器在 {@link CodeShrinkVisitor} 与 {@link ProcessVariables} 之前运行。
  */
 @JadxVisitor(
 		name = "ModVisitor",
@@ -122,7 +126,7 @@ public class ModVisitor extends AbstractVisitor {
 						break;
 
 					case NEW_ARRAY:
-						// replace with filled array if 'fill-array' is next instruction
+						// 如果下一条指令是 'fill-array'，则替换为已填充的数组
 						NewArrayNode newArrInsn = (NewArrayNode) insn;
 						InsnNode nextInsn = getFirstUseSkipMove(insn.getResult());
 						if (nextInsn != null && nextInsn.getType() == InsnType.FILL_ARRAY) {
@@ -170,7 +174,7 @@ public class ModVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * If field is not visible from use site => cast to origin class
+	 * 如果字段在使用处不可见，则将实例转换（cast）为其声明所在的原始类。
 	 */
 	private static void fixFieldUsage(MethodNode mth, IndexInsnNode insn) {
 		InsnArg instanceArg = insn.getArg(insn.getType() == InsnType.IGET ? 0 : 1);
@@ -184,13 +188,13 @@ public class ModVisitor extends AbstractVisitor {
 		ArgType clsType = fieldInfo.getDeclClass().getType();
 		ArgType instanceType = instanceArg.getType();
 		if (Objects.equals(clsType, instanceType)) {
-			// cast not needed
+			// 无需转换
 			return;
 		}
 
 		FieldNode fieldNode = mth.root().resolveField(fieldInfo);
 		if (fieldNode == null) {
-			// unknown field
+			// 未知字段
 			TypeCompareEnum result = mth.root().getTypeCompare().compareTypes(instanceType, clsType);
 			if (result.isEqual() || (result == TypeCompareEnum.NARROW_BY_GENERIC && !instanceType.isGenericType())) {
 				return;
@@ -198,7 +202,7 @@ public class ModVisitor extends AbstractVisitor {
 		} else if (isFieldVisibleInMethod(fieldNode, mth)) {
 			return;
 		}
-		// insert cast
+		// 插入类型转换
 		IndexInsnNode castInsn = new IndexInsnNode(InsnType.CAST, clsType, 1);
 		castInsn.addArg(instanceArg.duplicate());
 		castInsn.add(AFlag.SYNTHETIC);
@@ -224,9 +228,9 @@ public class ModVisitor extends AbstractVisitor {
 		if (accessFlags.isPrivate()) {
 			return false;
 		}
-		// package-private or protected
+		// 包级私有或 protected
 		if (Objects.equals(useCls.getClassInfo().getPackage(), fieldCls.getClassInfo().getPackage())) {
-			// same package
+			// 同一个包
 			return true;
 		}
 		if (accessFlags.isPackagePrivate()) {
@@ -234,7 +238,7 @@ public class ModVisitor extends AbstractVisitor {
 		}
 		// protected
 		TypeCompareEnum result = mth.root().getTypeCompare().compareTypes(useCls, fieldCls);
-		return result == TypeCompareEnum.NARROW; // true if use class is subclass of field class
+		return result == TypeCompareEnum.NARROW; // 若使用类是字段所在类的子类则返回 true
 	}
 
 	private static void replaceConstKeys(MethodNode mth, ClassNode parentClass, SwitchInsn insn) {
@@ -250,7 +254,7 @@ public class ModVisitor extends AbstractVisitor {
 	}
 
 	private static void fixPrimitiveCast(MethodNode mth, BlockNode block, int i, InsnNode insn) {
-		// replace boolean to (byte/char/short/long/double/float) cast with ternary
+		// 将 boolean 到 (byte/char/short/long/double/float) 的转换替换为三元表达式
 		InsnArg castArg = insn.getArg(0);
 		if (castArg.getType() == ArgType.BOOLEAN) {
 			ArgType type = insn.getResult().getType();
@@ -373,7 +377,7 @@ public class ModVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * Inline CMP instructions into 'if' to help conditions merging
+	 * 将 CMP 指令内联到 'if' 指令中，以便于条件合并。
 	 */
 	private static void inlineCMPInsns(MethodNode mth, BlockNode block, int i, InsnNode insn, InsnRemover remover) {
 		RegisterArg resArg = insn.getResult();
@@ -407,7 +411,7 @@ public class ModVisitor extends AbstractVisitor {
 	private static void removeCheckCast(MethodNode mth, BlockNode block, int i, IndexInsnNode insn) {
 		InsnArg castArg = insn.getArg(0);
 		if (castArg.isZeroLiteral()) {
-			// always keep cast for 'null'
+			// 对 'null' 始终保留类型转换
 			insn.add(AFlag.EXPLICIT_CAST);
 			return;
 		}
@@ -424,7 +428,7 @@ public class ModVisitor extends AbstractVisitor {
 		}
 		InsnNode prevCast = isCastDuplicate(insn);
 		if (prevCast != null) {
-			// replace previous cast with move
+			// 将前一个类型转换替换为 move 指令
 			InsnNode move = new InsnNode(InsnType.MOVE, 1);
 			move.setResult(prevCast.getResult());
 			move.addArg(prevCast.getArg(0));
@@ -450,7 +454,7 @@ public class ModVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * Remove unnecessary instructions
+	 * 移除不必要的指令。
 	 */
 	private static void removeStep(MethodNode mth, InsnRemover remover) {
 		for (BlockNode block : mth.getBasicBlocks()) {
@@ -502,9 +506,11 @@ public class ModVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * For args in anonymous constructor invoke apply:
-	 * - forbid inline into constructor call
-	 * - make variables final (compiler require this implicitly)
+	 * 对匿名类构造函数调用中的参数应用以下处理：
+	 * <ul>
+	 *     <li>禁止将其内联到构造函数调用中</li>
+	 *     <li>将变量声明为 final（编译器隐式要求）</li>
+	 * </ul>
 	 */
 	private static void processAnonymousConstructor(MethodNode mth, ConstructorInsn co) {
 		IMethodDetails callMthDetails = mth.root().getMethodUtils().getMethodDetails(co);
@@ -524,7 +530,7 @@ public class ModVisitor extends AbstractVisitor {
 				}
 			}
 		} else {
-			// additional info not available apply mods to all args (the safest solution)
+			// 无法获取额外信息，则对所有参数应用修改（最安全的方案）
 			co.getArguments().forEach(ModVisitor::anonymousCallArgMod);
 		}
 	}
@@ -537,8 +543,8 @@ public class ModVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * Return first usage instruction for arg.
-	 * If used only once try to follow move chain
+	 * 返回参数的第一个使用指令。
+	 * 如果只被使用一次，则尝试沿 move 链继续追踪。
 	 */
 	@Nullable
 	private static InsnNode getFirstUseSkipMove(RegisterArg arg) {
@@ -602,7 +608,7 @@ public class ModVisitor extends AbstractVisitor {
 		}
 		ExceptionHandler excHandler = excHandlerAttr.getHandler();
 
-		// result arg used both in this insn and exception handler,
+		// 结果参数同时被该指令和异常处理器使用，
 		RegisterArg resArg = insn.getResult();
 		ArgType type = excHandler.getArgType();
 		String name = excHandler.isCatchAll() ? "th" : "e";
@@ -614,7 +620,7 @@ public class ModVisitor extends AbstractVisitor {
 			excHandler.setArg(new NamedArg(name, type));
 			remover.addAndUnbind(insn);
 		} else if (sVar.isUsedInPhi()) {
-			// exception var moved to external variable => replace with 'move' insn
+			// 异常变量被移动到外部变量 => 替换为 'move' 指令
 			InsnNode moveInsn = new InsnNode(InsnType.MOVE, 1);
 			moveInsn.setResult(insn.getResult());
 			NamedArg namedArg = new NamedArg(name, type);
@@ -622,7 +628,7 @@ public class ModVisitor extends AbstractVisitor {
 			excHandler.setArg(namedArg);
 			replaceInsn(mth, block, 0, moveInsn);
 		}
-		block.copyAttributeFrom(insn, AType.CODE_COMMENTS); // save comment
+		block.copyAttributeFrom(insn, AType.CODE_COMMENTS); // 保存注释
 	}
 
 	public static void addFieldUsage(IFieldInfoRef fieldData, MethodNode mth) {

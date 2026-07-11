@@ -12,38 +12,53 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IContainer;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.CodegenException;
 
+/**
+ * if 语句区域。
+ * <p>
+ * 表示反编译过程中的 if 条件分支结构，包含条件、then 分支区域和可选的 else 分支区域。
+ */
 public final class IfRegion extends ConditionRegion implements IBranchRegion {
+	/** then 分支区域（条件成立时执行的代码块） */
 	private IContainer thenRegion;
+	/** else 分支区域（条件不成立时执行的代码块，可能为 null） */
 	private IContainer elseRegion;
 
 	public IfRegion(IRegion parent) {
 		super(parent);
 	}
 
+	/** 获取 then 分支区域 */
 	public IContainer getThenRegion() {
 		return thenRegion;
 	}
 
+	/** 设置 then 分支区域 */
 	public void setThenRegion(IContainer thenRegion) {
 		this.thenRegion = thenRegion;
 	}
 
+	/** 获取 else 分支区域 */
 	public IContainer getElseRegion() {
 		return elseRegion;
 	}
 
+	/** 设置 else 分支区域 */
 	public void setElseRegion(IContainer elseRegion) {
 		this.elseRegion = elseRegion;
 	}
 
+	/**
+	 * 反转当前 if 区域：反转条件，并交换 then 分支与 else 分支。
+	 */
 	public void invert() {
 		invertCondition();
-		// swap regions
+		// 交换 then 分支与 else 分支
 		IContainer tmp = thenRegion;
 		thenRegion = elseRegion;
 		elseRegion = tmp;
 	}
 
+	/** 获取该 if 语句对应的源码行号 */
 	public int getSourceLine() {
 		return getConditionSourceLine();
 	}

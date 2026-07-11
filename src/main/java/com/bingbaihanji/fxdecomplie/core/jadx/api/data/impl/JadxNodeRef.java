@@ -119,11 +119,10 @@ public class JadxNodeRef implements IJavaNodeRef {
 		if (this == o) {
 			return true;
 		}
-		if (!(o instanceof JadxNodeRef)) {
+		if (!(o instanceof JadxNodeRef that)) {
 			return false;
 		}
-		JadxNodeRef that = (JadxNodeRef) o;
-		return refType == that.refType
+        return refType == that.refType
 				&& Objects.equals(declClass, that.declClass)
 				&& Objects.equals(shortId, that.shortId);
 	}

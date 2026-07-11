@@ -17,7 +17,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.AccessFlags
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.EncodedValue;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.AnnotationMethodParamsAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.Jadx;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodeGenUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -51,12 +51,23 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.Fall
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.FallbackOption.COMMENTED_DUMP;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.FallbackOption.FALLBACK_MODE;
 
+/**
+ * 方法代码生成器。
+ * <p>
+ * 负责将 {@link MethodNode} 生成为 Java 源码文本，包括方法定义（修饰符、返回类型、方法名、
+ * 参数列表、throws、注解等）与方法体。方法体根据反编译模式（AUTO/RESTRUCTURE/SIMPLE/FALLBACK）
+ * 采用不同的生成策略，并在生成失败时回退到指令转储（fallback dump）。
+ */
 public class MethodGen {
 	private static final Logger LOG = LoggerFactory.getLogger(MethodGen.class);
 
+	/** 当前正在生成的方法节点 */
 	private final MethodNode mth;
+	/** 所属类的代码生成器 */
 	private final ClassGen classGen;
+	/** 注解生成器 */
 	private final AnnotationGen annotationGen;
+	/** 变量/参数名称生成器 */
 	private final NameGen nameGen;
 
 	public MethodGen(ClassGen classGen, MethodNode mth) {
@@ -78,6 +89,15 @@ public class MethodGen {
 		return mth;
 	}
 
+	/**
+	 * 生成方法定义部分（不含方法体的花括号内容）。
+	 * <p>
+	 * 处理静态初始化块、匿名构造器、覆盖注解、访问修饰符、返回类型/构造器名、参数列表、
+	 * throws 声明以及注解默认值等。
+	 *
+	 * @param code 代码写入器
+	 * @return 若在方法名后需要追加空格（普通方法定义）返回 true；匿名构造器等场景返回 false
+	 */
 	public boolean addDefinition(ICodeWriter code) {
 		if (mth.getMethodInfo().isClassInit()) {
 			code.startLine();
@@ -86,12 +106,12 @@ public class MethodGen {
 			return true;
 		}
 		if (mth.contains(AFlag.ANONYMOUS_CONSTRUCTOR)) {
-			// don't add method name and arguments
+			// 不添加方法名和参数
 			code.startLine();
 			code.attachDefinition(mth);
 			return false;
 		}
-		if (Consts.DEBUG_USAGE) {
+		if (false) {
 			ClassGen.addMthUsageInfo(code, mth);
 		}
 		addOverrideAnnotation(code, mth);
@@ -99,12 +119,12 @@ public class MethodGen {
 
 		AccessInfo clsAccFlags = mth.getParentClass().getAccessFlags();
 		AccessInfo ai = mth.getAccessFlags();
-		// don't add 'abstract' and 'public' to methods in interface
+		// 接口中的方法不添加 'abstract' 和 'public'
 		if (clsAccFlags.isInterface()) {
 			ai = ai.remove(AccessFlags.ABSTRACT);
 			ai = ai.remove(AccessFlags.PUBLIC);
 		}
-		// don't add 'public' for annotations
+		// 注解类不添加 'public'
 		if (clsAccFlags.isAnnotation()) {
 			ai = ai.remove(AccessFlags.PUBLIC);
 		}
@@ -129,7 +149,7 @@ public class MethodGen {
 		code.startLineWithNum(mth.getSourceLine());
 		code.add(ai.makeString(mth.checkCommentsLevel(CommentsLevel.INFO)));
 		if (clsAccFlags.isInterface() && !mth.isNoCode() && !mth.getAccessFlags().isStatic()) {
-			// add 'default' for method with code in interface
+			// 接口中带方法体的方法添加 'default'
 			code.add("default ");
 		}
 
@@ -138,7 +158,7 @@ public class MethodGen {
 		}
 		if (ai.isConstructor()) {
 			code.attachDefinition(mth);
-			code.add(classGen.getClassNode().getAlias()); // constructor
+			code.add(classGen.getClassNode().getAlias()); // 构造器
 		} else {
 			classGen.useType(code, mth.getReturnType());
 			code.add(' ');
@@ -152,7 +172,7 @@ public class MethodGen {
 
 		annotationGen.addThrows(mth, code);
 
-		// add default value for annotation class
+		// 为注解类添加默认值
 		if (mth.getParentClass().getAccessFlags().isAnnotation()) {
 			EncodedValue def = annotationGen.getAnnotationDefaultValue(mth);
 			if (def != null) {
@@ -184,7 +204,7 @@ public class MethodGen {
 						md -> md.getMethodInfo().getDeclClass().getAliasFullName()));
 			}
 		}
-		if (Consts.DEBUG) {
+		if (false) {
 			code.startLine("// related by override: ");
 			code.add(Utils.listToString(overrideAttr.getRelatedMthNodes(), ", ", m -> m.getParentClass().getFullName()));
 		}
@@ -209,13 +229,13 @@ public class MethodGen {
 			SSAVar ssaVar = mthArg.getSVar();
 			CodeVar var;
 			if (ssaVar == null) {
-				// abstract or interface methods
+				// 抽象方法或接口方法
 				var = CodeVar.fromMthArg(mthArg, classGen.isFallbackMode());
 			} else {
 				var = ssaVar.getCodeVar();
 			}
 
-			// add argument annotation
+			// 添加参数注解
 			if (paramsAnnotation != null) {
 				annotationGen.addForParameter(code, paramsAnnotation, argNum);
 			}
@@ -225,13 +245,13 @@ public class MethodGen {
 			ArgType argType;
 			ArgType varType = var.getType();
 			if (varType == null || varType == ArgType.UNKNOWN) {
-				// occur on decompilation errors
+				// 反编译出错时会出现该情况
 				argType = mthArg.getInitType();
 			} else {
 				argType = varType;
 			}
 			if (argNum == lastArgNum && mth.getAccessFlags().isVarArgs()) {
-				// change last array argument to varargs
+				// 将最后一个数组参数改为可变参数（varargs）
 				if (argType.isArray()) {
 					ArgType elType = argType.getArrayElement();
 					classGen.useType(code, elType);
@@ -252,6 +272,20 @@ public class MethodGen {
 		}
 	}
 
+	/**
+	 * 根据反编译模式生成方法体指令代码。
+	 * <p>
+	 * 支持四种模式：
+	 * <ul>
+	 *   <li>AUTO —— 自动选择：回退模式或无区域（region）时走指令转储，否则用区域模式</li>
+	 *   <li>RESTRUCTURE —— 使用区域重组（RegionGen）生成</li>
+	 *   <li>SIMPLE —— 简化模式（基本块行号生成）</li>
+	 *   <li>FALLBACK —— 原始指令转储模式</li>
+	 * </ul>
+	 *
+	 * @param code 代码写入器
+	 * @throws CodegenException 代码生成失败时抛出
+	 */
 	public void addInstructions(ICodeWriter code) throws CodegenException {
 		JadxArgs args = mth.root().getArgs();
 		DecompileModeOverrideAttr modeOverrideAttr = mth.getTopParentClass().get(AType.DECOMPILE_MODE_OVERRIDE);
@@ -264,7 +298,7 @@ public class MethodGen {
 		switch (mode) {
 			case AUTO:
 				if (classGen.isFallbackMode() || mth.getRegion() == null) {
-					// TODO: try simple mode first
+					// TODO: 先尝试简化模式
 					dumpInstructions(code);
 				} else {
 					addRegionInsns(code);
@@ -285,6 +319,14 @@ public class MethodGen {
 		}
 	}
 
+	/**
+	 * 使用区域重组（RegionGen）生成方法体指令。
+	 * <p>
+	 * 若生成过程中发生栈溢出或异常，则记录错误并回退到指令转储。
+	 *
+	 * @param code 代码写入器
+	 * @throws CodegenException 需要重启代码生成时抛出
+	 */
 	public void addRegionInsns(ICodeWriter code) throws CodegenException {
 		try {
 			RegionGen regionGen = new RegionGen(this);
@@ -356,6 +398,12 @@ public class MethodGen {
 		}
 	}
 
+	/**
+	 * 转储方法指令：以注释形式输出回退指令，并生成一条抛出
+	 * {@code UnsupportedOperationException("Method not decompiled...")} 的语句。
+	 *
+	 * @param code 代码写入器
+	 */
 	public void dumpInstructions(ICodeWriter code) {
 		if (mth.checkCommentsLevel(CommentsLevel.ERROR)) {
 			code.startLine("/*");
@@ -373,6 +421,12 @@ public class MethodGen {
 				.add("\");");
 	}
 
+	/**
+	 * 生成回退模式的方法代码：重新加载原始指令并逐条转储。
+	 *
+	 * @param code           代码写入器
+	 * @param fallbackOption 回退选项（回退模式 / 块转储 / 注释转储）
+	 */
 	public void addFallbackMethodCode(ICodeWriter code, FallbackOption fallbackOption) {
 		if (fallbackOption == COMMENTED_DUMP && mth.getCommentsLevel() != CommentsLevel.DEBUG) {
 			long insnCountEstimate = mth.getInsnsCount();
@@ -389,9 +443,9 @@ public class MethodGen {
 			}
 		}
 		if (fallbackOption != FALLBACK_MODE) {
-			List<JadxError> errors = mth.getAll(AType.JADX_ERROR); // preserve error before unload
+			List<JadxError> errors = mth.getAll(AType.JADX_ERROR); // 卸载前保留错误信息
 			try {
-				// load original instructions
+				// 加载原始指令
 				mth.unload();
 				mth.load();
 				for (IDexTreeVisitor visitor : Jadx.getFallbackPassesList()) {
@@ -418,12 +472,24 @@ public class MethodGen {
 		code.decIndent();
 	}
 
+	/** 回退代码生成选项 */
 	public enum FallbackOption {
+		/** 完整回退模式 */
 		FALLBACK_MODE,
+		/** 块转储 */
 		BLOCK_DUMP,
+		/** 注释形式的转储 */
 		COMMENTED_DUMP
 	}
 
+	/**
+	 * 将给定指令数组以回退方式逐条输出到代码写入器。
+	 *
+	 * @param code    代码写入器
+	 * @param mth     方法节点
+	 * @param insnArr 指令数组
+	 * @param option  回退选项
+	 */
 	public static void addFallbackInsns(ICodeWriter code, MethodNode mth, InsnNode[] insnArr, FallbackOption option) {
 		int startIndent = code.getIndent();
 		MethodGen methodGen = getFallbackMethodGen(mth);
@@ -519,7 +585,7 @@ public class MethodGen {
 			return true;
 		}
 		if (insn.contains(AType.JUMP)) {
-			// don't add label for ifs else branch
+			// 不为 if 的 else 分支添加标签
 			if (prevInsn != null && prevInsn.getType() == InsnType.IF) {
 				List<JumpInfo> jumps = insn.getAll(AType.JUMP);
 				if (jumps.size() == 1) {
@@ -536,17 +602,26 @@ public class MethodGen {
 	}
 
 	/**
-	 * Return fallback variant of method codegen
+	 * 返回方法代码生成的回退（fallback）变体。
+	 *
+	 * @param mth 方法节点
+	 * @return 使用回退配置构建的 MethodGen
 	 */
 	public static MethodGen getFallbackMethodGen(MethodNode mth) {
 		ClassGen clsGen = new ClassGen(mth.getParentClass(), null, false, true, true, IntegerFormat.AUTO);
 		return new MethodGen(clsGen, mth);
 	}
 
+	/**
+	 * 获取基本块对应的标签名，形如 {@code L<cId>}。
+	 */
 	public static String getLabelName(BlockNode block) {
 		return String.format("L%d", block.getCId());
 	}
 
+	/**
+	 * 获取 if 指令跳转目标对应的标签名。
+	 */
 	public static String getLabelName(IfNode insn) {
 		BlockNode thenBlock = insn.getThenBlock();
 		if (thenBlock != null) {
@@ -555,6 +630,9 @@ public class MethodGen {
 		return getLabelName(insn.getTarget());
 	}
 
+	/**
+	 * 获取指令偏移量对应的标签名，负偏移使用 {@code LB_} 前缀。
+	 */
 	public static String getLabelName(int offset) {
 		if (offset < 0) {
 			return String.format("LB_%x", -offset);

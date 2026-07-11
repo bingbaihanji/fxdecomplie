@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.AccessInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
@@ -64,7 +64,7 @@ public class ProcessMethodsForInline extends AbstractVisitor {
 			if (useTopCls != parentClass) {
 				parentClass.removeDependency(useTopCls);
 				useTopCls.addCodegenDep(parentClass);
-				if (Consts.DEBUG_USAGE) {
+				if (false) {
 					parentClass.addDebugComment("Remove dependency: " + useTopCls + " to inline " + mth);
 					useTopCls.addDebugComment("Add dependency: " + parentClass + " to inline " + mth);
 				}

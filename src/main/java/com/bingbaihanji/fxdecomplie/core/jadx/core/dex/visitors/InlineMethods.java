@@ -36,9 +36,21 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 		runAfter = TypeInferenceVisitor.class,
 		runBefore = ModVisitor.class
 )
+/**
+ * 方法内联访问器。
+ * <p>
+ * 将此前在 {@link MarkMethodsForInline} 中标记为可内联的方法调用替换为方法体本身，
+ * 从而在反编译结果中消除多余的间接调用（如简单的 getter/setter 访问器）。
+ * 内联过程中会完成寄存器重映射、结果值处理，并同步更新方法/字段/类的使用（usage）信息。
+ */
 public class InlineMethods extends AbstractVisitor {
 	private static final Logger LOG = LoggerFactory.getLogger(InlineMethods.class);
 
+	/**
+	 * 遍历方法的所有基本块，处理其中的 INVOKE 指令，尝试对其进行内联。
+	 *
+	 * @param mth 待处理的方法节点
+	 */
 	@Override
 	public void visit(MethodNode mth) throws JadxException {
 		if (mth.isNoCode()) {
@@ -62,10 +74,10 @@ public class InlineMethods extends AbstractVisitor {
 		try {
 			MethodInlineAttr mia = MarkMethodsForInline.process(callMth);
 			if (mia == null) {
-				// method is not yet loaded => force process
+				// 方法尚未加载 => 强制处理其所在类以完成加载
 				mth.addDebugComment("Class process forced to load method for inline: " + callMth);
 				mth.root().getProcessClasses().forceProcess(callMth.getParentClass());
-				// run check again
+				// 重新检查一次
 				mia = MarkMethodsForInline.process(callMth);
 				if (mia == null) {
 					mth.addWarnComment("Failed to check method for inline after forced process" + callMth);
@@ -85,7 +97,7 @@ public class InlineMethods extends AbstractVisitor {
 		InsnNode inlCopy = mia.getInsn().copyWithoutResult();
 		if (replaceRegs(mth, callMth, mia, insn, inlCopy)) {
 			IMethodDetails methodDetailsAttr = inlCopy.get(AType.METHOD_DETAILS);
-			// replaceInsn replaces the attributes as well, make sure to preserve METHOD_DETAILS
+			// replaceInsn 会一并替换属性，因此需要保留 METHOD_DETAILS
 			if (BlockUtils.replaceInsn(mth, block, insn, inlCopy)) {
 				if (methodDetailsAttr != null) {
 					inlCopy.addAttr(methodDetailsAttr);
@@ -95,7 +107,7 @@ public class InlineMethods extends AbstractVisitor {
 			}
 		}
 		mth.addWarnComment("Failed to inline method: " + callMth);
-		// undo changes to insn
+		// 撤销对指令所做的改动
 		InsnRemover.unbindInsn(mth, inlCopy);
 		insn.rebindArgs();
 	}
@@ -103,14 +115,14 @@ public class InlineMethods extends AbstractVisitor {
 	private boolean replaceRegs(MethodNode mth, MethodNode callMth, MethodInlineAttr mia, InvokeNode insn, InsnNode inlCopy) {
 		try {
 			if (!callMth.getMethodInfo().getArgumentsTypes().isEmpty()) {
-				// remap args
+				// 重映射参数寄存器
 				InsnArg[] regs = new InsnArg[callMth.getRegsCount()];
 				int[] regNums = mia.getArgsRegNums();
 				for (int i = 0; i < regNums.length; i++) {
 					InsnArg arg = insn.getArg(i);
 					regs[regNums[i]] = arg;
 				}
-				// replace args
+				// 替换参数
 				List<RegisterArg> inlArgs = new ArrayList<>();
 				inlCopy.getRegisterArgs(inlArgs);
 				for (RegisterArg r : inlArgs) {
@@ -134,7 +146,7 @@ public class InlineMethods extends AbstractVisitor {
 			if (resultArg != null) {
 				inlCopy.setResult(resultArg.duplicate());
 			} else if (isAssignNeeded(mia.getInsn(), insn, callMth)) {
-				// add a fake result to make correct java expression (see test TestGetterInlineNegative)
+				// 添加一个假的结果值以生成正确的 Java 表达式（参见测试 TestGetterInlineNegative）
 				inlCopy.setResult(mth.makeSyntheticRegArg(callMth.getReturnType(), "unused"));
 			}
 			return true;
@@ -162,7 +174,7 @@ public class InlineMethods extends AbstractVisitor {
 		newUseIn.remove(mth);
 		inlinedMth.setUseIn(newUseIn);
 		insn.visitInsns(innerInsn -> {
-			// TODO: share code with UsageInfoVisitor
+			// TODO: 与 UsageInfoVisitor 共用代码
 			switch (innerInsn.getType()) {
 				case INVOKE:
 				case CONSTRUCTOR:

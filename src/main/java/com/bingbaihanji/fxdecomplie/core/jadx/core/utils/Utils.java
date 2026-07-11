@@ -32,14 +32,25 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxDecompiler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.DepthTraversal;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
+/**
+ * 通用工具类，提供字符串处理、集合操作、堆栈跟踪、线程工具等常用功能。
+ */
 public class Utils {
 
+	/** Jadx API 所在的包名，用于在过滤堆栈跟踪时识别并截断 API 层调用帧 */
 	private static final String JADX_API_PACKAGE = JadxDecompiler.class.getPackage().getName();
+	/** 堆栈跟踪过滤的停止类名，遇到该类时截断后续的调用帧 */
 	private static final String STACKTRACE_STOP_CLS_NAME = DepthTraversal.class.getName();
 
 	private Utils() {
 	}
 
+	/**
+	 * 清理对象名称，将 Smali 格式的类名（如 Ljava/lang/String;）转换为 Java 格式（如 java.lang.String）
+	 *
+	 * @param obj Smali 格式的对象名称
+	 * @return 清理后的 Java 格式对象名称
+	 */
 	public static String cleanObjectName(String obj) {
 		if (obj.charAt(0) == 'L') {
 			int last = obj.length() - 1;
@@ -50,6 +61,12 @@ public class Utils {
 		return obj;
 	}
 
+	/**
+	 * 截取对象名称，移除 Smali 格式中的 'L' 前缀和 ';' 后缀
+	 *
+	 * @param obj Smali 格式的对象名称
+	 * @return 截取后的对象名称
+	 */
 	public static String cutObject(String obj) {
 		if (obj.charAt(0) == 'L') {
 			return obj.substring(1, obj.length() - 1);
@@ -57,10 +74,25 @@ public class Utils {
 		return obj;
 	}
 
+	/**
+	 * 将 Java 格式的类名转换为 Smali 格式（如 java.lang.String → Ljava/lang/String;）
+	 *
+	 * @param obj Java 格式的对象名称
+	 * @return Smali 格式的限定对象名称
+	 */
 	public static String makeQualifiedObjectName(String obj) {
 		return 'L' + obj.replace('.', '/') + ';';
 	}
 
+	/**
+	 * 将 Smali 类型描述符转换为 Java 类型名称
+	 * <p>
+	 * 支持基本类型（V→void, Z→boolean, C→char, B→byte, S→short, I→int, F→float, J→long, D→double）、
+	 * 对象类型（L...;）和数组类型（[...）
+	 *
+	 * @param descString Smali 类型描述符
+	 * @return 对应的 Java 类型名称
+	 */
 	public static String smaliNameToJavaName(String descString) {
 		if (descString.isEmpty()) {
 			return descString;
@@ -108,12 +140,24 @@ public class Utils {
 		return javaName;
 	}
 
+	/**
+	 * 清理对象名称并处理内部类，将 Smali 格式转换为 Java 格式，同时将内部类分隔符 '$' 替换为 '.'
+	 *
+	 * @param obj Smali 格式的对象名称
+	 * @return 处理内部类后的 Java 格式对象名称
+	 */
 	private static String cleanObjectNameWithInnerClass(String obj) {
-		// Probably can just update the Utils.cleanObjectName method?
+		// 或许可以直接更新 Utils.cleanObjectName 方法？
 		String result = Utils.cleanObjectName(obj);
 		return result.replace('$', '.');
 	}
 
+	/**
+	 * 将 Java 类型名称转换为 Smali 类型描述符（{@link #smaliNameToJavaName} 的逆操作）
+	 *
+	 * @param descString Java 类型名称
+	 * @return 对应的 Smali 类型描述符
+	 */
 	public static String javaNameToSmaliName(String descString) {
 		if (descString.isEmpty()) {
 			return descString;
@@ -159,6 +203,13 @@ public class Utils {
 		return javaName;
 	}
 
+	/**
+	 * 重复拼接字符串指定的次数
+	 *
+	 * @param str   待重复的字符串
+	 * @param count 重复次数，小于 1 时返回空字符串
+	 * @return 重复拼接后的字符串
+	 */
 	@SuppressWarnings("StringRepeatCanBeUsed")
 	public static String strRepeat(String str, int count) {
 		if (count < 1) {
@@ -174,10 +225,23 @@ public class Utils {
 		return sb.toString();
 	}
 
+	/**
+	 * 将可迭代对象拼接为字符串，默认使用 ", " 作为分隔符
+	 *
+	 * @param objects 待拼接的可迭代对象
+	 * @return 拼接后的字符串
+	 */
 	public static String listToString(Iterable<?> objects) {
 		return listToString(objects, ", ");
 	}
 
+	/**
+	 * 将可迭代对象按指定分隔符拼接为字符串
+	 *
+	 * @param objects 待拼接的可迭代对象
+	 * @param joiner  分隔符
+	 * @return 拼接后的字符串
+	 */
 	public static String listToString(Iterable<?> objects, String joiner) {
 		if (objects == null) {
 			return "";
@@ -185,20 +249,50 @@ public class Utils {
 		return listToString(objects, joiner, Objects::toString);
 	}
 
+	/**
+	 * 将可迭代对象通过转换函数映射后拼接为字符串，默认使用 ", " 作为分隔符
+	 *
+	 * @param objects 待拼接的可迭代对象
+	 * @param toStr   元素到字符串的转换函数
+	 * @return 拼接后的字符串
+	 */
 	public static <T> String listToString(Iterable<T> objects, Function<T, String> toStr) {
 		return listToString(objects, ", ", toStr);
 	}
 
+	/**
+	 * 将可迭代对象通过转换函数映射后按指定分隔符拼接为字符串
+	 *
+	 * @param objects 待拼接的可迭代对象
+	 * @param joiner  分隔符
+	 * @param toStr   元素到字符串的转换函数
+	 * @return 拼接后的字符串
+	 */
 	public static <T> String listToString(Iterable<T> objects, String joiner, Function<T, String> toStr) {
 		StringBuilder sb = new StringBuilder();
 		listToString(sb, objects, joiner, toStr);
 		return sb.toString();
 	}
 
+	/**
+	 * 将可迭代对象按指定分隔符拼接并追加到已有的 StringBuilder 中
+	 *
+	 * @param sb      结果构建器
+	 * @param objects 待拼接的可迭代对象
+	 * @param joiner  分隔符
+	 */
 	public static <T> void listToString(StringBuilder sb, Iterable<T> objects, String joiner) {
 		listToString(sb, objects, joiner, Objects::toString);
 	}
 
+	/**
+	 * 将可迭代对象通过转换函数映射后按指定分隔符拼接并追加到已有的 StringBuilder 中
+	 *
+	 * @param sb      结果构建器
+	 * @param objects 待拼接的可迭代对象
+	 * @param joiner  分隔符
+	 * @param toStr   元素到字符串的转换函数
+	 */
 	public static <T> void listToString(StringBuilder sb, Iterable<T> objects, String joiner, Function<T, String> toStr) {
 		if (objects == null) {
 			return;
@@ -212,6 +306,12 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * 将数组元素以 ", " 分隔拼接为字符串
+	 *
+	 * @param arr 待拼接的数组
+	 * @return 拼接后的字符串，数组为空时返回空字符串
+	 */
 	public static <T> String arrayToStr(T[] arr) {
 		int len = arr == null ? 0 : arr.length;
 		if (len == 0) {
@@ -225,6 +325,12 @@ public class Utils {
 		return sb.toString();
 	}
 
+	/**
+	 * 将字符串列表直接连接为一个字符串（无分隔符）
+	 *
+	 * @param list 待连接的字符串列表
+	 * @return 连接后的字符串
+	 */
 	public static String concatStrings(List<String> list) {
 		if (isEmpty(list)) {
 			return "";
@@ -237,10 +343,21 @@ public class Utils {
 		return sb.toString();
 	}
 
+	/**
+	 * 获取当前调用位置的堆栈跟踪字符串
+	 *
+	 * @return 当前堆栈跟踪文本
+	 */
 	public static String currentStackTrace() {
 		return getStackTrace(new Exception());
 	}
 
+	/**
+	 * 获取当前调用位置的堆栈跟踪字符串，并跳过开头指定数量的栈帧
+	 *
+	 * @param skipFrames 需要跳过的栈帧数量
+	 * @return 当前堆栈跟踪文本
+	 */
 	public static String currentStackTrace(int skipFrames) {
 		Exception e = new Exception();
 		StackTraceElement[] stackTrace = e.getStackTrace();
@@ -251,14 +368,33 @@ public class Utils {
 		return getStackTrace(e);
 	}
 
+	/**
+	 * 获取完整的堆栈跟踪字符串（不过滤 jadx 内部调用帧）
+	 *
+	 * @param throwable 异常对象
+	 * @return 完整的堆栈跟踪文本
+	 */
 	public static String getFullStackTrace(Throwable throwable) {
 		return getStackTrace(throwable, false);
 	}
 
+	/**
+	 * 获取经过过滤的堆栈跟踪字符串（截断 jadx 内部调用帧）
+	 *
+	 * @param throwable 异常对象
+	 * @return 过滤后的堆栈跟踪文本
+	 */
 	public static String getStackTrace(Throwable throwable) {
 		return getStackTrace(throwable, true);
 	}
 
+	/**
+	 * 获取堆栈跟踪字符串
+	 *
+	 * @param throwable 异常对象
+	 * @param filter    是否过滤 jadx 内部调用帧
+	 * @return 堆栈跟踪文本
+	 */
 	private static String getStackTrace(Throwable throwable, boolean filter) {
 		if (throwable == null) {
 			return "";
@@ -272,6 +408,12 @@ public class Utils {
 		return sw.getBuffer().toString();
 	}
 
+	/**
+	 * 将异常的堆栈跟踪逐行追加写入到代码输出器中
+	 *
+	 * @param code      代码输出器
+	 * @param throwable 异常对象
+	 */
 	public static void appendStackTrace(ICodeWriter code, Throwable throwable) {
 		if (throwable == null) {
 			return;
@@ -287,7 +429,7 @@ public class Utils {
 						break;
 
 					case '\r':
-						// ignore
+						// 忽略回车符
 						break;
 
 					default:
@@ -303,11 +445,16 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * 递归过滤异常及其原因链的堆栈跟踪，截断 jadx 内部调用帧
+	 *
+	 * @param th 待过滤的异常
+	 */
 	private static void filterRecursive(Throwable th) {
 		try {
 			filter(th);
 		} catch (Exception e) {
-			// ignore filter exceptions
+			// 忽略过滤过程中的异常
 		}
 		Throwable cause = th.getCause();
 		if (cause != null) {
@@ -330,7 +477,7 @@ public class Utils {
 			}
 			prevElement = stackTraceElement;
 		}
-		// stop condition not found -> just cut tail to any jadx class
+		// 未找到停止条件 -> 直接截断到最后一个 jadx 类之后的部分
 		for (int i = length - 1; i >= 0; i--) {
 			String clsName = stackTrace[i].getClassName();
 			if (clsName.startsWith("jadx.")) {
@@ -343,6 +490,13 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * 将集合中的每个元素通过映射函数转换后收集为新列表
+	 *
+	 * @param list    源集合
+	 * @param mapFunc 元素映射函数
+	 * @return 映射后的列表，源集合为空时返回空列表
+	 */
 	public static <T, R> List<R> collectionMap(Collection<T> list, Function<T, R> mapFunc) {
 		if (list == null || list.isEmpty()) {
 			return Collections.emptyList();
@@ -354,6 +508,13 @@ public class Utils {
 		return result;
 	}
 
+	/**
+	 * 将集合中的每个元素通过映射函数转换后收集为新列表，并过滤掉映射结果为 null 的元素
+	 *
+	 * @param list    源集合
+	 * @param mapFunc 元素映射函数
+	 * @return 映射后的非空元素列表，源集合为空时返回空列表
+	 */
 	public static <T, R> List<R> collectionMapNoNull(Collection<T> list, Function<T, R> mapFunc) {
 		if (list == null || list.isEmpty()) {
 			return Collections.emptyList();
@@ -368,6 +529,13 @@ public class Utils {
 		return result;
 	}
 
+	/**
+	 * 按引用（==）判断列表中是否包含指定元素
+	 *
+	 * @param list    待检查的列表
+	 * @param element 目标元素
+	 * @return 若存在引用相同的元素则返回 true
+	 */
 	public static <T> boolean containsInListByRef(List<T> list, T element) {
 		if (isEmpty(list)) {
 			return false;
@@ -380,6 +548,13 @@ public class Utils {
 		return false;
 	}
 
+	/**
+	 * 按引用（==）查找元素在列表中的索引
+	 *
+	 * @param list    待检查的列表
+	 * @param element 目标元素
+	 * @return 引用相同元素的索引，未找到时返回 -1
+	 */
 	public static <T> int indexInListByRef(List<T> list, T element) {
 		if (list == null || list.isEmpty()) {
 			return -1;
@@ -394,6 +569,12 @@ public class Utils {
 		return -1;
 	}
 
+	/**
+	 * 将列表转换为不可变列表，并对空列表和单元素列表做优化
+	 *
+	 * @param list 源列表
+	 * @return 不可变列表
+	 */
 	public static <T> List<T> lockList(List<T> list) {
 		if (list.isEmpty()) {
 			return Collections.emptyList();
@@ -405,7 +586,11 @@ public class Utils {
 	}
 
 	/**
-	 * Sub list from startIndex (inclusive) to list end
+	 * 返回列表从 startIndex（含）到末尾的子列表
+	 *
+	 * @param list       源列表
+	 * @param startIndex 起始索引（包含）
+	 * @return 子列表，起始索引超出范围时返回空列表
 	 */
 	public static <T> List<T> listTail(List<T> list, int startIndex) {
 		if (startIndex == 0) {
@@ -418,6 +603,13 @@ public class Utils {
 		return list.subList(startIndex, size);
 	}
 
+	/**
+	 * 合并两个列表为一个新列表，其中一个为空时直接返回另一个
+	 *
+	 * @param first  第一个列表
+	 * @param second 第二个列表
+	 * @return 合并后的列表
+	 */
 	public static <T> List<T> mergeLists(List<T> first, List<T> second) {
 		if (isEmpty(first)) {
 			return second;
@@ -431,6 +623,13 @@ public class Utils {
 		return result;
 	}
 
+	/**
+	 * 合并两个集合为一个新集合，其中一个为空时直接返回另一个
+	 *
+	 * @param first  第一个集合
+	 * @param second 第二个集合
+	 * @return 合并后的集合
+	 */
 	public static <T> Set<T> mergeSets(Set<T> first, Set<T> second) {
 		if (isEmpty(first)) {
 			return second;
@@ -444,6 +643,13 @@ public class Utils {
 		return result;
 	}
 
+	/**
+	 * 由成对的键值参数构建一个不可变的字符串映射
+	 *
+	 * @param parameters 键值交替排列的参数（key1, value1, key2, value2, ...）
+	 * @return 不可变的字符串映射
+	 * @throws IllegalArgumentException 当参数个数不是偶数时抛出
+	 */
 	public static Map<String, String> newConstStringMap(String... parameters) {
 		int len = parameters.length;
 		if (len == 0) {
@@ -460,7 +666,11 @@ public class Utils {
 	}
 
 	/**
-	 * Merge two maps. Return HashMap as result. Second map will override values from first map.
+	 * 合并两个 Map，返回一个新的 HashMap。第二个 Map 的值会覆盖第一个 Map 中的同名键。
+	 *
+	 * @param first  第一个 Map
+	 * @param second 第二个 Map
+	 * @return 合并后的 Map
 	 */
 	public static <K, V> Map<K, V> mergeMaps(Map<K, V> first, Map<K, V> second) {
 		if (isEmpty(first)) {
@@ -476,11 +686,15 @@ public class Utils {
 	}
 
 	/**
-	 * Build map from list of values with value to key mapping function
+	 * 通过“值到键”的映射函数，将值列表构建为 Map
 	 * <br>
-	 * Similar to:
+	 * 类似于：
 	 * <br>
 	 * {@code list.stream().collect(Collectors.toMap(mapKey, Function.identity())); }
+	 *
+	 * @param list   值列表
+	 * @param mapKey 由值提取键的映射函数
+	 * @return 构建的 Map
 	 */
 	public static <K, V> Map<K, V> groupBy(List<V> list, Function<V, K> mapKey) {
 		Map<K, V> map = new HashMap<>(list.size());
@@ -491,12 +705,23 @@ public class Utils {
 	}
 
 	/**
-	 * Simple DFS visit for tree (cycles not allowed)
+	 * 对树结构进行简单的深度优先遍历（不允许存在环）
+	 *
+	 * @param root             根节点
+	 * @param childrenProvider 提供节点子节点列表的函数
+	 * @param visitor          节点访问器
 	 */
 	public static <T> void treeDfsVisit(T root, Function<T, List<T>> childrenProvider, Consumer<T> visitor) {
 		multiRootTreeDfsVisit(Collections.singletonList(root), childrenProvider, visitor);
 	}
 
+	/**
+	 * 对多根树结构进行深度优先遍历（不允许存在环）
+	 *
+	 * @param roots            根节点列表
+	 * @param childrenProvider 提供节点子节点列表的函数
+	 * @param visitor          节点访问器
+	 */
 	public static <T> void multiRootTreeDfsVisit(List<T> roots, Function<T, List<T>> childrenProvider, Consumer<T> visitor) {
 		Deque<T> queue = new ArrayDeque<>(roots);
 		while (true) {
@@ -511,6 +736,12 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * 当列表恰好只有一个元素时返回该元素，否则返回 null
+	 *
+	 * @param list 源列表
+	 * @return 唯一元素或 null
+	 */
 	@Nullable
 	public static <T> T getOne(@Nullable List<T> list) {
 		if (list == null || list.size() != 1) {
@@ -519,6 +750,12 @@ public class Utils {
 		return list.get(0);
 	}
 
+	/**
+	 * 当集合恰好只有一个元素时返回该元素，否则返回 null
+	 *
+	 * @param collection 源集合
+	 * @return 唯一元素或 null
+	 */
 	@Nullable
 	public static <T> T getOne(@Nullable Collection<T> collection) {
 		if (collection == null || collection.size() != 1) {
@@ -527,6 +764,13 @@ public class Utils {
 		return collection.iterator().next();
 	}
 
+	/**
+	 * 判断输入集合中是否包含任意一个搜索键
+	 *
+	 * @param inputSet   输入集合
+	 * @param searchKeys 搜索键集合
+	 * @return 若存在交集则返回 true
+	 */
 	public static <T> boolean isSetContainsAny(Set<T> inputSet, Set<T> searchKeys) {
 		for (T t : inputSet) {
 			if (searchKeys.contains(t)) {
@@ -536,6 +780,12 @@ public class Utils {
 		return false;
 	}
 
+	/**
+	 * 返回列表的第一个元素，列表为空时返回 null
+	 *
+	 * @param list 源列表
+	 * @return 第一个元素或 null
+	 */
 	@Nullable
 	public static <T> T first(List<T> list) {
 		if (list.isEmpty()) {
@@ -544,6 +794,12 @@ public class Utils {
 		return list.get(0);
 	}
 
+	/**
+	 * 返回可迭代对象的第一个元素，无元素时返回 null
+	 *
+	 * @param list 源可迭代对象
+	 * @return 第一个元素或 null
+	 */
 	@Nullable
 	public static <T> T first(Iterable<T> list) {
 		Iterator<T> it = list.iterator();
@@ -553,6 +809,12 @@ public class Utils {
 		return it.next();
 	}
 
+	/**
+	 * 返回列表的最后一个元素，列表为空时返回 null
+	 *
+	 * @param list 源列表
+	 * @return 最后一个元素或 null
+	 */
 	@Nullable
 	public static <T> T last(List<T> list) {
 		if (list.isEmpty()) {
@@ -561,6 +823,12 @@ public class Utils {
 		return list.get(list.size() - 1);
 	}
 
+	/**
+	 * 返回可迭代对象的最后一个元素，无元素时返回 null
+	 *
+	 * @param list 源可迭代对象
+	 * @return 最后一个元素或 null
+	 */
 	@Nullable
 	public static <T> T last(Iterable<T> list) {
 		Iterator<T> it = list.iterator();
@@ -575,6 +843,13 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * 返回对象本身，若对象为 null 则返回默认值
+	 *
+	 * @param obj        目标对象
+	 * @param defaultObj 默认值
+	 * @return 非空对象或默认值
+	 */
 	public static <T> T getOrElse(@Nullable T obj, T defaultObj) {
 		if (obj == null) {
 			return defaultObj;
@@ -582,36 +857,80 @@ public class Utils {
 		return obj;
 	}
 
+	/**
+	 * 判断集合是否为 null 或空
+	 *
+	 * @param col 待判断的集合
+	 * @return 若为 null 或空则返回 true
+	 */
 	public static <T> boolean isEmpty(Collection<T> col) {
 		return col == null || col.isEmpty();
 	}
 
+	/**
+	 * 判断集合是否不为 null 且非空
+	 *
+	 * @param col 待判断的集合
+	 * @return 若非空则返回 true
+	 */
 	public static <T> boolean notEmpty(Collection<T> col) {
 		return col != null && !col.isEmpty();
 	}
 
+	/**
+	 * 判断 Map 是否为 null 或空
+	 *
+	 * @param map 待判断的 Map
+	 * @return 若为 null 或空则返回 true
+	 */
 	public static <K, V> boolean isEmpty(Map<K, V> map) {
 		return map == null || map.isEmpty();
 	}
 
+	/**
+	 * 判断数组是否为 null 或长度为零
+	 *
+	 * @param arr 待判断的数组
+	 * @return 若为 null 或长度为 0 则返回 true
+	 */
 	public static <T> boolean isEmpty(T[] arr) {
 		return arr == null || arr.length == 0;
 	}
 
+	/**
+	 * 判断数组是否不为 null 且长度大于零
+	 *
+	 * @param arr 待判断的数组
+	 * @return 若非空则返回 true
+	 */
 	public static <T> boolean notEmpty(T[] arr) {
 		return arr != null && arr.length != 0;
 	}
 
+	/**
+	 * 检查当前线程是否被中断，若已中断则抛出运行时异常
+	 *
+	 * @throws JadxRuntimeException 当前线程被中断时抛出
+	 */
 	public static void checkThreadInterrupt() {
 		if (Thread.currentThread().isInterrupted()) {
 			throw new JadxRuntimeException("Thread interrupted");
 		}
 	}
 
+	/**
+	 * 创建一个带命名前缀的简单线程工厂
+	 *
+	 * @param name 线程名称前缀
+	 * @return 线程工厂实例
+	 */
 	public static ThreadFactory simpleThreadFactory(String name) {
 		return new SimpleThreadFactory(name);
 	}
 
+	/**
+	 * 简单线程工厂实现，为线程设置统一的命名规则和未捕获异常处理器
+	 */
 	private static final class SimpleThreadFactory implements ThreadFactory {
 		private static final AtomicInteger POOL = new AtomicInteger(0);
 		private static final Thread.UncaughtExceptionHandler EXC_HANDLER = new SimpleUncaughtExceptionHandler();
@@ -632,6 +951,9 @@ public class Utils {
 			return thread;
 		}
 
+		/**
+		 * 未捕获异常处理器，对内存溢出错误强制中断线程，其他异常仅记录日志
+		 */
 		private static class SimpleUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 			private static final Logger LOG = LoggerFactory.getLogger(SimpleUncaughtExceptionHandler.class);
 
@@ -648,8 +970,13 @@ public class Utils {
 	}
 
 	/**
-	 * @deprecated env vars shouldn't be used in core modules.
-	 *             Prefer to parse in `app` (use JadxCommonEnv from 'app-commons') and set in jadx args.
+	 * 读取布尔类型的环境变量
+	 *
+	 * @param varName  环境变量名
+	 * @param defValue 默认值
+	 * @return 环境变量的布尔值，未设置时返回默认值
+	 * @deprecated 核心模块中不应使用环境变量。
+	 *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置。
 	 */
 	@Deprecated
 	public static boolean getEnvVarBool(String varName, boolean defValue) {
@@ -661,8 +988,13 @@ public class Utils {
 	}
 
 	/**
-	 * @deprecated env vars shouldn't be used in core modules.
-	 *             Prefer to parse in `app` (use JadxCommonEnv from 'app-commons') and set in jadx args.
+	 * 读取整数类型的环境变量
+	 *
+	 * @param varName  环境变量名
+	 * @param defValue 默认值
+	 * @return 环境变量的整数值，未设置时返回默认值
+	 * @deprecated 核心模块中不应使用环境变量。
+	 *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置。
 	 */
 	@Deprecated
 	public static int getEnvVarInt(String varName, int defValue) {
@@ -673,6 +1005,13 @@ public class Utils {
 		return Integer.parseInt(strValue);
 	}
 
+	/**
+	 * 安全地将字符串解析为 int，解析失败时返回默认值
+	 *
+	 * @param value    待解析的字符串
+	 * @param defValue 默认值
+	 * @return 解析结果或默认值
+	 */
 	public static int safeParseInt(String value, int defValue) {
 		if (value == null || value.isEmpty()) {
 			return defValue;
@@ -684,6 +1023,12 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * 安全地将字符串解析为 Integer，解析失败时返回 null
+	 *
+	 * @param value 待解析的字符串
+	 * @return 解析结果，失败时返回 null
+	 */
 	public static @Nullable Integer safeParseInteger(@Nullable String value) {
 		if (value == null || value.isEmpty()) {
 			return null;

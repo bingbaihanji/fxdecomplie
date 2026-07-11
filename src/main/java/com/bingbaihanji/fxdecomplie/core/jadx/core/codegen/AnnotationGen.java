@@ -15,7 +15,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.AnnotationDefaultAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.AnnotationMethodParamsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.AnnotationsAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.IAttributeNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
@@ -70,7 +70,7 @@ public class AnnotationGen {
 		}
 		for (IAnnotation a : aList.getAll()) {
 			String aCls = a.getAnnotationClass();
-			if (!aCls.equals(Consts.OVERRIDE_ANNOTATION)) {
+			if (!aCls.equals(JadxConsts.OVERRIDE_ANNOTATION)) {
 				code.startLine();
 				formatAnnotation(code, a);
 			}

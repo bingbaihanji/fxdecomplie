@@ -16,12 +16,27 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.IDecompileScheduler;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JavaClass;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
+/**
+ * 反编译调度器，负责将待反编译的类分组成批次。
+ * <p>
+ * 根据类之间的依赖关系进行排序和分组，以优化反编译顺序并减少线程间的锁竞争。
+ * 实现了 {@link IDecompileScheduler} 接口。
+ */
 public class DecompilerScheduler implements IDecompileScheduler {
 	private static final Logger LOG = LoggerFactory.getLogger(DecompilerScheduler.class);
 
 	private static final int MERGED_BATCH_SIZE = 16;
 	private static final boolean DEBUG_BATCHES = false;
 
+	/**
+	 * 构建反编译批次。
+	 * <p>
+	 * 根据类之间的依赖关系将待反编译的类分组成多个批次。构建失败（如栈溢出或其他异常）时，
+	 * 会回退到简单的按依赖数排序的单类批次方案。
+	 *
+	 * @param classes 待反编译的类列表
+	 * @return 分组后的批次列表
+	 */
 	@Override
 	public List<List<JavaClass>> buildBatches(List<JavaClass> classes) {
 		try {
@@ -44,8 +59,11 @@ public class DecompilerScheduler implements IDecompileScheduler {
 	}
 
 	/**
-	 * Put classes with many dependencies at the end.
-	 * Build batches for dependencies of single class to avoid locking from another thread.
+	 * 将依赖较多的类排到最后。
+	 * 为单个类的依赖构建批次，以避免其它线程对这些依赖类加锁而产生竞争。
+	 *
+	 * @param classes 待反编译的类列表
+	 * @return 分组后的批次列表
 	 */
 	public List<List<JavaClass>> internalBatches(List<JavaClass> classes) {
 		List<DepInfo> deps = sumDependencies(classes);
@@ -60,7 +78,7 @@ public class DecompilerScheduler implements IDecompileScheduler {
 			}
 			int depsSize = cls.getTotalDepsCount();
 			if (depsSize == 0) {
-				// add classes without dependencies in merged batch
+				// 将无依赖的类加入合并批次
 				mergedBatch.add(cls);
 				if (mergedBatch.size() >= MERGED_BATCH_SIZE) {
 					result.add(mergedBatch);
@@ -102,6 +120,9 @@ public class DecompilerScheduler implements IDecompileScheduler {
 		return deps;
 	}
 
+	/**
+	 * 依赖信息，记录某个类及其累计依赖数量，用于按依赖数排序。
+	 */
 	private static final class DepInfo implements Comparable<DepInfo> {
 		private final JavaClass cls;
 		private final int depsCount;

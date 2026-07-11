@@ -66,6 +66,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResourceStorage;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ValuesParser;
 
+/**
+ * DEX 文件的根节点，是整个反编译模型的顶层容器。
+ * <p>
+ * 负责管理所有已加载的类（{@link ClassNode}）、包（{@link PackageNode}）、
+ * 类路径图（{@link ClspGraph}）以及反编译遍历器（{@link IDexTreeVisitor}）。
+ * 同时持有反编译参数（{@link JadxArgs}）、常量存储、信息存储和缓存等全局资源。
+ */
 public class RootNode {
 	private static final Logger LOG = LoggerFactory.getLogger(RootNode.class);
 
@@ -98,7 +105,7 @@ public class RootNode {
 	private @Nullable ClassNode appResClass;
 
 	/**
-	 * Optional decompiler reference
+	 * 可选的反编译器引用
 	 */
 	private @Nullable JadxDecompiler decompiler;
 
@@ -109,7 +116,7 @@ public class RootNode {
 	}
 
 	/**
-	 * Deprecated. Prefer {@link #RootNode(JadxDecompiler)}
+	 * 已废弃。推荐使用 {@link #RootNode(JadxDecompiler)}
 	 */
 	@Deprecated
 	public RootNode(JadxArgs args) {
@@ -128,6 +135,9 @@ public class RootNode {
 		this.typeUtils = new TypeUtils(this);
 	}
 
+	/**
+	 * 初始化根节点。当启用混淆还原或重命名标志时，初始化别名提供器和重命名条件。
+	 */
 	public void init() {
 		if (args.isDeobfuscationOn() || !args.getRenameFlags().isEmpty()) {
 			args.getAliasProvider().init(this);
@@ -137,6 +147,10 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 从加载的输入源加载所有类
+	 * @param loadedInputs 已加载的代码输入源列表
+	 */
 	public void loadClasses(List<ICodeLoader> loadedInputs) {
 		for (ICodeLoader codeLoader : loadedInputs) {
 			codeLoader.visitClasses(cls -> {
@@ -150,29 +164,43 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 完成类加载后的处理流程：
+	 * 1. 检测并修复重复类名
+	 * 2. 打印已加载类、方法和指令的统计信息
+	 * 3. 按名称排序类（顶层类排在内部类之前）
+	 * 4. 可选地检测并移动内部类到其父类中
+	 * 5. 排序包列表
+	 */
 	public void finishClassLoad() {
 		if (classes.size() != clsMap.size()) {
-			// class name duplication detected
+			// 检测到类名重复
 			fixDuplicatedClasses();
 		}
 		classes = new ArrayList<>(clsMap.values());
 
-		// print stats for loaded classes
+		// 打印已加载类的统计信息
 		int mthCount = classes.stream().mapToInt(c -> c.getMethods().size()).sum();
 		int insnsCount = classes.stream().flatMap(c -> c.getMethods().stream()).mapToInt(MethodNode::getInsnsCount).sum();
 		LOG.info("Loaded classes: {}, methods: {}, instructions: {}", classes.size(), mthCount, insnsCount);
 
-		// sort classes by name, expect top classes before inner
+		// 按名称排序类，顶层类排在内部类之前
 		classes.sort(Comparator.comparing(ClassNode::getRawName));
 
 		if (args.isMoveInnerClasses()) {
-			// detect and move inner classes
+			// 检测并移动内部类
 			initInnerClasses();
 		}
-		// sort packages
+		// 排序包列表
 		Collections.sort(packages);
 	}
 
+	/**
+	 * 当类加载失败时，创建一个占位的合成类节点，用于记录错误信息。
+	 *
+	 * @param classData 原始类数据
+	 * @param exc       加载过程中发生的异常
+	 */
 	private void addDummyClass(IClassData classData, Exception exc) {
 		try {
 			String typeStr = classData.getType();
@@ -195,6 +223,10 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 修复重复类名问题。当多个输入源中存在相同全限定名的类时，
+	 * 通过 {@link SelectFromDuplicates} 策略选择保留其中一个，并移除其余重复项。
+	 */
 	private void fixDuplicatedClasses() {
 		classes.stream()
 				.collect(Collectors.groupingBy(ClassNode::getClassInfo))
@@ -206,7 +238,7 @@ public class RootNode {
 					List<ClassNode> dupClsList = entry.getValue();
 					ClassNode selectedCls = SelectFromDuplicates.process(dupClsList);
 
-					// keep only selected class in classes maps
+					// 仅在类映射中保留选定的类
 					clsMap.put(clsInfo, selectedCls);
 					rawClsMap.put(selectedCls.getRawName(), selectedCls);
 
@@ -222,12 +254,24 @@ public class RootNode {
 				});
 	}
 
+	/**
+	 * 将类节点添加到根节点中，同时更新类信息映射和原始名称映射。
+	 *
+	 * @param clsNode 要添加的类节点
+	 */
 	public void addClassNode(ClassNode clsNode) {
 		classes.add(clsNode);
 		clsMap.put(clsNode.getClassInfo(), clsNode);
 		rawClsMap.put(clsNode.getRawName(), clsNode);
 	}
 
+	/**
+	 * 加载并处理 Android 资源文件。解析 resources.arsc 或 resources.pb 文件，
+	 * 处理资源存储、更新混淆的资源文件名，并初始化 Manifest 属性。
+	 *
+	 * @param resLoader 资源加载器
+	 * @param resources 资源文件列表
+	 */
 	public void loadResources(ResourcesLoader resLoader, List<ResourceFile> resources) {
 		ResourceFile arsc = getResourceFile(resources);
 		if (arsc == null) {
@@ -246,6 +290,12 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 从资源文件列表中查找 ARSC 类型的资源文件。
+	 *
+	 * @param resources 资源文件列表
+	 * @return 找到的 ARSC 资源文件，未找到则返回 null
+	 */
 	private @Nullable ResourceFile getResourceFile(List<ResourceFile> resources) {
 		for (ResourceFile rf : resources) {
 			if (rf.getType() == ResourceType.ARSC) {
@@ -255,12 +305,21 @@ public class RootNode {
 		return null;
 	}
 
+	/**
+	 * 处理资源存储数据，设置资源名称常量、应用包名，并搜索应用资源类。
+	 *
+	 * @param resStorage 资源存储对象
+	 */
 	public void processResources(ResourceStorage resStorage) {
 		constValues.setResourcesNames(resStorage.getResourcesNames());
 		appPackage = resStorage.getAppPackage();
 		appResClass = AndroidResourcesUtils.searchAppResClass(this, resStorage);
 	}
 
+	/**
+	 * 初始化类路径图（{@link ClspGraph}）。加载 jadx 类集合文件，
+	 * 将应用中的类添加到图中，并初始化缓存。
+	 */
 	public void initClassPath() {
 		try {
 			if (this.clsp == null) {
@@ -277,6 +336,13 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 更新混淆的资源文件名。通过资源表中的条目名称匹配资源文件，
+	 * 并根据配置设置资源文件的别名（原始名称）。
+	 *
+	 * @param parser    资源表解析器
+	 * @param resources 资源文件列表
+	 */
 	private void updateObfuscatedFiles(IResTableParser parser, List<ResourceFile> resources) {
 		if (args.isSkipResources()) {
 			return;
@@ -306,8 +372,12 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 初始化内部类关系。将内部类移动到其父类中，
+	 * 并处理无法找到父类的内部类（将其标记为非内部类）。
+	 */
 	private void initInnerClasses() {
-		// move inner classes
+		// 移动内部类
 		List<ClassNode> inner = new ArrayList<>();
 		for (ClassNode cls : classes) {
 			if (cls.getClassInfo().isInner()) {
@@ -325,7 +395,7 @@ public class RootNode {
 				parent.addInnerClass(cls);
 			}
 		}
-		// reload names for inner classes of updated parents
+		// 重新加载已更新父类的内部类名称
 		for (ClassNode updCls : updated) {
 			for (ClassNode innerCls : updCls.getInnerClasses()) {
 				innerCls.getClassInfo().updateNames(this);
@@ -336,10 +406,17 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 合并自定义遍历器到反编译流程中。对于预定义模式（FALLBACK、SIMPLE），
+	 * 忽略自定义遍历器；否则将自定义的准备阶段和反编译阶段遍历器合并到现有流程中。
+	 * 同时处理调试检查和禁用遍历器的配置。
+	 *
+	 * @param customPasses 按类型分组的自定义遍历器映射
+	 */
 	public void mergePasses(Map<JadxPassType, List<JadxPass>> customPasses) {
 		DecompilationMode mode = args.getDecompilationMode();
 		if (mode == DecompilationMode.FALLBACK || mode == DecompilationMode.SIMPLE) {
-			// for predefined modes ignore custom (and plugin) passes
+			// 对于预定义模式，忽略自定义（和插件）遍历器
 			return;
 		}
 
@@ -367,6 +444,10 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 运行反编译前的准备阶段。遍历所有准备阶段的遍历器，
+	 * 对每个非内部类执行深度优先遍历。记录每个遍历器的执行耗时（DEBUG 级别）。
+	 */
 	public void runPreDecompileStage() {
 		boolean debugEnabled = LOG.isDebugEnabled();
 		for (IDexTreeVisitor pass : preDecompilePasses) {
@@ -389,13 +470,21 @@ public class RootNode {
 		}
 	}
 
+	/**
+	 * 为单个类运行反编译前的准备阶段遍历器。
+	 *
+	 * @param cls 要处理的类节点
+	 */
 	public void runPreDecompileStageForClass(ClassNode cls) {
 		for (IDexTreeVisitor pass : preDecompilePasses) {
 			DepthTraversal.visit(pass, cls);
 		}
 	}
 
-	// TODO: make better API for reload passes lists
+	// TODO: 为重新加载遍历器列表创建更好的 API
+	/**
+	 * 重置所有遍历器列表为默认状态，用于插件或自定义遍历器变更后重新加载。
+	 */
 	public void resetPasses() {
 		preDecompilePasses.clear();
 		preDecompilePasses.addAll(Jadx.getPreDecompilePassesList());
@@ -404,6 +493,9 @@ public class RootNode {
 		processClasses.getPasses().addAll(Jadx.getPassesList(args));
 	}
 
+	/**
+	 * 重启所有遍历器。卸载所有类的缓存数据，清除属性，并重新运行准备阶段。
+	 */
 	public void restartVisitors() {
 		for (ClassNode cls : classes) {
 			cls.unload();

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.PhiListAttr;
@@ -193,7 +193,7 @@ public class InsnRemover {
 					break;
 				}
 			}
-			if (!found && Consts.DEBUG_WITH_ERRORS) {
+			if (!found && false) {
 				throw new JadxRuntimeException("Can't remove insn:"
 						+ "\n  " + rem
 						+ "\n not found in list:"

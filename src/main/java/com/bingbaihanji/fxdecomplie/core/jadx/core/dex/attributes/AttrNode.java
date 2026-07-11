@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.CommentsLevel;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.annotations.IAnnotation;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.IJadxAttribute;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.JadxCommentsAttr;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 
@@ -19,7 +19,7 @@ public abstract class AttrNode implements IAttributeNode {
 	@Override
 	public void add(AFlag flag) {
 		initStorage().add(flag);
-		if (Consts.DEBUG_ATTRIBUTES) {
+		if (false) {
 			addDebugComment("Add flag " + flag + " at " + Utils.currentStackTrace(2));
 		}
 	}
@@ -27,7 +27,7 @@ public abstract class AttrNode implements IAttributeNode {
 	@Override
 	public void addAttr(IJadxAttribute attr) {
 		initStorage().add(attr);
-		if (Consts.DEBUG_ATTRIBUTES) {
+		if (false) {
 			addDebugComment("Add attribute " + attr.getClass().getSimpleName()
 					+ ": " + attr + " at " + Utils.currentStackTrace(2));
 		}
@@ -44,7 +44,7 @@ public abstract class AttrNode implements IAttributeNode {
 	@Override
 	public <T> void addAttr(IJadxAttrType<AttrList<T>> type, T obj) {
 		initStorage().add(type, obj);
-		if (Consts.DEBUG_ATTRIBUTES) {
+		if (false) {
 			addDebugComment("Add attribute " + obj + " at " + Utils.currentStackTrace(2));
 		}
 	}

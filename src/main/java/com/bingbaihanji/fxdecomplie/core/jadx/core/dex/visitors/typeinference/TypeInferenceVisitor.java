@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.AnonymousClassAttr;
@@ -40,6 +40,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.JadxVisitor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.ssa.SSATransform;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxOverflowException;
 
+/**
+ * 类型推断访问器。
+ * <p>
+ * 为 SSA 变量计算最佳类型。该访问器在 SSA 变换、常量内联和方法详情附加之后运行，
+ * 通过收集类型边界信息并进行类型传播来推断每个变量的最优类型。
+ * </p>
+ */
 @JadxVisitor(
 		name = "Type Inference",
 		desc = "Calculate best types for SSA variables",
@@ -55,18 +62,25 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 	private RootNode root;
 	private TypeUpdate typeUpdate;
 
+	/**
+	 * 初始化类型推断访问器，设置根节点和类型更新器
+	 */
 	@Override
 	public void init(RootNode root) {
 		this.root = root;
 		this.typeUpdate = root.getTypeUpdate();
 	}
 
+	/**
+	 * 对单个方法执行类型推断：先赋予不可变类型，再收集类型边界，最后进行类型传播。
+	 * 无代码的方法直接跳过；推断过程中的栈溢出或异常会作为错误附加到方法上，不会中断整体流程。
+	 */
 	@Override
 	public void visit(MethodNode mth) {
 		if (mth.isNoCode()) {
 			return;
 		}
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.info("Start type inference in method: {}", mth);
 		}
 		try {
@@ -81,21 +95,21 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * Collect initial type bounds from assign and usages
+	 * 收集初始类型边界信息，包括赋值边界和使用边界
 	 */
 	void initTypeBounds(MethodNode mth) {
 		List<SSAVar> ssaVars = mth.getSVars();
 		ssaVars.forEach(this::attachBounds);
 		ssaVars.forEach(this::mergePhiBounds);
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			ssaVars.stream().sorted()
 					.forEach(ssaVar -> LOG.debug("Type bounds for {}: {}", ssaVar.toShortString(), ssaVar.getTypeInfo().getBounds()));
 		}
 	}
 
 	/**
-	 * Guess type from usage and try to set it to current variable
-	 * and all connected instructions with {@link TypeUpdate#apply(MethodNode, SSAVar, ArgType)}
+	 * 执行类型传播：根据使用情况推测类型，并尝试将其设置到当前变量
+	 * 以及所有通过 {@link TypeUpdate#apply(MethodNode, SSAVar, ArgType)} 关联的指令
 	 */
 	boolean runTypePropagation(MethodNode mth) {
 		List<SSAVar> ssaVars = mth.getSVars();
@@ -109,7 +123,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 			ArgType immutableType = ssaVar.getImmutableType();
 			if (immutableType != null) {
 				TypeUpdateResult result = typeUpdate.applyWithWiderIgnSame(mth, ssaVar, immutableType);
-				if (Consts.DEBUG_TYPE_INFERENCE && result == TypeUpdateResult.REJECT) {
+				if (false && result == TypeUpdateResult.REJECT) {
 					LOG.info("Reject initial immutable type {} for {}", immutableType, ssaVar);
 				}
 			}
@@ -135,7 +149,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 		Set<ITypeBound> bounds = typeInfo.getBounds();
 		Optional<ArgType> bestTypeOpt = selectBestTypeFromBounds(bounds);
 		if (bestTypeOpt.isEmpty()) {
-			if (Consts.DEBUG_TYPE_INFERENCE) {
+			if (false) {
 				LOG.warn("Failed to select best type from bounds, count={} : ", bounds.size());
 				for (ITypeBound bound : bounds) {
 					LOG.warn("  {}", bound);
@@ -145,7 +159,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 		}
 		ArgType candidateType = bestTypeOpt.get();
 		TypeUpdateResult result = typeUpdate.apply(mth, ssaVar, candidateType);
-		if (Consts.DEBUG_TYPE_INFERENCE && result == TypeUpdateResult.REJECT) {
+		if (false && result == TypeUpdateResult.REJECT) {
 			if (ssaVar.getTypeInfo().getType().equals(candidateType)) {
 				LOG.info("Same type rejected: {} -> {}, bounds: {}", ssaVar, candidateType, bounds);
 			} else if (candidateType.isTypeKnown()) {
@@ -240,7 +254,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 
 			case CHECK_CAST:
 				if (insn.contains(AFlag.SOFT_CAST)) {
-					// ignore bound, will run checks on update
+					// 忽略边界约束，将在类型更新时进行检查
 				} else {
 					addBound(typeInfo, new TypeBoundCheckCastAssign(root, (IndexInsnNode) insn));
 				}
@@ -304,7 +318,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 			}
 		}
 		if (insn.getType() == InsnType.CHECK_CAST && insn.contains(AFlag.SOFT_CAST)) {
-			// ignore
+			// 忽略软类型转换
 			return null;
 		}
 		return new TypeBoundConst(BoundEnum.USE, regArg.getInitType(), regArg);
@@ -329,7 +343,7 @@ public final class TypeInferenceVisitor extends AbstractVisitor {
 			return new TypeBoundInvokeUse(root, invoke, regArg, argType);
 		}
 
-		// for override methods use origin declared class as a type
+		// 对于重写方法，使用原始声明类作为类型
 		if (methodDetails instanceof MethodNode) {
 			MethodNode callMth = (MethodNode) methodDetails;
 			ClassInfo declCls = methodUtils.getMethodOriginDeclClass(callMth);

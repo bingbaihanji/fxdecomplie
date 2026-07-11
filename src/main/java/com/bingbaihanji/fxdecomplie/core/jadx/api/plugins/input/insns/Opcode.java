@@ -1,5 +1,11 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns;
 
+/**
+ * 指令操作码枚举。
+ * <p>
+ * 统一表示来自不同字节码格式（Dalvik DEX、Java 字节码等）的指令类型，
+ * 供反编译引擎在解析、分析和转换指令时使用。
+ */
 public enum Opcode {
 	UNKNOWN,
 	NOP,
@@ -190,7 +196,7 @@ public enum Opcode {
 	CONST_METHOD_HANDLE,
 	CONST_METHOD_TYPE,
 
-	// Java specific dynamic jump instructions
+	// Java 特有的动态跳转指令
 	JAVA_JSR,
 	JAVA_RET,
 }

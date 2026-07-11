@@ -6,7 +6,7 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
@@ -37,10 +37,10 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 public class ApplyVariableNames extends AbstractVisitor {
 
 	private static final Map<String, String> OBJ_ALIAS = Utils.newConstStringMap(
-			Consts.CLASS_STRING, "str",
-			Consts.CLASS_CLASS, "cls",
-			Consts.CLASS_THROWABLE, "th",
-			Consts.CLASS_OBJECT, "obj",
+			JadxConsts.CLASS_STRING, "str",
+			JadxConsts.CLASS_CLASS, "cls",
+			JadxConsts.CLASS_THROWABLE, "th",
+			JadxConsts.CLASS_OBJECT, "obj",
 			"java.util.Iterator", "it",
 			"java.util.HashMap", "map",
 			"java.lang.Boolean", "bool",
@@ -244,7 +244,7 @@ public class ApplyVariableNames extends AbstractVisitor {
 			return makeNameForClass(declClass);
 		}
 		if ("forName".equals(name) && declClass.getType().equals(ArgType.CLASS)) {
-			return OBJ_ALIAS.get(Consts.CLASS_CLASS);
+			return OBJ_ALIAS.get(JadxConsts.CLASS_CLASS);
 		}
 		// use method name as a variable name not the best idea in most cases
 		if (!GOOD_VAR_NAMES.contains(name)) {

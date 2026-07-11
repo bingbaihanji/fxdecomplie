@@ -24,12 +24,31 @@ import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.utils.Descripto
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.utils.JavaClassParseException;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.utils.ModifiedUTF8Decoder;
 
+/**
+ * 常量池读取器。
+ * <p>
+ * 依据 {@link ClassOffsets} 记录的各常量池项偏移，从 class 文件的字节数据中
+ * 按索引读取常量池条目，包括类引用、字段引用、方法引用、调用点、方法句柄
+ * 以及各类字面量常量，并将其转换为上层需要的数据结构。
+ */
 public class ConstPoolReader {
+	/** 所属的类读取器 */
 	private final JavaClassReader clsReader;
+	/** 所属的类数据 */
 	private final JavaClassData clsData;
+	/** 底层字节数据读取器 */
 	private final DataReader data;
+	/** 常量池各条目的偏移信息 */
 	private final ClassOffsets offsets;
 
+	/**
+	 * 构造常量池读取器。
+	 *
+	 * @param clsReader     所属的类读取器
+	 * @param javaClassData 所属的类数据
+	 * @param data          底层字节数据读取器
+	 * @param offsets       常量池各条目的偏移信息
+	 */
 	public ConstPoolReader(JavaClassReader clsReader, JavaClassData javaClassData, DataReader data, ClassOffsets offsets) {
 		this.clsReader = clsReader;
 		this.clsData = javaClassData;
@@ -37,6 +56,12 @@ public class ConstPoolReader {
 		this.offsets = offsets;
 	}
 
+	/**
+	 * 读取指定索引处的类常量，返回其规范化后的类型描述符。
+	 *
+	 * @param idx 常量池索引
+	 * @return 类型描述符，索引对应的名称为空时返回 {@code null}
+	 */
 	@Nullable
 	public String getClass(int idx) {
 		jumpToData(idx);
@@ -44,6 +69,12 @@ public class ConstPoolReader {
 		return fixType(getUtf8(nameIdx));
 	}
 
+	/**
+	 * 读取指定索引处的字段引用。
+	 *
+	 * @param idx 常量池索引
+	 * @return 字段引用数据
+	 */
 	public IFieldRef getFieldRef(int idx) {
 		jumpToData(idx);
 		int clsIdx = data.readU2();
@@ -59,6 +90,12 @@ public class ConstPoolReader {
 		return fieldData;
 	}
 
+	/**
+	 * 读取指定索引处字段引用的类型描述符。
+	 *
+	 * @param idx 常量池索引
+	 * @return 字段类型描述符
+	 */
 	public String getFieldType(int idx) {
 		jumpToData(idx);
 		data.skip(2);
@@ -69,6 +106,12 @@ public class ConstPoolReader {
 		return getUtf8(typeIdx);
 	}
 
+	/**
+	 * 读取指定索引处的方法引用。
+	 *
+	 * @param idx 常量池索引
+	 * @return 方法引用数据
+	 */
 	public IMethodRef getMethodRef(int idx) {
 		jumpToData(idx);
 		int clsIdx = data.readU2();
@@ -85,6 +128,13 @@ public class ConstPoolReader {
 		return mthRef;
 	}
 
+	/**
+	 * 读取指定索引处的调用点（invokedynamic）。
+	 *
+	 * @param idx 常量池索引
+	 * @return 调用点数据
+	 * @throws JavaClassParseException 当常量类型为字段调用点（尚未实现）或非预期类型时抛出
+	 */
 	public ICallSite getCallSite(int idx) {
 		ConstantType constType = jumpToConst(idx);
 		switch (constType) {
@@ -102,6 +152,15 @@ public class ConstPoolReader {
 		}
 	}
 
+	/**
+	 * 根据引导方法及名称/描述符解析出方法调用点。
+	 *
+	 * @param bootstrapMthIdx 引导方法索引
+	 * @param nameIdx         名称常量索引
+	 * @param descIdx         描述符常量索引
+	 * @return 解析出的调用点
+	 * @throws JavaClassParseException 当缺少 BootstrapMethods 属性时抛出
+	 */
 	private CallSite resolveMethodCallSite(int bootstrapMthIdx, int nameIdx, int descIdx) {
 		JavaBootstrapMethodsAttr bootstrapMethodsAttr = clsData.loadClassAttribute(data, JavaAttrType.BOOTSTRAP_METHODS);
 		if (bootstrapMethodsAttr == null) {
@@ -119,6 +178,12 @@ public class ConstPoolReader {
 		return new CallSite(values);
 	}
 
+	/**
+	 * 读取指定索引处的方法句柄。
+	 *
+	 * @param idx 常量池索引
+	 * @return 方法句柄，字段类型句柄返回 {@link FieldRefHandle}，否则返回 {@link MethodRefHandle}
+	 */
 	private IMethodHandle getMethodHandle(int idx) {
 		jumpToData(idx);
 		int kind = data.readU1();
@@ -130,6 +195,13 @@ public class ConstPoolReader {
 		return new MethodRefHandle(handleType, getMethodRef(refIdx));
 	}
 
+	/**
+	 * 将 class 文件中的方法句柄种类（reference_kind）转换为 {@link MethodHandleType}。
+	 *
+	 * @param kind 方法句柄种类值（1-9）
+	 * @return 对应的方法句柄类型
+	 * @throws IllegalArgumentException 当种类值未知时抛出
+	 */
 	private MethodHandleType convertMethodHandleKind(int kind) {
 		switch (kind) {
 			case 1:
@@ -155,6 +227,12 @@ public class ConstPoolReader {
 		}
 	}
 
+	/**
+	 * 读取指定索引处的 UTF-8 字符串常量。
+	 *
+	 * @param idx 常量池索引，为 0 时表示无值
+	 * @return 字符串内容，索引为 0 时返回 {@code null}
+	 */
 	public String getUtf8(int idx) {
 		if (idx == 0) {
 			return null;
@@ -163,49 +241,106 @@ public class ConstPoolReader {
 		return readString();
 	}
 
+	/**
+	 * 跳转到指定索引的常量条目并读取其标签，返回常量类型。
+	 *
+	 * @param idx 常量池索引
+	 * @return 该常量的类型
+	 */
 	public ConstantType jumpToConst(int idx) {
 		jumpToTag(idx);
 		return ConstantType.getTypeByTag(data.readU1());
 	}
 
+	/**
+	 * 从当前位置读取一个带长度前缀的 Modified UTF-8 字符串。
+	 *
+	 * @return 解析出的字符串
+	 */
 	public String readString() {
 		int len = data.readU2();
 		byte[] bytes = data.readBytes(len);
 		return parseString(bytes);
 	}
 
+	/**
+	 * 从当前位置读取一个无符号 2 字节整数。
+	 *
+	 * @return 读取到的值
+	 */
 	public int readU2() {
 		return data.readU2();
 	}
 
+	/**
+	 * 从当前位置读取一个无符号 4 字节整数。
+	 *
+	 * @return 读取到的值
+	 */
 	public int readU4() {
 		return data.readU4();
 	}
 
+	/**
+	 * 从当前位置读取一个无符号 8 字节整数。
+	 *
+	 * @return 读取到的值
+	 */
 	public long readU8() {
 		return data.readU8();
 	}
 
+	/**
+	 * 读取指定索引处的 Integer 常量。
+	 *
+	 * @param idx 常量池索引
+	 * @return int 值
+	 */
 	public int getInt(int idx) {
 		jumpToData(idx);
 		return data.readS4();
 	}
 
+	/**
+	 * 读取指定索引处的 Long 常量。
+	 *
+	 * @param idx 常量池索引
+	 * @return long 值
+	 */
 	public long getLong(int idx) {
 		jumpToData(idx);
 		return data.readS8();
 	}
 
+	/**
+	 * 读取指定索引处的 Double 常量。
+	 *
+	 * @param idx 常量池索引
+	 * @return double 值
+	 */
 	public double getDouble(int idx) {
 		jumpToData(idx);
 		return Double.longBitsToDouble(data.readU8());
 	}
 
+	/**
+	 * 读取指定索引处的 Float 常量。
+	 *
+	 * @param idx 常量池索引
+	 * @return float 值
+	 */
 	public float getFloat(int idx) {
 		jumpToData(idx);
 		return Float.intBitsToFloat(data.readU4());
 	}
 
+	/**
+	 * 将指定索引处的常量读取为编码值（{@link EncodedValue}）。
+	 *
+	 * @param idx 常量池索引
+	 * @return 对应的编码值
+	 * @throws JavaClassParseException 当该常量类型无法编码为编码值时抛出
+	 */
 	public EncodedValue readAsEncodedValue(int idx) {
 		ConstantType constantType = jumpToConst(idx);
 		switch (constantType) {
@@ -233,11 +368,26 @@ public class ConstPoolReader {
 		}
 	}
 
+	/**
+	 * 将 Modified UTF-8 字节解码为字符串。
+	 *
+	 * @param bytes 字节内容
+	 * @return 解码后的字符串
+	 */
 	@NotNull
 	private String parseString(byte[] bytes) {
 		return ModifiedUTF8Decoder.decodeString(bytes);
 	}
 
+	/**
+	 * 规范化类名，使其成为合法的类型描述符。
+	 * <p>
+	 * 数组类型（以 {@code [} 开头）原样返回；已带 {@code L}/{@code T} 前缀且以
+	 * {@code ;} 结尾的原样返回；其余情况补全为 {@code L<类名>;} 形式。
+	 *
+	 * @param clsName 原始类名
+	 * @return 规范化后的类型描述符
+	 */
 	private String fixType(String clsName) {
 		switch (clsName.charAt(0)) {
 			case '[':
@@ -253,10 +403,20 @@ public class ConstPoolReader {
 		return 'L' + clsName + ';';
 	}
 
+	/**
+	 * 将读取位置跳转到指定索引常量条目的数据起始处。
+	 *
+	 * @param idx 常量池索引
+	 */
 	private void jumpToData(int idx) {
 		data.absPos(offsets.getOffsetOfConstEntry(idx));
 	}
 
+	/**
+	 * 将读取位置跳转到指定索引常量条目的标签处（数据起始前 1 字节）。
+	 *
+	 * @param idx 常量池索引
+	 */
 	private void jumpToTag(int idx) {
 		data.absPos(offsets.getOffsetOfConstEntry(idx) - 1);
 	}

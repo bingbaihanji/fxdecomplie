@@ -6,7 +6,7 @@ import java.util.Objects;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.AccessFlags;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.FieldReplaceAttr;
@@ -159,7 +159,7 @@ public class ClassModifier extends AbstractVisitor {
 		}
 		ClassNode cls = mth.getParentClass();
 		if (removeBridgeMethod(cls, mth)) {
-			if (Consts.DEBUG) {
+			if (false) {
 				mth.addDebugComment("Removed as synthetic bridge method");
 			} else {
 				mth.add(AFlag.DONT_GENERATE);

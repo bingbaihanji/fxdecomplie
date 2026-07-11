@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.ExceptionsAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.clsp.ClspClass;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.clsp.ClspMethod;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -87,12 +87,12 @@ public class MethodThrowsVisitor extends AbstractVisitor {
 	}
 
 	private void mergeExceptions(Set<String> excSet) {
-		if (excSet.contains(Consts.CLASS_EXCEPTION)) {
-			excSet.removeIf(e -> !e.equals(Consts.CLASS_EXCEPTION));
+		if (excSet.contains(JadxConsts.CLASS_EXCEPTION)) {
+			excSet.removeIf(e -> !e.equals(JadxConsts.CLASS_EXCEPTION));
 			return;
 		}
-		if (excSet.contains(Consts.CLASS_THROWABLE)) {
-			excSet.removeIf(e -> !e.equals(Consts.CLASS_THROWABLE));
+		if (excSet.contains(JadxConsts.CLASS_THROWABLE)) {
+			excSet.removeIf(e -> !e.equals(JadxConsts.CLASS_THROWABLE));
 			return;
 		}
 		List<String> toRemove = new ArrayList<>();

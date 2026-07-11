@@ -44,8 +44,22 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 				RenameVisitor.class
 		}
 )
+/**
+ * 重写方法访问器。
+ * <p>
+ * 遍历类的父类型层次结构，标记出属于方法重写（override）的方法，并为其附加
+ * {@link MethodOverrideAttr} 属性；同时尝试还原因类型擦除（type erasure）而丢失的
+ * 返回值类型与参数类型，使其与基类/接口中的方法签名保持一致。若修正后的签名可能引发
+ * 方法冲突，还会进行冲突检测与重命名处理。
+ */
 public class OverrideMethodVisitor extends AbstractVisitor {
 
+	/**
+	 * 收集类的所有父类型信息，并对类中每个方法进行重写检测与类型修正。
+	 *
+	 * @param cls 待处理的类节点
+	 * @return 始终返回 {@code true}，以便继续访问该类的内部结构
+	 */
 	@Override
 	public boolean visit(ClassNode cls) throws JadxException {
 		SuperTypesData superData = collectSuperTypes(cls);
@@ -72,7 +86,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 				boolean updated = fixMethodReturnType(mth, baseMth, superData);
 				updated |= fixMethodArgTypes(mth, baseMth, superData);
 				if (updated) {
-					// check if new signature cause method collisions
+					// 检查新签名是否会导致方法冲突
 					checkMethodSignatureCollisions(mth, mth.root().getArgs().isRenameValid());
 				}
 			}
@@ -108,8 +122,8 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 					Map<String, ClspMethod> methodsMap = clsDetails.getMethodsMap();
 					for (Map.Entry<String, ClspMethod> entry : methodsMap.entrySet()) {
 						String mthShortId = entry.getKey();
-						// do not check full signature, classpath methods can be trusted
-						// i.e. doesn't contain methods with same signature in one class
+						// 不检查完整签名，类路径中的方法是可信的
+						// 即：同一个类中不会包含签名相同的方法
 						if (mthShortId.startsWith(signature)) {
 							overrideList.add(entry.getValue());
 							break;
@@ -134,15 +148,15 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 
 	@Nullable
 	private MethodNode searchOverriddenMethod(ClassNode cls, MethodNode mth, String signature) {
-		// search by exact full signature (with return value) to fight obfuscation (see test
-		// 'TestOverrideWithSameName')
+		// 通过精确的完整签名（含返回值）搜索，以对抗混淆（参见测试
+		// 'TestOverrideWithSameName'）
 		String shortId = mth.getMethodInfo().getShortId();
 		for (MethodNode supMth : cls.getMethods()) {
 			if (supMth.getMethodInfo().getShortId().equals(shortId) && !supMth.getAccessFlags().isStatic()) {
 				return supMth;
 			}
 		}
-		// search by signature without return value and check if return value is wider type
+		// 按不含返回值的签名搜索，并检查其返回值是否为更宽的类型
 		for (MethodNode supMth : cls.getMethods()) {
 			if (supMth.getMethodInfo().getShortId().startsWith(signature) && !supMth.getAccessFlags().isStatic()) {
 				TypeCompare typeCompare = cls.root().getTypeCompare();
@@ -167,11 +181,11 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 			return null;
 		}
 		if (attr == null) {
-			// traced to base method
+			// 追踪到了基类方法
 			List<IMethodDetails> cleanOverrideList = overrideList.stream().distinct().collect(Collectors.toList());
 			return applyOverrideAttr(mth, cleanOverrideList, baseMethods, false);
 		}
-		// trace stopped at already processed method -> start merging
+		// 追踪在已处理过的方法处停止 -> 开始合并
 		List<IMethodDetails> mergedOverrideList = Utils.mergeLists(overrideList, attr.getOverrideList());
 		List<IMethodDetails> cleanOverrideList = mergedOverrideList.stream().distinct().collect(Collectors.toList());
 		Set<IMethodDetails> mergedBaseMethods = Utils.mergeSets(baseMethods, attr.getBaseMethods());
@@ -180,16 +194,16 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 
 	private MethodOverrideAttr applyOverrideAttr(MethodNode mth, List<IMethodDetails> overrideList,
 			Set<IMethodDetails> baseMethods, boolean update) {
-		// don't rename method if override list contains not resolved method
+		// 若重写链中包含未解析的方法，则禁止重命名
 		boolean dontRename = overrideList.stream().anyMatch(m -> !(m instanceof MethodNode));
 		SortedSet<MethodNode> relatedMethods = null;
 		List<MethodNode> mthNodes = getMethodNodes(mth, overrideList);
 		if (update) {
-			// merge related methods from all override attributes
+			// 合并所有重写属性中的关联方法
 			for (MethodNode mthNode : mthNodes) {
 				MethodOverrideAttr ovrdAttr = mthNode.get(AType.METHOD_OVERRIDE);
 				if (ovrdAttr != null) {
-					// use one of already allocated sets
+					// 复用一个已分配的集合
 					relatedMethods = ovrdAttr.getRelatedMthNodes();
 					break;
 				}
@@ -218,7 +232,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 				mthNode.add(AFlag.DONT_RENAME);
 			}
 			if (depth == 0) {
-				// skip current (first) method
+				// 跳过当前（第一个）方法
 				depth = 1;
 				continue;
 			}
@@ -248,7 +262,8 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 	}
 
 	/**
-	 * NOTE: Simplified version of method from ModVisitor.isFieldVisibleInMethod
+	 * 检查父类方法在当前类中是否可见。
+	 * 注意：此方法为 {@code ModVisitor.isFieldVisibleInMethod} 的简化版。
 	 */
 	private boolean isMethodVisibleInCls(MethodNode superMth, ClassNode cls) {
 		AccessInfo accessFlags = superMth.getAccessFlags();
@@ -258,7 +273,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 		if (accessFlags.isPublic() || accessFlags.isProtected()) {
 			return true;
 		}
-		// package-private
+		// 包级私有可见性
 		return Objects.equals(superMth.getParentClass().getPackage(), cls.getPackage());
 	}
 
@@ -314,7 +329,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 			return 0;
 		}
 		if (!superTypes.add(superType)) {
-			// found 'super' loop, stop processing
+			// 发现 'super' 循环引用，停止处理
 			return 0;
 		}
 		ClassNode classNode = root.resolveClass(superType);
@@ -333,7 +348,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 			}
 			return 1;
 		}
-		// no info found => treat as hierarchy end
+		// 未找到任何信息 => 视为继承层次终点
 		endTypes.add(superType.getObject());
 		return 1;
 	}
@@ -450,7 +465,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 		}
 	}
 
-	// TODO: at this point deobfuscator is not available and map file already saved
+	// TODO: 此时反混淆器尚不可用，且映射文件已保存
 	private static String makeNewAlias(MethodNode mth) {
 		ClassNode cls = mth.getParentClass();
 		String baseName = mth.getAlias();

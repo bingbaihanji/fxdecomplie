@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.ICodeWriter;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.impl.SimpleCodeWriter;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.InsnGen;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
@@ -47,7 +47,7 @@ public class CheckRegions extends AbstractVisitor {
 				if (blocksInRegions.add(block)) {
 					return;
 				}
-				if (Consts.DEBUG_RESTRUCTURE
+				if (false
 						&& LOG.isDebugEnabled()
 						&& !block.contains(AFlag.RETURN)
 						&& !block.contains(AFlag.REMOVE)

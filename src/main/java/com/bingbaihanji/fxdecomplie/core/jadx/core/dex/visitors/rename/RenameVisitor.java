@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IAliasProvider;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -133,7 +133,7 @@ public class RenameVisitor extends AbstractVisitor {
 
 	private static boolean checkPackage(JadxArgs args, IAliasProvider aliasProvider, PackageNode pkg) {
 		if (args.isRenameValid() && pkg.getAliasPkgInfo().isDefaultPkg()) {
-			pkg.setFullAlias(Consts.DEFAULT_PACKAGE_NAME, false);
+			pkg.setFullAlias(JadxConsts.DEFAULT_PACKAGE_NAME, false);
 			return true;
 		}
 		String pkgName = pkg.getAliasPkgInfo().getName();
@@ -154,7 +154,7 @@ public class RenameVisitor extends AbstractVisitor {
 		boolean renameValid = args.isRenameValid();
 		if (renameValid) {
 			if (ANONYMOUS_CLASS_PATTERN.matcher(clsName).matches()) {
-				return Consts.ANONYMOUS_CLASS_PREFIX + NameMapper.removeInvalidCharsMiddle(clsName);
+				return JadxConsts.ANONYMOUS_CLASS_PREFIX + NameMapper.removeInvalidCharsMiddle(clsName);
 			}
 
 			char firstChar = clsName.charAt(0);

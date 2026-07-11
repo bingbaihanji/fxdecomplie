@@ -10,7 +10,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.InsnData;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.custom.IArrayPayload;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.custom.ICustomPayload;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns.custom.ISwitchPayload;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.nodes.CodeFeaturesAttr;
@@ -90,7 +90,7 @@ public class InsnDecoder {
 			case CONST_CLASS: {
 				ArgType clsType = ArgType.parse(insn.getIndexAsType());
 				InsnNode constClsInsn = new ConstClassNode(clsType);
-				constClsInsn.setResult(InsnArg.reg(insn, 0, ArgType.generic(Consts.CLASS_CLASS, clsType)));
+				constClsInsn.setResult(InsnArg.reg(insn, 0, ArgType.generic(JadxConsts.CLASS_CLASS, clsType)));
 				return constClsInsn;
 			}
 

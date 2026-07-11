@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.InsnType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.ArgType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.instructions.args.InsnArg;
@@ -68,7 +68,7 @@ public class TypeSearch {
 			searchSuccess = true;
 		} else {
 			searchSuccess = search(vars) && fullCheck(vars);
-			if (Consts.DEBUG_TYPE_INFERENCE && !searchSuccess) {
+			if (false && !searchSuccess) {
 				LOG.debug("Multi-variable search failed");
 			}
 		}
@@ -108,7 +108,7 @@ public class TypeSearch {
 
 	private boolean search(List<TypeSearchVarInfo> vars) {
 		int len = vars.size();
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.debug("Run multi-variable search for {} vars: ", len);
 			StringBuilder sb = new StringBuilder();
 			long count = 1;
@@ -151,13 +151,13 @@ public class TypeSearch {
 			}
 			n++;
 			if (n > SEARCH_ITERATION_LIMIT) {
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.debug(" > iterations limit reached: {}", SEARCH_ITERATION_LIMIT);
 				}
 				return false;
 			}
 		}
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.debug(" > done after {} iterations", n);
 		}
 		// mark all vars as resolved

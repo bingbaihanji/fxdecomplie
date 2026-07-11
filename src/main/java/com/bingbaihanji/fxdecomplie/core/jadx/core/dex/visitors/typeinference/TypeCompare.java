@@ -27,6 +27,10 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinfer
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeCompareEnum.WIDER_BY_GENERIC;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.isEmpty;
 
+/**
+ * 类型比较器，用于比较两个类型之间的关系（相等、更窄、更宽或冲突）。
+ * 支持基本类型、对象类型、数组类型、泛型类型和通配符类型的比较。
+ */
 public class TypeCompare {
 	private static final Logger LOG = LoggerFactory.getLogger(TypeCompare.class);
 
@@ -34,20 +38,46 @@ public class TypeCompare {
 	private final Comparator<ArgType> comparator;
 	private final Comparator<ArgType> reversedComparator;
 
+	/**
+	 * 构造类型比较器
+	 *
+	 * @param root 根节点，用于类继承关系查询
+	 */
 	public TypeCompare(RootNode root) {
 		this.root = root;
 		this.comparator = new ArgTypeComparator();
 		this.reversedComparator = comparator.reversed();
 	}
 
+	/**
+	 * 比较两个类节点的类型
+	 *
+	 * @param first 第一个类节点
+	 * @param second 第二个类节点
+	 * @return 类型比较结果
+	 */
 	public TypeCompareEnum compareTypes(ClassNode first, ClassNode second) {
 		return compareObjects(first.getType(), second.getType());
 	}
 
+	/**
+	 * 比较两个类信息的类型
+	 *
+	 * @param first 第一个类信息
+	 * @param second 第二个类信息
+	 * @return 类型比较结果
+	 */
 	public TypeCompareEnum compareTypes(ClassInfo first, ClassInfo second) {
 		return compareObjects(first.getType(), second.getType());
 	}
 
+	/**
+	 * 比较两个对象类型（带预检查）
+	 *
+	 * @param first 第一个类型
+	 * @param second 第二个类型
+	 * @return 类型比较结果
+	 */
 	public TypeCompareEnum compareObjects(ArgType first, ArgType second) {
 		if (first == second || Objects.equals(first, second)) {
 			return TypeCompareEnum.EQUAL;
@@ -56,7 +86,7 @@ public class TypeCompare {
 	}
 
 	/**
-	 * Compare two type and return result for first argument (narrow, wider or conflict)
+	 * 比较两个类型并返回第一个参数的比较结果（更窄、更宽或冲突）
 	 */
 	public TypeCompareEnum compareTypes(ArgType first, ArgType second) {
 		if (first == second || Objects.equals(first, second)) {
@@ -81,7 +111,7 @@ public class TypeCompare {
 			}
 		}
 		if (firstArray /* && secondArray */) {
-			// both arrays
+			// 两个都是数组类型，比较数组元素类型
 			return compareTypes(first.getArrayElement(), second.getArrayElement());
 		}
 		if (!firstKnown /* && !secondKnown */) {
@@ -96,7 +126,7 @@ public class TypeCompare {
 		if (firstObj && secondObj) {
 			return compareObjectsNoPreCheck(first, second);
 		} else {
-			// primitive types conflicts with objects
+			// 基本类型与对象类型冲突
 			if (firstObj && secondPrimitive) {
 				return CONFLICT;
 			}
@@ -112,6 +142,13 @@ public class TypeCompare {
 		return TypeCompareEnum.CONFLICT;
 	}
 
+	/**
+	 * 比较数组类型与其他类型
+	 *
+	 * @param array 数组类型
+	 * @param other 其他类型
+	 * @return 类型比较结果
+	 */
 	private TypeCompareEnum compareArrayWithOtherType(ArgType array, ArgType other) {
 		if (!other.isTypeKnown()) {
 			if (other.contains(PrimitiveType.ARRAY)) {
@@ -131,6 +168,13 @@ public class TypeCompare {
 		throw new JadxRuntimeException("Unprocessed type: " + other + " in array compare");
 	}
 
+	/**
+	 * 将已知类型与未知类型进行比较
+	 *
+	 * @param known 已知类型
+	 * @param unknown 未知类型
+	 * @return 类型比较结果
+	 */
 	private TypeCompareEnum compareWithUnknown(ArgType known, ArgType unknown) {
 		if (unknown == ArgType.UNKNOWN) {
 			return NARROW;
@@ -158,6 +202,13 @@ public class TypeCompare {
 		return CONFLICT;
 	}
 
+	/**
+	 * 比较两个对象类型（不带预检查）
+	 *
+	 * @param first 第一个类型
+	 * @param second 第二个类型
+	 * @return 类型比较结果
+	 */
 	private TypeCompareEnum compareObjectsNoPreCheck(ArgType first, ArgType second) {
 		boolean objectsEquals = first.getObject().equals(second.getObject());
 		boolean firstGenericType = first.isGenericType();
@@ -189,22 +240,22 @@ public class TypeCompare {
 			if (firstGeneric != secondGeneric) {
 				return firstGeneric ? NARROW_BY_GENERIC : WIDER_BY_GENERIC;
 			}
-			// both generics on same object
+			// 同一对象上两个都是泛型
 			if (first.getWildcardBound() != null && second.getWildcardBound() != null) {
-				// both wildcards
+				// 两个都是通配符
 				return compareWildcardTypes(first, second);
 			}
 			List<ArgType> firstGenericTypes = first.getGenericTypes();
 			List<ArgType> secondGenericTypes = second.getGenericTypes();
 			if (isEmpty(firstGenericTypes) || isEmpty(secondGenericTypes)) {
-				// check outer types
+				// 检查外部类型
 				ArgType firstOuterType = first.getOuterType();
 				ArgType secondOuterType = second.getOuterType();
 				if (firstOuterType != null && secondOuterType != null) {
 					return compareTypes(firstOuterType, secondOuterType);
 				}
 			} else {
-				// compare generics arrays
+				// 比较泛型数组
 				int len = firstGenericTypes.size();
 				if (len == secondGenericTypes.size()) {
 					for (int i = 0; i < len; i++) {
@@ -232,6 +283,13 @@ public class TypeCompare {
 		return TypeCompareEnum.CONFLICT;
 	}
 
+	/**
+	 * 比较两个通配符类型
+	 *
+	 * @param first 第一个通配符类型
+	 * @param second 第二个通配符类型
+	 * @return 类型比较结果
+	 */
 	private TypeCompareEnum compareWildcardTypes(ArgType first, ArgType second) {
 		WildcardBound firstWildcardBound = first.getWildcardBound();
 		WildcardBound secondWildcardBound = second.getWildcardBound();
@@ -248,6 +306,13 @@ public class TypeCompare {
 		return CONFLICT;
 	}
 
+	/**
+	 * 比较泛型类型与普通对象类型
+	 *
+	 * @param genericType 泛型类型（类型变量）
+	 * @param objType 对象类型
+	 * @return 类型比较结果
+	 */
 	private TypeCompareEnum compareGenericTypeWithObject(ArgType genericType, ArgType objType) {
 		if (objType.isGenericType()) {
 			return compareTypeVariables(genericType, objType);
@@ -272,6 +337,13 @@ public class TypeCompare {
 		return NARROW;
 	}
 
+	/**
+	 * 比较两个类型变量（泛型类型），依据其上界（extends 类型）判断宽窄关系
+	 *
+	 * @param first 第一个类型变量
+	 * @param second 第二个类型变量
+	 * @return 类型比较结果
+	 */
 	private TypeCompareEnum compareTypeVariables(ArgType first, ArgType second) {
 		if (first.getObject().equals(second.getObject())) {
 			List<ArgType> firstExtendTypes = removeObject(first.getExtendTypes());
@@ -294,6 +366,12 @@ public class TypeCompare {
 		return CONFLICT;
 	}
 
+	/**
+	 * 从类型变量的上界列表中移除 Object 类型（Object 上界不提供额外约束信息）
+	 *
+	 * @param extendTypes 上界类型列表
+	 * @return 移除 Object 后的上界列表
+	 */
 	private List<ArgType> removeObject(List<ArgType> extendTypes) {
 		if (extendTypes.contains(ArgType.OBJECT)) {
 			if (extendTypes.size() == 1) {
@@ -306,6 +384,13 @@ public class TypeCompare {
 		return extendTypes;
 	}
 
+	/**
+	 * 比较两个基本类型的宽窄关系（依据类型宽度，例如 int 比 byte 更宽）
+	 *
+	 * @param type1 第一个基本类型
+	 * @param type2 第二个基本类型
+	 * @return 类型比较结果
+	 */
 	private TypeCompareEnum comparePrimitives(PrimitiveType type1, PrimitiveType type2) {
 		if (type1 == PrimitiveType.BOOLEAN || type2 == PrimitiveType.BOOLEAN) {
 			return type1 == type2 ? EQUAL : CONFLICT;
@@ -334,6 +419,13 @@ public class TypeCompare {
 		}
 	}
 
+	/**
+	 * 返回基本类型对应的宽度序号，用于宽窄比较（BYTE 最小，DOUBLE 最大）。
+	 * 对于 BOOLEAN、OBJECT、ARRAY、VOID 等不参与宽窄比较的类型抛出异常。
+	 *
+	 * @param type 基本类型
+	 * @return 类型宽度序号
+	 */
 	private byte getTypeWidth(PrimitiveType type) {
 		switch (type) {
 			case BYTE:
@@ -360,14 +452,28 @@ public class TypeCompare {
 		throw new JadxRuntimeException("Unhandled type: " + type);
 	}
 
+	/**
+	 * 返回正向类型比较器
+	 *
+	 * @return 正向 {@link ArgType} 比较器
+	 */
 	public Comparator<ArgType> getComparator() {
 		return comparator;
 	}
 
+	/**
+	 * 返回反向类型比较器
+	 *
+	 * @return 反向 {@link ArgType} 比较器
+	 */
 	public Comparator<ArgType> getReversedComparator() {
 		return reversedComparator;
 	}
 
+	/**
+	 * 基于 {@link #compareTypes(ArgType, ArgType)} 结果实现的 {@link ArgType} 比较器。
+	 * 冲突返回 -2，更宽返回 -1，更窄返回 1，相等返回 0。
+	 */
 	private final class ArgTypeComparator implements Comparator<ArgType> {
 		@Override
 		public int compare(ArgType a, ArgType b) {

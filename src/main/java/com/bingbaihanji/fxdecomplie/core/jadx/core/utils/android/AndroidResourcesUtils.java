@@ -28,7 +28,10 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResourceStorage;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.entry.ResourceEntry;
 
 /**
- * Android resources specific handlers
+ * Android 资源相关的专用处理工具类。
+ * <p>
+ * 负责搜索应用的 R 类、将资源 ID 注入 R 类内部类字段，
+ * 以及在代码生成阶段处理资源字段的引用输出。
  */
 public class AndroidResourcesUtils {
 	private static final Logger LOG = LoggerFactory.getLogger(AndroidResourcesUtils.class);
@@ -36,6 +39,16 @@ public class AndroidResourcesUtils {
 	private AndroidResourcesUtils() {
 	}
 
+	/**
+	 * 查找（或在缺失时生成）应用的 R 资源类，并向其中注入资源字段。
+	 * <p>
+	 * 优先在应用包名下查找 {@code R} 类；找不到时按短名 {@code R} 搜索候选类；
+	 * 仍未找到则创建一个合成的 R 类用于承载所有资源 ID。
+	 *
+	 * @param root       根节点
+	 * @param resStorage 资源存储
+	 * @return 应用的 R 资源类节点
+	 */
 	public static ClassNode searchAppResClass(RootNode root, ResourceStorage resStorage) {
 		String appPackage = root.getAppPackage();
 		String fullName = appPackage != null ? appPackage + ".R" : "R";
@@ -62,6 +75,14 @@ public class AndroidResourcesUtils {
 		return rCls;
 	}
 
+	/**
+	 * 处理 R 资源字段的引用，在代码中生成形如 {@code R.type.name} 的字段访问。
+	 *
+	 * @param code      代码写入器
+	 * @param clsGen    类代码生成器
+	 * @param declClass 字段所属的声明类
+	 * @return 若为 R 资源字段并已生成引用返回 true，否则返回 false
+	 */
 	public static boolean handleAppResField(ICodeWriter code, ClassGen clsGen, ClassInfo declClass) {
 		ClassInfo parentClass = declClass.getParentClass();
 		if (parentClass != null && "R".equals(parentClass.getShortName())) {
@@ -74,17 +95,31 @@ public class AndroidResourcesUtils {
 	}
 
 	/**
-	 * Force hex format for Android resources ids
+	 * 判断字段值是否为 Android 资源 ID，从而强制以十六进制格式输出。
+	 *
+	 * @param cls  字段所属类
+	 * @param type 字段类型
+	 * @return 为资源类中的 int 字段返回 true
 	 */
 	public static boolean isResourceFieldValue(ClassNode cls, ArgType type) {
 		return type.equals(ArgType.INT) && isResourceClass(cls);
 	}
 
+	/**
+	 * 判断指定类是否为 R 资源类的内部类型类（其父类别名为 {@code R}）。
+	 *
+	 * @param cls 待判断的类
+	 * @return 是资源类返回 true
+	 */
 	public static boolean isResourceClass(ClassNode cls) {
 		ClassNode parentClass = cls.getParentClass();
 		return parentClass != null && "R".equals(parentClass.getAlias());
 	}
 
+	/**
+	 * 资源类型类信息，持有某一资源类型（如 string、drawable）对应的内部类节点
+	 * 及其字段名到字段节点的映射。
+	 */
 	private static final class ResClsInfo {
 		private final ClassNode typeCls;
 		private final Map<String, FieldNode> fieldsMap = new HashMap<>();
@@ -102,6 +137,16 @@ public class AndroidResourcesUtils {
 		}
 	}
 
+	/**
+	 * 向 R 类中按资源类型补全资源字段。
+	 * <p>
+	 * 遍历资源存储中的每个资源，为其在对应类型的内部类中创建缺失的静态 final int 字段；
+	 * 若已存在同 ID 的常量字段但名称不同，则为其设置别名以恢复可读的资源名。
+	 *
+	 * @param resCls     R 资源类节点
+	 * @param resStorage 资源存储
+	 * @param rClsExists 目标 R 类是否为已存在的类（而非新生成的合成类）
+	 */
 	private static void addResourceFields(ClassNode resCls, ResourceStorage resStorage, boolean rClsExists) {
 		Map<Integer, FieldNode> resFieldsMap = fillResFieldsMap(resCls);
 		Map<String, ResClsInfo> innerClsMap = new TreeMap<>();
@@ -142,6 +187,14 @@ public class AndroidResourcesUtils {
 		}
 	}
 
+	/**
+	 * 获取（或在缺失时创建）指定资源类型对应的内部类型类。
+	 *
+	 * @param resCls     R 资源类节点
+	 * @param rClsExists R 类是否为已存在的类
+	 * @param typeName   资源类型名（如 string、layout）
+	 * @return 对应资源类型类的信息
+	 */
 	private static ResClsInfo getClassForResType(ClassNode resCls, boolean rClsExists, String typeName) {
 		RootNode root = resCls.root();
 		String typeClsFullName = resCls.getClassInfo().makeRawFullName() + '$' + typeName;
@@ -160,6 +213,12 @@ public class AndroidResourcesUtils {
 		return new ResClsInfo(newTypeCls);
 	}
 
+	/**
+	 * 收集全局常量中所有静态 final 的 int 字段，构建资源 ID 到字段节点的映射。
+	 *
+	 * @param resCls R 资源类节点
+	 * @return 资源 ID 到字段节点的映射
+	 */
 	@NotNull
 	private static Map<Integer, FieldNode> fillResFieldsMap(ClassNode resCls) {
 		Map<Integer, FieldNode> resFieldsMap = new HashMap<>();

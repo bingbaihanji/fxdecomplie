@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.clsp.ClspGraph;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -147,7 +147,7 @@ public final class FixTypesVisitor extends AbstractVisitor {
 		Set<ITypeBound> bounds = typeInfo.getBounds();
 		Optional<ArgType> bestTypeOpt = selectBestTypeFromBounds(bounds);
 		if (bestTypeOpt.isEmpty()) {
-			if (Consts.DEBUG_TYPE_INFERENCE) {
+			if (false) {
 				LOG.warn("Failed to select best type from bounds, count={} : ", bounds.size());
 				for (ITypeBound bound : bounds) {
 					LOG.warn("  {}", bound);
@@ -158,7 +158,7 @@ public final class FixTypesVisitor extends AbstractVisitor {
 		ArgType candidateType = bestTypeOpt.get();
 		TypeUpdateResult result = typeUpdate.apply(mth, ssaVar, candidateType);
 		if (result == TypeUpdateResult.REJECT) {
-			if (Consts.DEBUG_TYPE_INFERENCE) {
+			if (false) {
 				if (ssaVar.getTypeInfo().getType().equals(candidateType)) {
 					LOG.info("Same type rejected: {} -> {}, bounds: {}", ssaVar, candidateType, bounds);
 				} else if (candidateType.isTypeKnown()) {
@@ -420,7 +420,7 @@ public final class FixTypesVisitor extends AbstractVisitor {
 		if (changed == 0) {
 			return false;
 		}
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			mth.addDebugComment("Restore " + changed + " type vars casts");
 		}
 		typeInference.initTypeBounds(mth);
@@ -553,7 +553,7 @@ public final class FixTypesVisitor extends AbstractVisitor {
 		if (!inserted) {
 			return null;
 		}
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.info("Insert cast for {} before {} in {}", useArg, useInsn, useBlock);
 		}
 		return castInsn;
@@ -619,7 +619,7 @@ public final class FixTypesVisitor extends AbstractVisitor {
 			assignBlock.getInstructions().add(insertIndex, newInsn);
 			useInsn.replaceArg(useArg, newInsn.getResult().duplicate());
 		}
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.debug("Duplicate const insn {} times: {} in {}", useList.size(), assignInsn, assignBlock);
 		}
 		return true;
@@ -670,7 +670,7 @@ public final class FixTypesVisitor extends AbstractVisitor {
 		if (insnsAdded == 0) {
 			return false;
 		}
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			mth.addDebugComment("Additional " + insnsAdded + " move instructions added to help type inference");
 		}
 		InitCodeVariables.rerun(mth);
@@ -850,7 +850,7 @@ public final class FixTypesVisitor extends AbstractVisitor {
 		for (RegisterArg arg : new ArrayList<>(var.getUseList())) {
 			if (fixBooleanUsage(mth, arg)) {
 				fixed = true;
-				if (Consts.DEBUG_TYPE_INFERENCE) {
+				if (false) {
 					LOG.info("Fixed boolean usage for arg {} from {}", arg, arg.getParentInsn());
 				}
 			}

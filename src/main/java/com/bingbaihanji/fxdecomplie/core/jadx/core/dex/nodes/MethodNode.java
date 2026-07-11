@@ -48,52 +48,87 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeE
 
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 
+/**
+ * 方法节点，表示 DEX 字节码中的一个方法。
+ * <p>
+ * 继承自 {@link NotificationAttrNode}，实现了方法详情、可加载、代码节点等接口。
+ * 包含方法的字节码指令、基本块、异常处理器、循环信息、SSA 变量等反编译所需数据。
+ * </p>
+ */
 public class MethodNode extends NotificationAttrNode implements IMethodDetails, ILoadable, ICodeNode, Comparable<MethodNode> {
 	private static final Logger LOG = LoggerFactory.getLogger(MethodNode.class);
+	/** 空指令数组，用于无代码的方法 */
 	private static final InsnNode[] EMPTY_INSN_ARRAY = new InsnNode[0];
 
+	/** 方法元信息（名称、签名等） */
 	private final MethodInfo mthInfo;
+	/** 所属父类节点 */
 	private final ClassNode parentClass;
+	/** 访问标志（public/private/static 等） */
 	private AccessInfo accFlags;
 
+	/** 字节码读取器，用于读取方法的原始字节码 */
 	private final ICodeReader codeReader;
+	/** 方法字节码中的原始指令数量 */
 	private final int insnsCount;
 
+	/** 标识该方法是否无代码（如抽象方法、接口方法） */
 	private boolean noCode;
+	/** 寄存器总数 */
 	private int regsCount;
+	/** 参数起始寄存器索引 */
 	private int argsStartReg;
 
+	/** 标识方法是否已加载反编译数据 */
 	private boolean loaded;
 
-	// additional info available after load, keep on unload
+	// 加载后可用的附加信息，卸载时保留
 	private ArgType retType;
 	private List<ArgType> argTypes;
 	private List<ArgType> typeParameters;
 
-	// decompilation data, reset on unload
+	// 反编译数据，卸载时重置
+	/** this 引用的寄存器参数（非静态方法） */
 	private RegisterArg thisArg;
+	/** 方法参数的寄存器参数列表 */
 	private List<RegisterArg> argsList;
+	/** 方法指令数组 */
 	private @Nullable InsnNode[] instructions;
+	/** 基本块列表 */
 	private List<BlockNode> blocks;
+	/** 基本块最大计数 ID */
 	private int blocksMaxCId;
+	/** 入口基本块 */
 	private BlockNode enterBlock;
+	/** 出口基本块 */
 	private BlockNode exitBlock;
+	/** SSA 变量列表 */
 	private List<SSAVar> sVars;
+	/** 异常处理器列表 */
 	private List<ExceptionHandler> exceptionHandlers;
+	/** 循环信息列表 */
 	private List<LoopInfo> loops;
+	/** 反编译后的代码区域 */
 	private Region region;
 
-	// Methods that use this method
+	/** 调用此方法的方法列表（调用者） */
 	private List<MethodNode> useIn = Collections.emptyList();
-	// Unresolved methods that use this method
+	/** 未解析的调用此方法的方法信息 */
 	private List<MethodInfo> unresolvedUsed = Collections.emptyList();
-	// Methods that this method uses
+	/** 此方法调用的方法集合（被调用者） */
 	private Set<MethodNode> methodsUsed = new HashSet<>();
-	// True if this method contains a self call
+	/** 标识此方法是否包含递归自调用 */
 	private boolean callsSelf = false;
 
 	private JavaMethod javaNode;
 
+	/**
+	 * 根据方法数据构建方法节点实例。
+	 *
+	 * @param classNode  所属父类节点
+	 * @param methodData 方法数据（来自输入插件）
+	 * @return 构建完成的方法节点
+	 */
 	public static MethodNode build(ClassNode classNode, IMethodData methodData) {
 		MethodNode methodNode = new MethodNode(classNode, methodData);
 		methodNode.addAttrs(methodData.getAttributes());
@@ -121,10 +156,13 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		unload();
 	}
 
+	/**
+	 * 卸载方法的反编译数据，释放内存。返回类型、参数类型和类型参数不会被卸载。
+	 */
 	@Override
 	public void unload() {
 		loaded = false;
-		// don't unload retType, argTypes, typeParameters
+		// 不卸载 retType、argTypes、typeParameters
 		thisArg = null;
 		argsList = null;
 		sVars = Collections.emptyList();
@@ -139,26 +177,42 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		unloadAttributes();
 	}
 
+	/**
+	 * 更新方法的参数类型和返回类型。
+	 *
+	 * @param argTypes 新的参数类型列表
+	 * @param retType  新的返回类型
+	 */
 	public void updateTypes(List<ArgType> argTypes, ArgType retType) {
 		this.argTypes = argTypes;
 		this.retType = retType;
 	}
 
+	/**
+	 * 更新方法的泛型类型参数列表。
+	 *
+	 * @param typeParameters 新的类型参数列表
+	 */
 	public void updateTypeParameters(List<ArgType> typeParameters) {
 		this.typeParameters = typeParameters;
 	}
 
+	/**
+	 * 加载方法的反编译数据，包括指令解码和参数初始化。
+	 *
+	 * @throws DecodeException 如果指令解码失败
+	 */
 	@Override
 	public void load() throws DecodeException {
 		if (loaded) {
-			// method already loaded
+			// 方法已加载，直接返回
 			return;
 		}
 		try {
 			loaded = true;
 			if (noCode) {
 				regsCount = 0;
-				// TODO: registers not needed without code
+				// TODO: 无代码时不需要寄存器
 				initArguments(this.argTypes);
 				return;
 			}
@@ -168,7 +222,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 			initArguments(this.argTypes);
 
 			if (contains(AType.JADX_ERROR)) {
-				// don't load instructions for method with errors
+				// 存在错误时不加载指令
 				this.instructions = EMPTY_INSN_ARRAY;
 			} else {
 				InsnDecoder decoder = new InsnDecoder(this);
@@ -178,7 +232,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 			if (!noCode) {
 				unload();
 				noCode = true;
-				// load without code
+				// 以无代码模式加载
 				load();
 				noCode = false;
 			}
@@ -187,6 +241,9 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		}
 	}
 
+	/**
+	 * 重新加载方法数据，先卸载再加载。
+	 */
 	public void reload() {
 		unload();
 		try {
@@ -196,6 +253,11 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		}
 	}
 
+	/**
+	 * 初始化方法参数寄存器，包括 this 引用（非静态方法）和方法参数。
+	 *
+	 * @param args 参数类型列表
+	 */
 	private void initArguments(List<ArgType> args) {
 		int pos = getArgsStartPos(args);
 		TypeUtils typeUtils = root().getTypeUtils();
@@ -223,6 +285,12 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		}
 	}
 
+	/**
+	 * 计算参数在寄存器中的起始位置。
+	 *
+	 * @param args 参数类型列表
+	 * @return 参数起始寄存器位置
+	 */
 	private int getArgsStartPos(List<ArgType> args) {
 		if (noCode) {
 			return 0;
@@ -249,12 +317,23 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return argTypes;
 	}
 
+	/**
+	 * 更新方法的参数类型，并重新初始化参数寄存器。
+	 *
+	 * @param newArgTypes 新的参数类型列表
+	 * @param comment     调试注释信息
+	 */
 	public void updateArgTypes(List<ArgType> newArgTypes, String comment) {
 		this.addDebugComment(comment + ", original types: " + getArgTypes());
 		this.argTypes = Collections.unmodifiableList(newArgTypes);
 		initArguments(newArgTypes);
 	}
 
+	/**
+	 * 判断方法是否包含泛型参数（即原始参数类型与当前参数类型不同）。
+	 *
+	 * @return 如果包含泛型参数返回 true
+	 */
 	public boolean containsGenericArgs() {
 		return !Objects.equals(mthInfo.getArgumentsTypes(), getArgTypes());
 	}
@@ -265,14 +344,29 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return retType;
 	}
 
+	/**
+	 * 更新方法的返回类型。
+	 *
+	 * @param type 新的返回类型
+	 */
 	public void updateReturnType(ArgType type) {
 		this.retType = type;
 	}
 
+	/**
+	 * 判断方法返回类型是否为 void。
+	 *
+	 * @return 如果返回类型为 void 返回 true
+	 */
 	public boolean isVoidReturn() {
 		return mthInfo.getReturnType().equals(ArgType.VOID);
 	}
 
+	/**
+	 * 收集方法参数的变量节点列表，用于代码元数据映射。
+	 *
+	 * @return 参数变量节点列表
+	 */
 	public List<VarNode> collectArgNodes() {
 		ICodeInfo codeInfo = getTopParentClass().getCode();
 		int mthDefPos = getDefPosition();
@@ -281,7 +375,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		List<VarNode> args = new ArrayList<>(argsCount);
 		codeInfo.getCodeMetadata().searchDown(mthDefPos, (pos, ann) -> {
 			if (pos > lineEndPos) {
-				// Stop at line end
+				// 到达行尾时停止搜索
 				return Boolean.TRUE;
 			}
 			if (ann instanceof NodeDeclareRef) {
@@ -289,7 +383,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 				if (declRef instanceof VarNode) {
 					VarNode varNode = (VarNode) declRef;
 					if (!varNode.getMth().equals(this)) {
-						// Stop if we've gone too far and have entered a different method
+						// 已进入其他方法范围，停止搜索
 						return Boolean.TRUE;
 					}
 					args.add(varNode);
@@ -303,6 +397,12 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return args;
 	}
 
+	/**
+	 * 返回参数寄存器列表（不含 this）。
+	 *
+	 * @return 参数寄存器列表
+	 * @throws JadxRuntimeException 如果参数寄存器尚未加载
+	 */
 	public List<RegisterArg> getArgRegs() {
 		if (argsList == null) {
 			throw new JadxRuntimeException("Method arg registers not loaded: " + this
@@ -311,6 +411,11 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return argsList;
 	}
 
+	/**
+	 * 返回全部参数寄存器列表，非静态方法会在首位包含 this 参数。
+	 *
+	 * @return 包含 this（如有）的全部参数寄存器列表
+	 */
 	public List<RegisterArg> getAllArgRegs() {
 		List<RegisterArg> argRegs = getArgRegs();
 		if (thisArg != null) {
@@ -322,11 +427,19 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return argRegs;
 	}
 
+	/**
+	 * 返回 this 引用寄存器参数，静态方法返回 null。
+	 *
+	 * @return this 参数寄存器，静态方法为 null
+	 */
 	@Nullable
 	public RegisterArg getThisArg() {
 		return thisArg;
 	}
 
+	/**
+	 * 标记跳过第一个参数（如合成参数）。
+	 */
 	public void skipFirstArgument() {
 		this.add(AFlag.SKIP_FIRST_ARG);
 	}
@@ -336,10 +449,20 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return typeParameters;
 	}
 
+	/**
+	 * 返回方法原始名称。
+	 *
+	 * @return 方法名
+	 */
 	public String getName() {
 		return mthInfo.getName();
 	}
 
+	/**
+	 * 返回方法别名（重命名后使用的名称）。
+	 *
+	 * @return 方法别名
+	 */
 	public String getAlias() {
 		return mthInfo.getAlias();
 	}
@@ -349,73 +472,151 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return parentClass;
 	}
 
+	/**
+	 * 返回方法直接所属的父类节点。
+	 *
+	 * @return 父类节点
+	 */
 	public ClassNode getParentClass() {
 		return parentClass;
 	}
 
+	/**
+	 * 返回最顶层的父类节点（穿透内部类嵌套）。
+	 *
+	 * @return 顶层父类节点
+	 */
 	public ClassNode getTopParentClass() {
 		return parentClass.getTopParentClass();
 	}
 
+	/**
+	 * 判断方法是否无代码（抽象方法、接口方法或加载失败）。
+	 *
+	 * @return 无代码返回 true
+	 */
 	public boolean isNoCode() {
 		return noCode;
 	}
 
+	/**
+	 * 返回方法解码后的指令数组。
+	 *
+	 * @return 指令数组，未加载时可能为 null
+	 */
 	public InsnNode[] getInstructions() {
 		return instructions;
 	}
 
+	/**
+	 * 释放指令数组占用的内存。
+	 */
 	public void unloadInsnArr() {
 		this.instructions = null;
 	}
 
+	/**
+	 * 初始化基本块列表。
+	 */
 	public void initBasicBlocks() {
 		blocks = new ArrayList<>();
 	}
 
+	/**
+	 * 完成基本块构建，锁定基本块和循环信息使其不可变。
+	 */
 	public void finishBasicBlocks() {
 		blocks = lockList(blocks);
 		loops = lockList(loops);
 		blocks.forEach(BlockNode::lock);
 	}
 
+	/**
+	 * 返回方法的基本块列表。
+	 *
+	 * @return 基本块列表
+	 */
 	public List<BlockNode> getBasicBlocks() {
 		return blocks;
 	}
 
+	/**
+	 * 设置方法的基本块列表并更新块位置。
+	 *
+	 * @param blocks 基本块列表
+	 */
 	public void setBasicBlocks(List<BlockNode> blocks) {
 		this.blocks = blocks;
 		updateBlockPositions();
 	}
 
+	/**
+	 * 更新基本块的位置索引。
+	 */
 	public void updateBlockPositions() {
 		BlockNode.updateBlockPositions(blocks);
 	}
 
+	/**
+	 * 返回下一个基本块的计数 ID 并自增。
+	 *
+	 * @return 下一个基本块计数 ID
+	 */
 	public int getNextBlockCId() {
 		return blocksMaxCId++;
 	}
 
+	/**
+	 * 返回入口基本块。
+	 *
+	 * @return 入口基本块
+	 */
 	public BlockNode getEnterBlock() {
 		return enterBlock;
 	}
 
+	/**
+	 * 设置入口基本块。
+	 *
+	 * @param enterBlock 入口基本块
+	 */
 	public void setEnterBlock(BlockNode enterBlock) {
 		this.enterBlock = enterBlock;
 	}
 
+	/**
+	 * 返回出口基本块。
+	 *
+	 * @return 出口基本块
+	 */
 	public BlockNode getExitBlock() {
 		return exitBlock;
 	}
 
+	/**
+	 * 设置出口基本块。
+	 *
+	 * @param exitBlock 出口基本块
+	 */
 	public void setExitBlock(BlockNode exitBlock) {
 		this.exitBlock = exitBlock;
 	}
 
+	/**
+	 * 返回出口块前驱的基本块列表（即方法退出前的块）。
+	 *
+	 * @return 出口前驱基本块列表
+	 */
 	public List<BlockNode> getPreExitBlocks() {
 		return exitBlock.getPredecessors();
 	}
 
+	/**
+	 * 判断给定基本块是否为出口前驱块。
+	 *
+	 * @param block 待检查的基本块
+	 * @return 若为出口前驱块返回 true
+	 */
 	public boolean isPreExitBlock(BlockNode block) {
 		List<BlockNode> successors = block.getSuccessors();
 		if (successors.size() == 1) {
@@ -424,10 +625,18 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return exitBlock.getPredecessors().contains(block);
 	}
 
+	/**
+	 * 重置循环信息列表。
+	 */
 	public void resetLoops() {
 		this.loops = new ArrayList<>();
 	}
 
+	/**
+	 * 注册一个循环信息并分配 ID。
+	 *
+	 * @param loop 循环信息
+	 */
 	public void registerLoop(LoopInfo loop) {
 		if (loops.isEmpty()) {
 			loops = new ArrayList<>(5);
@@ -436,6 +645,12 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		loops.add(loop);
 	}
 
+	/**
+	 * 返回包含指定基本块的循环（返回首个匹配）。
+	 *
+	 * @param block 基本块
+	 * @return 包含该块的循环信息，无则返回 null
+	 */
 	@Nullable
 	public LoopInfo getLoopForBlock(BlockNode block) {
 		if (loops.isEmpty()) {
@@ -449,6 +664,12 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return null;
 	}
 
+	/**
+	 * 返回包含指定基本块的所有循环。
+	 *
+	 * @param block 基本块
+	 * @return 包含该块的所有循环信息列表
+	 */
 	public List<LoopInfo> getAllLoopsForBlock(BlockNode block) {
 		if (loops.isEmpty()) {
 			return Collections.emptyList();
@@ -462,14 +683,30 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return list;
 	}
 
+	/**
+	 * 返回方法中的循环数量。
+	 *
+	 * @return 循环数量
+	 */
 	public int getLoopsCount() {
 		return loops.size();
 	}
 
+	/**
+	 * 返回方法中所有循环信息的可迭代集合。
+	 *
+	 * @return 循环信息集合
+	 */
 	public Iterable<LoopInfo> getLoops() {
 		return loops;
 	}
 
+	/**
+	 * 添加一个异常处理器。
+	 *
+	 * @param handler 异常处理器
+	 * @return 添加的异常处理器
+	 */
 	public ExceptionHandler addExceptionHandler(ExceptionHandler handler) {
 		if (exceptionHandlers.isEmpty()) {
 			exceptionHandlers = new ArrayList<>(2);
@@ -478,18 +715,38 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return handler;
 	}
 
+	/**
+	 * 清除已标记为移除的异常处理器。
+	 *
+	 * @return 若有处理器被移除返回 true
+	 */
 	public boolean clearExceptionHandlers() {
 		return exceptionHandlers.removeIf(ExceptionHandler::isRemoved);
 	}
 
+	/**
+	 * 返回方法的异常处理器集合。
+	 *
+	 * @return 异常处理器集合
+	 */
 	public Iterable<ExceptionHandler> getExceptionHandlers() {
 		return exceptionHandlers;
 	}
 
+	/**
+	 * 判断方法是否没有异常处理器。
+	 *
+	 * @return 无异常处理器返回 true
+	 */
 	public boolean isNoExceptionHandlers() {
 		return exceptionHandlers.isEmpty();
 	}
 
+	/**
+	 * 返回异常处理器数量。
+	 *
+	 * @return 异常处理器数量
+	 */
 	public int getExceptionHandlersCount() {
 		return exceptionHandlers.size();
 	}
@@ -508,11 +765,13 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 	}
 
 	/**
-	 * Return true if exists method with same name and arguments count
+	 * 判断是否存在同名且参数数量相同的方法（即方法被重载）。
+	 *
+	 * @return 若存在重载方法返回 true
 	 */
 	public boolean isArgsOverloaded() {
 		MethodInfo thisMthInfo = this.mthInfo;
-		// quick check in current class
+		// 先在当前类中快速检查
 		for (MethodNode method : parentClass.getMethods()) {
 			if (method == this) {
 				continue;
@@ -524,14 +783,24 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return root().getMethodUtils().isMethodArgsOverloaded(parentClass.getClassInfo().getType(), thisMthInfo);
 	}
 
+	/**
+	 * 判断方法是否为构造方法。
+	 *
+	 * @return 为构造方法返回 true
+	 */
 	public boolean isConstructor() {
 		return accFlags.isConstructor() && mthInfo.isConstructor();
 	}
 
+	/**
+	 * 判断方法是否为默认（无参）构造方法。
+	 *
+	 * @return 为默认构造方法返回 true
+	 */
 	public boolean isDefaultConstructor() {
 		if (isConstructor()) {
 			int defaultArgCount = 0;
-			// workaround for non-static inner class constructor, that has synthetic argument
+			// 针对非静态内部类构造方法的处理：它带有一个合成参数
 			if (parentClass.getClassInfo().isInner()
 					&& !parentClass.getAccessFlags().isStatic()) {
 				ClassNode outerCls = parentClass.getParentClass();
@@ -545,16 +814,29 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return false;
 	}
 
+	/**
+	 * 返回方法使用的寄存器总数。
+	 *
+	 * @return 寄存器总数
+	 */
 	public int getRegsCount() {
 		return regsCount;
 	}
 
+	/**
+	 * 返回参数起始寄存器索引。
+	 *
+	 * @return 参数起始寄存器索引
+	 */
 	public int getArgsStartReg() {
 		return argsStartReg;
 	}
 
 	/**
-	 * Create new fake register arg.
+	 * 创建一个新的合成（伪造）寄存器参数。
+	 *
+	 * @param type 参数类型
+	 * @return 新建的合成寄存器参数
 	 */
 	public RegisterArg makeSyntheticRegArg(ArgType type) {
 		RegisterArg arg = InsnArg.reg(0, type);
@@ -565,17 +847,38 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return arg;
 	}
 
+	/**
+	 * 创建一个带名称的合成寄存器参数。
+	 *
+	 * @param type 参数类型
+	 * @param name 参数名称
+	 * @return 新建的合成寄存器参数
+	 */
 	public RegisterArg makeSyntheticRegArg(ArgType type, String name) {
 		RegisterArg arg = makeSyntheticRegArg(type);
 		arg.setName(name);
 		return arg;
 	}
 
+	/**
+	 * 为指定赋值寄存器参数创建新的 SSA 变量，自动分配版本号。
+	 *
+	 * @param assignArg 赋值寄存器参数
+	 * @return 新建的 SSA 变量
+	 */
 	public SSAVar makeNewSVar(@NotNull RegisterArg assignArg) {
 		int regNum = assignArg.getRegNum();
 		return makeNewSVar(regNum, getNextSVarVersion(regNum), assignArg);
 	}
 
+	/**
+	 * 使用指定寄存器号和版本号创建新的 SSA 变量。
+	 *
+	 * @param regNum    寄存器号
+	 * @param version   版本号
+	 * @param assignArg 赋值寄存器参数
+	 * @return 新建的 SSA 变量
+	 */
 	public SSAVar makeNewSVar(int regNum, int version, @NotNull RegisterArg assignArg) {
 		SSAVar var = new SSAVar(regNum, version, assignArg);
 		if (sVars.isEmpty()) {
@@ -596,10 +899,20 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return v;
 	}
 
+	/**
+	 * 移除指定的 SSA 变量。
+	 *
+	 * @param var 待移除的 SSA 变量
+	 */
 	public void removeSVar(SSAVar var) {
 		sVars.remove(var);
 	}
 
+	/**
+	 * 返回方法的 SSA 变量列表。
+	 *
+	 * @return SSA 变量列表
+	 */
 	public List<SSAVar> getSVars() {
 		return sVars;
 	}
@@ -619,10 +932,20 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		this.accFlags = newAccessFlags;
 	}
 
+	/**
+	 * 返回方法反编译后的代码区域。
+	 *
+	 * @return 代码区域
+	 */
 	public Region getRegion() {
 		return region;
 	}
 
+	/**
+	 * 设置方法反编译后的代码区域。
+	 *
+	 * @param region 代码区域
+	 */
 	public void setRegion(Region region) {
 		this.region = region;
 	}
@@ -647,15 +970,28 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return mthInfo;
 	}
 
+	/**
+	 * 返回方法字节码在文件中的偏移量。
+	 *
+	 * @return 代码偏移量，无代码时返回 0
+	 */
 	public long getMethodCodeOffset() {
 		return noCode ? 0 : codeReader.getCodeOffset();
 	}
 
+	/**
+	 * 返回方法的调试信息。
+	 *
+	 * @return 调试信息，无代码时返回 null
+	 */
 	@Nullable
 	public IDebugInfo getDebugInfo() {
 		return noCode ? null : codeReader.getDebugInfo();
 	}
 
+	/**
+	 * 忽略此方法，标记为不生成代码并置为无代码。
+	 */
 	public void ignoreMethod() {
 		add(AFlag.DONT_GENERATE);
 		noCode = true;
@@ -674,7 +1010,9 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 	}
 
 	/**
-	 * Calculate instructions count at current stage
+	 * 计算当前阶段的指令数量。
+	 *
+	 * @return 指令数量，无法确定时返回 -1
 	 */
 	public long countInsns() {
 		if (instructions != null) {
@@ -687,14 +1025,18 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 	}
 
 	/**
-	 * Raw instructions count in method bytecode
+	 * 返回方法字节码中的原始指令数量。
+	 *
+	 * @return 原始指令数量
 	 */
 	public int getInsnsCount() {
 		return insnsCount;
 	}
 
 	/**
-	 * Returns method code with comments and annotations
+	 * 返回带注释和注解的方法源码。
+	 *
+	 * @return 方法源码字符串
 	 */
 	public String getCodeStr() {
 		return CodeUtils.extractMethodCode(this, getTopParentClass().getCode());
@@ -705,10 +1047,20 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return accFlags.isVarArgs();
 	}
 
+	/**
+	 * 判断方法反编译数据是否已加载。
+	 *
+	 * @return 已加载返回 true
+	 */
 	public boolean isLoaded() {
 		return loaded;
 	}
 
+	/**
+	 * 返回方法的字节码读取器。
+	 *
+	 * @return 字节码读取器，无代码时可能为 null
+	 */
 	public @Nullable ICodeReader getCodeReader() {
 		return codeReader;
 	}
@@ -718,53 +1070,97 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
 		return useIn;
 	}
 
-	// Do not modify passed list after setting
+	/**
+	 * 设置调用此方法的方法列表（调用者），设置后请勿修改传入列表。
+	 *
+	 * @param useIn 调用者方法列表
+	 */
 	public void setUseIn(List<MethodNode> useIn) {
 		this.useIn = useIn;
 
-		// Notify all methods (callers) this method (callee) is used in
+		// 通知所有调用者方法：此方法（被调用者）被它们使用
 		for (MethodNode methodUsedIn : useIn) {
 			methodUsedIn.addUsed(this);
 		}
 	}
 
+	/**
+	 * 添加一个被此方法调用的方法（被调用者）。
+	 *
+	 * @param used 被调用的方法
+	 */
 	public void addUsed(MethodNode used) {
 		if (used != null) {
 			this.methodsUsed.add(used);
 		}
 	}
 
+	/**
+	 * 设置此方法调用的方法集合（被调用者）。
+	 *
+	 * @param methodsUsed 被调用的方法列表
+	 */
 	public void setUsed(List<MethodNode> methodsUsed) {
 		this.methodsUsed = new HashSet<>(methodsUsed);
 	}
 
+	/**
+	 * 返回此方法调用的方法集合（被调用者），返回前会剔除无效项。
+	 *
+	 * @return 被调用的方法集合
+	 */
 	public Set<MethodNode> getUsed() {
 		this.removeInvalidMethodsUsed();
 		return methodsUsed;
 	}
 
+	/**
+	 * 返回未解析的调用此方法的方法信息列表。
+	 *
+	 * @return 未解析的调用者方法信息列表
+	 */
 	public List<MethodInfo> getUnresolvedUsed() {
 		return unresolvedUsed;
 	}
 
+	/**
+	 * 设置未解析的调用此方法的方法信息列表。
+	 *
+	 * @param unresolvedUsed 未解析的调用者方法信息列表
+	 */
 	public void setUnresolvedUsed(List<MethodInfo> unresolvedUsed) {
 		this.unresolvedUsed = unresolvedUsed;
 	}
 
+	/**
+	 * 设置此方法是否包含递归自调用。
+	 *
+	 * @param callsSelf 是否递归自调用
+	 */
 	public void setCallsSelf(boolean callsSelf) {
 		this.callsSelf = callsSelf;
 	}
 
+	/**
+	 * 判断此方法是否包含递归自调用。
+	 *
+	 * @return 包含递归自调用返回 true
+	 */
 	public boolean callsSelf() {
 		return this.callsSelf;
 	}
 
-	// Remove any methods from the list of used methods (calees) if this method (caller) has been
-	// removed from the calee's list of callers
+	// 如果此方法（调用者）已从被调用者的调用者列表中移除，
+	// 则从被调用方法（被调用者）列表中移除对应项
 	private void removeInvalidMethodsUsed() {
 		methodsUsed.removeIf(methodUsed -> !methodUsed.getUseIn().contains(this));
 	}
 
+	/**
+	 * 返回关联的 Java API 方法对象。
+	 *
+	 * @return Java 方法对象
+	 */
 	public JavaMethod getJavaNode() {
 		return javaNode;
 	}

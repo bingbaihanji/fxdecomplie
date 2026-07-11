@@ -13,7 +13,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.AccessFlags
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.ILocalVar;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.JadxAttrType;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data.attributes.types.MethodParametersAttr;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.Consts;
+import com.bingbaihanji.fxdecomplie.util.JadxConsts;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.deobf.NameMapper;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
@@ -62,7 +62,7 @@ public class DebugInfoApplyVisitor extends AbstractVisitor {
 	}
 
 	private static void applyDebugInfo(MethodNode mth) {
-		if (Consts.DEBUG_TYPE_INFERENCE) {
+		if (false) {
 			LOG.info("Apply debug info for method: {}", mth);
 		}
 		mth.getSVars().forEach(ssaVar -> searchAndApplyVarDebugInfo(mth, ssaVar));
@@ -100,7 +100,7 @@ public class DebugInfoApplyVisitor extends AbstractVisitor {
 				int startAddr = localVar.getStartOffset();
 				int endAddr = localVar.getEndOffset();
 				if (isInside(startOffset, startAddr, endAddr) || isInside(endOffset, startAddr, endAddr)) {
-					if (Consts.DEBUG_TYPE_INFERENCE) {
+					if (false) {
 						LOG.debug("Apply debug info by offset for: {} to {}", ssaVar, localVar);
 					}
 					ArgType type = DebugInfoAttachVisitor.getVarType(mth, localVar);
@@ -136,7 +136,7 @@ public class DebugInfoApplyVisitor extends AbstractVisitor {
 	public static boolean applyDebugInfo(MethodNode mth, SSAVar ssaVar, ArgType type, String varName) {
 		TypeUpdateResult result = mth.root().getTypeUpdate().applyDebugInfo(mth, ssaVar, type);
 		if (result == TypeUpdateResult.REJECT) {
-			if (Consts.DEBUG_TYPE_INFERENCE) {
+			if (false) {
 				LOG.debug("Reject debug info of type: {} and name: '{}' for {}, mth: {}", type, varName, ssaVar, mth);
 			}
 			return false;

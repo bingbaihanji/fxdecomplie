@@ -45,186 +45,285 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.IJadxFilesGette
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.TempFilesGetter;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
 
+/**
+ * Jadx 反编译器参数配置类。
+ * <p>
+ * 包含反编译过程中的所有可配置选项，如输入/输出路径、反编译模式、
+ * 去混淆设置、代码格式化选项、插件配置等。
+ * <p>
+ * 实现 {@link Closeable} 接口，用于释放内部缓存和插件加载器资源。
+ */
 public class JadxArgs implements Closeable {
 	private static final Logger LOG = LoggerFactory.getLogger(JadxArgs.class);
 
+	/** 默认线程数，取 CPU 核心数的一半（最少为 1） */
 	public static final int DEFAULT_THREADS_COUNT = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
 
+	/** 默认换行符，使用系统行分隔符 */
 	public static final String DEFAULT_NEW_LINE_STR = System.lineSeparator();
+	/** 默认缩进字符串，4 个空格 */
 	public static final String DEFAULT_INDENT_STR = "    ";
 
+	/** 默认输出根目录名 */
 	public static final String DEFAULT_OUT_DIR = "jadx-output";
+	/** 默认源码输出子目录名 */
 	public static final String DEFAULT_SRC_DIR = "sources";
+	/** 默认资源输出子目录名 */
 	public static final String DEFAULT_RES_DIR = "resources";
 
+	/** 待反编译的输入文件列表 */
 	private List<File> inputFiles = new ArrayList<>(1);
 
+	/** 输出根目录 */
 	private File outDir;
+	/** 源码输出目录 */
 	private File outDirSrc;
+	/** 资源输出目录 */
 	private File outDirRes;
 
+	/** 代码缓存，用于缓存反编译结果 */
 	private ICodeCache codeCache = new InMemoryCodeCache();
 
 	/**
-	 * Usage data cache. Saves use places of classes, methods and fields between code reloads.
-	 * Can be set to {@link EmptyUsageInfoCache} if code reload not needed.
+	 * 使用数据缓存。在代码重新加载之间保存类、方法和字段的使用位置信息。
+	 * 如果不需要代码重新加载，可以设置为 {@link EmptyUsageInfoCache}。
 	 */
 	private IUsageInfoCache usageInfoCache = new InMemoryUsageInfoCache();
 
+	/** 代码写入器工厂函数，用于创建 ICodeWriter 实例 */
 	private Function<JadxArgs, ICodeWriter> codeWriterProvider = AnnotatedCodeWriter::new;
 
+	/** 反编译使用的线程数 */
 	private int threadsCount = DEFAULT_THREADS_COUNT;
 
+	/** 是否输出控制流图（CFG） */
 	private boolean cfgOutput = false;
+	/** 是否输出原始控制流图 */
 	private boolean rawCFGOutput = false;
 
+	/** 是否显示不一致的代码（可能导致编译错误的代码） */
 	private boolean showInconsistentCode = false;
 
+	/** 是否使用 import 语句 */
 	private boolean useImports = true;
+	/** 是否保留调试信息 */
 	private boolean debugInfo = true;
+	/** 是否插入调试行号 */
 	private boolean insertDebugLines = false;
+	/** 是否提取 finally 块 */
 	private boolean extractFinally = true;
+	/** 是否内联匿名类 */
 	private boolean inlineAnonymousClasses = true;
+	/** 是否内联方法 */
 	private boolean inlineMethods = true;
+	/** 是否允许内联 Kotlin lambda 表达式 */
 	private boolean allowInlineKotlinLambda = true;
+	/** 是否将内部类移至顶级 */
 	private boolean moveInnerClasses = true;
 
+	/** 是否跳过资源文件的处理 */
 	private boolean skipResources = false;
+	/** 是否跳过源代码的处理 */
 	private boolean skipSources = false;
+	/** 是否使用 HTTP 头来检测资源文件扩展名 */
 	private boolean useHeadersForDetectResourceExtensions;
 
 	/**
-	 * Predicate that allows to filter the classes to be process based on their full name
+	 * 类过滤器谓词，允许根据类的全限定名过滤要处理的类
 	 */
 	private @Nullable Predicate<String> classFilter = null;
 
 	/**
-	 * Save dependencies for classes accepted by {@code classFilter}
+	 * 是否保存通过 {@code classFilter} 筛选的类的依赖项
 	 */
 	private boolean includeDependencies = false;
 
+	/** 用户自定义重命名映射文件路径 */
 	private Path userRenamesMappingsPath = null;
+	/** 用户自定义重命名映射模式 */
 	private UserRenamesMappingsMode userRenamesMappingsMode = UserRenamesMappingsMode.getDefault();
 
+	/** 是否启用去混淆 */
 	private boolean deobfuscationOn = false;
+	/** 是否使用源文件名作为类名的别名 */
 	private UseSourceNameAsClassNameAlias useSourceNameAsClassNameAlias = UseSourceNameAsClassNameAlias.getDefault();
+	/** 源名称重复次数限制 */
 	private int sourceNameRepeatLimit = 10;
 
+	/** 生成的重命名映射文件路径 */
 	private File generatedRenamesMappingFile = null;
+	/** 生成的重命名映射文件模式 */
 	private GeneratedRenamesMappingFileMode generatedRenamesMappingFileMode = GeneratedRenamesMappingFileMode.getDefault();
+	/** 资源名称来源 */
 	private ResourceNameSource resourceNameSource = ResourceNameSource.AUTO;
 
+	/** 去混淆时名称的最小长度 */
 	private int deobfuscationMinLength = 0;
+	/** 去混淆时名称的最大长度 */
 	private int deobfuscationMaxLength = Integer.MAX_VALUE;
 
 	/**
-	 * List of classes and packages (ends with '.*') to exclude from deobfuscation
+	 * 去混淆白名单，包含要排除去混淆处理的类和包名列表（以 '.*' 结尾表示包）
 	 */
 	private List<String> deobfuscationWhitelist = DeobfWhitelist.DEFAULT_LIST;
 
 	/**
-	 * Nodes alias provider for deobfuscator and rename visitor
+	 * 去混淆器和重命名访问器的节点别名提供器
 	 */
 	private IAliasProvider aliasProvider = new DeobfAliasProvider();
 
 	/**
-	 * Condition to rename node in deobfuscator
+	 * 去混淆器中节点重命名的条件
 	 */
 	private IRenameCondition renameCondition = JadxRenameConditions.buildDefault();
 
+	/** 是否将 Unicode 字符转义为 \\uXXXX 形式 */
 	private boolean escapeUnicode = false;
+	/** 是否将常量字段替换为其实际值 */
 	private boolean replaceConsts = true;
+	/** 是否保留字节码中的访问修饰符（即使它们与源码不一致） */
 	private boolean respectBytecodeAccModifiers = false;
+	/** Gradle 项目导出类型，null 表示不导出为 Gradle 项目 */
 	private @Nullable ExportGradleType exportGradleType = null;
 
+	/** 是否恢复字符串上的 switch 语句 */
 	private boolean restoreSwitchOverString = true;
 
+	/** 是否跳过 XML 格式化输出 */
 	private boolean skipXmlPrettyPrint = false;
 
+	/** 文件系统是否区分大小写 */
 	private boolean fsCaseSensitive;
 
+	/**
+	 * 重命名标志枚举，控制去混淆时的重命名行为。
+	 * <ul>
+	 *   <li>CASE - 区分大小写</li>
+	 *   <li>VALID - 仅使用有效标识符字符</li>
+	 *   <li>PRINTABLE - 仅使用可打印字符</li>
+	 * </ul>
+	 */
 	public enum RenameEnum {
 		CASE, VALID, PRINTABLE
 	}
 
+	/** 重命名标志集合 */
 	private Set<RenameEnum> renameFlags = EnumSet.allOf(RenameEnum.class);
 
+	/**
+	 * 输出格式枚举。
+	 * <ul>
+	 *   <li>JAVA - Java 源代码格式</li>
+	 *   <li>JSON - JSON 结构化格式</li>
+	 * </ul>
+	 */
 	public enum OutputFormatEnum {
 		JAVA, JSON
 	}
 
+	/** 输出格式 */
 	private OutputFormatEnum outputFormat = OutputFormatEnum.JAVA;
 
+	/** 反编译模式 */
 	private DecompilationMode decompilationMode = DecompilationMode.AUTO;
 
+	/** 代码数据对象，用于存储反编译后的代码元信息 */
 	private ICodeData codeData;
 
+	/** 代码中使用的换行符 */
 	private String codeNewLineStr = DEFAULT_NEW_LINE_STR;
 
+	/** 代码中使用的缩进字符串 */
 	private String codeIndentStr = DEFAULT_INDENT_STR;
 
+	/** 注释级别，控制反编译输出中注释的详细程度 */
 	private CommentsLevel commentsLevel = CommentsLevel.INFO;
 
+	/** 整数字面量的输出格式 */
 	private IntegerFormat integerFormat = IntegerFormat.AUTO;
 
 	/**
-	 * Maximum updates allowed total in method per one instruction.
-	 * Should be more or equal 1, default value is 10.
+	 * 每条指令在方法中允许的类型更新最大次数。
+	 * 值必须大于等于 1，默认值为 10。
 	 */
 	private int typeUpdatesLimitCount = 10;
 
+	/** 是否使用 dx 格式输入（Android Dalvik 可执行文件） */
 	private boolean useDxInput = false;
 
+	/**
+	 * Kotlin 方法用于变量名的策略枚举。
+	 * <ul>
+	 *   <li>DISABLE - 不使用 Kotlin 方法名</li>
+	 *   <li>APPLY - 应用 Kotlin 方法名</li>
+	 *   <li>APPLY_AND_HIDE - 应用并隐藏原始名称</li>
+	 * </ul>
+	 */
 	public enum UseKotlinMethodsForVarNames {
 		DISABLE, APPLY, APPLY_AND_HIDE
 	}
 
+	/** 是否使用 Kotlin 方法名作为变量名 */
 	private UseKotlinMethodsForVarNames useKotlinMethodsForVarNames = UseKotlinMethodsForVarNames.APPLY;
 
 	/**
-	 * Additional files structure info.
-	 * Defaults to tmp dirs.
+	 * 附加文件结构信息获取器。
+	 * 默认使用临时目录。
 	 */
 	private IJadxFilesGetter filesGetter = TempFilesGetter.INSTANCE;
 
 	/**
-	 * Additional data validation and security checks
+	 * 附加数据验证和安全检查
 	 */
 	private IJadxSecurity security = new JadxSecurity(JadxSecurityFlag.all());
 
 	/**
-	 * Don't save files (can be using for performance testing)
+	 * 是否跳过文件保存（可用于性能测试）
 	 */
 	private boolean skipFilesSave = false;
 
 	/**
-	 * Run additional expensive checks to verify internal invariants and info integrity
+	 * 是否运行额外的开销较大的检查，以验证内部不变量和信息完整性
 	 */
 	private boolean runDebugChecks = false;
 
 	/**
-	 * Passes to exclude from processing.
+	 * 要排除处理的反编译通道列表
 	 */
 	private final List<String> disabledPasses = new ArrayList<>();
 
+	/** 插件选项键值对 */
 	private Map<String, String> pluginOptions = new HashMap<>();
 
+	/** 已禁用的插件名称集合 */
 	private Set<String> disabledPlugins = new HashSet<>();
 
+	/** 插件加载器 */
 	private JadxPluginLoader pluginLoader = new JadxBasePluginLoader();
 
+	/** 是否加载 jadx 内置类集合文件 */
 	private boolean loadJadxClsSetFile = true;
 
+	/** 使用默认选项创建 JadxArgs 实例 */
 	public JadxArgs() {
-		// use default options
+		// 使用默认选项
 	}
 
+	/**
+	 * 设置输出根目录，并自动设置源码和资源子目录。
+	 *
+	 * @param rootDir 输出根目录
+	 */
 	public void setRootDir(File rootDir) {
 		setOutDir(rootDir);
 		setOutDirSrc(new File(rootDir, DEFAULT_SRC_DIR));
 		setOutDirRes(new File(rootDir, DEFAULT_RES_DIR));
 	}
 
+	/**
+	 * 关闭并释放所有内部资源，包括代码缓存、使用数据缓存和插件加载器。
+	 * 关闭过程中的异常会被记录到日志，不会抛出。
+	 */
 	@Override
 	public void close() {
 		try {
@@ -242,18 +341,38 @@ public class JadxArgs implements Closeable {
 		}
 	}
 
+	/**
+	 * 获取待反编译的输入文件列表。
+	 *
+	 * @return 输入文件列表
+	 */
 	public List<File> getInputFiles() {
 		return inputFiles;
 	}
 
+	/**
+	 * 向输入文件列表追加一个文件。
+	 *
+	 * @param inputFile 待添加的输入文件
+	 */
 	public void addInputFile(File inputFile) {
 		this.inputFiles.add(inputFile);
 	}
 
+	/**
+	 * 设置单个输入文件（内部通过追加方式实现，不会清空已有列表）。
+	 *
+	 * @param inputFile 输入文件
+	 */
 	public void setInputFile(File inputFile) {
 		addInputFile(inputFile);
 	}
 
+	/**
+	 * 设置输入文件列表，替换已有的输入文件集合。
+	 *
+	 * @param inputFiles 输入文件列表
+	 */
 	public void setInputFiles(List<File> inputFiles) {
 		this.inputFiles = inputFiles;
 	}
@@ -287,7 +406,7 @@ public class JadxArgs implements Closeable {
 	}
 
 	public void setThreadsCount(int threadsCount) {
-		this.threadsCount = Math.max(1, threadsCount); // make sure threadsCount >= 1
+		this.threadsCount = Math.max(1, threadsCount); // 确保线程数不小于 1
 	}
 
 	public boolean isCfgOutput() {
@@ -306,12 +425,17 @@ public class JadxArgs implements Closeable {
 		this.rawCFGOutput = rawCFGOutput;
 	}
 
+	/**
+	 * 判断当前是否处于回退（fallback）反编译模式。
+	 *
+	 * @return 若反编译模式为 {@link DecompilationMode#FALLBACK} 则返回 true
+	 */
 	public boolean isFallbackMode() {
 		return decompilationMode == DecompilationMode.FALLBACK;
 	}
 
 	/**
-	 * Deprecated: use 'decompilation mode' property
+	 * @deprecated 请使用 {@link #setDecompilationMode(DecompilationMode)} 属性代替
 	 */
 	@Deprecated
 	public void setFallbackMode(boolean fallbackMode) {
@@ -448,10 +572,21 @@ public class JadxArgs implements Closeable {
 		this.deobfuscationOn = deobfuscationOn;
 	}
 
+	/**
+	 * 判断去混淆映射文件是否为强制保存（覆盖）模式。
+	 *
+	 * @return 若映射文件模式为 {@link GeneratedRenamesMappingFileMode#OVERWRITE} 则返回 true
+	 */
 	public boolean isDeobfuscationForceSave() {
 		return generatedRenamesMappingFileMode == GeneratedRenamesMappingFileMode.OVERWRITE;
 	}
 
+	/**
+	 * 设置去混淆映射文件是否强制保存（覆盖）。
+	 * 传入 true 时会将映射文件模式设为 {@link GeneratedRenamesMappingFileMode#OVERWRITE}。
+	 *
+	 * @param deobfuscationForceSave 是否强制保存
+	 */
 	public void setDeobfuscationForceSave(boolean deobfuscationForceSave) {
 		if (deobfuscationForceSave) {
 			this.generatedRenamesMappingFileMode = GeneratedRenamesMappingFileMode.OVERWRITE;
@@ -483,7 +618,7 @@ public class JadxArgs implements Closeable {
 	}
 
 	/**
-	 * @deprecated Use {@link #getUseSourceNameAsClassNameAlias()} instead.
+	 * @deprecated 请使用 {@link #getUseSourceNameAsClassNameAlias()} 代替
 	 */
 	@Deprecated
 	public boolean isUseSourceNameAsClassAlias() {
@@ -491,7 +626,7 @@ public class JadxArgs implements Closeable {
 	}
 
 	/**
-	 * @deprecated Use {@link #setUseSourceNameAsClassNameAlias(UseSourceNameAsClassNameAlias)} instead.
+	 * @deprecated 请使用 {@link #setUseSourceNameAsClassNameAlias(UseSourceNameAsClassNameAlias)} 代替
 	 */
 	@Deprecated
 	public void setUseSourceNameAsClassAlias(boolean useSourceNameAsClassAlias) {
@@ -579,10 +714,22 @@ public class JadxArgs implements Closeable {
 		this.respectBytecodeAccModifiers = respectBytecodeAccModifiers;
 	}
 
+	/**
+	 * 判断是否导出为 Gradle 项目。
+	 *
+	 * @return 若 {@code exportGradleType} 非 null 则返回 true
+	 */
 	public boolean isExportAsGradleProject() {
 		return exportGradleType != null;
 	}
 
+	/**
+	 * 设置是否导出为 Gradle 项目。
+	 * 传入 true 且当前未指定 Gradle 类型时，默认使用 {@link ExportGradleType#AUTO}；
+	 * 传入 false 时清除导出类型。
+	 *
+	 * @param exportAsGradleProject 是否导出为 Gradle 项目
+	 */
 	public void setExportAsGradleProject(boolean exportAsGradleProject) {
 		if (exportAsGradleProject) {
 			if (exportGradleType == null) {
@@ -649,6 +796,12 @@ public class JadxArgs implements Closeable {
 		updateRenameFlag(renamePrintable, RenameEnum.PRINTABLE);
 	}
 
+	/**
+	 * 根据开关状态更新重命名标志集合。
+	 *
+	 * @param enabled 为 true 时添加标志，为 false 时移除标志
+	 * @param flag    要更新的重命名标志
+	 */
 	private void updateRenameFlag(boolean enabled, RenameEnum flag) {
 		if (enabled) {
 			renameFlags.add(flag);
@@ -669,6 +822,11 @@ public class JadxArgs implements Closeable {
 		return outputFormat;
 	}
 
+	/**
+	 * 判断输出格式是否为 JSON。
+	 *
+	 * @return 若输出格式为 {@link OutputFormatEnum#JSON} 则返回 true
+	 */
 	public boolean isJsonOutput() {
 		return outputFormat == OutputFormatEnum.JSON;
 	}
@@ -850,7 +1008,11 @@ public class JadxArgs implements Closeable {
 	}
 
 	/**
-	 * Hash of all options that can change result code
+	 * 计算所有可能影响反编译结果代码的选项的哈希值。
+	 * 用于缓存键生成，确保选项变更时能生成不同的缓存键。
+	 *
+	 * @param decompiler Jadx 反编译器实例（可为 null，此时不包含插件哈希）
+	 * @return 选项哈希值的 MD5 字符串
 	 */
 	public String makeCodeArgsHash(@Nullable JadxDecompiler decompiler) {
 		String argStr = "args:" + decompilationMode + useImports + showInconsistentCode
@@ -867,6 +1029,13 @@ public class JadxArgs implements Closeable {
 		return FileUtils.md5Sum(argStr);
 	}
 
+	/**
+	 * 构建插件相关的哈希字符串，作为选项哈希的一部分。
+	 * 将所有已解析插件上下文的输入哈希以 ":" 连接。
+	 *
+	 * @param decompiler Jadx 反编译器实例（可为 null，此时返回空字符串）
+	 * @return 插件哈希字符串
+	 */
 	private static String buildPluginsHash(@Nullable JadxDecompiler decompiler) {
 		if (decompiler == null) {
 			return "";
@@ -877,6 +1046,11 @@ public class JadxArgs implements Closeable {
 				.collect(Collectors.joining(":"));
 	}
 
+	/**
+	 * 返回包含主要配置选项的字符串表示，主要用于调试和日志输出。
+	 *
+	 * @return 描述当前参数配置的字符串
+	 */
 	@Override
 	public String toString() {
 		return "JadxArgs{" + "inputFiles=" + inputFiles
