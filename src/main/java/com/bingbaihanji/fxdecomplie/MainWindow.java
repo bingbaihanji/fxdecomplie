@@ -77,6 +77,8 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private final NavigationController navigationController = new NavigationController(this);
     /** 重命名与反混淆控制器（重命名/ProGuard 映射/反混淆预览/快照恢复） */
     private final RenameController renameController = new RenameController(this);
+    /** 反混淆与 ProGuard 映射控制器（自动反混淆/映射导入导出/快照恢复） */
+    private final DeobfuscationController deobfuscationController = new DeobfuscationController(this);
     /** 搜索与用法查找控制器（搜索对话框/Find Usages/包搜索/全文缓存/索引等待） */
     private final SearchController searchController = new SearchController(this);
     /** 引擎切换与图形展示控制器（引擎切换/标签页刷新/继承图/CFG/方法图/引擎对比） */
@@ -646,22 +648,22 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     @Override
     public void deobfuscate() {
-        renameController.deobfuscate();
+        deobfuscationController.deobfuscate();
     }
 
     @Override
     public void importProGuardMapping() {
-        renameController.importProGuardMapping();
+        deobfuscationController.importProGuardMapping();
     }
 
     @Override
     public void exportProGuardMapping() {
-        renameController.exportProGuardMapping();
+        deobfuscationController.exportProGuardMapping();
     }
 
     @Override
     public void restoreLastRenameSnapshot() {
-        renameController.restoreLastRenameSnapshot();
+        deobfuscationController.restoreLastRenameSnapshot();
     }
 
     /** 打开搜索对话框 */
@@ -788,6 +790,14 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             showWarning(warnTitle, warnMessage);
         }
         return view;
+    }
+
+    /** 刷新指定工作区的文件树可见单元格(重命名/反混淆后,由 Rename/Deobfuscation 控制器共用) */
+    void refreshWorkspaceTree(Workspace workspace) {
+        WorkspaceView view = workspaceViewFor(workspace);
+        if (view != null && view.treeView() != null) {
+            view.treeView().refreshVisibleCells();
+        }
     }
 
 }
