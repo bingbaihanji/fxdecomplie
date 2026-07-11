@@ -25,7 +25,7 @@ public interface ICodeData {
     List<ICodeRename> getRenames();
 
     /**
-     * 判断当前代码数据是否为空（不包含任何注释或重命名信息）
+     * 判断当前代码数据是否为空 (不包含任何注释或重命名信息)
      *
      * @return 若不包含任何数据则返回 {@code true}，否则返回 {@code false}
      */

@@ -16,7 +16,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResContainer;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResTableBinaryParserProvider;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.IZipEntry;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipContent;
-import com.bingbaihanji.fxdecomplie.util.ByteUtils;
+import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils.RE
 // TODO: 移动到 core 包
 
 /**
- * 资源加载器，负责加载和解析 Android 应用中的各类资源文件（如二进制 XML、ARSC 资源表、图片等）
+ * 资源加载器，负责加载和解析 Android 应用中的各类资源文件 (如二进制 XML、ARSC 资源表、图片等)
  * 实现了 {@link IResourcesLoader} 接口，支持自定义资源容器工厂和资源表解析器的扩展
  */
 public final class ResourcesLoader implements IResourcesLoader {
@@ -84,7 +84,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 加载指定资源文件的内容容器（静态入口）
+     * 加载指定资源文件的内容容器 (静态入口)
      * 解码失败时不会抛出异常，而是返回一个包含错误信息与堆栈的文本资源容器
      *
      * @param jadxRef 反编译器实例
@@ -211,7 +211,7 @@ public final class ResourcesLoader implements IResourcesLoader {
 
     /**
      * 根据资源类型将输入流解析为对应的内容容器
-     * 会优先尝试自定义资源容器工厂，其次按类型（清单/XML、ARSC、图片等）分别处理
+     * 会优先尝试自定义资源容器工厂，其次按类型 (清单/XML、ARSC、图片等)分别处理
      *
      * @param resFile     资源文件
      * @param inputStream 资源输入流
@@ -245,7 +245,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     /**
      * 解析 ARSC/PB 资源表，返回资源表解析器
      *
-     * @param resFile 资源文件（类型必须为 {@link ResourceType#ARSC}）
+     * @param resFile 资源文件 (类型必须为 {@link ResourceType#ARSC})
      * @param is      资源表输入流
      * @return 完成解析的资源表解析器
      * @throws IOException              读取失败时抛出
@@ -273,7 +273,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     /**
      * 加载单个文件的资源优先尝试自定义资源加载器，若均无法处理则回退到默认加载逻辑
      *
-     * @param list 资源文件列表（结果收集到此列表）
+     * @param list 资源文件列表 (结果收集到此列表)
      * @param file 待加载的文件
      */
     private void loadFile(List<ResourceFile> list, File file) {
@@ -296,9 +296,9 @@ public final class ResourcesLoader implements IResourcesLoader {
     /**
      * 默认的文件加载逻辑若为 ZIP/压缩包则遍历其条目逐一加入，否则作为单个资源文件加入
      *
-     * @param list   资源文件列表（结果收集到此列表）
+     * @param list   资源文件列表 (结果收集到此列表)
      * @param file   待加载的文件
-     * @param subDir 条目名称前缀（子目录），用于区分嵌套归档
+     * @param subDir 条目名称前缀 (子目录)，用于区分嵌套归档
      */
     public void defaultLoadFile(List<ResourceFile> list, File file, String subDir) {
         if (ByteUtils.isZipFile(file)) {
@@ -321,10 +321,10 @@ public final class ResourcesLoader implements IResourcesLoader {
     /**
      * 将 ZIP 中的单个条目转换为资源文件并加入列表目录条目会被跳过
      *
-     * @param list    资源文件列表（结果收集到此列表）
+     * @param list    资源文件列表 (结果收集到此列表)
      * @param zipFile 所属的 ZIP 文件
      * @param entry   ZIP 条目
-     * @param subDir  条目名称前缀（子目录）
+     * @param subDir  条目名称前缀 (子目录)
      */
     public void addEntry(List<ResourceFile> list, File zipFile, IZipEntry entry, String subDir) {
         if (entry.isDirectory()) {
@@ -340,7 +340,7 @@ public final class ResourcesLoader implements IResourcesLoader {
     }
 
     /**
-     * 懒加载并返回二进制 XML 解析器（延迟初始化，线程安全）
+     * 懒加载并返回二进制 XML 解析器 (延迟初始化，线程安全)
      *
      * @return 二进制 XML 解析器实例
      */

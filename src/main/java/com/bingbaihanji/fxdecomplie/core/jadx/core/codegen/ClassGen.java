@@ -39,24 +39,24 @@ import java.util.stream.Stream;
  * 类代码生成器
  * <p>
  * 负责将 {@link ClassNode} 中间表示生成为 Java 源码文本，包括包声明、导入语句、类声明、
- * 字段、方法、内部类以及枚举字段等同时管理导入集合、类型/类名的书写方式（短名或全名）
+ * 字段、方法、内部类以及枚举字段等同时管理导入集合、类型/类名的书写方式 (短名或全名)
  * 与导入冲突检测内部类通过创建带 parentGen 的子 ClassGen 递归生成，导入统一汇聚到顶层
  */
 public class ClassGen {
 
     /** 当前正在生成的类节点 */
     private final ClassNode cls;
-    /** 父类生成器（用于内部类场景），顶层类为 null */
+    /** 父类生成器 (用于内部类场景)，顶层类为 null */
     private final ClassGen parentGen;
     /** 注解生成器 */
     private final AnnotationGen annotationGen;
-    /** 是否为回退（fallback）模式，回退模式使用全限定名且不做导入优化 */
+    /** 是否为回退 (fallback)模式，回退模式使用全限定名且不做导入优化 */
     private final boolean fallback;
     /** 是否使用 import 简化类名 */
     private final boolean useImports;
-    /** 是否显示不一致（反编译异常）的代码 */
+    /** 是否显示不一致 (反编译异常)的代码 */
     private final boolean showInconsistentCode;
-    /** 整数字面量的输出格式（十进制/十六进制等） */
+    /** 整数字面量的输出格式 (十进制/十六进制等) */
     private final IntegerFormat integerFormat;
 
     /** 当前类收集到的导入集合 */
@@ -67,7 +67,7 @@ public class ClassGen {
     /** 类体代码是否已开始生成 */
     private boolean bodyGenStarted;
 
-    /** 外层名称生成器（匿名内部类内联时用于继承外层已用变量名） */
+    /** 外层名称生成器 (匿名内部类内联时用于继承外层已用变量名) */
     @Nullable
     private NameGen outerNameGen;
 
@@ -258,7 +258,7 @@ public class ClassGen {
      * 生成类的声明部分
      * <p>
      * 包含注释、注解、访问修饰符、class/interface/enum 关键字、类名、泛型参数、
-     * 父类（extends）与实现接口（implements）等
+     * 父类 (extends)与实现接口 (implements)等
      *
      * @param clsCode 代码写入器
      */
@@ -268,7 +268,7 @@ public class ClassGen {
             af = af.remove(AccessFlags.ABSTRACT)
                     .remove(AccessFlags.STATIC);
         }
-        // 顶层类（非内部类）不允许使用 'static' 和 'private' 修饰符
+        // 顶层类 (非内部类)不允许使用 'static' 和 'private' 修饰符
         if (!cls.getClassInfo().isInner()) {
             af = af.remove(AccessFlags.STATIC).remove(AccessFlags.PRIVATE);
         }
@@ -330,7 +330,7 @@ public class ClassGen {
      *
      * @param code             代码写入器
      * @param generics         泛型参数列表
-     * @param classDeclaration 是否为类声明处（类声明处会为上界类型补充导入）
+     * @param classDeclaration 是否为类声明处 (类声明处会为上界类型补充导入)
      * @return 若生成了泛型参数返回 true，否则返回 false
      */
     public boolean addGenericTypeParameters(ICodeWriter code, List<ArgType> generics, boolean classDeclaration) {
@@ -375,7 +375,7 @@ public class ClassGen {
     }
 
     /**
-     * 生成类体（花括号内的内容），字段、内部类与方法
+     * 生成类体 (花括号内的内容)，字段、内部类与方法
      *
      * @param clsCode 代码写入器
      * @throws CodegenException 代码生成失败时抛出
@@ -385,10 +385,10 @@ public class ClassGen {
     }
 
     /**
-     * 生成类体（花括号内的内容）
+     * 生成类体 (花括号内的内容)
      *
      * @param clsCode        代码写入器
-     * @param printClassName 是否将原始类名作为注释输出（例如用于内联类）
+     * @param printClassName 是否将原始类名作为注释输出 (例如用于内联类)
      * @throws CodegenException 代码生成失败时抛出
      */
     public void addClassBody(ICodeWriter clsCode, boolean printClassName) throws CodegenException {
@@ -515,9 +515,9 @@ public class ClassGen {
     }
 
     /**
-     * 生成单个方法的完整代码（方法定义 + 方法体）
+     * 生成单个方法的完整代码 (方法定义 + 方法体)
      * <p>
-     * 无代码的方法（抽象/接口方法）只生成定义并以分号结尾 对于代码异常、回退模式或
+     * 无代码的方法 (抽象/接口方法)只生成定义并以分号结尾 对于代码异常、回退模式或
      * 标记不一致的方法使用回退方式生成方法体
      *
      * @param code 代码写入器
@@ -620,7 +620,7 @@ public class ClassGen {
         if (integerFormat != IntegerFormat.DECIMAL && AndroidResourcesUtils.isResourceFieldValue(cls, type)) {
             return String.format("0x%08x", lit);
         }
-        // 强制字面量类型与字段类型一致（Java 字节码可能使用不同的类型）
+        // 强制字面量类型与字段类型一致 (Java 字节码可能使用不同的类型)
         return TypeGen.literalToString(lit, type, cls, fallback);
     }
 
@@ -720,7 +720,7 @@ public class ClassGen {
     }
 
     /**
-     * 按原始类名（内部形式）写入类引用
+     * 按原始类名 (内部形式)写入类引用
      *
      * @param code   代码写入器
      * @param rawCls 原始类名
@@ -852,7 +852,7 @@ public class ClassGen {
         if (isBothClassesInOneTopClass(useCls, extClsInfo)) {
             return shortName;
         }
-        // java.lang 包下的顶层类不生成 import（不含子包）
+        // java.lang 包下的顶层类不生成 import (不含子包)
         if ("java.lang".equals(extClsInfo.getPackage()) && extClsInfo.getParentClass() == null) {
             return shortName;
         }

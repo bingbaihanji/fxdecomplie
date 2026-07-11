@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.menu;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCombination;
 

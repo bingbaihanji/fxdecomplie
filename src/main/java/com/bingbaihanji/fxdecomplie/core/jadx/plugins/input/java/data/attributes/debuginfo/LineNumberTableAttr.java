@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * LineNumberTable 属性
  * <p>
- * 表示 class 文件中的 LineNumberTable 属性，建立字节码偏移量（offset）到
+ * 表示 class 文件中的 LineNumberTable 属性，建立字节码偏移量 (offset)到
  * 源代码行号的映射关系，用于调试信息中的行号定位
  * </p>
  */
@@ -52,7 +52,7 @@ public class LineNumberTableAttr implements IJavaAttribute {
     /**
      * 获取偏移量到行号的映射表
      *
-     * @return 字节码偏移量（key）到源代码行号（value）的映射
+     * @return 字节码偏移量 (key)到源代码行号 (value)的映射
      */
     public Map<Integer, Integer> getLineMap() {
         return lineMap;

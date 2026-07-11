@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 字面量指令参数
- * 以 long 存储原始位值，配合类型（如整型、浮点型、布尔型等）解释其含义
+ * 以 long 存储原始位值，配合类型 (如整型、浮点型、布尔型等)解释其含义
  */
 public final class LiteralArg extends InsnArg {
 
@@ -22,7 +22,7 @@ public final class LiteralArg extends InsnArg {
         this.type = type;
     }
 
-    /** 创建字面量参数（不修正类型） */
+    /** 创建字面量参数 (不修正类型) */
     public static LiteralArg make(long value, ArgType type) {
         return new LiteralArg(value, type);
     }
@@ -32,7 +32,7 @@ public final class LiteralArg extends InsnArg {
         return new LiteralArg(value, fixLiteralType(value, type));
     }
 
-    /** 根据字面量值推断并修正其类型（用于类型未知的窄类型场景） */
+    /** 根据字面量值推断并修正其类型 (用于类型未知的窄类型场景) */
     private static ArgType fixLiteralType(long value, ArgType type) {
         if (value == 0 || type.isTypeKnown() || type.contains(PrimitiveType.LONG) || type.contains(PrimitiveType.DOUBLE)) {
             return type;
@@ -76,7 +76,7 @@ public final class LiteralArg extends InsnArg {
         return literal == 0;
     }
 
-    /** 是否为整型字面量（int/byte/char/short/long） */
+    /** 是否为整型字面量 (int/byte/char/short/long) */
     public boolean isInteger() {
         switch (type.getPrimitiveType()) {
             case INT:
@@ -90,7 +90,7 @@ public final class LiteralArg extends InsnArg {
         }
     }
 
-    /** 是否为负数（整型、浮点型或双精度型的负值） */
+    /** 是否为负数 (整型、浮点型或双精度型的负值) */
     public boolean isNegative() {
         if (isInteger()) {
             return literal < 0;

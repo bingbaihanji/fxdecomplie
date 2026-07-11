@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * 不包含元信息支持的 CodeWriter 实现
  * <p>
- * 这是一个简化的代码写入器，不支持附加元数据注解（如定义位置、源码行映射等）
+ * 这是一个简化的代码写入器，不支持附加元数据注解 (如定义位置、源码行映射等)
  * 适用于仅需要生成纯文本代码、不关心代码导航和元信息的场景
  * </p>
  */
@@ -60,7 +60,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     /**
      * 开始新的一行：先换行，再添加当前缩进
      *
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter startLine() {
@@ -73,7 +73,7 @@ public class SimpleCodeWriter implements ICodeWriter {
      * 开始新的一行并追加一个字符
      *
      * @param c 要追加的字符
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter startLine(char c) {
@@ -86,7 +86,7 @@ public class SimpleCodeWriter implements ICodeWriter {
      * 开始新的一行并追加一个字符串
      *
      * @param str 要追加的字符串
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter startLine(String str) {
@@ -98,12 +98,12 @@ public class SimpleCodeWriter implements ICodeWriter {
     /**
      * 开始新的一行，并按需附带源码行号
      * <p>
-     * 当启用了行号插入（{@code insertLineNumbers}）时，会以注释形式写入源码行号 
+     * 当启用了行号插入 ({@code insertLineNumbers})时，会以注释形式写入源码行号 
      * 否则仅记录源码行映射
      * </p>
      *
      * @param sourceLine 源码行号，为 0 时等同于普通 {@link #startLine()}
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter startLineWithNum(int sourceLine) {
@@ -130,8 +130,8 @@ public class SimpleCodeWriter implements ICodeWriter {
     /**
      * 添加可能包含多行的字符串，并为其中的每个换行补齐当前缩进
      *
-     * @param str 要添加的（可能多行的）字符串
-     * @return 当前写入器（便于链式调用）
+     * @param str 要添加的 (可能多行的)字符串
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter addMultiLine(String str) {
@@ -147,7 +147,7 @@ public class SimpleCodeWriter implements ICodeWriter {
      * 追加一个字符串
      *
      * @param str 要追加的字符串
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter add(String str) {
@@ -159,7 +159,7 @@ public class SimpleCodeWriter implements ICodeWriter {
      * 追加一个字符
      *
      * @param c 要追加的字符
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter add(char c) {
@@ -171,7 +171,7 @@ public class SimpleCodeWriter implements ICodeWriter {
      * 追加另一个写入器中已有的代码字符串
      *
      * @param cw 源代码写入器
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public ICodeWriter add(ICodeWriter cw) {
@@ -182,7 +182,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     /**
      * 追加一个换行符
      *
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter newLine() {
@@ -193,7 +193,7 @@ public class SimpleCodeWriter implements ICodeWriter {
     /**
      * 追加一个单位缩进
      *
-     * @return 当前写入器（便于链式调用）
+     * @return 当前写入器 (便于链式调用)
      */
     @Override
     public SimpleCodeWriter addIndent() {

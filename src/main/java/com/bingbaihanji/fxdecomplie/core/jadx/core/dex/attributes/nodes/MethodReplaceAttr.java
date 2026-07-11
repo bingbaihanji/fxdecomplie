@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 
 /**
- * 方法替换属性：对该方法的调用应替换为指定的方法（用于合成方法的重定向）
+ * 方法替换属性：对该方法的调用应替换为指定的方法 (用于合成方法的重定向)
  */
 public class MethodReplaceAttr extends PinnedAttribute {
 

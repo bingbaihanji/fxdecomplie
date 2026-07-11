@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.outline;
 
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

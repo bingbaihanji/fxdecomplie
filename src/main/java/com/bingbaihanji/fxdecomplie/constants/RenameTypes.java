@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.constants;
 
 /**
- * 重命名条目类型常量。
+ * 重命名条目类型常量 
  */
 public final class RenameTypes {
 

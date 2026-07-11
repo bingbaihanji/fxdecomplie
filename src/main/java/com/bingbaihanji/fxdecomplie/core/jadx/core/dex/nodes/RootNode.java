@@ -45,9 +45,9 @@ import java.util.stream.Collectors;
 /**
  * DEX 文件的根节点，是整个反编译模型的顶层容器
  * <p>
- * 负责管理所有已加载的类（{@link ClassNode}）、包（{@link PackageNode}）、
- * 类路径图（{@link ClspGraph}）以及反编译遍历器（{@link IDexTreeVisitor}）
- * 同时持有反编译参数（{@link JadxArgs}）、常量存储、信息存储和缓存等全局资源
+ * 负责管理所有已加载的类 ({@link ClassNode})、包 ({@link PackageNode})、
+ * 类路径图 ({@link ClspGraph})以及反编译遍历器 ({@link IDexTreeVisitor})
+ * 同时持有反编译参数 ({@link JadxArgs})、常量存储、信息存储和缓存等全局资源
  */
 public class RootNode {
     private static final Logger LOG = LoggerFactory.getLogger(RootNode.class);
@@ -142,7 +142,7 @@ public class RootNode {
      * 完成类加载后的处理流程：
      * 1. 检测并修复重复类名
      * 2. 打印已加载类、方法和指令的统计信息
-     * 3. 按名称排序类（顶层类排在内部类之前）
+     * 3. 按名称排序类 (顶层类排在内部类之前)
      * 4. 可选地检测并移动内部类到其父类中
      * 5. 排序包列表
      */
@@ -291,7 +291,7 @@ public class RootNode {
     }
 
     /**
-     * 初始化类路径图（{@link ClspGraph}）加载 jadx 类集合文件，
+     * 初始化类路径图 ({@link ClspGraph})加载 jadx 类集合文件，
      * 将应用中的类添加到图中，并初始化缓存
      */
     public void initClassPath() {
@@ -312,7 +312,7 @@ public class RootNode {
 
     /**
      * 更新混淆的资源文件名通过资源表中的条目名称匹配资源文件，
-     * 并根据配置设置资源文件的别名（原始名称）
+     * 并根据配置设置资源文件的别名 (原始名称)
      *
      * @param parser    资源表解析器
      * @param resources 资源文件列表
@@ -348,7 +348,7 @@ public class RootNode {
 
     /**
      * 初始化内部类关系将内部类移动到其父类中，
-     * 并处理无法找到父类的内部类（将其标记为非内部类）
+     * 并处理无法找到父类的内部类 (将其标记为非内部类)
      */
     private void initInnerClasses() {
         // 移动内部类
@@ -381,7 +381,7 @@ public class RootNode {
     }
 
     /**
-     * 合并自定义遍历器到反编译流程中对于预定义模式（FALLBACK、SIMPLE），
+     * 合并自定义遍历器到反编译流程中对于预定义模式 (FALLBACK、SIMPLE)，
      * 忽略自定义遍历器 否则将自定义的准备阶段和反编译阶段遍历器合并到现有流程中
      * 同时处理调试检查和禁用遍历器的配置
      *
@@ -390,7 +390,7 @@ public class RootNode {
     public void mergePasses(Map<JadxPassType, List<JadxPass>> customPasses) {
         DecompilationMode mode = args.getDecompilationMode();
         if (mode == DecompilationMode.FALLBACK || mode == DecompilationMode.SIMPLE) {
-            // 对于预定义模式，忽略自定义（和插件）遍历器
+            // 对于预定义模式，忽略自定义 (和插件)遍历器
             return;
         }
 
@@ -420,7 +420,7 @@ public class RootNode {
 
     /**
      * 运行反编译前的准备阶段遍历所有准备阶段的遍历器，
-     * 对每个非内部类执行深度优先遍历记录每个遍历器的执行耗时（DEBUG 级别）
+     * 对每个非内部类执行深度优先遍历记录每个遍历器的执行耗时 (DEBUG 级别)
      */
     public void runPreDecompileStage() {
         boolean debugEnabled = LOG.isDebugEnabled();

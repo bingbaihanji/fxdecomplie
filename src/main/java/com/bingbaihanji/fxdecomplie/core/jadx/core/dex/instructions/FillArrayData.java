@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * 表示 Dex 字节码中的 fill-array-data 指令
  * <p>
- * 该指令用于填充数组的初始数据，根据元素大小（1/2/4/8 字节）推断元素类型，
+ * 该指令用于填充数组的初始数据，根据元素大小 (1/2/4/8 字节)推断元素类型，
  * 并支持将原始字节数组数据转换为字面量参数列表
  * </p>
  */
@@ -30,11 +30,11 @@ public final class FillArrayData extends InsnNode {
     /** 八字节元素类型：long 或 double */
     private static final ArgType EIGHT_BYTES_TYPE = ArgType.unknown(PrimitiveType.LONG, PrimitiveType.DOUBLE);
 
-    /** 数组原始数据（byte[]/short[]/int[]/long[] 之一） */
+    /** 数组原始数据 (byte[]/short[]/int[]/long[] 之一) */
     private final Object data;
     /** 数组元素个数 */
     private final int size;
-    /** 单个元素的字节大小（1/2/4/8） */
+    /** 单个元素的字节大小 (1/2/4/8) */
     private final int elemSize;
     /** 推断出的元素类型 */
     private ArgType elemType;
@@ -64,9 +64,9 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 根据元素宽度（字节数）推断对应的元素类型
+     * 根据元素宽度 (字节数)推断对应的元素类型
      *
-     * @param elementWidthUnit 元素宽度（0/1/2/4/8 字节）
+     * @param elementWidthUnit 元素宽度 (0/1/2/4/8 字节)
      * @return 推断出的 ArgType
      * @throws JadxRuntimeException 当元素宽度未知时抛出
      */
@@ -89,7 +89,7 @@ public final class FillArrayData extends InsnNode {
     /**
      * 获取数组原始数据对象
      *
-     * @return 原始数据（byte[]/short[]/int[]/long[] 之一）
+     * @return 原始数据 (byte[]/short[]/int[]/long[] 之一)
      */
     public Object getData() {
         return data;

@@ -10,7 +10,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
-import com.bingbaihanji.fxdecomplie.util.JadxConsts;
+import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +76,7 @@ public class ExceptionHandler {
      * 向 catch 块添加异常类型
      *
      * @param mth  所属方法节点
-     * @param type 异常类型，null 表示捕获所有异常（Throwable）
+     * @param type 异常类型，null 表示捕获所有异常 (Throwable)
      * @return 如果添加成功返回 true，否则返回 false
      */
     public boolean addCatchType(MethodNode mth, @Nullable ClassInfo type) {
@@ -134,7 +134,7 @@ public class ExceptionHandler {
     }
 
     /**
-     * 判断是否捕获所有异常（catch 块为空或包含 Throwable 类型）
+     * 判断是否捕获所有异常 (catch 块为空或包含 Throwable 类型)
      *
      * @return 如果捕获所有异常返回 true，否则返回 false
      */

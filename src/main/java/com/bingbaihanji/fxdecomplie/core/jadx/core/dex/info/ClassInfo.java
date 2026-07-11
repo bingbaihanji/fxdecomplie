@@ -19,17 +19,17 @@ import java.util.Objects;
 public final class ClassInfo implements Comparable<ClassInfo> {
     /** 类在 DEX 中的类型表示 */
     private final ArgType type;
-    /** 类的短名称（不含包名） */
+    /** 类的短名称 (不含包名) */
     private String name;
     /** 类的包名，对于内部类此字段为 null */
     @Nullable("for inner classes")
     private String pkg;
-    /** 类的完整名称（包名.短名称） */
+    /** 类的完整名称 (包名.短名称) */
     private String fullName;
     /** 父类信息，仅在内部类时有值 */
     @Nullable
     private ClassInfo parentClass;
-    /** 类的别名信息（包名和短名称别名） */
+    /** 类的别名信息 (包名和短名称别名) */
     @Nullable
     private ClassAliasInfo alias;
 
@@ -100,7 +100,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
             throw new JadxRuntimeException("Null class type");
         }
         if (type.isArray()) {
-            // TODO: 检查数组类中声明方法的情况（如 int[] 中的 clone 方法）
+            // TODO: 检查数组类中声明方法的情况 (如 int[] 中的 clone 方法)
             return ArgType.OBJECT;
         }
         if (!type.isObject() || type.isGenericType()) {
@@ -121,7 +121,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
      * @param shortName   短名称
      * @param parentClass 父类信息，如果是内部类则不为 null
      * @param alias       是否使用别名
-     * @param raw         是否使用原始格式（使用 '$' 而非 '.' 作为内部类分隔符）
+     * @param raw         是否使用原始格式 (使用 '$' 而非 '.' 作为内部类分隔符)
      * @return 完整的类名字符串
      */
     private static String makeFullClsName(String pkg, String shortName, ClassInfo parentClass, boolean alias, boolean raw) {
@@ -140,7 +140,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
 
     /**
      * 修改类的短名称别名
-     * 如果新名称与原名称相同或为空，则只处理包名别名（如果有）
+     * 如果新名称与原名称相同或为空，则只处理包名别名 (如果有)
      *
      * @param aliasName 新的别名短名称
      */
@@ -199,7 +199,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
 
     /**
      * 为别名信息填充完整名称
-     * 仅对非内部类（无父类）设置别名的完整类名
+     * 仅对非内部类 (无父类)设置别名的完整类名
      *
      * @param alias 待填充完整名称的别名信息
      */
@@ -325,28 +325,28 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     }
 
     /**
-     * 构建完整的类名（非别名，非原始格式）
+     * 构建完整的类名 (非别名，非原始格式)
      */
     private String makeFullName() {
         return makeFullClsName(pkg, name, parentClass, false, false);
     }
 
     /**
-     * 构建原始格式的完整类名（非别名，使用 '$' 作为内部类分隔符）
+     * 构建原始格式的完整类名 (非别名，使用 '$' 作为内部类分隔符)
      */
     public String makeRawFullName() {
         return makeFullClsName(pkg, name, parentClass, false, true);
     }
 
     /**
-     * 构建别名的完整类名（使用别名，非原始格式）
+     * 构建别名的完整类名 (使用别名，非原始格式)
      */
     public String makeAliasFullName() {
         return makeFullClsName(getAliasPkg(), getAliasShortName(), parentClass, true, false);
     }
 
     /**
-     * 构建别名的原始格式完整类名（使用别名，使用 '$' 作为内部类分隔符）
+     * 构建别名的原始格式完整类名 (使用别名，使用 '$' 作为内部类分隔符)
      *
      * @return 别名的原始格式完整类名
      */
@@ -372,7 +372,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     /**
      * 获取类的完整名称
      *
-     * @return 完整类名（包名.短名称）
+     * @return 完整类名 (包名.短名称)
      */
     public String getFullName() {
         return fullName;
@@ -381,7 +381,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     /**
      * 获取类的短名称
      *
-     * @return 类的短名称（不含包名）
+     * @return 类的短名称 (不含包名)
      */
     public String getShortName() {
         return name;
@@ -406,7 +406,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     }
 
     /**
-     * 判断类是否位于默认包（无包名）
+     * 判断类是否位于默认包 (无包名)
      *
      * @return 如果位于默认包返回 true，否则返回 false
      */
@@ -424,7 +424,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     }
 
     /**
-     * 获取不含包名的别名（内部类以 '.' 拼接各级外部类别名）
+     * 获取不含包名的别名 (内部类以 '.' 拼接各级外部类别名)
      *
      * @return 不含包名的别名名称
      */
@@ -438,7 +438,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     /**
      * 返回当前 ClassInfo 所表示类的外部类
      *
-     * @return 外部（父）类信息，如果不是内部类则返回 null
+     * @return 外部 (父)类信息，如果不是内部类则返回 null
      */
     public @Nullable ClassInfo getParentClass() {
         return parentClass;
@@ -505,7 +505,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
     }
 
     /**
-     * 返回类的字符串表示（完整类名）
+     * 返回类的字符串表示 (完整类名)
      *
      * @return 完整类名
      */

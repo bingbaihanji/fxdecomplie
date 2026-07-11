@@ -43,7 +43,7 @@ import static com.bingbaihanji.fxdecomplie.util.collection.ListUtils.allMatch;
 /**
  * 方法指令修改访问器
  * <p>
- * 负责对方法内的指令进行修改（删除、替换、处理异常处理器等），
+ * 负责对方法内的指令进行修改 (删除、替换、处理异常处理器等)，
  * 例如：将常量替换为常量字段引用、内联 CMP 指令、移除多余的类型转换、
  * 将 new-array + fill-array 合并为填充数组指令、处理 move-exception 等
  * 该访问器在 {@link CodeShrinkVisitor} 与 {@link ProcessVariables} 之前运行
@@ -134,7 +134,7 @@ public class ModVisitor extends AbstractVisitor {
     }
 
     /**
-     * 如果字段在使用处不可见，则将实例转换（cast）为其声明所在的原始类
+     * 如果字段在使用处不可见，则将实例转换 (cast)为其声明所在的原始类
      */
     private static void fixFieldUsage(MethodNode mth, IndexInsnNode insn) {
         InsnArg instanceArg = insn.getArg(insn.getType() == InsnType.IGET ? 0 : 1);
@@ -408,7 +408,7 @@ public class ModVisitor extends AbstractVisitor {
      * 对匿名类构造函数调用中的参数应用以下处理：
      * <ul>
      *     <li>禁止将其内联到构造函数调用中</li>
-     *     <li>将变量声明为 final（编译器隐式要求）</li>
+     *     <li>将变量声明为 final (编译器隐式要求)</li>
      * </ul>
      */
     private static void processAnonymousConstructor(MethodNode mth, ConstructorInsn co) {
@@ -429,7 +429,7 @@ public class ModVisitor extends AbstractVisitor {
                 }
             }
         } else {
-            // 无法获取额外信息，则对所有参数应用修改（最安全的方案）
+            // 无法获取额外信息，则对所有参数应用修改 (最安全的方案)
             co.getArguments().forEach(ModVisitor::anonymousCallArgMod);
         }
     }

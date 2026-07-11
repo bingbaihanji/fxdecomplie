@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.comment;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;

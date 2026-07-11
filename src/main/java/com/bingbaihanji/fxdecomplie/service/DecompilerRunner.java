@@ -5,8 +5,8 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
-import com.bingbaihanji.fxdecomplie.util.LruCache;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.cache.LruCache;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

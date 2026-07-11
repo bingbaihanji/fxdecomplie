@@ -21,7 +21,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.export.ExportGradleType;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.PluginContext;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.IJadxFilesGetter;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.TempFilesGetter;
-import com.bingbaihanji.fxdecomplie.util.ByteUtils;
+import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  * 实现 {@link Closeable} 接口，用于释放内部缓存和插件加载器资源
  */
 public class JadxArgs implements Closeable {
-    /** 默认线程数，取 CPU 核心数的一半（最少为 1） */
+    /** 默认线程数，取 CPU 核心数的一半 (最少为 1) */
     public static final int DEFAULT_THREADS_COUNT = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
     /** 默认换行符，使用系统行分隔符 */
     public static final String DEFAULT_NEW_LINE_STR = System.lineSeparator();
@@ -78,12 +78,12 @@ public class JadxArgs implements Closeable {
     /** 反编译使用的线程数 */
     private int threadsCount = DEFAULT_THREADS_COUNT;
 
-    /** 是否输出控制流图（CFG） */
+    /** 是否输出控制流图 (CFG) */
     private boolean cfgOutput = false;
     /** 是否输出原始控制流图 */
     private boolean rawCFGOutput = false;
 
-    /** 是否显示不一致的代码（可能导致编译错误的代码） */
+    /** 是否显示不一致的代码 (可能导致编译错误的代码) */
     private boolean showInconsistentCode = false;
 
     /** 是否使用 import 语句 */
@@ -145,7 +145,7 @@ public class JadxArgs implements Closeable {
     private int deobfuscationMaxLength = Integer.MAX_VALUE;
 
     /**
-     * 去混淆白名单，包含要排除去混淆处理的类和包名列表（以 '.*' 结尾表示包）
+     * 去混淆白名单，包含要排除去混淆处理的类和包名列表 (以 '.*' 结尾表示包)
      */
     private List<String> deobfuscationWhitelist = DeobfWhitelist.DEFAULT_LIST;
 
@@ -163,7 +163,7 @@ public class JadxArgs implements Closeable {
     private boolean escapeUnicode = false;
     /** 是否将常量字段替换为其实际值 */
     private boolean replaceConsts = true;
-    /** 是否保留字节码中的访问修饰符（即使它们与源码不一致） */
+    /** 是否保留字节码中的访问修饰符 (即使它们与源码不一致) */
     private boolean respectBytecodeAccModifiers = false;
     /** Gradle 项目导出类型，null 表示不导出为 Gradle 项目 */
     private @Nullable ExportGradleType exportGradleType = null;
@@ -199,7 +199,7 @@ public class JadxArgs implements Closeable {
      * 值必须大于等于 1，默认值为 10
      */
     private int typeUpdatesLimitCount = 10;
-    /** 是否使用 dx 格式输入（Android Dalvik 可执行文件） */
+    /** 是否使用 dx 格式输入 (Android Dalvik 可执行文件) */
     private boolean useDxInput = false;
     /** 是否使用 Kotlin 方法名作为变量名 */
     private UseKotlinMethodsForVarNames useKotlinMethodsForVarNames = UseKotlinMethodsForVarNames.APPLY;
@@ -213,7 +213,7 @@ public class JadxArgs implements Closeable {
      */
     private IJadxSecurity security = new JadxSecurity(JadxSecurityFlag.all());
     /**
-     * 是否跳过文件保存（可用于性能测试）
+     * 是否跳过文件保存 (可用于性能测试)
      */
     private boolean skipFilesSave = false;
     /**
@@ -238,7 +238,7 @@ public class JadxArgs implements Closeable {
      * 构建插件相关的哈希字符串，作为选项哈希的一部分
      * 将所有已解析插件上下文的输入哈希以 ":" 连接
      *
-     * @param decompiler Jadx 反编译器实例（可为 null，此时返回空字符串）
+     * @param decompiler Jadx 反编译器实例 (可为 null，此时返回空字符串)
      * @return 插件哈希字符串
      */
     private static String buildPluginsHash(@Nullable JadxDecompiler decompiler) {
@@ -311,7 +311,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置单个输入文件（内部通过追加方式实现，不会清空已有列表）
+     * 设置单个输入文件 (内部通过追加方式实现，不会清空已有列表)
      *
      * @param inputFile 输入文件
      */
@@ -368,7 +368,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 判断当前是否处于回退（fallback）反编译模式
+     * 判断当前是否处于回退 (fallback)反编译模式
      *
      * @return 若反编译模式为 {@link DecompilationMode#FALLBACK} 则返回 true
      */
@@ -515,7 +515,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 判断去混淆映射文件是否为强制保存（覆盖）模式
+     * 判断去混淆映射文件是否为强制保存 (覆盖)模式
      *
      * @return 若映射文件模式为 {@link GeneratedRenamesMappingFileMode#OVERWRITE} 则返回 true
      */
@@ -524,7 +524,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 设置去混淆映射文件是否强制保存（覆盖）
+     * 设置去混淆映射文件是否强制保存 (覆盖)
      * 传入 true 时会将映射文件模式设为 {@link GeneratedRenamesMappingFileMode#OVERWRITE}
      *
      * @param deobfuscationForceSave 是否强制保存
@@ -953,7 +953,7 @@ public class JadxArgs implements Closeable {
      * 计算所有可能影响反编译结果代码的选项的哈希值
      * 用于缓存键生成，确保选项变更时能生成不同的缓存键
      *
-     * @param decompiler Jadx 反编译器实例（可为 null，此时不包含插件哈希）
+     * @param decompiler Jadx 反编译器实例 (可为 null，此时不包含插件哈希)
      * @return 选项哈希值的 MD5 字符串
      */
     public String makeCodeArgsHash(@Nullable JadxDecompiler decompiler) {

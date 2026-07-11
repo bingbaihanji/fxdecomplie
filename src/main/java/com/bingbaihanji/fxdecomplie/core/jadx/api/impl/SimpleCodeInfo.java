@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeMetadata;
 /**
  * {@link ICodeInfo} 的简单实现，不包含元数据支持
  * <p>
- * 该类直接持有一个代码字符串，适用于不需要代码元数据（如行号映射、注解等）的场景
+ * 该类直接持有一个代码字符串，适用于不需要代码元数据 (如行号映射、注解等)的场景
  * 所有与元数据相关的方法均返回空或 false
  * </p>
  */

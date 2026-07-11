@@ -68,7 +68,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 为指定资源条目登记重命名（使用其 ID 与键名）
+     * 为指定资源条目登记重命名 (使用其 ID 与键名)
      *
      * @param entry 资源条目
      */
@@ -97,7 +97,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 在唯一名称集合中查找与给定资源条目同名（配置 + 类型 + 键名）的条目
+     * 在唯一名称集合中查找与给定资源条目同名 (配置 + 类型 + 键名)的条目
      *
      * @param resourceEntry 待查询的资源条目
      * @return 同名的已存在资源条目，若不存在则返回 {@code null}
@@ -143,7 +143,7 @@ public class ResourceStorage {
     }
 
     /**
-     * 设置应用包名（经安全接口校验后存储）
+     * 设置应用包名 (经安全接口校验后存储)
      *
      * @param appPackage 应用包名
      */

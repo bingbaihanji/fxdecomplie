@@ -10,7 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import java.util.List;
 
 /**
- * 对字段节点（{@link FieldNode}）的对外封装，向 API 使用者提供字段的名称、
+ * 对字段节点 ({@link FieldNode})的对外封装，向 API 使用者提供字段的名称、
  * 类型、访问标志和引用关系等信息
  */
 public final class JavaField implements JavaNode {
@@ -25,19 +25,19 @@ public final class JavaField implements JavaNode {
         this.parent = cls;
     }
 
-    /** 获取字段名（使用别名，可能经过反混淆重命名） */
+    /** 获取字段名 (使用别名，可能经过反混淆重命名) */
     @Override
     public String getName() {
         return field.getAlias();
     }
 
-    /** 获取字段的完整名称（所属类全名 + 字段名） */
+    /** 获取字段的完整名称 (所属类全名 + 字段名) */
     @Override
     public String getFullName() {
         return parent.getFullName() + '.' + getName();
     }
 
-    /** 获取字段的原始名称（未经别名替换） */
+    /** 获取字段的原始名称 (未经别名替换) */
     public String getRawName() {
         return field.getName();
     }
@@ -48,13 +48,13 @@ public final class JavaField implements JavaNode {
         return parent;
     }
 
-    /** 获取最顶层的外部类（内部类会向上追溯到顶层类） */
+    /** 获取最顶层的外部类 (内部类会向上追溯到顶层类) */
     @Override
     public JavaClass getTopParentClass() {
         return parent.getTopParentClass();
     }
 
-    /** 获取字段的访问标志（public/private/static 等） */
+    /** 获取字段的访问标志 (public/private/static 等) */
     public AccessInfo getAccessFlags() {
         return field.getAccessFlags();
     }
@@ -64,13 +64,13 @@ public final class JavaField implements JavaNode {
         return ArgType.tryToResolveClassAlias(field.root(), field.getType());
     }
 
-    /** 获取该字段定义在源码中的位置（偏移量） */
+    /** 获取该字段定义在源码中的位置 (偏移量) */
     @Override
     public int getDefPos() {
         return field.getDefPosition();
     }
 
-    /** 获取引用了该字段的节点列表（即哪些地方使用了本字段） */
+    /** 获取引用了该字段的节点列表 (即哪些地方使用了本字段) */
     @Override
     public List<JavaNode> getUseIn() {
         return getDeclaringClass().getRootDecompiler().convertNodes(field.getUseIn());

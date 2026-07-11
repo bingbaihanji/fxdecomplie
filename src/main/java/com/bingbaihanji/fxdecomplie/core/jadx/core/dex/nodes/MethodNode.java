@@ -54,7 +54,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /** 空指令数组，用于无代码的方法 */
     private static final InsnNode[] EMPTY_INSN_ARRAY = new InsnNode[0];
 
-    /** 方法元信息（名称、签名等） */
+    /** 方法元信息 (名称、签名等) */
     private final MethodInfo mthInfo;
     /** 所属父类节点 */
     private final ClassNode parentClass;
@@ -62,9 +62,9 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     private final ICodeReader codeReader;
     /** 方法字节码中的原始指令数量 */
     private final int insnsCount;
-    /** 访问标志（public/private/static 等） */
+    /** 访问标志 (public/private/static 等) */
     private AccessInfo accFlags;
-    /** 标识该方法是否无代码（如抽象方法、接口方法） */
+    /** 标识该方法是否无代码 (如抽象方法、接口方法) */
     private boolean noCode;
     /** 寄存器总数 */
     private int regsCount;
@@ -80,7 +80,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     private List<ArgType> typeParameters;
 
     // 反编译数据，卸载时重置
-    /** this 引用的寄存器参数（非静态方法） */
+    /** this 引用的寄存器参数 (非静态方法) */
     private RegisterArg thisArg;
     /** 方法参数的寄存器参数列表 */
     private List<RegisterArg> argsList;
@@ -103,11 +103,11 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /** 反编译后的代码区域 */
     private Region region;
 
-    /** 调用此方法的方法列表（调用者） */
+    /** 调用此方法的方法列表 (调用者) */
     private List<MethodNode> useIn = Collections.emptyList();
     /** 未解析的调用此方法的方法信息 */
     private List<MethodInfo> unresolvedUsed = Collections.emptyList();
-    /** 此方法调用的方法集合（被调用者） */
+    /** 此方法调用的方法集合 (被调用者) */
     private Set<MethodNode> methodsUsed = new HashSet<>();
     /** 标识此方法是否包含递归自调用 */
     private boolean callsSelf = false;
@@ -139,7 +139,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
      * 根据方法数据构建方法节点实例
      *
      * @param classNode  所属父类节点
-     * @param methodData 方法数据（来自输入插件）
+     * @param methodData 方法数据 (来自输入插件)
      * @return 构建完成的方法节点
      */
     public static MethodNode build(ClassNode classNode, IMethodData methodData) {
@@ -246,7 +246,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 初始化方法参数寄存器，包括 this 引用（非静态方法）和方法参数
+     * 初始化方法参数寄存器，包括 this 引用 (非静态方法)和方法参数
      *
      * @param args 参数类型列表
      */
@@ -322,7 +322,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否包含泛型参数（即原始参数类型与当前参数类型不同）
+     * 判断方法是否包含泛型参数 (即原始参数类型与当前参数类型不同)
      *
      * @return 如果包含泛型参数返回 true
      */
@@ -390,7 +390,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回参数寄存器列表（不含 this）
+     * 返回参数寄存器列表 (不含 this)
      *
      * @return 参数寄存器列表
      * @throws JadxRuntimeException 如果参数寄存器尚未加载
@@ -406,7 +406,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /**
      * 返回全部参数寄存器列表，非静态方法会在首位包含 this 参数
      *
-     * @return 包含 this（如有）的全部参数寄存器列表
+     * @return 包含 this (如有)的全部参数寄存器列表
      */
     public List<RegisterArg> getAllArgRegs() {
         List<RegisterArg> argRegs = getArgRegs();
@@ -430,7 +430,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 标记跳过第一个参数（如合成参数）
+     * 标记跳过第一个参数 (如合成参数)
      */
     public void skipFirstArgument() {
         this.add(AFlag.SKIP_FIRST_ARG);
@@ -451,7 +451,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回方法别名（重命名后使用的名称）
+     * 返回方法别名 (重命名后使用的名称)
      *
      * @return 方法别名
      */
@@ -474,7 +474,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回最顶层的父类节点（穿透内部类嵌套）
+     * 返回最顶层的父类节点 (穿透内部类嵌套)
      *
      * @return 顶层父类节点
      */
@@ -483,7 +483,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否无代码（抽象方法、接口方法或加载失败）
+     * 判断方法是否无代码 (抽象方法、接口方法或加载失败)
      *
      * @return 无代码返回 true
      */
@@ -595,7 +595,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回出口块前驱的基本块列表（即方法退出前的块）
+     * 返回出口块前驱的基本块列表 (即方法退出前的块)
      *
      * @return 出口前驱基本块列表
      */
@@ -638,7 +638,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回包含指定基本块的循环（返回首个匹配）
+     * 返回包含指定基本块的循环 (返回首个匹配)
      *
      * @param block 基本块
      * @return 包含该块的循环信息，无则返回 null
@@ -757,7 +757,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断是否存在同名且参数数量相同的方法（即方法被重载）
+     * 判断是否存在同名且参数数量相同的方法 (即方法被重载)
      *
      * @return 若存在重载方法返回 true
      */
@@ -785,7 +785,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否为默认（无参）构造方法
+     * 判断方法是否为默认 (无参)构造方法
      *
      * @return 为默认构造方法返回 true
      */
@@ -825,7 +825,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 创建一个新的合成（伪造）寄存器参数
+     * 创建一个新的合成 (伪造)寄存器参数
      *
      * @param type 参数类型
      * @return 新建的合成寄存器参数
@@ -1063,21 +1063,21 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置调用此方法的方法列表（调用者），设置后请勿修改传入列表
+     * 设置调用此方法的方法列表 (调用者)，设置后请勿修改传入列表
      *
      * @param useIn 调用者方法列表
      */
     public void setUseIn(List<MethodNode> useIn) {
         this.useIn = useIn;
 
-        // 通知所有调用者方法：此方法（被调用者）被它们使用
+        // 通知所有调用者方法：此方法 (被调用者)被它们使用
         for (MethodNode methodUsedIn : useIn) {
             methodUsedIn.addUsed(this);
         }
     }
 
     /**
-     * 添加一个被此方法调用的方法（被调用者）
+     * 添加一个被此方法调用的方法 (被调用者)
      *
      * @param used 被调用的方法
      */
@@ -1088,7 +1088,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 返回此方法调用的方法集合（被调用者），返回前会剔除无效项
+     * 返回此方法调用的方法集合 (被调用者)，返回前会剔除无效项
      *
      * @return 被调用的方法集合
      */
@@ -1098,7 +1098,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 设置此方法调用的方法集合（被调用者）
+     * 设置此方法调用的方法集合 (被调用者)
      *
      * @param methodsUsed 被调用的方法列表
      */
@@ -1142,8 +1142,8 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
         return this.callsSelf;
     }
 
-    // 如果此方法（调用者）已从被调用者的调用者列表中移除，
-    // 则从被调用方法（被调用者）列表中移除对应项
+    // 如果此方法 (调用者)已从被调用者的调用者列表中移除，
+    // 则从被调用方法 (被调用者)列表中移除对应项
     private void removeInvalidMethodsUsed() {
         methodsUsed.removeIf(methodUsed -> !methodUsed.getUseIn().contains(this));
     }

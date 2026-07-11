@@ -45,9 +45,9 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.Fall
 /**
  * 方法代码生成器
  * <p>
- * 负责将 {@link MethodNode} 生成为 Java 源码文本，包括方法定义（修饰符、返回类型、方法名、
- * 参数列表、throws、注解等）与方法体方法体根据反编译模式（AUTO/RESTRUCTURE/SIMPLE/FALLBACK）
- * 采用不同的生成策略，并在生成失败时回退到指令转储（fallback dump）
+ * 负责将 {@link MethodNode} 生成为 Java 源码文本，包括方法定义 (修饰符、返回类型、方法名、
+ * 参数列表、throws、注解等)与方法体方法体根据反编译模式 (AUTO/RESTRUCTURE/SIMPLE/FALLBACK)
+ * 采用不同的生成策略，并在生成失败时回退到指令转储 (fallback dump)
  */
 public class MethodGen {
     private static final Logger LOG = LoggerFactory.getLogger(MethodGen.class);
@@ -122,7 +122,7 @@ public class MethodGen {
     }
 
     /**
-     * 返回方法代码生成的回退（fallback）变体
+     * 返回方法代码生成的回退 (fallback)变体
      *
      * @param mth 方法节点
      * @return 使用回退配置构建的 MethodGen
@@ -173,13 +173,13 @@ public class MethodGen {
     }
 
     /**
-     * 生成方法定义部分（不含方法体的花括号内容）
+     * 生成方法定义部分 (不含方法体的花括号内容)
      * <p>
      * 处理静态初始化块、匿名构造器、覆盖注解、访问修饰符、返回类型/构造器名、参数列表、
      * throws 声明以及注解默认值等
      *
      * @param code 代码写入器
-     * @return 若在方法名后需要追加空格（普通方法定义）返回 true 匿名构造器等场景返回 false
+     * @return 若在方法名后需要追加空格 (普通方法定义)返回 true 匿名构造器等场景返回 false
      */
     public boolean addDefinition(ICodeWriter code) {
         if (mth.methodInfo().isClassInit()) {
@@ -334,7 +334,7 @@ public class MethodGen {
                 argType = varType;
             }
             if (argNum == lastArgNum && mth.getAccessFlags().isVarArgs()) {
-                // 将最后一个数组参数改为可变参数（varargs）
+                // 将最后一个数组参数改为可变参数 (varargs)
                 if (argType.isArray()) {
                     ArgType elType = argType.getArrayElement();
                     classGen.useType(code, elType);
@@ -360,9 +360,9 @@ public class MethodGen {
      * <p>
      * 支持四种模式：
      * <ul>
-     *   <li>AUTO —— 自动选择：回退模式或无区域（region）时走指令转储，否则用区域模式</li>
-     *   <li>RESTRUCTURE —— 使用区域重组（RegionGen）生成</li>
-     *   <li>SIMPLE —— 简化模式（基本块行号生成）</li>
+     *   <li>AUTO —— 自动选择：回退模式或无区域 (region)时走指令转储，否则用区域模式</li>
+     *   <li>RESTRUCTURE —— 使用区域重组 (RegionGen)生成</li>
+     *   <li>SIMPLE —— 简化模式 (基本块行号生成)</li>
      *   <li>FALLBACK —— 原始指令转储模式</li>
      * </ul>
      *
@@ -403,7 +403,7 @@ public class MethodGen {
     }
 
     /**
-     * 使用区域重组（RegionGen）生成方法体指令
+     * 使用区域重组 (RegionGen)生成方法体指令
      * <p>
      * 若生成过程中发生栈溢出或异常，则记录错误并回退到指令转储
      *
@@ -508,7 +508,7 @@ public class MethodGen {
      * 生成回退模式的方法代码：重新加载原始指令并逐条转储
      *
      * @param code           代码写入器
-     * @param fallbackOption 回退选项（回退模式 / 块转储 / 注释转储）
+     * @param fallbackOption 回退选项 (回退模式 / 块转储 / 注释转储)
      */
     public void addFallbackMethodCode(ICodeWriter code, FallbackOption fallbackOption) {
         if (fallbackOption == COMMENTED_DUMP && mth.getCommentsLevel() != CommentsLevel.DEBUG) {

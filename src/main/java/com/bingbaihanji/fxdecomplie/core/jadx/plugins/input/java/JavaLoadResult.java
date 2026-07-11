@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * Java 代码加载结果
  * <p>
  * 持有一组 {@link JavaClassReader}，在遍历时逐个解析出类数据，
- * 并可选地持有一个在关闭时一并释放的资源（如打开的归档文件）
+ * 并可选地持有一个在关闭时一并释放的资源 (如打开的归档文件)
  */
 public class JavaLoadResult implements ICodeLoader {
     private static final Logger LOG = LoggerFactory.getLogger(JavaLoadResult.class);
@@ -75,7 +75,7 @@ public class JavaLoadResult implements ICodeLoader {
     }
 
     /**
-     * 关闭加载结果，释放关联的可关闭资源（若存在）
+     * 关闭加载结果，释放关联的可关闭资源 (若存在)
      *
      * @throws IOException 关闭资源时发生 I/O 异常
      */

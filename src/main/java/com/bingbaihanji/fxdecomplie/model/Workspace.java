@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.model;
 
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
 import java.io.File;
 import java.util.*;

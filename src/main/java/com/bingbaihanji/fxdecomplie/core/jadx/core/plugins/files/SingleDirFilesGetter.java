@@ -54,7 +54,7 @@ public class SingleDirFilesGetter implements IJadxFilesGetter {
     }
 
     /**
-     * 在基础目录下创建（若不存在）并返回指定名称的子目录
+     * 在基础目录下创建 (若不存在)并返回指定名称的子目录
      *
      * @param subDir 子目录名称
      * @return 已确保存在的子目录路径

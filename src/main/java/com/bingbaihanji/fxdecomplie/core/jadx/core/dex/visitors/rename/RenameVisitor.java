@@ -12,7 +12,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.AbstractVisitor;
-import com.bingbaihanji.fxdecomplie.util.JadxConsts;
+import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;

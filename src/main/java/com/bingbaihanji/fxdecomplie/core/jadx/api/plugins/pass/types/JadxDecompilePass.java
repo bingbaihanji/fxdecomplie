@@ -9,7 +9,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
  * 反编译处理通道接口
  * <p>
  * 实现此接口可在反编译过程中遍历所有类和方法，
- * 对中间表示（IR）进行修改或信息提取
+ * 对中间表示 (IR)进行修改或信息提取
  */
 public interface JadxDecompilePass extends JadxPass {
     JadxPassType TYPE = new JadxPassType("DecompilePass");

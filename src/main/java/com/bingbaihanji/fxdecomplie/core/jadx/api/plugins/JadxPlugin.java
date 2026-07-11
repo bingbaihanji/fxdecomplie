@@ -23,7 +23,7 @@ public interface JadxPlugin {
     /**
      * 初始化插件
      * <p>
-     * 通过 {@link JadxPluginContext} 注册处理通道（passes）、代码输入和选项
+     * 通过 {@link JadxPluginContext} 注册处理通道 (passes)、代码输入和选项
      * 对于耗时操作，建议使用 {@link JadxPreparePass} 或 {@link JadxAfterLoadPass} 代替
      *
      * @param context 插件上下文，用于注册通道、输入和选项

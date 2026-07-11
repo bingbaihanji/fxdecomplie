@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.scene.Node;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;

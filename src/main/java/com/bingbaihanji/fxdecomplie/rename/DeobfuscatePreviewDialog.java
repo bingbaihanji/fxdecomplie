@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;

@@ -9,7 +9,7 @@ import java.util.Objects;
  *
  * <p><b>相等性语义</b>：仅基于 {@code fullPath} 和 {@code engine} 判断相等，
  * {@code sourceCode} 不参与相等性比较这允许同一类用同一引擎的两次反编译结果
- * 在集合中视为同一对象（满足缓存键语义）</p>
+ * 在集合中视为同一对象 (满足缓存键语义)</p>
  *
  * @author bingbaihanji
  * @date 2026-06-17

@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.rename;
 
 import com.bingbaihanji.fxdecomplie.model.*;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import org.slf4j.Logger;

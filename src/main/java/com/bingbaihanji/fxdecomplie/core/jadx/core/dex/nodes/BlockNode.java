@@ -19,7 +19,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 /**
  * 基本块节点，表示控制流图中的一个基本块
  * <p>
- * 包含指令列表、前驱/后继节点关系以及支配树相关信息（支配节点、后支配节点、支配边界等）
+ * 包含指令列表、前驱/后继节点关系以及支配树相关信息 (支配节点、后支配节点、支配边界等)
  * </p>
  */
 public final class BlockNode extends AttrNode implements IBlock, Comparable<BlockNode> {
@@ -37,21 +37,21 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
      */
     private final List<InsnNode> instructions = new ArrayList<>(2);
     /**
-     * 在块列表中的位置（便于使用 BitSet 进行位操作）
+     * 在块列表中的位置 (便于使用 BitSet 进行位操作)
      */
     private int pos;
     /**
-     * 前驱基本块列表（控制流中能到达当前块的块）
+     * 前驱基本块列表 (控制流中能到达当前块的块)
      */
     private List<BlockNode> predecessors = new ArrayList<>(1);
 
     /**
-     * 后继基本块列表（控制流中从当前块出发能到达的块）
+     * 后继基本块列表 (控制流中从当前块出发能到达的块)
      */
     private List<BlockNode> successors = new ArrayList<>(1);
 
     /**
-     * 清理后的后继节点列表（排除异常处理器和循环回边目标的副本）
+     * 清理后的后继节点列表 (排除异常处理器和循环回边目标的副本)
      */
     private List<BlockNode> cleanSuccessors;
 
@@ -66,17 +66,17 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     private BitSet postDoms = EmptyBitSet.EMPTY;
 
     /**
-     * 支配边界（Dominator Frontier）
+     * 支配边界 (Dominator Frontier)
      */
     private BitSet domFrontier;
 
     /**
-     * 直接支配节点（Immediate Dominator）
+     * 直接支配节点 (Immediate Dominator)
      */
     private BlockNode idom;
 
     /**
-     * 直接后支配节点（Immediate Post Dominator）
+     * 直接后支配节点 (Immediate Post Dominator)
      */
     private BlockNode iPostDom;
 
@@ -195,7 +195,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取清理后的后继节点列表（排除异常处理器和循环回边目标）
+     * 获取清理后的后继节点列表 (排除异常处理器和循环回边目标)
      *
      * @return 清理后的后继节点列表
      */
@@ -261,7 +261,7 @@ public final class BlockNode extends AttrNode implements IBlock, Comparable<Bloc
     }
 
     /**
-     * 获取当前节点的支配节点集合（不包含自身）
+     * 获取当前节点的支配节点集合 (不包含自身)
      *
      * @return 支配节点的位集合
      */

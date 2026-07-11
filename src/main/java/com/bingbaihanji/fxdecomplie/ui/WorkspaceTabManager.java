@@ -16,7 +16,7 @@ import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeModelConverter;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;

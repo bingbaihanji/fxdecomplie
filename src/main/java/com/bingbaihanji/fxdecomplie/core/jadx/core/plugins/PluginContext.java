@@ -22,7 +22,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.JadxFilesData;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
-import com.bingbaihanji.fxdecomplie.util.ByteUtils;
+import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
@@ -36,14 +36,14 @@ import java.util.function.Supplier;
 /**
  * 插件上下文，作为单个插件运行时的核心载体
  * <p>
- * 同时实现 {@link JadxPluginContext}（提供给插件访问反编译器能力的接口）与
- * {@link JadxPluginRuntimeData}（对外暴露插件运行时数据），并负责在正确的类加载器下
+ * 同时实现 {@link JadxPluginContext} (提供给插件访问反编译器能力的接口)与
+ * {@link JadxPluginRuntimeData} (对外暴露插件运行时数据)，并负责在正确的类加载器下
  * 初始化/卸载插件、注册代码输入、处理选项与输入哈希等
  */
 public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, Comparable<PluginContext> {
     /** 所属的反编译器实例 */
     private final JadxDecompiler decompiler;
-    /** 全局插件数据（所有插件的集合视图） */
+    /** 全局插件数据 (所有插件的集合视图) */
     private final JadxPluginsData pluginsData;
     /** 当前插件实例 */
     private final JadxPlugin plugin;
@@ -53,11 +53,11 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     private final ClassLoader pluginClassLoader;
     /** 插件注册的代码输入列表 */
     private final List<JadxCodeInput> codeInputs = new ArrayList<>();
-    /** 应用级上下文（提供 GUI 上下文、文件获取器等） */
+    /** 应用级上下文 (提供 GUI 上下文、文件获取器等) */
     private AppContext appContext;
-    /** 插件注册的选项（可能为空） */
+    /** 插件注册的选项 (可能为空) */
     private @Nullable JadxPluginOptions options;
-    /** 插件注册的输入哈希提供者（可能为空） */
+    /** 插件注册的输入哈希提供者 (可能为空) */
     private @Nullable Supplier<String> inputsHashSupplier;
 
     /** 插件是否已初始化 */
@@ -79,7 +79,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     }
 
     /**
-     * 初始化插件（在插件类加载器上下文中调用 {@link JadxPlugin#init}），并标记为已初始化
+     * 初始化插件 (在插件类加载器上下文中调用 {@link JadxPlugin#init})，并标记为已初始化
      */
     public void init() {
         classLoaderWrap(() -> {
@@ -183,7 +183,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
 
     /**
      * 计算基于插件选项的默认哈希 仅统计会影响代码生成的选项
-     * （跳过带有 {@link OptionFlag#NOT_CHANGING_CODE} 标志的选项）
+     *  (跳过带有 {@link OptionFlag#NOT_CHANGING_CODE} 标志的选项)
      */
     private String defaultOptionsHash() {
         if (options == null) {
@@ -221,7 +221,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         this.appContext = appContext;
     }
 
-    /** 获取 GUI 上下文（在非 GUI 环境下可能为空） */
+    /** 获取 GUI 上下文 (在非 GUI 环境下可能为空) */
     @Override
     public @Nullable JadxGuiContext getGuiContext() {
         return appContext.getGuiContext();
@@ -245,7 +245,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         return pluginInfo.getPluginId();
     }
 
-    /** 获取插件注册的选项（可能为空） */
+    /** 获取插件注册的选项 (可能为空) */
     @Override
     public @Nullable JadxPluginOptions getOptions() {
         return options;
@@ -267,7 +267,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
      * 加载给定的代码文件，将所有已注册代码输入的加载结果合并为一个代码加载器
      *
      * @param files     待加载的文件路径列表
-     * @param closeable 加载完成后需要关闭的资源（可能为空）
+     * @param closeable 加载完成后需要关闭的资源 (可能为空)
      * @return 合并后的代码加载器
      */
     @Override
@@ -301,7 +301,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
         return getPluginId().hashCode();
     }
 
-    /** 基于插件 ID 进行比较（用于排序） */
+    /** 基于插件 ID 进行比较 (用于排序) */
     @Override
     public int compareTo(PluginContext other) {
         return this.getPluginId().compareTo(other.getPluginId());

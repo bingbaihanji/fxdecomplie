@@ -399,7 +399,7 @@ public class BlockExceptionHandler {
         // 此时，由于插入了新的底部块，指向原始底部块的交叉边有可能被转变为回边
         // 这会引发问题，因为回边通常意味着循环，但这里并非循环为修复这一点，
         // 那些同时存在从底部块出发路径的底部块前驱，会被重写为指向原始路径交叉点
-        //（即合成块之前的位置）
+        // (即合成块之前的位置)
         if (bottom != null && bottom.contains(AType.EXC_SPLIT_CROSS)) {
             List<BlockNode> convertBlocks = new ArrayList<>();
             for (BlockNode b : bottom.getPredecessors()) {
@@ -487,7 +487,7 @@ public class BlockExceptionHandler {
         }
         // 未找到 -> 这些块没有相同的支配节点
         // 尝试在输入集合外部搜索公共交叉块
-        // 注意：退出节点不需要底部块（不存在从它们流出的数据流）
+        // 注意：退出节点不需要底部块 (不存在从它们流出的数据流)
         BlockNode pathCross = BlockUtils.getPathCross(mth, blocks);
         if (pathCross == null) {
             return null;
@@ -497,7 +497,7 @@ public class BlockExceptionHandler {
         List<BlockNode> outsidePredecessors = preds.stream()
                 .filter(p -> !BlockUtils.atLeastOnePathExists(blocks, p))
                 .collect(Collectors.toList());
-        // 如果没有前驱，或者每个前驱都在集合外部（这意味着插入新的合成块不起任何作用），
+        // 如果没有前驱，或者每个前驱都在集合外部 (这意味着插入新的合成块不起任何作用)，
         // 则直接返回已有的路径交叉块
         if (outsidePredecessors.isEmpty() || outsidePredecessors.size() == pathCross.getPredecessors().size()) {
             return pathCross;
@@ -576,7 +576,7 @@ public class BlockExceptionHandler {
     }
 
     /**
-     * 尝试将多个 catch 处理器合并为一个多重 catch（multi-catch）
+     * 尝试将多个 catch 处理器合并为一个多重 catch (multi-catch)
      * 条件：每个处理器只有当前异常块，且所有处理器共享同一个后继块和同一个结果寄存器
      */
     private static boolean mergeMultiCatch(MethodNode mth, TryCatchBlockAttr tryCatch) {

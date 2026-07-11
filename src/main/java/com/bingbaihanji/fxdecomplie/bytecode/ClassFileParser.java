@@ -216,7 +216,7 @@ public final class ClassFileParser {
     }
 
     /**
-     * 从常量池提取直接类引用,保持出现顺序并去重。
+     * 从常量池提取直接类引用,保持出现顺序并去重 
      */
     private static List<String> referencedClassNames(Object[] cp) {
         Set<String> refs = new LinkedHashSet<>();
@@ -236,7 +236,7 @@ public final class ClassFileParser {
     }
 
     /**
-     * 过滤数组、方法句柄等非普通内部类名引用。
+     * 过滤数组、方法句柄等非普通内部类名引用 
      */
     private static boolean isLoadableClassReference(String className) {
         return className != null

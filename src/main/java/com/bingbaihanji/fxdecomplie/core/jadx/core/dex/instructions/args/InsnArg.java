@@ -94,7 +94,7 @@ public abstract class InsnArg extends Typed {
     /**
      * 将指令包装为参数
      * 对于 CONST/MOVE 指令，若能内联则直接返回其参数并标记不生成代码 
-     * 若不能内联（强制内联标志），则作为包装指令处理
+     * 若不能内联 (强制内联标志)，则作为包装指令处理
      */
     @NotNull
     public static InsnArg wrapInsnIntoArg(InsnNode insn) {
@@ -117,7 +117,7 @@ public abstract class InsnArg extends Typed {
     }
 
     /**
-     * 将指令包装为指令参数（内部包装）
+     * 将指令包装为指令参数 (内部包装)
      * <p>
      * 优先使用 {@link InsnArg#wrapInsnIntoArg(InsnNode)}
      * 本方法不支持 MOVE 和 CONST 指令！
@@ -183,7 +183,7 @@ public abstract class InsnArg extends Typed {
         this.parentInsn = parentInsn;
     }
 
-    /** 将指令包装进当前参数（默认解除原参数绑定） */
+    /** 将指令包装进当前参数 (默认解除原参数绑定) */
     @Nullable("if wrap failed")
     public InsnArg wrapInstruction(MethodNode mth, InsnNode insn) {
         return wrapInstruction(mth, insn, true);
@@ -210,7 +210,7 @@ public abstract class InsnArg extends Typed {
             return null;
         }
         if (insn.getType() == InsnType.MOVE && this.isRegister()) {
-            // 为 MOVE 指令保留变量名（在 for-each 循环的迭代变量中需要）
+            // 为 MOVE 指令保留变量名 (在 for-each 循环的迭代变量中需要)
             String name = ((RegisterArg) this).getName();
             if (name != null) {
                 InsnArg arg = insn.getArg(0);
@@ -250,7 +250,7 @@ public abstract class InsnArg extends Typed {
         return false;
     }
 
-    /** 是否为零常量（零字面量或包装的零 CONST 指令） */
+    /** 是否为零常量 (零字面量或包装的零 CONST 指令) */
     public boolean isZeroConst() {
         if (isZeroLiteral()) {
             return true;
@@ -264,7 +264,7 @@ public abstract class InsnArg extends Typed {
         return false;
     }
 
-    /** 是否为布尔值 false（值为 0 的布尔字面量） */
+    /** 是否为布尔值 false (值为 0 的布尔字面量) */
     public boolean isFalse() {
         if (isLiteral()) {
             LiteralArg litArg = (LiteralArg) this;
@@ -273,7 +273,7 @@ public abstract class InsnArg extends Typed {
         return false;
     }
 
-    /** 是否为布尔值 true（值为 1 的布尔字面量） */
+    /** 是否为布尔值 true (值为 1 的布尔字面量) */
     public boolean isTrue() {
         if (isLiteral()) {
             LiteralArg litArg = (LiteralArg) this;
@@ -288,7 +288,7 @@ public abstract class InsnArg extends Typed {
     }
 
     /**
-     * 对于来自其他类的 'this' 也返回 true（常见于匿名类中）
+     * 对于来自其他类的 'this' 也返回 true (常见于匿名类中)
      */
     public boolean isAnyThis() {
         if (contains(AFlag.THIS)) {
@@ -309,7 +309,7 @@ public abstract class InsnArg extends Typed {
         return null;
     }
 
-    /** 是否为常量（字面量或包装的常量指令） */
+    /** 是否为常量 (字面量或包装的常量指令) */
     public boolean isConst() {
         return isLiteral() || (isInsnWrap() && ((InsnWrapArg) this).getWrapInsn().isConstInsn());
     }
@@ -345,7 +345,7 @@ public abstract class InsnArg extends Typed {
         return false;
     }
 
-    /** 判断是否与指定寄存器参数指向相同的代码变量（CodeVar） */
+    /** 判断是否与指定寄存器参数指向相同的代码变量 (CodeVar) */
     public boolean isSameCodeVar(RegisterArg arg) {
         if (arg == null) {
             return false;
@@ -361,7 +361,7 @@ public abstract class InsnArg extends Typed {
         return InsnUtils.containsVar(this, arg);
     }
 
-    /** 将公共参数（属性、父指令）复制到副本上 */
+    /** 将公共参数 (属性、父指令)复制到副本上 */
     protected final <T extends InsnArg> T copyCommonParams(T copy) {
         copy.copyAttributesFrom(this);
         copy.setParentInsn(parentInsn);

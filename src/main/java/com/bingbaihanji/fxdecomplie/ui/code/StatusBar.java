@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;

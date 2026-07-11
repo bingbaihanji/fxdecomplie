@@ -19,8 +19,8 @@ import java.util.List;
 /**
  * Java 类数据解析器
  * <p>
- * 基于 {@link JavaClassReader} 读取到的原始字节，解析 {@code .class} 文件的结构（访问标志、类型、
- * 父类、接口、字段、方法及各类属性），并对外提供 {@link IClassData} 接口所需的访问能力
+ * 基于 {@link JavaClassReader} 读取到的原始字节，解析 {@code .class} 文件的结构 (访问标志、类型、
+ * 父类、接口、字段、方法及各类属性)，并对外提供 {@link IClassData} 接口所需的访问能力
  * 解析过程借助 {@link ClassOffsets} 记录的各段偏移量、{@link ConstPoolReader} 常量池读取器
  * 以及 {@link AttributesReader} 属性读取器完成
  */
@@ -50,7 +50,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回该类在输入文件中的偏移量（此处使用访问标志的偏移量）
+     * 返回该类在输入文件中的偏移量 (此处使用访问标志的偏移量)
      */
     @Override
     public int getInputFileOffset() {
@@ -58,7 +58,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回当前实例自身作为副本（本实现为不可变解析器，无需真正复制）
+     * 返回当前实例自身作为副本 (本实现为不可变解析器，无需真正复制)
      */
     @Override
     public IClassData copy() {
@@ -74,7 +74,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回当前类的类型（全限定类型描述）
+     * 返回当前类的类型 (全限定类型描述)
      */
     @Override
     public String getType() {
@@ -83,7 +83,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回父类的类型 若无父类（如 {@code java.lang.Object}）则返回 {@code null}
+     * 返回父类的类型 若无父类 (如 {@code java.lang.Object})则返回 {@code null}
      */
     @Override
     @Nullable
@@ -151,7 +151,7 @@ public class JavaClassData implements IClassData {
      * 解析单个字段，将访问标志、名称、类型及属性写入给定的字段对象
      *
      * @param reader 定位到字段起始位置的读取器
-     * @param field  用于承载解析结果的字段对象（会被复用）
+     * @param field  用于承载解析结果的字段对象 (会被复用)
      */
     private void parseField(DataReader reader, JavaFieldData field) {
         int accessFlags = reader.readU2();
@@ -169,7 +169,7 @@ public class JavaClassData implements IClassData {
      * 解析单个方法，构建方法引用并将访问标志、属性写入给定的方法对象
      *
      * @param reader 定位到方法起始位置的读取器
-     * @param method 用于承载解析结果的方法对象（会被复用）
+     * @param method 用于承载解析结果的方法对象 (会被复用)
      * @param id     方法在类中的序号，用于生成唯一 id
      */
     private void parseMethod(DataReader reader, JavaMethodData method, int id) {
@@ -199,7 +199,7 @@ public class JavaClassData implements IClassData {
     }
 
     /**
-     * 返回类级别的属性列表（如注解、内部类、源文件、签名等）
+     * 返回类级别的属性列表 (如注解、内部类、源文件、签名等)
      */
     @Override
     public List<IJadxAttribute> getAttributes() {

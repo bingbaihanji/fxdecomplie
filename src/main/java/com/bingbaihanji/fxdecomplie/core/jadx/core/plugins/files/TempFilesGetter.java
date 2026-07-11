@@ -51,7 +51,7 @@ public class TempFilesGetter implements IJadxFilesGetter {
     }
 
     /**
-     * 在临时根目录下创建（若不存在）并返回指定名称的子目录
+     * 在临时根目录下创建 (若不存在)并返回指定名称的子目录
      *
      * @param subDir 子目录名称
      * @return 已确保存在的子目录路径
@@ -63,7 +63,7 @@ public class TempFilesGetter implements IJadxFilesGetter {
     }
 
     /**
-     * 临时根目录持有者，采用按需初始化的懒加载单例（Initialization-on-demand holder）
+     * 临时根目录持有者，采用按需初始化的懒加载单例 (Initialization-on-demand holder)
      * 首次访问时创建临时根目录，并注册 JVM 退出时删除
      */
     private static final class TempRootHolder {

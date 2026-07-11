@@ -15,9 +15,9 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getBl
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.selectOther;
 
 /**
- * 表示条件跳转指令节点（if）
+ * 表示条件跳转指令节点 (if)
  * <p>
- * 继承自 {@link GotoNode}，包含一个比较操作符（{@link IfOp}）和两个参与比较的参数，
+ * 继承自 {@link GotoNode}，包含一个比较操作符 ({@link IfOp})和两个参与比较的参数，
  * 并维护条件成立时跳转的 {@code thenBlock} 与条件不成立时进入的 {@code elseBlock}
  */
 public class IfNode extends GotoNode {
@@ -29,7 +29,7 @@ public class IfNode extends GotoNode {
             PrimitiveType.BYTE, PrimitiveType.SHORT, PrimitiveType.CHAR);
     private static final ArgType NUMBERS_TYPE = ArgType.unknown(
             PrimitiveType.INT, PrimitiveType.BYTE, PrimitiveType.SHORT, PrimitiveType.CHAR);
-    /** 条件比较操作符（如 EQ、NE、LT、GE 等） */
+    /** 条件比较操作符 (如 EQ、NE、LT、GE 等) */
     protected IfOp op;
     /** 条件成立时跳转到的目标基本块 */
     private BlockNode thenBlock;
@@ -38,7 +38,7 @@ public class IfNode extends GotoNode {
 
     /**
      * 根据原始 DEX 指令数据构造条件跳转节点
-     * 若指令只有一个寄存器，则第二个参数默认为字面量 0（与 0 比较）
+     * 若指令只有一个寄存器，则第二个参数默认为字面量 0 (与 0 比较)
      *
      * @param insn 原始 DEX 指令数据
      * @param op   条件比较操作符
@@ -82,7 +82,7 @@ public class IfNode extends GotoNode {
 
     /**
      * 根据操作符收窄参数的候选类型
-     * 相等/不等比较（EQ/NE）允许更宽泛的类型（含布尔、对象、数组等），
+     * 相等/不等比较 (EQ/NE)允许更宽泛的类型 (含布尔、对象、数组等)，
      * 其他数值比较仅允许数值类型
      *
      * @param op 条件比较操作符
@@ -181,7 +181,7 @@ public class IfNode extends GotoNode {
         return elseBlock;
     }
 
-    /** @return 跳转目标偏移（若 thenBlock 已初始化则返回其起始偏移，否则返回原始 target） */
+    /** @return 跳转目标偏移 (若 thenBlock 已初始化则返回其起始偏移，否则返回原始 target) */
     @Override
     public int getTarget() {
         return thenBlock == null ? target : thenBlock.getStartOffset();
@@ -206,7 +206,7 @@ public class IfNode extends GotoNode {
         return op == other.op;
     }
 
-    /** @return 当前节点的深拷贝（包含 then/else 块引用和通用参数属性） */
+    /** @return 当前节点的深拷贝 (包含 then/else 块引用和通用参数属性) */
     @Override
     public InsnNode copy() {
         IfNode copy = new IfNode(op, target);

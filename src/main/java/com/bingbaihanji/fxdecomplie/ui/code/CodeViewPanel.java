@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.scene.control.CheckBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -189,7 +189,7 @@ public class CodeViewPanel extends VBox {
             if (e.isAltDown() && e.isControlDown() && e.isShiftDown()
                     && e.getCode() == javafx.scene.input.KeyCode.C) {
                 e.consume();
-                String ref = com.bingbaihanji.fxdecomplie.util.CopyReferenceHelper
+                String ref = com.bingbaihanji.fxdecomplie.util.reference.CopyReferenceHelper
                         .getReferenceString(contextMenuContext.openFile(), area);
                 if (!ref.isEmpty()) {
                     javafx.scene.input.Clipboard.getSystemClipboard().setContent(

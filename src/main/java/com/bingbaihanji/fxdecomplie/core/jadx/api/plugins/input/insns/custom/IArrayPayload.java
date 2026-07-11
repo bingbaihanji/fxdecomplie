@@ -17,7 +17,7 @@ public interface IArrayPayload extends ICustomPayload {
     /**
      * 获取单个数组元素占用的字节数
      *
-     * @return 单个元素的大小（字节）
+     * @return 单个元素的大小 (字节)
      */
     int getElementSize();
 

@@ -17,14 +17,14 @@ import java.util.Map;
 public interface ICodeWriter {
 
     /**
-     * 检查当前写入器是否支持元数据（如定义引用、行号映射等）
+     * 检查当前写入器是否支持元数据 (如定义引用、行号映射等)
      *
      * @return 如果支持元数据则返回 {@code true}
      */
     boolean isMetadataSupported();
 
     /**
-     * 开始新的一行（不含内容）
+     * 开始新的一行 (不含内容)
      *
      * @return 当前写入器实例，便于链式调用
      */
@@ -94,7 +94,7 @@ public interface ICodeWriter {
     ICodeWriter newLine();
 
     /**
-     * 向当前行追加缩进空格（缩进量由当前缩进级别决定）
+     * 向当前行追加缩进空格 (缩进量由当前缩进级别决定)
      *
      * @return 当前写入器实例，便于链式调用
      */
@@ -125,21 +125,21 @@ public interface ICodeWriter {
     void setIndent(int indent);
 
     /**
-     * 返回当前行号（仅在支持元数据时有效）
+     * 返回当前行号 (仅在支持元数据时有效)
      *
      * @return 当前行号
      */
     int getLine();
 
     /**
-     * 返回起始行位置（仅在支持元数据时有效）
+     * 返回起始行位置 (仅在支持元数据时有效)
      *
      * @return 起始行位置偏移量
      */
     int getLineStartPos();
 
     /**
-     * 在当前代码位置附加一个定义引用（如类、方法、字段的定义）
+     * 在当前代码位置附加一个定义引用 (如类、方法、字段的定义)
      *
      * @param obj 要附加的代码节点引用
      */
@@ -183,7 +183,7 @@ public interface ICodeWriter {
     /**
      * 获取当前已写入代码的字符总长度
      *
-     * @return 代码长度（字符数）
+     * @return 代码长度 (字符数)
      */
     int getLength();
 
@@ -195,7 +195,7 @@ public interface ICodeWriter {
     StringBuilder getRawBuf();
 
     /**
-     * 获取原始注解映射表（内部使用）
+     * 获取原始注解映射表 (内部使用)
      *
      * @return 行号到注解的映射表
      */

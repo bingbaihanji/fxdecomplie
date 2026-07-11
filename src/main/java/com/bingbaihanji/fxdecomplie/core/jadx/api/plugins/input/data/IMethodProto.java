@@ -3,7 +3,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.data;
 import java.util.List;
 
 /**
- * 方法原型（签名）接口
+ * 方法原型 (签名)接口
  * <p>
  * 描述方法的返回类型与参数类型列表，不包含方法名，
  * 用于表示方法的类型签名信息

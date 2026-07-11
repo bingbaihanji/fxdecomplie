@@ -29,7 +29,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     /**
      * 从缓冲区读取一个字节
      *
-     * @return 读取到的字节（0-255），如果缓冲区已无剩余数据则返回 -1
+     * @return 读取到的字节 (0-255)，如果缓冲区已无剩余数据则返回 -1
      */
     @Override
     public int read() throws IOException {
@@ -71,7 +71,7 @@ public class ByteBufferBackedInputStream extends InputStream {
     /**
      * 记录当前读取位置，供后续 {@link #reset()} 恢复
      *
-     * @param unused 标记读取上限（此实现中未使用）
+     * @param unused 标记读取上限 (此实现中未使用)
      */
     @Override
     public synchronized void mark(int unused) {

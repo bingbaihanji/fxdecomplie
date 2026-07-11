@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 /**
  * 表示一个 try-catch 块的属性
  * 封装了 try 块所包含的基础块、异常处理器、以及 try 块之间的嵌套关系
- * 提供了 try 边（{@link TryEdge}）的计算方法，用于确定 try-catch-finally 的控制流离开路径
+ * 提供了 try 边 ({@link TryEdge})的计算方法，用于确定 try-catch-finally 的控制流离开路径
  */
 public class TryCatchBlockAttr implements IJadxAttribute {
 
@@ -32,13 +32,13 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     private final List<ExceptionHandler> handlers;
     /** 属于该 try 块的基础块列表 */
     private List<BlockNode> blocks;
-    /** 外层 try 块（若当前块嵌套在其它 try 块中） */
+    /** 外层 try 块 (若当前块嵌套在其它 try 块中) */
     private TryCatchBlockAttr outerTryBlock;
     /** 内层嵌套的 try 块列表 */
     private List<TryCatchBlockAttr> innerTryBlocks = Collections.emptyList();
     /** 标记该 try 块是否已被合并到外层 try 块 */
     private boolean merged = false;
-    /** try 块的顶部分割块（进入 try 体的入口块） */
+    /** try 块的顶部分割块 (进入 try 体的入口块) */
     private BlockNode topSplitter;
 
     /**
@@ -77,7 +77,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 判断该 try 块是否仅用于抛出异常（即块内只有 throw、move-exception 或 monitor-exit 指令）
+     * 判断该 try 块是否仅用于抛出异常 (即块内只有 throw、move-exception 或 monitor-exit 指令)
      *
      * @return 若该 try 块仅抛出异常则返回 true
      */
@@ -191,7 +191,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * @return 外层 try 块（若当前块嵌套在其它 try 块中）
+     * @return 外层 try 块 (若当前块嵌套在其它 try 块中)
      */
     public TryCatchBlockAttr getOuterTryBlock() {
         return outerTryBlock;
@@ -207,7 +207,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * @return try 块的顶部分割块（进入 try 体的入口块）
+     * @return try 块的顶部分割块 (进入 try 体的入口块)
      */
     public BlockNode getTopSplitter() {
         return topSplitter;
@@ -246,7 +246,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 计算所有异常处理器对应的 try 边（{@link TryEdge}）
+     * 计算所有异常处理器对应的 try 边 ({@link TryEdge})
      * 每条边表示从 try 体到某个异常处理器的控制流路径
      *
      * @return 指向异常处理器的 try 边列表
@@ -272,7 +272,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 计算所有非处理器（fallthrough，即正常离开 try 体）的 try 边
+     * 计算所有非处理器 (fallthrough，即正常离开 try 体)的 try 边
      *
      * @return fallthrough 类型的 try 边列表
      */
@@ -286,7 +286,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 计算 fallthrough 类型的 try 边，并将结果累积到给定集合中（用于递归处理嵌套 try 块）
+     * 计算 fallthrough 类型的 try 边，并将结果累积到给定集合中 (用于递归处理嵌套 try 块)
      *
      * @param edges          用于收集 try 边的列表
      * @param exploredBlocks 已探索过的基础块，避免重复计算
@@ -320,11 +320,11 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 从给定的起始块出发，深度优先探索 try 体的控制流路径，识别各类离开 try 的边（fallthrough、循环退出、提前退出等）
+     * 从给定的起始块出发，深度优先探索 try 体的控制流路径，识别各类离开 try 的边 (fallthrough、循环退出、提前退出等)
      *
      * @param edges          用于收集识别出的 try 边的列表
      * @param blk            当前正在探索的基础块
-     * @param searchBlocks   属于该 try 体（不含处理器块）的基础块集合
+     * @param searchBlocks   属于该 try 体 (不含处理器块)的基础块集合
      * @param exploredBlocks 已探索过的基础块，避免重复计算
      * @param exploredTrys   已探索过的 try 块，避免无限递归
      */
@@ -372,9 +372,9 @@ public class TryCatchBlockAttr implements IJadxAttribute {
             }
             if (!searchBlocks.contains(successor) && !isPathToAnySearchBlock) {
                 // 该块不包含在此 try 的块列表中这可能是因为它是 try 的一个出口，
-                // 或者它是一个通向出口的块（例如异常处理器）
+                // 或者它是一个通向出口的块 (例如异常处理器)
 
-                // 如果该块（successor）通向一个出口，那么"所有 try 块加上该块"的底部块
+                // 如果该块 (successor)通向一个出口，那么"所有 try 块加上该块"的底部块
                 // 将等于"所有 try 块"的底部块如果该块本身就是一个出口，则要么：
                 // - 不存在从所有 try 块到该块的路径，从而使底部块为 null
                 // - 存在从所有 try 块到该块的路径，但之后没有更多 try 块，从而使底部块就是该块
@@ -408,7 +408,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
                             continue;
                         }
 
-                        // 不确定为何这些顶部分割块必须相同才能被视为"嵌套" try，但这样似乎是可行的（？）
+                        // 不确定为何这些顶部分割块必须相同才能被视为"嵌套" try，但这样似乎是可行的 (？)
                         if (nestedTry.getTopSplitter() != getTopSplitter()) {
                             continue;
                         }
@@ -454,7 +454,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
         List<ExceptionHandler> mergedHandlers;
         if (hasInnerBlocks) {
             // 收集当前块及所有内层块的处理器
-            // （目前有意不使用递归收集）
+            //  (目前有意不使用递归收集)
             mergedHandlers = new ArrayList<>(getHandlers());
             for (TryCatchBlockAttr innerTryBlock : getInnerTryBlocks()) {
                 mergedHandlers.addAll(innerTryBlock.getHandlers());

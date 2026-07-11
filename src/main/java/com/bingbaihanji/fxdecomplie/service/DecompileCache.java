@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.util.LruCache;
+import com.bingbaihanji.fxdecomplie.util.cache.LruCache;
 
 /**
  * L2 反编译源码内存缓存,缓存键 = workspaceKey + internalName + engine + optionsHash

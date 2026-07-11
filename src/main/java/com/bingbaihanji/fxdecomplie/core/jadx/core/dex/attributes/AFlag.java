@@ -2,9 +2,9 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes;
 
 /**
  * 属性标志枚举
- * 用于标记节点（方法、基本块、指令等）的二进制状态标志（设置或未设置）
+ * 用于标记节点 (方法、基本块、指令等)的二进制状态标志 (设置或未设置)
  * 每个标志以 {@link java.util.EnumSet} 形式存储在 {@link AttributeStorage} 中，
- * 使用一个 long 值即可容纳所有标志（最多 64 个）
+ * 使用一个 long 值即可容纳所有标志 (最多 64 个)
  */
 public enum AFlag {
     /** 方法入口基本块 */
@@ -115,7 +115,7 @@ public enum AFlag {
     /** 算术单操作数 */
     ARITH_ONEARG,
 
-    /** 贯穿（穿透到下一个 case） */
+    /** 贯穿 (穿透到下一个 case) */
     FALL_THROUGH,
 
     /** 可变参数调用 */
@@ -127,7 +127,7 @@ public enum AFlag {
     EXPLICIT_PRIMITIVE_TYPE,
     /** 显式类型转换 */
     EXPLICIT_CAST,
-    SOFT_CAST, // 用于辅助类型推断的合成转换（允许泛型未检查转换）
+    SOFT_CAST, // 用于辅助类型推断的合成转换 (允许泛型未检查转换)
 
     INCONSISTENT_CODE, // 反编译不一致警告
 
@@ -145,10 +145,10 @@ public enum AFlag {
     // 类处理标志
     RESTART_CODEGEN, // 必须重新执行代码生成
     RELOAD_AT_CODEGEN_STAGE, // 类在 'process' 阶段无法分析，需在 'codegen' 阶段前卸载
-    CLASS_DEEP_RELOAD, // 在 process 阶段前执行深度类卸载（重载）
+    CLASS_DEEP_RELOAD, // 在 process 阶段前执行深度类卸载 (重载)
     CLASS_UNLOADED, // 类已被完全卸载
 
-    DONT_UNLOAD_CLASS, // 代码生成后不要卸载类（仅用于测试和调试！）
+    DONT_UNLOAD_CLASS, // 代码生成后不要卸载类 (仅用于测试和调试！)
 
     /** 解析 Java JSR 指令 */
     RESOLVE_JAVA_JSR,

@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.IDexTreeVisitor;
 /**
  * Pass 包装访问器接口
  * <p>
- * 将 {@link JadxPass} 适配为 DEX 树访问器（{@link IDexTreeVisitor}），
+ * 将 {@link JadxPass} 适配为 DEX 树访问器 ({@link IDexTreeVisitor})，
  * 使得插件提供的 Pass 能够接入 jadx 的访问器执行流程，
  * 同时可以通过 {@link #getPass()} 获取被包装的原始 Pass
  */

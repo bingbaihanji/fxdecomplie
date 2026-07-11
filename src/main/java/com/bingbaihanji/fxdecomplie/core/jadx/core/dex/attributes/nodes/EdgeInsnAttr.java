@@ -10,7 +10,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 import java.util.Objects;
 
 /**
- * 边指令属性：表示需要附加在控制流图某条边（从起始块到结束块）上的指令
+ * 边指令属性：表示需要附加在控制流图某条边 (从起始块到结束块)上的指令
  * <p>
  * 该属性会同时添加到边的起始块和结束块上，用于在代码生成阶段
  * 在两个基本块之间的跳转边上插入指令
@@ -42,7 +42,7 @@ public class EdgeInsnAttr implements IJadxAttribute {
     }
 
     /**
-     * 为从 start 到 end 的边添加边指令属性，并同时挂载到两个块上（避免重复添加）
+     * 为从 start 到 end 的边添加边指令属性，并同时挂载到两个块上 (避免重复添加)
      *
      * @param start 边的起始块
      * @param end   边的结束块

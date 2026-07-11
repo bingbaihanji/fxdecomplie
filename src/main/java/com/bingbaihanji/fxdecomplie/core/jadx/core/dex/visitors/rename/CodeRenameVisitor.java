@@ -50,7 +50,7 @@ public class CodeRenameVisitor extends AbstractVisitor {
     /**
      * 为指定类逐个应用重命名规则
      * <p>
-     * 当前仅支持方法级别的代码引用重命名（{@code RefType.METHOD}），
+     * 当前仅支持方法级别的代码引用重命名 ({@code RefType.METHOD})，
      * 通过方法的短 ID 查找对应的方法节点，然后调用 {@link #processRename} 执行实际重命名
      * </p>
      *
@@ -168,10 +168,10 @@ public class CodeRenameVisitor extends AbstractVisitor {
      * 从外部传入的代码数据中更新重命名映射表
      * <p>
      * 将 {@link ICodeData} 中的所有重命名条目按声明类分组，
-     * 并过滤掉不包含代码引用的条目（即仅保留需要实际重命名变量/参数的条目）
+     * 并过滤掉不包含代码引用的条目 (即仅保留需要实际重命名变量/参数的条目)
      * </p>
      *
-     * @param data 外部代码数据，可能为 null（表示无重命名数据）
+     * @param data 外部代码数据，可能为 null (表示无重命名数据)
      */
     private void updateRenamesMap(@Nullable ICodeData data) {
         if (data == null) {

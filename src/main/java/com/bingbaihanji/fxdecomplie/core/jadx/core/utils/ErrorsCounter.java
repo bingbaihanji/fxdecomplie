@@ -18,7 +18,7 @@ import java.util.*;
  */
 public class ErrorsCounter {
     private static final Logger LOG = LoggerFactory.getLogger(ErrorsCounter.class);
-    /** 是否在错误信息中打印方法字节码指令数量（仅在调试模式下开启） */
+    /** 是否在错误信息中打印方法字节码指令数量 (仅在调试模式下开启) */
     private static final boolean PRINT_MTH_SIZE = false;
 
     /** 发生错误的节点集合 */
@@ -64,7 +64,7 @@ public class ErrorsCounter {
     }
 
     /**
-     * 向错误计数器添加一条错误记录（线程安全）
+     * 向错误计数器添加一条错误记录 (线程安全)
      * 将错误节点加入集合，累加错误计数，记录日志，并将 {@link JadxError} 属性附加到节点
      *
      * @param node  发生错误的节点
@@ -103,7 +103,7 @@ public class ErrorsCounter {
     }
 
     /**
-     * 向警告计数器添加一条警告记录（线程安全）
+     * 向警告计数器添加一条警告记录 (线程安全)
      * 将警告节点加入集合，累加警告计数并记录日志
      *
      * @param node 发生警告的节点
@@ -117,7 +117,7 @@ public class ErrorsCounter {
 
     /**
      * 打印错误与警告的汇总报告
-     * 输出所有发生错误的节点列表（按名称排序），以及警告的总数与涉及节点数
+     * 输出所有发生错误的节点列表 (按名称排序)，以及警告的总数与涉及节点数
      */
     public void printReport() {
         if (getErrorCount() > 0) {

@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.text.JavaSourceAnalyzer;
 
 import java.util.ArrayDeque;
@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 
-/** 类名/令牌 → 文件树节点的多策略解析器（无状态,从 NavigationController 抽取,便于单测） */
+/** 类名/令牌 → 文件树节点的多策略解析器 (无状态,从 NavigationController 抽取,便于单测) */
 public final class ClassNodeResolver {
 
     private ClassNodeResolver() {

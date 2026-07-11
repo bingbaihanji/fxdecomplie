@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * 通用区域节点，用于表示反编译过程中的代码块序列
  * <p>
- * Region 是最基础的区域容器，内部维护一个有序的子容器列表（blocks），
+ * Region 是最基础的区域容器，内部维护一个有序的子容器列表 (blocks)，
  * 按顺序存放多个 {@link IContainer} 子块，最终通过 {@link #generate} 方法
  * 依次生成对应的反编译代码
  * </p>

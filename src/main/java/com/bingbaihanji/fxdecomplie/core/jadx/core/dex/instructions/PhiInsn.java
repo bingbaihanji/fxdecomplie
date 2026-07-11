@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 表示 SSA（静态单赋值）形式中的 Phi 函数指令节点
+ * 表示 SSA (静态单赋值)形式中的 Phi 函数指令节点
  * <p>
  * Phi 指令用于在控制流汇合点合并来自不同前驱基本块的多个变量定义，
  * 每个参数都与其来源的前驱块一一绑定该节点被标记为不可内联、不生成源码
@@ -27,14 +27,14 @@ import java.util.List;
  */
 public final class PhiInsn extends InsnNode {
 
-    // 参数到前驱块的映射（顺序与参数列表一致）
+    // 参数到前驱块的映射 (顺序与参数列表一致)
     private final List<BlockNode> blockBinds;
 
     /**
      * 构造 Phi 指令并设置结果寄存器
      *
      * @param regNum       结果寄存器编号
-     * @param predecessors 前驱块数量（用于预分配参数容量）
+     * @param predecessors 前驱块数量 (用于预分配参数容量)
      */
     public PhiInsn(int regNum, int predecessors) {
         this(predecessors);
@@ -46,7 +46,7 @@ public final class PhiInsn extends InsnNode {
     /**
      * 内部构造方法，初始化指令类型和前驱块绑定列表
      *
-     * @param argsCount 参数数量（预分配容量）
+     * @param argsCount 参数数量 (预分配容量)
      */
     private PhiInsn(int argsCount) {
         super(InsnType.PHI, argsCount);
@@ -109,7 +109,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 获取第 n 个参数（Phi 指令的参数均为寄存器参数）
+     * 获取第 n 个参数 (Phi 指令的参数均为寄存器参数)
      *
      * @param n 参数索引
      * @return 第 n 个寄存器参数
@@ -186,7 +186,7 @@ public final class PhiInsn extends InsnNode {
     }
 
     /**
-     * 根据块（IBlock）查找绑定的参数
+     * 根据块 (IBlock)查找绑定的参数
      *
      * @param block 基本块
      * @return 绑定的寄存器参数，未找到时返回 null
@@ -249,7 +249,7 @@ public final class PhiInsn extends InsnNode {
         throw new JadxRuntimeException("Direct setArg is forbidden for PHI insn, bindArg must be used");
     }
 
-    /** @return 当前 Phi 节点的拷贝（复制通用参数属性） */
+    /** @return 当前 Phi 节点的拷贝 (复制通用参数属性) */
     @Override
     public InsnNode copy() {
         return copyCommonParams(new PhiInsn(getArgsCount()));

@@ -80,13 +80,13 @@ public class TypeUpdateInfo {
                     + " with updateSeq = " + updateSeq + ". Try increasing type updates limit count.");
         }
         if (updateSeq % 100 == 0) {
-            // 偶尔检查线程中断（每次更新都检查过于频繁）
+            // 偶尔检查线程中断 (每次更新都检查过于频繁)
             Utils.checkThreadInterrupt();
         }
     }
 
     /**
-     * 回滚对指定参数的更新，移除此参数及其之后的所有更新（按序列号）
+     * 回滚对指定参数的更新，移除此参数及其之后的所有更新 (按序列号)
      *
      * @param arg 要回滚更新的 InsnArg 参数
      */

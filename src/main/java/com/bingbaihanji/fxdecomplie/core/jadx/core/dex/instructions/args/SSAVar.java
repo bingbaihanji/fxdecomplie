@@ -19,11 +19,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * SSA（静态单赋值）变量表示类
+ * SSA (静态单赋值)变量表示类
  * <p>
- * 每个 SSA 变量由寄存器编号（regNum）和版本号（version）唯一标识，
- * 记录了变量的赋值点（assign）和所有使用点（useList），
- * 并维护类型推断信息（typeInfo）和关联的代码变量（codeVar）
+ * 每个 SSA 变量由寄存器编号 (regNum)和版本号 (version)唯一标识，
+ * 记录了变量的赋值点 (assign)和所有使用点 (useList)，
+ * 并维护类型推断信息 (typeInfo)和关联的代码变量 (codeVar)
  * </p>
  */
 public class SSAVar implements Comparable<SSAVar> {
@@ -286,7 +286,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 设置变量名称（委托给关联的代码变量）
+     * 设置变量名称 (委托给关联的代码变量)
      *
      * @param name 变量名称
      * @throws JadxRuntimeException 当代码变量尚未初始化时

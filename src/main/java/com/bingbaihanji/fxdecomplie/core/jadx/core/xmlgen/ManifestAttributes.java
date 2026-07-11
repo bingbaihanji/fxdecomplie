@@ -21,7 +21,7 @@ import java.util.*;
  * 加载并存储 Android Manifest 属性规范
  * <p>
  * 从 classpath 中的 attrs.xml 和 attrs_manifest.xml 解析 Android 标准属性定义，
- * 支持对 ENUM（枚举）和 FLAG（标志位）类型的属性值进行解码
+ * 支持对 ENUM (枚举)和 FLAG (标志位)类型的属性值进行解码
  * </p>
  */
 public class ManifestAttributes {
@@ -32,7 +32,7 @@ public class ManifestAttributes {
     private final IJadxSecurity security;
     /**
      * 存储默认 Android 资源属性定义的映射表
-     * 键为 Android 属性名（例如 "android:layout_width"），
+     * 键为 Android 属性名 (例如 "android:layout_width")，
      * 值为对应的 {@link MAttr} 对象
      */
     private final Map<String, MAttr> attrMap = new HashMap<>();
@@ -233,14 +233,14 @@ public class ManifestAttributes {
         }
     }
 
-    /** 属性值类型：ENUM（枚举，单值）、FLAG（标志位，可按位组合） */
+    /** 属性值类型：ENUM (枚举，单值)、FLAG (标志位，可按位组合) */
     private enum MAttrType {
         ENUM, FLAG
     }
 
     /**
      * 描述单个 Android 属性的可选值集合
-     * 包含属性类型（枚举或标志位）以及「数值 → 名称」的映射
+     * 包含属性类型 (枚举或标志位)以及「数值 → 名称」的映射
      */
     private static class MAttr {
         private final MAttrType type;

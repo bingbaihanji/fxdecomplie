@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.utils;
 
-import com.bingbaihanji.util.I18nContext;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nContext;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import org.junit.jupiter.api.Test;
 
 import java.util.Locale;

@@ -30,7 +30,7 @@ public class Utils {
     }
 
     /**
-     * 清理对象名称，将 Smali 格式的类名（如 Ljava/lang/String;）转换为 Java 格式（如 java.lang.String）
+     * 清理对象名称，将 Smali 格式的类名 (如 Ljava/lang/String;)转换为 Java 格式 (如 java.lang.String)
      *
      * @param obj Smali 格式的对象名称
      * @return 清理后的 Java 格式对象名称
@@ -59,7 +59,7 @@ public class Utils {
     }
 
     /**
-     * 将 Java 格式的类名转换为 Smali 格式（如 java.lang.String → Ljava/lang/String;）
+     * 将 Java 格式的类名转换为 Smali 格式 (如 java.lang.String → Ljava/lang/String;)
      *
      * @param obj Java 格式的对象名称
      * @return Smali 格式的限定对象名称
@@ -71,8 +71,8 @@ public class Utils {
     /**
      * 将 Smali 类型描述符转换为 Java 类型名称
      * <p>
-     * 支持基本类型（V→void, Z→boolean, C→char, B→byte, S→short, I→int, F→float, J→long, D→double）、
-     * 对象类型（L...;）和数组类型（[...）
+     * 支持基本类型 (V→void, Z→boolean, C→char, B→byte, S→short, I→int, F→float, J→long, D→double)、
+     * 对象类型 (L...;)和数组类型 ([...)
      *
      * @param descString Smali 类型描述符
      * @return 对应的 Java 类型名称
@@ -137,7 +137,7 @@ public class Utils {
     }
 
     /**
-     * 将 Java 类型名称转换为 Smali 类型描述符（{@link #smaliNameToJavaName} 的逆操作）
+     * 将 Java 类型名称转换为 Smali 类型描述符 ({@link #smaliNameToJavaName} 的逆操作)
      *
      * @param descString Java 类型名称
      * @return 对应的 Smali 类型描述符
@@ -310,7 +310,7 @@ public class Utils {
     }
 
     /**
-     * 将字符串列表直接连接为一个字符串（无分隔符）
+     * 将字符串列表直接连接为一个字符串 (无分隔符)
      *
      * @param list 待连接的字符串列表
      * @return 连接后的字符串
@@ -353,7 +353,7 @@ public class Utils {
     }
 
     /**
-     * 获取完整的堆栈跟踪字符串（不过滤 jadx 内部调用帧）
+     * 获取完整的堆栈跟踪字符串 (不过滤 jadx 内部调用帧)
      *
      * @param throwable 异常对象
      * @return 完整的堆栈跟踪文本
@@ -363,7 +363,7 @@ public class Utils {
     }
 
     /**
-     * 获取经过过滤的堆栈跟踪字符串（截断 jadx 内部调用帧）
+     * 获取经过过滤的堆栈跟踪字符串 (截断 jadx 内部调用帧)
      *
      * @param throwable 异常对象
      * @return 过滤后的堆栈跟踪文本
@@ -514,7 +514,7 @@ public class Utils {
     }
 
     /**
-     * 按引用（==）判断列表中是否包含指定元素
+     * 按引用 (==)判断列表中是否包含指定元素
      *
      * @param list    待检查的列表
      * @param element 目标元素
@@ -533,7 +533,7 @@ public class Utils {
     }
 
     /**
-     * 按引用（==）查找元素在列表中的索引
+     * 按引用 (==)查找元素在列表中的索引
      *
      * @param list    待检查的列表
      * @param element 目标元素
@@ -570,10 +570,10 @@ public class Utils {
     }
 
     /**
-     * 返回列表从 startIndex（含）到末尾的子列表
+     * 返回列表从 startIndex (含)到末尾的子列表
      *
      * @param list       源列表
-     * @param startIndex 起始索引（包含）
+     * @param startIndex 起始索引 (包含)
      * @return 子列表，起始索引超出范围时返回空列表
      */
     public static <T> List<T> listTail(List<T> list, int startIndex) {
@@ -630,7 +630,7 @@ public class Utils {
     /**
      * 由成对的键值参数构建一个不可变的字符串映射
      *
-     * @param parameters 键值交替排列的参数（key1, value1, key2, value2, ...）
+     * @param parameters 键值交替排列的参数 (key1, value1, key2, value2, ...)
      * @return 不可变的字符串映射
      * @throws IllegalArgumentException 当参数个数不是偶数时抛出
      */
@@ -689,7 +689,7 @@ public class Utils {
     }
 
     /**
-     * 对树结构进行简单的深度优先遍历（不允许存在环）
+     * 对树结构进行简单的深度优先遍历 (不允许存在环)
      *
      * @param root             根节点
      * @param childrenProvider 提供节点子节点列表的函数
@@ -700,7 +700,7 @@ public class Utils {
     }
 
     /**
-     * 对多根树结构进行深度优先遍历（不允许存在环）
+     * 对多根树结构进行深度优先遍历 (不允许存在环)
      *
      * @param roots            根节点列表
      * @param childrenProvider 提供节点子节点列表的函数
@@ -909,7 +909,7 @@ public class Utils {
      * @param defValue 默认值
      * @return 环境变量的布尔值，未设置时返回默认值
      * @deprecated 核心模块中不应使用环境变量
-     *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置
+     *             建议在 `app` 中解析 (使用 'app-commons' 的 JadxCommonEnv)并通过 jadx 参数设置
      */
     @Deprecated
     public static boolean getEnvVarBool(String varName, boolean defValue) {
@@ -927,7 +927,7 @@ public class Utils {
      * @param defValue 默认值
      * @return 环境变量的整数值，未设置时返回默认值
      * @deprecated 核心模块中不应使用环境变量
-     *             建议在 `app` 中解析（使用 'app-commons' 的 JadxCommonEnv）并通过 jadx 参数设置
+     *             建议在 `app` 中解析 (使用 'app-commons' 的 JadxCommonEnv)并通过 jadx 参数设置
      */
     @Deprecated
     public static int getEnvVarInt(String varName, int defValue) {

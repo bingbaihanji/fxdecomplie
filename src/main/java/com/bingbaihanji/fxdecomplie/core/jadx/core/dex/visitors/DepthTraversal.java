@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
  * 深度优先遍历工具类
  * <p>
  * 提供对 {@link ClassNode} 和 {@link MethodNode} 的深度优先访问能力，
- * 将访问者（{@link IDexTreeVisitor}）逐层应用到类节点及其内部类、方法上
+ * 将访问者 ({@link IDexTreeVisitor})逐层应用到类节点及其内部类、方法上
  * 遍历过程中捕获异常并记录到对应的节点错误信息中，防止因单个节点异常导致整个遍历中断
  * </p>
  */

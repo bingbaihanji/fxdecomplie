@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * 基于双端队列实现的深度优先（DFS）块迭代器
+ * 基于双端队列实现的深度优先 (DFS)块迭代器
  * <p>
  * 从给定的起始基本块开始，按照 {@link #nextFunc} 定义的后继块关系进行深度优先遍历
  * 使用 {@link BlockSet} 记录已访问块，避免重复遍历
@@ -18,7 +18,7 @@ import java.util.function.Function;
 public class DFSIteration {
     /** 后继块计算函数，用于确定每个块的下一步遍历目标 */
     private final Function<BlockNode, List<BlockNode>> nextFunc;
-    /** 双端队列，作为 DFS 遍历的工作队列（从尾部取，实现栈行为） */
+    /** 双端队列，作为 DFS 遍历的工作队列 (从尾部取，实现栈行为) */
     private final Deque<BlockNode> queue;
     /** 已访问块的集合，基于 BitSet 实现 */
     private final BlockSet visited;

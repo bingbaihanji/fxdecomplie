@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.IMethodDetails;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.DecodeException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.util.JadxConsts;
+import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +29,11 @@ public class ClspGraph {
     private final RootNode root;
     /** 引用到但未在类图中找到的缺失类集合 */
     private final Set<String> missingClasses = new HashSet<>();
-    /** 类全限定名到类路径信息（{@link ClspClass}）的映射 */
+    /** 类全限定名到类路径信息 ({@link ClspClass})的映射 */
     private Map<String, ClspClass> nameMap;
-    /** 类名到其所有父类型（含祖先）集合的缓存 */
+    /** 类名到其所有父类型 (含祖先)集合的缓存 */
     private Map<String, Set<String>> superTypesCache;
-    /** 类名到其所有实现类（子类型）列表的缓存 */
+    /** 类名到其所有实现类 (子类型)列表的缓存 */
     private Map<String, List<String>> implementsCache;
 
     /**
@@ -96,7 +96,7 @@ public class ClspGraph {
     }
 
     /**
-     * 检查指定全限定名的类是否已知（已加载到类图中）
+     * 检查指定全限定名的类是否已知 (已加载到类图中)
      *
      * @param fullName 类的全限定名
      * @return 如果类已知则返回 {@code true}，否则返回 {@code false}
@@ -164,7 +164,7 @@ public class ClspGraph {
     }
 
     /**
-     * 判断类 {@code clsName} 是否为 {@code implClsName} 的实例（即是否继承或实现了后者）
+     * 判断类 {@code clsName} 是否为 {@code implClsName} 的实例 (即是否继承或实现了后者)
      *
      * @param clsName     待判断的类名
      * @param implClsName 目标父类型 / 接口名
@@ -176,7 +176,7 @@ public class ClspGraph {
     }
 
     /**
-     * 获取实现（或继承）指定类型的所有类
+     * 获取实现 (或继承)指定类型的所有类
      *
      * @param clsName 类型名
      * @return 所有子类型的类名列表，若无则返回空列表
@@ -249,7 +249,7 @@ public class ClspGraph {
     }
 
     /**
-     * 获取指定类的所有父类型（包含直接与间接祖先、接口）
+     * 获取指定类的所有父类型 (包含直接与间接祖先、接口)
      *
      * @param clsName 类名
      * @return 父类型名集合，若无则返回空集合
@@ -261,7 +261,7 @@ public class ClspGraph {
 
     /**
      * 填充父类型缓存，为每个类计算其全部祖先类型集合
-     * 针对空集合、单元素集合（尤其是 Object）做了内存优化
+     * 针对空集合、单元素集合 (尤其是 Object)做了内存优化
      */
     private void fillSuperTypesCache() {
         Map<String, Set<String>> map = new HashMap<>(nameMap.size());

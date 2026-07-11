@@ -44,9 +44,9 @@ public enum InsnType {
     /** switch 分支数据表 */
     SWITCH_DATA,
 
-    /** 进入同步块（获取锁） */
+    /** 进入同步块 (获取锁) */
     MONITOR_ENTER,
-    /** 退出同步块（释放锁） */
+    /** 退出同步块 (释放锁) */
     MONITOR_EXIT,
 
     /** 类型检查转换 */
@@ -70,7 +70,7 @@ public enum InsnType {
 
     /** 创建新数组 */
     NEW_ARRAY,
-    /** 创建新实例（对象） */
+    /** 创建新实例 (对象) */
     NEW_INSTANCE,
 
     /** 读取实例字段 */
@@ -90,7 +90,7 @@ public enum InsnType {
 
     // *** 以下为附加指令 ***
 
-    /** 空操作（替代被移除的指令） */
+    /** 空操作 (替代被移除的指令) */
     NOP,
 
     /** 三元运算 */
@@ -108,7 +108,7 @@ public enum InsnType {
 
     /** 仅生成单个参数 */
     ONE_ARG,
-    /** SSA Phi 节点（合并多个控制流路径的值） */
+    /** SSA Phi 节点 (合并多个控制流路径的值) */
     PHI,
 
     /** 伪指令，用于区域代码生成时保留待使用的参数 */

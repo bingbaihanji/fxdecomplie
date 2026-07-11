@@ -1,13 +1,13 @@
 package com.bingbaihanji.fxdecomplie.decompiler.jadx;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JavaClass;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 /**
- * 从 jadx 输出类集合中选择本次请求对应的目标类。
+ * 从 jadx 输出类集合中选择本次请求对应的目标类 
  */
 public final class JadxOutputSelector {
 

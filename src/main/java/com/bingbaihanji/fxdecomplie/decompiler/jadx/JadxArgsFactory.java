@@ -1,12 +1,12 @@
 package com.bingbaihanji.fxdecomplie.decompiler.jadx;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
-import com.bingbaihanji.fxdecomplie.util.JadxOptionsBridge;
+import com.bingbaihanji.fxdecomplie.util.jadx.JadxOptionsBridge;
 
 import java.util.Map;
 
 /**
- * 创建项目默认的 jadx 参数并应用用户配置。
+ * 创建项目默认的 jadx 参数并应用用户配置 
  */
 public final class JadxArgsFactory {
 

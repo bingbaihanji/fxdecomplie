@@ -23,11 +23,11 @@ public class ConstStorage {
 
     /** 是否启用常量替换优化 */
     private final boolean replaceEnabled;
-    /** 全局常量值存储（存放公共常量） */
+    /** 全局常量值存储 (存放公共常量) */
     private final ValueStorage globalValues = new ValueStorage();
-    /** 按类隔离的常量值存储映射（存放各类的非公共常量） */
+    /** 按类隔离的常量值存储映射 (存放各类的非公共常量) */
     private final Map<ClassNode, ValueStorage> classes = new HashMap<>();
-    /** 资源 ID 到资源名称的映射（例如 R.string.app_name） */
+    /** 资源 ID 到资源名称的映射 (例如 R.string.app_name) */
     private Map<Integer, String> resourcesNames = new HashMap<>();
 
     /**
@@ -163,7 +163,7 @@ public class ConstStorage {
 
     /**
      * 根据字面量参数查找对应的常量字段
-     * 根据参数的原始类型（boolean、char、byte、short、int、long、float、double）
+     * 根据参数的原始类型 (boolean、char、byte、short、int、long、float、double)
      * 将字面量转换为对应类型的值，然后委托 {@link #getConstField} 查找
      * 对于较小的绝对值，不搜索全局常量以减少误匹配
      *
@@ -224,7 +224,7 @@ public class ConstStorage {
     }
 
     /**
-     * 获取全局常量字段映射（值到字段引用）
+     * 获取全局常量字段映射 (值到字段引用)
      *
      * @return 全局常量字段映射
      */
@@ -263,7 +263,7 @@ public class ConstStorage {
          * 存储值与字段的映射关系
          * 如果该值已存在重复记录，或插入时发现冲突，则标记为重复值并移除映射
          *
-         * @return 如果该值是重复值（即多个字段拥有相同的常量值）则返回 true
+         * @return 如果该值是重复值 (即多个字段拥有相同的常量值)则返回 true
          */
         boolean put(Object value, IFieldInfoRef fld) {
             if (duplicates.contains(value)) {
@@ -279,7 +279,7 @@ public class ConstStorage {
             return false;
         }
 
-        /** 检查该值是否已存在（包括重复值） */
+        /** 检查该值是否已存在 (包括重复值) */
         public boolean contains(Object value) {
             return duplicates.contains(value) || values.containsKey(value);
         }

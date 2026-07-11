@@ -23,7 +23,7 @@ public class TypeGen {
     public static String signature(ArgType type) {
         PrimitiveType stype = type.getPrimitiveType();
         if (stype == PrimitiveType.OBJECT) {
-            return com.bingbaihanji.fxdecomplie.util.SmaliNameUtils.javaToSmali(type.getObject());
+            return com.bingbaihanji.fxdecomplie.util.jvm.SmaliNameUtils.javaToSmali(type.getObject());
         }
         if (stype == PrimitiveType.ARRAY) {
             return '[' + signature(type.getArrayElement());

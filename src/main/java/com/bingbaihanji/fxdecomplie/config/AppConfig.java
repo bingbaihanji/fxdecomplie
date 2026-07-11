@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.config;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.util.AtomicFile;
+import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 

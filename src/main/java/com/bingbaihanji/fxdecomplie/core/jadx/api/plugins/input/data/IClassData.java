@@ -23,21 +23,21 @@ public interface IClassData {
     IClassData copy();
 
     /**
-     * 获取该类所属的输入文件名（如所在的 JAR/DEX 文件名）
+     * 获取该类所属的输入文件名 (如所在的 JAR/DEX 文件名)
      *
      * @return 输入文件名
      */
     String getInputFileName();
 
     /**
-     * 获取类的类型描述符（完整类型签名）
+     * 获取类的类型描述符 (完整类型签名)
      *
      * @return 类的类型描述符
      */
     String getType();
 
     /**
-     * 获取类的访问标志（access flags）
+     * 获取类的访问标志 (access flags)
      *
      * @return 访问标志位掩码
      */
@@ -53,7 +53,7 @@ public interface IClassData {
     /**
      * 获取父类的类型描述符
      *
-     * @return 父类类型描述符 若无父类（如 {@code java.lang.Object}）则返回 {@code null}
+     * @return 父类类型描述符 若无父类 (如 {@code java.lang.Object})则返回 {@code null}
      */
     @Nullable
     String getSuperType();
@@ -74,7 +74,7 @@ public interface IClassData {
     void visitFieldsAndMethods(ISeqConsumer<IFieldData> fieldsConsumer, ISeqConsumer<IMethodData> mthConsumer);
 
     /**
-     * 获取该类上附加的属性列表（如注解、签名等）
+     * 获取该类上附加的属性列表 (如注解、签名等)
      *
      * @return 类属性列表
      */

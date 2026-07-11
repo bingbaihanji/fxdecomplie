@@ -19,16 +19,16 @@ import java.util.Set;
  */
 public class LoopInfo {
 
-    /** 循环的起始块（循环头） */
+    /** 循环的起始块 (循环头) */
     private final BlockNode start;
-    /** 循环的结束块（回边的源块） */
+    /** 循环的结束块 (回边的源块) */
     private final BlockNode end;
     /** 构成循环体的所有基本块集合 */
     private final Set<BlockNode> loopBlocks;
 
     /** 循环编号 */
     private int id;
-    /** 父循环（用于表示嵌套循环关系） */
+    /** 父循环 (用于表示嵌套循环关系) */
     private LoopInfo parentLoop;
 
     /**
@@ -73,7 +73,7 @@ public class LoopInfo {
 
     /**
      * 返回退出边的源块<br>
-     * 退出节点属于循环（包含在 {@code loopBlocks} 中）
+     * 退出节点属于循环 (包含在 {@code loopBlocks} 中)
      *
      * @return 退出边源块集合
      */
@@ -81,7 +81,7 @@ public class LoopInfo {
         Set<BlockNode> nodes = new HashSet<>();
         Set<BlockNode> blocks = getLoopBlocks();
         for (BlockNode block : blocks) {
-            // 退出：后继节点不属于本循环（不要改用 getCleanSuccessors）
+            // 退出：后继节点不属于本循环 (不要改用 getCleanSuccessors)
             for (BlockNode s : block.getSuccessors()) {
                 if (!blocks.contains(s) && !s.contains(AType.EXC_HANDLER)) {
                     nodes.add(block);
@@ -110,7 +110,7 @@ public class LoopInfo {
     }
 
     /**
-     * 获取循环的前置头块（pre-header）
+     * 获取循环的前置头块 (pre-header)
      *
      * @return 前置头块
      */

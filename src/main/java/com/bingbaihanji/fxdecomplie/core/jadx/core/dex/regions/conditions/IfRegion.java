@@ -18,9 +18,9 @@ import java.util.List;
  * 表示反编译过程中的 if 条件分支结构，包含条件、then 分支区域和可选的 else 分支区域
  */
 public final class IfRegion extends ConditionRegion implements IBranchRegion {
-    /** then 分支区域（条件成立时执行的代码块） */
+    /** then 分支区域 (条件成立时执行的代码块) */
     private IContainer thenRegion;
-    /** else 分支区域（条件不成立时执行的代码块，可能为 null） */
+    /** else 分支区域 (条件不成立时执行的代码块，可能为 null) */
     private IContainer elseRegion;
 
     public IfRegion(IRegion parent) {

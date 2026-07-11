@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 /**
  * 自定义 Pass 合并器
  * <p>
- * 负责将用户自定义的 {@link JadxPass} 按其声明的顺序依赖（runAfter / runBefore）
- * 合并到已有的访问者（{@link IDexTreeVisitor}）列表中的正确位置
+ * 负责将用户自定义的 {@link JadxPass} 按其声明的顺序依赖 (runAfter / runBefore)
+ * 合并到已有的访问者 ({@link IDexTreeVisitor})列表中的正确位置
  */
 public class PassMerge {
 

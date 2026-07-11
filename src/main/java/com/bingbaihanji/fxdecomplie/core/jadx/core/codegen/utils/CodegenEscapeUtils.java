@@ -11,8 +11,8 @@ import java.util.function.IntConsumer;
 /**
  * 代码生成专用的字符串工具类，提供转义、反转义、数字格式化等功能
  * <p>
- * 从原 StringUtils 提取，保留代码生成（codegen）需要的所有方法
- * 其余通用方法（isEmpty/notEmpty/containsChar 等）已重定向到 JDK 标准 API
+ * 从原 StringUtils 提取，保留代码生成 (codegen)需要的所有方法
+ * 其余通用方法 (isEmpty/notEmpty/containsChar 等)已重定向到 JDK 标准 API
  */
 public class CodegenEscapeUtils {
     private static final CodegenEscapeUtils DEFAULT_INSTANCE = new CodegenEscapeUtils(new JadxArgs());

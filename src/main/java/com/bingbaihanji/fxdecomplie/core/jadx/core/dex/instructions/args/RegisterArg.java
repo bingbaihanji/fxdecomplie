@@ -59,7 +59,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 获取初始类型（构造时设置的类型，不会随类型推断改变）
+     * 获取初始类型 (构造时设置的类型，不会随类型推断改变)
      *
      * @return 初始类型
      */
@@ -144,7 +144,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 设置关联的 SSA 变量（包级私有，仅允许内部调用）
+     * 设置关联的 SSA 变量 (包级私有，仅允许内部调用)
      *
      * @param sVar SSA 变量，不能为 null
      */
@@ -200,7 +200,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 如果当前名称未知（为 null），则设置指定名称
+     * 如果当前名称未知 (为 null)，则设置指定名称
      *
      * @param name 要设置的名称
      */
@@ -360,7 +360,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 判断当前 SSA 变量是否与其他 SSA 变量关联（共享同一个源码变量）
+     * 判断当前 SSA 变量是否与其他 SSA 变量关联 (共享同一个源码变量)
      *
      * @return 如果关联的 SSA 变量数量大于 1 返回 true
      */

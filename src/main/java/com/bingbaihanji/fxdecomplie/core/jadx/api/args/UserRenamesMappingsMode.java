@@ -3,12 +3,12 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.args;
 /**
  * 用户重命名映射的读写模式枚举
  * <p>
- * 控制反编译器在加载和保存用户自定义重命名映射（如类名、方法名、字段名的手动重命名）时的行为策略
+ * 控制反编译器在加载和保存用户自定义重命名映射 (如类名、方法名、字段名的手动重命名)时的行为策略
  */
 public enum UserRenamesMappingsMode {
 
     /**
-     * 仅读取映射文件，用户可手动保存（默认模式）
+     * 仅读取映射文件，用户可手动保存 (默认模式)
      */
     READ,
 

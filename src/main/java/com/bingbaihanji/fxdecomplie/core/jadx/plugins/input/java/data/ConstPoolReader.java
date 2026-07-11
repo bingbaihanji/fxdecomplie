@@ -124,11 +124,11 @@ public class ConstPoolReader {
     }
 
     /**
-     * 读取指定索引处的调用点（invokedynamic）
+     * 读取指定索引处的调用点 (invokedynamic)
      *
      * @param idx 常量池索引
      * @return 调用点数据
-     * @throws JavaClassParseException 当常量类型为字段调用点（尚未实现）或非预期类型时抛出
+     * @throws JavaClassParseException 当常量类型为字段调用点 (尚未实现)或非预期类型时抛出
      */
     public ICallSite getCallSite(int idx) {
         ConstantType constType = jumpToConst(idx);
@@ -191,9 +191,9 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将 class 文件中的方法句柄种类（reference_kind）转换为 {@link MethodHandleType}
+     * 将 class 文件中的方法句柄种类 (reference_kind)转换为 {@link MethodHandleType}
      *
-     * @param kind 方法句柄种类值（1-9）
+     * @param kind 方法句柄种类值 (1-9)
      * @return 对应的方法句柄类型
      * @throws IllegalArgumentException 当种类值未知时抛出
      */
@@ -330,7 +330,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将指定索引处的常量读取为编码值（{@link EncodedValue}）
+     * 将指定索引处的常量读取为编码值 ({@link EncodedValue})
      *
      * @param idx 常量池索引
      * @return 对应的编码值
@@ -377,7 +377,7 @@ public class ConstPoolReader {
     /**
      * 规范化类名，使其成为合法的类型描述符
      * <p>
-     * 数组类型（以 {@code [} 开头）原样返回 已带 {@code L}/{@code T} 前缀且以
+     * 数组类型 (以 {@code [} 开头)原样返回 已带 {@code L}/{@code T} 前缀且以
      * {@code ;} 结尾的原样返回 其余情况补全为 {@code L<类名>;} 形式
      *
      * @param clsName 原始类名
@@ -408,7 +408,7 @@ public class ConstPoolReader {
     }
 
     /**
-     * 将读取位置跳转到指定索引常量条目的标签处（数据起始前 1 字节）
+     * 将读取位置跳转到指定索引常量条目的标签处 (数据起始前 1 字节)
      *
      * @param idx 常量池索引
      */

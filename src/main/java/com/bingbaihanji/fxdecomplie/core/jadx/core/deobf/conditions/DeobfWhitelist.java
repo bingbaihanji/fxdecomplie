@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * 反混淆白名单条件
  * <p>
- * 对处于白名单中的包或类禁止重命名（反混淆），常用于保留 Android 支持库、
+ * 对处于白名单中的包或类禁止重命名 (反混淆)，常用于保留 Android 支持库、
  * AndroidX 等已知库的原始名称白名单项支持以 {@code .*} 结尾表示整个包
  */
 public class DeobfWhitelist extends AbstractDeobfCondition {
@@ -27,10 +27,10 @@ public class DeobfWhitelist extends AbstractDeobfCondition {
             "androidx.core.os.*",
             "androidx.annotation.Px");
 
-    /** 默认白名单的字符串形式（以空格分隔各项） */
+    /** 默认白名单的字符串形式 (以空格分隔各项) */
     public static final String DEFAULT_STR = Utils.listToString(DEFAULT_LIST, " ");
 
-    /** 白名单中的包名集合（去除末尾的 {@code .*} 后） */
+    /** 白名单中的包名集合 (去除末尾的 {@code .*} 后) */
     private final Set<String> packages = new HashSet<>();
     /** 白名单中的完整类名集合 */
     private final Set<String> classes = new HashSet<>();

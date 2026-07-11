@@ -22,7 +22,7 @@ public interface IResourcesLoader {
     /**
      * 注册资源表解析器提供者
      * <p>
-     * 资源表解析器用于解析 Android 二进制资源表（如 resources.arsc），
+     * 资源表解析器用于解析 Android 二进制资源表 (如 resources.arsc)，
      * 将二进制格式的资源 ID 映射为可读的资源名称和值
      *
      * @param resTableParserProvider 要注册的资源表解析器提供者

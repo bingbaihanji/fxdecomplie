@@ -17,6 +17,6 @@ public enum InsnIndexType {
     FIELD_REF,
     /** 方法引用 */
     METHOD_REF,
-    /** 调用点（动态调用的 call site） */
+    /** 调用点 (动态调用的 call site) */
     CALL_SITE
 }

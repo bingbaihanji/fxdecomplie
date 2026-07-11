@@ -9,8 +9,8 @@
  *   <li>{@code api} — 公开 API 层，定义反编译接口、插件扩展点、资源加载、选项配置等 
  *       与核心实现解耦，供上层模块调用</li>
  *   <li>{@code core} — 核心实现层，包含 DEX 解析、控制流分析、类型推断、代码生成、
- *       混淆还原（deobfuscation）、资源 XML 解析等反编译全流程</li>
- *   <li>{@code plugins} — 插件系统，包括输入源插件（如 Java class 文件加载）和插件管理器，
+ *       混淆还原 (deobfuscation)、资源 XML 解析等反编译全流程</li>
+ *   <li>{@code plugins} — 插件系统，包括输入源插件 (如 Java class 文件加载)和插件管理器，
  *       支持扩展反编译能力</li>
  *   <li>{@code zip} — ZIP 归档文件的底层 I/O 工具，为 APK/JAR 等归档格式的读取提供支持</li>
  * </ul>

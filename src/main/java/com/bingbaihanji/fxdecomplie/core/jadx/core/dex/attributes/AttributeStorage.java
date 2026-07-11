@@ -14,8 +14,8 @@ import java.util.function.Consumer;
 
 /**
  * 属性存储容器，用于存放不同类型的属性：<br>
- * 1. 标志（Flags）—— 布尔型属性（已设置或未设置）<br>
- * 2. 属性（Attributes）—— 与属性类型（{@link IJadxAttrType}）关联的类实例（{@link IJadxAttribute}）<br>
+ * 1. 标志 (Flags)—— 布尔型属性 (已设置或未设置)<br>
+ * 2. 属性 (Attributes)—— 与属性类型 ({@link IJadxAttrType})关联的类实例 ({@link IJadxAttribute})<br>
  */
 public class AttributeStorage {
 
@@ -139,7 +139,7 @@ public class AttributeStorage {
         }
     }
 
-    /** 移除指定的属性实例（仅当存储中的实例与其为同一对象时才移除） */
+    /** 移除指定的属性实例 (仅当存储中的实例与其为同一对象时才移除) */
     public void remove(IJadxAttribute attr) {
         if (!attributes.isEmpty()) {
             writeAttributes(map -> {
@@ -188,7 +188,7 @@ public class AttributeStorage {
         return list;
     }
 
-    /** 判断存储容器是否为空（无标志且无属性） */
+    /** 判断存储容器是否为空 (无标志且无属性) */
     public boolean isEmpty() {
         return flags.isEmpty() && attributes.isEmpty();
     }

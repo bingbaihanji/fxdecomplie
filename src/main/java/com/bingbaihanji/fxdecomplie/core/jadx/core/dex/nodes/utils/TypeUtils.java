@@ -124,11 +124,11 @@ public class TypeUtils {
     }
 
     /**
-     * 在类的上下文中展开类型中的类型变量，为其补充已知的边界（extends）信息
+     * 在类的上下文中展开类型中的类型变量，为其补充已知的边界 (extends)信息
      *
      * @param cls  提供类型变量上下文的类
      * @param type 待展开的类型
-     * @return 展开后的类型（原对象，可能被就地修改）
+     * @return 展开后的类型 (原对象，可能被就地修改)
      */
     public ArgType expandTypeVariables(ClassNode cls, ArgType type) {
         if (type.containsTypeVariable()) {
@@ -138,11 +138,11 @@ public class TypeUtils {
     }
 
     /**
-     * 在方法的上下文中展开类型中的类型变量，为其补充已知的边界（extends）信息
+     * 在方法的上下文中展开类型中的类型变量，为其补充已知的边界 (extends)信息
      *
      * @param mth  提供类型变量上下文的方法
      * @param type 待展开的类型
-     * @return 展开后的类型（原对象，可能被就地修改）
+     * @return 展开后的类型 (原对象，可能被就地修改)
      */
     public ArgType expandTypeVariables(MethodNode mth, ArgType type) {
         if (type.containsTypeVariable()) {
@@ -181,7 +181,7 @@ public class TypeUtils {
     }
 
     /**
-     * 获取方法上下文中所有已知的类型变量（包含所属类及其父类、以及方法自身声明的类型变量）
+     * 获取方法上下文中所有已知的类型变量 (包含所属类及其父类、以及方法自身声明的类型变量)
      * 结果会缓存到方法的 {@link MethodTypeVarsAttr} 属性中
      *
      * @param mth 目标方法
@@ -300,7 +300,7 @@ public class TypeUtils {
             ArgType actualType = actualTypes.get(i);
             ArgType typeVar = typeParameters.get(i);
             if (typeVar.getExtendTypes() != null) {
-                // 强制使用短格式（仅类型变量名）
+                // 强制使用短格式 (仅类型变量名)
                 typeVar = ArgType.genericType(typeVar.getObject());
             }
             replaceMap.put(typeVar, actualType);
@@ -446,7 +446,7 @@ public class TypeUtils {
     }
 
     /**
-     * 遍历指定类型的所有父类型（父类与接口），对每一对 (子类型, 父类型) 调用回调
+     * 遍历指定类型的所有父类型 (父类与接口)，对每一对 (子类型, 父类型) 调用回调
      * 已解析的类委托给 {@link ClassNode#visitSuperTypes}，否则基于类路径信息递归遍历
      *
      * @param type     起始类型

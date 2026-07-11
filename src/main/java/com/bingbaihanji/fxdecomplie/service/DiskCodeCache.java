@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
-import com.bingbaihanji.fxdecomplie.util.AtomicFile;
+import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

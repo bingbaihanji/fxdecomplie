@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.util.text;
 
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
 import java.util.regex.Pattern;
 

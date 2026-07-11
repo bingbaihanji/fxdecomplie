@@ -10,10 +10,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * 已识别作用域（含终止节点）的遍历状态
+ * 已识别作用域 (含终止节点)的遍历状态
  * <p>
- * 该状态表示遍历器已确定了一个明确的作用域，包含若干根节点（{@code roots}）和一个作用域终止节点
- * （{@code scopeTerminator}）处于此状态时，遍历器已准备好进行比较，
+ * 该状态表示遍历器已确定了一个明确的作用域，包含若干根节点 ({@code roots})和一个作用域终止节点
+ *  ({@code scopeTerminator})处于此状态时，遍历器已准备好进行比较，
  * {@link #getCompareState()} 返回 {@link ComparisonState#READY_TO_COMPARE}，
  * 并通过 {@link MergePathActivePathTraverserHandler} 合并路径继续处理
  * </p>
@@ -28,7 +28,7 @@ public final class IdentifiedScopeWithTerminatorTraverserState extends Traverser
     private final BlockNode scopeTerminator;
 
     /**
-     * 构造已识别作用域（含终止节点）的遍历状态
+     * 构造已识别作用域 (含终止节点)的遍历状态
      *
      * @param state           底层的活动路径状态
      * @param centralityState 中心性状态

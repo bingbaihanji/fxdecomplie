@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * fxdecomplie 到移植 jadx 内核的稳定边界。
+ * fxdecomplie 到移植 jadx 内核的稳定边界 
  */
 public final class JadxDecompilerFacade {
 

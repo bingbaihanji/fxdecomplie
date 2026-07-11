@@ -11,16 +11,16 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.api.resources.ResourceConte
 
 /**
  * 资源文件类型枚举
- * 根据文件扩展名对资源进行分类，用于确定文件的内容类型（二进制/文本/未知）
+ * 根据文件扩展名对资源进行分类，用于确定文件的内容类型 (二进制/文本/未知)
  */
 public enum ResourceType {
     /** 代码文件：DEX 字节码、JAR 归档、Java 类文件 */
     CODE(CONTENT_BINARY, ".dex", ".jar", ".class"),
     /** XML 文件 */
     XML(CONTENT_TEXT, ".xml"),
-    /** Android 资源编译表（Android Resource Table） */
+    /** Android 资源编译表 (Android Resource Table) */
     ARSC(CONTENT_TEXT, ".arsc"),
-    /** APK 安装包及其变体（APKM、APKS） */
+    /** APK 安装包及其变体 (APKM、APKS) */
     APK(CONTENT_BINARY, ".apk", ".apkm", ".apks"),
     /** 字体文件：TrueType、OpenType */
     FONT(CONTENT_BINARY, ".ttf", ".ttc", ".otf"),
@@ -39,13 +39,13 @@ public enum ResourceType {
     TEXT(CONTENT_TEXT, ".txt", ".ini", ".conf", ".yaml", ".properties", ".js", ".java", ".kt", ".md"),
     /** HTML 网页文件 */
     HTML(CONTENT_TEXT, ".html", ".htm"),
-    /** 原生共享库（Linux .so 文件） */
+    /** 原生共享库 (Linux .so 文件) */
     LIB(CONTENT_BINARY, ".so"),
     /** AndroidManifest.xml 清单文件 */
     MANIFEST(CONTENT_TEXT),
     /** 未知二进制文件 */
     UNKNOWN_BIN(CONTENT_BINARY, ".bin"),
-    /** 未知类型文件（无法识别扩展名时的默认类型） */
+    /** 未知类型文件 (无法识别扩展名时的默认类型) */
     UNKNOWN(CONTENT_UNKNOWN);
 
     private static final Map<String, ResourceType> EXT_MAP = new HashMap<>();
@@ -72,7 +72,7 @@ public enum ResourceType {
 
     /**
      * 根据文件名推断资源类型
-     * 优先识别 {@code resources.pb}（视为 ARSC），并对 {@code AndroidManifest.xml} 做特殊处理（视为 MANIFEST）
+     * 优先识别 {@code resources.pb} (视为 ARSC)，并对 {@code AndroidManifest.xml} 做特殊处理 (视为 MANIFEST)
      *
      * @param fileName 文件名
      * @return 匹配到的资源类型，无法识别时返回 {@link #UNKNOWN}
@@ -96,7 +96,7 @@ public enum ResourceType {
     }
 
     /**
-     * 获取该资源类型的内容类型（二进制/文本/未知）
+     * 获取该资源类型的内容类型 (二进制/文本/未知)
      *
      * @return 资源内容类型
      */

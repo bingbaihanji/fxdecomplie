@@ -1,12 +1,12 @@
 package com.bingbaihanji.fxdecomplie.decompiler.jadx;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
 import java.util.Map;
 
 /**
- * 单次 jadx 反编译请求。
+ * 单次 jadx 反编译请求 
  */
 public record JadxDecompilerRequest(
         String typeName,

@@ -53,7 +53,7 @@ public class DecompilerScheduler implements IDecompileScheduler {
     /**
      * 构建反编译批次
      * <p>
-     * 根据类之间的依赖关系将待反编译的类分组成多个批次构建失败（如栈溢出或其他异常）时，
+     * 根据类之间的依赖关系将待反编译的类分组成多个批次构建失败 (如栈溢出或其他异常)时，
      * 会回退到简单的按依赖数排序的单类批次方案
      *
      * @param classes 待反编译的类列表

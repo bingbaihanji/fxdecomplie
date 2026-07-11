@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
- * Jadx 的 Zip 读取器包装类，提供自定义的 Zip 解析器（{@link JadxZipParser}），
+ * Jadx 的 Zip 读取器包装类，提供自定义的 Zip 解析器 ({@link JadxZipParser})，
  * 当自定义解析器无法处理时，自动回退到 Java 默认实现
  */
 public class ZipReader {

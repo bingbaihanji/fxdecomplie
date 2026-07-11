@@ -9,15 +9,15 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference;
 public enum TypeCompareEnum {
     /** 类型完全相同 */
     EQUAL,
-    /** 当前类型更窄（更具体） */
+    /** 当前类型更窄 (更具体) */
     NARROW,
     /** 相同的基本类型，但带泛型，因此更窄 */
     NARROW_BY_GENERIC, // 相同的基础类型，带泛型
-    /** 当前类型更宽（更通用） */
+    /** 当前类型更宽 (更通用) */
     WIDER,
     /** 相同的基本类型，但不带泛型，因此更宽 */
     WIDER_BY_GENERIC, // 相同的基础类型，不带泛型
-    /** 类型冲突（不兼容） */
+    /** 类型冲突 (不兼容) */
     CONFLICT,
     /** 相同的基本类型，但泛型存在冲突 */
     CONFLICT_BY_GENERIC, // 相同的基础类型，泛型冲突
@@ -65,7 +65,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断当前类型是否更宽（包括泛型相关的更宽）
+     * 判断当前类型是否更宽 (包括泛型相关的更宽)
      *
      * @return 如果当前类型更宽返回 true
      */
@@ -83,7 +83,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断当前类型是否更窄（包括泛型相关的更窄）
+     * 判断当前类型是否更窄 (包括泛型相关的更窄)
      *
      * @return 如果当前类型更窄返回 true
      */
@@ -101,7 +101,7 @@ public enum TypeCompareEnum {
     }
 
     /**
-     * 判断两个类型是否冲突（不兼容）
+     * 判断两个类型是否冲突 (不兼容)
      *
      * @return 如果类型冲突返回 true
      */

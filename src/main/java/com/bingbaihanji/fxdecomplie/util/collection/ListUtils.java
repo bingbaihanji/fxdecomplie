@@ -276,7 +276,7 @@ public final class ListUtils {
     }
 
     /**
-     * 判断两个列表是否包含相同元素（忽略顺序）
+     * 判断两个列表是否包含相同元素 (忽略顺序)
      *
      * @param first  第一个列表
      * @param second 第二个列表
@@ -396,7 +396,7 @@ public final class ListUtils {
     }
 
     /**
-     * 将单个元素与数组拼接为新列表（元素在前）
+     * 将单个元素与数组拼接为新列表 (元素在前)
      *
      * @param first  首元素
      * @param values 后续元素数组
@@ -437,7 +437,7 @@ public final class ListUtils {
     }
 
     /**
-     * 安全移除列表中的元素（对 null 或空列表不做处理）
+     * 安全移除列表中的元素 (对 null 或空列表不做处理)
      *
      * @param list 源列表
      * @param obj  待移除的元素
@@ -507,7 +507,7 @@ public final class ListUtils {
     /**
      * 在列表中查找恰好唯一一个满足过滤条件的元素
      *
-     * @return 若满足条件的元素不是恰好一个（零个或多个）则返回 null
+     * @return 若满足条件的元素不是恰好一个 (零个或多个)则返回 null
      */
     @Nullable
     public static <T> T filterOnlyOne(List<T> list, Predicate<T> filter) {
@@ -577,7 +577,7 @@ public final class ListUtils {
     }
 
     /**
-     * 将枚举（{@link Enumeration}）转换为列表
+     * 将枚举 ({@link Enumeration})转换为列表
      *
      * @param enumeration 源枚举
      * @return 转换后的列表 枚举为 null 或空时返回空列表

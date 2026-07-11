@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.ui.window;
 
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.windows.jfx.WindowToolkit;
 import javafx.geometry.Pos;
 import javafx.scene.Node;

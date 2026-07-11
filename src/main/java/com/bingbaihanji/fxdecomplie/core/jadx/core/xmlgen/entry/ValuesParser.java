@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * 资源值解析器
  * <p>
- * 负责将资源表（resources.arsc）中的原始数据（数据类型 + 数据值）解码为可读的字符串表示，
+ * 负责将资源表 (resources.arsc)中的原始数据 (数据类型 + 数据值)解码为可读的字符串表示，
  * 支持字符串、整型、布尔、浮点、颜色、尺寸、分数以及资源引用、属性引用等各类数据类型，
  * 同时可解析简单值、命名值列表以及资源名称引用
  */
@@ -102,7 +102,7 @@ public class ValuesParser extends ParserConstants {
     /**
      * 解码原始值对象
      *
-     * @param value 原始值（包含数据类型与数据）
+     * @param value 原始值 (包含数据类型与数据)
      * @return 解码后的字符串，若为空类型则返回 {@code null}
      */
     @Nullable
@@ -115,7 +115,7 @@ public class ValuesParser extends ParserConstants {
     /**
      * 根据数据类型解码资源数据值
      *
-     * @param dataType 数据类型（TYPE_* 常量）
+     * @param dataType 数据类型 (TYPE_* 常量)
      * @param data     原始数据值
      * @return 解码后的字符串表示，空类型返回 {@code null}
      */
@@ -189,7 +189,7 @@ public class ValuesParser extends ParserConstants {
      * 解码名称引用，将资源 ID 引用还原为资源名称
      *
      * @param nameRef 名称引用 ID
-     * @return 解码后的名称（以 '.' 分隔），无法解析时返回十六进制表示
+     * @return 解码后的名称 (以 '.' 分隔)，无法解析时返回十六进制表示
      */
     public String decodeNameRef(int nameRef) {
         int ref = nameRef;

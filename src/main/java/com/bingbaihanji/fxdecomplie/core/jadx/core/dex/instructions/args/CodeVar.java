@@ -68,7 +68,7 @@ public class CodeVar {
         this.ssaVars = ssaVars;
     }
 
-    /** 添加一个关联的 SSA 变量（去重） */
+    /** 添加一个关联的 SSA 变量 (去重) */
     public void addSsaVar(SSAVar ssaVar) {
         if (ssaVars.isEmpty()) {
             ssaVars = new ArrayList<>(3);
@@ -127,7 +127,7 @@ public class CodeVar {
     }
 
     /**
-     * 以“或”运算合并另一个代码变量的标记（已声明/this/final）
+     * 以“或”运算合并另一个代码变量的标记 (已声明/this/final)
      */
     public void mergeFlagsFrom(CodeVar other) {
         if (other.isDeclared()) {

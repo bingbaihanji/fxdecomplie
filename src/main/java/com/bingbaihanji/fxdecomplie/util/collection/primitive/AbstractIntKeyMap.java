@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.util.collection.primitive;
 
-import com.bingbaihanji.fxdecomplie.util.NumberUtil;
+import com.bingbaihanji.fxdecomplie.util.math.NumberUtil;
 
 import java.util.Arrays;
 

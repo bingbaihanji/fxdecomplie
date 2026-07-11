@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 /**
  * DEX 树遍历访问者接口
  * <p>
- * 定义了对 DEX 文件结构（根节点、类节点、方法节点）进行遍历时的访问回调方法
+ * 定义了对 DEX 文件结构 (根节点、类节点、方法节点)进行遍历时的访问回调方法
  * 实现此接口可对 DEX 树的各个层级执行自定义处理逻辑
  * </p>
  */

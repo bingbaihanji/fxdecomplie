@@ -16,7 +16,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinfer
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.isEmpty;
 
 /**
- * 类型比较器，用于比较两个类型之间的关系（相等、更窄、更宽或冲突）
+ * 类型比较器，用于比较两个类型之间的关系 (相等、更窄、更宽或冲突)
  * 支持基本类型、对象类型、数组类型、泛型类型和通配符类型的比较
  */
 public class TypeCompare {
@@ -60,7 +60,7 @@ public class TypeCompare {
     }
 
     /**
-     * 比较两个对象类型（带预检查）
+     * 比较两个对象类型 (带预检查)
      *
      * @param first 第一个类型
      * @param second 第二个类型
@@ -74,7 +74,7 @@ public class TypeCompare {
     }
 
     /**
-     * 比较两个类型并返回第一个参数的比较结果（更窄、更宽或冲突）
+     * 比较两个类型并返回第一个参数的比较结果 (更窄、更宽或冲突)
      */
     public TypeCompareEnum compareTypes(ArgType first, ArgType second) {
         if (first == second || Objects.equals(first, second)) {
@@ -191,7 +191,7 @@ public class TypeCompare {
     }
 
     /**
-     * 比较两个对象类型（不带预检查）
+     * 比较两个对象类型 (不带预检查)
      *
      * @param first 第一个类型
      * @param second 第二个类型
@@ -297,7 +297,7 @@ public class TypeCompare {
     /**
      * 比较泛型类型与普通对象类型
      *
-     * @param genericType 泛型类型（类型变量）
+     * @param genericType 泛型类型 (类型变量)
      * @param objType 对象类型
      * @return 类型比较结果
      */
@@ -326,7 +326,7 @@ public class TypeCompare {
     }
 
     /**
-     * 比较两个类型变量（泛型类型），依据其上界（extends 类型）判断宽窄关系
+     * 比较两个类型变量 (泛型类型)，依据其上界 (extends 类型)判断宽窄关系
      *
      * @param first 第一个类型变量
      * @param second 第二个类型变量
@@ -355,7 +355,7 @@ public class TypeCompare {
     }
 
     /**
-     * 从类型变量的上界列表中移除 Object 类型（Object 上界不提供额外约束信息）
+     * 从类型变量的上界列表中移除 Object 类型 (Object 上界不提供额外约束信息)
      *
      * @param extendTypes 上界类型列表
      * @return 移除 Object 后的上界列表
@@ -373,7 +373,7 @@ public class TypeCompare {
     }
 
     /**
-     * 比较两个基本类型的宽窄关系（依据类型宽度，例如 int 比 byte 更宽）
+     * 比较两个基本类型的宽窄关系 (依据类型宽度，例如 int 比 byte 更宽)
      *
      * @param type1 第一个基本类型
      * @param type2 第二个基本类型
@@ -408,7 +408,7 @@ public class TypeCompare {
     }
 
     /**
-     * 返回基本类型对应的宽度序号，用于宽窄比较（BYTE 最小，DOUBLE 最大）
+     * 返回基本类型对应的宽度序号，用于宽窄比较 (BYTE 最小，DOUBLE 最大)
      * 对于 BOOLEAN、OBJECT、ARRAY、VOID 等不参与宽窄比较的类型抛出异常
      *
      * @param type 基本类型

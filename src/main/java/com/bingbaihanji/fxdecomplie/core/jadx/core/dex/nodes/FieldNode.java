@@ -22,12 +22,12 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
 
     /** 字段所属的父类节点 */
     private final ClassNode parentClass;
-    /** 字段的基本信息（名称、类型描述符、所属类） */
+    /** 字段的基本信息 (名称、类型描述符、所属类) */
     private final FieldInfo fieldInfo;
-    /** 字段的访问标志（public/private/protected/static/final 等） */
+    /** 字段的访问标志 (public/private/protected/static/final 等) */
     private AccessInfo accFlags;
 
-    /** 字段的类型，可能在分析过程中被更新（例如泛型擦除后的类型推断） */
+    /** 字段的类型，可能在分析过程中被更新 (例如泛型擦除后的类型推断) */
     private ArgType type;
 
     /** 使用了该字段的方法列表 */
@@ -70,7 +70,7 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
     }
 
     /**
-     * 更新字段的类型（例如在类型推断过程中）
+     * 更新字段的类型 (例如在类型推断过程中)
      *
      * @param type 新的类型
      */
@@ -111,7 +111,7 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
         return fieldInfo.getName();
     }
 
-    /** 获取字段别名（重命名后的名称），若未重命名则返回原始名称 */
+    /** 获取字段别名 (重命名后的名称)，若未重命名则返回原始名称 */
     public String getAlias() {
         return fieldInfo.getAlias();
     }
@@ -138,7 +138,7 @@ public class FieldNode extends NotificationAttrNode implements ICodeNode, IField
         return parentClass;
     }
 
-    /** 获取字段所属的顶层父类节点（对于内部类则返回最外层类） */
+    /** 获取字段所属的顶层父类节点 (对于内部类则返回最外层类) */
     public ClassNode getTopParentClass() {
         return parentClass.getTopParentClass();
     }

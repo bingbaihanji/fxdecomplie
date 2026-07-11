@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 /**
  * Jadx 插件管理器，负责插件的加载、注册、卸载、解析和初始化
  * <p>
- * 管理所有插件的生命周期，处理插件间的冲突（通过 {@code provides} 机制），
+ * 管理所有插件的生命周期，处理插件间的冲突 (通过 {@code provides} 机制)，
  * 并维护已解析的插件集合供反编译器使用
  */
 public class JadxPluginManager {
@@ -48,7 +48,7 @@ public class JadxPluginManager {
     /**
      * 添加冲突插件的解决方案建议
      * <p>
-     * 当多个插件提供相同的功能（相同 provides 标识）时，通过此方法指定优先使用的插件
+     * 当多个插件提供相同的功能 (相同 provides 标识)时，通过此方法指定优先使用的插件
      *
      * @param provides  提供的功能标识
      * @param pluginId  建议优先使用的插件 ID
@@ -139,12 +139,12 @@ public class JadxPluginManager {
         return result;
     }
 
-    /** 获取所有已加载的插件上下文（包含未解析的冲突插件） */
+    /** 获取所有已加载的插件上下文 (包含未解析的冲突插件) */
     public SortedSet<PluginContext> getAllPluginContexts() {
         return allPlugins;
     }
 
-    /** 获取已解析（消除冲突后）的插件上下文集合 */
+    /** 获取已解析 (消除冲突后)的插件上下文集合 */
     public SortedSet<PluginContext> getResolvedPluginContexts() {
         return resolvedPlugins;
     }
@@ -154,7 +154,7 @@ public class JadxPluginManager {
      * <p>
      * 按 {@code provides} 标识对所有插件分组，每组仅保留一个插件：
      * 若组内仅有一个插件则直接保留 若存在多个，则优先选择建议插件
-     * （通过 {@link #providesSuggestion}），否则选取组内第一个
+     *  (通过 {@link #providesSuggestion})，否则选取组内第一个
      * 解析结果写入 {@link #resolvedPlugins}
      */
     private synchronized void resolve() {
@@ -186,7 +186,7 @@ public class JadxPluginManager {
         init(allPlugins);
     }
 
-    /** 初始化已解析（消除冲突后）的插件 */
+    /** 初始化已解析 (消除冲突后)的插件 */
     public void initResolved() {
         init(resolvedPlugins);
     }
@@ -224,7 +224,7 @@ public class JadxPluginManager {
         unload(allPlugins);
     }
 
-    /** 卸载已解析（消除冲突后）的插件 */
+    /** 卸载已解析 (消除冲突后)的插件 */
     public void unloadResolved() {
         unload(resolvedPlugins);
     }

@@ -39,7 +39,7 @@ public class AndroidResourcesUtils {
     }
 
     /**
-     * 查找（或在缺失时生成）应用的 R 资源类，并向其中注入资源字段
+     * 查找 (或在缺失时生成)应用的 R 资源类，并向其中注入资源字段
      * <p>
      * 优先在应用包名下查找 {@code R} 类 找不到时按短名 {@code R} 搜索候选类 
      * 仍未找到则创建一个合成的 R 类用于承载所有资源 ID
@@ -105,7 +105,7 @@ public class AndroidResourcesUtils {
     }
 
     /**
-     * 判断指定类是否为 R 资源类的内部类型类（其父类别名为 {@code R}）
+     * 判断指定类是否为 R 资源类的内部类型类 (其父类别名为 {@code R})
      *
      * @param cls 待判断的类
      * @return 是资源类返回 true
@@ -123,7 +123,7 @@ public class AndroidResourcesUtils {
      *
      * @param resCls     R 资源类节点
      * @param resStorage 资源存储
-     * @param rClsExists 目标 R 类是否为已存在的类（而非新生成的合成类）
+     * @param rClsExists 目标 R 类是否为已存在的类 (而非新生成的合成类)
      */
     private static void addResourceFields(ClassNode resCls, ResourceStorage resStorage, boolean rClsExists) {
         Map<Integer, FieldNode> resFieldsMap = fillResFieldsMap(resCls);
@@ -166,11 +166,11 @@ public class AndroidResourcesUtils {
     }
 
     /**
-     * 获取（或在缺失时创建）指定资源类型对应的内部类型类
+     * 获取 (或在缺失时创建)指定资源类型对应的内部类型类
      *
      * @param resCls     R 资源类节点
      * @param rClsExists R 类是否为已存在的类
-     * @param typeName   资源类型名（如 string、layout）
+     * @param typeName   资源类型名 (如 string、layout)
      * @return 对应资源类型类的信息
      */
     private static ResClsInfo getClassForResType(ClassNode resCls, boolean rClsExists, String typeName) {
@@ -216,7 +216,7 @@ public class AndroidResourcesUtils {
     }
 
     /**
-     * 资源类型类信息，持有某一资源类型（如 string、drawable）对应的内部类节点
+     * 资源类型类信息，持有某一资源类型 (如 string、drawable)对应的内部类节点
      * 及其字段名到字段节点的映射
      */
     private static final class ResClsInfo {

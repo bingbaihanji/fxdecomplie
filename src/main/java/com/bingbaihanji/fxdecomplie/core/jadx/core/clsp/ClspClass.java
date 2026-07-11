@@ -18,9 +18,9 @@ public class ClspClass {
     private final ArgType clsType;
     /** 类在类路径图中的唯一标识 ID */
     private final int id;
-    /** 类的访问标志（public、interface、abstract 等） */
+    /** 类的访问标志 (public、interface、abstract 等) */
     private final int accFlags;
-    /** 类来源（标识该类来自哪个类路径源） */
+    /** 类来源 (标识该类来自哪个类路径源) */
     private final ClspClassSource source;
     /** 父类和实现的接口类型数组 */
     private ArgType[] parents;
@@ -84,7 +84,7 @@ public class ClspClass {
         this.parents = parents;
     }
 
-    /** 获取方法映射表（键为方法短 ID，值为 ClspMethod） */
+    /** 获取方法映射表 (键为方法短 ID，值为 ClspMethod) */
     public Map<String, ClspMethod> getMethodsMap() {
         return methodsMap;
     }
@@ -121,7 +121,7 @@ public class ClspClass {
         this.typeParameters = typeParameters;
     }
 
-    /** 获取类的来源（标识该类来自哪个类路径源） */
+    /** 获取类的来源 (标识该类来自哪个类路径源) */
     public ClspClassSource getSource() {
         return this.source;
     }

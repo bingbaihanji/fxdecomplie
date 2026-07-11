@@ -38,8 +38,8 @@ import java.util.stream.Collectors;
 /**
  * 重写方法访问器
  * <p>
- * 遍历类的父类型层次结构，标记出属于方法重写（override）的方法，并为其附加
- * {@link MethodOverrideAttr} 属性 同时尝试还原因类型擦除（type erasure）而丢失的
+ * 遍历类的父类型层次结构，标记出属于方法重写 (override)的方法，并为其附加
+ * {@link MethodOverrideAttr} 属性 同时尝试还原因类型擦除 (type erasure)而丢失的
  * 返回值类型与参数类型，使其与基类/接口中的方法签名保持一致若修正后的签名可能引发
  * 方法冲突，还会进行冲突检测与重命名处理
  */
@@ -154,8 +154,8 @@ public class OverrideMethodVisitor extends AbstractVisitor {
 
     @Nullable
     private MethodNode searchOverriddenMethod(ClassNode cls, MethodNode mth, String signature) {
-        // 通过精确的完整签名（含返回值）搜索，以对抗混淆（参见测试
-        // 'TestOverrideWithSameName'）
+        // 通过精确的完整签名 (含返回值)搜索，以对抗混淆 (参见测试
+        // 'TestOverrideWithSameName')
         String shortId = mth.methodInfo().getShortId();
         for (MethodNode supMth : cls.getMethods()) {
             if (supMth.methodInfo().getShortId().equals(shortId) && !supMth.getAccessFlags().isStatic()) {
@@ -238,7 +238,7 @@ public class OverrideMethodVisitor extends AbstractVisitor {
                 mthNode.add(AFlag.DONT_RENAME);
             }
             if (depth == 0) {
-                // 跳过当前（第一个）方法
+                // 跳过当前 (第一个)方法
                 depth = 1;
                 continue;
             }

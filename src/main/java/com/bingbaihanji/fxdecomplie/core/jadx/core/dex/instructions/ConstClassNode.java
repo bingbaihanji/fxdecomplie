@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.InsnNode;
 /**
  * 表示 Dex 字节码中的 const-class 指令节点
  * <p>
- * 该指令将一个类引用（{@code Class<T>} 类型）加载到寄存器中，
+ * 该指令将一个类引用 ({@code Class<T>} 类型)加载到寄存器中，
  * 对应 Java 中的 {@code Foo.class} 表达式
  * </p>
  */

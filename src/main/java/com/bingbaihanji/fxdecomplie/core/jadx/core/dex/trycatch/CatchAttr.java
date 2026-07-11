@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * catch 捕获属性
- * 作为附加在指令上的属性，用于记录该指令可能触发的异常处理器（catch 分支）列表
+ * 作为附加在指令上的属性，用于记录该指令可能触发的异常处理器 (catch 分支)列表
  * 处理器按其偏移量排序
  */
 public class CatchAttr implements IJadxAttribute {

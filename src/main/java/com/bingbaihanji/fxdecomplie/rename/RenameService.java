@@ -8,8 +8,8 @@ import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import com.bingbaihanji.fxdecomplie.util.AtomicFile;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import com.google.gson.Gson;
@@ -143,7 +143,7 @@ public final class RenameService {
      * 三个静态缓存均以 workspaceHash 为键，条目生命周期应与工作区一致
      * 工作区关闭时调用本方法，避免长会话中缓存随打开过的工作区数量单调增长
      *
-     * @param workspaceHash 工作区 hash（与 load/save 使用的键一致）
+     * @param workspaceHash 工作区 hash (与 load/save 使用的键一致)
      */
     public static void cleanupWorkspace(String workspaceHash) {
         if (workspaceHash == null) {

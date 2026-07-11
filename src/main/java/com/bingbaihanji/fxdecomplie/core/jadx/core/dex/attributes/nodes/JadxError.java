@@ -16,7 +16,7 @@ public class JadxError implements Comparable<JadxError> {
 
     /** 错误描述信息 */
     private final String error;
-    /** 导致此错误的异常（可为空） */
+    /** 导致此错误的异常 (可为空) */
     private final Throwable cause;
 
     /**

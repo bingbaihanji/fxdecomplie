@@ -21,7 +21,7 @@ public final class FieldInfo implements IFieldInfoRef {
     private final String name;
     /** 字段类型 */
     private final ArgType type;
-    /** 字段别名（用于重命名后的显示，默认与字段名相同） */
+    /** 字段别名 (用于重命名后的显示，默认与字段名相同) */
     private String alias;
 
     /**
@@ -97,7 +97,7 @@ public final class FieldInfo implements IFieldInfoRef {
         this.alias = name;
     }
 
-    /** 判断字段是否存在别名（即别名与原始名称不同） */
+    /** 判断字段是否存在别名 (即别名与原始名称不同) */
     public boolean hasAlias() {
         return !Objects.equals(name, alias);
     }
@@ -112,7 +112,7 @@ public final class FieldInfo implements IFieldInfoRef {
     }
 
     /**
-     * 获取字段的短标识符，格式为：字段名:类型签名（不含类名）
+     * 获取字段的短标识符，格式为：字段名:类型签名 (不含类名)
      *
      * @return 字段短标识符字符串
      */
@@ -121,7 +121,7 @@ public final class FieldInfo implements IFieldInfoRef {
     }
 
     /**
-     * 获取字段的原始完整标识符（使用原始类型名称，未经过泛型擦除），
+     * 获取字段的原始完整标识符 (使用原始类型名称，未经过泛型擦除)，
      * 格式为：原始全限定类名.字段名:类型签名
      *
      * @return 字段原始完整标识符字符串

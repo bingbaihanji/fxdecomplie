@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 /**
  * 类型搜索状态
  * <p>
- * 在类型推断的搜索过程中，维护方法内每个 SSA 变量（{@link SSAVar}）
- * 到其类型搜索信息（{@link TypeSearchVarInfo}）的映射，
+ * 在类型推断的搜索过程中，维护方法内每个 SSA 变量 ({@link SSAVar})
+ * 到其类型搜索信息 ({@link TypeSearchVarInfo})的映射，
  * 并提供按解析状态查询变量的能力
  */
 public class TypeSearchState {

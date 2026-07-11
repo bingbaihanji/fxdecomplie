@@ -14,15 +14,15 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenE
  */
 public class NameMapper {
 
-    /** 匹配单个有效的 Java 标识符（不含点号） */
+    /** 匹配单个有效的 Java 标识符 (不含点号) */
     public static final Pattern VALID_JAVA_IDENTIFIER = Pattern.compile(
             "\\p{javaJavaIdentifierStart}\\p{javaJavaIdentifierPart}*");
 
-    /** 匹配有效的 Java 全限定标识符（以点号分隔的多段标识符） */
+    /** 匹配有效的 Java 全限定标识符 (以点号分隔的多段标识符) */
     private static final Pattern VALID_JAVA_FULL_IDENTIFIER = Pattern.compile(
             "(" + VALID_JAVA_IDENTIFIER + "\\.)*" + VALID_JAVA_IDENTIFIER);
 
-    /** Java 语言保留字（关键字）集合，不能用作标识符 */
+    /** Java 语言保留字 (关键字)集合，不能用作标识符 */
     private static final Set<String> RESERVED_NAMES = new HashSet<>(
             Arrays.asList(
                     "_",
@@ -80,12 +80,12 @@ public class NameMapper {
                     "volatile",
                     "while"));
 
-    /** 私有构造方法，禁止实例化（本类为工具类，仅提供静态方法） */
+    /** 私有构造方法，禁止实例化 (本类为工具类，仅提供静态方法) */
     private NameMapper() {
     }
 
     /**
-     * 判断给定字符串是否为 Java 保留字（关键字）
+     * 判断给定字符串是否为 Java 保留字 (关键字)
      *
      * @param str 待检查的字符串
      * @return 若为保留字则返回 true
@@ -95,7 +95,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否为有效的 Java 标识符（非空、非保留字且符合标识符规则）
+     * 判断给定字符串是否为有效的 Java 标识符 (非空、非保留字且符合标识符规则)
      *
      * @param str 待检查的字符串
      * @return 若为有效标识符则返回 true
@@ -107,7 +107,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否为有效的 Java 全限定标识符（以点号分隔的多段标识符）
+     * 判断给定字符串是否为有效的 Java 全限定标识符 (以点号分隔的多段标识符)
      *
      * @param str 待检查的字符串
      * @return 若为有效的全限定标识符则返回 true
@@ -149,7 +149,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符是否为可打印的 ASCII 字符（范围 32~126）
+     * 判断给定字符是否为可打印的 ASCII 字符 (范围 32~126)
      *
      * @param c 待检查的字符
      * @return 若为可打印字符则返回 true
@@ -159,7 +159,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定码点是否为可打印的 ASCII 码点（范围 32~126）
+     * 判断给定码点是否为可打印的 ASCII 码点 (范围 32~126)
      *
      * @param c 待检查的码点
      * @return 若为可打印 ASCII 码点则返回 true
@@ -169,8 +169,8 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定码点是否可打印（排除控制字符、格式字符、私有区、代理区及未分配字符，
-     * 空白字符中仅允许标准空格）
+     * 判断给定码点是否可打印 (排除控制字符、格式字符、私有区、代理区及未分配字符，
+     * 空白字符中仅允许标准空格)
      *
      * @param codePoint Unicode 码点
      * @return 若可打印则返回 true
@@ -216,12 +216,12 @@ public class NameMapper {
     /**
      * 返回移除以下字符后的字符串：
      * <ul>
-     * <li>不可打印字符（包括 Unicode 字符）
+     * <li>不可打印字符 (包括 Unicode 字符)
      * <li>不能作为 Java 标识符组成部分的字符
      * </ul>
      * 注意：此“中间段”方法必须与带前缀的字符串配合使用：
      * <ul>
-     * <li>可能保留对 Java 标识符起始位置无效的字符（例如数字）
+     * <li>可能保留对 Java 标识符起始位置无效的字符 (例如数字)
      * <li>结果不会检查是否为保留字
      * </ul>
      */
@@ -256,7 +256,7 @@ public class NameMapper {
     }
 
     /**
-     * 返回移除所有不可打印字符后的字符串（仅保留可打印的 ASCII 字符）
+     * 返回移除所有不可打印字符后的字符串 (仅保留可打印的 ASCII 字符)
      *
      * @param name 原始字符串
      * @return 移除不可打印字符后的字符串

@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 任务执行器实现，负责调度和执行分阶段的任务
- * 支持并行和顺序两种执行模式（类似 fork-join 模式）
+ * 支持并行和顺序两种执行模式 (类似 fork-join 模式)
  * 任务按阶段顺序执行，每个阶段可以是并行或顺序执行
  */
 public class TaskExecutor implements ITaskExecutor {
@@ -132,7 +132,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 获取当前已完成的任务数量（执行进度）
+     * 获取当前已完成的任务数量 (执行进度)
      *
      * @return 已完成的任务数
      */
@@ -154,7 +154,7 @@ public class TaskExecutor implements ITaskExecutor {
             if (running.get() || executor != null) {
                 throw new IllegalStateException("Already executing");
             }
-            executor = Executors.newFixedThreadPool(1, new com.bingbaihanji.fxdecomplie.util.NamedThreadFactory("task-s"));
+            executor = Executors.newFixedThreadPool(1, new com.bingbaihanji.fxdecomplie.util.concurrent.NamedThreadFactory("task-s"));
             running.set(true);
             terminating.set(false);
             progress.set(0);
@@ -179,7 +179,7 @@ public class TaskExecutor implements ITaskExecutor {
     /**
      * 阻塞等待执行结束
      * <p>
-     * 若执行过程中记录了错误（{@link Error}），等待结束后将其重新抛出
+     * 若执行过程中记录了错误 ({@link Error})，等待结束后将其重新抛出
      */
     @Override
     public void awaitTermination() {
@@ -250,7 +250,7 @@ public class TaskExecutor implements ITaskExecutor {
     /**
      * 逐阶段运行所有任务
      * <p>
-     * 顺序阶段（或线程数为 1 时）在当前线程逐个执行 并行阶段创建固定大小线程池并发执行，
+     * 顺序阶段 (或线程数为 1 时)在当前线程逐个执行 并行阶段创建固定大小线程池并发执行，
      * 并等待其全部完成任一阶段后若检测到终止标志则提前退出执行结束时统一停止执行器
      */
     private void runStages() {
@@ -263,7 +263,7 @@ public class TaskExecutor implements ITaskExecutor {
                     }
                 } else {
                     ExecutorService parallelExecutor = Executors.newFixedThreadPool(
-                            threads, new com.bingbaihanji.fxdecomplie.util.NamedThreadFactory("task-p"));
+                            threads, new com.bingbaihanji.fxdecomplie.util.concurrent.NamedThreadFactory("task-p"));
                     for (Runnable task : stage.getTasks()) {
                         parallelExecutor.execute(() -> wrapTask(task));
                     }

@@ -165,11 +165,11 @@ public final class TypeUpdate {
     }
 
     /**
-     * 为 InsnArg（指令参数）排队一个类型更新请求
+     * 为 InsnArg (指令参数)排队一个类型更新请求
      *
      * @param callback 当此更新的结果计算完成后执行的回调，
      *                 可以为 null —— 此时回调将原样传递结果不做改变
-     * @return 如果更新已加入队列则返回 null 如果未入队（校验失败）则返回非空结果
+     * @return 如果更新已加入队列则返回 null 如果未入队 (校验失败)则返回非空结果
      */
     public @Nullable TypeUpdateResult queueTypeUpdate(TypeUpdateInfo updateInfo,
                                                       InsnArg arg, ArgType candidateType, @Nullable ITypeUpdateCallback callback) {
@@ -191,10 +191,10 @@ public final class TypeUpdate {
     }
 
     /**
-     * 排队一个直接类型更新请求（不经过校验，标记为 direct）
+     * 排队一个直接类型更新请求 (不经过校验，标记为 direct)
      *
      * @param callback 结果计算完成后执行的回调，可以为 null
-     * @return 恒返回 null（请求已加入队列）
+     * @return 恒返回 null (请求已加入队列)
      */
     public @Nullable TypeUpdateResult queueDirectTypeUpdate(TypeUpdateInfo updateInfo, InsnArg arg, ArgType candidateType,
                                                             @Nullable ITypeUpdateCallback callback) {
@@ -426,7 +426,7 @@ public final class TypeUpdate {
     private TypeUpdateResult invokeListener(TypeUpdateInfo updateInfo, InsnNode insn, InsnArg arg, ArgType candidateType) {
         BaseInvokeNode invoke = (BaseInvokeNode) insn;
         if (isAssign(invoke, arg)) {
-            // TODO: 实现反向类型传播（从结果传播到实例）
+            // TODO: 实现反向类型传播 (从结果传播到实例)
             return SAME;
         }
         if (invoke.getInstanceArg() == arg) {
@@ -587,7 +587,7 @@ public final class TypeUpdate {
                     if (arrType.isTypeKnown() && arrType.isArray() && arrType.getArrayElement().isPrimitive()) {
                         TypeCompareEnum compResult = comparator.compareTypes(candidateType, arrType.getArrayElement());
                         if (compResult == TypeCompareEnum.WIDER) {
-                            // 允许基本类型的隐式向上转型（int a = byteArr[n]）
+                            // 允许基本类型的隐式向上转型 (int a = byteArr[n])
                             return CHANGED;
                         }
                     }
@@ -607,7 +607,7 @@ public final class TypeUpdate {
                     if (resType.isTypeKnown() && resType.isPrimitive()) {
                         TypeCompareEnum compResult = comparator.compareTypes(resType, arrayElement);
                         if (compResult == TypeCompareEnum.WIDER) {
-                            // 允许基本类型的隐式向上转型（int a = byteArr[n]）
+                            // 允许基本类型的隐式向上转型 (int a = byteArr[n])
                             return CHANGED;
                         }
                     }
@@ -633,7 +633,7 @@ public final class TypeUpdate {
                     if (putType.isTypeKnown()) {
                         TypeCompareEnum compResult = comparator.compareTypes(arrayElement, putType);
                         if (compResult == TypeCompareEnum.WIDER || compResult == TypeCompareEnum.WIDER_BY_GENERIC) {
-                            // 允许更宽的结果（即允许把任意对象放入 Object[]，或把 byte 放入 int[]）
+                            // 允许更宽的结果 (即允许把任意对象放入 Object[]，或把 byte 放入 int[])
                             return CHANGED;
                         }
                     }

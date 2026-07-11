@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * 实现 {@link ILocalVar} 接口，表示 class 文件中 LocalVariableTable 属性
  * 的单个变量条目包含变量名、类型描述符、泛型签名、寄存器编号以及
- * 在字节码中的有效范围（起止偏移量）
+ * 在字节码中的有效范围 (起止偏移量)
  * </p>
  */
 public class JavaLocalVar implements ILocalVar {
@@ -21,7 +21,7 @@ public class JavaLocalVar implements ILocalVar {
     private final int startOffset;
     /** 变量在字节码中的结束偏移量 */
     private final int endOffset;
-    /** 寄存器编号（可能被 shiftRegNum 调整） */
+    /** 寄存器编号 (可能被 shiftRegNum 调整) */
     private int regNum;
     /** 泛型签名信息，可能为 null */
     @Nullable
@@ -60,7 +60,7 @@ public class JavaLocalVar implements ILocalVar {
      * 将局部变量号转换为寄存器号
      * <p>
      * 在 Java 字节码中，方法参数先于局部变量占用寄存器槽位
-     * 此方法通过加上 maxStack（即方法参数占用的槽位数）将
+     * 此方法通过加上 maxStack (即方法参数占用的槽位数)将
      * 局部变量索引偏移为实际的寄存器编号
      * </p>
      *

@@ -16,14 +16,14 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenE
 
 /**
  * 包节点，表示 DEX 文件中的包结构
- * 维护包的层级关系（父包、子包）、包含的类列表，以及包别名（用于重命名）
+ * 维护包的层级关系 (父包、子包)、包含的类列表，以及包别名 (用于重命名)
  */
 public class PackageNode extends LineAttrNode
         implements IPackageUpdate, IDexNode, ICodeNodeRef, Comparable<PackageNode> {
 
     /** 根节点引用 */
     private final RootNode root;
-    /** 原始包信息（不含别名） */
+    /** 原始包信息 (不含别名) */
     private final PackageInfo pkgInfo;
     /** 父包节点，顶层包时为 null */
     private final @Nullable PackageNode parentPkg;
@@ -56,7 +56,7 @@ public class PackageNode extends LineAttrNode
      * 获取或构建指定全限定包名对应的包节点，并将给定类添加到该包中
      *
      * @param root    根节点
-     * @param fullPkg 全限定包名（以 '.' 分隔）
+     * @param fullPkg 全限定包名 (以 '.' 分隔)
      * @param cls     要添加到包中的类节点
      * @return 对应的包节点
      */
@@ -71,7 +71,7 @@ public class PackageNode extends LineAttrNode
      * 会自动创建缺失的父包节点
      *
      * @param root    根节点
-     * @param fullPkg 全限定包名（以 '.' 分隔）
+     * @param fullPkg 全限定包名 (以 '.' 分隔)
      * @return 对应的包节点
      */
     public static PackageNode getOrBuild(RootNode root, String fullPkg) {
@@ -115,7 +115,7 @@ public class PackageNode extends LineAttrNode
      *   <li>包含 '/' 的名称：按 '/' 转换为 '.' 后作为全限定别名</li>
      *   <li>以 '.' 开头的名称：去掉开头的点作为全限定别名</li>
      *   <li>包含 '.' 的名称：作为全限定别名</li>
-     *   <li>其他：作为叶子别名（仅重命名当前包的最后一段）</li>
+     *   <li>其他：作为叶子别名 (仅重命名当前包的最后一段)</li>
      * </ul>
      *
      * @param newName     新名称
@@ -143,7 +143,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 设置叶子包别名（仅影响当前包的最后一段名称）
+     * 设置叶子包别名 (仅影响当前包的最后一段名称)
      * 父包路径保持不变
      *
      * @param alias      新的叶子名称
@@ -161,7 +161,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 设置全限定包别名（替换整个包路径）
+     * 设置全限定包别名 (替换整个包路径)
      *
      * @param fullAlias  新的全限定包名
      * @param runUpdates 是否立即通知子包和类更新
@@ -203,21 +203,21 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 获取包的短名称（最后一段）
+     * 获取包的短名称 (最后一段)
      */
     public String getName() {
         return pkgInfo.getName();
     }
 
     /**
-     * 获取包的全限定名称（以 '.' 分隔的完整路径）
+     * 获取包的全限定名称 (以 '.' 分隔的完整路径)
      */
     public String getFullName() {
         return pkgInfo.getFullName();
     }
 
     /**
-     * 获取原始包信息（不含别名）
+     * 获取原始包信息 (不含别名)
      */
     public PackageInfo getPkgInfo() {
         return pkgInfo;
@@ -231,7 +231,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 判断当前包是否设置了别名（名称与原始包不同）
+     * 判断当前包是否设置了别名 (名称与原始包不同)
      */
     public boolean hasAlias() {
         if (pkgInfo == aliasPkgInfo) {
@@ -241,7 +241,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 判断父包是否设置了别名（当前包的别名父包与原始父包不同）
+     * 判断父包是否设置了别名 (当前包的别名父包与原始父包不同)
      *
      * @return 如果父包设置了别名返回 true，否则返回 false
      */
@@ -276,7 +276,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 判断当前包是否为根包（无父包）
+     * 判断当前包是否为根包 (无父包)
      *
      * @return 如果是根包返回 true，否则返回 false
      */
@@ -285,7 +285,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 判断当前包是否为叶子包（无子包）
+     * 判断当前包是否为叶子包 (无子包)
      *
      * @return 如果是叶子包返回 true，否则返回 false
      */
@@ -344,7 +344,7 @@ public class PackageNode extends LineAttrNode
     }
 
     /**
-     * 判断当前包是否为空（既没有类也没有子包）
+     * 判断当前包是否为空 (既没有类也没有子包)
      *
      * @return 如果包为空返回 true，否则返回 false
      */

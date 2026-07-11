@@ -84,7 +84,7 @@ public class MethodUtils {
     }
 
     /**
-     * 判断方法调用中的某个参数是否应被跳过（不生成到反编译源码中）
+     * 判断方法调用中的某个参数是否应被跳过 (不生成到反编译源码中)
      *
      * @param invokeNode 方法调用指令
      * @param arg        待判断的参数
@@ -104,7 +104,7 @@ public class MethodUtils {
     }
 
     /**
-     * 从 {@code startCls} 开始，在类继承体系中查找同名且参数个数相同的方法（即是否存在重载）
+     * 从 {@code startCls} 开始，在类继承体系中查找同名且参数个数相同的方法 (即是否存在重载)
      * 注意：{@code startCls} 可能与 {@code mthInfo.getDeclClass()} 不同
      *
      * @param startCls 查找的起始类类型
@@ -203,7 +203,7 @@ public class MethodUtils {
     }
 
     /**
-     * 获取方法所重写的基方法（若存在重写关系）
+     * 获取方法所重写的基方法 (若存在重写关系)
      *
      * @param mth 目标方法
      * @return 被重写的基方法详情 若不存在重写关系则返回 {@code null}

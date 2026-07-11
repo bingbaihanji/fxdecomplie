@@ -220,7 +220,7 @@ public class ProcessVariables extends AbstractVisitor {
             return;
         }
         checkCodeVars(mth, codeVars);
-        // TODO: 若已应用调试信息，则按名称合并代码变量（需要检查变量作用域）
+        // TODO: 若已应用调试信息，则按名称合并代码变量 (需要检查变量作用域)
 
         // 收集所有变量的使用情况
         CollectUsageRegionVisitor usageCollector = new CollectUsageRegionVisitor();

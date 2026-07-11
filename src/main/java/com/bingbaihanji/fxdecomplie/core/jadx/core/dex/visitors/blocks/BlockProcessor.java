@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks.BlockSplitter.connect;
 
 /**
- * 基本块处理器，负责构建和优化方法的控制流图（CFG）
+ * 基本块处理器，负责构建和优化方法的控制流图 (CFG)
  * 主要职责包括：计算支配树、识别循环结构、拆分和合并基本块、消除不可达块等
  */
 public class BlockProcessor extends AbstractVisitor {
@@ -42,7 +42,7 @@ public class BlockProcessor extends AbstractVisitor {
 
     /**
      * 处理基本块树的主流程，包括：移除不可达块、计算支配树、修复多入口循环、
-     * 迭代修改块树（合并常量返回、拆分循环等）、注册循环信息、计算后支配树
+     * 迭代修改块树 (合并常量返回、拆分循环等)、注册循环信息、计算后支配树
      */
     private static void processBlocksTree(MethodNode mth) {
         removeUnreachableBlocks(mth);
@@ -95,7 +95,7 @@ public class BlockProcessor extends AbstractVisitor {
      * <pre>
      * - 支配节点
      * - 支配边界
-     * - 后支配节点（仅当方法添加了 {@link AFlag#COMPUTE_POST_DOM} 标志时）
+     * - 后支配节点 (仅当方法添加了 {@link AFlag#COMPUTE_POST_DOM} 标志时)
      * - 循环及嵌套循环信息
      * </pre>
      * <p>
@@ -116,7 +116,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 更新所有基本块的干净后继列表（排除合成块等）
+     * 更新所有基本块的干净后继列表 (排除合成块等)
      */
     static void updateCleanSuccessors(MethodNode mth) {
         mth.getBasicBlocks().forEach(BlockNode::updateCleanSuccessors);
@@ -431,7 +431,7 @@ public class BlockProcessor extends AbstractVisitor {
 
     /**
      * 如果基本块仅包含一条 'move' 指令且所有前驱都是 'switch' 或 'if' 块，则复制该块
-     * 由于这类 move 块可能被编译器去重，复制它有助于解析 switch 分支顺序并检测 fallthrough（贯穿）
+     * 由于这类 move 块可能被编译器去重，复制它有助于解析 switch 分支顺序并检测 fallthrough (贯穿)
      */
     private static boolean duplicateSimpleMoveBlock(MethodNode mth, BlockNode block) {
         List<InsnNode> insns = block.getInstructions();
@@ -536,7 +536,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 在循环头之前插入一个简单的路径块（前置头块 pre-header）
+     * 在循环头之前插入一个简单的路径块 (前置头块 pre-header)
      */
     private static boolean insertPreHeader(MethodNode mth, LoopInfo loop) {
         BlockNode start = loop.getStart();
@@ -677,7 +677,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 当返回块存在多个前驱时，拆分（复制）该返回块
+     * 当返回块存在多个前驱时，拆分 (复制)该返回块
      */
     private static boolean splitReturn(MethodNode mth, BlockNode returnBlock) {
         if (returnBlock.contains(AFlag.SYNTHETIC)
@@ -720,7 +720,7 @@ public class BlockProcessor extends AbstractVisitor {
     }
 
     /**
-     * 当抛出块（throw）关联多个不同的异常处理器时，拆分（复制）该抛出块，
+     * 当抛出块 (throw)关联多个不同的异常处理器时，拆分 (复制)该抛出块，
      * 使每个异常处理器拥有独立的抛出块
      */
     private static boolean splitThrow(MethodNode mth, BlockNode exitBlock) {

@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.CommentData;
-import com.bingbaihanji.fxdecomplie.util.AtomicFile;
+import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ public final class CommentManager {
     /**
      * 分段锁数组：按 lockKey 的哈希映射到固定数量的锁，保证同一文件始终映射到同一把锁
      * <p>
-     * 相比"每 key 一把锁的 ConcurrentHashMap"，分段锁内存有界（永不增长、无泄漏），
+     * 相比"每 key 一把锁的 ConcurrentHashMap"，分段锁内存有界 (永不增长、无泄漏)，
      * 且不存在"移除锁条目 → 其他线程重建新锁"导致两个线程持不同锁进入临界区的竞态
      * 不同文件偶发共享同一分段锁只会带来可忽略的额外串行化，不影响正确性
      */

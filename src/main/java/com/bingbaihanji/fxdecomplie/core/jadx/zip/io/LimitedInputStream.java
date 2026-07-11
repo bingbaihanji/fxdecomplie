@@ -49,7 +49,7 @@ public class LimitedInputStream extends FilterInputStream {
     /**
      * 读取单个字节，并更新已读取计数
      *
-     * @return 读取到的字节（0-255），如果流已结束则返回 -1
+     * @return 读取到的字节 (0-255)，如果流已结束则返回 -1
      */
     @Override
     public int read() throws IOException {

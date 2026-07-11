@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 /**
  * 访问器抽象基类
  * <p>
- * 为 {@link IDexTreeVisitor} 提供空实现（no-op），子类只需重写自己关心的方法即可，
+ * 为 {@link IDexTreeVisitor} 提供空实现 (no-op)，子类只需重写自己关心的方法即可，
  * 无需实现全部接口方法
  */
 public abstract class AbstractVisitor implements IDexTreeVisitor {

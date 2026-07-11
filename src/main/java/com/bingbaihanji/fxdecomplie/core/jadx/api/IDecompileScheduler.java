@@ -7,7 +7,7 @@ import java.util.List;
  * <p>
  * 负责将待反编译的类列表拆分为多个批次，
  * 以支持并行反编译和进度跟踪不同的实现可以使用不同的
- * 分批策略（如按类数量、按依赖关系等）
+ * 分批策略 (如按类数量、按依赖关系等)
  */
 public interface IDecompileScheduler {
     /**

@@ -5,12 +5,12 @@ import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaClassReader;
 import com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java.JavaLoadResult;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
 import java.util.*;
 
 /**
- * 将项目工作区上下文转换为 jadx 可消费的 class reader 集合。
+ * 将项目工作区上下文转换为 jadx 可消费的 class reader 集合 
  */
 public final class JadxInputBuilder {
 

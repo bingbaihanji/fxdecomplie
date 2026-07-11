@@ -73,7 +73,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 触发该类的反编译操作并加载内部列表（字段、方法等）
+     * 触发该类的反编译操作并加载内部列表 (字段、方法等)
      * 如果已经加载过，则不会重复执行
      */
     public void decompile() {
@@ -116,7 +116,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 判断该类是否不包含可生成的代码（例如被标记为不生成）
+     * 判断该类是否不包含可生成的代码 (例如被标记为不生成)
      *
      * @return 如果该类不生成代码则返回 true
      */
@@ -325,7 +325,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的名称（可能是别名）
+     * 获取该类的名称 (可能是别名)
      *
      * @return 类名
      */
@@ -345,7 +345,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的原始名称（未经别名处理）
+     * 获取该类的原始名称 (未经别名处理)
      *
      * @return 原始类名
      */
@@ -382,7 +382,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取原始的顶层父类（基于声明结构，不考虑代码移动或内联）
+     * 获取原始的顶层父类 (基于声明结构，不考虑代码移动或内联)
      *
      * @return 原始顶层父类，如果自身已是顶层类则返回自身
      */
@@ -393,7 +393,7 @@ public final class JavaClass implements JavaNode {
     /**
      * 返回包含该类代码的顶层父类
      * <p>
-     * 由于代码可能被移动（move）或内联（inline），
+     * 由于代码可能被移动 (move)或内联 (inline)，
      * 代码父类可能与原始父类不同
      * </p>
      *
@@ -408,7 +408,7 @@ public final class JavaClass implements JavaNode {
     /**
      * 返回包含该类代码的父类
      * <p>
-     * 由于代码可能被移动（move）或内联（inline），
+     * 由于代码可能被移动 (move)或内联 (inline)，
      * 代码父类可能与原始父类不同
      * </p>
      *
@@ -428,7 +428,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的访问标志信息（public、abstract 等）
+     * 获取该类的访问标志信息 (public、abstract 等)
      *
      * @return 访问信息对象
      */
@@ -437,7 +437,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的内部类列表（会触发按需加载）
+     * 获取该类的内部类列表 (会触发按需加载)
      *
      * @return 内部类列表
      */
@@ -447,7 +447,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取被内联到该类中的类列表（会触发按需加载）
+     * 获取被内联到该类中的类列表 (会触发按需加载)
      *
      * @return 内联类列表
      */
@@ -457,7 +457,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的字段列表（会触发按需加载）
+     * 获取该类的字段列表 (会触发按需加载)
      *
      * @return 字段列表
      */
@@ -467,7 +467,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的方法列表（会触发按需加载）
+     * 获取该类的方法列表 (会触发按需加载)
      *
      * @return 方法列表
      */
@@ -477,7 +477,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 根据方法的短标识（shortId）查找方法
+     * 根据方法的短标识 (shortId)查找方法
      *
      * @param shortId 方法短标识
      * @return 匹配的方法，未找到则返回 null
@@ -502,7 +502,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类依赖的类总数（包含传递依赖）
+     * 获取该类依赖的类总数 (包含传递依赖)
      *
      * @return 依赖总数
      */

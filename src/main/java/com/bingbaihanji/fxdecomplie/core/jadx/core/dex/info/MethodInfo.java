@@ -141,7 +141,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
     }
 
     /**
-     * 生成方法签名字符串（使用原始方法名）
+     * 生成方法签名字符串 (使用原始方法名)
      *
      * @param includeRetType 是否包含返回类型
      * @return 方法签名字符串
@@ -229,12 +229,12 @@ public final class MethodInfo implements Comparable<MethodInfo> {
         return argTypes.size();
     }
 
-    /** 判断该方法是否为构造方法（方法名为 {@code <init>}） */
+    /** 判断该方法是否为构造方法 (方法名为 {@code <init>}) */
     public boolean isConstructor() {
         return "<init>".equals(name);
     }
 
-    /** 判断该方法是否为静态初始化方法（方法名为 {@code <clinit>}） */
+    /** 判断该方法是否为静态初始化方法 (方法名为 {@code <clinit>}) */
     public boolean isClassInit() {
         return "<clinit>".equals(name);
     }
@@ -279,7 +279,7 @@ public final class MethodInfo implements Comparable<MethodInfo> {
         return hash;
     }
 
-    /** 判断两个方法信息是否相等（方法短标识与声明类均相同即视为相等） */
+    /** 判断两个方法信息是否相等 (方法短标识与声明类均相同即视为相等) */
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

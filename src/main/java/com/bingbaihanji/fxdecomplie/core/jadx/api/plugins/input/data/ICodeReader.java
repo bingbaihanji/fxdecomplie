@@ -22,10 +22,10 @@ public interface ICodeReader {
     /** 获取参数起始寄存器的编号 */
     int getArgsStartReg();
 
-    /** 获取指令单元（16位字）总数 */
+    /** 获取指令单元 (16位字)总数 */
     int getUnitsCount();
 
-    /** 获取调试信息（可能为 {@code null}） */
+    /** 获取调试信息 (可能为 {@code null}) */
     @Nullable
     IDebugInfo getDebugInfo();
 

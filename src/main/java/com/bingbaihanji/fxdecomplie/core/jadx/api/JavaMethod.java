@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 对方法节点（{@link MethodNode}）的对外封装，向 API 使用者提供方法的名称、
+ * 对方法节点 ({@link MethodNode})的对外封装，向 API 使用者提供方法的名称、
  * 参数、返回类型、引用关系等信息
  */
 public final class JavaMethod implements JavaNode {
@@ -30,7 +30,7 @@ public final class JavaMethod implements JavaNode {
         this.mth = m;
     }
 
-    /** 获取方法名（使用别名，可能经过反混淆重命名） */
+    /** 获取方法名 (使用别名，可能经过反混淆重命名) */
     @Override
     public String getName() {
         return mth.getAlias();
@@ -48,13 +48,13 @@ public final class JavaMethod implements JavaNode {
         return parent;
     }
 
-    /** 获取最顶层的外部类（内部类会向上追溯到顶层类） */
+    /** 获取最顶层的外部类 (内部类会向上追溯到顶层类) */
     @Override
     public JavaClass getTopParentClass() {
         return parent.getTopParentClass();
     }
 
-    /** 获取方法的访问标志（public/private/static 等） */
+    /** 获取方法的访问标志 (public/private/static 等) */
     public AccessInfo getAccessFlags() {
         return mth.getAccessFlags();
     }
@@ -76,7 +76,7 @@ public final class JavaMethod implements JavaNode {
         return ArgType.tryToResolveClassAlias(mth.root(), retType);
     }
 
-    /** 获取引用了该方法的节点列表（即哪些地方使用了本方法） */
+    /** 获取引用了该方法的节点列表 (即哪些地方使用了本方法) */
     @Override
     public List<JavaNode> getUseIn() {
         return getDeclaringClass().getRootDecompiler().convertNodes(mth.getUseIn());
@@ -97,7 +97,7 @@ public final class JavaMethod implements JavaNode {
         return mth.callsSelf();
     }
 
-    /** 获取与该方法存在重写关系（覆盖/被覆盖）的相关方法列表 */
+    /** 获取与该方法存在重写关系 (覆盖/被覆盖)的相关方法列表 */
     public List<JavaMethod> getOverrideRelatedMethods() {
         MethodOverrideAttr ovrdAttr = mth.get(AType.METHOD_OVERRIDE);
         if (ovrdAttr == null) {
@@ -115,12 +115,12 @@ public final class JavaMethod implements JavaNode {
         return mth.methodInfo().isConstructor();
     }
 
-    /** 判断该方法是否为类初始化方法（静态初始化块 &lt;clinit&gt;） */
+    /** 判断该方法是否为类初始化方法 (静态初始化块 &lt;clinit&gt;) */
     public boolean isClassInit() {
         return mth.methodInfo().isClassInit();
     }
 
-    /** 获取该方法定义在源码中的位置（偏移量） */
+    /** 获取该方法定义在源码中的位置 (偏移量) */
     @Override
     public int getDefPos() {
         return mth.getDefPosition();

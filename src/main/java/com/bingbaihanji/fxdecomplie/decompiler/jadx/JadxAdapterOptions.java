@@ -3,9 +3,9 @@ package com.bingbaihanji.fxdecomplie.decompiler.jadx;
 import java.util.Map;
 
 /**
- * 项目层 jadx 适配选项。
+ * 项目层 jadx 适配选项 
  * <p>
- * 这些选项不直接映射到 {@code JadxArgs},而是控制 fxdecomplie 如何向 jadx 内核提供输入。
+ * 这些选项不直接映射到 {@code JadxArgs},而是控制 fxdecomplie 如何向 jadx 内核提供输入 
  */
 public record JadxAdapterOptions(
         boolean loadWorkspaceDependencies,

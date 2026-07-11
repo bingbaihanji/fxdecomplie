@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeCompareEnum;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.util.JadxConsts;
+import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import com.bingbaihanji.fxdecomplie.util.collection.ListUtils;
 import com.google.errorprone.annotations.Immutable;
 import org.jetbrains.annotations.NotNull;
@@ -21,19 +21,19 @@ import java.util.function.Function;
 /**
  * 抽象参数类型表示类，用于描述 Dalvik 字节码中寄存器、字段、方法参数和返回值的类型
  * <p>
- * 采用不可变设计（{@code @Immutable}），通过静态工厂方法创建各类类型的实例
+ * 采用不可变设计 ({@code @Immutable})，通过静态工厂方法创建各类类型的实例
  * 支持基本类型、对象类型、数组类型、泛型类型、通配符类型和未知类型等多种类型表示
  * <p>
  * 类型层次结构：
  * <ul>
- *   <li>{@link PrimitiveArg} - 基本类型（int、boolean、long 等）</li>
+ *   <li>{@link PrimitiveArg} - 基本类型 (int、boolean、long 等)</li>
  *   <li>{@link ObjectType} - 对象类型</li>
- *   <li>{@link GenericType} - 泛型类型参数（如 {@code T}、{@code E extends Comparable}）</li>
- *   <li>{@link GenericObject} - 参数化泛型对象（如 {@code List<String>}）</li>
- *   <li>{@link OuterGenericObject} - 外部泛型对象（如 {@code Outer<T>.Inner}）</li>
- *   <li>{@link WildcardType} - 通配符类型（如 {@code ? extends Number}）</li>
+ *   <li>{@link GenericType} - 泛型类型参数 (如 {@code T}、{@code E extends Comparable})</li>
+ *   <li>{@link GenericObject} - 参数化泛型对象 (如 {@code List<String>})</li>
+ *   <li>{@link OuterGenericObject} - 外部泛型对象 (如 {@code Outer<T>.Inner})</li>
+ *   <li>{@link WildcardType} - 通配符类型 (如 {@code ? extends Number})</li>
  *   <li>{@link ArrayArg} - 数组类型</li>
- *   <li>{@link UnknownArg} - 未知类型（待类型推断确定）</li>
+ *   <li>{@link UnknownArg} - 未知类型 (待类型推断确定)</li>
  * </ul>
  */
 @Immutable
@@ -80,16 +80,16 @@ public abstract class ArgType {
     public static final ArgType RUNTIME_EXCEPTION = objectNoCache(JadxConsts.CLASS_RUNTIME_EXCEPTION);
     /** Object[] 数组类型 */
     public static final ArgType OBJECT_ARRAY = array(OBJECT);
-    /** 无界通配符类型（?） */
+    /** 无界通配符类型 (?) */
     public static final ArgType WILDCARD = wildcard();
 
-    // ==================== 未知类型常量（用于类型推断） ====================
+    // ==================== 未知类型常量 (用于类型推断) ====================
 
     /** 完全未知类型，可能为任何类型 */
     public static final ArgType UNKNOWN = unknown(PrimitiveType.values());
-    /** 未知对象类型（可能是对象或数组） */
+    /** 未知对象类型 (可能是对象或数组) */
     public static final ArgType UNKNOWN_OBJECT = unknown(PrimitiveType.OBJECT, PrimitiveType.ARRAY);
-    /** 未知对象类型（不含数组） */
+    /** 未知对象类型 (不含数组) */
     public static final ArgType UNKNOWN_OBJECT_NO_ARRAY = unknown(PrimitiveType.OBJECT);
     /** 未知数组类型 */
     public static final ArgType UNKNOWN_ARRAY = array(UNKNOWN);
@@ -109,7 +109,7 @@ public abstract class ArgType {
     public static final ArgType NARROW_INTEGRAL = unknown(
             PrimitiveType.INT, PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR);
 
-    /** 窄数值类型（不含 boolean）：可能为 int、float、short、byte、char */
+    /** 窄数值类型 (不含 boolean)：可能为 int、float、short、byte、char */
     public static final ArgType NARROW_NUMBERS_NO_BOOL = unknown(
             PrimitiveType.INT, PrimitiveType.FLOAT,
             PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR);
@@ -118,7 +118,7 @@ public abstract class ArgType {
     public static final ArgType NARROW_NEG_NUMBERS = unknown(
             PrimitiveType.INT, PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.FLOAT);
 
-    /** 窄数值类型（不含 float）：可能为 int、boolean、short、byte、char */
+    /** 窄数值类型 (不含 float)：可能为 int、boolean、short、byte、char */
     public static final ArgType NARROW_NUMBERS_NO_FLOAT = unknown(
             PrimitiveType.INT, PrimitiveType.BOOLEAN,
             PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR);
@@ -147,22 +147,22 @@ public abstract class ArgType {
     }
 
     /**
-     * 创建不走缓存的对象类型实例（用于内部常量初始化，避免循环依赖）
+     * 创建不走缓存的对象类型实例 (用于内部常量初始化，避免循环依赖)
      */
     private static ArgType objectNoCache(String obj) {
         return new ObjectType(obj);
     }
 
     /**
-     * 根据类名创建对象类型常用类型（Object、String、Class、Throwable、Exception）
+     * 根据类名创建对象类型常用类型 (Object、String、Class、Throwable、Exception)
      * 会返回预定义的常量实例
      *
-     * @param obj 类的内部名称（如 "java/lang/String"）
+     * @param obj 类的内部名称 (如 "java/lang/String")
      * @return 对象类型实例
      */
     public static ArgType object(String obj) {
         // 待办：添加缓存
-        String cleanObjectName = com.bingbaihanji.fxdecomplie.util.SmaliNameUtils.smaliToJava(obj);
+        String cleanObjectName = com.bingbaihanji.fxdecomplie.util.jvm.SmaliNameUtils.smaliToJava(obj);
         switch (cleanObjectName) {
             case JadxConsts.CLASS_OBJECT:
                 return OBJECT;
@@ -180,7 +180,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 创建无边界约束的泛型类型参数（如 {@code T}）
+     * 创建无边界约束的泛型类型参数 (如 {@code T})
      *
      * @param type 泛型参数名称
      * @return 泛型类型实例
@@ -190,37 +190,37 @@ public abstract class ArgType {
     }
 
     /**
-     * 创建带单个上界的泛型类型参数（如 {@code T extends Comparable}）
+     * 创建带单个上界的泛型类型参数 (如 {@code T extends Comparable})
      */
     public static ArgType genericType(String type, ArgType extendType) {
         return new GenericType(type, extendType);
     }
 
     /**
-     * 创建带多个上界的泛型类型参数（如 {@code T extends Comparable & Serializable}）
+     * 创建带多个上界的泛型类型参数 (如 {@code T extends Comparable & Serializable})
      */
     public static ArgType genericType(String type, List<ArgType> extendTypes) {
         return new GenericType(type, extendTypes);
     }
 
     /**
-     * 创建无界通配符类型（{@code ?}）
+     * 创建无界通配符类型 ({@code ?})
      */
     public static ArgType wildcard() {
         return new WildcardType(OBJECT, WildcardBound.UNBOUND);
     }
 
     /**
-     * 创建带边界的通配符类型（如 {@code ? extends Number} 或 {@code ? super String}）
+     * 创建带边界的通配符类型 (如 {@code ? extends Number} 或 {@code ? super String})
      */
     public static ArgType wildcard(ArgType obj, WildcardBound bound) {
         return new WildcardType(obj, bound);
     }
 
     /**
-     * 创建参数化泛型对象类型（如 {@code List<String>}、{@code Map<K, V>}）
+     * 创建参数化泛型对象类型 (如 {@code List<String>}、{@code Map<K, V>})
      *
-     * @param obj      基础对象类型（必须为对象类型）
+     * @param obj      基础对象类型 (必须为对象类型)
      * @param generics 泛型参数列表
      * @return 泛型对象类型实例
      */
@@ -231,14 +231,14 @@ public abstract class ArgType {
         return new GenericObject(obj.getObject(), generics);
     }
 
-    /** 创建参数化泛型对象类型（可变参数形式的泛型参数） */
+    /** 创建参数化泛型对象类型 (可变参数形式的泛型参数) */
     public static ArgType generic(ArgType obj, ArgType... generics) {
         return generic(obj, Arrays.asList(generics));
     }
 
     /** 根据类名创建参数化泛型对象类型 */
     public static ArgType generic(String obj, List<ArgType> generics) {
-        return new GenericObject(com.bingbaihanji.fxdecomplie.util.SmaliNameUtils.smaliToJava(obj), generics);
+        return new GenericObject(com.bingbaihanji.fxdecomplie.util.jvm.SmaliNameUtils.smaliToJava(obj), generics);
     }
 
     /** 根据类名创建带单个泛型参数的参数化泛型对象类型 */
@@ -246,21 +246,21 @@ public abstract class ArgType {
         return generic(obj, Collections.singletonList(generic));
     }
 
-    /** 根据类名创建参数化泛型对象类型（仅用于测试） */
+    /** 根据类名创建参数化泛型对象类型 (仅用于测试) */
     @TestOnly
     public static ArgType generic(String obj, ArgType... generics) {
         return generic(obj, Arrays.asList(generics));
     }
 
     /**
-     * 创建外部泛型对象类型（如 {@code Outer<T>.Inner}）
+     * 创建外部泛型对象类型 (如 {@code Outer<T>.Inner})
      */
     public static ArgType outerGeneric(ArgType genericOuterType, ArgType innerType) {
         return new OuterGenericObject((ObjectType) genericOuterType, (ObjectType) innerType);
     }
 
     /**
-     * 创建一维数组类型（如 {@code int[]}、{@code String[]}）
+     * 创建一维数组类型 (如 {@code int[]}、{@code String[]})
      *
      * @param vtype 数组元素类型
      * @return 数组类型实例
@@ -270,7 +270,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 创建指定维度的数组类型（如 {@code int[][]} 对应 dimension=2）
+     * 创建指定维度的数组类型 (如 {@code int[][]} 对应 dimension=2)
      *
      * @param type      数组元素类型
      * @param dimension 数组维度
@@ -288,7 +288,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 创建未知类型，指定可能的类型集合（用于类型推断）
+     * 创建未知类型，指定可能的类型集合 (用于类型推断)
      *
      * @param types 可能的类型数组
      * @return 未知类型实例
@@ -314,7 +314,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 判断 {@code type} 是否为 {@code of} 的实例（子类型关系）
+     * 判断 {@code type} 是否为 {@code of} 的实例 (子类型关系)
      *
      * @param root 根节点，提供类继承关系查询
      * @param type 待判断类型
@@ -369,7 +369,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 解析类型描述符字符串（如 {@code "Ljava/lang/String;"}、{@code "[I"}、{@code "TT;"}）为 {@link ArgType}
+     * 解析类型描述符字符串 (如 {@code "Ljava/lang/String;"}、{@code "[I"}、{@code "TT;"})为 {@link ArgType}
      *
      * @param type 类型描述符字符串
      * @return 解析得到的类型
@@ -396,7 +396,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 解析单个基本类型描述符字符（如 {@code 'I'} 对应 int，{@code 'Z'} 对应 boolean）
+     * 解析单个基本类型描述符字符 (如 {@code 'I'} 对应 int，{@code 'Z'} 对应 boolean)
      *
      * @param f 基本类型描述符字符
      * @return 对应的基本类型
@@ -429,7 +429,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 尝试将类型中的类名解析为其别名（如反混淆后的重命名），递归处理数组元素、通配符与泛型实参
+     * 尝试将类型中的类名解析为其别名 (如反混淆后的重命名)，递归处理数组元素、通配符与泛型实参
      *
      * @param root 根节点，提供类信息与别名查询
      * @param type 待解析的类型
@@ -476,7 +476,7 @@ public abstract class ArgType {
         return ListUtils.map(types, t -> tryToResolveClassAlias(root, t));
     }
 
-    /** 类型是否已确定（非未知类型） */
+    /** 类型是否已确定 (非未知类型) */
     public boolean isTypeKnown() {
         return false;
     }
@@ -486,7 +486,7 @@ public abstract class ArgType {
         return null;
     }
 
-    // ==================== 类型查询与访问方法（默认实现，由子类按需重写） ====================
+    // ==================== 类型查询与访问方法 (默认实现，由子类按需重写) ====================
 
     /** 是否为基本类型 */
     public boolean isPrimitive() {
@@ -503,12 +503,12 @@ public abstract class ArgType {
         return false;
     }
 
-    /** 是否为带泛型信息的类型（参数化泛型对象或通配符） */
+    /** 是否为带泛型信息的类型 (参数化泛型对象或通配符) */
     public boolean isGeneric() {
         return false;
     }
 
-    /** 是否为泛型类型参数（类型变量，如 {@code T}） */
+    /** 是否为泛型类型参数 (类型变量，如 {@code T}) */
     public boolean isGenericType() {
         return false;
     }
@@ -523,7 +523,7 @@ public abstract class ArgType {
         return Collections.emptyList();
     }
 
-    /** 设置泛型类型参数的上界列表（默认空实现，仅泛型类型参数支持） */
+    /** 设置泛型类型参数的上界列表 (默认空实现，仅泛型类型参数支持) */
     public void setExtendTypes(List<ArgType> extendTypes) {
     }
 
@@ -532,7 +532,7 @@ public abstract class ArgType {
         return null;
     }
 
-    /** 获取通配符的边界（上界/下界/无界），非通配符返回 {@code null} */
+    /** 获取通配符的边界 (上界/下界/无界)，非通配符返回 {@code null} */
     public WildcardBound getWildcardBound() {
         return null;
     }
@@ -562,7 +562,7 @@ public abstract class ArgType {
         return 0;
     }
 
-    /** 获取数组的元素类型（降低一维），非数组返回 {@code null} */
+    /** 获取数组的元素类型 (降低一维)，非数组返回 {@code null} */
     public ArgType getArrayElement() {
         return null;
     }
@@ -578,15 +578,15 @@ public abstract class ArgType {
     /** 从可能的类型集合中选取首选的确定类型 */
     public abstract ArgType selectFirst();
 
-    /** 获取该类型所有可能的基本类型集合（用于类型推断） */
+    /** 获取该类型所有可能的基本类型集合 (用于类型推断) */
     public abstract PrimitiveType[] getPossibleTypes();
 
-    /** 该类型是否可能是对象类型（已确定为对象或未知类型中包含对象） */
+    /** 该类型是否可能是对象类型 (已确定为对象或未知类型中包含对象) */
     public boolean canBeObject() {
         return isObject() || (!isTypeKnown() && contains(PrimitiveType.OBJECT));
     }
 
-    /** 该类型是否可能是数组类型（已确定为数组或未知类型中包含数组） */
+    /** 该类型是否可能是数组类型 (已确定为数组或未知类型中包含数组) */
     public boolean canBeArray() {
         return isArray() || (!isTypeKnown() && contains(PrimitiveType.ARRAY));
     }
@@ -597,7 +597,7 @@ public abstract class ArgType {
                 || (!isTypeKnown() && contains(primitiveType));
     }
 
-    /** 该类型是否可能是任意数值类型（非对象且非数组的基本类型） */
+    /** 该类型是否可能是任意数值类型 (非对象且非数组的基本类型) */
     public boolean canBeAnyNumber() {
         if (isPrimitive()) {
             return !getPrimitiveType().isObjectOrArray();
@@ -642,7 +642,7 @@ public abstract class ArgType {
         return false;
     }
 
-    /** 递归判断该类型是否包含类型变量（泛型参数、通配符、泛型实参、外部类型或数组元素中的类型变量） */
+    /** 递归判断该类型是否包含类型变量 (泛型参数、通配符、泛型实参、外部类型或数组元素中的类型变量) */
     public boolean containsTypeVariable() {
         if (isGenericType()) {
             return true;
@@ -681,7 +681,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 递归访问此类型的所有子类型（数组元素、通配符类型、泛型参数）
+     * 递归访问此类型的所有子类型 (数组元素、通配符类型、泛型参数)
      * 若需提前退出遍历，令 visitor 返回非 null 值即可，该值将作为结果返回
      *
      * @param visitor 类型访问器
@@ -731,7 +731,7 @@ public abstract class ArgType {
         return hash;
     }
 
-    /** 由各子类实现的类型内容相等比较（在 {@link #equals(Object)} 完成哈希与类型校验后调用） */
+    /** 由各子类实现的类型内容相等比较 (在 {@link #equals(Object)} 完成哈希与类型校验后调用) */
     abstract boolean internalEquals(Object obj);
 
     @Override
@@ -781,7 +781,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 已知类型基类所有类型确定（非未知）的子类继承此类
+     * 已知类型基类所有类型确定 (非未知)的子类继承此类
      */
     private abstract static class KnownType extends ArgType {
 
@@ -809,7 +809,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 基本类型实现，表示 Java 基本数据类型（int、boolean、long 等）
+     * 基本类型实现，表示 Java 基本数据类型 (int、boolean、long 等)
      */
     private static final class PrimitiveArg extends KnownType {
         private final PrimitiveType type;
@@ -841,7 +841,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 对象类型实现，表示 Java 引用类型（类、接口等）
+     * 对象类型实现，表示 Java 引用类型 (类、接口等)
      */
     private static class ObjectType extends KnownType {
         protected final String objName;
@@ -878,7 +878,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 泛型类型参数实现，表示未实例化的类型变量（如 {@code T}、{@code E extends Comparable}）
+     * 泛型类型参数实现，表示未实例化的类型变量 (如 {@code T}、{@code E extends Comparable})
      */
     private static final class GenericType extends ObjectType {
         private List<ArgType> extendTypes;
@@ -928,7 +928,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 通配符类型实现（如 {@code ? extends Number}、{@code ? super String}、{@code ?}）
+     * 通配符类型实现 (如 {@code ? extends Number}、{@code ? super String}、{@code ?})
      */
     private static final class WildcardType extends ObjectType {
         private final ArgType type;
@@ -977,7 +977,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 参数化泛型对象类型实现（如 {@code List<String>}、{@code Map<String, Integer>}）
+     * 参数化泛型对象类型实现 (如 {@code List<String>}、{@code Map<String, Integer>})
      */
     private static class GenericObject extends ObjectType {
         private final List<ArgType> generics;
@@ -1015,7 +1015,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 外部泛型对象类型实现，表示内部类持有外部类的泛型参数（如 {@code Outer<T>.Inner}）
+     * 外部泛型对象类型实现，表示内部类持有外部类的泛型参数 (如 {@code Outer<T>.Inner})
      */
     private static class OuterGenericObject extends ObjectType {
         private final ObjectType outerType;
@@ -1066,7 +1066,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 数组类型实现，通过递归嵌套支持多维数组（如 {@code int[][]} 由两层 ArrayArg 嵌套表示）
+     * 数组类型实现，通过递归嵌套支持多维数组 (如 {@code int[][]} 由两层 ArrayArg 嵌套表示)
      */
     private static final class ArrayArg extends KnownType {
         private static final PrimitiveType[] ARRAY_POSSIBLES = new PrimitiveType[]{PrimitiveType.ARRAY};

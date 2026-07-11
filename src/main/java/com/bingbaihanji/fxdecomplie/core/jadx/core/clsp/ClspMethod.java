@@ -19,9 +19,9 @@ import java.util.Objects;
  */
 public class ClspMethod implements IMethodDetails, Comparable<ClspMethod> {
 
-    /** 方法信息（名称、所属类、参数描述符等） */
+    /** 方法信息 (名称、所属类、参数描述符等) */
     private final MethodInfo methodInfo;
-    /** 方法参数类型列表（可能包含泛型信息） */
+    /** 方法参数类型列表 (可能包含泛型信息) */
     private final List<ArgType> argTypes;
     /** 方法返回类型 */
     private final ArgType returnType;
@@ -71,7 +71,7 @@ public class ClspMethod implements IMethodDetails, Comparable<ClspMethod> {
         return argTypes;
     }
 
-    /** 判断参数类型是否包含泛型信息（与原始参数类型不同则为 true） */
+    /** 判断参数类型是否包含泛型信息 (与原始参数类型不同则为 true) */
     public boolean containsGenericArgs() {
         return !Objects.equals(argTypes, methodInfo.getArgumentsTypes());
     }

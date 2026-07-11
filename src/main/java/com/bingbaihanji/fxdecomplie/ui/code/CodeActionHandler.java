@@ -60,7 +60,7 @@ public interface CodeActionHandler {
 
     /**
      * 复制引用字符串到剪贴板的回调(Alt+Ctrl+Shift+C) 
-     * 引用字符串已由 CodeViewPanel 通过 {@link com.bingbaihanji.fxdecomplie.util.CopyReferenceHelper} 计算,
+     * 引用字符串已由 CodeViewPanel 通过 {@link com.bingbaihanji.fxdecomplie.util.reference.CopyReferenceHelper} 计算,
      * 子类可覆盖此方法以显示状态栏提示 
      *
      * @param referenceText 已生成的引用字符串

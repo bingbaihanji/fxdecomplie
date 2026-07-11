@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 
 import java.util.Map;
 import java.util.Objects;

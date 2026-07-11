@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.quickopen;
 
 import com.bingbaihanji.fxdecomplie.ui.IconHelper;
-import com.bingbaihanji.util.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;

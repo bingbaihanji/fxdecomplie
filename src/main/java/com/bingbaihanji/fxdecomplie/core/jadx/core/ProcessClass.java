@@ -29,7 +29,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState
 
 /**
  * 类处理核心组件，负责类的加载、处理和代码生成
- * 管理反编译过程中的各个阶段（pass），协调类的依赖处理和代码生成流程
+ * 管理反编译过程中的各个阶段 (pass)，协调类的依赖处理和代码生成流程
  */
 public class ProcessClass {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessClass.class);
@@ -37,7 +37,7 @@ public class ProcessClass {
     /** 未生成代码的标记对象 */
     private static final ICodeInfo NOT_GENERATED = new SimpleCodeInfo("");
 
-    /** 反编译处理阶段列表（访问者链） */
+    /** 反编译处理阶段列表 (访问者链) */
     private final List<IDexTreeVisitor> passes;
     /** 不同反编译模式对应的 ProcessClass 实例缓存 */
     private final Map<DecompilationMode, ProcessClass> modesMap = new EnumMap<>(DecompilationMode.class);
@@ -221,7 +221,7 @@ public class ProcessClass {
 
     /**
      * 使用指定的反编译模式为类生成代码
-     * 根据不同的反编译模式（如 SIMPLE、FALLBACK）使用不同的处理流程
+     * 根据不同的反编译模式 (如 SIMPLE、FALLBACK)使用不同的处理流程
      *
      * @param cls  待生成代码的类节点
      * @param mode 反编译模式
@@ -245,7 +245,7 @@ public class ProcessClass {
     }
 
     /**
-     * 初始化所有处理阶段（访问者）
+     * 初始化所有处理阶段 (访问者)
      * 在开始处理类之前调用，确保所有访问者已准备好
      *
      * @param root 根节点，包含整个 DEX 文件的结构信息
@@ -266,7 +266,7 @@ public class ProcessClass {
      *
      * @param mth            待处理的方法节点
      * @param visitorName    目标访问者名称
-     * @param includeVisitor 是否包含目标访问者本身（true: 执行到目标访问者并包含; false: 执行到目标访问者之前）
+     * @param includeVisitor 是否包含目标访问者本身 (true: 执行到目标访问者并包含; false: 执行到目标访问者之前)
      * @return 是否找到并执行了目标访问者
      */
     public boolean processMethodUntilVisitor(MethodNode mth, String visitorName, boolean includeVisitor) {
@@ -317,7 +317,7 @@ public class ProcessClass {
     }
 
     /**
-     * 获取处理阶段（访问者）列表
+     * 获取处理阶段 (访问者)列表
      *
      * @return 反编译处理阶段列表
      */

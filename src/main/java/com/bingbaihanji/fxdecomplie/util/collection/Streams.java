@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.util.collection;
 
 
-import com.bingbaihanji.fxdecomplie.util.CountDown;
+import com.bingbaihanji.fxdecomplie.util.concurrent.CountDown;
 import com.bingbaihanji.fxdecomplie.util.reflect.ReflectUtils;
 
 import java.util.*;

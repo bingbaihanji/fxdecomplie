@@ -22,7 +22,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnList;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.InsnRemover;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.util.JadxConsts;
+import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

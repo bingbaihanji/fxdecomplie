@@ -101,9 +101,9 @@ public final class JadxDecompiler implements Closeable {
     private final List<Closeable> closeableList = new ArrayList<>();
     /** 根节点，包含所有已加载的类和资源信息 */
     private RootNode root;
-    /** 反编译后的 Java 类列表（缓存） */
+    /** 反编译后的 Java 类列表 (缓存) */
     private List<JavaClass> classes;
-    /** 资源文件列表（缓存） */
+    /** 资源文件列表 (缓存) */
     private List<ResourceFile> resources;
     /** 事件系统实现 */
     private IJadxEvents events = new JadxEventsImpl();
@@ -270,7 +270,7 @@ public final class JadxDecompiler implements Closeable {
         pluginManager.register(plugin);
     }
 
-    /** 保存所有反编译结果（源码和资源）到输出目录 */
+    /** 保存所有反编译结果 (源码和资源)到输出目录 */
     public void save() {
         save(!args.isSkipSources(), !args.isSkipResources());
     }
@@ -383,7 +383,7 @@ public final class JadxDecompiler implements Closeable {
                 continue;
             }
             if (codeSources.contains(resOriginalName)) {
-                // 不输出代码源资源（.dex、.class 等）
+                // 不输出代码源资源 (.dex、.class 等)
                 // 不要信任文件扩展名，仅使用被设置为类输入的源
                 continue;
             }

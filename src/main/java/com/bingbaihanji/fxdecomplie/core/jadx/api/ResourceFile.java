@@ -49,7 +49,7 @@ public class ResourceFile {
 
     /**
      * 根据资源名称创建资源文件实例
-     * 若名称未通过安全校验（非法条目名），则返回 {@code null}
+     * 若名称未通过安全校验 (非法条目名)，则返回 {@code null}
      *
      * @param decompiler 反编译器实例
      * @param name       资源名称
@@ -64,7 +64,7 @@ public class ResourceFile {
     }
 
     /**
-     * 获取资源的原始名称（未经过混淆处理的名称）
+     * 获取资源的原始名称 (未经过混淆处理的名称)
      *
      * @return 资源原始名称
      */
@@ -110,7 +110,7 @@ public class ResourceFile {
     }
 
     /**
-     * 根据资源条目为该资源设置别名（即反混淆后的规范化路径）
+     * 根据资源条目为该资源设置别名 (即反混淆后的规范化路径)
      * 当 {@code useHeaders} 为 {@code true} 时，会读取文件头字节以探测真实扩展名 
      * 否则直接从原始名称提取扩展名
      *
@@ -166,7 +166,7 @@ public class ResourceFile {
      * 对经 aapt2 资源压缩后仍保留的 .9.png 点九图做特殊处理
      *
      * @param name 资源名称
-     * @return 提取到的扩展名（含点号），无扩展名时返回空字符串
+     * @return 提取到的扩展名 (含点号)，无扩展名时返回空字符串
      */
     private String getExtFromName(String name) {
         // 经 aapt2 进行资源压缩时，图片的 .9.png 扩展名始终会被保留

@@ -22,7 +22,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.regions.RegionMa
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeCompare;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.typeinference.TypeCompareEnum;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
-import com.bingbaihanji.fxdecomplie.util.JadxConsts;
+import com.bingbaihanji.fxdecomplie.util.jadx.JadxConsts;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

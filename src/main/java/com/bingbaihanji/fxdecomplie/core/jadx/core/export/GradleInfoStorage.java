@@ -5,16 +5,16 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.export;
  */
 public class GradleInfoStorage {
 
-    /** 是否使用矢量图 pathData（vector drawable 路径数据） */
+    /** 是否使用矢量图 pathData (vector drawable 路径数据) */
     private boolean vectorPathData;
 
-    /** 是否使用矢量图 fillType（vector drawable 填充类型） */
+    /** 是否使用矢量图 fillType (vector drawable 填充类型) */
     private boolean vectorFillType;
 
     /** 是否使用 Apache HTTP legacy 库 */
     private boolean useApacheHttpLegacy;
 
-    /** 资源 ID 是否为非 final（Android Gradle 插件的 nonFinalResIds 选项） */
+    /** 资源 ID 是否为非 final (Android Gradle 插件的 nonFinalResIds 选项) */
     private boolean nonFinalResIds;
 
     /**

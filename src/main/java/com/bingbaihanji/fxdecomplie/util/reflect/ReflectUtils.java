@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.util.reflect;
 
-import com.bingbaihanji.fxdecomplie.util.AccessPatcher;
+import com.bingbaihanji.fxdecomplie.util.reflect.AccessPatcher;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

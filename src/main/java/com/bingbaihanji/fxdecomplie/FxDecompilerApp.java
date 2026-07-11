@@ -2,7 +2,10 @@ package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
+import com.bingbaihanji.fxdecomplie.context.AppContext;
+import com.bingbaihanji.fxdecomplie.controller.MainWindow;
 import com.bingbaihanji.fxdecomplie.ui.IconHelper;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.bingbaihanji.windows.platform.WindowAppearance;
 import com.bingbaihanji.windows.platform.WindowCornerPreference;
@@ -246,9 +249,9 @@ public final class FxDecompilerApp {
         /** 根据配置的语言设置切换应用的国际化语言 */
         private void applyConfiguredLocale() {
             if ("en".equalsIgnoreCase(config.language())) {
-                com.bingbaihanji.util.I18nUtil.switchLocale(Locale.ENGLISH);
+                I18nUtil.switchLocale(Locale.ENGLISH);
             } else if ("zh-CN".equalsIgnoreCase(config.language())) {
-                com.bingbaihanji.util.I18nUtil.switchLocale(Locale.SIMPLIFIED_CHINESE);
+                I18nUtil.switchLocale(Locale.SIMPLIFIED_CHINESE);
             }
         }
 
