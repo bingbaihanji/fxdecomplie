@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,7 +58,7 @@ public class TempFilesGetter implements IJadxFilesGetter {
      */
     private Path makeSubDir(String subDir) {
         Path dir = TempRootHolder.TEMP_ROOT_DIR.resolve(subDir);
-        FileUtils.makeDirs(dir);
+        IoUtils.makeDirs(dir);
         return dir;
     }
 

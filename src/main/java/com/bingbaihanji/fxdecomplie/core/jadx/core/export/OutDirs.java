@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.export;
 
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 
 import java.io.File;
 
@@ -42,7 +42,7 @@ public class OutDirs {
      * 确保源码和资源输出目录存在，不存在则自动创建。
      */
     public void makeDirs() {
-        FileUtils.makeDirs(srcOutDir);
-        FileUtils.makeDirs(resOutDir);
+        IoUtils.makeDirs(srcOutDir);
+        IoUtils.makeDirs(resOutDir);
     }
 }

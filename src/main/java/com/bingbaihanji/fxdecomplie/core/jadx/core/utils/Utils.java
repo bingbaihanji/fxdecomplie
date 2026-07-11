@@ -1073,7 +1073,6 @@ public class Utils {
         return !iter1.hasNext() && !iter2.hasNext();
     }
 
-    /** @see ListUtils#filterOnlyOne(List, Predicate) */
     public static <T> T filterOnlyOne(List<T> list, java.util.function.Predicate<T> filter) {
         if (list == null || list.isEmpty()) {
             return null;

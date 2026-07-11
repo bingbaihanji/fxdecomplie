@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.FieldInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.info.MethodInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class DeobfPresets {
             return deobfMapFile.toPath();
         }
         Path inputFilePath = jadxArgs.getInputFiles().get(0).toPath().toAbsolutePath();
-        String baseName = FileUtils.getPathBaseName(inputFilePath);
+        String baseName = IoUtils.getPathBaseName(inputFilePath);
         return inputFilePath.getParent().resolve(baseName + ".jobf");
     }
 

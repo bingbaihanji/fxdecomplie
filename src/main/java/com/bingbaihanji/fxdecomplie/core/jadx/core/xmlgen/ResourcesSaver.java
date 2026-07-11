@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.security.IJadxSecurity;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.SaveCode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +113,7 @@ public class ResourcesSaver implements Runnable {
 
             case DECODED_DATA:
                 byte[] data = rc.getDecodedData();
-                FileUtils.makeDirsForFile(outFile);
+                IoUtils.makeDirsForFile(outFile);
                 try {
                     Files.write(outFile.toPath(), data);
                 } catch (Exception e) {
@@ -123,7 +123,7 @@ public class ResourcesSaver implements Runnable {
 
             case RES_LINK:
                 ResourceFile resFile = rc.getResLink();
-                FileUtils.makeDirsForFile(outFile);
+                IoUtils.makeDirsForFile(outFile);
                 try {
                     saveResourceFile(resFile, outFile);
                 } catch (Exception e) {

@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AFlag;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +94,7 @@ public class SaveCode {
      * @param file 目标文件
      */
     public static void save(String code, File file) {
-        File outFile = FileUtils.prepareFile(file);
+        File outFile = IoUtils.prepareFile(file);
         try (PrintWriter out = new PrintWriter(outFile, StandardCharsets.UTF_8)) {
             out.println(code);
         } catch (Exception e) {
@@ -111,15 +111,10 @@ public class SaveCode {
      */
     public static String getFileExtension(RootNode root) {
         JadxArgs.OutputFormatEnum outputFormat = root.getArgs().getOutputFormat();
-        switch (outputFormat) {
-            case JAVA:
-                return ".java";
-
-            case JSON:
-                return ".json";
-
-            default:
-                throw new JadxRuntimeException("Unknown output format: " + outputFormat);
-        }
+        return switch (outputFormat) {
+            case JAVA -> ".java";
+            case JSON -> ".json";
+            default -> throw new JadxRuntimeException("Unknown output format: " + outputFormat);
+        };
     }
 }

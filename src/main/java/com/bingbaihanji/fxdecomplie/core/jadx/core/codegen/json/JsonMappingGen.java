@@ -13,7 +13,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.GsonUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ public class JsonMappingGen {
         JadxArgs args = root.getArgs();
         File outDirSrc = args.getOutDirSrc().getAbsoluteFile();
         File mappingFile = new File(outDirSrc, "mapping.json");
-        FileUtils.makeDirsForFile(mappingFile);
+        IoUtils.makeDirsForFile(mappingFile);
         try (Writer writer = new FileWriter(mappingFile)) {
             GSON.toJson(mapping, writer);
             LOG.info("Save mappings to {}", mappingFile.getAbsolutePath());

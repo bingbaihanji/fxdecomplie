@@ -2,7 +2,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.JadxPluginInfo;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.data.IJadxFiles;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 
 import java.nio.file.Path;
 
@@ -34,7 +34,7 @@ public class JadxFilesData implements IJadxFiles {
 
     private Path toPluginPath(Path dir) {
         Path dirPath = dir.resolve(PLUGINS_DATA_DIR).resolve(pluginInfo.getPluginId());
-        FileUtils.makeDirs(dirPath);
+        IoUtils.makeDirs(dirPath);
         return dirPath;
     }
 }

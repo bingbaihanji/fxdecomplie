@@ -26,7 +26,8 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.events.JadxEventsImpl
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.DecompilerScheduler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.tasks.TaskExecutor;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResourcesSaver;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
@@ -135,7 +136,7 @@ public final class JadxDecompiler implements Closeable {
         reset();
         JadxArgsValidator.validate(this);
         LOG.info("loading ...");
-        FileUtils.updateTempRootDir(args.getFilesGetter().getTempDir());
+        IoUtils.updateTempRootDir(args.getFilesGetter().getTempDir());
         loadPlugins();
         loadInputFiles();
 
@@ -176,7 +177,7 @@ public final class JadxDecompiler implements Closeable {
     private void loadInputFiles() {
         loadedInputs.clear();
         List<Path> inputPaths = Utils.collectionMap(args.getInputFiles(), File::toPath);
-        List<Path> inputFiles = FileUtils.expandDirs(inputPaths);
+        List<Path> inputFiles = IoUtils.expandDirs(inputPaths);
         long start = System.currentTimeMillis();
         for (PluginContext plugin : pluginManager.getResolvedPluginContexts()) {
             for (JadxCodeInput codeLoader : plugin.getCodeInputs()) {
@@ -213,9 +214,9 @@ public final class JadxDecompiler implements Closeable {
         closeAll(customCodeLoaders);
         closeAll(customResourcesLoaders);
         closeAll(closeableList);
-        FileUtils.deleteDirIfExists(args.getFilesGetter().getTempDir());
+        IoUtils.deleteDirIfExists(args.getFilesGetter().getTempDir());
         args.close();
-        FileUtils.clearTempRootDir();
+        IoUtils.clearTempRootDir();
     }
 
     private void closeAll(List<? extends Closeable> list) {

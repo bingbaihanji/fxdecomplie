@@ -20,7 +20,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.conditions.IfRegi
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.regions.loops.LoopRegion;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.ExceptionHandler;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.SaveCode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
@@ -162,7 +162,7 @@ public class DotGraphUtils {
                 .resolve(mth.getParentClass().getClassInfo().getAliasFullPath() + "_graphs")
                 .resolve(fileName)
                 .toFile();
-        return FileUtils.cutFileName(file);
+        return IoUtils.cutFileName(file);
     }
 
     public void dumpToFile(MethodNode mth) {

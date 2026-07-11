@@ -9,7 +9,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.DecodeException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -291,7 +291,7 @@ public class ClsSet {
     }
 
     public void save(Path path) throws IOException {
-        FileUtils.makeDirsForFile(path);
+        IoUtils.makeDirsForFile(path);
         String outputName = path.getFileName().toString();
         if (outputName.endsWith(CLST_EXTENSION)) {
             try (BufferedOutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(path))) {

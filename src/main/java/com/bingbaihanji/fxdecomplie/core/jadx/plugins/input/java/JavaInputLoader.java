@@ -2,7 +2,6 @@ package com.bingbaihanji.fxdecomplie.core.jadx.plugins.input.java;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.utils.CommonFileUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.TempFilesGetter;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.IZipEntry;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipContent;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
@@ -122,7 +121,7 @@ public class JavaInputLoader {
         }
         if (isStartWithBytes(content, ZIP_FILE_MAGIC) || CommonFileUtils.isZipFileExt(name)) {
             Path tempZip = Files.createTempFile(tempPath, "temp", ".zip");
-            FileUtils.writeFile(tempZip, content);
+            Files.write(tempZip, content);
             File zipFile = tempZip.toFile();
             List<JavaClassReader> readers = collectFromZip(zipFile, concatSource(parentFileName, name));
             CommonFileUtils.safeDeleteFile(zipFile);

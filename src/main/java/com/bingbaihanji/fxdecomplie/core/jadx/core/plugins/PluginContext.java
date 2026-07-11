@@ -23,6 +23,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipReader;
+import com.bingbaihanji.fxdecomplie.util.ByteUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
@@ -196,7 +197,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
                 sb.append(':').append(allOptions.get(optDesc.name()));
             }
         }
-        return FileUtils.md5Sum(sb.toString());
+        return ByteUtils.md5Sum(sb.toString());
     }
 
     /** 获取事件总线。 */

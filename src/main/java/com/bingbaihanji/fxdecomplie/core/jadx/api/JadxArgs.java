@@ -22,6 +22,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.PluginContext;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.IJadxFilesGetter;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.files.TempFilesGetter;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.util.ByteUtils;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -968,7 +969,7 @@ public class JadxArgs implements Closeable {
                 + respectBytecodeAccModifiers + fsCaseSensitive + renameFlags
                 + commentsLevel + useDxInput + integerFormat + typeUpdatesLimitCount
                 + "|" + buildPluginsHash(decompiler);
-        return FileUtils.md5Sum(argStr);
+        return ByteUtils.md5Sum(argStr);
     }
 
     /**

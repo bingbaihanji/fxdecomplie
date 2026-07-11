@@ -10,13 +10,14 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.Res9patchStreamDecoder;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.BinaryXMLParser;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.IResTableParser;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResContainer;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.xmlgen.ResTableBinaryParserProvider;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.IZipEntry;
 import com.bingbaihanji.fxdecomplie.core.jadx.zip.ZipContent;
+import com.bingbaihanji.fxdecomplie.util.ByteUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,8 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils.READ_BUFFER_SIZE;
-import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.FileUtils.copyStream;
+import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils.READ_BUFFER_SIZE;
+
 
 // TODO: 移动到 core 包
 
@@ -147,7 +148,7 @@ public final class ResourcesLoader implements IResourcesLoader {
      */
     public static ICodeInfo loadToCodeWriter(InputStream is, Charset charset) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(READ_BUFFER_SIZE);
-        copyStream(is, baos);
+        is.transferTo(baos);
         return new SimpleCodeInfo(baos.toString(charset));
     }
 
@@ -301,7 +302,7 @@ public final class ResourcesLoader implements IResourcesLoader {
      * @param subDir 条目名称前缀（子目录），用于区分嵌套归档
      */
     public void defaultLoadFile(List<ResourceFile> list, File file, String subDir) {
-        if (FileUtils.isZipFile(file)) {
+        if (ByteUtils.isZipFile(file)) {
             try {
                 ZipContent zipContent = decompiler.getZipReader().open(file);
                 // 此处暂不关闭 zip，条目内容将在后续读取
