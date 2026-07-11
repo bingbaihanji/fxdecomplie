@@ -3,7 +3,6 @@ package com.bingbaihanji.fxdecomplie;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
-import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
@@ -96,8 +95,7 @@ public final class WorkspaceController {
             }
             owner.statusBar().setFilePath(I18nUtil.getString("project.opened", file.getAbsolutePath()));
         } catch (IOException ex) {
-            DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                    I18nUtil.getString("project.open.failed", ex.getMessage()));
+            owner.showError(I18nUtil.getString("project.open.failed", ex.getMessage()));
         }
     }
 
@@ -118,7 +116,7 @@ public final class WorkspaceController {
             }
         }
         if (inputPaths.isEmpty()) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("project.save"), I18nUtil.getString("dialog.export.noworkspace"));
+            owner.showWarning(I18nUtil.getString("project.save"), I18nUtil.getString("dialog.export.noworkspace"));
             return;
         }
 
@@ -136,8 +134,7 @@ public final class WorkspaceController {
                     1, owner.currentEngine().name(), inputPaths, selectedPath, owner.config().export().lastPath()));
             owner.statusBar().setFilePath(I18nUtil.getString("project.saved", file.getAbsolutePath()));
         } catch (IOException ex) {
-            DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                    I18nUtil.getString("project.save.failed", ex.getMessage()));
+            owner.showError(I18nUtil.getString("project.save.failed", ex.getMessage()));
         }
     }
 
@@ -162,11 +159,11 @@ public final class WorkspaceController {
     public void saveCurrentFile() {
         CodeEditorTab codeTab = owner.tabManager().currentCodeTab();
         if (codeTab == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.nofile"));
+            owner.showWarning(I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.nofile"));
             return;
         }
         if (!codeTab.isSourceReady()) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.pending"));
+            owner.showWarning(I18nUtil.getString("dialog.save.title"), I18nUtil.getString("dialog.save.pending"));
             return;
         }
 
@@ -183,8 +180,7 @@ public final class WorkspaceController {
             ExportService.exportCurrentCode(owner.decoratedCurrentSource(codeTab), file.toPath());
             owner.statusBar().setFilePath(I18nUtil.getString("status.saved", file.getAbsolutePath()));
         } catch (IOException ex) {
-            DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                    I18nUtil.getString("dialog.save.failed", ex.getMessage()));
+            owner.showError(I18nUtil.getString("dialog.save.failed", ex.getMessage()));
         }
     }
 
@@ -204,10 +200,9 @@ public final class WorkspaceController {
 
     /** 快速打开类 */
     public void quickOpenClass() {
-        var view = owner.tabManager().currentWorkspaceView();
+        var view = owner.requireWorkspaceOrWarn(I18nUtil.getString("menu.edit.quickOpen"),
+                I18nUtil.getString("dialog.needOpenFile"));
         if (view == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("menu.edit.quickOpen"),
-                    I18nUtil.getString("dialog.needOpenFile"));
             return;
         }
         java.util.List<String> classNames = new java.util.ArrayList<>();
@@ -249,12 +244,12 @@ public final class WorkspaceController {
     public void openNewWindow() {
         CodeEditorTab currentTab = owner.tabManager().currentCodeTab();
         if (currentTab == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.warning.title"),
+            owner.showWarning(I18nUtil.getString("dialog.warning.title"),
                     I18nUtil.getString("dialog.needOpenFile"));
             return;
         }
         if (!currentTab.isSourceReady()) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.warning.title"),
+            owner.showWarning(I18nUtil.getString("dialog.warning.title"),
                     I18nUtil.getString("dialog.save.pending"));
             return;
         }
@@ -296,8 +291,7 @@ public final class WorkspaceController {
                 },
                 errorMsg -> {
                     owner.statusBar().clearTask();
-                    DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.load.error") + ": " + errorMsg);
+                    owner.showError(I18nUtil.getString("dialog.load.error") + ": " + errorMsg);
                 });
     }
 }

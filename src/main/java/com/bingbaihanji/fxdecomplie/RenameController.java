@@ -1,8 +1,9 @@
 package com.bingbaihanji.fxdecomplie;
 
 import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.rename.RenameEntry;
+import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.*;
-import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.util.ClassNameUtil;
@@ -39,19 +40,19 @@ public final class RenameController {
 
     /** @return true 若重命名条目允许回退到可见标识符替换(类名或通用标识符类型) */
     private static boolean allowVisibleIdentifierFallback(
-            com.bingbaihanji.fxdecomplie.rename.RenameEntry entry) {
+            RenameEntry entry) {
         if (entry == null || entry.type() == null) {
             return false;
         }
-        return com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS.equals(entry.type())
-                || com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_IDENTIFIER.equals(entry.type());
+        return RenameService.TYPE_CLASS.equals(entry.type())
+                || RenameService.TYPE_IDENTIFIER.equals(entry.type());
     }
 
     /** @return true 若重命名条目是类级别的重命名 */
     private static boolean isClassRenameEntry(
-            com.bingbaihanji.fxdecomplie.rename.RenameEntry entry) {
+            RenameEntry entry) {
         return entry != null
-                && com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS.equals(entry.type());
+                && RenameService.TYPE_CLASS.equals(entry.type());
     }
 
     public void renameAtCaret(CodeViewContext context,
@@ -76,7 +77,7 @@ public final class RenameController {
             return;
         }
         int offset = JavaSourceAnalyzer.flatOffset(text, caret);
-        String caretName = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String caretName = RenameService
                 .identifierAt(text, offset);
         if (caretName.isBlank()) {
             owner.statusBar().setFilePath("Rename unavailable: place cursor on a Java name");
@@ -85,11 +86,11 @@ public final class RenameController {
         WorkspaceIndex index = context.workspace() != null && context.workspace().isIndexReady()
                 ? context.workspace().getIndex() : context.workspaceIndex();
         String wsHash = CommentScope.workspaceHash(context.workspace());
-        var targetOpt = com.bingbaihanji.fxdecomplie.rename.RenameService.resolveTarget(
+        var targetOpt = RenameService.resolveTarget(
                 text, offset, context.classInternalName(), context.classBytes(), index, wsHash);
-        var target = targetOpt.orElseGet(() -> new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
-                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
-                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_IDENTIFIER,
+        var target = targetOpt.orElseGet(() -> new RenameService.RenameTarget(
+                new RenameEntry(
+                        RenameService.TYPE_IDENTIFIER,
                         context.classInternalName(), caretName, caretName, ""),
                 "identifier", caretName));
         target = refineClassRenameTarget(context.workspace(), context.classInternalName(),
@@ -107,24 +108,24 @@ public final class RenameController {
             return;
         }
 
-        com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry =
-                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+        RenameEntry visibleEntry =
+                new RenameEntry(
                         baseEntry.type(), baseEntry.className(), oldName, newName,
                         baseEntry.desc());
-        String currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String currentRenamedSource = RenameService
                 .applySingleRename(text, visibleEntry, codeTab.getOpenFile().fullPath(), wsHash);
         if (java.util.Objects.equals(currentRenamedSource, text)
                 && allowVisibleIdentifierFallback(visibleEntry)) {
-            currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+            currentRenamedSource = RenameService
                     .replaceVisibleIdentifier(text, oldName, newName);
         }
         if (isClassRenameEntry(visibleEntry)) {
-            currentRenamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+            currentRenamedSource = RenameService
                     .replaceVisibleClassDeclaration(currentRenamedSource, oldName, newName);
         }
         boolean currentTabChanged = false;
         if (!java.util.Objects.equals(currentRenamedSource, text)) {
-            String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+            String displayClass = RenameService
                     .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
             codeTab.updateSourceCode(displayClass, currentRenamedSource);
             reinstallCodeContext(codeTab, currentRenamedSource);
@@ -132,24 +133,24 @@ public final class RenameController {
         }
 
         // 保存
-        com.bingbaihanji.fxdecomplie.rename.RenameEntry entry =
-                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
+        RenameEntry entry =
+                new RenameEntry(
                         baseEntry.type(), baseEntry.className(), baseEntry.oldName(),
                         newName, baseEntry.desc());
-        boolean saved = com.bingbaihanji.fxdecomplie.rename.RenameService.save(wsHash,
+        boolean saved = RenameService.save(wsHash,
                 entry);
-        String postSaveSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String postSaveSource = RenameService
                 .applySingleRename(text, visibleEntry, codeTab.getOpenFile().fullPath(), wsHash);
         if (java.util.Objects.equals(postSaveSource, text)
                 && allowVisibleIdentifierFallback(visibleEntry)) {
-            postSaveSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+            postSaveSource = RenameService
                     .replaceVisibleIdentifier(text, oldName, newName);
         }
         if (isClassRenameEntry(visibleEntry)) {
-            postSaveSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+            postSaveSource = RenameService
                     .replaceVisibleClassDeclaration(postSaveSource, oldName, newName);
         }
-        String savedDisplayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String savedDisplayClass = RenameService
                 .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
         String currentVisibleSource = codeTab.getCodeArea() == null
                 ? codeTab.getOpenFile().sourceCode() : codeTab.getCodeArea().getText();
@@ -181,35 +182,35 @@ public final class RenameController {
     /** 修复当前类的重命名显示映射(当显示名与重命名映射不一致时自动修正) */
     private void repairCurrentClassDisplayMappingIfNeeded(
             CodeViewContext context, CodeEditorTab codeTab, String workspaceHash,
-            com.bingbaihanji.fxdecomplie.rename.RenameEntry baseEntry,
+            RenameEntry baseEntry,
             String currentName, String sourceCode) {
         if (context == null || codeTab == null || baseEntry == null
                 || currentName == null || currentName.isBlank()
-                || !com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS
+                || !RenameService.TYPE_CLASS
                 .equals(baseEntry.type())) {
             return;
         }
         String currentClass = JavaSourceAnalyzer.normalizeInternalClassName(context.classInternalName());
-        String entryClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String entryClass = RenameService
                 .originalInternalName(baseEntry.className(), workspaceHash);
         if (!ClassNameUtil.sameInternalName(entryClass, currentClass)) {
             return;
         }
-        String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String displayClass = RenameService
                 .displayClassName(codeTab.getOpenFile().fullPath(), workspaceHash);
         if (currentName.equals(displayClass)) {
             return;
         }
-        com.bingbaihanji.fxdecomplie.rename.RenameEntry repairEntry =
-                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
-                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS,
+        RenameEntry repairEntry =
+                new RenameEntry(
+                        RenameService.TYPE_CLASS,
                         baseEntry.className(), baseEntry.oldName(), currentName, baseEntry.desc());
-        boolean saved = com.bingbaihanji.fxdecomplie.rename.RenameService
+        boolean saved = RenameService
                 .save(workspaceHash, repairEntry);
         if (!saved) {
             return;
         }
-        String repairedDisplay = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String repairedDisplay = RenameService
                 .displayClassName(codeTab.getOpenFile().fullPath(), workspaceHash);
         codeTab.updateSourceCode(repairedDisplay, sourceCode);
         reinstallCodeContext(codeTab, sourceCode);
@@ -222,10 +223,10 @@ public final class RenameController {
     }
 
     /** 当光标位于类声明处时强制将重命名目标设为本类 */
-    private com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget forceCurrentClassRenameTarget(
+    private RenameService.RenameTarget forceCurrentClassRenameTarget(
             CodeViewContext context, String sourceCode, int offset, String caretName,
             String workspaceHash,
-            com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget target) {
+            RenameService.RenameTarget target) {
         if (context == null || caretName == null || caretName.isBlank()
                 || context.classInternalName() == null || context.classInternalName().isBlank()) {
             return target;
@@ -234,22 +235,22 @@ public final class RenameController {
             return target;
         }
         String ownerInternal = JavaSourceAnalyzer.normalizeInternalClassName(context.classInternalName());
-        String originalOwner = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String originalOwner = RenameService
                 .originalInternalName(ownerInternal, workspaceHash);
         String originalLeaf = JavaSourceAnalyzer.classLeafName(originalOwner);
         if (originalLeaf.isBlank()) {
             originalLeaf = JavaSourceAnalyzer.classLeafName(ownerInternal);
         }
-        return new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
-                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
-                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS,
+        return new RenameService.RenameTarget(
+                new RenameEntry(
+                        RenameService.TYPE_CLASS,
                         originalOwner, originalLeaf, caretName, ""),
                 "class", caretName);
     }
 
     private boolean isCurrentClassRenamePosition(CodeViewContext context, String sourceCode,
                                                  int offset, String caretName, String workspaceHash) {
-        String currentDisplay = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String currentDisplay = RenameService
                 .displayClassName(context.classInternalName(), workspaceHash);
         String currentOriginal = JavaSourceAnalyzer.classLeafName(context.classInternalName());
         if (caretName.equals(currentDisplay) || caretName.equals(currentOriginal)) {
@@ -258,22 +259,22 @@ public final class RenameController {
         return JavaSourceAnalyzer.isDeclaredTypeNameAt(sourceCode, offset, caretName);
     }
 
-    private com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget refineClassRenameTarget(
+    private RenameService.RenameTarget refineClassRenameTarget(
             Workspace workspace, String currentClassName, String caretName,
             String workspaceHash,
-            com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget target) {
+            RenameService.RenameTarget target) {
         if (target == null || caretName == null || caretName.isBlank()) {
             return target;
         }
         var entry = target.entry();
-        if (entry != null && com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS
+        if (entry != null && RenameService.TYPE_CLASS
                 .equals(entry.type())) {
             return target;
         }
         String currentInternal = JavaSourceAnalyzer.normalizeInternalClassName(currentClassName);
         String currentSimple = JavaSourceAnalyzer.tokenSimpleName(currentInternal);
         FileTreeNode node = null;
-        String currentDisplayName = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String currentDisplayName = RenameService
                 .displayClassName(currentClassName, workspaceHash);
         if (caretName.equals(currentSimple) || caretName.equals(currentDisplayName)) {
             node = workspace == null ? null : workspace.findNodeByPath(currentInternal + ".class");
@@ -288,16 +289,16 @@ public final class RenameController {
         if (ownerPath.endsWith(".class")) {
             ownerPath = ownerPath.substring(0, ownerPath.length() - ".class".length());
         }
-        return new com.bingbaihanji.fxdecomplie.rename.RenameService.RenameTarget(
-                new com.bingbaihanji.fxdecomplie.rename.RenameEntry(
-                        com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS,
+        return new RenameService.RenameTarget(
+                new RenameEntry(
+                        RenameService.TYPE_CLASS,
                         ownerPath, caretName, caretName, ""),
                 "class", caretName);
     }
 
     /** 重命名后刷新所有已打开的代码标签页,可指定跳过某个标签页(触发源标签页已自行更新) */
     private int refreshOpenTabsAfterRename(Workspace workspace, String workspaceHash,
-                                           com.bingbaihanji.fxdecomplie.rename.RenameEntry visibleEntry,
+                                           RenameEntry visibleEntry,
                                            CodeEditorTab skipTab) {
         WorkspaceView view = owner.workspaceViewFor(workspace);
         if (view == null || workspaceHash == null || workspaceHash.isBlank()) {
@@ -317,22 +318,22 @@ public final class RenameController {
                         ? openFile.sourceCode() : codeTab.getCodeArea().getText();
                 String renamedSource;
                 if (visibleEntry == null) {
-                    renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    renamedSource = RenameService
                             .applyRenames(currentVisibleSource, workspaceHash, openFile.fullPath());
-                } else if (com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS
+                } else if (RenameService.TYPE_CLASS
                         .equals(visibleEntry.type())) {
                     // 类重命名：仅通过 applySingleRename 应用(有包上下文检查)
                     // 不使用 replaceVisibleIdentifier(会按简单名全局替换导致跨包误匹配)
-                    renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    renamedSource = RenameService
                             .applySingleRename(currentVisibleSource, visibleEntry,
                                     openFile.fullPath(), workspaceHash);
                 } else {
-                    renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                    renamedSource = RenameService
                             .applySingleRename(currentVisibleSource, visibleEntry,
                                     openFile.fullPath(), workspaceHash);
                     if (java.util.Objects.equals(renamedSource, currentVisibleSource)
                             && allowVisibleIdentifierFallback(visibleEntry)) {
-                        renamedSource = com.bingbaihanji.fxdecomplie.rename.RenameService
+                        renamedSource = RenameService
                                 .replaceVisibleIdentifier(currentVisibleSource,
                                         visibleEntry.oldName(), visibleEntry.newName());
                     }
@@ -340,7 +341,7 @@ public final class RenameController {
                 if (java.util.Objects.equals(renamedSource, currentVisibleSource)) {
                     continue;
                 }
-                String displayClass = com.bingbaihanji.fxdecomplie.rename.RenameService
+                String displayClass = RenameService
                         .displayClassName(openFile.fullPath(), workspaceHash);
                 codeTab.updateSourceCode(displayClass, renamedSource);
                 changedTabs++;
@@ -400,7 +401,7 @@ public final class RenameController {
                 WorkspaceIndex index = workspace.isIndexReady()
                         ? workspace.getIndex()
                         : WorkspaceIndex.EMPTY;
-                java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions =
+                java.util.List<RenameEntry> suggestions =
                         com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.scan(nodesSnapshot, index);
                 boolean memberScanComplete = index != WorkspaceIndex.EMPTY;
                 log.info("deobfuscate: scan returned {} suggestions (nodes={}, memberScanComplete={})",
@@ -414,8 +415,7 @@ public final class RenameController {
                 log.error("反混淆扫描失败", ex);
                 Platform.runLater(() -> {
                     owner.statusBar().clearTask();
-                    DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                            "Deobfuscate failed: " + ex.getMessage());
+                    owner.showError("Deobfuscate failed: " + ex.getMessage());
                 });
             }
         });
@@ -423,7 +423,7 @@ public final class RenameController {
 
     /** 显示反混淆预览对话框,提交用户选择的重命名条目并刷新所有相关标签页 */
     private void showDeobfuscatePreview(Workspace workspace,
-                                        java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> suggestions,
+                                        java.util.List<RenameEntry> suggestions,
                                         boolean memberScanComplete,
                                         long classNodeCount) {
         owner.statusBar().clearTask();
@@ -436,20 +436,18 @@ public final class RenameController {
             return;
         }
         log.info("showDeobfuscatePreview: {} suggestions to show", suggestions.size());
-        String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
-                .of(workspace, "").workspaceHash();
-        java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> selected =
+        String wsHash = CommentScope.workspaceHash(workspace);
+        java.util.List<RenameEntry> selected =
                 com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog.show(owner.stage(), suggestions);
         log.info("showDeobfuscatePreview: dialog returned {} selected entries", selected.size());
         if (selected.isEmpty()) {
             owner.statusBar().setFilePath("Deobfuscate cancelled or no entries selected");
             return;
         }
-        int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, selected, true);
+        int saved = RenameService.saveAll(wsHash, selected, true);
         if (saved == 0) {
             owner.statusBar().setFilePath("Deobfuscate failed: rename mapping was not saved");
-            DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                    "Deobfuscate failed: rename mapping was not saved.");
+            owner.showError("Deobfuscate failed: rename mapping was not saved.");
             return;
         }
         if (saved != selected.size()) {
@@ -466,11 +464,8 @@ public final class RenameController {
     }
 
     public void importProGuardMapping() {
-        WorkspaceView view = owner.tabManager().currentWorkspaceView();
-        if (view == null) {
-            DialogHelper.showWarning(owner.stage(), "Import ProGuard Mapping", I18nUtil.getString("dialog.export.noworkspace"));
-            return;
-        }
+        WorkspaceView view = owner.requireWorkspaceOrWarn("Import ProGuard Mapping", I18nUtil.getString("dialog.export.noworkspace"));
+        if (view == null) { return; }
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Import ProGuard Mapping");
         chooser.getExtensionFilters().addAll(
@@ -482,42 +477,35 @@ public final class RenameController {
         }
         try {
             String text = java.nio.file.Files.readString(file.toPath());
-            java.util.List<com.bingbaihanji.fxdecomplie.rename.RenameEntry> entries =
-                    com.bingbaihanji.fxdecomplie.rename.RenameService.parseProGuardMapping(text);
+            java.util.List<RenameEntry> entries =
+                    RenameService.parseProGuardMapping(text);
             if (entries.isEmpty()) {
-                DialogHelper.showWarning(owner.stage(), "Import ProGuard Mapping", "No mapping entries found.");
+                owner.showWarning("Import ProGuard Mapping", "No mapping entries found.");
                 return;
             }
             Workspace workspace = view.workspace();
-            String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
-                    .of(workspace, "").workspaceHash();
-            int saved = com.bingbaihanji.fxdecomplie.rename.RenameService.saveAll(wsHash, entries, true);
+            String wsHash = CommentScope.workspaceHash(workspace);
+            int saved = RenameService.saveAll(wsHash, entries, true);
             if (saved == 0) {
-                DialogHelper.showError(owner.stage(), "Import ProGuard Mapping", "No mapping entries could be saved.");
+                owner.showError("Import ProGuard Mapping", "No mapping entries could be saved.");
                 return;
             }
-            workspace.clearSourceSearchCaches();
-            int reloadTabs = reloadOpenTabsAfterDeobfuscate(workspace);
-            refreshWorkspaceTree(workspace);
+            int reloadTabs = reloadAndRefreshAfterRename(workspace);
             owner.statusBar().setFilePath("Imported mapping: " + saved + " saved, "
                     + reloadTabs + " tabs reload scheduled");
         } catch (java.io.IOException e) {
             log.error("导入 ProGuard mapping 失败", e);
-            DialogHelper.showError(owner.stage(), "Import ProGuard Mapping", e.getMessage());
+            owner.showError("Import ProGuard Mapping", e.getMessage());
         }
     }
 
     public void exportProGuardMapping() {
-        WorkspaceView view = owner.tabManager().currentWorkspaceView();
-        if (view == null) {
-            DialogHelper.showWarning(owner.stage(), "Export ProGuard Mapping", I18nUtil.getString("dialog.export.noworkspace"));
-            return;
-        }
-        String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
-                .of(view.workspace(), "").workspaceHash();
-        String mapping = com.bingbaihanji.fxdecomplie.rename.RenameService.exportProGuard(wsHash);
+        WorkspaceView view = owner.requireWorkspaceOrWarn("Export ProGuard Mapping", I18nUtil.getString("dialog.export.noworkspace"));
+        if (view == null) { return; }
+        String wsHash = CommentScope.workspaceHash(view.workspace());
+        String mapping = RenameService.exportProGuard(wsHash);
         if (mapping.isBlank()) {
-            DialogHelper.showWarning(owner.stage(), "Export ProGuard Mapping", "No rename mappings found.");
+            owner.showWarning("Export ProGuard Mapping", "No rename mappings found.");
             return;
         }
         FileChooser chooser = new FileChooser();
@@ -535,30 +523,32 @@ public final class RenameController {
             owner.statusBar().setFilePath("Exported mapping: " + file.getAbsolutePath());
         } catch (java.io.IOException e) {
             log.error("导出 ProGuard mapping 失败", e);
-            DialogHelper.showError(owner.stage(), "Export ProGuard Mapping", e.getMessage());
+            owner.showError("Export ProGuard Mapping", e.getMessage());
         }
     }
 
     public void restoreLastRenameSnapshot() {
-        WorkspaceView view = owner.tabManager().currentWorkspaceView();
-        if (view == null) {
-            DialogHelper.showWarning(owner.stage(), "Restore Rename Snapshot", I18nUtil.getString("dialog.export.noworkspace"));
-            return;
-        }
+        WorkspaceView view = owner.requireWorkspaceOrWarn("Restore Rename Snapshot", I18nUtil.getString("dialog.export.noworkspace"));
+        if (view == null) { return; }
         Workspace workspace = view.workspace();
-        String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
-                .of(workspace, "").workspaceHash();
-        boolean restored = com.bingbaihanji.fxdecomplie.rename.RenameService
+        String wsHash = CommentScope.workspaceHash(workspace);
+        boolean restored = RenameService
                 .restoreLatestBackup(wsHash);
         if (!restored) {
             owner.statusBar().setFilePath("No rename snapshot found");
-            DialogHelper.showWarning(owner.stage(), "Restore Rename Snapshot", "No rename snapshot found for current workspace.");
+            owner.showWarning("Restore Rename Snapshot", "No rename snapshot found for current workspace.");
             return;
         }
-        workspace.clearSourceSearchCaches();
-        int reloadTabs = reloadOpenTabsAfterDeobfuscate(workspace);
-        refreshWorkspaceTree(workspace);
+        int reloadTabs = reloadAndRefreshAfterRename(workspace);
         owner.statusBar().setFilePath("Rename snapshot restored, " + reloadTabs + " tabs reloaded");
+    }
+
+    /** 反混淆/重命名后统一刷新：清缓存 + 重载已开标签 + 刷新文件树。@return 受影响的标签数 */
+    private int reloadAndRefreshAfterRename(Workspace workspace) {
+        workspace.clearSourceSearchCaches();
+        int changed = reloadOpenTabsAfterDeobfuscate(workspace);
+        refreshWorkspaceTree(workspace);
+        return changed;
     }
 
     /** 反混淆后重新反编译所有已打开的代码标签页以应用新的重命名映射 */

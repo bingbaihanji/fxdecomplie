@@ -4,7 +4,6 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
-import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.search.*;
@@ -65,10 +64,9 @@ public final class SearchController {
 
     /** 打开搜索对话框,可预填初始查询关键词 */
     public void openSearch(String initialQuery) {
-        var view = owner.tabManager().currentWorkspaceView();
+        var view = owner.requireWorkspaceOrWarn(I18nUtil.getString("search.title"),
+                I18nUtil.getString("dialog.needOpenFile"));
         if (view == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("search.title"),
-                    I18nUtil.getString("dialog.needOpenFile"));
             return;
         }
         withWorkspaceIndex(view.workspace(), index -> openSearchWithIndex(view, index, initialQuery));
@@ -128,9 +126,9 @@ public final class SearchController {
 
     /** 查找当前工作区内的类/方法/字段使用 */
     public void openFindUsages() {
-        var view = owner.tabManager().currentWorkspaceView();
+        var view = owner.requireWorkspaceOrWarn(I18nUtil.getString("usage.title"),
+                I18nUtil.getString("dialog.export.noworkspace"));
         if (view == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("usage.title"), I18nUtil.getString("dialog.export.noworkspace"));
             return;
         }
         withWorkspaceIndex(view.workspace(), index ->
@@ -230,12 +228,11 @@ public final class SearchController {
         workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
             owner.statusBar().clearTask();
             if (error != null) {
-                DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                        I18nUtil.getString("dialog.index.failed", error.getMessage()));
+                owner.showError(I18nUtil.getString("dialog.index.failed", error.getMessage()));
                 return;
             }
-            if (owner.tabManager().currentWorkspaceView() == null
-                    || !workspace.equals(owner.tabManager().currentWorkspaceView().workspace())) {
+            WorkspaceView currentView = owner.tabManager().currentWorkspaceView();
+            if (currentView == null || !workspace.equals(currentView.workspace())) {
                 owner.statusBar().setFilePath(I18nUtil.getString("status.indexingComplete"));
                 return;
             }

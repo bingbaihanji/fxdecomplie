@@ -37,9 +37,9 @@ public final class ExportController {
 
     /** 批量导出所有类为 .java 文件 */
     public void exportAllFiles() {
-        WorkspaceView view = owner.tabManager().currentWorkspaceView();
+        WorkspaceView view = owner.requireWorkspaceOrWarn(I18nUtil.getString("dialog.export.title"),
+                I18nUtil.getString("dialog.export.noworkspace"));
         if (view == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.export.title"), I18nUtil.getString("dialog.export.noworkspace"));
             return;
         }
         owner.searchController().withWorkspaceIndex(view.workspace(), index -> {
@@ -76,8 +76,7 @@ public final class ExportController {
             } catch (Exception ex) {
                 Platform.runLater(() -> {
                     owner.statusBar().clearTask();
-                    DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.index.failed", ex.getMessage()));
+                    owner.showError(I18nUtil.getString("dialog.index.failed", ex.getMessage()));
                 });
             }
         });
@@ -122,7 +121,7 @@ public final class ExportController {
                     owner.statusBar().clearTask();
                     if (cancelled) {
                         owner.statusBar().setFilePath(I18nUtil.getString("dialog.export.canceled"));
-                        DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.export.title"),
+                        owner.showWarning(I18nUtil.getString("dialog.export.title"),
                                 I18nUtil.getString("dialog.export.canceled"));
                         return;
                     }
@@ -138,12 +137,11 @@ public final class ExportController {
                     owner.statusBar().clearTask();
                     if (cancelled) {
                         owner.statusBar().setFilePath(I18nUtil.getString("dialog.export.canceled"));
-                        DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.export.title"),
+                        owner.showWarning(I18nUtil.getString("dialog.export.title"),
                                 I18nUtil.getString("dialog.export.canceled"));
                         return;
                     }
-                    DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                            I18nUtil.getString("dialog.export.failed", ex.getMessage()));
+                    owner.showError(I18nUtil.getString("dialog.export.failed", ex.getMessage()));
                 });
             } catch (Exception ex) {
                 log.error("导出失败", ex);
@@ -152,11 +150,10 @@ public final class ExportController {
                     progressHandle.close();
                     owner.statusBar().clearTask();
                     if (cancelled) {
-                        DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.export.title"),
+                        owner.showWarning(I18nUtil.getString("dialog.export.title"),
                                 I18nUtil.getString("dialog.export.canceled"));
                     } else {
-                        DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                                I18nUtil.getString("dialog.export.failed", ex.getMessage()));
+                        owner.showError(I18nUtil.getString("dialog.export.failed", ex.getMessage()));
                     }
                 });
             }
@@ -164,8 +161,7 @@ public final class ExportController {
             exportCanceled.set(true);
             progressHandle.close();
             owner.statusBar().clearTask();
-            DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                    "Export task rejected: background queue is full");
+            owner.showError("Export task rejected: background queue is full");
         })));
     }
 

@@ -759,9 +759,35 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
+    /** 弹出错误对话框(标准错误标题) */
+    void showError(String message) {
+        showError(I18nUtil.getString("dialog.error.title"), message);
+    }
+
     /** 弹出错误对话框 */
-    private void showError(String title, String message) {
+    void showError(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showError(stage, title, message);
+    }
+
+    /** 弹出警告对话框 */
+    void showWarning(String title, String message) {
+        com.bingbaihanji.fxdecomplie.ui.DialogHelper.showWarning(stage, title, message);
+    }
+
+    /**
+     * 返回当前工作区视图；若无打开的工作区,弹出警告并返回 {@code null}。
+     * 用于收敛各控制器中重复的 "view == null → 警告 → return" 守卫。
+     *
+     * @param warnTitle   警告标题(i18n 已解析)
+     * @param warnMessage 警告内容(i18n 已解析)
+     * @return 当前工作区视图,或 {@code null}
+     */
+    WorkspaceView requireWorkspaceOrWarn(String warnTitle, String warnMessage) {
+        WorkspaceView view = tabManager.currentWorkspaceView();
+        if (view == null) {
+            showWarning(warnTitle, warnMessage);
+        }
+        return view;
     }
 
 }

@@ -3,7 +3,6 @@ package com.bingbaihanji.fxdecomplie;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
-import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
 import com.bingbaihanji.fxdecomplie.ui.code.*;
 import com.bingbaihanji.fxdecomplie.ui.graph.*;
@@ -154,6 +153,7 @@ public final class EngineController {
         String methodName = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper
                 .findMethodAtLine(source, line);
         if (methodName == null || methodName.isBlank()) {
+            showGraphFailed(methodName, null);
             return;
         }
         owner.statusBar().setTask(I18nUtil.getString("task.loading"));
@@ -163,7 +163,7 @@ public final class EngineController {
         BackgroundTasks.run("CFG-" + methodName, () -> {
             try {
                 byte[] classBytes = owner.classBytesForContext(context);
-                if (classBytes == null) {
+                if (classBytes == null || classBytes.length == 0) {
                     Platform.runLater(() -> showGraphFailed(dialog, null, null));
                     return;
                 }
@@ -237,19 +237,22 @@ public final class EngineController {
             return;
         }
         if (error == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("dialog.warning.title"), message);
+            owner.showWarning(I18nUtil.getString("dialog.warning.title"), message);
         } else {
-            DialogHelper.showError(owner.stage(), I18nUtil.getString("dialog.error.title"),
-                    message);
+            owner.showError(message);
         }
     }
 
     /** 用全部引擎反编译当前类并排打开标签页,方便对比输出 */
     public void compareEngines() {
-        WorkspaceView view = owner.tabManager().currentWorkspaceView();
+        WorkspaceView view = owner.requireWorkspaceOrWarn(I18nUtil.getString("menu.engine.compareAll"),
+                I18nUtil.getString("dialog.needOpenFile"));
+        if (view == null) {
+            return;
+        }
         CodeEditorTab currentTab = owner.tabManager().currentCodeTab();
-        if (view == null || currentTab == null) {
-            DialogHelper.showWarning(owner.stage(), I18nUtil.getString("menu.engine.compareAll"),
+        if (currentTab == null) {
+            owner.showWarning(I18nUtil.getString("menu.engine.compareAll"),
                     I18nUtil.getString("dialog.needOpenFile"));
             return;
         }
