@@ -1,17 +1,13 @@
 package com.bingbaihanji.fxdecomplie.decompiler.jadx;
 
 import com.bingbaihanji.fxdecomplie.core.jadx.api.deobf.IRenameCondition;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ClassNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.FieldNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
-import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
+import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
 
 /**
- * 项目适配层的 jadx 去混淆条件。
+ * 项目适配层的 jadx 去混淆条件
  *
- * <p>fxdecomplie 当前持久化状态只支持类/字段/方法重命名,不支持包级 rename。
- * 因此禁用 jadx package alias,避免源码 package/import 与项目树路径产生两套状态。</p>
+ * <p>fxdecomplie 当前持久化状态只支持类/字段/方法重命名,不支持包级 rename
+ * 因此禁用 jadx package alias,避免源码 package/import 与项目树路径产生两套状态</p>
  */
 final class JadxProjectRenameCondition implements IRenameCondition {
     private final IRenameCondition delegate;

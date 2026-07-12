@@ -1,6 +1,5 @@
 package com.bingbaihanji.fxdecomplie.util.reflect;
 
-import com.bingbaihanji.fxdecomplie.util.reflect.AccessPatcher;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +11,7 @@ import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * 反射工具类。
+ * 反射工具类
  *
  * @author Matt Coley
  * @author xDark
@@ -54,7 +53,7 @@ public final class ReflectUtils {
 
 
     /**
-     * 禁止任何实例化。
+     * 禁止任何实例化
      */
     private ReflectUtils() {
         throw new AssertionError("工具类不允许实例化");
@@ -64,11 +63,11 @@ public final class ReflectUtils {
     // == 实例化 ==
 
     /**
-     * 初始化反射访问修补。
+     * 初始化反射访问修补
      */
     public static void patch() {
-        // 有意留空。修补在静态初始化块中完成，调用方通过调用此方法
-        // 即可触发该初始化。
+        // 有意留空修补在静态初始化块中完成，调用方通过调用此方法
+        // 即可触发该初始化
     }
 
     /**
@@ -810,7 +809,7 @@ public final class ReflectUtils {
     }
 
     /**
-     * @return 具有全部访问权限的可信 lookup。
+     * @return 具有全部访问权限的可信 lookup
      */
 
     public static MethodHandles.Lookup lookup() {
@@ -834,16 +833,16 @@ public final class ReflectUtils {
 
     /**
      * @param declaringClass
-     * 		声明该方法的类。
+     * 		声明该方法的类
      * @param name
-     * 		方法名。
+     * 		方法名
      * @param args
-     * 		方法的参数类型。
+     * 		方法的参数类型
      *
-     * @return 该类中指定方法对应的 {@link Method} 对象。
+     * @return 该类中指定方法对应的 {@link Method} 对象
      *
      * @throws NoSuchMethodException
-     * 		当找不到与指定名称和参数签名匹配的方法时抛出。
+     * 		当找不到与指定名称和参数签名匹配的方法时抛出
      */
 
     public static Method getDeclaredMethod(Class<?> declaringClass, String name, Class<?>... args)
@@ -855,13 +854,13 @@ public final class ReflectUtils {
 
     /**
      * @param instance
-     * 		字段所属实例。
+     * 		字段所属实例
      * @param fieldName
-     * 		要设置值的字段名。
+     * 		要设置值的字段名
      * @param value
-     * 		要设置的值。
+     * 		要设置的值
      * @param <T>
-     * 		假定的字段类型。
+     * 		假定的字段类型
      */
     public static <T> void quietSet(Object instance, String fieldName, T value) {
         Field field = getDeclaredField(instance.getClass(), fieldName);
@@ -870,13 +869,13 @@ public final class ReflectUtils {
 
     /**
      * @param instance
-     * 		字段所属实例。
+     * 		字段所属实例
      * @param field
-     * 		要设置值的字段。
+     * 		要设置值的字段
      * @param value
-     * 		要设置的值。
+     * 		要设置的值
      * @param <T>
-     * 		假定的字段类型。
+     * 		假定的字段类型
      */
     @SuppressWarnings("unchecked")
     public static <T> void quietSet(Object instance, Field field, T value) {
@@ -890,13 +889,13 @@ public final class ReflectUtils {
 
     /**
      * @param instance
-     * 		字段所属实例。
+     * 		字段所属实例
      * @param fieldName
-     * 		要读取值的字段名。
+     * 		要读取值的字段名
      * @param <T>
-     * 		假定的字段类型。
+     * 		假定的字段类型
      *
-     * @return 字段值。
+     * @return 字段值
      */
     public static <T> T quietGet(Object instance, String fieldName) {
         Field field = getDeclaredField(instance.getClass(), fieldName);
@@ -905,13 +904,13 @@ public final class ReflectUtils {
 
     /**
      * @param instance
-     * 		字段所属实例。
+     * 		字段所属实例
      * @param field
-     * 		要读取值的字段。
+     * 		要读取值的字段
      * @param <T>
-     * 		假定的字段类型。
+     * 		假定的字段类型
      *
-     * @return 字段值。
+     * @return 字段值
      */
     @SuppressWarnings("unchecked")
 
@@ -926,15 +925,15 @@ public final class ReflectUtils {
 
     /**
      * @param type
-     * 		要构造的类。
+     * 		要构造的类
      * @param argTypes
-     * 		参数类型。
+     * 		参数类型
      * @param args
-     * 		参数值。
+     * 		参数值
      * @param <T>
-     * 		假定的类类型。
+     * 		假定的类类型
      *
-     * @return 该类的新实例。
+     * @return 该类的新实例
      */
 
     public static <T> T quietNew(Class<T> type, Class<?>[] argTypes, Object[] args) {
@@ -949,19 +948,19 @@ public final class ReflectUtils {
 
     /**
      * @param type
-     * 		定义该方法的类。
+     * 		定义该方法的类
      * @param instance
-     * 		调用所在的实例；静态方法则为 {@code null}。
+     * 		调用所在的实例；静态方法则为 {@code null}
      * @param name
-     * 		方法名。
+     * 		方法名
      * @param argTypes
-     * 		参数类型。
+     * 		参数类型
      * @param args
-     * 		参数值。
+     * 		参数值
      * @param <T>
-     * 		假定的类类型。
+     * 		假定的类类型
      *
-     * @return 调用的返回值。
+     * @return 调用的返回值
      */
     @SuppressWarnings("unchecked")
 
@@ -976,12 +975,12 @@ public final class ReflectUtils {
     }
 
     /**
-     * 将 'from' 中的字段值复制到 'to'。
+     * 将 'from' 中的字段值复制到 'to'
      *
      * @param from
-     * 		提供待复制值的实例。
+     * 		提供待复制值的实例
      * @param to
-     * 		复制值的目标实例。
+     * 		复制值的目标实例
      */
     public static void copyTo(Object from, Object to) {
         if (from == null || to == null) {
@@ -1004,10 +1003,10 @@ public final class ReflectUtils {
     }
 
     /**
-     * 传播抛出的异常。
+     * 传播抛出的异常
      *
      * @param t
-     * 		要传播的异常。
+     * 		要传播的异常
      */
     @SuppressWarnings("unchecked")
     public static <X extends Throwable> void propagate(Throwable t) throws X {
@@ -1016,14 +1015,14 @@ public final class ReflectUtils {
 
     /**
      * @param field
-     * 		要读取的字段。
+     * 		要读取的字段
      * @param instance
-     * 		类的实例。
+     * 		类的实例
      *
-     * @return 该实例中的字段值。
+     * @return 该实例中的字段值
      *
      * @throws IllegalAccessException
-     * 		当无法访问该字段时抛出。
+     * 		当无法访问该字段时抛出
      */
 
     private static Object get(Field field, Object instance) throws IllegalAccessException {
@@ -1033,14 +1032,14 @@ public final class ReflectUtils {
 
     /**
      * @param field
-     * 		要设置的字段。
+     * 		要设置的字段
      * @param instance
-     * 		类的实例。
+     * 		类的实例
      * @param value
-     * 		要设置的值。
+     * 		要设置的值
      *
      * @throws IllegalAccessException
-     * 		当无法访问该字段时抛出。
+     * 		当无法访问该字段时抛出
      */
     private static void set(Field field, Object instance, Object value) throws IllegalAccessException {
         field.setAccessible(true);
@@ -1049,20 +1048,20 @@ public final class ReflectUtils {
 
 
     /**
-     * 字段写入操作的函数式接口。
+     * 字段写入操作的函数式接口
      *
      * @param <T>
-     * 		值类型。
+     * 		值类型
      */
     interface ThrowableSetter<T> {
         void set(Field field, Object instance, T value) throws IllegalAccessException;
     }
 
     /**
-     * 字段读取操作的函数式接口。
+     * 字段读取操作的函数式接口
      *
      * @param <T>
-     * 		值类型。
+     * 		值类型
      */
     interface ThrowableGetter<T> {
         T get(Field field, Object instance) throws IllegalAccessException;

@@ -4,9 +4,9 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.cache.LruCache;
 
 /**
- * L2 反编译源码内存缓存，按字节大小限制（50MB 上限），加权 LRU 淘汰。
- * 缓存键 = workspaceKey + internalName + engine + optionsHash。
- * 引擎切换或反编译选项变更时自动失效。
+ * L2 反编译源码内存缓存，按字节大小限制（50MB 上限），加权 LRU 淘汰
+ * 缓存键 = workspaceKey + internalName + engine + optionsHash
+ * 引擎切换或反编译选项变更时自动失效
  *
  * @author bingbaihanji
  * @date 2026-06-18

@@ -9,14 +9,14 @@ import com.bingbaihanji.fxdecomplie.util.value.StringValue;
 import java.util.Optional;
 
 /**
- * 字符串值持有者实现。
+ * 字符串值持有者实现
  *
  * @author Matt Coley
  */
 public class StringValueImpl extends ObjectValueBoxImpl<String> implements StringValue {
     /**
      * @param nullness
-     * 		值的空值状态。
+     * 		值的空值状态
      */
     public StringValueImpl(Nullness nullness) {
         super(Types.STRING_TYPE, nullness);
@@ -24,7 +24,7 @@ public class StringValueImpl extends ObjectValueBoxImpl<String> implements Strin
 
     /**
      * @param value
-     * 		要持有的字符串值。
+     * 		要持有的字符串值
      */
     public StringValueImpl(String value) {
         super(Types.STRING_TYPE, value);

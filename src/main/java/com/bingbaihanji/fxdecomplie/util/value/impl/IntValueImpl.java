@@ -9,7 +9,7 @@ import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 import java.util.OptionalInt;
 
 /**
- * 整数值持有者实现。
+ * 整数值持有者实现
  *
  * @author Matt Coley
  */
@@ -18,7 +18,7 @@ public class IntValueImpl implements IntValue {
     private final OptionalInt value;
 
     /**
-     * 创建一个内容未知的整数值。
+     * 创建一个内容未知的整数值
      */
     public IntValueImpl() {
         this.value = OptionalInt.empty();
@@ -26,7 +26,7 @@ public class IntValueImpl implements IntValue {
 
     /**
      * @param value
-     * 		要持有的整数值。
+     * 		要持有的整数值
      */
     public IntValueImpl(int value) {
         this.value = OptionalInt.of(value);

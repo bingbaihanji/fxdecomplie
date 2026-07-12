@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.OptionalInt;
 
 /**
- * 能够记录数组内容部分细节的值。
+ * 能够记录数组内容部分细节的值
  *
  * @author Matt Coley
  */
@@ -40,11 +40,11 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param type
-     * 		数组类型。
+     * 		数组类型
      * @param nullness
-     * 		数组空值状态。
+     * 		数组空值状态
      *
-     * @return 给定类型的数组值。
+     * @return 给定类型的数组值
      */
 
     static ArrayValue of(Type type, Nullness nullness) {
@@ -66,13 +66,13 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param type
-     * 		数组类型。
+     * 		数组类型
      * @param nullness
-     * 		数组空值状态。
+     * 		数组空值状态
      * @param length
-     * 		数组长度。
+     * 		数组长度
      *
-     * @return 给定类型/长度的数组值。
+     * @return 给定类型/长度的数组值
      */
 
     static ArrayValue of(Type type, Nullness nullness, int length) {
@@ -81,11 +81,11 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param type
-     * 		数组类型。
+     * 		数组类型
      * @param dimensions
-     * 		要创建的数组各维度长度。
+     * 		要创建的数组各维度长度
      *
-     * @return 由 {@link Opcodes#MULTIANEWARRAY} 指令创建的数组值。
+     * @return 由 {@link Opcodes#MULTIANEWARRAY} 指令创建的数组值
      */
 
     static ReValue multiANewArray(Type type, int[] dimensions) {
@@ -100,22 +100,22 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param index
-     * 		要赋值的索引。
+     * 		要赋值的索引
      * @param value
-     * 		要赋的值。
+     * 		要赋的值
      *
-     * @return 在给定索引处赋予给定值后的新数组。
+     * @return 在给定索引处赋予给定值后的新数组
      */
 
     ArrayValue setValue(int index, ReValue value);
 
     /**
      * @param originalValue
-     * 		某个值。
+     * 		某个值
      * @param updatedValue
-     * 		该值的某个更新版本。
+     * 		该值的某个更新版本
      *
-     * @return 将给定原始值替换为更新值后的新数组。
+     * @return 将给定原始值替换为更新值后的新数组
      */
 
     ArrayValue updatedCopyIfContained(ReValue originalValue, ReValue updatedValue);
@@ -130,15 +130,15 @@ public interface ArrayValue extends ObjectValue {
     Type type();
 
     /**
-     * 元素类型是任意数组的基础类型。考虑以下情形：
+     * 元素类型是任意数组的基础类型考虑以下情形：
      * <ul>
      *     <li>{@code int[]}</li>
      *     <li>{@code int[][]}</li>
      *     <li>{@code int[][][]}</li>
      * </ul>
-     * 它们的元素类型都是 {@code int}。
+     * 它们的元素类型都是 {@code int}
      *
-     * @return 数组的元素类型。
+     * @return 数组的元素类型
      */
 
     default Type elementType() {
@@ -153,7 +153,7 @@ public interface ArrayValue extends ObjectValue {
      *     <li>3: {@code int[][][]}</li>
      * </ul>
      *
-     * @return 数组的维数。
+     * @return 数组的维数
      */
     default int dimensions() {
         return type().getDimensions();
@@ -169,16 +169,16 @@ public interface ArrayValue extends ObjectValue {
      *     <tr><td>未知</td><td>{@code int[]}</td></tr>
      * </table>
      *
-     * @return 第一维的长度。
+     * @return 第一维的长度
      */
 
     OptionalInt getFirstDimensionLength();
 
     /**
      * @param index
-     * 		{@link #getFirstDimensionLength()} 范围内的索引。
+     *        {@link #getFirstDimensionLength()} 范围内的索引
      *
-     * @return 若已知则返回给定索引处的值；否则返回数组元素类型对应的 {@link ReValue}。
+     * @return 若已知则返回给定索引处的值；否则返回数组元素类型对应的 {@link ReValue}
      */
 
     ReValue getValue(int index);

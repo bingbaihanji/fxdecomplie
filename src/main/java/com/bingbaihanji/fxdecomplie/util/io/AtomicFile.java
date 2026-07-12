@@ -3,12 +3,7 @@ package com.bingbaihanji.fxdecomplie.util.io;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
@@ -102,6 +97,14 @@ public final class AtomicFile {
             }
         }
         Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    private static void deleteIfExists(File file) {
+        try {
+            Files.deleteIfExists(file.toPath());
+        } catch (IOException e) {
+            log.warn("Failed to delete file {}", file, e);
+        }
     }
 
     /**
@@ -310,14 +313,6 @@ public final class AtomicFile {
             throw e;
         } finally {
             closeQuietly(out);
-        }
-    }
-
-    private static void deleteIfExists(File file) {
-        try {
-            Files.deleteIfExists(file.toPath());
-        } catch (IOException e) {
-            log.warn("Failed to delete file {}", file, e);
         }
     }
 

@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.util.value.impl.StringValueImpl;
 import org.objectweb.asm.Type;
 
 /**
- * 能够记录特定对象类型精确内容的值。
+ * 能够记录特定对象类型精确内容的值
  * <table>
  *     <tr><th>内容</th><th>使用的值</th></tr>
  *     <tr><td>{@code null}</td><td>{@link #VAL_OBJECT_NULL}</td></tr>
@@ -32,9 +32,9 @@ public non-sealed interface ObjectValue extends ReValue {
 
     /**
      * @param text
-     * 		精确的字符串内容。
+     * 		精确的字符串内容
      *
-     * @return 持有该精确内容的字符串值。
+     * @return 持有该精确内容的字符串值
      */
 
     static StringValue string(String text) {
@@ -52,9 +52,9 @@ public non-sealed interface ObjectValue extends ReValue {
 
     /**
      * @param nullness
-     * 		该 {@link Class} 的空值状态。
+     * 		该 {@link Class} 的空值状态
      *
-     * @return 给定空值状态的类字面量对象值。
+     * @return 给定空值状态的类字面量对象值
      */
 
     static ObjectValue clazz(Nullness nullness) {
@@ -67,9 +67,9 @@ public non-sealed interface ObjectValue extends ReValue {
 
     /**
      * @param nullness
-     * 		字符串的空值状态。
+     * 		字符串的空值状态
      *
-     * @return 给定空值状态的字符串值。
+     * @return 给定空值状态的字符串值
      */
 
     static StringValue string(Nullness nullness) {
@@ -82,9 +82,9 @@ public non-sealed interface ObjectValue extends ReValue {
 
     /**
      * @param nullness
-     * 		字符串的空值状态。
+     * 		字符串的空值状态
      *
-     * @return 给定空值状态、类型为 {@link Object} 的对象值。
+     * @return 给定空值状态、类型为 {@link Object} 的对象值
      */
 
     static ObjectValue object(Nullness nullness) {
@@ -98,11 +98,11 @@ public non-sealed interface ObjectValue extends ReValue {
 
     /**
      * @param type
-     * 		对象类型。
+     * 		对象类型
      * @param nullness
-     * 		对象的空值状态。
+     * 		对象的空值状态
      *
-     * @return 给定类型与空值状态的对象值。
+     * @return 给定类型与空值状态的对象值
      */
     static ObjectValue object(Type type, Nullness nullness) {
         if (Types.OBJECT_TYPE.equals(type)) {
@@ -122,20 +122,20 @@ public non-sealed interface ObjectValue extends ReValue {
     Type type();
 
     /**
-     * @return 此值的空值状态。
+     * @return 此值的空值状态
      */
 
     Nullness nullness();
 
     /**
-     * @return 当此值确定为 {@code null} 时返回 {@code true}。
+     * @return 当此值确定为 {@code null} 时返回 {@code true}
      */
     default boolean isNull() {
         return nullness() == Nullness.NULL;
     }
 
     /**
-     * @return 当此值确定<b>不</b>为 {@code null} 时返回 {@code true}。
+     * @return 当此值确定<b>不</b>为 {@code null} 时返回 {@code true}
      */
     default boolean isNotNull() {
         return nullness() == Nullness.NOT_NULL;

@@ -22,12 +22,12 @@ public final class AccessPatcher {
     private static final Logger log = LoggerFactory.getLogger(AccessPatcher.class);
     private static volatile boolean patched;
 
-    // 禁止任何实例化。
+    // 禁止任何实例化
     private AccessPatcher() {
     }
 
     /**
-     * 修补 JDK 访问限制。
+     * 修补 JDK 访问限制
      */
     public static void patch() {
         if (patched) {
@@ -49,7 +49,7 @@ public final class AccessPatcher {
     }
 
     /**
-     * 开放所有包。
+     * 开放所有包
      */
     private static void openPackages() {
         try {
@@ -81,7 +81,7 @@ public final class AccessPatcher {
     }
 
     /**
-     * 修补反射过滤器。
+     * 修补反射过滤器
      */
     private static void patchReflectionFilters() {
         Class<?> klass;

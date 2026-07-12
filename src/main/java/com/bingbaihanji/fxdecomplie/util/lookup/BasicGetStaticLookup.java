@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * {@link GetStaticLookup} 的基础实现，用于处理常见的静态字段。
+ * {@link GetStaticLookup} 的基础实现，用于处理常见的静态字段
  *
  * @author Matt Coley
  */

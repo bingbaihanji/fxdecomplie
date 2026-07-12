@@ -6,7 +6,7 @@ import org.objectweb.asm.Type;
 
 
 /**
- * 装箱 {@link Boolean} 值持有者实现。
+ * 装箱 {@link Boolean} 值持有者实现
  *
  * @author Matt Coley
  */
@@ -15,7 +15,7 @@ public class BoxedBooleanValueImpl extends ObjectValueBoxImpl<Boolean> {
 
     /**
      * @param nullness
-     * 		值的空值状态。
+     * 		值的空值状态
      */
     public BoxedBooleanValueImpl(Nullness nullness) {
         super(TYPE, nullness);
@@ -23,7 +23,7 @@ public class BoxedBooleanValueImpl extends ObjectValueBoxImpl<Boolean> {
 
     /**
      * @param value
-     * 		要持有的装箱值。
+     * 		要持有的装箱值
      */
     public BoxedBooleanValueImpl(Boolean value) {
         super(TYPE, value);

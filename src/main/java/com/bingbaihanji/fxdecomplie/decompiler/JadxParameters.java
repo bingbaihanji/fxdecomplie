@@ -15,7 +15,7 @@ import java.util.List;
  * jadx 反编译引擎可配置参数定义
  * <p>
  * 参数列表从 {@link JadxOptionSchema} 生成，确保与 {@code JadxOptionsBridge}
- * 和 {@code DecompilerOptions.hash()} 的 key/默认值一致。
+ * 和 {@code DecompilerOptions.hash()} 的 key/默认值一致
  *
  * @author bingbaihanji
  */

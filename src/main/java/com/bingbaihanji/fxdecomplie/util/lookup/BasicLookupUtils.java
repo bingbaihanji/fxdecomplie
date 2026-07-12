@@ -10,14 +10,14 @@ import java.util.List;
 import java.util.OptionalInt;
 
 /**
- * 供各查找实现使用的通用工具，用于在 JVM 值与解释器值之间转换。
+ * 供各查找实现使用的通用工具，用于在 JVM 值与解释器值之间转换
  *
  * @author Matt Coley
  */
 public class BasicLookupUtils {
     // TODO: 这些短名称方法便于代码生成，应保持原样，
     //       但我们也应当以更显式的方式暴露转换逻辑，供插件开发者在
-    //       编写转换器或自定义查找实现时使用。
+    //       编写转换器或自定义查找实现时使用
 
     @SuppressWarnings("all")
     protected static byte b(IntValue value) {
@@ -65,7 +65,7 @@ public class BasicLookupUtils {
     }
 
     protected static Object objl(ObjectValue value) {
-        // 直接返回对象类型，而不是在调用处以 T 进行自动转型。
+        // 直接返回对象类型，而不是在调用处以 T 进行自动转型
         return obj(value);
     }
 
@@ -138,7 +138,7 @@ public class BasicLookupUtils {
 
 
     protected static ObjectValue obj(Object value) {
-        // 该转换并不完美，因为会在过程中丢失类型信息。
+        // 该转换并不完美，因为会在过程中丢失类型信息
         if (value == null) {
             return ObjectValue.VAL_OBJECT_NULL;
         }

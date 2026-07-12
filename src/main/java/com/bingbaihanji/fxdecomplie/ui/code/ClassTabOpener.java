@@ -231,12 +231,21 @@ public final class ClassTabOpener {
                 .findFirst().orElse(null);
     }
 
+    private static String cacheOptionsHash(DecompilerTypeEnum engine, Map<String, String> engineOptions) {
+        String optionsHash = DecompilerOptions.hash(engineOptions);
+        if (engine == DecompilerTypeEnum.JADX
+                && Boolean.parseBoolean(engineOptions.getOrDefault("deobfuscationOn", "false"))) {
+            return optionsHash + "_" + JadxProjectRenameSynchronizer.CACHE_STATE_VERSION;
+        }
+        return optionsHash;
+    }
+
+    /** 创建代码编辑器标签页 */
+
     /** 更新编辑器主题,后续新打开的标签页将使用新主题 */
     public void setEditorTheme(VsCodeThemeLoader.ThemeData newTheme) {
         this.editorTheme = newTheme;
     }
-
-    /** 创建代码编辑器标签页 */
 
     /** 暴露 L2 缓存给全文搜索等批量解编译场景复用已打开的标签页结果 */
     public DecompileCache getDecompileCache() {
@@ -389,7 +398,7 @@ public final class ClassTabOpener {
                 String sourceCode = result.sourceCode();
                 sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
-                // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致。
+                // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致
                 CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                         ? OutlineParser.extractMetadata(sourceCode, bytes)
                         : emptyMetadata();
@@ -564,7 +573,7 @@ public final class ClassTabOpener {
                 String sourceCode = result.sourceCode();
                 sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
-                // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致。
+                // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致
                 CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                         ? OutlineParser.extractMetadata(sourceCode, bytes)
                         : emptyMetadata();
@@ -626,6 +635,11 @@ public final class ClassTabOpener {
         }
     }
 
+    /**
+     * 打开文本文件标签页(XML/JSON/YML/properties/.java 等)
+     * 读取字节码转为 UTF-8 文本,在只读 CodeArea 中显示
+     */
+
     /** 取消当前运行的反编译任务(同时使主导航和刷新请求失效) */
     public void cancelCurrentTask() {
         decompileGeneration.incrementAndGet();
@@ -633,10 +647,6 @@ public final class ClassTabOpener {
         BackgroundTasks.cancel(currentDecompileTask);
     }
 
-    /**
-     * 打开文本文件标签页(XML/JSON/YML/properties/.java 等)
-     * 读取字节码转为 UTF-8 文本,在只读 CodeArea 中显示
-     */
     /** 以 Hex 视图打开任意文件(右键菜单入口,始终新建标签页) */
     public void openFileInHexView(FileTreeNode node, Workspace workspace, TabPane codeTabPane) {
         statusBar.setFilePath(I18nUtil.getString("status.reading", node.getFullPath()));
@@ -1270,15 +1280,6 @@ public final class ClassTabOpener {
             return DecompilerTypeEnum.VINEFLOWER;
         }
         return requestedEngine;
-    }
-
-    private static String cacheOptionsHash(DecompilerTypeEnum engine, Map<String, String> engineOptions) {
-        String optionsHash = DecompilerOptions.hash(engineOptions);
-        if (engine == DecompilerTypeEnum.JADX
-                && Boolean.parseBoolean(engineOptions.getOrDefault("deobfuscationOn", "false"))) {
-            return optionsHash + "_" + JadxProjectRenameSynchronizer.CACHE_STATE_VERSION;
-        }
-        return optionsHash;
     }
 
     private void notifyRenameStateChanged(Workspace workspace) {

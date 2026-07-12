@@ -1,7 +1,8 @@
 package com.bingbaihanji.fxdecomplie.ui.settings;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
-import com.bingbaihanji.fxdecomplie.decompiler.*;
+import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.decompiler.EngineParameters;
 import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxAdapterOptions;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
@@ -13,13 +14,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import javafx.scene.control.*;
-import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -560,7 +555,7 @@ public final class SettingsDialog {
         return new VBox(scroll);
     }
 
-    /** JADX 选项较多,按实际作用域分组,避免全部挤在“通用/高级”里。 */
+    /** JADX 选项较多,按实际作用域分组,避免全部挤在“通用/高级”里 */
     private static VBox buildJadxParameterPanel(AppConfig config,
                                                 List<DecompilerParameter> params,
                                                 Map<String, String> engineOpts,

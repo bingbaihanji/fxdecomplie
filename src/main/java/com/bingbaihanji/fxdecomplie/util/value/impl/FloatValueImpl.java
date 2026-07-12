@@ -9,7 +9,7 @@ import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 import java.util.OptionalDouble;
 
 /**
- * float 值持有者实现。
+ * float 值持有者实现
  *
  * @author Matt Coley
  */
@@ -19,7 +19,7 @@ public class FloatValueImpl implements FloatValue {
 
     /**
      * @param value
-     * 		要持有的 float 值。
+     * 		要持有的 float 值
      */
     public FloatValueImpl(float value) {
         this.value = OptionalDouble.of(value);
@@ -27,14 +27,14 @@ public class FloatValueImpl implements FloatValue {
 
     /**
      * @param value
-     * 		要持有的值（以 double 形式提供）。
+     * 		要持有的值（以 double 形式提供）
      */
     public FloatValueImpl(double value) {
         this.value = OptionalDouble.of(value);
     }
 
     /**
-     * 创建一个内容未知的 float 值。
+     * 创建一个内容未知的 float 值
      */
     public FloatValueImpl() {
         this.value = OptionalDouble.empty();

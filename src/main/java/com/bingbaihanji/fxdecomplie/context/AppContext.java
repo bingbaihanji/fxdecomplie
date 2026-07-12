@@ -6,7 +6,6 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CommentManager;
-import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.ui.code.ClassTabOpener;
 import com.bingbaihanji.windows.jfx.WindowToolkit;
 import org.slf4j.Logger;

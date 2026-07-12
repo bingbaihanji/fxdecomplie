@@ -14,7 +14,7 @@ import java.util.OptionalInt;
 import java.util.function.IntFunction;
 
 /**
- * 数组值持有者实现。
+ * 数组值持有者实现
  *
  * @author Matt Coley
  */
@@ -26,12 +26,12 @@ public class ArrayValueImpl implements ArrayValue {
     private final List<ReValue> contents;
 
     /**
-     * 创建一个长度未知的新数组值。
+     * 创建一个长度未知的新数组值
      *
      * @param type
-     * 		数组类型。
+     * 		数组类型
      * @param nullness
-     * 		数组引用的空值状态。
+     * 		数组引用的空值状态
      */
     public ArrayValueImpl(Type type, Nullness nullness) {
         if (type.getSort() != Type.ARRAY) {
@@ -44,34 +44,34 @@ public class ArrayValueImpl implements ArrayValue {
     }
 
     /**
-     * 创建一个长度已知的新数组值。
+     * 创建一个长度已知的新数组值
      * <p>
-     * 数组内容以元素类型的默认 {@link ReValue} 实例填充。
+     * 数组内容以元素类型的默认 {@link ReValue} 实例填充
      *
      * @param type
-     * 		数组类型。
+     * 		数组类型
      * @param nullness
-     * 		数组引用的空值状态。
+     * 		数组引用的空值状态
      * @param length
-     * 		数组长度。
+     * 		数组长度
      */
     public ArrayValueImpl(Type type, Nullness nullness, int length) {
         this(type, nullness, length, new ConstProvider(getSubTypedValue(type, ReValue::ofTypeDefaultValue)));
     }
 
     /**
-     * 创建一个长度已知并希望预先填充值的新数组。
+     * 创建一个长度已知并希望预先填充值的新数组
      * <p>
-     * 数组内容由索引到值的函数提供。
+     * 数组内容由索引到值的函数提供
      *
      * @param type
-     * 		数组类型。
+     * 		数组类型
      * @param nullness
-     * 		数组引用的空值状态。
+     * 		数组引用的空值状态
      * @param length
-     * 		数组长度。
+     * 		数组长度
      * @param indexValueFunction
-     * 		数组索引到值的函数。
+     * 		数组索引到值的函数
      */
     public ArrayValueImpl(Type type, Nullness nullness, int length, IntFunction<ReValue> indexValueFunction) {
         if (type.getSort() != Type.ARRAY) {
@@ -86,7 +86,7 @@ public class ArrayValueImpl implements ArrayValue {
                 contents.add(indexValueFunction.apply(i));
             }
         } else {
-            // 数组长度为负数。因此存在两种可能：
+            // 数组长度为负数因此存在两种可能：
             // - 我们的栈求值存在 bug
             // - 我们正在分析故意抛出异常的混淆代码
             this.length = OptionalInt.empty();
@@ -117,7 +117,7 @@ public class ArrayValueImpl implements ArrayValue {
             return copy;
         }
 
-        // 值未知，因此无需创建副本。
+        // 值未知，因此无需创建副本
         return this;
     }
 
@@ -127,12 +127,12 @@ public class ArrayValueImpl implements ArrayValue {
             for (int i = 0; i < contents.size(); i++) {
                 ReValue content = contents.get(i);
 
-                // 情形 1：该值是此数组中的直接条目。
+                // 情形 1：该值是此数组中的直接条目
                 if (content == originalValue) {
                     return setValue(i, updatedValue);
                 }
 
-                // 情形 2：此数组是多维的，该值位于嵌套的子数组中。
+                // 情形 2：此数组是多维的，该值位于嵌套的子数组中
                 else if (content instanceof ArrayValue subArray) {
                     ArrayValue updatedSubArray = subArray.updatedCopyIfContained(originalValue, updatedValue);
                     if (subArray != updatedSubArray) {
@@ -142,7 +142,7 @@ public class ArrayValueImpl implements ArrayValue {
             }
         }
 
-        // 未包含该值，无需改动。
+        // 未包含该值，无需改动
         return this;
     }
 

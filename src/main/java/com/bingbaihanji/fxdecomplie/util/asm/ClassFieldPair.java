@@ -4,12 +4,12 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 
 /**
- * 类与字段的组合对。
+ * 类与字段的组合对
  *
  * @param classNode
- * 		所包装的类。
+ * 		所包装的类
  * @param fieldNode
- * 		所包装的字段。
+ * 		所包装的字段
  */
 public record ClassFieldPair(ClassNode classNode,
                              FieldNode fieldNode) {

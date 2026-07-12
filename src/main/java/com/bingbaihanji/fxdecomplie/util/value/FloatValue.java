@@ -7,7 +7,7 @@ import org.objectweb.asm.Type;
 import java.util.OptionalDouble;
 
 /**
- * 能够记录精确的浮点内容的值。
+ * 能够记录精确的浮点内容的值
  *
  * @author Matt Coley
  */
@@ -22,9 +22,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param value
-     * 		要持有的 float 值。
+     * 		要持有的 float 值
      *
-     * @return 持有该精确内容的 float 值。
+     * @return 持有该精确内容的 float 值
      */
 
     static FloatValue of(float value) {
@@ -45,9 +45,9 @@ public non-sealed interface FloatValue extends ReValue {
     }
 
     /**
-     * @return 值的 float 内容。若 {@link #hasKnownValue() 未知} 则为空。
+     * @return 值的 float 内容若 {@link #hasKnownValue() 未知} 则为空
      *
-     * @implNote Java 没有 {@code OptionalFloat}。
+     * @implNote Java 没有 {@code OptionalFloat}
      */
 
     OptionalDouble value();
@@ -70,9 +70,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param value
-     * 		用于比较的值。
+     * 		用于比较的值
      *
-     * @return 当已知值等于给定值时返回 {@code true}。
+     * @return 当已知值等于给定值时返回 {@code true}
      */
     default boolean isEqualTo(float value) {
         return value().isPresent() && value().getAsDouble() == value;
@@ -80,9 +80,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param value
-     * 		用于比较的值。
+     * 		用于比较的值
      *
-     * @return 当已知值小于给定值时返回 {@code true}。
+     * @return 当已知值小于给定值时返回 {@code true}
      */
     default boolean isLessThan(float value) {
         return value().isPresent() && value().getAsDouble() < value;
@@ -90,9 +90,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param value
-     * 		用于比较的值。
+     * 		用于比较的值
      *
-     * @return 当已知值小于或等于给定值时返回 {@code true}。
+     * @return 当已知值小于或等于给定值时返回 {@code true}
      */
     default boolean isLessThanOrEqual(float value) {
         return value().isPresent() && value().getAsDouble() <= value;
@@ -100,9 +100,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param value
-     * 		用于比较的值。
+     * 		用于比较的值
      *
-     * @return 当已知值大于给定值时返回 {@code true}。
+     * @return 当已知值大于给定值时返回 {@code true}
      */
     default boolean isGreaterThan(float value) {
         return value().isPresent() && value().getAsDouble() > value;
@@ -110,9 +110,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param value
-     * 		用于比较的值。
+     * 		用于比较的值
      *
-     * @return 当已知值大于或等于给定值时返回 {@code true}。
+     * @return 当已知值大于或等于给定值时返回 {@code true}
      */
     default boolean isGreaterThanOrEqual(float value) {
         return value().isPresent() && value().getAsDouble() >= value;
@@ -121,9 +121,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param other
-     * 		另一个值。
+     * 		另一个值
      *
-     * @return 两值之和；若任一值未知则为 {@link #UNKNOWN}。
+     * @return 两值之和；若任一值未知则为 {@link #UNKNOWN}
      */
     default FloatValue add(FloatValue other) {
         OptionalDouble value = value();
@@ -137,9 +137,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param other
-     * 		另一个值。
+     * 		另一个值
      *
-     * @return 两值之差；若任一值未知则为 {@link #UNKNOWN}。
+     * @return 两值之差；若任一值未知则为 {@link #UNKNOWN}
      */
     default FloatValue sub(FloatValue other) {
         OptionalDouble value = value();
@@ -153,9 +153,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param other
-     * 		另一个值。
+     * 		另一个值
      *
-     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）。
+     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）
      */
     default FloatValue mul(FloatValue other) {
         OptionalDouble value = value();
@@ -172,9 +172,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param other
-     * 		另一个值。
+     * 		另一个值
      *
-     * @return 两值之商；若任一值未知或除数为 0 则为 {@link #UNKNOWN}。
+     * @return 两值之商；若任一值未知或除数为 0 则为 {@link #UNKNOWN}
      */
     default FloatValue div(FloatValue other) {
         OptionalDouble value = value();
@@ -192,9 +192,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param other
-     * 		另一个值。
+     * 		另一个值
      *
-     * @return 比较结果（对应 {@code fcmpg} 指令，NaN 视为大于）；若任一值未知则为 {@link IntValue#UNKNOWN}。
+     * @return 比较结果（对应 {@code fcmpg} 指令，NaN 视为大于）；若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpg(FloatValue other) {
         OptionalDouble value = value();
@@ -213,9 +213,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param other
-     * 		另一个值。
+     * 		另一个值
      *
-     * @return 比较结果（对应 {@code fcmpl} 指令，NaN 视为小于）；若任一值未知则为 {@link IntValue#UNKNOWN}。
+     * @return 比较结果（对应 {@code fcmpl} 指令，NaN 视为小于）；若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpl(FloatValue other) {
         OptionalDouble value = value();
@@ -234,9 +234,9 @@ public non-sealed interface FloatValue extends ReValue {
 
     /**
      * @param other
-     * 		另一个值。
+     * 		另一个值
      *
-     * @return 两值取余的结果；若任一值未知则为 {@link #UNKNOWN}。
+     * @return 两值取余的结果；若任一值未知则为 {@link #UNKNOWN}
      */
     default FloatValue rem(FloatValue other) {
         OptionalDouble value = value();
@@ -249,7 +249,7 @@ public non-sealed interface FloatValue extends ReValue {
 
 
     /**
-     * @return 取负后的值；若值未知则为 {@link #UNKNOWN}。
+     * @return 取负后的值；若值未知则为 {@link #UNKNOWN}
      */
     default FloatValue negate() {
         OptionalDouble value = value();
@@ -261,7 +261,7 @@ public non-sealed interface FloatValue extends ReValue {
 
 
     /**
-     * @return 转换为 int 后的值；若值未知则为 {@link IntValue#UNKNOWN}。
+     * @return 转换为 int 后的值；若值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue castInt() {
         OptionalDouble value = value();
@@ -273,7 +273,7 @@ public non-sealed interface FloatValue extends ReValue {
 
 
     /**
-     * @return 转换为 double 后的值；若值未知则为 {@link DoubleValue#UNKNOWN}。
+     * @return 转换为 double 后的值；若值未知则为 {@link DoubleValue#UNKNOWN}
      */
     default DoubleValue castDouble() {
         OptionalDouble value = value();
@@ -285,7 +285,7 @@ public non-sealed interface FloatValue extends ReValue {
 
 
     /**
-     * @return 转换为 long 后的值；若值未知则为 {@link LongValue#UNKNOWN}。
+     * @return 转换为 long 后的值；若值未知则为 {@link LongValue#UNKNOWN}
      */
     default LongValue castLong() {
         OptionalDouble value = value();

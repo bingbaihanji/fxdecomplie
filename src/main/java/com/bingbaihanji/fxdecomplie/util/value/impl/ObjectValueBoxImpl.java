@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * 装箱对象值持有者实现。
+ * 装箱对象值持有者实现
  *
  * @author Matt Coley
  */
@@ -23,9 +23,9 @@ public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
 
     /**
      * @param type
-     * 		对象类型。
+     * 		对象类型
      * @param nullness
-     * 		值的空值状态。
+     * 		值的空值状态
      */
     public ObjectValueBoxImpl(Type type, Nullness nullness) {
         super(type, nullness);
@@ -34,9 +34,9 @@ public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
 
     /**
      * @param type
-     * 		对象类型。
+     * 		对象类型
      * @param value
-     * 		要持有的装箱值。
+     * 		要持有的装箱值
      */
     public ObjectValueBoxImpl(Type type, T value) {
         super(type, value == null ? Nullness.NULL : Nullness.NOT_NULL);
@@ -46,18 +46,18 @@ public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
 
     /**
      * @param value
-     * 		要包装的值。
+     * 		要包装的值
      *
-     * @return 持有给定值的装箱值实例。
+     * @return 持有给定值的装箱值实例
      */
     protected abstract ObjectValueBoxImpl<T> wrap(T value);
 
 
     /**
      * @param nullness
-     * 		值的空值状态。
+     * 		值的空值状态
      *
-     * @return 内容未知、具有给定空值状态的装箱值实例。
+     * @return 内容未知、具有给定空值状态的装箱值实例
      */
     protected abstract ObjectValueBoxImpl<T> wrapUnknown(Nullness nullness);
 
@@ -68,10 +68,10 @@ public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
 
 
     /**
-     * @return 拆箱后的值。
+     * @return 拆箱后的值
      *
      * @throws java.util.NoSuchElementException
-     * 		当值未知时。
+     * 		当值未知时
      */
     public T unbox() {
         return value().orElseThrow();
@@ -79,7 +79,7 @@ public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
 
 
     /**
-     * @return 值的内容。若未知则为空。
+     * @return 值的内容若未知则为空
      */
     public Optional<T> value() {
         return value;

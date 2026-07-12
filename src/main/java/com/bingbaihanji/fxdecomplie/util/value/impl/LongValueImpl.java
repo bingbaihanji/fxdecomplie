@@ -10,7 +10,7 @@ import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 import java.util.OptionalLong;
 
 /**
- * long 值持有者实现。
+ * long 值持有者实现
  *
  * @author Matt Coley
  */
@@ -20,14 +20,14 @@ public class LongValueImpl implements LongValue {
 
     /**
      * @param value
-     * 		要持有的 long 值。
+     * 		要持有的 long 值
      */
     public LongValueImpl(long value) {
         this.value = OptionalLong.of(value);
     }
 
     /**
-     * 创建一个内容未知的 long 值。
+     * 创建一个内容未知的 long 值
      */
     public LongValueImpl() {
         this.value = OptionalLong.empty();

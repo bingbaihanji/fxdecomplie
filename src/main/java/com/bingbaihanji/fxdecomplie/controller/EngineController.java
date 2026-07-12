@@ -198,11 +198,6 @@ public final class EngineController {
         }
     }
 
-    /** 一次图形渲染请求：对话框标题、后台任务名、失败提示路径、以及从类字节构建 DOT 的闭包 */
-    private record GraphSpec(String title, String taskName, String failurePath,
-                             java.util.function.Function<byte[], String> dotBuilder) {
-    }
-
     /**
      * 图形渲染统一骨架：创建并显示对话框 → 后台取类字节 → 构建 DOT → FX 线程显示 → 失败处理
      * dotBuilder 返回 null 表示无内容,走失败提示
@@ -283,5 +278,10 @@ public final class EngineController {
             return owner.currentEngine();
         }
         return currentTab.getOpenFile().engine();
+    }
+
+    /** 一次图形渲染请求：对话框标题、后台任务名、失败提示路径、以及从类字节构建 DOT 的闭包 */
+    private record GraphSpec(String title, String taskName, String failurePath,
+                             java.util.function.Function<byte[], String> dotBuilder) {
     }
 }

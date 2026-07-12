@@ -39,7 +39,7 @@ public final class JadxDecompilerFacade {
         JadxDiagnostic diag = result.diagnostic();
         return "// jadx decompile failed: " + sanitize(diag != null ? diag.message() : "unknown error")
                 + "\n// Class: " + (diag != null && diag.className() != null
-                        ? diag.className() : "(unknown)");
+                ? diag.className() : "(unknown)");
     }
 
     /**

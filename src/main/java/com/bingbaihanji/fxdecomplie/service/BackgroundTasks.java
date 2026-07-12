@@ -7,7 +7,7 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 /**
- * 后台任务工具类，提供三个独立线程池以避免长任务阻塞交互操作。
+ * 后台任务工具类，提供三个独立线程池以避免长任务阻塞交互操作
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -15,32 +15,24 @@ import java.util.function.Consumer;
 public final class BackgroundTasks {
 
     private static final Logger log = LoggerFactory.getLogger(BackgroundTasks.class);
-
-    /** 任务池类型，调用方据此将任务路由到合适的池。 */
-    public enum PoolType {
-        /** 搜索、打开类、Ctrl+Click、UI 触发的交互操作 */
-        INTERACTIVE,
-        /** 磁盘缓存写入、索引构建 — 磁盘/CPU 密集型批处理 */
-        IO,
-        /** 导出任务专用 */
-        EXPORT
-    }
-
     private static final int CORES = Runtime.getRuntime().availableProcessors();
     private static final int INTERACTIVE_THREADS = Math.clamp(CORES, 4, 8);
-    private static final int IO_THREADS = 2;
-    private static final int EXPORT_THREADS = Math.clamp(CORES, 2, 4);
-
     private static final ThreadPoolExecutor INTERACTIVE_POOL = createPool(
             INTERACTIVE_THREADS, 200, "bg-int");
-    private static final ThreadPoolExecutor IO_POOL = createPool(
-            IO_THREADS, Integer.MAX_VALUE, "bg-io");
+    private static final int IO_THREADS = 2;
+    private static final int EXPORT_THREADS = Math.clamp(CORES, 2, 4);
     private static final ThreadPoolExecutor EXPORT_POOL = createPool(
             EXPORT_THREADS, 50, "bg-exp");
+    private static final ThreadPoolExecutor IO_POOL = createPool(
+            IO_THREADS, Integer.MAX_VALUE, "bg-io");
 
     static {
         INTERACTIVE_POOL.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         EXPORT_POOL.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    }
+
+    private BackgroundTasks() {
+        throw new AssertionError("utility class");
     }
 
     private static ThreadPoolExecutor createPool(int threads, int queueSize, String prefix) {
@@ -66,11 +58,7 @@ public final class BackgroundTasks {
         };
     }
 
-    private BackgroundTasks() {
-        throw new AssertionError("utility class");
-    }
-
-    /** 提交到 INTERACTIVE 池（向后兼容）。 */
+    /** 提交到 INTERACTIVE 池（向后兼容） */
     public static Future<?> run(String name, Runnable task) {
         return run(PoolType.INTERACTIVE, name, task, null);
     }
@@ -80,7 +68,7 @@ public final class BackgroundTasks {
         return run(PoolType.INTERACTIVE, name, task, onRejected);
     }
 
-    /** 提交到指定池。 */
+    /** 提交到指定池 */
     public static Future<?> run(PoolType type, String name, Runnable task) {
         return run(type, name, task, null);
     }
@@ -138,5 +126,15 @@ public final class BackgroundTasks {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /** 任务池类型，调用方据此将任务路由到合适的池 */
+    public enum PoolType {
+        /** 搜索、打开类、Ctrl+Click、UI 触发的交互操作 */
+        INTERACTIVE,
+        /** 磁盘缓存写入、索引构建 — 磁盘/CPU 密集型批处理 */
+        IO,
+        /** 导出任务专用 */
+        EXPORT
     }
 }

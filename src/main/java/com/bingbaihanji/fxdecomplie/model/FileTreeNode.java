@@ -27,7 +27,7 @@ public class FileTreeNode {
     private final NodeTypeEnum nodeType;
     /** 可选资源清理回调,例如关闭归档句柄通过 AtomicReference 保证单次执行 */
     private final AtomicReference<Runnable> cleanupRef = new AtomicReference<>();
-    /** 缓存的文件字节,按需加载后保留,避免重复读取同一打开文件。使用 SoftReference 允许 GC 在内存压力下回收。 */
+    /** 缓存的文件字节,按需加载后保留,避免重复读取同一打开文件使用 SoftReference 允许 GC 在内存压力下回收 */
     private volatile SoftReference<byte[]> cachedBytesRef;
     /** 懒加载字节来源,用于 JAR/ZIP/目录条目 */
     private volatile ByteLoader byteLoader;

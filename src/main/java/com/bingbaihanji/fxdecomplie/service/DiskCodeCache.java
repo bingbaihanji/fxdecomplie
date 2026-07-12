@@ -101,8 +101,11 @@ public final class DiskCodeCache {
             try (var stream = Files.walk(CACHE_ROOT)) {
                 totalSize = stream.filter(Files::isRegularFile)
                         .mapToLong(p -> {
-                            try { return Files.size(p); }
-                            catch (IOException e) { return 0L; }
+                            try {
+                                return Files.size(p);
+                            } catch (IOException e) {
+                                return 0L;
+                            }
                         }).sum();
             }
             if (totalSize > MAX_CACHE_SIZE_BYTES) {

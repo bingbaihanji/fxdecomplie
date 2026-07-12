@@ -13,7 +13,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 /**
- * {@link InvokeVirtualLookup} 的基础实现，用于处理常见的虚方法。
+ * {@link InvokeVirtualLookup} 的基础实现，用于处理常见的虚方法
  * <br>
  * 大部分为自动生成
  *
@@ -238,7 +238,7 @@ public class BasicInvokeVirtualLookup extends BasicLookupUtils implements Invoke
                 value = func.apply(params);
             } catch (Throwable t) {
                 // 某些方法本身可能抛出异常，例如 'Math.floorDiv(0, 0)'，因此这些
-                // 错误日志仅在调试时启用。
+                // 错误日志仅在调试时启用
                 logger.debug("Computation threw an exception for: " + key, t);
             }
         }

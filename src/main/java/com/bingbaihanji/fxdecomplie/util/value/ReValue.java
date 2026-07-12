@@ -10,19 +10,19 @@ import org.objectweb.asm.tree.analysis.Value;
 
 
 /**
- * 一类值的基类型，当所有控制流路径最终收敛于单一使用场景时，能够记录精确内容。
+ * 一类值的基类型，当所有控制流路径最终收敛于单一使用场景时，能够记录精确内容
  *
  * @author Matt Coley
  */
 public sealed interface ReValue extends Value permits IntValue, FloatValue, DoubleValue, LongValue, ObjectValue, UninitializedValue {
     /**
      * @param value
-     * 		LDC 指令中的 ASM 常量值。
+     * 		LDC 指令中的 ASM 常量值
      *
-     * @return 给定输入的 {@link ReValue} 包装。
+     * @return 给定输入的 {@link ReValue} 包装
      *
      * @throws IllegalValueException
-     * 		当该值无法映射为 {@link ReValue} 时。
+     * 		当该值无法映射为 {@link ReValue} 时
      * @see LdcInsnNode#cst 可能的取值
      */
 
@@ -61,14 +61,14 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
 
     /**
      * @param type
-     * 		要为其创建新泛型值的类型。
+     * 		要为其创建新泛型值的类型
      * @param nullness
-     * 		值的空值状态。
+     * 		值的空值状态
      *
-     * @return 给定类型的值。
+     * @return 给定类型的值
      *
      * @throws IllegalValueException
-     * 		当该类型无法映射为 {@link ReValue} 时。
+     * 		当该类型无法映射为 {@link ReValue} 时
      */
 
     static ReValue ofType(Type type, Nullness nullness) throws IllegalValueException {
@@ -89,12 +89,12 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
 
     /**
      * @param type
-     * 		要为其创建新泛型值的类型。
+     * 		要为其创建新泛型值的类型
      *
-     * @return 给定类型的值，取默认值 <i>（基本类型为 {@code 0}，对象/数组为 {@code null}）</i>。
+     * @return 给定类型的值，取默认值 <i>（基本类型为 {@code 0}，对象/数组为 {@code null}）</i>
      *
      * @throws IllegalValueException
-     * 		当该类型无法映射为 {@link ReValue} 时。
+     * 		当该类型无法映射为 {@link ReValue} 时
      */
 
     static ReValue ofTypeDefaultValue(Type type) throws IllegalValueException {
@@ -112,11 +112,11 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
 
     /**
      * @param value
-     * 		可能是基本类型的某个值。
+     * 		可能是基本类型的某个值
      * @param v
-     * 		用于比较的基本类型值。
+     * 		用于比较的基本类型值
      *
-     * @return 当该值是基本类型，且其基本类型值等于给定字面量值时返回 {@code true}。
+     * @return 当该值是基本类型，且其基本类型值等于给定字面量值时返回 {@code true}
      */
     static boolean isPrimitiveEqualTo(ReValue value, int v) {
         return switch (value) {
@@ -129,30 +129,30 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
     }
 
     /**
-     * @return 当精确内容已知时返回 {@code true}。
+     * @return 当精确内容已知时返回 {@code true}
      * 若此值为 {@link ObjectValue}，则 {@code null} 不计入其中，
-     * 此时应使用 {@link ObjectValue#isNull()}。
+     * 此时应使用 {@link ObjectValue#isNull()}
      */
     boolean hasKnownValue();
 
     /**
-     * @return 值内容的类型。
+     * @return 值内容的类型
      */
 
     Type type();
 
     /**
-     * 仅当我们值的类型比给定的另一个类型更宽泛时调用。
-     * 例如，若我们是 {@code ArrayList}，则可能将 {@code List} 视为 {@code other} 值，但反之绝不可能。
+     * 仅当我们值的类型比给定的另一个类型更宽泛时调用
+     * 例如，若我们是 {@code ArrayList}，则可能将 {@code List} 视为 {@code other} 值，但反之绝不可能
      *
      * @param other
-     * 		要合并的另一个值。
-     * 		应假定该值的类型与我们的 {@link #type()} 相同，或为其子类型。
+     * 		要合并的另一个值
+     * 		应假定该值的类型与我们的 {@link #type()} 相同，或为其子类型
      *
-     * @return 合并后的值。
+     * @return 合并后的值
      *
      * @throws IllegalValueException
-     * 		当给定值无法与此值合并时。
+     * 		当给定值无法与此值合并时
      */
 
     ReValue mergeWith(ReValue other) throws IllegalValueException;

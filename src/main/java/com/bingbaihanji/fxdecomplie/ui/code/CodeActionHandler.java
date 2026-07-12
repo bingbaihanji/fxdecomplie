@@ -32,7 +32,7 @@ public interface CodeActionHandler {
     }
 
     /**
-     * 跳转到声明(右键菜单/Ctrl+Click 兜底),包含点击列号用于同名短类精确匹配。
+     * 跳转到声明(右键菜单/Ctrl+Click 兜底),包含点击列号用于同名短类精确匹配
      */
     default void goToDeclaration(CodeViewContext context, int lineNumber, String token, int column) {
         goToDeclaration(context, lineNumber, token);

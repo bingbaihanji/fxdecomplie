@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class Workspace implements AutoCloseable {
 
+    /** 全源码搜索缓存单工作区内存上限（200MB） */
+    private static final long MAX_SOURCE_SEARCH_CACHE_BYTES = 200_000_000L;
     /** 工作区显示名称(如 demo.jar) */
     private final String name;
     /** 源文件或目录 */
@@ -31,8 +33,6 @@ public class Workspace implements AutoCloseable {
     private final AtomicBoolean indexBuildStarted = new AtomicBoolean();
     /** 工作区级源码搜索缓存,按引擎和选项分组 */
     private final ConcurrentMap<String, Map<String, String>> sourceSearchCaches = new ConcurrentHashMap<>();
-    /** 全源码搜索缓存单工作区内存上限（200MB） */
-    private static final long MAX_SOURCE_SEARCH_CACHE_BYTES = 200_000_000L;
     /** 当前 sourceSearchCaches 中所有条目的估算字节数 */
     private long sourceSearchCacheBytes;
     /** 工作区索引,用于全局搜索、字节码搜索和后续分析 */

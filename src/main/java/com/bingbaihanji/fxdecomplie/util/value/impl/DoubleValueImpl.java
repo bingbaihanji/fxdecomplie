@@ -9,7 +9,7 @@ import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 import java.util.OptionalDouble;
 
 /**
- * double 值持有者实现。
+ * double 值持有者实现
  *
  * @author Matt Coley
  */
@@ -19,14 +19,14 @@ public class DoubleValueImpl implements DoubleValue {
 
     /**
      * @param value
-     * 		要持有的 double 值。
+     * 		要持有的 double 值
      */
     public DoubleValueImpl(double value) {
         this.value = OptionalDouble.of(value);
     }
 
     /**
-     * 创建一个内容未知的 double 值。
+     * 创建一个内容未知的 double 值
      */
     public DoubleValueImpl() {
         this.value = OptionalDouble.empty();

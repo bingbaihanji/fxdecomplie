@@ -6,7 +6,7 @@ import org.objectweb.asm.Type;
 
 
 /**
- * 装箱 {@link Character} 值持有者实现。
+ * 装箱 {@link Character} 值持有者实现
  *
  * @author Matt Coley
  */
@@ -15,7 +15,7 @@ public class BoxedCharacterValueImpl extends ObjectValueBoxImpl<Character> {
 
     /**
      * @param nullness
-     * 		值的空值状态。
+     * 		值的空值状态
      */
     public BoxedCharacterValueImpl(Nullness nullness) {
         super(TYPE, nullness);
@@ -23,7 +23,7 @@ public class BoxedCharacterValueImpl extends ObjectValueBoxImpl<Character> {
 
     /**
      * @param value
-     * 		要持有的装箱值。
+     * 		要持有的装箱值
      */
     public BoxedCharacterValueImpl(Character value) {
         super(TYPE, value);
