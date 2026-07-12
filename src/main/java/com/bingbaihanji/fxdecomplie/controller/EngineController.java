@@ -103,37 +103,20 @@ public final class EngineController {
         owner.statusBar().setTask(I18nUtil.getString("task.loading"));
         owner.statusBar().setFilePath(I18nUtil.getString("graph.building", fullPath));
         log.info("请求查看继承图: {}", fullPath);
-        GraphDialog dialog = new GraphDialog(owner.stage(),
-                I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath);
-        dialog.show();
-        BackgroundTasks.run("InheritanceGraph-" + fullPath, () -> {
-            try {
-                byte[] classBytes = owner.classBytesForContext(context);
-                if (classBytes == null || classBytes.length == 0) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                WorkspaceIndex graphIndex = workspace != null
-                        ? owner.searchController().awaitWorkspaceIndex(workspace)
-                        : index;
-                if (graphIndex == WorkspaceIndex.EMPTY && index != null) {
-                    graphIndex = index;
-                }
-                var tree = InheritanceService.buildTree(fullPath, graphIndex, classBytes);
-                if (tree == null) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                String dot = GraphService.toInheritanceDOT(tree);
-                Platform.runLater(() -> {
-                    owner.statusBar().clearTask();
-                    dialog.showDot(dot);
-                });
-            } catch (Exception e) {
-                log.error("查看继承图失败: {}", fullPath, e);
-                Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
-            }
-        });
+        runGraph(context, new GraphSpec(
+                I18nUtil.getString("context.inheritanceGraph") + " - " + fullPath,
+                "InheritanceGraph-" + fullPath,
+                fullPath,
+                classBytes -> {
+                    WorkspaceIndex graphIndex = workspace != null
+                            ? owner.searchController().awaitWorkspaceIndex(workspace)
+                            : index;
+                    if (graphIndex == WorkspaceIndex.EMPTY && index != null) {
+                        graphIndex = index;
+                    }
+                    var tree = InheritanceService.buildTree(fullPath, graphIndex, classBytes);
+                    return tree == null ? null : GraphService.toInheritanceDOT(tree);
+                }));
     }
 
     public void showControlFlowGraph(CodeViewContext context) {
@@ -162,27 +145,12 @@ public final class EngineController {
         }
         owner.statusBar().setTask(I18nUtil.getString("task.loading"));
         owner.statusBar().setFilePath("CFG - " + methodName);
-        GraphDialog dialog = new GraphDialog(owner.stage(), "CFG - " + methodName);
-        dialog.show();
-        BackgroundTasks.run("CFG-" + methodName, () -> {
-            try {
-                byte[] classBytes = owner.classBytesForContext(context);
-                if (classBytes == null || classBytes.length == 0) {
-                    Platform.runLater(() -> showGraphFailed(dialog, null, null));
-                    return;
-                }
-                String dot = com.bingbaihanji.fxdecomplie.ui.graph.CfgAnalyzer
-                        .buildCfgDot(classBytes, methodName, null);
-                Platform.runLater(() -> dialog.showDot(dot));
-                Platform.runLater(owner.statusBar()::clearTask);
-            } catch (Exception e) {
-                log.error("CFG生成失败", e);
-                Platform.runLater(() -> {
-                    showGraphFailed(dialog, null, e);
-                    owner.statusBar().clearTask();
-                });
-            }
-        });
+        runGraph(context, new GraphSpec(
+                "CFG - " + methodName,
+                "CFG-" + methodName,
+                null,
+                classBytes -> com.bingbaihanji.fxdecomplie.ui.graph.CfgAnalyzer
+                        .buildCfgDot(classBytes, methodName, null)));
     }
 
     public void showMethodGraph(CodeViewContext context) {
@@ -197,31 +165,14 @@ public final class EngineController {
         owner.statusBar().setTask(I18nUtil.getString("task.loading"));
         owner.statusBar().setFilePath(I18nUtil.getString("graph.building", fullPath));
         log.info("请求查看方法图: {}", fullPath);
-        GraphDialog dialog = new GraphDialog(owner.stage(),
-                I18nUtil.getString("context.methodGraph") + " - " + fullPath);
-        dialog.show();
-        BackgroundTasks.run("MethodGraph-" + fullPath, () -> {
-            try {
-                byte[] classBytes = owner.classBytesForContext(context);
-                if (classBytes == null || classBytes.length == 0) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                var graph = GraphService.parseMethodCalls(classBytes);
-                if (graph.methods().isEmpty()) {
-                    Platform.runLater(() -> showGraphFailed(dialog, fullPath, null));
-                    return;
-                }
-                String dot = GraphService.toMethodDOT(graph);
-                Platform.runLater(() -> {
-                    owner.statusBar().clearTask();
-                    dialog.showDot(dot);
-                });
-            } catch (Exception e) {
-                log.error("查看方法图失败: {}", fullPath, e);
-                Platform.runLater(() -> showGraphFailed(dialog, fullPath, e));
-            }
-        });
+        runGraph(context, new GraphSpec(
+                I18nUtil.getString("context.methodGraph") + " - " + fullPath,
+                "MethodGraph-" + fullPath,
+                fullPath,
+                classBytes -> {
+                    var graph = GraphService.parseMethodCalls(classBytes);
+                    return graph.methods().isEmpty() ? null : GraphService.toMethodDOT(graph);
+                }));
     }
 
     private void showGraphFailed(String fullPath, Throwable error) {
@@ -245,6 +196,41 @@ public final class EngineController {
         } else {
             owner.showError(message);
         }
+    }
+
+    /** 一次图形渲染请求：对话框标题、后台任务名、失败提示路径、以及从类字节构建 DOT 的闭包 */
+    private record GraphSpec(String title, String taskName, String failurePath,
+                             java.util.function.Function<byte[], String> dotBuilder) {
+    }
+
+    /**
+     * 图形渲染统一骨架：创建并显示对话框 → 后台取类字节 → 构建 DOT → FX 线程显示 → 失败处理
+     * dotBuilder 返回 null 表示无内容,走失败提示
+     */
+    private void runGraph(CodeViewContext context, GraphSpec spec) {
+        GraphDialog dialog = new GraphDialog(owner.stage(), spec.title());
+        dialog.show();
+        BackgroundTasks.run(spec.taskName(), () -> {
+            try {
+                byte[] classBytes = owner.classBytesForContext(context);
+                if (classBytes == null || classBytes.length == 0) {
+                    Platform.runLater(() -> showGraphFailed(dialog, spec.failurePath(), null));
+                    return;
+                }
+                String dot = spec.dotBuilder().apply(classBytes);
+                if (dot == null) {
+                    Platform.runLater(() -> showGraphFailed(dialog, spec.failurePath(), null));
+                    return;
+                }
+                Platform.runLater(() -> {
+                    owner.statusBar().clearTask();
+                    dialog.showDot(dot);
+                });
+            } catch (Exception e) {
+                log.error("图形渲染失败: {}", spec.taskName(), e);
+                Platform.runLater(() -> showGraphFailed(dialog, spec.failurePath(), e));
+            }
+        });
     }
 
     /** 用全部引擎反编译当前类并排打开标签页,方便对比输出 */
