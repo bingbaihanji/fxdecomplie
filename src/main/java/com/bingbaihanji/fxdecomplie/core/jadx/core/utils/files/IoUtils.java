@@ -43,11 +43,21 @@ public final class IoUtils {
 
     public static synchronized Path updateTempRootDir(Path newTempRootDir) {
         try {
-            makeDirs(newTempRootDir);
-            Path dir = Files.createTempDirectory(newTempRootDir, JADX_TMP_INSTANCE_PREFIX);
-            tempRootDir = dir;
-            dir.toFile().deleteOnExit();
-            return dir;
+            try {
+                Files.createDirectories(newTempRootDir);
+                Path dir = Files.createTempDirectory(newTempRootDir, JADX_TMP_INSTANCE_PREFIX);
+                tempRootDir = dir;
+                dir.toFile().deleteOnExit();
+                return dir;
+            } catch (NoSuchFileException e) {
+                // OS may have cleaned up the parent temp directory; retry once
+                LOG.debug("temp root parent missing, retrying: {}", newTempRootDir);
+                Files.createDirectories(newTempRootDir);
+                Path dir = Files.createTempDirectory(newTempRootDir, JADX_TMP_INSTANCE_PREFIX);
+                tempRootDir = dir;
+                dir.toFile().deleteOnExit();
+                return dir;
+            }
         } catch (Exception e) {
             throw new JadxRuntimeException("Failed to update temp root directory", e);
         }
