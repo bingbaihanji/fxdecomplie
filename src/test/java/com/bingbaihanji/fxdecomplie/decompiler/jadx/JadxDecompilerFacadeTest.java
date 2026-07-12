@@ -50,6 +50,32 @@ class JadxDecompilerFacadeTest {
         assertFalse(source.contains("dependencyValue() {\n        return 41;"), source);
     }
 
+    @Test
+    void decompileResultReturnsOkForValidClass(@TempDir Path tmp) throws Exception {
+        CompiledSample sample = compileSample(tmp);
+        DecompilerContext context = DecompilerContext.of(
+                name -> "z/a".equals(name) ? sample.dependencyBytes() : null);
+        JadxDecompilerResult result = JadxDecompilerFacade.getInstance()
+                .decompileResult(new JadxDecompilerRequest(
+                        "z/b", "z/b.class", sample.targetBytes(), context));
+
+        assertEquals(JadxResultStatus.OK, result.status());
+        assertTrue(result.isSuccess());
+        assertNotNull(result.source());
+        assertTrue(result.source().contains("targetValue"));
+    }
+
+    @Test
+    void decompileResultReturnsExceptionForEmptyBytes() {
+        JadxDecompilerResult result = JadxDecompilerFacade.getInstance()
+                .decompileResult(new JadxDecompilerRequest(
+                        "test/Empty", "", new byte[0], DecompilerContext.EMPTY));
+
+        assertEquals(JadxResultStatus.EXCEPTION, result.status());
+        assertFalse(result.isSuccess());
+        assertNotNull(result.diagnostic());
+    }
+
     private static CompiledSample compileSample(Path tmp) throws Exception {
         Path srcRoot = tmp.resolve("src");
         Path outRoot = tmp.resolve("classes");

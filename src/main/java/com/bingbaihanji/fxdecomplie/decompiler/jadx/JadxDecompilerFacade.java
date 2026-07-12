@@ -24,11 +24,6 @@ public final class JadxDecompilerFacade {
         return INSTANCE;
     }
 
-    private static String failed(String typeName, String reason) {
-        return "// jadx decompile failed: " + sanitize(reason)
-                + "\n// Class: " + (typeName == null || typeName.isBlank() ? "(unknown)" : typeName);
-    }
-
     private static String sanitize(String message) {
         return (message == null || message.isBlank() ? "unknown error" : message)
                 .replace("*/", "* /")
@@ -37,7 +32,22 @@ public final class JadxDecompilerFacade {
     }
 
     public String decompile(JadxDecompilerRequest request) {
+        JadxDecompilerResult result = decompileResult(request);
+        if (result.isSuccess()) {
+            return result.source();
+        }
+        JadxDiagnostic diag = result.diagnostic();
+        return "// jadx decompile failed: " + sanitize(diag != null ? diag.message() : "unknown error")
+                + "\n// Class: " + (diag != null && diag.className() != null
+                        ? diag.className() : "(unknown)");
+    }
+
+    /**
+     * 结构化反编译，返回包含状态和诊断信息的结果对象
+     */
+    public JadxDecompilerResult decompileResult(JadxDecompilerRequest request) {
         long start = System.currentTimeMillis();
+        String typeName = request == null ? "" : request.typeName();
         try {
             JadxInputPlan inputPlan = inputBuilder.build(request);
             JadxArgs args = JadxArgsFactory.create(request.options());
@@ -48,8 +58,11 @@ public final class JadxDecompilerFacade {
 
                 List<JavaClass> classes = jadx.getClassesWithInners();
                 if (classes.isEmpty()) {
+                    long elapsed = System.currentTimeMillis() - start;
                     log.warn("jadx decompile: no classes loaded for {}", inputPlan.targetType());
-                    return failed(inputPlan.targetType(), "no classes loaded");
+                    return new JadxDecompilerResult(null, JadxResultStatus.NO_CLASSES_LOADED,
+                            new JadxDiagnostic(JadxResultStatus.NO_CLASSES_LOADED,
+                                    "no classes loaded", inputPlan.targetType(), elapsed));
                 }
 
                 JavaClass targetClass = JadxOutputSelector.select(classes, inputPlan.targetType());
@@ -62,22 +75,25 @@ public final class JadxDecompilerFacade {
                 if (source == null || source.isBlank()) {
                     log.warn("jadx decompile returned empty: {} ({}ms, deps={})",
                             inputPlan.targetType(), elapsed, inputPlan.dependencyClasses());
-                    return failed(inputPlan.targetType(), "empty output");
+                    return new JadxDecompilerResult(null, JadxResultStatus.EMPTY_OUTPUT,
+                            new JadxDiagnostic(JadxResultStatus.EMPTY_OUTPUT,
+                                    "empty output", inputPlan.targetType(), elapsed));
                 }
 
                 log.debug("jadx decompile OK: {} ({}ms, classes={}, deps={}, chars={})",
                         inputPlan.targetType(), elapsed, inputPlan.totalClasses(),
                         inputPlan.dependencyClasses(), source.length());
-                return source;
+                return new JadxDecompilerResult(source, JadxResultStatus.OK,
+                        new JadxDiagnostic(JadxResultStatus.OK, "OK", inputPlan.targetType(), elapsed));
             }
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - start;
-            String typeName = request == null ? "" : request.typeName();
             String message = e.getMessage() == null || e.getMessage().isBlank()
                     ? e.getClass().getSimpleName() : e.getMessage();
             log.error("jadx decompile exception: {} ({}ms): {}", typeName, elapsed, message, e);
-            return "// jadx Error: " + sanitize(message)
-                    + "\n// Class: " + (typeName == null || typeName.isBlank() ? "(unknown)" : typeName);
+            return new JadxDecompilerResult(null, JadxResultStatus.EXCEPTION,
+                    new JadxDiagnostic(JadxResultStatus.EXCEPTION,
+                            sanitize(message), typeName.isBlank() ? null : typeName, elapsed));
         }
     }
 }
