@@ -4,7 +4,6 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.FileTreeModel;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -33,12 +33,13 @@ public final class WorkspaceLoader {
     /**
      * 加载文件并创建工作区(在后台线程上调用)
      *
-     * @param file      输入文件/目录
-     * @param config    应用配置,用于记录最近文件
-     * @param onSuccess 工作区创建成功回调(在 JavaFX 线程上调用)
-     * @param onError   加载失败回调(在 JavaFX 线程上调用)
+     * @param file       输入文件/目录
+     * @param config     应用配置,用于记录最近文件
+     * @param uiExecutor UI 线程执行器(如 Platform::runLater),回调通过它切回 UI 线程
+     * @param onSuccess  工作区创建成功回调(在 UI 线程上调用)
+     * @param onError    加载失败回调(在 UI 线程上调用)
      */
-    public static void loadAsync(File file, AppConfig config,
+    public static void loadAsync(File file, AppConfig config, Executor uiExecutor,
                                  Consumer<Workspace> onSuccess,
                                  Consumer<String> onError) {
         String name = file.getName();
@@ -61,8 +62,8 @@ public final class WorkspaceLoader {
                         WorkspaceIndex.EMPTY, contentStamp);
                 long totalElapsed = System.currentTimeMillis() - loadStart;
                 log.info("工作区创建完成: {} (archive={}, {}ms)", name, isArchive, totalElapsed);
-                // ---- 步骤 4: 在 JavaFX 线程上通知 UI完整索引按需构建 ----
-                Platform.runLater(() -> {
+                // ---- 步骤 4: 在 UI 线程上通知 UI完整索引按需构建 ----
+                uiExecutor.execute(() -> {
                     if (onSuccess != null) {
                         onSuccess.accept(workspace);
                     }
@@ -72,7 +73,7 @@ public final class WorkspaceLoader {
                 long totalElapsed = System.currentTimeMillis() - loadStart;
                 String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
                 log.error("文件加载失败: {} ({}ms): {}", file.getAbsolutePath(), totalElapsed, msg, e);
-                Platform.runLater(() -> {
+                uiExecutor.execute(() -> {
                     if (onError != null) {
                         onError.accept(msg);
                     }
@@ -81,7 +82,7 @@ public final class WorkspaceLoader {
                 // OOM / StackOverflow 等致命错误：通知 UI 后重新抛出以保留原始语义
                 log.error("文件加载致命错误: {}: {}", file.getAbsolutePath(),
                         e.getClass().getSimpleName(), e);
-                Platform.runLater(() -> {
+                uiExecutor.execute(() -> {
                     if (onError != null) {
                         onError.accept("Fatal: " + e.getClass().getSimpleName());
                     }

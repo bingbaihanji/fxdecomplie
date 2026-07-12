@@ -12,6 +12,7 @@ import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeOnlyWindow;
 import com.bingbaihanji.fxdecomplie.ui.quickopen.QuickOpenDialog;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
+import javafx.application.Platform;
 import javafx.scene.control.Tab;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -279,7 +280,7 @@ public final class WorkspaceController {
         owner.statusBar().setFilePath(I18nUtil.getString("status.loading", file.getAbsolutePath()));
         owner.statusBar().setTask(I18nUtil.getString("task.loading"));
 
-        WorkspaceLoader.loadAsync(file, owner.config(),
+        WorkspaceLoader.loadAsync(file, owner.config(), Platform::runLater,
                 workspace -> {
                     owner.statusBar().clearTask();
                     owner.tabManager().addWorkspaceTab(workspace,
