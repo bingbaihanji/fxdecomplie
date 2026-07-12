@@ -1207,7 +1207,7 @@ public final class ClassTabOpener {
 
                 // ---- 异步保存到 L3 磁盘缓存(非阻塞) ----
                 final String finalSource = sourceCode;
-                BackgroundTasks.run("DiskCache-" + internalName, () -> {
+                BackgroundTasks.run(BackgroundTasks.PoolType.IO, "DiskCache-" + internalName, () -> {
                     DiskCodeCache.save(cacheWsKey, internalName, effectiveEngine, optionsHash, finalSource);
                 });
             }
@@ -1247,7 +1247,7 @@ public final class ClassTabOpener {
         if (!DecompilerRunner.isFailureOutput(sourceCode)) {
             decompileCache.put(cacheWsKey, internalName, effectiveEngine, optionsHash, sourceCode);
             final String finalSource = sourceCode;
-            BackgroundTasks.run("DiskCache-" + internalName, () ->
+            BackgroundTasks.run(BackgroundTasks.PoolType.IO, "DiskCache-" + internalName, () ->
                     DiskCodeCache.save(cacheWsKey, internalName, effectiveEngine, optionsHash, finalSource));
         }
 

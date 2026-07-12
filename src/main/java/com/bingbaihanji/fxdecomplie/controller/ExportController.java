@@ -105,7 +105,7 @@ public final class ExportController {
             }
         });
         owner.statusBar().setTask(I18nUtil.getString("task.exporting"));
-        exportTaskRef.set(BackgroundTasks.run("Export", () -> {
+        exportTaskRef.set(BackgroundTasks.run(BackgroundTasks.PoolType.EXPORT, "Export", () -> {
             try {
                 ExportResult result = ExportService.exportAll(
                         nodes, exportConfig, index, owner.commentScope(workspace, exportConfig),

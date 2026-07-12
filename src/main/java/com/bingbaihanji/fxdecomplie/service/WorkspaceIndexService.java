@@ -35,7 +35,7 @@ public final class WorkspaceIndexService {
         }
         log.info("开始构建工作区索引: {}", workspace.getName());
         long start = System.currentTimeMillis();
-        Future<?> task = BackgroundTasks.run("Index-" + workspace.getName(), () -> {
+        Future<?> task = BackgroundTasks.run(BackgroundTasks.PoolType.IO, "Index-" + workspace.getName(), () -> {
             int previousPriority = Thread.currentThread().getPriority();
             try {
                 Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
