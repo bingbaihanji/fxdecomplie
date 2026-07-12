@@ -172,6 +172,23 @@ public final class ByteUtils {
     }
 
     /**
+     * 计算字符串 (UTF-8 编码)的 SHA-256 摘要,返回完整小写十六进制 (64 字符)
+     * SHA-256 由 JVM 规范保证始终可用,缺失时抛 IllegalStateException (不可达)
+     *
+     * @param input 输入字符串,不能为 null
+     * @return 64 字符小写十六进制摘要
+     */
+    public static String sha256Hex(String input) {
+        Objects.requireNonNull(input, "input 不能为 null");
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            return bytesToHex(md.digest(input.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
+        }
+    }
+
+    /**
      * 通过文件魔数 (PK\03\04)判断文件是否为 ZIP 格式
      * @param file 待检测的文件
      * @return 是 ZIP 文件返回 true

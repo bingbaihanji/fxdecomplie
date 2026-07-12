@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences;
 
 import java.util.LinkedHashMap;
@@ -152,16 +153,6 @@ public final class DecompilerOptions {
                 .sorted(Map.Entry.comparingByKey())
                 .map(e -> e.getKey() + "=" + e.getValue())
                 .collect(java.util.stream.Collectors.joining(","));
-        try {
-            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(canonical.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder id = new StringBuilder();
-            for (int i = 0; i < 8; i++) {
-                id.append(String.format("%02x", hash[i]));
-            }
-            return id.toString();
-        } catch (java.security.NoSuchAlgorithmException e) {
-            return Integer.toUnsignedString(canonical.hashCode(), 16);
-        }
+        return ByteUtils.sha256Hex(canonical).substring(0, 16);
     }
 }

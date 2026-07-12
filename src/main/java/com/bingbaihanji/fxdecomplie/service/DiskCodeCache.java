@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
+import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,8 +11,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.List;
 
@@ -228,16 +227,6 @@ public final class DiskCodeCache {
         if (optionsHash == null || optionsHash.isBlank() || "default".equals(optionsHash)) {
             return "default";
         }
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(optionsHash.getBytes(StandardCharsets.UTF_8));
-            StringBuilder id = new StringBuilder();
-            for (int i = 0; i < 8; i++) {
-                id.append(String.format("%02x", hash[i]));
-            }
-            return id.toString();
-        } catch (NoSuchAlgorithmException e) {
-            return Integer.toHexString(optionsHash.hashCode());
-        }
+        return ByteUtils.sha256Hex(optionsHash).substring(0, 16);
     }
 }

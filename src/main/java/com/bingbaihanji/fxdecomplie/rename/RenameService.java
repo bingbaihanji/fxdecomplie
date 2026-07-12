@@ -9,6 +9,7 @@ import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
+import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.collection.ArrayMap;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
@@ -28,8 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -2820,15 +2819,9 @@ public final class RenameService {
         return getRootDir().resolve(safe + ".json");
     }
 
-    /** 对工作区哈希进行 SHA-256 摘要,取前 16 字节的十六进制表示作为文件名 */
+    /** 对工作区哈希进行 SHA-256 摘要,取前 16 字节 (32 位十六进制)作为文件名 */
     private static String workspaceHashDigest(String workspaceHash) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(safe(workspaceHash).getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash, 0, 16);
-        } catch (NoSuchAlgorithmException e) {
-            return Integer.toHexString(safe(workspaceHash).hashCode());
-        }
+        return ByteUtils.sha256Hex(safe(workspaceHash)).substring(0, 32);
     }
 
     /**
