@@ -87,25 +87,25 @@ public final class SettingsDialog {
         // CFR 面板
         Tab cfrTab = new Tab("CFR");
         cfrTab.setClosable(false);
-        cfrTab.setContent(buildEngineParameterPanel(draft, "CFR", CfrParameters.PARAMETERS,
+        cfrTab.setContent(buildEngineParameterPanel(draft, "CFR", EngineParameters.forType(DecompilerTypeEnum.CFR),
                 engineOptionsArea, engineControlMaps.get("CFR")));
 
         // Procyon 面板
         Tab procyonTab = new Tab("Procyon");
         procyonTab.setClosable(false);
-        procyonTab.setContent(buildEngineParameterPanel(draft, "PROCYON", ProcyonParameters.PARAMETERS,
+        procyonTab.setContent(buildEngineParameterPanel(draft, "PROCYON", EngineParameters.forType(DecompilerTypeEnum.PROCYON),
                 engineOptionsArea, engineControlMaps.get("PROCYON")));
 
         // Vineflower 面板
         Tab vfTab = new Tab("Vineflower");
         vfTab.setClosable(false);
-        vfTab.setContent(buildEngineParameterPanel(draft, "VINEFLOWER", VineflowerParameters.PARAMETERS,
+        vfTab.setContent(buildEngineParameterPanel(draft, "VINEFLOWER", EngineParameters.forType(DecompilerTypeEnum.VINEFLOWER),
                 engineOptionsArea, engineControlMaps.get("VINEFLOWER")));
 
         // jadx 面板
         Tab jadxTab = new Tab("jadx");
         jadxTab.setClosable(false);
-        jadxTab.setContent(buildEngineParameterPanel(draft, "JADX", JadxParameters.PARAMETERS,
+        jadxTab.setContent(buildEngineParameterPanel(draft, "JADX", EngineParameters.forType(DecompilerTypeEnum.JADX),
                 engineOptionsArea, engineControlMaps.get("JADX")));
 
         engineTabPane.getTabs().addAll(cfrTab, procyonTab, vfTab, jadxTab);
