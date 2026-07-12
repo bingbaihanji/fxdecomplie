@@ -95,6 +95,82 @@ public final class ClassNodeResolver {
         return findNodeBySimpleNameInTree(workspace, token, currentClassName);
     }
 
+    /** 在工作区中按包名 token 查找包节点,不回退到同名类 */
+    public static FileTreeNode findPackageNodeForToken(Workspace workspace, String token,
+                                                       String currentClassName,
+                                                       String sourceCode,
+                                                       int lineNumber) {
+        if (workspace == null || token == null || token.isBlank()) {
+            return null;
+        }
+        String packagePath = resolvePackagePath(token, currentClassName, sourceCode, lineNumber);
+        if (packagePath.isBlank()) {
+            return null;
+        }
+        return findPackageNode(workspace, packagePath);
+    }
+
+    private static String resolvePackagePath(String token, String currentClassName,
+                                             String sourceCode, int lineNumber) {
+        String normalizedToken = token.replace('.', '/');
+        if (isPackageDeclarationLine(sourceCode, lineNumber)) {
+            return packageDeclaration(sourceCode, lineNumber);
+        }
+        if (normalizedToken.contains("/")) {
+            return normalizedToken;
+        }
+        String currentPackage = JavaSourceAnalyzer.packageName(
+                JavaSourceAnalyzer.normalizeInternalClassName(currentClassName));
+        return currentPackage.isBlank() ? normalizedToken : currentPackage + "/" + normalizedToken;
+    }
+
+    private static boolean isPackageDeclarationLine(String sourceCode, int lineNumber) {
+        return !packageDeclaration(sourceCode, lineNumber).isBlank();
+    }
+
+    private static String packageDeclaration(String sourceCode, int lineNumber) {
+        if (sourceCode == null || sourceCode.isBlank() || lineNumber <= 0) {
+            return "";
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        if (lineNumber > lines.length) {
+            return "";
+        }
+        String line = JavaSourceAnalyzer.stripLineComment(lines[lineNumber - 1]).strip();
+        if (!line.startsWith("package ") || !line.endsWith(";")) {
+            return "";
+        }
+        String pkg = line.substring("package ".length(), line.length() - 1).strip();
+        return pkg.replace('.', '/');
+    }
+
+    private static FileTreeNode findPackageNode(Workspace workspace, String packagePath) {
+        if (workspace == null || packagePath == null || packagePath.isBlank()) {
+            return null;
+        }
+        String normalized = packagePath.replace('\\', '/');
+        while (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        FileTreeModel root = workspace.getTreeRoot();
+        if (root == null) {
+            return null;
+        }
+        ArrayDeque<FileTreeModel> queue = new ArrayDeque<>();
+        queue.add(root);
+        while (!queue.isEmpty()) {
+            FileTreeModel item = queue.removeFirst();
+            FileTreeNode node = item.getValue();
+            if (node != null
+                    && node.getNodeType() == FileTreeNode.NodeTypeEnum.PACKAGE
+                    && normalized.equals(node.getFullPath().replace('\\', '/'))) {
+                return node;
+            }
+            queue.addAll(item.getChildren());
+        }
+        return null;
+    }
+
     /** 在工作区索引中按简单类名查找节点(优先同包匹配,回退到首个匹配) */
     private static FileTreeNode findNodeBySimpleNameInIndex(Workspace workspace, WorkspaceIndex index,
                                                             String token, String currentInternal) {

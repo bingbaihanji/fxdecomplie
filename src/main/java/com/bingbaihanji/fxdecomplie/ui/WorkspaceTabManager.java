@@ -774,6 +774,31 @@ public final class WorkspaceTabManager {
         showToolWindow(ToolTab.INHERITANCE);
     }
 
+    /** 显示当前工作区的注释工具窗口 */
+    public void showCommentsToolWindow() {
+        showToolWindow(ToolTab.COMMENTS);
+    }
+
+    /** 刷新当前工作区中指定类和引擎的注释列表(用于注释增删后即时更新) */
+    public void refreshCommentListFor(Workspace workspace, String className) {
+        if (workspace == null || className == null) {
+            return;
+        }
+        String wsHash = CommentScope.workspaceHash(workspace);
+        for (Tab tab : outerTabPane.getTabs()) {
+            WorkspaceTools tools = workspaceTools.get(tab);
+            if (tools != null && tools.toolTabPane.getTabs().contains(tools.commentsTab)) {
+                WorkspaceView view = workspaceViews.get(tab);
+                if (view != null && view.workspace() == workspace) {
+                    // Find the CommentListPane and refresh it
+                    if (tools.commentsTab.getContent() instanceof CommentListPane clp) {
+                        clp.load(wsHash, className);
+                    }
+                }
+            }
+        }
+    }
+
     /** 隐藏当前工作区底部工具窗口,但保留其中的标签页状态不关闭 */
     public void hideBottomToolWindow() {
         Tab tab = outerTabPane.getSelectionModel().getSelectedItem();
@@ -838,7 +863,11 @@ public final class WorkspaceTabManager {
             return;
         }
 
-        Tab tab = toolTab == ToolTab.OUTLINE ? tools.outlineTab : tools.inheritanceTab;
+        Tab tab = switch (toolTab) {
+            case OUTLINE -> tools.outlineTab;
+            case INHERITANCE -> tools.inheritanceTab;
+            case COMMENTS -> tools.commentsTab;
+        };
         if (!tools.toolTabPane.getTabs().contains(tab)) {
             tools.toolTabPane.getTabs().add(tab);
         }
@@ -1032,7 +1061,8 @@ public final class WorkspaceTabManager {
 
     private enum ToolTab {
         OUTLINE,
-        INHERITANCE
+        INHERITANCE,
+        COMMENTS
     }
 
     @FunctionalInterface

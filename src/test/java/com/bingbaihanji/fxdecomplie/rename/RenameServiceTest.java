@@ -67,6 +67,21 @@ class RenameServiceTest {
     }
 
     @Test
+    void skipExistingDoesNotOverwriteExistingClassRename() {
+        String workspaceHash = "skip-existing-class-test";
+        RenameService.setRootDir(tempDir);
+        RenameService.save(workspaceHash,
+                new RenameEntry("class", "com/example/Foo", "Foo", "ManualName", ""));
+
+        int saved = RenameService.saveAll(workspaceHash, java.util.List.of(
+                new RenameEntry("class", "com/example/Foo", "Foo", "AutoName", "")), true);
+
+        assertEquals(0, saved);
+        assertEquals("ManualName",
+                RenameService.displayClassName("com/example/Foo.class", workspaceHash));
+    }
+
+    @Test
     void resolveTargetUsesBytecodeMetadataForMembers() throws Exception {
         byte[] bytes = compileClass("com.example", "Foo", """
                 package com.example;

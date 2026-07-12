@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.args.GeneratedRenamesMappingFileMode;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.JadxDecompiler;
+import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -25,11 +26,36 @@ class JadxDecompilerFacadeTest {
         JadxArgs args = JadxArgsFactory.create(Map.of("deobfuscationOn", "true"));
 
         assertTrue(args.isDeobfuscationOn());
+        assertFalse(args.getRenameCondition().shouldRename((com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode) null));
         assertEquals(GeneratedRenamesMappingFileMode.IGNORE,
                 args.getGeneratedRenamesMappingFileMode());
         assertNotNull(args.getOutDir());
         assertTrue(args.getOutDir().toPath().toAbsolutePath().normalize()
                 .endsWith(Path.of("cache", "jadx", "runtime")));
+    }
+
+    @Test
+    void deobfuscationAliasesAreSyncedToProjectRenameState(@TempDir Path tmp) throws Exception {
+        RenameService.setRootDir(tmp.resolve("renames"));
+        CompiledSample sample = compileSample(tmp);
+        String workspaceHash = "jadx-sync-test";
+        DecompilerContext context = DecompilerContext.of(
+                name -> "z/a".equals(name) ? sample.dependencyBytes() : null,
+                Map.of(
+                        "deobfuscationOn", "true",
+                        "deobfuscationMinLength", "3"),
+                null,
+                workspaceHash);
+
+        String source = new JadxDecompiler().decompile(
+                "z/b.class", sample.targetBytes(), context);
+
+        assertFalse(source.startsWith("// jadx decompile failed"), source);
+        assertFalse(RenameService.loadAll(workspaceHash).isEmpty());
+        String displayName = RenameService.displayClassName("z/b.class", workspaceHash);
+        assertFalse("b".equals(displayName), displayName);
+        assertTrue(displayName.startsWith("C"), displayName);
+        assertTrue(displayName.endsWith("b"), displayName);
     }
 
     @Test

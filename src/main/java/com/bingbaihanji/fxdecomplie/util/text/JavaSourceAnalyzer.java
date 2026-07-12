@@ -38,7 +38,7 @@ public final class JavaSourceAnalyzer {
                 continue;
             }
             boolean classLike = Character.isUpperCase(part.charAt(0)) || classSegmentSeen;
-            if (sb.length() > 0) {
+            if (!sb.isEmpty()) {
                 sb.append(classLike ? '$' : '/');
             }
             sb.append(part);
@@ -140,13 +140,13 @@ public final class JavaSourceAnalyzer {
         String quoted = Pattern.quote(simpleToken);
         Pattern methodPattern = Pattern.compile(
                 "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
-                        + "\\s*\\([^;]*\\)\\s*(?:throws\\s+[\\w.$,\\s]+)?\\s*(?:\\{|;)?\\s*$");
+                        + "\\s*\\([^;]*\\)\\s*(?:throws\\s+[\\w.$,\\s]+)?\\s*[{;]?\\s*$");
         if (methodPattern.matcher(trimmed).find()) {
             return true;
         }
         Pattern fieldPattern = Pattern.compile(
                 "^(?:[\\w@$]+\\s+)*(?:[\\w.$<>\\[\\],?]+\\s+)+" + quoted
-                        + "\\s*(?:=|;|,).*$");
+                        + "\\s*[=;,].*$");
         return fieldPattern.matcher(trimmed).find();
     }
 
@@ -222,10 +222,10 @@ public final class JavaSourceAnalyzer {
             return "";
         }
         String result = token.strip();
-        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(0))) {
+        while (!result.isEmpty() && isDeclarationTokenChar(result.charAt(0))) {
             result = result.substring(1);
         }
-        while (!result.isEmpty() && !isDeclarationTokenChar(result.charAt(result.length() - 1))) {
+        while (!result.isEmpty() && isDeclarationTokenChar(result.charAt(result.length() - 1))) {
             result = result.substring(0, result.length() - 1);
         }
         return result;
@@ -233,7 +233,7 @@ public final class JavaSourceAnalyzer {
 
     /** @return true 若字符是声明 token 的有效字符(Java 标识符、点号、美元符、斜杠) */
     public static boolean isDeclarationTokenChar(char ch) {
-        return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$' || ch == '/';
+        return !Character.isJavaIdentifierPart(ch) && ch != '.' && ch != '$' && ch != '/';
     }
 
     /** 从限定名中提取简单名(最后一段) */
@@ -249,7 +249,7 @@ public final class JavaSourceAnalyzer {
             return false;
         }
         String trimmed = token.strip();
-        while (!trimmed.isEmpty() && !isDeclarationTokenChar(trimmed.charAt(0))) {
+        while (!trimmed.isEmpty() && isDeclarationTokenChar(trimmed.charAt(0))) {
             trimmed = trimmed.substring(1);
         }
         if (trimmed.isEmpty()) {
@@ -324,7 +324,7 @@ public final class JavaSourceAnalyzer {
             return true;
         }
         return Pattern.compile("(^|[\\s(<,])" + quoted
-                + "\\s*(?:<[^;{}()]*>)?(?:\\s*\\[\\s*\\])*\\s+"
+                + "\\s*(?:<[^;{}()]*>)?(?:\\s*\\[\\s*])*\\s+"
                 + "[a-zA-Z_$][a-zA-Z0-9_$]*\\b").matcher(line).find();
     }
 
@@ -372,8 +372,7 @@ public final class JavaSourceAnalyzer {
                 || !Character.isJavaIdentifierPart(sourceCode.charAt(probe)))) {
             probe--;
         }
-        if (probe < 0 || probe >= sourceCode.length()
-                || !Character.isJavaIdentifierPart(sourceCode.charAt(probe))) {
+        if (probe >= sourceCode.length() || !Character.isJavaIdentifierPart(sourceCode.charAt(probe))) {
             return false;
         }
         int start = probe;

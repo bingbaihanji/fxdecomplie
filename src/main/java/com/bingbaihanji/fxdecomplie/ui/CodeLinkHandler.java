@@ -70,19 +70,24 @@ public final class CodeLinkHandler {
             if (event.getButton() == MouseButton.PRIMARY && event.isControlDown()) {
                 var pos = codeArea.getTextPosition(event.getScreenX(), event.getScreenY());
                 int line = pos == null ? codeArea.getCaretPosition().index() + 1 : pos.index() + 1;
-                String token = navigationTokenAt(codeArea.getText(), pos);
+                NavigationToken navToken = navigationTokenRangeAt(codeArea.getText(), pos);
+                String token = navToken == null ? "" : navToken.token();
+                if (!isPackageNavigationContext(codeArea.getText(), navToken)) {
+                    var refs = metadata == null ? List.<CodeMetadata.Reference>of()
+                            : metadata.getRefsAtLine(line);
+                    CodeMetadata.Reference ref = selectReference(refs, token,
+                            navToken == null ? -1 : lineColumn(codeArea.getText(), navToken.startOffset()));
+                    if (ref != null && onNavigate != null) {
+                        onNavigate.accept(ref);
+                        event.consume();
+                        return;
+                    }
+                }
+
                 if (onTokenNavigate != null && !token.isBlank()) {
                     onTokenNavigate.accept(line, token);
                     event.consume();
                     return;
-                }
-
-                var refs = metadata == null ? List.<CodeMetadata.Reference>of()
-                        : metadata.getRefsAtLine(line);
-                CodeMetadata.Reference ref = selectReference(refs, token);
-                if (ref != null && onNavigate != null) {
-                    onNavigate.accept(ref);
-                    event.consume();
                 }
             }
         };
@@ -118,7 +123,7 @@ public final class CodeLinkHandler {
      * @return 匹配的引用,无匹配时返回 null
      */
     private static CodeMetadata.Reference selectReference(List<CodeMetadata.Reference> refs,
-                                                          String token) {
+                                                          String token, int column) {
         if (refs == null || refs.isEmpty()) {
             return null;
         }
@@ -127,19 +132,40 @@ public final class CodeLinkHandler {
             return null;
         }
         String simpleToken = simpleName(cleanToken);
+        CodeMetadata.Reference bestWithColumn = null;
+        int bestDistance = Integer.MAX_VALUE;
+        CodeMetadata.Reference bestNoColumn = null;
         for (CodeMetadata.Reference ref : refs) {
             if (ref.targetClass() == null) {
                 continue;
             }
             String normalized = ref.targetClass().replace('.', '/');
             if (ref.targetClass().equals(cleanToken)
-                    || normalized.equals(cleanToken.replace('.', '/'))
-                    || simpleName(normalized).equals(simpleToken)) {
+                    || normalized.equals(cleanToken.replace('.', '/'))) {
                 return ref;
             }
+            if (simpleName(normalized).equals(simpleToken)) {
+                if (ref.columnStart() >= 0) {
+                    int distance = column >= 0 ? Math.abs(ref.columnStart() - column) : 0;
+                    if (bestWithColumn == null || distance < bestDistance) {
+                        bestDistance = distance;
+                        bestWithColumn = ref;
+                    }
+                } else if (bestNoColumn == null) {
+                    bestNoColumn = ref;
+                }
+            }
         }
-        // 无精确匹配时不回退到第一个引用,避免导航到错误位置
-        return null;
+        return bestWithColumn != null ? bestWithColumn : bestNoColumn;
+    }
+
+    private static int lineColumn(String text, int offset) {
+        if (text == null || offset < 0) {
+            return -1;
+        }
+        int bounded = Math.min(offset, text.length());
+        int lineStart = text.lastIndexOf('\n', Math.max(0, bounded - 1));
+        return bounded - (lineStart < 0 ? 0 : lineStart + 1);
     }
 
     /** 从指定文本位置提取可导航的 Java 标识符(类名或成员引用) */
@@ -182,10 +208,18 @@ public final class CodeLinkHandler {
         while (qualifiedEnd < text.length() && isJavaNameChar(text.charAt(qualifiedEnd))) {
             qualifiedEnd++;
         }
+        while (qualifiedEnd > qualifiedStart && text.charAt(qualifiedEnd - 1) == '.') {
+            qualifiedEnd--;
+        }
 
         String qualified = text.substring(qualifiedStart, qualifiedEnd);
         int localSegmentStart = segmentStart - qualifiedStart;
         int localSegmentEnd = segmentEnd - qualifiedStart;
+        NavigationToken packageAwareToken = packageAwareToken(text, qualified,
+                qualifiedStart, qualifiedEnd, localSegmentStart, localSegmentEnd);
+        if (packageAwareToken != null) {
+            return packageAwareToken;
+        }
         String token = selectNavigationToken(qualified, localSegmentStart, localSegmentEnd);
         if (!isNavigableToken(token)) {
             return null;
@@ -200,6 +234,70 @@ public final class CodeLinkHandler {
             }
         }
         return new NavigationToken(token, tokenStart, tokenEnd);
+    }
+
+    private static NavigationToken packageAwareToken(String text, String qualified,
+                                                     int qualifiedStart, int qualifiedEnd,
+                                                     int localSegmentStart,
+                                                     int localSegmentEnd) {
+        String linePrefix = linePrefixBefore(text, qualifiedStart).stripLeading();
+        if (linePrefix.equals("package")) {
+            return navigableToken(qualified, qualifiedStart, qualifiedEnd);
+        }
+        if (!linePrefix.equals("import") && !linePrefix.equals("import static")) {
+            return null;
+        }
+        boolean wildcardImport = hasImportWildcardSuffix(text, qualifiedEnd);
+        if (wildcardImport) {
+            return navigableToken(qualified, qualifiedStart, qualifiedEnd);
+        }
+        if (isLastSegment(qualified, localSegmentEnd)) {
+            return null;
+        }
+        String packagePrefix = qualified.substring(0, localSegmentEnd);
+        return navigableToken(packagePrefix, qualifiedStart, qualifiedStart + packagePrefix.length());
+    }
+
+    private static NavigationToken navigableToken(String token, int start, int end) {
+        return isNavigableToken(token) ? new NavigationToken(token, start, end) : null;
+    }
+
+    private static String linePrefixBefore(String text, int offset) {
+        int lineStart = text.lastIndexOf('\n', Math.max(0, offset - 1));
+        lineStart = lineStart < 0 ? 0 : lineStart + 1;
+        return text.substring(lineStart, offset).stripTrailing();
+    }
+
+    private static boolean hasImportWildcardSuffix(String text, int offset) {
+        int i = offset;
+        while (i < text.length() && Character.isWhitespace(text.charAt(i))) {
+            i++;
+        }
+        return i + 1 < text.length() && text.charAt(i) == '.' && text.charAt(i + 1) == '*';
+    }
+
+    private static boolean isPackageNavigationContext(String text, NavigationToken token) {
+        if (text == null || token == null) {
+            return false;
+        }
+        String prefix = linePrefixBefore(text, token.startOffset()).stripLeading();
+        if (prefix.equals("package")) {
+            return true;
+        }
+        if (!prefix.equals("import") && !prefix.equals("import static")) {
+            return false;
+        }
+        if (hasImportWildcardSuffix(text, token.endOffset())) {
+            return true;
+        }
+        String lineRemainder = lineRemainderAfter(text, token.endOffset()).stripLeading();
+        return lineRemainder.startsWith(".");
+    }
+
+    private static String lineRemainderAfter(String text, int offset) {
+        int lineEnd = text.indexOf('\n', Math.min(offset, text.length()));
+        lineEnd = lineEnd < 0 ? text.length() : lineEnd;
+        return text.substring(Math.min(offset, text.length()), lineEnd);
     }
 
     /** 将 TextPos(行号+列偏移)转换为文本在原始字符串中的平坦偏移量 */

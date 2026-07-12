@@ -222,6 +222,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         classTabOpener = new ClassTabOpener(config, editorTheme, statusBar);
         classTabOpener.setCodeActionHandler(this);
         classTabOpener.setOnTabReady(this::refreshToolbarState);
+        classTabOpener.setOnRenameStateChanged(this::refreshWorkspaceTree);
         // L2 缓存跨工作区共享,不清空以提升重复打开性能
         tabManager.showWelcomeTabIfEmpty();
 
@@ -417,6 +418,12 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         editorActions.showInheritance();
     }
 
+    /** 显示注释工具窗口 */
+    @Override
+    public void showComments() {
+        editorActions.showComments();
+    }
+
     /** 隐藏底部工具窗口 */
     @Override
     public void hideBottomTools() {
@@ -449,6 +456,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     @Override
     public void goToDeclaration(CodeViewContext context, int lineNumber, String token) {
         navigationController.goToDeclaration(context, lineNumber, token);
+    }
+
+    @Override
+    public void goToDeclaration(CodeViewContext context, int lineNumber, String token, int column) {
+        navigationController.goToDeclaration(context, lineNumber, token, column);
     }
 
     @Override
@@ -654,7 +666,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 commentScope(view == null ? null : view.workspace(), openFile.engine()));
     }
 
-    /** 刷新当前类的所有已打开标签页中的注释装饰显示 */
+    /** 刷新当前类的所有已打开标签页中的注释装饰显示,同时刷新底部注释列表 */
     private void refreshVisibleComments(CodeViewContext context) {
         WorkspaceView view = workspaceViewFor(context.workspace());
         if (view == null || context.openFile() == null) {
@@ -671,6 +683,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                             codeTab.getOpenFile().fullPath(),
                             new CommentScope(context.workspaceHash(), context.optionsHash()));
                     codeTab.updateVisibleSource(decorated);
+                    // 同步刷新底部注释列表面板
+                    tabManager.refreshCommentListFor(context.workspace(),
+                            context.openFile().fullPath());
                     return;
                 }
             }

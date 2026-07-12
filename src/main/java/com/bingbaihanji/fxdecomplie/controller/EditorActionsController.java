@@ -92,6 +92,11 @@ public final class EditorActionsController {
         owner.tabManager().showInheritanceToolWindow();
     }
 
+    /** 显示注释工具窗口 */
+    public void showComments() {
+        owner.tabManager().showCommentsToolWindow();
+    }
+
     /** 隐藏底部工具窗口 */
     public void hideBottomTools() {
         owner.tabManager().hideBottomToolWindow();

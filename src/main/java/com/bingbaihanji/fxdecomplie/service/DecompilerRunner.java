@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerFactory;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.util.cache.LruCache;
@@ -233,7 +234,8 @@ public final class DecompilerRunner {
             return DecompilerContext.withOptions(options);
         }
         WorkspaceClassPath classPath = new WorkspaceClassPath(workspace);
-        return DecompilerContext.singleUse(classPath::getClassBytes, options, classPath);
+        return DecompilerContext.of(classPath::getClassBytes, options, classPath,
+                CommentScope.workspaceHash(workspace));
     }
 
     /**

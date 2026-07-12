@@ -53,6 +53,10 @@ public final class NavigationController {
     }
 
     public void goToDeclaration(CodeViewContext context, int lineNumber, String token) {
+        goToDeclaration(context, lineNumber, token, -1);
+    }
+
+    public void goToDeclaration(CodeViewContext context, int lineNumber, String token, int columnHint) {
         if (context == null || context.workspace() == null) {
             return;
         }
@@ -62,11 +66,24 @@ public final class NavigationController {
         if (isCurrentClassDeclaration(context, lineNumber, targetToken)) {
             return;
         }
+        Workspace workspace = context.workspace();
+        WorkspaceIndex index = workspace.isIndexReady() ? workspace.getIndex() : context.workspaceIndex();
+        String sourceCode = context.openFile() == null ? "" : context.openFile().sourceCode();
+
+        if (shouldPreferPackageNavigation(sourceCode, lineNumber, targetToken)) {
+            FileTreeNode packageNode = ClassNodeResolver.findPackageNodeForToken(workspace, targetToken,
+                    context.classInternalName(), sourceCode, lineNumber);
+            if (packageNode != null) {
+                revealNodeInTree(workspace, packageNode);
+                return;
+            }
+        }
+
         if (context.metadata() != null) {
             var refs = context.metadata().getRefsAtLine(lineNumber);
             if (!refs.isEmpty()) {
                 // 计算点击处的列号,用于同名类精确匹配
-                int column = computeClickColumn(context, lineNumber, token);
+                int column = columnHint >= 0 ? columnHint : computeClickColumn(context, lineNumber, token);
                 CodeMetadata.Reference selected = selectReference(refs, token, column);
                 if (openReferenceInWorkspace(context.workspace(), selected)) {
                     return;
@@ -79,9 +96,6 @@ public final class NavigationController {
             return;
         }
 
-        Workspace workspace = context.workspace();
-        WorkspaceIndex index = workspace.isIndexReady() ? workspace.getIndex() : context.workspaceIndex();
-        String sourceCode = context.openFile() == null ? "" : context.openFile().sourceCode();
         owner.statusBar().setFilePath(I18nUtil.getString("status.locating", targetToken));
 
         boolean preferClassNavigation = JavaSourceAnalyzer.shouldPreferClassNavigation(targetToken)
@@ -100,6 +114,13 @@ public final class NavigationController {
             return;
         }
 
+        FileTreeNode packageNode = ClassNodeResolver.findPackageNodeForToken(workspace, targetToken,
+                context.classInternalName(), sourceCode, lineNumber);
+        if (packageNode != null) {
+            revealNodeInTree(workspace, packageNode);
+            return;
+        }
+
         if (!preferClassNavigation) {
             if (JavaSourceAnalyzer.shouldSearchWorkspaceForClassToken(targetToken)) {
                 node = ClassNodeResolver.findNodeForToken(workspace, index, targetToken,
@@ -112,6 +133,36 @@ public final class NavigationController {
         }
 
         owner.statusBar().setFilePath(I18nUtil.getString("status.locateFailed", targetToken));
+    }
+
+    private boolean shouldPreferPackageNavigation(String sourceCode, int lineNumber, String token) {
+        if (sourceCode == null || sourceCode.isBlank() || token == null || token.isBlank()) {
+            return false;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace('\r', '\n').split("\n", -1);
+        if (lineNumber < 1 || lineNumber > lines.length) {
+            return false;
+        }
+        String line = JavaSourceAnalyzer.stripLineComment(lines[lineNumber - 1]).strip();
+        if (line.startsWith("package ")) {
+            return true;
+        }
+        if (!line.startsWith("import ")) {
+            return false;
+        }
+        if (line.endsWith(".*;")) {
+            return true;
+        }
+        String clean = JavaSourceAnalyzer.sanitizeDeclarationToken(token);
+        String imported = line.substring("import ".length()).strip();
+        if (imported.startsWith("static ")) {
+            imported = imported.substring("static ".length()).strip();
+        }
+        if (imported.endsWith(";")) {
+            imported = imported.substring(0, imported.length() - 1).strip();
+        }
+        String simpleImportName = JavaSourceAnalyzer.tokenSimpleName(imported);
+        return imported.contains(".") && !simpleImportName.equals(clean);
     }
 
     /**
@@ -190,20 +241,29 @@ public final class NavigationController {
         if (cleanToken.isBlank()) {
             return -1;
         }
-        // 找到 token 在行中的位置(作为独立标识符,不是更长标识符的一部分)
-        int idx = line.indexOf(cleanToken);
-        if (idx < 0) {
-            return -1;
+        int best = -1;
+        int searchFrom = 0;
+        while (searchFrom < line.length()) {
+            int idx = line.indexOf(cleanToken, searchFrom);
+            if (idx < 0) {
+                break;
+            }
+            int end = idx + cleanToken.length();
+            boolean leftBoundary = idx == 0 || !Character.isJavaIdentifierPart(line.charAt(idx - 1));
+            boolean rightBoundary = end >= line.length() || !Character.isJavaIdentifierPart(line.charAt(end));
+            if (leftBoundary && rightBoundary) {
+                if (best < 0) {
+                    best = idx;
+                }
+                int tokenSimpleStart = cleanToken.lastIndexOf('.') + 1;
+                if (tokenSimpleStart <= 0 || idx + tokenSimpleStart >= line.length()) {
+                    return idx;
+                }
+                return idx + tokenSimpleStart;
+            }
+            searchFrom = idx + cleanToken.length();
         }
-        // 验证不是更长标识符的一部分
-        if (idx > 0 && Character.isJavaIdentifierPart(line.charAt(idx - 1))) {
-            return -1;
-        }
-        int end = idx + cleanToken.length();
-        if (end < line.length() && Character.isJavaIdentifierPart(line.charAt(end))) {
-            return -1;
-        }
-        return idx;
+        return best;
     }
 
     /**
@@ -278,6 +338,16 @@ public final class NavigationController {
         }
         owner.classTabOpener().openClassTab(node, workspace, view.codeTabPane(),
                 owner.currentEngine(), owner.lineNumbersEnabled());
+    }
+
+    private void revealNodeInTree(Workspace workspace, FileTreeNode node) {
+        WorkspaceView view = owner.workspaceViewFor(workspace);
+        if (view == null || node == null) {
+            return;
+        }
+        owner.tabManager().selectTreeNodeByPath(node.getFullPath());
+        owner.statusBar().setFilePath(I18nUtil.getString("status.navigatedTo",
+                node.getFullPath(), 1));
     }
 
     /** 尝试在当前代码标签页中定位并滚动到 token 的声明行 */

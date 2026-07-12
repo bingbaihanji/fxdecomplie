@@ -161,7 +161,8 @@ public final class SearchController {
         Map<String, String> fullSourceCache = new LinkedHashMap<>(safeOpenTabs);
         var index = awaitWorkspaceIndex(view.workspace());
         boolean indexReady = index != WorkspaceIndex.EMPTY;
-        var context = DecompilerContext.fromWorkspaceIndex(index, engineOptions);
+        var context = DecompilerContext.fromWorkspaceIndex(index, engineOptions,
+                com.bingbaihanji.fxdecomplie.model.CommentScope.workspaceHash(view.workspace()));
         var classes = index.classes();
         int total = classes.size();
         int processed = 0;

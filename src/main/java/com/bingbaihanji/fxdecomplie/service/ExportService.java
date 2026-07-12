@@ -241,7 +241,8 @@ public final class ExportService {
             throws IOException {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
         Files.createDirectories(outputDir);
-        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
+        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions(),
+                commentScope == null ? "" : commentScope.workspaceHash());
         try {
             for (FileTreeNode data : items) {
                 if (canceled != null && canceled.getAsBoolean()) {
@@ -293,7 +294,8 @@ public final class ExportService {
             Files.createDirectories(zipPath.getParent());
         }
         Set<String> writtenEntries = new HashSet<>();
-        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions());
+        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions(),
+                commentScope == null ? "" : commentScope.workspaceHash());
         try {
             try (ZipOutputStream zos = new ZipOutputStream(
                     new BufferedOutputStream(Files.newOutputStream(zipPath)))) {

@@ -112,8 +112,10 @@ public class CodeAreaContextMenu extends ContextMenu {
         if (actionHandler == null || context == null || codeArea == null) {
             return;
         }
+        TextPos pos = actionPosition != null ? actionPosition : codeArea.getCaretPosition();
         int line = currentLine();
-        actionHandler.goToDeclaration(context, line, tokenAtActionPosition());
+        int column = pos == null ? -1 : Math.max(0, pos.offset());
+        actionHandler.goToDeclaration(context, line, tokenAtActionPosition(), column);
     }
 
     /** 显示当前类的继承关系图 */

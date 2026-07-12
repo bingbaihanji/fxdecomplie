@@ -37,8 +37,9 @@ public final class JadxParameters {
             }
             String key = def.key();
             String defaultValue = def.defaultValue().toString();
+            ParamType paramType = def.type() == OptionType.BOOLEAN ? ParamType.BOOLEAN : ParamType.INTEGER;
             params.add(new DecompilerParameter(key,
-                    def.type() == OptionType.BOOLEAN ? ParamType.BOOLEAN : ParamType.STRING,
+                    paramType,
                     defaultValue, def.i18nKey(), def.i18nKey() + ".help", category, null));
         }
         // 适配器参数 — 不属于内核引擎选项，手动添加
@@ -48,12 +49,12 @@ public final class JadxParameters {
                 "engine.jadx." + JadxAdapterOptions.LOAD_WORKSPACE_DEPENDENCIES + ".help",
                 Category.ADVANCED, null));
         params.add(new DecompilerParameter(JadxAdapterOptions.WORKSPACE_DEPENDENCY_LIMIT,
-                ParamType.STRING, "96",
+                ParamType.INTEGER, "96",
                 "engine.jadx." + JadxAdapterOptions.WORKSPACE_DEPENDENCY_LIMIT,
                 "engine.jadx." + JadxAdapterOptions.WORKSPACE_DEPENDENCY_LIMIT + ".help",
                 Category.ADVANCED, null));
         params.add(new DecompilerParameter(JadxAdapterOptions.WORKSPACE_DEPENDENCY_DEPTH,
-                ParamType.STRING, "1",
+                ParamType.INTEGER, "1",
                 "engine.jadx." + JadxAdapterOptions.WORKSPACE_DEPENDENCY_DEPTH,
                 "engine.jadx." + JadxAdapterOptions.WORKSPACE_DEPENDENCY_DEPTH + ".help",
                 Category.ADVANCED, null));

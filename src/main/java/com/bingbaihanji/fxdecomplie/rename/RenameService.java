@@ -239,6 +239,13 @@ public final class RenameService {
                         break;
                     }
                     if (sameClassRenameTarget(e, normalized)) {
+                        if (skipExisting) {
+                            log.debug("saveAll: skipExisting=true, 保留已有类重命名 class={} old={} new={}",
+                                    e.className(), e.oldName(), e.newName());
+                            replaced = true;
+                            skipped = true;
+                            break;
+                        }
                         list.set(i, normalized);
                         replaced = true;
                         break;

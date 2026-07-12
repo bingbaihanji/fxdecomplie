@@ -28,6 +28,9 @@ public interface ViewActions {
     /** 显示继承工具窗口 */
     void showInheritance();
 
+    /** 显示注释工具窗口 */
+    void showComments();
+
     /** 隐藏底部工具窗口 */
     void hideBottomTools();
 }

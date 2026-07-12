@@ -80,6 +80,11 @@ public final class JadxDecompilerFacade {
                                     "empty output", inputPlan.targetType(), elapsed));
                 }
 
+                if (args.isDeobfuscationOn()) {
+                    JadxProjectRenameSynchronizer.syncDeobfAliases(
+                            request.context().workspaceHash(), classes);
+                }
+
                 log.debug("jadx decompile OK: {} ({}ms, classes={}, deps={}, chars={})",
                         inputPlan.targetType(), elapsed, inputPlan.totalClasses(),
                         inputPlan.dependencyClasses(), source.length());

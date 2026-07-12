@@ -23,6 +23,7 @@ public final class JadxArgsFactory {
         args.setRootDir(AppPaths.jadxRuntimeDir().toFile());
         args.setGeneratedRenamesMappingFileMode(GeneratedRenamesMappingFileMode.IGNORE);
         JadxOptionsBridge.apply(args, options);
+        args.setRenameCondition(new JadxProjectRenameCondition(args.getRenameCondition()));
         return args;
     }
 

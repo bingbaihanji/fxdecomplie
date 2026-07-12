@@ -107,11 +107,12 @@ public class MainMenuBar extends MenuBar {
         MenuItem collapseTree = item(I18nUtil.getString("menu.view.collapseTree"), null, actions::collapseTree);
         MenuItem showOutline = item(I18nUtil.getString("menu.view.outline"), null, actions::showOutline);
         MenuItem showInheritance = item(I18nUtil.getString("menu.view.inheritance"), null, actions::showInheritance);
+        MenuItem showComments = item(I18nUtil.getString("menu.view.comments"), null, actions::showComments);
         MenuItem hideBottomTools = item(I18nUtil.getString("menu.view.hideTools"), null, actions::hideBottomTools);
         viewMenu.getItems().addAll(
                 zoomIn, zoomOut, zoomReset,
                 new SeparatorMenuItem(), toggleLineNumbers, collapseTree,
-                new SeparatorMenuItem(), showOutline, showInheritance, hideBottomTools
+                new SeparatorMenuItem(), showOutline, showInheritance, showComments, hideBottomTools
         );
         return viewMenu;
     }

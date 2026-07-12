@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.settings;
 
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.*;
+import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxAdapterOptions;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 import com.bingbaihanji.fxdecomplie.model.ExportConfig;
 import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
@@ -12,8 +13,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import javafx.scene.control.*;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -31,6 +36,43 @@ import java.util.function.Consumer;
 public final class SettingsDialog {
 
     private static final Logger log = LoggerFactory.getLogger(SettingsDialog.class);
+    private static final String JSON_AREA_STYLE = "-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
+            + "-fx-font-family: 'Consolas', 'JetBrains Mono', monospace; -fx-font-size: 12px;";
+    private static final String JSON_AREA_ERROR_STYLE = JSON_AREA_STYLE
+            + " -fx-border-color: #f44747; -fx-border-width: 1px;";
+
+    private static final List<String> JADX_CODE_OPTIONS = List.of(
+            "showInconsistentCode",
+            "useImports",
+            "debugInfo",
+            "extractFinally",
+            "inlineAnonymousClasses",
+            "inlineMethods",
+            "moveInnerClasses",
+            "allowInlineKotlinLambda",
+            "restoreSwitchOverString",
+            "replaceConsts",
+            "escapeUnicode",
+            "insertDebugLines",
+            "respectBytecodeAccModifiers");
+
+    private static final List<String> JADX_DEOBFUSCATION_OPTIONS = List.of(
+            "deobfuscationOn",
+            "deobfuscationMinLength",
+            "deobfuscationMaxLength",
+            "sourceNameRepeatLimit");
+
+    private static final List<String> JADX_RESOURCE_OPTIONS = List.of(
+            "skipResources",
+            "skipSources",
+            "skipXmlPrettyPrint",
+            JadxAdapterOptions.LOAD_WORKSPACE_DEPENDENCIES,
+            JadxAdapterOptions.WORKSPACE_DEPENDENCY_LIMIT,
+            JadxAdapterOptions.WORKSPACE_DEPENDENCY_DEPTH);
+
+    private static final List<String> JADX_PERFORMANCE_OPTIONS = List.of(
+            "threadsCount",
+            "typeUpdatesLimitCount");
 
     private SettingsDialog() {
         throw new AssertionError("utility class");
@@ -41,6 +83,7 @@ public final class SettingsDialog {
         dialog.initOwner(owner);
         dialog.setTitle(I18nUtil.getString("menu.edit.settings"));
         dialog.setHeaderText(null);
+        dialog.setResizable(true);
         DialogHelper.applyNativeStyle(dialog);
 
         AppConfig draft = config.copy();
@@ -55,15 +98,18 @@ public final class SettingsDialog {
         engineCombo.getItems().addAll("PROCYON", "CFR", "VINEFLOWER", "JD", "JADX");
         engineCombo.setValue(draft.decompiler().defaultEngine().name());
 
-        // 引擎选项 JSON 编辑器(移到独立 TitledPane 中,默认折叠)
+        // 引擎选项 JSON 编辑器(移到独立面板中,给足可读空间)
         Label engineOptionsLabel = new Label(I18nUtil.getString("settings.decompiler.engineOptions"));
         engineOptionsLabel.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
 
         TextArea engineOptionsArea = new TextArea();
         engineOptionsArea.setPromptText(I18nUtil.getString("settings.decompiler.engineOptionsHint"));
-        engineOptionsArea.setPrefRowCount(6);
-        engineOptionsArea.setStyle("-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
-                + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px;");
+        engineOptionsArea.setPrefRowCount(14);
+        engineOptionsArea.setMinHeight(130);
+        engineOptionsArea.setPrefHeight(260);
+        engineOptionsArea.setWrapText(false);
+        engineOptionsArea.setStyle(JSON_AREA_STYLE);
+        VBox.setVgrow(engineOptionsArea, Priority.ALWAYS);
 
         // 初始化 JSON
         refreshEngineOptionsJson(draft, engineOptionsArea);
@@ -83,6 +129,8 @@ public final class SettingsDialog {
 
         // ── 引擎参数子标签页 ──
         TabPane engineTabPane = new TabPane();
+        engineTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        VBox.setVgrow(engineTabPane, Priority.ALWAYS);
 
         // CFR 面板
         Tab cfrTab = new Tab("CFR");
@@ -110,17 +158,17 @@ public final class SettingsDialog {
 
         engineTabPane.getTabs().addAll(cfrTab, procyonTab, vfTab, jadxTab);
 
-        // JSON 编辑器折叠面板
-        TitledPane jsonPane = new TitledPane();
-        jsonPane.setText(I18nUtil.getStringOrDefault("settings.decompiler.engineOptionsJson", "Engine Options JSON (Advanced)"));
-        jsonPane.setExpanded(false);
-        jsonPane.setContent(new VBox(5, engineOptionsLabel, engineOptionsArea));
-
         VBox decompilerContent = new VBox(10,
                 new Label(I18nUtil.getString("settings.defaultEngine")), engineCombo,
-                engineTabPane,
-                jsonPane);
+                engineTabPane);
+        VBox.setVgrow(decompilerContent, Priority.ALWAYS);
         decompilerTab.setContent(decompilerContent);
+
+        Tab engineOptionsTab = new Tab(I18nUtil.getStringOrDefault(
+                "settings.decompiler.engineOptionsJson", "Engine Options JSON"));
+        engineOptionsTab.setClosable(false);
+        engineOptionsTab.setContent(buildEngineOptionsJsonContent(draft, engineOptionsArea,
+                engineOptionsLabel, engineControlMaps, jsonDirty));
 
         // JSON 失焦 → 解析 → 回填面板控件
         engineOptionsArea.focusedProperty().addListener((obs, old, focused) -> {
@@ -135,12 +183,9 @@ public final class SettingsDialog {
                             }.getType());
                     applyJsonToControls(allOpts, engineControlMaps);
                     jsonDirty[0] = false;
-                    engineOptionsArea.setStyle("-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
-                            + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px;");
+                    engineOptionsArea.setStyle(JSON_AREA_STYLE);
                 } catch (Exception ex) {
-                    engineOptionsArea.setStyle("-fx-control-inner-background: #3c3c3c; -fx-text-fill: #cccccc; "
-                            + "-fx-font-family: 'Consolas', monospace; -fx-font-size: 12px; "
-                            + "-fx-border-color: #f44747; -fx-border-width: 1px;");
+                    engineOptionsArea.setStyle(JSON_AREA_ERROR_STYLE);
                 }
             }
         });
@@ -350,7 +395,7 @@ public final class SettingsDialog {
                 ? "English" : "简体中文");
         langTab.setContent(new VBox(10, new Label(I18nUtil.getString("settings.uiLang")), langCombo));
 
-        tabPane.getTabs().addAll(decompilerTab, uiTab, searchTab, exportTab, cacheTab, langTab);
+        tabPane.getTabs().addAll(decompilerTab, engineOptionsTab, uiTab, searchTab, exportTab, cacheTab, langTab);
 
         Button restoreDefaultsBtn = new Button(I18nUtil.getString("settings.restoreDefaults"));
         restoreDefaultsBtn.setStyle("-fx-font-size: 12px; -fx-text-fill: #f44747;");
@@ -373,7 +418,10 @@ public final class SettingsDialog {
         });
 
         VBox content = new VBox(10, tabPane, restoreDefaultsBtn);
+        VBox.setVgrow(tabPane, Priority.ALWAYS);
         dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setMinSize(760, 560);
+        dialog.getDialogPane().setPrefSize(980, 720);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
 
         var result = dialog.showAndWait();
@@ -484,6 +532,9 @@ public final class SettingsDialog {
                                                   Map<String, javafx.scene.Node> controlMap) {
         Map<String, String> engineOpts = config.decompiler().engineOptions()
                 .computeIfAbsent(engineName, ignored -> new LinkedHashMap<>());
+        if ("JADX".equals(engineName)) {
+            return buildJadxParameterPanel(config, params, engineOpts, jsonArea, controlMap);
+        }
 
         List<DecompilerParameter> common = new ArrayList<>();
         List<DecompilerParameter> advanced = new ArrayList<>();
@@ -504,8 +555,60 @@ public final class SettingsDialog {
         ScrollPane scroll = new ScrollPane(new VBox(5, commonPane, advancedPane));
         scroll.setFitToWidth(true);
         scroll.setStyle("-fx-background: #2b2b2b; -fx-background-color: #2b2b2b;");
+        VBox.setVgrow(scroll, Priority.ALWAYS);
 
         return new VBox(scroll);
+    }
+
+    /** JADX 选项较多,按实际作用域分组,避免全部挤在“通用/高级”里。 */
+    private static VBox buildJadxParameterPanel(AppConfig config,
+                                                List<DecompilerParameter> params,
+                                                Map<String, String> engineOpts,
+                                                TextArea jsonArea,
+                                                Map<String, javafx.scene.Node> controlMap) {
+        Map<String, DecompilerParameter> byKey = new LinkedHashMap<>();
+        for (DecompilerParameter param : params) {
+            byKey.put(param.key(), param);
+        }
+
+        VBox sections = new VBox(6,
+                buildTitledParameterPane("settings.engine.jadx.code", selectParameters(byKey, JADX_CODE_OPTIONS),
+                        engineOpts, jsonArea, controlMap, config),
+                buildTitledParameterPane("settings.engine.jadx.deobfuscation",
+                        selectParameters(byKey, JADX_DEOBFUSCATION_OPTIONS),
+                        engineOpts, jsonArea, controlMap, config),
+                buildTitledParameterPane("settings.engine.jadx.resources",
+                        selectParameters(byKey, JADX_RESOURCE_OPTIONS),
+                        engineOpts, jsonArea, controlMap, config),
+                buildTitledParameterPane("settings.engine.jadx.performance",
+                        selectParameters(byKey, JADX_PERFORMANCE_OPTIONS),
+                        engineOpts, jsonArea, controlMap, config));
+
+        List<DecompilerParameter> other = new ArrayList<>(byKey.values());
+        if (!other.isEmpty()) {
+            TitledPane otherPane = buildTitledParameterPane("settings.engine.advanced", other,
+                    engineOpts, jsonArea, controlMap, config);
+            otherPane.setExpanded(false);
+            sections.getChildren().add(otherPane);
+        }
+
+        ScrollPane scroll = new ScrollPane(sections);
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background: #2b2b2b; -fx-background-color: #2b2b2b;");
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+        return new VBox(scroll);
+    }
+
+    private static List<DecompilerParameter> selectParameters(Map<String, DecompilerParameter> source,
+                                                              List<String> keys) {
+        List<DecompilerParameter> result = new ArrayList<>();
+        for (String key : keys) {
+            DecompilerParameter param = source.remove(key);
+            if (param != null) {
+                result.add(param);
+            }
+        }
+        return result;
     }
 
     /**
@@ -518,10 +621,27 @@ public final class SettingsDialog {
                                                        TextArea jsonArea,
                                                        Map<String, javafx.scene.Node> controlMap,
                                                        AppConfig config) {
+        if (params.isEmpty()) {
+            TitledPane emptyPane = new TitledPane();
+            emptyPane.setText(I18nUtil.getStringOrDefault(titleKey, titleKey));
+            emptyPane.setContent(new Label(I18nUtil.getStringOrDefault(
+                    "settings.engine.noOptions", "No options")));
+            emptyPane.setExpanded(false);
+            return emptyPane;
+        }
+
         GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(5);
+        grid.setHgap(14);
+        grid.setVgap(8);
         grid.setStyle("-fx-padding: 8;");
+        ColumnConstraints labelColumn = new ColumnConstraints();
+        labelColumn.setMinWidth(190);
+        labelColumn.setPrefWidth(260);
+        labelColumn.setHgrow(Priority.ALWAYS);
+        ColumnConstraints controlColumn = new ColumnConstraints();
+        controlColumn.setMinWidth(120);
+        controlColumn.setPrefWidth(180);
+        grid.getColumnConstraints().addAll(labelColumn, controlColumn);
 
         for (int i = 0; i < params.size(); i++) {
             DecompilerParameter param = params.get(i);
@@ -529,6 +649,8 @@ public final class SettingsDialog {
             String helpText = I18nUtil.getStringOrDefault(param.helpKey(), "");
 
             Label lbl = new Label(labelText);
+            lbl.setWrapText(true);
+            lbl.setMaxWidth(Double.MAX_VALUE);
             lbl.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 12px;");
             if (!helpText.isEmpty()) {
                 lbl.setTooltip(new Tooltip(helpText));
@@ -542,14 +664,83 @@ public final class SettingsDialog {
             });
 
             controlMap.put(param.key(), controlHolder[0]);
-            grid.add(controlHolder[0], 0, i);
-            grid.add(lbl, 1, i);
+            grid.add(lbl, 0, i);
+            grid.add(controlHolder[0], 1, i);
+            GridPane.setHgrow(lbl, Priority.ALWAYS);
         }
 
         TitledPane pane = new TitledPane();
         pane.setText(I18nUtil.getStringOrDefault(titleKey, titleKey));
         pane.setContent(grid);
         return pane;
+    }
+
+    private static VBox buildEngineOptionsJsonContent(AppConfig config,
+                                                      TextArea jsonArea,
+                                                      Label engineOptionsLabel,
+                                                      Map<String, Map<String, javafx.scene.Node>> engineControlMaps,
+                                                      boolean[] jsonDirty) {
+        Button formatButton = new Button(I18nUtil.getStringOrDefault(
+                "settings.decompiler.formatJson", "Format"));
+        formatButton.setMinWidth(Region.USE_PREF_SIZE);
+        formatButton.setOnAction(e -> formatJsonArea(jsonArea));
+
+        Button applyJsonButton = new Button(I18nUtil.getStringOrDefault(
+                "settings.decompiler.applyJson", "Apply JSON to controls"));
+        applyJsonButton.setMinWidth(Region.USE_PREF_SIZE);
+        applyJsonButton.setOnAction(e -> {
+            Map<String, Map<String, String>> parsed = parseEngineOptionsJson(jsonArea.getText());
+            if (parsed == null) {
+                jsonArea.setStyle(JSON_AREA_ERROR_STYLE);
+                return;
+            }
+            applyJsonToControls(parsed, engineControlMaps);
+            jsonDirty[0] = false;
+            jsonArea.setStyle(JSON_AREA_STYLE);
+        });
+
+        Button refreshButton = new Button(I18nUtil.getStringOrDefault(
+                "settings.decompiler.refreshJson", "Refresh from controls"));
+        refreshButton.setMinWidth(Region.USE_PREF_SIZE);
+        refreshButton.setOnAction(e -> {
+            refreshEngineOptionsJson(config, jsonArea);
+            jsonDirty[0] = false;
+            jsonArea.setStyle(JSON_AREA_STYLE);
+        });
+
+        engineOptionsLabel.setWrapText(true);
+        engineOptionsLabel.setMaxWidth(Double.MAX_VALUE);
+        VBox.setVgrow(engineOptionsLabel, Priority.NEVER);
+
+        FlowPane actions = new FlowPane(8, 6, formatButton, applyJsonButton, refreshButton);
+        actions.setPrefWrapLength(360);
+        actions.setMinHeight(Region.USE_PREF_SIZE);
+        actions.setStyle("-fx-padding: 0;");
+
+        VBox toolbar = new VBox(6, engineOptionsLabel, actions);
+        toolbar.setFillWidth(true);
+        toolbar.setStyle("-fx-padding: 0 0 6 0;");
+
+        VBox content = new VBox(10, toolbar, jsonArea);
+        content.setFillWidth(true);
+        content.setStyle("-fx-padding: 10;");
+        VBox.setVgrow(jsonArea, Priority.ALWAYS);
+        return content;
+    }
+
+    private static void formatJsonArea(TextArea jsonArea) {
+        String text = jsonArea.getText();
+        if (text == null || text.isBlank()) {
+            jsonArea.setStyle(JSON_AREA_STYLE);
+            return;
+        }
+        try {
+            Object tree = new Gson().fromJson(text, Object.class);
+            jsonArea.setText(new GsonBuilder().setPrettyPrinting().create().toJson(tree));
+            jsonArea.setStyle(JSON_AREA_STYLE);
+        } catch (Exception ex) {
+            jsonArea.setStyle(JSON_AREA_ERROR_STYLE);
+        }
     }
 
     /** 根据参数类型创建对应的 JavaFX 控件(CheckBox/Spinner/TextField/ComboBox) */
@@ -570,7 +761,7 @@ public final class SettingsDialog {
                 Spinner<Integer> spinner = new Spinner<>(0, Integer.MAX_VALUE,
                         parseOrDefault(currentValue, 0), 1);
                 spinner.setEditable(true);
-                spinner.setPrefWidth(100);
+                spinner.setPrefWidth(150);
                 spinner.getEditor().setTextFormatter(new javafx.scene.control.TextFormatter<>(
                         change -> change.getControlNewText().matches("\\d*") ? change : null));
                 spinner.valueProperty().addListener((obs, old, val) -> onChange.run());
@@ -578,7 +769,7 @@ public final class SettingsDialog {
             }
             case STRING -> {
                 TextField tf = new TextField(currentValue != null ? currentValue : "");
-                tf.setPrefWidth(120);
+                tf.setPrefWidth(180);
                 tf.textProperty().addListener((obs, old, val) -> onChange.run());
                 yield tf;
             }

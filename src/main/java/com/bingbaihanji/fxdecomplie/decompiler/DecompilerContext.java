@@ -23,6 +23,8 @@ public final class DecompilerContext implements AutoCloseable {
     private final ClassBytecodeProvider bytecodeProvider;
     /** 反编译选项(不可变) */
     private final Map<String, String> options;
+    /** 工作区标识,用于需要同步项目级状态的引擎适配层 */
+    private final String workspaceHash;
     /** 可关闭的资源(如 ZipFile),反编译完成后可能需要关闭 */
     private final AutoCloseable closeable;
     /** 是否在使用后自动关闭 closeable */
@@ -32,15 +34,24 @@ public final class DecompilerContext implements AutoCloseable {
 
     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
                               Map<String, String> options) {
-        this(bytecodeProvider, options, null, false);
+        this(bytecodeProvider, options, null, false, "");
     }
 
     private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
                               Map<String, String> options,
                               AutoCloseable closeable,
                               boolean closeAfterUse) {
+        this(bytecodeProvider, options, closeable, closeAfterUse, "");
+    }
+
+    private DecompilerContext(ClassBytecodeProvider bytecodeProvider,
+                              Map<String, String> options,
+                              AutoCloseable closeable,
+                              boolean closeAfterUse,
+                              String workspaceHash) {
         this.bytecodeProvider = Objects.requireNonNull(bytecodeProvider, "bytecodeProvider");
         this.options = options == null ? Map.of() : Map.copyOf(options);
+        this.workspaceHash = workspaceHash == null ? "" : workspaceHash;
         this.closeable = closeable;
         this.closeAfterUse = closeAfterUse;
     }
@@ -81,6 +92,13 @@ public final class DecompilerContext implements AutoCloseable {
         return of(bytecodeProvider, options, closeable, true);
     }
 
+    public static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
+                                       Map<String, String> options,
+                                       AutoCloseable closeable,
+                                       String workspaceHash) {
+        return of(bytecodeProvider, options, closeable, true, workspaceHash);
+    }
+
     /**
      * 创建一次性使用的上下文(语义等同 {@link #of(ClassBytecodeProvider, Map, AutoCloseable)},
      * closeAfterUse 固定为 true)
@@ -105,6 +123,14 @@ public final class DecompilerContext implements AutoCloseable {
                                         Map<String, String> options,
                                         AutoCloseable closeable,
                                         boolean closeAfterUse) {
+        return of(bytecodeProvider, options, closeable, closeAfterUse, "");
+    }
+
+    private static DecompilerContext of(ClassBytecodeProvider bytecodeProvider,
+                                        Map<String, String> options,
+                                        AutoCloseable closeable,
+                                        boolean closeAfterUse,
+                                        String workspaceHash) {
         if (bytecodeProvider == null) {
             if (closeable != null) {
                 try {
@@ -114,9 +140,9 @@ public final class DecompilerContext implements AutoCloseable {
                             "bytecodeProvider 为 null 时无法持有 closeable", e);
                 }
             }
-            return withOptions(options);
+            return withOptions(options, workspaceHash);
         }
-        return new DecompilerContext(bytecodeProvider, options, closeable, closeAfterUse);
+        return new DecompilerContext(bytecodeProvider, options, closeable, closeAfterUse, workspaceHash);
     }
 
     /**
@@ -139,10 +165,16 @@ public final class DecompilerContext implements AutoCloseable {
      */
     public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index,
                                                        Map<String, String> options) {
+        return fromWorkspaceIndex(index, options, "");
+    }
+
+    public static DecompilerContext fromWorkspaceIndex(WorkspaceIndex index,
+                                                       Map<String, String> options,
+                                                       String workspaceHash) {
         if (index == null) {
-            return withOptions(options);
+            return withOptions(options, workspaceHash);
         }
-        return of(index::getClassBytes, options);
+        return new DecompilerContext(index::getClassBytes, options, null, false, workspaceHash);
     }
 
     /**
@@ -152,7 +184,12 @@ public final class DecompilerContext implements AutoCloseable {
      * @return 反编译上下文
      */
     public static DecompilerContext withOptions(Map<String, String> options) {
-        return new DecompilerContext(internalName -> null, options);
+        return withOptions(options, "");
+    }
+
+    public static DecompilerContext withOptions(Map<String, String> options,
+                                                String workspaceHash) {
+        return new DecompilerContext(internalName -> null, options, null, false, workspaceHash);
     }
 
     /**
@@ -214,6 +251,11 @@ public final class DecompilerContext implements AutoCloseable {
     /** @return 是否携带选项 */
     public boolean hasOptions() {
         return !options.isEmpty();
+    }
+
+    /** @return 当前反编译请求关联的工作区标识,无工作区时为空 */
+    public String workspaceHash() {
+        return workspaceHash;
     }
 
     /** @return 是否在使用后自动关闭可关闭资源 */

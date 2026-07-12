@@ -14,12 +14,7 @@ import java.util.Objects;
  * @author bingbaihanji
  * @date 2026-06-17
  */
-public final class OpenFile {
-
-    private final String className;
-    private final String fullPath;
-    private final String sourceCode;
-    private final DecompilerTypeEnum engine;
+public record OpenFile(String className, String fullPath, String sourceCode, DecompilerTypeEnum engine) {
 
     /**
      * 构造打开文件
@@ -70,20 +65,4 @@ public final class OpenFile {
     }
 
     // --- accessors ---
-
-    public String className() {
-        return className;
-    }
-
-    public String fullPath() {
-        return fullPath;
-    }
-
-    public String sourceCode() {
-        return sourceCode;
-    }
-
-    public DecompilerTypeEnum engine() {
-        return engine;
-    }
 }
