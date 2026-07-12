@@ -271,6 +271,8 @@ public final class DecompilerRunner {
         return trimmed.startsWith("// Vineflower Error:")
                 || trimmed.startsWith("// CFR Error:")
                 || trimmed.startsWith("// Procyon Error:")
+                || trimmed.startsWith("// jadx Error:")
+                || trimmed.startsWith("// jadx decompile failed")
                 || trimmed.startsWith("// CFR decompile failed")
                 || trimmed.startsWith("// Procyon decompile failed")
                 || trimmed.startsWith("// Vineflower decompile failed")
