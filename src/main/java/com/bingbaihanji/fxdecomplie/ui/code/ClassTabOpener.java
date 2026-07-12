@@ -3,14 +3,15 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxRenameAdapter;
 import com.bingbaihanji.fxdecomplie.model.*;
 import com.bingbaihanji.fxdecomplie.service.*;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
-import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
@@ -1152,19 +1153,24 @@ public final class ClassTabOpener {
         String optionsHash = DecompilerOptions.hash(engineOptions);
         String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
 
+        // ---- 构建 rename 适配器并纳入缓存 key ----
+        JadxRenameAdapter renameAdapter = buildRenameAdapter(workspace);
+        String renameHash = renameAdapter.snapshotHash();
+        String cacheWsKey = wsKey + "_" + renameHash;
+
         // ---- L2: 内存反编译缓存(最快路径) ----
-        String sourceCode = decompileCache.get(wsKey, internalName, effectiveEngine, optionsHash);
+        String sourceCode = decompileCache.get(cacheWsKey, internalName, effectiveEngine, optionsHash);
         if (sourceCode != null) {
             log.debug("缓存 L2 命中: {} engine={}", internalName, effectiveEngine);
         }
 
         // ---- L2 未命中:尝试 L3 磁盘持久化缓存 ----
         if (sourceCode == null) {
-            sourceCode = DiskCodeCache.load(wsKey, internalName, effectiveEngine, optionsHash);
+            sourceCode = DiskCodeCache.load(cacheWsKey, internalName, effectiveEngine, optionsHash);
             if (sourceCode != null) {
                 log.debug("缓存 L3 命中(回填L2): {} engine={}", internalName, effectiveEngine);
                 // ---- L3 命中:回填 L2,使下次查询即时完成 ----
-                decompileCache.put(wsKey, internalName, effectiveEngine, optionsHash, sourceCode);
+                decompileCache.put(cacheWsKey, internalName, effectiveEngine, optionsHash, sourceCode);
             }
         }
 
@@ -1185,14 +1191,19 @@ public final class ClassTabOpener {
             }
             if (!DecompilerRunner.isFailureOutput(sourceCode)) {
                 // ---- 保存反编译结果到 L2(即时) ----
-                decompileCache.put(wsKey, internalName, effectiveEngine, optionsHash, sourceCode);
+                decompileCache.put(cacheWsKey, internalName, effectiveEngine, optionsHash, sourceCode);
 
                 // ---- 异步保存到 L3 磁盘缓存(非阻塞) ----
                 final String finalSource = sourceCode;
                 BackgroundTasks.run("DiskCache-" + internalName, () -> {
-                    DiskCodeCache.save(wsKey, internalName, effectiveEngine, optionsHash, finalSource);
+                    DiskCodeCache.save(cacheWsKey, internalName, effectiveEngine, optionsHash, finalSource);
                 });
             }
+        }
+
+        // ---- 应用 rename（对成功结果应用项目重命名） ----
+        if (sourceCode != null && !DecompilerRunner.isFailureOutput(sourceCode)) {
+            sourceCode = renameAdapter.applyRenames(sourceCode);
         }
 
         // ---- 提取元数据用于 Ctrl+Click 导航 大源码的链接扫描会被禁用,这里也跳过避免拖慢首屏 ----
@@ -1210,8 +1221,14 @@ public final class ClassTabOpener {
         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
         String optionsHash = DecompilerOptions.hash(engineOptions);
         String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
-        decompileCache.invalidate(wsKey, internalName);
-        DiskCodeCache.invalidate(wsKey, internalName);
+
+        // ---- 构建 rename 适配器并纳入缓存 key ----
+        JadxRenameAdapter renameAdapter = buildRenameAdapter(workspace);
+        String renameHash = renameAdapter.snapshotHash();
+        String cacheWsKey = wsKey + "_" + renameHash;
+
+        decompileCache.invalidate(cacheWsKey, internalName);
+        DiskCodeCache.invalidate(cacheWsKey, internalName);
 
         if (!active.getAsBoolean()) {
             throw new CancellationException("反编译请求已被替换");
@@ -1224,16 +1241,53 @@ public final class ClassTabOpener {
             throw new CancellationException("反编译请求已被替换");
         }
         if (!DecompilerRunner.isFailureOutput(sourceCode)) {
-            decompileCache.put(wsKey, internalName, effectiveEngine, optionsHash, sourceCode);
+            decompileCache.put(cacheWsKey, internalName, effectiveEngine, optionsHash, sourceCode);
             final String finalSource = sourceCode;
             BackgroundTasks.run("DiskCache-" + internalName, () ->
-                    DiskCodeCache.save(wsKey, internalName, effectiveEngine, optionsHash, finalSource));
+                    DiskCodeCache.save(cacheWsKey, internalName, effectiveEngine, optionsHash, finalSource));
+        }
+
+        // ---- 应用 rename ----
+        if (sourceCode != null && !DecompilerRunner.isFailureOutput(sourceCode)) {
+            sourceCode = renameAdapter.applyRenames(sourceCode);
         }
 
         CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                 ? OutlineParser.extractMetadata(sourceCode, bytes)
                 : new CodeMetadata(Map.of());
         return new DecompileResult(sourceCode, metadata, effectiveEngine);
+    }
+
+    /**
+     * 从工作区的 RenameService 构建 JadxRenameAdapter。
+     * 若无 rename 映射则返回空适配器（no-op）。
+     */
+    private JadxRenameAdapter buildRenameAdapter(Workspace workspace) {
+        if (workspace == null) {
+            return JadxRenameAdapter.EMPTY;
+        }
+        try {
+            String wsHash = CommentScope.workspaceHash(workspace);
+            var entries = com.bingbaihanji.fxdecomplie.rename.RenameService.loadAll(wsHash);
+            if (entries == null || entries.isEmpty()) {
+                return JadxRenameAdapter.EMPTY;
+            }
+            Map<String, String> renameMap = new java.util.HashMap<>();
+            for (var entry : entries) {
+                if (com.bingbaihanji.fxdecomplie.rename.RenameService.TYPE_CLASS.equals(entry.type())) {
+                    String internalName = entry.className();
+                    String pkg = internalName.contains("/")
+                            ? internalName.substring(0, internalName.lastIndexOf('/') + 1).replace('/', '.')
+                            : "";
+                    String newFullName = pkg + entry.newName();
+                    renameMap.put(internalName, newFullName);
+                }
+            }
+            return JadxRenameAdapter.of(renameMap);
+        } catch (Exception e) {
+            log.debug("无法读取 rename 映射，使用空适配器: {}", e.getMessage());
+            return JadxRenameAdapter.EMPTY;
+        }
     }
 
     private DecompilerTypeEnum effectiveEngineFor(byte[] bytes, DecompilerTypeEnum requestedEngine) {
