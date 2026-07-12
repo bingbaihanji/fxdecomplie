@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.util.value.impl.StringValueImpl;
 import java.util.Optional;
 
 /**
- * Value capable of recording exact content of strings.
+ * 能够记录字符串精确内容的值。
  *
  * @author Matt Coley
  */
@@ -19,16 +19,16 @@ public interface StringValue extends ObjectValue {
     StringValue VAL_STRING_SPACE = new StringValueImpl(" ");
 
     /**
-     * @return String content of value. Empty if {@link #hasKnownValue() not known}.
+     * @return 值的字符串内容。若 {@link #hasKnownValue() 未知} 则为空。
      */
 
     Optional<String> getText();
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is equal to the given value.
+     * @return 当已知值等于给定值时返回 {@code true}。
      */
     default boolean isEqualTo(String otherValue) {
         if (getText().isPresent()) {
@@ -42,9 +42,9 @@ public interface StringValue extends ObjectValue {
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is not equal to the given value.
+     * @return 当已知值不等于给定值时返回 {@code true}。
      */
     default boolean isNotEqualTo(String otherValue) {
         if (getText().isPresent()) {

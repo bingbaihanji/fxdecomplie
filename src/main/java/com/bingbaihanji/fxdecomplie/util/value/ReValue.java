@@ -10,21 +10,20 @@ import org.objectweb.asm.tree.analysis.Value;
 
 
 /**
- * Base type of value capable of recording exact content
- * when all control flow paths converge on a single use case.
+ * 一类值的基类型，当所有控制流路径最终收敛于单一使用场景时，能够记录精确内容。
  *
  * @author Matt Coley
  */
 public sealed interface ReValue extends Value permits IntValue, FloatValue, DoubleValue, LongValue, ObjectValue, UninitializedValue {
     /**
      * @param value
-     * 		ASM constant value in a LDC instruction.
+     * 		LDC 指令中的 ASM 常量值。
      *
-     * @return A {@link ReValue} wrapper of the given input.
+     * @return 给定输入的 {@link ReValue} 包装。
      *
      * @throws IllegalValueException
-     * 		When the value could not be mapped to a {@link ReValue}.
-     * @see LdcInsnNode#cst Possible values
+     * 		当该值无法映射为 {@link ReValue} 时。
+     * @see LdcInsnNode#cst 可能的取值
      */
 
     static ReValue ofConstant(Object value) throws IllegalValueException {
@@ -62,14 +61,14 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
 
     /**
      * @param type
-     * 		Type of value to create a new generic value for.
+     * 		要为其创建新泛型值的类型。
      * @param nullness
-     * 		Nullability state of the value.
+     * 		值的空值状态。
      *
-     * @return Value of the given type.
+     * @return 给定类型的值。
      *
      * @throws IllegalValueException
-     * 		When the type could not be mapped to a {@link ReValue}.
+     * 		当该类型无法映射为 {@link ReValue} 时。
      */
 
     static ReValue ofType(Type type, Nullness nullness) throws IllegalValueException {
@@ -90,12 +89,12 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
 
     /**
      * @param type
-     * 		Type of value to create a new generic value for.
+     * 		要为其创建新泛型值的类型。
      *
-     * @return Value of the given type with the default value <i>({@code 0} for primitives, {@code null} for objects/arrays)</i>.
+     * @return 给定类型的值，取默认值 <i>（基本类型为 {@code 0}，对象/数组为 {@code null}）</i>。
      *
      * @throws IllegalValueException
-     * 		When the type could not be mapped to a {@link ReValue}.
+     * 		当该类型无法映射为 {@link ReValue} 时。
      */
 
     static ReValue ofTypeDefaultValue(Type type) throws IllegalValueException {
@@ -113,12 +112,11 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
 
     /**
      * @param value
-     * 		Some value that may be a primitive.
+     * 		可能是基本类型的某个值。
      * @param v
-     * 		Primitive value to compare against.
+     * 		用于比较的基本类型值。
      *
-     * @return {@code true} when the value is a primitive,
-     * and the primitive value is equal to the given literal value.
+     * @return 当该值是基本类型，且其基本类型值等于给定字面量值时返回 {@code true}。
      */
     static boolean isPrimitiveEqualTo(ReValue value, int v) {
         return switch (value) {
@@ -131,30 +129,30 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
     }
 
     /**
-     * @return {@code true} when the exact content is known.
-     * {@code null} does not count if this is an {@link ObjectValue}
-     * and for that you should use {@link ObjectValue#isNull()}.
+     * @return 当精确内容已知时返回 {@code true}。
+     * 若此值为 {@link ObjectValue}，则 {@code null} 不计入其中，
+     * 此时应使用 {@link ObjectValue#isNull()}。
      */
     boolean hasKnownValue();
 
     /**
-     * @return Type of value content.
+     * @return 值内容的类型。
      */
 
     Type type();
 
     /**
-     * Called from  only when our value's type is a looser type than the given other type.
-     * For instance, if we are a {@code ArrayList} we could see {@code List} as the {@code other} value, but never the other way around.
+     * 仅当我们值的类型比给定的另一个类型更宽泛时调用。
+     * 例如，若我们是 {@code ArrayList}，则可能将 {@code List} 视为 {@code other} 值，但反之绝不可能。
      *
      * @param other
-     * 		Other value to merge with.
-     * 		It should be assumed that this other value's type is the same as, or a child type of our {@link #type()}.
+     * 		要合并的另一个值。
+     * 		应假定该值的类型与我们的 {@link #type()} 相同，或为其子类型。
      *
-     * @return Merged value.
+     * @return 合并后的值。
      *
      * @throws IllegalValueException
-     * 		When the given value cannot be merged with this one.
+     * 		当给定值无法与此值合并时。
      */
 
     ReValue mergeWith(ReValue other) throws IllegalValueException;

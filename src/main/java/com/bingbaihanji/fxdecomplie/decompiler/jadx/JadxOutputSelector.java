@@ -22,18 +22,28 @@ public final class JadxOutputSelector {
         }
         String normalizedTarget = ClassNameUtil.normalizeInternalName(targetType);
         for (JavaClass cls : classes) {
-            String fullName = cls.getClassNode().getClassInfo().getFullName();
-            if (ClassNameUtil.sameInternalName(fullName, normalizedTarget)) {
+            if (matchesTarget(cls, normalizedTarget)) {
                 return cls;
             }
         }
 
         String simpleName = ClassNameUtil.simpleName(normalizedTarget);
         for (JavaClass cls : classes) {
-            if (simpleName.equals(cls.getName())) {
+            if (simpleName.equals(ClassNameUtil.simpleName(cls.getRawName()))
+                    || simpleName.equals(cls.getClassNode().getName())
+                    || simpleName.equals(cls.getName())) {
                 return cls;
             }
         }
         return null;
+    }
+
+    private static boolean matchesTarget(JavaClass cls, String normalizedTarget) {
+        return ClassNameUtil.sameInternalName(cls.getRawName(), normalizedTarget)
+                || ClassNameUtil.sameInternalName(
+                cls.getClassNode().getClassInfo().makeRawFullName(), normalizedTarget)
+                || ClassNameUtil.sameInternalName(
+                cls.getClassNode().getClassInfo().getFullName(), normalizedTarget)
+                || ClassNameUtil.sameInternalName(cls.getFullName(), normalizedTarget);
     }
 }

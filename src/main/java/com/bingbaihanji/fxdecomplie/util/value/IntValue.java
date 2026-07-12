@@ -7,7 +7,7 @@ import org.objectweb.asm.Type;
 import java.util.OptionalInt;
 
 /**
- * Value capable of recording exact integer content.
+ * 能够记录精确整数内容的值。
  *
  * @author Matt Coley
  */
@@ -25,9 +25,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param value
-     * 		Integer value to hold.
+     * 		要持有的整数值。
      *
-     * @return Integer value holding the exact content.
+     * @return 持有该精确内容的整数值。
      */
 
     static IntValue of(int value) {
@@ -46,7 +46,7 @@ public non-sealed interface IntValue extends ReValue {
     }
 
     /**
-     * @return Integer content of value. Empty if {@link #hasKnownValue() not known}.
+     * @return 值的整数内容。若 {@link #hasKnownValue() 未知} 则为空。
      */
 
     OptionalInt value();
@@ -69,9 +69,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is equal to the given value.
+     * @return 当已知值等于给定值时返回 {@code true}。
      */
     default boolean isEqualTo(int value) {
         return value().isPresent() && value().getAsInt() == value;
@@ -79,9 +79,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is equal to the given value.
+     * @return 当已知值等于给定值时返回 {@code true}。
      */
     default boolean isEqualTo(IntValue otherValue) {
         return value().isPresent() && otherValue.value().isPresent()
@@ -90,9 +90,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is not equal to the given value.
+     * @return 当已知值不等于给定值时返回 {@code true}。
      */
     default boolean isNotEqualTo(int value) {
         return value().isPresent() && value().getAsInt() != value;
@@ -100,9 +100,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is not equal to the given value.
+     * @return 当已知值不等于给定值时返回 {@code true}。
      */
     default boolean isNotEqualTo(IntValue otherValue) {
         return value().isPresent() && otherValue.value().isPresent()
@@ -111,9 +111,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is less than the given value.
+     * @return 当已知值小于给定值时返回 {@code true}。
      */
     default boolean isLessThan(int value) {
         return value().isPresent() && value().getAsInt() < value;
@@ -121,9 +121,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is less than the given value.
+     * @return 当已知值小于给定值时返回 {@code true}。
      */
     default boolean isLessThan(IntValue otherValue) {
         return value().isPresent() && otherValue.value().isPresent()
@@ -132,9 +132,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is less than or equal to the given value.
+     * @return 当已知值小于或等于给定值时返回 {@code true}。
      */
     default boolean isLessThanOrEqual(int value) {
         return value().isPresent() && value().getAsInt() <= value;
@@ -142,9 +142,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is less than or equal to the given value.
+     * @return 当已知值小于或等于给定值时返回 {@code true}。
      */
     default boolean isLessThanOrEqual(IntValue otherValue) {
         return value().isPresent() && otherValue.value().isPresent()
@@ -153,9 +153,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is greater than the given value.
+     * @return 当已知值大于给定值时返回 {@code true}。
      */
     default boolean isGreaterThan(int value) {
         return value().isPresent() && value().getAsInt() > value;
@@ -163,9 +163,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is greater than the given value.
+     * @return 当已知值大于给定值时返回 {@code true}。
      */
     default boolean isGreaterThan(IntValue otherValue) {
         return value().isPresent() && otherValue.value().isPresent()
@@ -174,9 +174,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is greater than or equal to the given value.
+     * @return 当已知值大于或等于给定值时返回 {@code true}。
      */
     default boolean isGreaterThanOrEqual(int value) {
         return value().isPresent() && value().getAsInt() >= value;
@@ -184,9 +184,9 @@ public non-sealed interface IntValue extends ReValue {
 
     /**
      * @param otherValue
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is greater than or equal to the given value.
+     * @return 当已知值大于或等于给定值时返回 {@code true}。
      */
     default boolean isGreaterThanOrEqual(IntValue otherValue) {
         return value().isPresent() && otherValue.value().isPresent()
@@ -194,6 +194,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param incr
+     * 		要加上的增量。
+     *
+     * @return 加上增量后的值；若值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue add(int incr) {
         OptionalInt value = value();
         if (value.isPresent()) {
@@ -203,6 +209,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之和；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue add(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -213,6 +225,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之差；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue sub(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -223,6 +241,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）。
+     */
     default IntValue mul(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -236,13 +260,19 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之商；若任一值未知或除数为 0 则为 {@link #UNKNOWN}。
+     */
     default IntValue div(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
         if (value.isPresent() && otherValue.isPresent()) {
             int otherLiteral = otherValue.getAsInt();
             if (otherLiteral == 0) {
-                return UNKNOWN; // We'll just pretend this works
+                return UNKNOWN; // 这里我们假装它能正常工作
             }
             return of(value.getAsInt() / otherLiteral);
         }
@@ -250,6 +280,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值按位与的结果；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）。
+     */
     default IntValue and(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -263,6 +299,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值按位或的结果；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 -1 时结果为 -1）。
+     */
     default IntValue or(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -276,6 +318,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值按位异或的结果；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue xor(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -286,13 +334,19 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值取余的结果；若任一值未知或除数为 0 则为 {@link #UNKNOWN}。
+     */
     default IntValue rem(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
         if (value.isPresent() && otherValue.isPresent()) {
             int otherLiteral = otherValue.getAsInt();
             if (otherLiteral == 0) {
-                return UNKNOWN; // We'll just pretend this works
+                return UNKNOWN; // 这里我们假装它能正常工作
             }
             return of(value.getAsInt() % otherLiteral);
         }
@@ -303,6 +357,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 左移后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue shl(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -313,6 +373,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 算术右移后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue shr(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -323,6 +389,12 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 逻辑右移（无符号右移）后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue ushr(IntValue other) {
         OptionalInt value = value();
         OptionalInt otherValue = other.value();
@@ -333,6 +405,9 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @return 取负后的值；若值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue negate() {
         OptionalInt value = value();
         if (value.isPresent()) {
@@ -342,6 +417,9 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 byte 后的值；若值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue castByte() {
         OptionalInt value = value();
         if (value.isPresent()) {
@@ -351,6 +429,9 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 char 后的值；若值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue castChar() {
         OptionalInt value = value();
         if (value.isPresent()) {
@@ -360,6 +441,9 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 short 后的值；若值未知则为 {@link #UNKNOWN}。
+     */
     default IntValue castShort() {
         OptionalInt value = value();
         if (value.isPresent()) {
@@ -369,6 +453,9 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 float 后的值；若值未知则为 {@link FloatValue#UNKNOWN}。
+     */
     default FloatValue castFloat() {
         OptionalInt value = value();
         if (value.isPresent()) {
@@ -378,6 +465,9 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 double 后的值；若值未知则为 {@link DoubleValue#UNKNOWN}。
+     */
     default DoubleValue castDouble() {
         OptionalInt value = value();
         if (value.isPresent()) {
@@ -387,6 +477,9 @@ public non-sealed interface IntValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 long 后的值；若值未知则为 {@link LongValue#UNKNOWN}。
+     */
     default LongValue castLong() {
         OptionalInt value = value();
         if (value.isPresent()) {

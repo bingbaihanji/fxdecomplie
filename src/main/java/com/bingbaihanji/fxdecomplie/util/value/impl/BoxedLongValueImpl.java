@@ -6,17 +6,25 @@ import org.objectweb.asm.Type;
 
 
 /**
- * Boxed {@link Long} value holder implementation.
+ * 装箱 {@link Long} 值持有者实现。
  *
  * @author Matt Coley
  */
 public class BoxedLongValueImpl extends ObjectValueBoxImpl<Long> {
     private static final Type TYPE = Type.getType(Long.class);
 
+    /**
+     * @param nullness
+     * 		值的空值状态。
+     */
     public BoxedLongValueImpl(Nullness nullness) {
         super(TYPE, nullness);
     }
 
+    /**
+     * @param value
+     * 		要持有的装箱值。
+     */
     public BoxedLongValueImpl(Long value) {
         super(TYPE, value);
     }
@@ -35,7 +43,7 @@ public class BoxedLongValueImpl extends ObjectValueBoxImpl<Long> {
 
     @Override
     public int getSize() {
-        // Deconflict between object-v-primitive value interfaces
+        // 用于消解对象值接口与基本类型值接口之间的冲突
         return 1;
     }
 }

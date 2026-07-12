@@ -4,25 +4,25 @@ import com.bingbaihanji.fxdecomplie.util.value.ReValue;
 import org.objectweb.asm.tree.FieldInsnNode;
 
 /**
- * Lookup for static field values.
+ * 用于查找静态字段值。
  *
  * @author Matt Coley
  */
 public interface GetStaticLookup {
     /**
      * @param field
-     * 		Field reference.
+     * 		字段引用。
      *
-     * @return Value representing the field.
+     * @return 表示该字段的值。
      */
 
     ReValue get(FieldInsnNode field);
 
     /**
      * @param field
-     * 		Field reference.
+     * 		字段引用。
      *
-     * @return {@code true} when this lookup can provide a value via {@link #get(FieldInsnNode)}.
+     * @return 当此查找能够通过 {@link #get(FieldInsnNode)} 提供值时返回 {@code true}。
      */
     boolean hasLookup(FieldInsnNode field);
 }

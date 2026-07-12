@@ -12,9 +12,9 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Basic implementation of {@link InvokeStaticLookup} for common static fields.
+ * {@link InvokeStaticLookup} 的基础实现，用于处理常见的静态方法。
  * <br>
- * Mostly auto-generated
+ * 大部分为自动生成
  *
  * @author Matt Coley
  */
@@ -23,14 +23,14 @@ public class BasicInvokeStaticLookup extends BasicLookupUtils implements InvokeS
     private static final Logger logger = LoggerFactory.getLogger(BasicInvokeStaticLookup.class);
 
     static {
-        // Utilities & common types
+        // 工具类与常用类型
         math();
         arrays();
         system();
         strings();
         objects();
 
-        // Primitives
+        // 基本类型
         booleans();
         bytes();
         chars();
@@ -569,7 +569,7 @@ public class BasicInvokeStaticLookup extends BasicLookupUtils implements InvokeS
         METHODS.put("java/lang/Math.nextDown(D)D", (Func_1<DoubleValue>) (a) -> d(Math.nextDown(d(a))));
         METHODS.put("java/lang/Math.nextDown(F)F", (Func_1<FloatValue>) (a) -> f(Math.nextDown(f(a))));
 
-        // Duplicate for StrictMath
+        // 为 StrictMath 复制一份
         new ArrayList<>(METHODS.entrySet()).iterator().forEachRemaining((e) -> {
             String key = e.getKey();
             if (key.startsWith("java/lang/Math.")) {
@@ -587,8 +587,8 @@ public class BasicInvokeStaticLookup extends BasicLookupUtils implements InvokeS
             try {
                 value = func.apply(values);
             } catch (Throwable t) {
-                // Some methods may inherently throw, like 'Math.floorDiv(0, 0)' so these error
-                // log calls are only active while debugging.
+                // 某些方法本身可能抛出异常，例如 'Math.floorDiv(0, 0)'，因此这些
+                // 错误日志仅在调试时启用。
                 logger.debug("Computation threw an exception for: " + key, t);
             }
         }

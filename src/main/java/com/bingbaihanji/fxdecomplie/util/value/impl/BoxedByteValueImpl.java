@@ -6,17 +6,25 @@ import org.objectweb.asm.Type;
 
 
 /**
- * Boxed {@link Byte} value holder implementation.
+ * 装箱 {@link Byte} 值持有者实现。
  *
  * @author Matt Coley
  */
 public class BoxedByteValueImpl extends ObjectValueBoxImpl<Byte> {
     private static final Type TYPE = Type.getType(Byte.class);
 
+    /**
+     * @param nullness
+     * 		值的空值状态。
+     */
     public BoxedByteValueImpl(Nullness nullness) {
         super(TYPE, nullness);
     }
 
+    /**
+     * @param value
+     * 		要持有的装箱值。
+     */
     public BoxedByteValueImpl(Byte value) {
         super(TYPE, value);
     }
@@ -35,7 +43,7 @@ public class BoxedByteValueImpl extends ObjectValueBoxImpl<Byte> {
 
     @Override
     public int getSize() {
-        // Deconflict between object-v-primitive value interfaces
+        // 用于消解对象值接口与基本类型值接口之间的冲突
         return 1;
     }
 }

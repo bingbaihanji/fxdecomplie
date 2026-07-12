@@ -4,7 +4,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.PackageNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -13,13 +15,23 @@ import java.util.stream.Collectors;
  */
 public class ExcludePackageWithTLDNames extends AbstractDeobfCondition {
 
+    private static final String RESOURCE_NAME = "tlds.txt";
+    private static final String LEGACY_RESOURCE_PATH = "/jadx/core/deobf/conditions/tlds.txt";
+
     private static Set<String> loadTldSet() {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(TldHolder.class.getResourceAsStream("tlds.txt")))) {
+        InputStream inputStream = ExcludePackageWithTLDNames.class.getResourceAsStream(RESOURCE_NAME);
+        if (inputStream == null) {
+            inputStream = ExcludePackageWithTLDNames.class.getResourceAsStream(LEGACY_RESOURCE_PATH);
+        }
+        if (inputStream == null) {
+            throw new JadxRuntimeException("Failed to load top level domain list file: " + RESOURCE_NAME);
+        }
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             return reader.lines()
                     .filter(line -> !line.startsWith("#") && !line.isEmpty())
                     .collect(Collectors.toSet());
         } catch (Exception e) {
-            throw new JadxRuntimeException("Failed to load top level domain list file: tlds.txt", e);
+            throw new JadxRuntimeException("Failed to load top level domain list file: " + RESOURCE_NAME, e);
         }
     }
 

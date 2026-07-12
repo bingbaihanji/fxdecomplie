@@ -14,7 +14,7 @@ import java.util.Set;
 /**
  * 解除 JDK 内部反射访问限制的工具
  * <p>
- * <b>You must initialize {@link ReflectUtils} first!</b>
+ * <b>必须先初始化 {@link ReflectUtils}！</b>
  *
  * @author xDark
  */
@@ -22,12 +22,12 @@ public final class AccessPatcher {
     private static final Logger log = LoggerFactory.getLogger(AccessPatcher.class);
     private static volatile boolean patched;
 
-    // Deny all constructions.
+    // 禁止任何实例化。
     private AccessPatcher() {
     }
 
     /**
-     * Patches JDK access restrictions.
+     * 修补 JDK 访问限制。
      */
     public static void patch() {
         if (patched) {
@@ -49,7 +49,7 @@ public final class AccessPatcher {
     }
 
     /**
-     * Opens all packages.
+     * 开放所有包。
      */
     private static void openPackages() {
         try {
@@ -81,7 +81,7 @@ public final class AccessPatcher {
     }
 
     /**
-     * Patches reflection filters.
+     * 修补反射过滤器。
      */
     private static void patchReflectionFilters() {
         Class<?> klass;

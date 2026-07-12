@@ -10,7 +10,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Simple multi-map.
+ * 简单的多值映射(一个键关联一组值)
  *
  * @author xDark
  */
@@ -20,9 +20,9 @@ public final class MultiMap<K, V, C extends Collection<V>> {
 
     /**
      * @param backing
-     * 		Backing map.
+     * 		底层 Map
      * @param collectionSupplier
-     * 		Collection supplier.
+     * 		值集合的供给函数
      */
     private MultiMap(Map<K, C> backing, Supplier<? extends C> collectionSupplier) {
         this.backing = backing;
@@ -30,20 +30,20 @@ public final class MultiMap<K, V, C extends Collection<V>> {
     }
 
     /**
-     * Creates a multi-map.
+     * 创建一个多值映射
      *
      * @param map
-     * 		Backing map.
+     * 		底层 Map
      * @param collectionSupplier
-     * 		Supplier for collections of values.
+     * 		用于创建值集合的供给函数
      * @param <K>
-     * 		Key type.
+     * 		键类型
      * @param <V>
-     * 		Value type.
+     * 		值类型
      * @param <C>
-     * 		Collection type.
+     * 		值集合类型
      *
-     * @return New multi-map.
+     * @return 新建的多值映射
      */
 
     public static <K, V, C extends Collection<V>> MultiMap<K, V, C> from(Map<K, C> map, Supplier<? extends C> collectionSupplier) {
@@ -51,7 +51,7 @@ public final class MultiMap<K, V, C extends Collection<V>> {
     }
 
     /**
-     * @return Total amount of items in the map.
+     * @return 映射中所有值的总数量
      */
     public int size() {
         return backing.values()
@@ -61,7 +61,7 @@ public final class MultiMap<K, V, C extends Collection<V>> {
     }
 
     /**
-     * @return {@code true} if the map is empty.
+     * @return 映射为空时返回 {@code true}
      */
     public boolean isEmpty() {
         return backing.values()
@@ -71,9 +71,9 @@ public final class MultiMap<K, V, C extends Collection<V>> {
 
     /**
      * @param key
-     * 		Key to check.
+     * 		要检查的键
      *
-     * @return {@code true} if map contains the key.
+     * @return 映射包含该键时返回 {@code true}
      */
     public boolean containsKey(K key) {
         return backing.containsKey(key);
@@ -81,9 +81,9 @@ public final class MultiMap<K, V, C extends Collection<V>> {
 
     /**
      * @param value
-     * 		Value to check.
+     * 		要检查的值
      *
-     * @return {@code true} if map contains the value.
+     * @return 映射包含该值时返回 {@code true}
      */
     public boolean containsValue(V value) {
         return backing.values()
@@ -93,9 +93,9 @@ public final class MultiMap<K, V, C extends Collection<V>> {
 
     /**
      * @param key
-     * 		Key to get a collection for.
+     * 		要获取值集合的键
      *
-     * @return Collection for the key.
+     * @return 该键对应的值集合(不存在时会创建)
      */
 
     public C get(K key) {
@@ -104,9 +104,9 @@ public final class MultiMap<K, V, C extends Collection<V>> {
 
     /**
      * @param key
-     * 		Key to get a collection for.
+     * 		要获取值集合的键
      *
-     * @return A collection of values or an empty list, if none.
+     * @return 该键对应的值集合;若不存在则返回空列表
      */
     @SuppressWarnings("unchecked")
 
@@ -116,51 +116,51 @@ public final class MultiMap<K, V, C extends Collection<V>> {
 
     /**
      * @param key
-     * 		Key to get a collection for.
+     * 		要获取值集合的键
      *
-     * @return A collection of values or {@code defaultValue}, if none.
+     * @return 该键对应的值集合;若不存在则返回 {@code defaultValue}
      */
     public C getOrDefault(K key, C defaultValue) {
         return backing.getOrDefault(key, defaultValue);
     }
 
     /**
-     * Puts value in the map.
+     * 向映射中放入一个值
      *
      * @param key
-     * 		Key.
+     * 		键
      * @param value
-     * 		Value.
+     * 		值
      *
-     * @return {@code true} if value was added to the collection.
+     * @return 值被成功加入集合时返回 {@code true}
      */
     public boolean put(K key, V value) {
         return get(key).add(value);
     }
 
     /**
-     * Puts a collection of values in the map.
+     * 向映射中放入一组值
      *
      * @param key
-     * 		Key.
+     * 		键
      * @param values
-     * 		Values.
+     * 		值集合
      *
-     * @return {@code true} if any value was added to the collection.
+     * @return 有任意值被加入集合时返回 {@code true}
      */
     public boolean putAll(K key, Collection<? extends V> values) {
         return get(key).addAll(values);
     }
 
     /**
-     * Removes a key-value pair.
+     * 移除一个键值对
      *
      * @param key
-     * 		Key.
+     * 		键
      * @param value
-     * 		Value.
+     * 		值
      *
-     * @return {@code true} if key-value pair was removed.
+     * @return 键值对被成功移除时返回 {@code true}
      */
     public boolean remove(K key, V value) {
         C collection = backing.get(key);
@@ -172,12 +172,12 @@ public final class MultiMap<K, V, C extends Collection<V>> {
     }
 
     /**
-     * Removes a collection of values.
+     * 移除一个键对应的整组值
      *
      * @param key
-     * 		Key to remove.
+     * 		要移除的键
      *
-     * @return Collection of removed values or an empty list, if none.
+     * @return 被移除的值集合;若不存在则返回空列表
      */
 
     public Collection<V> remove(K key) {
@@ -189,14 +189,14 @@ public final class MultiMap<K, V, C extends Collection<V>> {
     }
 
     /**
-     * Clears the map.
+     * 清空映射
      */
     public void clear() {
         backing.clear();
     }
 
     /**
-     * @return All keys.
+     * @return 所有键
      */
 
     public Set<K> keySet() {
@@ -204,7 +204,7 @@ public final class MultiMap<K, V, C extends Collection<V>> {
     }
 
     /**
-     * @return All values.
+     * @return 所有值
      */
 
     public Stream<V> values() {
@@ -214,7 +214,7 @@ public final class MultiMap<K, V, C extends Collection<V>> {
     }
 
     /**
-     * @return Map entry set.
+     * @return Map 的 entry 集合
      */
 
     public Set<Map.Entry<K, C>> entrySet() {

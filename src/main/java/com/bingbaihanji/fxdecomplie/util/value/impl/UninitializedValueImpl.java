@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.util.value.ReValue;
 import com.bingbaihanji.fxdecomplie.util.value.UninitializedValue;
 
 /**
- * Uninitialized value implementation.
+ * 未初始化值实现。
  *
  * @author Matt Coley
  */

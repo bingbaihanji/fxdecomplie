@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.OptionalInt;
 
 /**
- * Value capable of recording partial details of array content.
+ * 能够记录数组内容部分细节的值。
  *
  * @author Matt Coley
  */
@@ -40,11 +40,11 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param type
-     * 		Array type.
+     * 		数组类型。
      * @param nullness
-     * 		Array null state.
+     * 		数组空值状态。
      *
-     * @return Array value of the given type.
+     * @return 给定类型的数组值。
      */
 
     static ArrayValue of(Type type, Nullness nullness) {
@@ -66,13 +66,13 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param type
-     * 		Array type.
+     * 		数组类型。
      * @param nullness
-     * 		Array null state.
+     * 		数组空值状态。
      * @param length
-     * 		Array length.
+     * 		数组长度。
      *
-     * @return Array value of the given type/length.
+     * @return 给定类型/长度的数组值。
      */
 
     static ArrayValue of(Type type, Nullness nullness, int length) {
@@ -81,11 +81,11 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param type
-     * 		Array type.
+     * 		数组类型。
      * @param dimensions
-     * 		Dimensions of the array to create.
+     * 		要创建的数组各维度长度。
      *
-     * @return Array value created from a {@link Opcodes#MULTIANEWARRAY} instruction.
+     * @return 由 {@link Opcodes#MULTIANEWARRAY} 指令创建的数组值。
      */
 
     static ReValue multiANewArray(Type type, int[] dimensions) {
@@ -100,22 +100,22 @@ public interface ArrayValue extends ObjectValue {
 
     /**
      * @param index
-     * 		Index to assign value at.
+     * 		要赋值的索引。
      * @param value
-     * 		Value to assign.
+     * 		要赋的值。
      *
-     * @return New array with the given value assigned at the given index.
+     * @return 在给定索引处赋予给定值后的新数组。
      */
 
     ArrayValue setValue(int index, ReValue value);
 
     /**
      * @param originalValue
-     * 		Some value.
+     * 		某个值。
      * @param updatedValue
-     * 		Some updated version of the value.
+     * 		该值的某个更新版本。
      *
-     * @return New array with the given original value replaced with the updated value.
+     * @return 将给定原始值替换为更新值后的新数组。
      */
 
     ArrayValue updatedCopyIfContained(ReValue originalValue, ReValue updatedValue);
@@ -130,15 +130,15 @@ public interface ArrayValue extends ObjectValue {
     Type type();
 
     /**
-     * The element type is the base of any array. Consider the following:
+     * 元素类型是任意数组的基础类型。考虑以下情形：
      * <ul>
      *     <li>{@code int[]}</li>
      *     <li>{@code int[][]}</li>
      *     <li>{@code int[][][]}</li>
      * </ul>
-     * The element type of each is {@code int}.
+     * 它们的元素类型都是 {@code int}。
      *
-     * @return Element type of the array.
+     * @return 数组的元素类型。
      */
 
     default Type elementType() {
@@ -146,39 +146,39 @@ public interface ArrayValue extends ObjectValue {
     }
 
     /**
-     * Consider the following:
+     * 考虑以下情形：
      * <ul>
      *     <li>1: {@code int[]}</li>
      *     <li>2: {@code int[][]}</li>
      *     <li>3: {@code int[][][]}</li>
      * </ul>
      *
-     * @return Dimensions of the array.
+     * @return 数组的维数。
      */
     default int dimensions() {
         return type().getDimensions();
     }
 
     /**
-     * Consider the following:
+     * 考虑以下情形：
      * <table>
-     *     <tr><th>Length</th><th>Array definition</th></tr>
+     *     <tr><th>长度</th><th>数组定义</th></tr>
      *     <tr><td>{@code 7}</td><td>{@code int[7]}</td></tr>
      *     <tr><td>{@code 7}</td><td>{@code int[7][9]}</td></tr>
-     *     <tr><td>Unknown</td><td>{@code int[][9]}</td></tr>
-     *     <tr><td>Unknown</td><td>{@code int[]}</td></tr>
+     *     <tr><td>未知</td><td>{@code int[][9]}</td></tr>
+     *     <tr><td>未知</td><td>{@code int[]}</td></tr>
      * </table>
      *
-     * @return Length of the first dimension.
+     * @return 第一维的长度。
      */
 
     OptionalInt getFirstDimensionLength();
 
     /**
      * @param index
-     * 		Index within {@link #getFirstDimensionLength()}.
+     * 		{@link #getFirstDimensionLength()} 范围内的索引。
      *
-     * @return Value, if known, at the given index. Otherwise, a {@link ReValue} of the array's element type..
+     * @return 若已知则返回给定索引处的值；否则返回数组元素类型对应的 {@link ReValue}。
      */
 
     ReValue getValue(int index);

@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * A wrapper around {@link org.objectweb.asm.Type}.
+ * 对 {@link org.objectweb.asm.Type} 的封装。
  *
  * @author Matt Coley
  */
@@ -66,9 +66,9 @@ public class Types {
 
     /**
      * @param type
-     * 		Some type to check.
+     * 		待检查的类型。
      *
-     * @return {@code true} if it matches a primitive type.
+     * @return 若为基本类型则返回 {@code true}。
      */
     public static boolean isPrimitive(Type type) {
         return type != null && type.getSort() <= Type.DOUBLE;
@@ -76,9 +76,9 @@ public class Types {
 
     /**
      * @param desc
-     * 		Some internal type descriptor.
+     * 		某个内部类型描述符。
      *
-     * @return {@code true} if it matches a reserved primitive type.
+     * @return 若匹配保留的基本类型则返回 {@code true}。
      */
     public static boolean isPrimitive(String desc) {
         if (desc == null || desc.length() != 1) {
@@ -93,12 +93,12 @@ public class Types {
 
     /**
      * @param name
-     * 		Must be a primitive class name. See {@link #isPrimitiveClassName(String)}.
+     * 		必须是基本类型的类名。参见 {@link #isPrimitiveClassName(String)}。
      *
-     * @return Internal name of primitive.
+     * @return 基本类型的内部名称。
      *
      * @throws IllegalArgumentException
-     * 		When the descriptor was not a primitive.
+     * 		当该描述符不是基本类型时抛出。
      */
 
     public static String classToPrimitive(String name) {
@@ -113,9 +113,9 @@ public class Types {
 
     /**
      * @param name
-     * 		Some class name.
+     * 		某个类名。
      *
-     * @return {@code true} if it matches the class name of a primitive type.
+     * @return 若匹配某个基本类型的类名则返回 {@code true}。
      */
     public static boolean isPrimitiveClassName(String name) {
         if (name == null) {
@@ -131,9 +131,9 @@ public class Types {
 
     /**
      * @param desc
-     * 		Class descriptor.
+     * 		类描述符。
      *
-     * @return {@code true} if it is one of the children of {@link Number}.
+     * @return 若为 {@link Number} 的某个子类则返回 {@code true}。
      */
     public static boolean isBoxedPrimitive(String desc) {
         return PRIMITIVE_BOXES.contains(desc);
@@ -141,9 +141,9 @@ public class Types {
 
     /**
      * @param type
-     * 		Some type to check.
+     * 		待检查的类型。
      *
-     * @return {@code true} if type is a void type.
+     * @return 若为 void 类型则返回 {@code true}。
      */
     public static boolean isVoid(Type type) {
         return type != null && type.getSort() == Type.VOID;
@@ -151,11 +151,11 @@ public class Types {
 
     /**
      * @param type
-     * 		Base type.
+     * 		基础类型。
      * @param dimensions
-     * 		Array dimensions.
+     * 		数组维度。
      *
-     * @return Array type of dimension size.
+     * @return 指定维度的数组类型。
      */
 
     public static Type array(Type type, int dimensions) {
@@ -164,9 +164,9 @@ public class Types {
 
     /**
      * @param arrayType
-     * 		Some array type.
+     * 		某个数组类型。
      *
-     * @return The type when removing one dimension from the array.
+     * @return 从该数组类型去掉一个维度后的类型。
      */
 
     public static Type undimension(Type arrayType) {
@@ -178,9 +178,9 @@ public class Types {
 
     /**
      * @param type
-     * 		Some internal type name.
+     * 		某个内部类型名称。
      *
-     * @return {@code true} for super-types of arrays.
+     * @return 对于数组的父类型返回 {@code true}。
      */
     public static boolean isArraySuperType(String type) {
         return "java/lang/Object".equals(type)
@@ -190,9 +190,9 @@ public class Types {
 
     /**
      * @param methodType
-     * 		Parsed method descriptor type.
+     * 		已解析的方法描述符类型。
      *
-     * @return Number of variable slots occupied by the parameters.
+     * @return 参数所占用的变量槽位数。
      */
     public static int countParameterSlots(Type methodType) {
         int size = 0;
@@ -204,13 +204,13 @@ public class Types {
     }
 
     /**
-     * ASM likes to throw {@link IllegalArgumentException} in cases where it can't parse type descriptors.
-     * This lets us check beforehand if its valid.
+     * ASM 在无法解析类型描述符时往往会抛出 {@link IllegalArgumentException}。
+     * 该方法让我们能够事先检查描述符是否有效。
      *
      * @param desc
-     * 		Descriptor to check.
+     * 		待检查的描述符。
      *
-     * @return {@code true} when its parsable.
+     * @return 当描述符可解析时返回 {@code true}。
      */
     @SuppressWarnings("all")
     public static boolean isValidDesc(String desc) {
@@ -245,9 +245,9 @@ public class Types {
 
     /**
      * @param type
-     * 		Type to check.
+     * 		待检查的类型。
      *
-     * @return {@code true} if it is a wide type.
+     * @return 若为宽类型（占两个槽位）则返回 {@code true}。
      */
     public static boolean isWide(Type type) {
         if (type == null) {
@@ -258,9 +258,9 @@ public class Types {
 
     /**
      * @param opcode
-     * 		Some instruction opcode.
+     * 		某个指令操作码。
      *
-     * @return The implied variable type, or {@code null} if the passed opcode does not imply a type.
+     * @return 隐含的变量类型；若传入的操作码不隐含类型则返回 {@code null}。
      */
 
     public static Type fromVarOpcode(int opcode) {
@@ -276,9 +276,9 @@ public class Types {
 
     /**
      * @param opcode
-     * 		Some array opcode.
+     * 		某个数组操作码。
      *
-     * @return The implied variable type, or {@code null} if the passed opcode does not imply a type.
+     * @return 隐含的变量类型；若传入的操作码不隐含类型则返回 {@code null}。
      */
 
     public static Type fromArrayOpcode(int opcode) {
@@ -295,9 +295,9 @@ public class Types {
 
     /**
      * @param ldc
-     * 		Constant load instruction.
+     * 		常量加载指令。
      *
-     * @return Type of the constant being loaded.
+     * @return 所加载常量的类型。
      */
 
     public static Type fromLdc(LdcInsnNode ldc) {
@@ -317,9 +317,9 @@ public class Types {
 
     /**
      * @param sort
-     * 		Type sort.
+     * 		类型 sort 值。
      *
-     * @return Primitive type for the given sort, or {@link #OBJECT_TYPE} if not a primitive.
+     * @return 给定 sort 对应的基本类型；若非基本类型则返回 {@link #OBJECT_TYPE}。
      */
 
     public static Type fromSort(int sort) {
@@ -339,11 +339,11 @@ public class Types {
 
     /**
      * @param sort
-     * 		Some type sort.
+     * 		某个类型 sort 值。
      *
-     * @return Normalized sort. This is in the context of runtime expectations.
-     * Any type smaller than {@code int} is treated as an {@code int}.
-     * Array types are essentially drop-in replaceable with object types in most cases.
+     * @return 归一化后的 sort。这是基于运行时预期的语境。
+     * 任何小于 {@code int} 的类型都被视为 {@code int}。
+     * 在大多数情况下，数组类型基本可以直接替换为对象类型。
      */
     public static int getNormalizedSort(int sort) {
         if (sort == Type.ARRAY) {
@@ -356,9 +356,9 @@ public class Types {
 
     /**
      * @param sort
-     *        {@link Type#getSort()}.
+     *        {@link Type#getSort()}。
      *
-     * @return Name of sort.
+     * @return sort 的名称。
      */
 
     public static String getSortName(int sort) {
@@ -382,9 +382,9 @@ public class Types {
 
     /**
      * @param tag
-     *        {@link Handle#getTag()}.
+     *        {@link Handle#getTag()}。
      *
-     * @return Name of sort.
+     * @return sort 的名称。
      */
 
     public static String getArraySortName(int tag) {
@@ -404,9 +404,9 @@ public class Types {
 
     /**
      * @param operand
-     *        {@link IntInsnNode#operand} for {@link Opcodes#NEWARRAY}.
+     *        用于 {@link Opcodes#NEWARRAY} 的 {@link IntInsnNode#operand}。
      *
-     * @return Type of array element, or {@link #OBJECT_TYPE} if the operand does not match a primitive type.
+     * @return 数组元素的类型；若操作数不匹配任何基本类型则返回 {@link #OBJECT_TYPE}。
      */
 
     public static Type newArrayElementType(int operand) {
@@ -425,9 +425,9 @@ public class Types {
 
     /**
      * @param descriptor
-     * 		Input descriptor.
+     * 		输入描述符。
      *
-     * @return Pretty-printed type.
+     * @return 美化打印后的类型。
      */
 
     public static String pretty(String descriptor) {
@@ -441,16 +441,16 @@ public class Types {
             return pretty(type);
 
         } catch (Throwable t) {
-            // Invalid descriptor, return as-is.
+            // 无效描述符，原样返回。
             return descriptor;
         }
     }
 
     /**
      * @param type
-     * 		Input type.
+     * 		输入类型。
      *
-     * @return Pretty-printed type.
+     * @return 美化打印后的类型。
      */
 
     public static String pretty(Type type) {
@@ -490,9 +490,9 @@ public class Types {
 
     /**
      * @param signature
-     * 		Class declaration signature.
+     * 		类声明签名。
      *
-     * @return {@code true} for a valid signatures, or {@code null}. Will be {@code false} otherwise.
+     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}。
      */
     public static boolean isValidClassSignature(String signature) {
         return isValidSignature(signature, SignatureContext.CLASS);
@@ -500,9 +500,9 @@ public class Types {
 
     /**
      * @param signature
-     * 		Field or variable signature.
+     * 		字段或变量签名。
      *
-     * @return {@code true} for a valid signatures, or {@code null}. Will be {@code false} otherwise.
+     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}。
      */
     public static boolean isValidFieldSignature(String signature) {
         return isValidSignature(signature, SignatureContext.FIELD);
@@ -510,9 +510,9 @@ public class Types {
 
     /**
      * @param signature
-     * 		Method signature.
+     * 		方法签名。
      *
-     * @return {@code true} for a valid signatures, or {@code null}. Will be {@code false} otherwise.
+     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}。
      */
     public static boolean isValidMethodSignature(String signature) {
         return isValidSignature(signature, SignatureContext.METHOD);
@@ -520,11 +520,11 @@ public class Types {
 
     /**
      * @param signature
-     * 		Signature contents.
+     * 		签名内容。
      * @param context
-     * 		Signature usage context.
+     * 		签名使用语境。
      *
-     * @return {@code true} for a valid signatures, or {@code null}. Will be {@code false} otherwise.
+     * @return 对于有效签名或 {@code null} 返回 {@code true}，否则返回 {@code false}。
      */
     public static boolean isValidSignature(String signature, SignatureContext context) {
         if (signature == null) {
@@ -546,21 +546,21 @@ public class Types {
     }
 
     /**
-     * Types of signature use-cases.
+     * 签名使用场景的类型。
      *
      * @see #isValidSignature(String, SignatureContext)
      */
     public enum SignatureContext {
         /**
-         * Class declarations.
+         * 类声明。
          */
         CLASS,
         /**
-         * Fields or variable declarations.
+         * 字段或变量声明。
          */
         FIELD,
         /**
-         * Method declarations.
+         * 方法声明。
          */
         METHOD
     }

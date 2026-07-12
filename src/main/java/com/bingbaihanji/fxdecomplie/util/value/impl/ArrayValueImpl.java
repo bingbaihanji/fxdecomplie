@@ -14,7 +14,7 @@ import java.util.OptionalInt;
 import java.util.function.IntFunction;
 
 /**
- * Array value holder implementation.
+ * 数组值持有者实现。
  *
  * @author Matt Coley
  */
@@ -26,12 +26,12 @@ public class ArrayValueImpl implements ArrayValue {
     private final List<ReValue> contents;
 
     /**
-     * New array value where we don't know the exact length.
+     * 创建一个长度未知的新数组值。
      *
      * @param type
-     * 		Array type.
+     * 		数组类型。
      * @param nullness
-     * 		Array reference nullability.
+     * 		数组引用的空值状态。
      */
     public ArrayValueImpl(Type type, Nullness nullness) {
         if (type.getSort() != Type.ARRAY) {
@@ -44,34 +44,34 @@ public class ArrayValueImpl implements ArrayValue {
     }
 
     /**
-     * New array value where we know the exact length.
+     * 创建一个长度已知的新数组值。
      * <p>
-     * Array contents are filled with default {@link ReValue} instances for the element type.
+     * 数组内容以元素类型的默认 {@link ReValue} 实例填充。
      *
      * @param type
-     * 		Array type.
+     * 		数组类型。
      * @param nullness
-     * 		Array reference nullability.
+     * 		数组引用的空值状态。
      * @param length
-     * 		Length of array.
+     * 		数组长度。
      */
     public ArrayValueImpl(Type type, Nullness nullness, int length) {
         this(type, nullness, length, new ConstProvider(getSubTypedValue(type, ReValue::ofTypeDefaultValue)));
     }
 
     /**
-     * New array where we know the exact length and want to pre-populate values.
+     * 创建一个长度已知并希望预先填充值的新数组。
      * <p>
-     * Array contents are filled with what is provided by the index-value function.
+     * 数组内容由索引到值的函数提供。
      *
      * @param type
-     * 		Array type.
+     * 		数组类型。
      * @param nullness
-     * 		Array reference nullability.
+     * 		数组引用的空值状态。
      * @param length
-     * 		Length of array.
+     * 		数组长度。
      * @param indexValueFunction
-     * 		Array index to value function.
+     * 		数组索引到值的函数。
      */
     public ArrayValueImpl(Type type, Nullness nullness, int length, IntFunction<ReValue> indexValueFunction) {
         if (type.getSort() != Type.ARRAY) {
@@ -86,9 +86,9 @@ public class ArrayValueImpl implements ArrayValue {
                 contents.add(indexValueFunction.apply(i));
             }
         } else {
-            // Array length is negative. So we have two possibilities:
-            // - We have a bug in our stack evaluation
-            // - We are looking at obfuscated code intentionally trying to throw exceptions
+            // 数组长度为负数。因此存在两种可能：
+            // - 我们的栈求值存在 bug
+            // - 我们正在分析故意抛出异常的混淆代码
             this.length = OptionalInt.empty();
             this.contents = null;
         }
@@ -117,7 +117,7 @@ public class ArrayValueImpl implements ArrayValue {
             return copy;
         }
 
-        // Values not known, so no need to create a copy.
+        // 值未知，因此无需创建副本。
         return this;
     }
 
@@ -127,12 +127,12 @@ public class ArrayValueImpl implements ArrayValue {
             for (int i = 0; i < contents.size(); i++) {
                 ReValue content = contents.get(i);
 
-                // Case 1: The value is a direct entry in this array.
+                // 情形 1：该值是此数组中的直接条目。
                 if (content == originalValue) {
                     return setValue(i, updatedValue);
                 }
 
-                // Case 2: This array is multidimensional and the value is in a nested sub array.
+                // 情形 2：此数组是多维的，该值位于嵌套的子数组中。
                 else if (content instanceof ArrayValue subArray) {
                     ArrayValue updatedSubArray = subArray.updatedCopyIfContained(originalValue, updatedValue);
                     if (subArray != updatedSubArray) {
@@ -142,7 +142,7 @@ public class ArrayValueImpl implements ArrayValue {
             }
         }
 
-        // Not contained, no changes needed.
+        // 未包含该值，无需改动。
         return this;
     }
 

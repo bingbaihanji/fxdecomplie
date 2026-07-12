@@ -13,9 +13,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.*;
 
 /**
- * Basic implementation of {@link InvokeVirtualLookup} for common static fields.
+ * {@link InvokeVirtualLookup} 的基础实现，用于处理常见的虚方法。
  * <br>
- * Mostly auto-generated
+ * 大部分为自动生成
  *
  * @author Matt Coley
  */
@@ -26,7 +26,7 @@ public class BasicInvokeVirtualLookup extends BasicLookupUtils implements Invoke
     static {
         strings();
 
-        // primitives
+        // 基本类型
         booleans();
         bytes();
         chars();
@@ -237,8 +237,8 @@ public class BasicInvokeVirtualLookup extends BasicLookupUtils implements Invoke
                 params.addAll(values);
                 value = func.apply(params);
             } catch (Throwable t) {
-                // Some methods may inherently throw, like 'Math.floorDiv(0, 0)' so these error
-                // log calls are only active while debugging.
+                // 某些方法本身可能抛出异常，例如 'Math.floorDiv(0, 0)'，因此这些
+                // 错误日志仅在调试时启用。
                 logger.debug("Computation threw an exception for: " + key, t);
             }
         }

@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * Stream utilities.
+ * Stream 工具类
  *
  * @author xDark
  */
@@ -22,14 +22,14 @@ public final class Streams {
     }
 
     /**
-     * Combines the given streams.
+     * 合并给定的多个 Stream
      *
      * @param streams
-     * 		Streams to combine.
+     * 		待合并的 Stream
      * @param <T>
-     * 		Stream element type.
+     * 		Stream 元素类型
      *
-     * @return Combined stream.
+     * @return 合并后的 Stream
      */
     public static <T> Stream<? extends T> of(Stream<? extends T>... streams) {
         Stream<? extends T> merged = null;
@@ -44,14 +44,14 @@ public final class Streams {
     }
 
     /**
-     * Makes stream interruptable.
+     * 使 Stream 支持中断
      *
      * @param stream
-     * 		Stream to make interruptable.
+     * 		要使其可中断的 Stream
      * @param <T>
-     * 		Stream element type.
+     * 		Stream 元素类型
      *
-     * @return Interruptable stream.
+     * @return 可中断的 Stream
      */
     public static <T> Stream<T> interruptable(Stream<? extends T> stream) {
         Spliterator<? extends T> spliterator = stream.spliterator();
@@ -75,16 +75,16 @@ public final class Streams {
     }
 
     /**
-     * Accepts all elements in the stream in the given executor.
+     * 在给定的执行器中消费 Stream 中的所有元素
      *
      * @param stream
-     * 		Stream to accept.
+     * 		要消费的 Stream
      * @param consumer
-     * 		Element consumer.
+     * 		元素消费者
      * @param executor
-     * 		Executor to use.
+     * 		使用的执行器
      * @param <T>
-     * 		Element type.
+     * 		元素类型
      */
     public static <T> void forEachOn(Stream<T> stream, Consumer<? super T> consumer, Executor executor) {
         AtomicReference<Throwable> throwable = new AtomicReference<>();
@@ -121,16 +121,16 @@ public final class Streams {
     }
 
     /**
-     * Recursively traversed {@code seed}.
+     * 从 {@code seed} 开始递归遍历
      *
      * @param seed
-     * 		Initial seed.
+     * 		初始种子
      * @param fn
-     * 		Transforming function.
+     * 		变换函数
      * @param <T>
-     * 		Element type.
+     * 		元素类型
      *
-     * @return Stream containing all traversed elements.
+     * @return 包含所有遍历元素的 Stream
      */
     public static <T> Stream<T> recurse(T seed, Function<? super T, Stream<? extends T>> fn) {
         return Stream.concat(
@@ -141,16 +141,16 @@ public final class Streams {
     }
 
     /**
-     * Recursively traversed {@code seed}.
+     * 从 {@code seed} 开始递归遍历
      *
      * @param seed
-     * 		Initial stream.
+     * 		初始 Stream
      * @param fn
-     * 		Transforming function.
+     * 		变换函数
      * @param <T>
-     * 		Element type.
+     * 		元素类型
      *
-     * @return Stream containing all traversed elements.
+     * @return 包含所有遍历元素的 Stream
      */
     public static <T> Stream<T> recurse(Stream<? extends T> seed, Function<? super T, Stream<? extends T>> fn) {
         return seed.flatMap(x -> recurse(x, fn));
@@ -158,11 +158,11 @@ public final class Streams {
 
     /**
      * @param flatMap
-     * 		Transforming function.
+     * 		变换函数
      * @param <T>
-     * 		Element type.
+     * 		元素类型
      *
-     * @return Stream containing all traversed elements.
+     * @return 包含所有遍历元素的 Stream
      */
 
     public static <T> Stream<T> recurseWithoutCycles(T seed, Function<T, Set<T>> flatMap) {
@@ -173,11 +173,11 @@ public final class Streams {
 
     /**
      * @param flatMap
-     * 		Transforming function.
+     * 		变换函数
      * @param <T>
-     * 		Element type.
+     * 		元素类型
      *
-     * @return Stream containing all traversed elements.
+     * @return 包含所有遍历元素的 Stream
      */
 
     public static <T> Stream<T> recurseIdentityWithoutCycles(T seed, Function<T, Set<T>> flatMap) {

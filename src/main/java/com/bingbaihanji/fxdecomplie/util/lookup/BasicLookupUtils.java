@@ -10,14 +10,14 @@ import java.util.List;
 import java.util.OptionalInt;
 
 /**
- * Common utilities for lookup implementations to convert between JVM values and interpreter values.
+ * 供各查找实现使用的通用工具，用于在 JVM 值与解释器值之间转换。
  *
  * @author Matt Coley
  */
 public class BasicLookupUtils {
-    // TODO: These short-named methods are useful for code generation and should stay as-is,
-    //       But we should also expose the conversion logic in a more explicit way for plugin developers
-    //       to use when writing transformers or their own lookup implementations.
+    // TODO: 这些短名称方法便于代码生成，应保持原样，
+    //       但我们也应当以更显式的方式暴露转换逻辑，供插件开发者在
+    //       编写转换器或自定义查找实现时使用。
 
     @SuppressWarnings("all")
     protected static byte b(IntValue value) {
@@ -65,21 +65,21 @@ public class BasicLookupUtils {
     }
 
     protected static Object objl(ObjectValue value) {
-        // Yield object type literally instead of auto-casting at call-site with T.
+        // 直接返回对象类型，而不是在调用处以 T 进行自动转型。
         return obj(value);
     }
 
     @SuppressWarnings("all")
     protected static <T> T obj(ObjectValue value) {
-        // Map null to null
+        // null 映射为 null
         if (value.isNull())
             return null;
 
-        // Unwrap strings
+        // 解包字符串
         if (value instanceof StringValue string)
             return (T) str(string);
 
-        // Unwrap boxed values
+        // 解包装箱值
         if (value instanceof ObjectValueBoxImpl<?> box)
             return (T) box.unbox();
 
@@ -138,17 +138,17 @@ public class BasicLookupUtils {
 
 
     protected static ObjectValue obj(Object value) {
-        // This isn't exactly perfect, as we lose type info with this conversion.
+        // 该转换并不完美，因为会在过程中丢失类型信息。
         if (value == null) {
             return ObjectValue.VAL_OBJECT_NULL;
         }
 
-        // String-like
+        // 类字符串
         if (value instanceof CharSequence string) {
             return str(string);
         }
 
-        // Primitive boxes
+        // 基本类型装箱
         if (value instanceof Integer i) {
             return new BoxedIntegerValueImpl(i);
         }

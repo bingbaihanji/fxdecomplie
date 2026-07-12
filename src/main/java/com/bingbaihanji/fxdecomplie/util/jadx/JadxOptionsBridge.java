@@ -101,7 +101,7 @@ public final class JadxOptionsBridge {
         intValue(options, "typeUpdatesLimitCount").ifSet(args::setTypeUpdatesLimitCount);
     }
 
-    // --- helpers ---
+    // --- 辅助方法 ---
 
     private static BooleanValue bool(Map<String, String> m, String key) {
         String v = m.get(key);

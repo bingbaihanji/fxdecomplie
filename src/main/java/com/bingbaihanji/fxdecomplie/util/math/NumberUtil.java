@@ -4,16 +4,16 @@ package com.bingbaihanji.fxdecomplie.util.math;
 import org.objectweb.asm.Type;
 
 /**
- * General number parsing and other operations.
+ * 通用数字解析及其他数值运算工具
  *
  * @author Matt Coley
  */
 public class NumberUtil {
     /**
      * @param number
-     * 		Value to convert to string.
+     * 		要转换为字符串的数值
      *
-     * @return String representation of value.
+     * @return 该数值的字符串表示
      */
 
     public static String toString(Number number) {
@@ -36,18 +36,18 @@ public class NumberUtil {
 
     /**
      * @param input
-     * 		Text input that represents a number.
+     * 		表示一个数字的文本输入
      * 		<ul>
-     * 		<li>Numbers ending with {@code F} are parsed as {@link Float}.</li>
-     * 		<li>Numbers ending with {@code D} are parsed as {@link Double}.</li>
-     * 		<li>Numbers ending with {@code L} are parsed as {@link Long}.</li>
+     * 		<li>以 {@code F} 结尾的数字解析为 {@link Float}</li>
+     * 		<li>以 {@code D} 结尾的数字解析为 {@link Double}</li>
+     * 		<li>以 {@code L} 结尾的数字解析为 {@link Long}</li>
      * 		</ul>
      *
-     * @return Number parsed from text.
-     * Can be an {@link Integer}, {@link Long}, {@link Float}, or {@link Double}.
+     * @return 从文本解析出的数字
+     * 可以是 {@link Integer}、{@link Long}、{@link Float} 或 {@link Double}
      *
      * @throws NumberFormatException
-     * 		When the input cannot be parsed.
+     * 		当输入无法被解析时抛出
      */
     @SuppressWarnings("")
 
@@ -84,9 +84,9 @@ public class NumberUtil {
 
     /**
      * @param text
-     * 		Text input that represents a decimal number.
+     * 		表示一个小数的文本输入
      *
-     * @return Decimal number, either {@link Float} or {@link Double}.
+     * @return 小数,类型为 {@link Float} 或 {@link Double}
      */
 
     private static Number parseDecimal(String text) {
@@ -109,11 +109,11 @@ public class NumberUtil {
 
     /**
      * @param type1
-     * 		Numeric type. Must be a primitive.
+     * 		数值类型,必须是基本类型
      * @param type2
-     * 		Numeric type. Must be a primitive.
+     * 		数值类型,必须是基本类型
      *
-     * @return Widest primitive.
+     * @return 范围更宽的基本类型
      */
 
     public static Type getWidestType(Type type1, Type type2) {
@@ -124,17 +124,17 @@ public class NumberUtil {
     }
 
     /**
-     * Compare two numeric values, regardless of their type.
+     * 比较两个数值,不受其类型限制
      *
      * @param right
-     * 		First value.
+     * 		第一个值
      * @param left
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Comparison of {@code X.compare(left, right)}
+     * @return {@code X.compare(left, right)} 的比较结果
      */
     public static int cmp(Number left, Number right) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (right instanceof Double || left instanceof Double) {
             return Double.compare(left.doubleValue(), right.doubleValue());
         } else if (right instanceof Float || left instanceof Float) {
@@ -148,15 +148,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Difference value.
+     * @return 差值
      */
 
     public static Number sub(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Double || first instanceof Double) {
             return first.doubleValue() - second.doubleValue();
         } else if (second instanceof Float || first instanceof Float) {
@@ -170,15 +170,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Sum value.
+     * @return 和值
      */
 
     public static Number add(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Double || first instanceof Double) {
             return first.doubleValue() + second.doubleValue();
         } else if (second instanceof Float || first instanceof Float) {
@@ -192,15 +192,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Product value.
+     * @return 积值
      */
 
     public static Number mul(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Double || first instanceof Double) {
             return first.doubleValue() * second.doubleValue();
         } else if (second instanceof Float || first instanceof Float) {
@@ -214,15 +214,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Divided value.
+     * @return 商值
      */
 
     public static Number div(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Double || first instanceof Double) {
             return first.doubleValue() / second.doubleValue();
         } else if (second instanceof Float || first instanceof Float) {
@@ -236,15 +236,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Remainder value.
+     * @return 余数值
      */
 
     public static Number rem(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Double || first instanceof Double) {
             return first.doubleValue() % second.doubleValue();
         } else if (second instanceof Float || first instanceof Float) {
@@ -258,15 +258,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Value where matching bits remain.
+     * @return 保留相同置位位的值(按位与)
      */
 
     public static Number and(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Long || first instanceof Long) {
             return first.longValue() & second.longValue();
         } else {
@@ -276,15 +276,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Value where all active bits remain.
+     * @return 保留所有置位位的值(按位或)
      */
 
     public static Number or(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Long || first instanceof Long) {
             return first.longValue() | second.longValue();
         } else {
@@ -294,15 +294,15 @@ public class NumberUtil {
 
     /**
      * @param first
-     * 		First value.
+     * 		第一个值
      * @param second
-     * 		Second value.
+     * 		第二个值
      *
-     * @return Value where non-matching bits remain.
+     * @return 保留不相同位的值(按位异或)
      */
 
     public static Number xor(Number first, Number second) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (second instanceof Long || first instanceof Long) {
             return first.longValue() ^ second.longValue();
         } else {
@@ -312,13 +312,13 @@ public class NumberUtil {
 
     /**
      * @param value
-     * 		Numeric value.
+     * 		数值
      *
-     * @return Negated value.
+     * @return 取负后的值
      */
 
     public static Number neg(Number value) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (value instanceof Double) {
             return -value.doubleValue();
         } else if (value instanceof Float) {
@@ -332,15 +332,15 @@ public class NumberUtil {
 
     /**
      * @param value
-     * 		Numeric value.
+     * 		数值
      * @param shift
-     * 		Value to shift by.
+     * 		移位的位数
      *
-     * @return Shifted value.
+     * @return 移位后的值
      */
 
     public static Number shiftLeft(Number value, Number shift) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (value instanceof Long) {
             return value.longValue() << shift.longValue();
         } else {
@@ -350,15 +350,15 @@ public class NumberUtil {
 
     /**
      * @param value
-     * 		Numeric value.
+     * 		数值
      * @param shift
-     * 		Value to shift by.
+     * 		移位的位数
      *
-     * @return Shifted value.
+     * @return 移位后的值
      */
 
     public static Number shiftRight(Number value, Number shift) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (value instanceof Long) {
             return value.longValue() >> shift.longValue();
         } else {
@@ -368,15 +368,15 @@ public class NumberUtil {
 
     /**
      * @param value
-     * 		Numeric value.
+     * 		数值
      * @param shift
-     * 		Value to shift by.
+     * 		移位的位数
      *
-     * @return Shifted value.
+     * @return 移位后的值
      */
 
     public static Number shiftRightU(Number value, Number shift) {
-        // Check for widest types first, go down the type list to narrower types until reaching int.
+        // 先检查范围最宽的类型,沿类型列表向下依次收窄直到 int
         if (value instanceof Long) {
             return value.longValue() >>> shift.longValue();
         } else {
@@ -385,14 +385,14 @@ public class NumberUtil {
     }
 
     /**
-     * Fast {@link Math#pow(double, double)} for {@code int}.
+     * 针对 {@code int} 的快速 {@link Math#pow(double, double)}
      *
      * @param base
-     * 		Base value.
+     * 		底数
      * @param exp
-     * 		Exponent power.
+     * 		指数(幂次)
      *
-     * @return {@code base^exp}.
+     * @return {@code base^exp}
      */
     public static int intPow(int base, int exp) {
         if (exp < 0) {
@@ -413,13 +413,13 @@ public class NumberUtil {
 
     /**
      * @param value
-     * 		Base value.
+     * 		基准值
      * @param min
-     * 		Clamp min.
+     * 		钳制下限
      * @param max
-     * 		Clamp max.
+     * 		钳制上限
      *
-     * @return Value, or min if value below min, or max if value above max.
+     * @return 返回该值;若低于 min 则返回 min,若高于 max 则返回 max
      */
     public static int intClamp(int value, int min, int max) {
         if (value > max) {
@@ -433,13 +433,13 @@ public class NumberUtil {
 
     /**
      * @param value
-     * 		Base value.
+     * 		基准值
      * @param min
-     * 		Clamp min.
+     * 		钳制下限
      * @param max
-     * 		Clamp max.
+     * 		钳制上限
      *
-     * @return Value, or min if value below min, or max if value above max.
+     * @return 返回该值;若低于 min 则返回 min,若高于 max 则返回 max
      */
     public static double doubleClamp(double value, double min, double max) {
         if (value > max) {
@@ -453,7 +453,7 @@ public class NumberUtil {
 
     /**
      * @param i
-     * 		Some value.
+     * 		某个值
      *
      * @return {@code i != 0}
      */
@@ -463,7 +463,7 @@ public class NumberUtil {
 
     /**
      * @param i
-     * 		Some value.
+     * 		某个值
      *
      * @return {@code i == 0}
      */
@@ -473,11 +473,11 @@ public class NumberUtil {
 
     /**
      * @param a
-     * 		Some value.
+     * 		某个值
      * @param b
-     * 		Another value.
+     * 		另一个值
      *
-     * @return {@code true} when they have the same sign.
+     * @return 当两者符号相同时返回 {@code true}
      */
     public static boolean haveSameSign(int a, int b) {
         return (a > 0 && b > 0) || (a < 0 && b < 0);
@@ -485,12 +485,12 @@ public class NumberUtil {
 
     /**
      * @param v
-     * 		Some value.
+     * 		某个值
      *
-     * @return Next power of two greater than or equal to {@code v}.
+     * @return 大于或等于 {@code v} 的下一个 2 的幂
      */
     public static int nextPowerOfTwo(int v) {
-        // Bit twiddling to round up to the next power of two.
+        // 位运算技巧,向上取整到下一个 2 的幂
         v--;
         v |= v >> 1;
         v |= v >> 2;

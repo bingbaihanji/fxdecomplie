@@ -5,28 +5,28 @@ import com.bingbaihanji.fxdecomplie.util.value.ReValue;
 import org.objectweb.asm.tree.FieldInsnNode;
 
 /**
- * Lookup for context-bound field values.
+ * 用于查找绑定上下文的字段值。
  *
  * @author Matt Coley
  */
 public interface GetFieldLookup {
     /**
      * @param field
-     * 		Field reference.
+     * 		字段引用。
      * @param context
-     * 		Class context the field resides within.
-     * 		Has a {@link ReValue#hasKnownValue() known value}.
+     * 		字段所在的类上下文。
+     * 		具有{@link ReValue#hasKnownValue() 已知值}。
      *
-     * @return Value representing the field.
+     * @return 表示该字段的值。
      */
 
     ReValue get(FieldInsnNode field, ReValue context);
 
     /**
      * @param field
-     * 		Field reference.
+     * 		字段引用。
      *
-     * @return {@code true} when this lookup can provide a value via {@link #get(FieldInsnNode, ReValue)}.
+     * @return 当此查找能够通过 {@link #get(FieldInsnNode, ReValue)} 提供值时返回 {@code true}。
      */
     boolean hasLookup(FieldInsnNode field);
 }

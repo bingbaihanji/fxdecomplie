@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Boxed object value holder implementation.
+ * 装箱对象值持有者实现。
  *
  * @author Matt Coley
  */
@@ -21,20 +21,44 @@ import java.util.Optional;
 public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
     private final Optional<T> value;
 
+    /**
+     * @param type
+     * 		对象类型。
+     * @param nullness
+     * 		值的空值状态。
+     */
     public ObjectValueBoxImpl(Type type, Nullness nullness) {
         super(type, nullness);
         value = Optional.empty();
     }
 
+    /**
+     * @param type
+     * 		对象类型。
+     * @param value
+     * 		要持有的装箱值。
+     */
     public ObjectValueBoxImpl(Type type, T value) {
         super(type, value == null ? Nullness.NULL : Nullness.NOT_NULL);
         this.value = Optional.ofNullable(value);
     }
 
 
+    /**
+     * @param value
+     * 		要包装的值。
+     *
+     * @return 持有给定值的装箱值实例。
+     */
     protected abstract ObjectValueBoxImpl<T> wrap(T value);
 
 
+    /**
+     * @param nullness
+     * 		值的空值状态。
+     *
+     * @return 内容未知、具有给定空值状态的装箱值实例。
+     */
     protected abstract ObjectValueBoxImpl<T> wrapUnknown(Nullness nullness);
 
     @Override
@@ -43,11 +67,20 @@ public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
     }
 
 
+    /**
+     * @return 拆箱后的值。
+     *
+     * @throws java.util.NoSuchElementException
+     * 		当值未知时。
+     */
     public T unbox() {
         return value().orElseThrow();
     }
 
 
+    /**
+     * @return 值的内容。若未知则为空。
+     */
     public Optional<T> value() {
         return value;
     }

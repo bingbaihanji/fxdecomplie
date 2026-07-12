@@ -22,6 +22,11 @@ public final class NamedThreadFactory implements ThreadFactory {
     private final AtomicInteger number = new AtomicInteger(0);
     private final int poolId;
 
+    /**
+     * 创建线程工厂
+     *
+     * @param name 线程名前缀
+     */
     public NamedThreadFactory(String name) {
         this.name = name;
         this.poolId = POOL_ID.incrementAndGet();

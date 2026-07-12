@@ -4,12 +4,12 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 /**
- * Pair of a class and field.
+ * 类与方法的组合对。
  *
  * @param classNode
- * 		Wrapped class.
+ * 		所包装的类。
  * @param methodNode
- * 		Wrapped method.
+ * 		所包装的方法。
  */
 public record ClassMethodPair(ClassNode classNode,
                               MethodNode methodNode) {

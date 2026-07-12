@@ -10,7 +10,7 @@ import org.objectweb.asm.Type;
 
 
 /**
- * Object value holder implementation.
+ * 对象值持有者实现。
  *
  * @author Matt Coley
  */
@@ -18,6 +18,12 @@ public class ObjectValueImpl implements ObjectValue {
     private final Type type;
     private final Nullness nullness;
 
+    /**
+     * @param type
+     * 		对象类型。
+     * @param nullness
+     * 		值的空值状态。
+     */
     public ObjectValueImpl(Type type, Nullness nullness) {
         this.type = type;
         this.nullness = nullness;

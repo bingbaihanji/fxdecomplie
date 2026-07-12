@@ -1,6 +1,8 @@
 package com.bingbaihanji.fxdecomplie.decompiler.jadx;
 
+import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.core.jadx.api.JadxArgs;
+import com.bingbaihanji.fxdecomplie.core.jadx.api.args.GeneratedRenamesMappingFileMode;
 import com.bingbaihanji.fxdecomplie.util.jadx.JadxOptionsBridge;
 
 import java.util.Map;
@@ -23,8 +25,12 @@ public final class JadxArgsFactory {
         args.setInlineAnonymousClasses(true);
         args.setExtractFinally(true);
         args.setDeobfuscationOn(false);
+        args.setRootDir(AppPaths.jadxRuntimeDir().toFile());
+        args.setGeneratedRenamesMappingFileMode(GeneratedRenamesMappingFileMode.IGNORE);
         args.setShowInconsistentCode(true);
         JadxOptionsBridge.apply(args, engineOptions);
+        args.setRootDir(AppPaths.jadxRuntimeDir().toFile());
+        args.setGeneratedRenamesMappingFileMode(GeneratedRenamesMappingFileMode.IGNORE);
         return args;
     }
 }

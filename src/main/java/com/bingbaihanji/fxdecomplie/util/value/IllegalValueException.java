@@ -1,14 +1,14 @@
 package com.bingbaihanji.fxdecomplie.util.value;
 
 /**
- * Exception thrown when creating a {@link ReValue} from some input fails.
+ * 当从某个输入创建 {@link ReValue} 失败时抛出的异常。
  *
  * @author Matt Coley
  */
 public class IllegalValueException extends Exception {
     /**
      * @param message
-     * 		Reason why the value could not be created.
+     * 		无法创建该值的原因。
      */
     public IllegalValueException(String message) {
         super(message);

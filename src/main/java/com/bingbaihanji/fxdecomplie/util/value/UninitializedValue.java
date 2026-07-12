@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.util.value.impl.UninitializedValueImpl;
 import org.objectweb.asm.Type;
 
 /**
- * Value representing a slot that has not been initialized or used yet.
+ * 表示尚未初始化或尚未使用的槽位的值。
  *
  * @author Matt Coley
  */

@@ -2,7 +2,6 @@ autoDeleteData: false
 autoDetectedPackages:
 - com.bingbaihanji.fxdecomplie
 - com.bingbaihanji.javafx
-- com.bingbaihanji.util
 - com.bingbaihanji.windows.jfx
 - com.bingbaihanji.windows.platform
 autoKeepDataNum: 10

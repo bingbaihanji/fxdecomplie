@@ -81,7 +81,7 @@ public final class AtomicFile {
             try {
                 closeable.close();
             } catch (Exception ignored) {
-                // Best effort cleanup.
+                // 尽力清理,忽略关闭异常
             }
         }
     }

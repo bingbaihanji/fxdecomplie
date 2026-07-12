@@ -7,28 +7,28 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import java.util.List;
 
 /**
- * Lookup for static method return values.
+ * 用于查找静态方法的返回值。
  *
  * @author Matt Coley
  */
 public interface InvokeStaticLookup {
     /**
      * @param method
-     * 		Method reference.
+     * 		方法引用。
      * @param values
-     * 		Argument values to the method.
-     * 		All items {@link ReValue#hasKnownValue() have known values}.
+     * 		方法的参数值。
+     * 		所有项均{@link ReValue#hasKnownValue() 具有已知值}。
      *
-     * @return Value representing the return value of the method.
+     * @return 表示该方法返回值的值。
      */
 
     ReValue get(MethodInsnNode method, List<? extends ReValue> values);
 
     /**
      * @param method
-     * 		Method reference.
+     * 		方法引用。
      *
-     * @return {@code true} when this lookup can provide a value via {@link #get(MethodInsnNode, List)}.
+     * @return 当此查找能够通过 {@link #get(MethodInsnNode, List)} 提供值时返回 {@code true}。
      */
     boolean hasLookup(MethodInsnNode method);
 }

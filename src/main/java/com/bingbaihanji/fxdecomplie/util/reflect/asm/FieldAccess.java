@@ -325,13 +325,13 @@ public abstract class FieldAccess {
                     mv.visitInsn(ARETURN);
                 }
             }
-            // Rest of fields: different type
+            // 其余字段：类型不同
             if (hasAnyBadTypeLabel) {
                 mv.visitLabel(labelForInvalidTypes);
                 mv.visitFrame(F_SAME, 0, null, 0, null);
                 insertThrowExceptionForFieldType(mv, "String");
             }
-            // Default: field not found
+            // 默认：字段未找到
             mv.visitLabel(defaultLabel);
             mv.visitFrame(F_SAME, 0, null, 0, null);
         }
@@ -346,7 +346,7 @@ public abstract class FieldAccess {
     private static void insertSetPrimitive(ClassWriter cw, String classNameInternal, ArrayList<Field> fields,
                                            Type primitiveType) {
         int maxStack = 6;
-        int maxLocals = 4; // See correction below for LLOAD and DLOAD
+        int maxLocals = 4; // 关于 LLOAD 和 DLOAD 的修正见下方
         final String setterMethodName;
         final String typeNameInternal = primitiveType.getDescriptor();
         final int loadValueInstruction;
@@ -378,12 +378,12 @@ public abstract class FieldAccess {
             case Type.LONG:
                 setterMethodName = "setLong";
                 loadValueInstruction = LLOAD;
-                maxLocals++; // (LLOAD and DLOAD actually load two slots)
+                maxLocals++; // （LLOAD 与 DLOAD 实际占用两个槽位）
                 break;
             case Type.DOUBLE:
                 setterMethodName = "setDouble";
                 loadValueInstruction = DLOAD;
-                maxLocals++; // (LLOAD and DLOAD actually load two slots)
+                maxLocals++; // （LLOAD 与 DLOAD 实际占用两个槽位）
                 break;
             default:
                 setterMethodName = "set";
@@ -424,13 +424,13 @@ public abstract class FieldAccess {
                     mv.visitInsn(RETURN);
                 }
             }
-            // Rest of fields: different type
+            // 其余字段：类型不同
             if (hasAnyBadTypeLabel) {
                 mv.visitLabel(labelForInvalidTypes);
                 mv.visitFrame(F_SAME, 0, null, 0, null);
                 insertThrowExceptionForFieldType(mv, primitiveType.getClassName());
             }
-            // Default: field not found
+            // 默认：字段未找到
             mv.visitLabel(defaultLabel);
             mv.visitFrame(F_SAME, 0, null, 0, null);
         }
@@ -518,13 +518,13 @@ public abstract class FieldAccess {
                     mv.visitInsn(returnValueInstruction);
                 }
             }
-            // Rest of fields: different type
+            // 其余字段：类型不同
             if (hasAnyBadTypeLabel) {
                 mv.visitLabel(labelForInvalidTypes);
                 mv.visitFrame(F_SAME, 0, null, 0, null);
                 insertThrowExceptionForFieldType(mv, primitiveType.getClassName());
             }
-            // Default: field not found
+            // 默认：字段未找到
             mv.visitLabel(defaultLabel);
             mv.visitFrame(F_SAME, 0, null, 0, null);
         }

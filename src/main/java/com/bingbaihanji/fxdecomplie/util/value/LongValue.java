@@ -8,7 +8,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 /**
- * Value capable of recording exact long content.
+ * 能够记录精确 long 内容的值。
  *
  * @author Matt Coley
  */
@@ -22,9 +22,9 @@ public non-sealed interface LongValue extends ReValue {
 
     /**
      * @param value
-     * 		Long value to hold.
+     * 		要持有的 long 值。
      *
-     * @return Long value holding the exact content.
+     * @return 持有该精确内容的 long 值。
      */
 
     static LongValue of(long value) {
@@ -43,7 +43,7 @@ public non-sealed interface LongValue extends ReValue {
     }
 
     /**
-     * @return Long content of value. Empty if {@link #hasKnownValue() not known}.
+     * @return 值的 long 内容。若 {@link #hasKnownValue() 未知} 则为空。
      */
 
     OptionalLong value();
@@ -66,9 +66,9 @@ public non-sealed interface LongValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is equal to the given value.
+     * @return 当已知值等于给定值时返回 {@code true}。
      */
     default boolean isEqualTo(long value) {
         return value().isPresent() && value().getAsLong() == value;
@@ -76,9 +76,9 @@ public non-sealed interface LongValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is less than the given value.
+     * @return 当已知值小于给定值时返回 {@code true}。
      */
     default boolean isLessThan(long value) {
         return value().isPresent() && value().getAsLong() < value;
@@ -86,9 +86,9 @@ public non-sealed interface LongValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is less than or equal to the given value.
+     * @return 当已知值小于或等于给定值时返回 {@code true}。
      */
     default boolean isLessThanOrEqual(long value) {
         return value().isPresent() && value().getAsLong() <= value;
@@ -96,9 +96,9 @@ public non-sealed interface LongValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is greater than the given value.
+     * @return 当已知值大于给定值时返回 {@code true}。
      */
     default boolean isGreaterThan(long value) {
         return value().isPresent() && value().getAsLong() > value;
@@ -106,15 +106,21 @@ public non-sealed interface LongValue extends ReValue {
 
     /**
      * @param value
-     * 		Value to check against.
+     * 		用于比较的值。
      *
-     * @return {@code true} when the known value is greater than or equal to the given value.
+     * @return 当已知值大于或等于给定值时返回 {@code true}。
      */
     default boolean isGreaterThanOrEqual(long value) {
         return value().isPresent() && value().getAsLong() >= value;
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之和；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue add(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -125,6 +131,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之差；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue sub(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -135,6 +147,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）。
+     */
     default LongValue mul(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -148,13 +166,19 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值之商；若任一值未知或除数为 0 则为 {@link #UNKNOWN}。
+     */
     default LongValue div(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
         if (value.isPresent() && otherValue.isPresent()) {
             long otherLiteral = otherValue.getAsLong();
             if (otherLiteral == 0) {
-                return UNKNOWN; // We'll just pretend this works
+                return UNKNOWN; // 这里我们假装它能正常工作
             }
             return of(value.getAsLong() / otherLiteral);
         }
@@ -162,6 +186,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值按位与的结果；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）。
+     */
     default LongValue and(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -175,6 +205,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值按位或的结果；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 -1 时结果为 -1）。
+     */
     default LongValue or(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -188,6 +224,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值按位异或的结果；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue xor(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -198,6 +240,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 比较结果（对应 {@code lcmp} 指令）；若任一值未知则为 {@link IntValue#UNKNOWN}。
+     */
     default IntValue cmp(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -208,13 +256,19 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		另一个值。
+     *
+     * @return 两值取余的结果；若任一值未知或除数为 0 则为 {@link #UNKNOWN}。
+     */
     default LongValue rem(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
         if (value.isPresent() && otherValue.isPresent()) {
             long otherLiteral = otherValue.getAsLong();
             if (otherLiteral == 0) {
-                return UNKNOWN; // We'll just pretend this works
+                return UNKNOWN; // 这里我们假装它能正常工作
             }
             return of(value.getAsLong() % otherLiteral);
         }
@@ -225,6 +279,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 左移后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue shl(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -235,6 +295,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 左移后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue shl(IntValue other) {
         OptionalLong value = value();
         OptionalInt otherValue = other.value();
@@ -245,6 +311,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 算术右移后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue shr(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -255,6 +327,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 算术右移后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue shr(IntValue other) {
         OptionalLong value = value();
         OptionalInt otherValue = other.value();
@@ -265,6 +343,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 逻辑右移（无符号右移）后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue ushr(LongValue other) {
         OptionalLong value = value();
         OptionalLong otherValue = other.value();
@@ -275,6 +359,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param other
+     * 		移位位数。
+     *
+     * @return 逻辑右移（无符号右移）后的值；若任一值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue ushr(IntValue other) {
         OptionalLong value = value();
         OptionalInt otherValue = other.value();
@@ -285,6 +375,9 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @return 取负后的值；若值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue negate() {
         OptionalLong value = value();
         if (value.isPresent()) {
@@ -294,6 +387,12 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @param incr
+     * 		要加上的增量。
+     *
+     * @return 加上增量后的值；若值未知则为 {@link #UNKNOWN}。
+     */
     default LongValue add(long incr) {
         OptionalLong value = value();
         if (value.isPresent()) {
@@ -303,6 +402,9 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 int 后的值；若值未知则为 {@link IntValue#UNKNOWN}。
+     */
     default IntValue castInt() {
         OptionalLong value = value();
         if (value.isPresent()) {
@@ -312,6 +414,9 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 float 后的值；若值未知则为 {@link FloatValue#UNKNOWN}。
+     */
     default FloatValue castFloat() {
         OptionalLong value = value();
         if (value.isPresent()) {
@@ -321,6 +426,9 @@ public non-sealed interface LongValue extends ReValue {
     }
 
 
+    /**
+     * @return 转换为 double 后的值；若值未知则为 {@link DoubleValue#UNKNOWN}。
+     */
     default DoubleValue castDouble() {
         OptionalLong value = value();
         if (value.isPresent()) {

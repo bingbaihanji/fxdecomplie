@@ -31,6 +31,10 @@ public final class AppPaths {
         return appDir().resolve("cache");
     }
 
+    public static Path jadxRuntimeDir() {
+        return cacheDir().resolve("jadx").resolve("runtime");
+    }
+
     public static Path workspaceDataDir() {
         return appDir().resolve("fxdecomplie");
     }
