@@ -13,6 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.IntConsumer;
@@ -104,7 +108,7 @@ public final class ExportService {
         Objects.requireNonNull(config, "config");
         Objects.requireNonNull(index, "index");
 
-        // ---- 步骤 1: 过滤可导出的类/资源条目(调用方已在 FX 线程提取为普通 List)----
+        // ---- 步骤 1: 过滤可导出的类/资源条目 ----
         List<FileTreeNode> items = new ArrayList<>();
         for (FileTreeNode node : nodes) {
             if (shouldExport(node, config.exportResources())) {
@@ -114,13 +118,57 @@ public final class ExportService {
         log.info("导出开始: {} 个文件, format={}, engine={}, output={}",
                 items.size(), config.format(), config.engine(), config.outputPath());
         long exportStart = System.currentTimeMillis();
-        ExportState state = new ExportState(items.size(), onProgress);
-        // ---- 步骤 2: 反编译并写入 — 分发到 ZIP 或目录路径 ----
-        if (config.format() == ExportConfig.Format.ZIP) {
-            exportAllToZip(items, index, config, commentScope, state, canceled);
-        } else {
-            exportAllToDir(items, index, config, commentScope, state, canceled);
+
+        // ---- 步骤 2: 并行反编译 (瓶颈阶段) ----
+        AtomicBoolean cancelFlag = new AtomicBoolean(false);
+        BooleanSupplier isCanceled = () -> canceled != null && canceled.getAsBoolean();
+        ConcurrentHashMap<FileTreeNode, ExportContent> decompiled = new ConcurrentHashMap<>();
+        List<String> parallelErrors = Collections.synchronizedList(new ArrayList<>());
+
+        int parallelism = Math.clamp(Runtime.getRuntime().availableProcessors(), 2, 4);
+        try (ForkJoinPool forkJoin = new ForkJoinPool(parallelism)) {
+            forkJoin.submit(() ->
+                    items.parallelStream().forEach(data -> {
+                        if (isCanceled.getAsBoolean() || cancelFlag.get()) {
+                            return;
+                        }
+                        try {
+                            DecompilerContext ctx = DecompilerContext.fromWorkspaceIndex(
+                                    index, config.engineOptions(),
+                                    commentScope == null ? "" : commentScope.workspaceHash());
+                            try {
+                                ExportContent content = buildExportContent(
+                                        data, ctx, config, commentScope, isCanceled);
+                                decompiled.put(data, content);
+                            } finally {
+                                try {
+                                    ctx.close();
+                                } catch (Exception e) {
+                                    log.debug("关闭反编译上下文失败", e);
+                                }
+                            }
+                        } catch (Exception e) {
+                            parallelErrors.add(data.getFullPath() + ": "
+                                    + (e.getMessage() != null ? e.getMessage()
+                                    : e.getClass().getSimpleName()));
+                        }
+                    })
+            ).get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            cancelFlag.set(true);
+        } catch (ExecutionException e) {
+            log.error("并行反编译阶段异常", e.getCause());
         }
+
+        // ---- 步骤 3: 按原始顺序写入 ----
+        ExportState state = new ExportState(items.size(), onProgress);
+        if (config.format() == ExportConfig.Format.ZIP) {
+            writeDecompiledToZip(items, decompiled, config, state, canceled);
+        } else {
+            writeDecompiledToDir(items, decompiled, config, state, canceled);
+        }
+        state.errors.addAll(parallelErrors);
 
         long elapsed = System.currentTimeMillis() - exportStart;
         log.info("导出完成: {}/{} 成功, {} 错误 ({}ms)",
@@ -235,125 +283,96 @@ public final class ExportService {
                 || data.getNodeType() == FileTreeNode.NodeTypeEnum.JAVA_FILE));
     }
 
-    private static void exportAllToDir(List<FileTreeNode> items, WorkspaceIndex index,
-                                       ExportConfig config, CommentScope commentScope, ExportState state,
-                                       BooleanSupplier canceled)
-            throws IOException {
+    /** 将已反编译的内容写入目录（顺序写入，无并发） */
+    private static void writeDecompiledToDir(List<FileTreeNode> items,
+                                              Map<FileTreeNode, ExportContent> decompiled,
+                                              ExportConfig config, ExportState state,
+                                              BooleanSupplier canceled) throws IOException {
         Path outputDir = config.outputPath().toAbsolutePath().normalize();
         Files.createDirectories(outputDir);
-        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions(),
-                commentScope == null ? "" : commentScope.workspaceHash());
-        try {
+        for (FileTreeNode data : items) {
+            if (canceled != null && canceled.getAsBoolean()) {
+                state.errors.add("导出已取消");
+                return;
+            }
+            try {
+                ExportContent content = decompiled.get(data);
+                if (content == null) {
+                    continue; // 反编译失败已在 parallelErrors 中记录
+                }
+                Path target = resolveSafeOutputPath(outputDir, content.relativePath());
+                target = applyDirConflictPolicy(target, config.conflictPolicy());
+                if (target != null) {
+                    Files.createDirectories(target.getParent());
+                    try {
+                        Files.write(target, content.bytes());
+                    } catch (Exception e) {
+                        try {
+                            Files.deleteIfExists(target);
+                        } catch (IOException ignored) {
+                            log.debug("清理失败写入残留文件失败: {}", target, ignored);
+                        }
+                        throw e;
+                    }
+                    state.successCount++;
+                }
+            } catch (Exception e) {
+                state.errors.add(data.getFullPath() + ": "
+                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+            } finally {
+                state.advance(data.getFullPath());
+            }
+        }
+    }
+
+    /** 将已反编译的内容写入 ZIP（顺序写入，ZipOutputStream 非线程安全） */
+    private static void writeDecompiledToZip(List<FileTreeNode> items,
+                                              Map<FileTreeNode, ExportContent> decompiled,
+                                              ExportConfig config, ExportState state,
+                                              BooleanSupplier canceled) throws IOException {
+        Path zipPath = config.outputPath().toAbsolutePath().normalize();
+        if (zipPath.getParent() != null) {
+            Files.createDirectories(zipPath.getParent());
+        }
+        Set<String> writtenEntries = new HashSet<>();
+        try (ZipOutputStream zos = new ZipOutputStream(
+                new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
             for (FileTreeNode data : items) {
                 if (canceled != null && canceled.getAsBoolean()) {
                     state.errors.add("导出已取消");
                     return;
                 }
                 try {
-                    // ---- 反编译: class → .java 源码, 资源 → 原始字节 ----
-                    ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
-                    // ---- 路径验证: 确保输出保持在目标目录内 ----
-                    Path target = resolveSafeOutputPath(outputDir, content.relativePath());
-                    // ---- 冲突解决: 覆盖 / 跳过 / 重命名 ----
-                    target = applyDirConflictPolicy(target, config.conflictPolicy());
-                    if (target != null) {
-                        // ---- 写入: 创建父目录并写入内容 ----
-                        Files.createDirectories(target.getParent());
+                    ExportContent content = decompiled.get(data);
+                    if (content == null) {
+                        continue;
+                    }
+                    String entryName = sanitizeZipEntryName(content.relativePath());
+                    entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
+                    if (entryName != null) {
+                        writtenEntries.add(entryName);
+                        zos.putNextEntry(new ZipEntry(entryName));
                         try {
-                            Files.write(target, content.bytes());
-                        } catch (Exception e) {
+                            zos.write(content.bytes());
+                            state.successCount++;
+                        } catch (IOException e) {
                             try {
-                                Files.deleteIfExists(target);
+                                zos.closeEntry();
                             } catch (IOException ignored) {
-                                log.debug("清理失败写入残留文件失败: {}", target, ignored);
                             }
                             throw e;
                         }
-                        state.successCount++;
+                        zos.closeEntry();
                     }
                 } catch (Exception e) {
-                    state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                    state.errors.add(data.getFullPath() + ": "
+                            + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+                    if (e instanceof IOException) {
+                        break;
+                    }
                 } finally {
                     state.advance(data.getFullPath());
                 }
-            }
-        } finally {
-            try {
-                context.close();
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
-    private static void exportAllToZip(List<FileTreeNode> items, WorkspaceIndex index,
-                                       ExportConfig config, CommentScope commentScope, ExportState state,
-                                       BooleanSupplier canceled)
-            throws IOException {
-        Path zipPath = config.outputPath().toAbsolutePath().normalize();
-        if (zipPath.getParent() != null) {
-            Files.createDirectories(zipPath.getParent());
-        }
-        Set<String> writtenEntries = new HashSet<>();
-        DecompilerContext context = DecompilerContext.fromWorkspaceIndex(index, config.engineOptions(),
-                commentScope == null ? "" : commentScope.workspaceHash());
-        try {
-            try (ZipOutputStream zos = new ZipOutputStream(
-                    new BufferedOutputStream(Files.newOutputStream(zipPath)))) {
-                boolean entryOpen = false;
-                for (FileTreeNode data : items) {
-                    if (canceled != null && canceled.getAsBoolean()) {
-                        state.errors.add("导出已取消");
-                        if (entryOpen) {
-                            try {
-                                zos.closeEntry();
-                            } catch (IOException e) {
-                                log.debug("取消导出时关闭 ZIP 条目失败", e);
-                            }
-                        }
-                        return;
-                    }
-                    try {
-                        ExportContent content = buildExportContent(data, context, config, commentScope, canceled);
-                        String entryName = sanitizeZipEntryName(content.relativePath());
-                        entryName = applyZipConflictPolicy(entryName, config.conflictPolicy(), writtenEntries);
-                        if (entryName != null) {
-                            writtenEntries.add(entryName);
-                            zos.putNextEntry(new ZipEntry(entryName));
-                            entryOpen = true;
-                            try {
-                                zos.write(content.bytes());
-                                state.successCount++;
-                            } catch (IOException e) {
-                                // 写入失败时关闭条目并终止整个 ZIP 导出,
-                                // 避免 closeEntry 写入损坏的 CRC 导致整个归档不可用
-                                try {
-                                    zos.closeEntry();
-                                } catch (IOException ignored) {
-                                }
-                                entryOpen = false;
-                                throw e;
-                            } finally {
-                                if (entryOpen) {
-                                    zos.closeEntry();
-                                    entryOpen = false;
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        state.errors.add(data.getFullPath() + ": " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-                        // ZIP 写入失败后整个归档已不可靠,终止导出
-                        if (e instanceof IOException) {
-                            break;
-                        }
-                    } finally {
-                        state.advance(data.getFullPath());
-                    }
-                }
-            }
-        } finally {
-            try {
-                context.close();
-            } catch (Exception ignored) {
             }
         }
     }
