@@ -95,18 +95,13 @@ public final class AtomicFile {
      * @param source 源文件
      * @param target 目标文件
      */
-    private static void rename(File source, File target) {
-        // 如果目标是目录,则先删除(兼容旧错误用法)
+    private static void rename(File source, File target) throws IOException {
         if (target.isDirectory()) {
             if (!target.delete()) {
-                log.warn("Failed to delete file which is a directory " + target);
+                throw new IOException("Failed to delete directory at target: " + target);
             }
         }
-        try {
-            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            log.warn("Failed to rename {} to {}", source, target, e);
-        }
+        Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
     /**
@@ -177,7 +172,7 @@ public final class AtomicFile {
      *
      * @param str 要完成的输出流(不能为 null)
      */
-    public void finishWrite(FileOutputStream str) {
+    public void finishWrite(FileOutputStream str) throws IOException {
         if (str == null) {
             return;
         }
@@ -242,7 +237,7 @@ public final class AtomicFile {
      * @return 用于读取的文件输入流
      * @throws FileNotFoundException 如果基础文件不存在
      */
-    public FileInputStream openRead() throws FileNotFoundException {
+    public FileInputStream openRead() throws IOException {
         if (legacyBackupFile.exists()) {
             rename(legacyBackupFile, baseFile);
         }

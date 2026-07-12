@@ -71,7 +71,7 @@ public class AppConfig {
      *
      * @return 应用根目录的绝对路径
      */
-    private static Path resolveAppDir() {
+    public static Path resolveAppDir() {
         try {
             var codeSource = AppConfig.class.getProtectionDomain().getCodeSource();
             if (codeSource != null && codeSource.getLocation() != null) {

@@ -47,44 +47,7 @@ public final class FxDecompilerApp {
 
     /** 在 static 初始化块中解析应用根目录,用于配置 logback 日志路径 */
     private static Path resolveAppDirForLogging() {
-        try {
-            var codeSource = FxDecompilerApp.class.getProtectionDomain().getCodeSource();
-            if (codeSource != null && codeSource.getLocation() != null) {
-                Path jarPath = Path.of(codeSource.getLocation().toURI());
-                if (Files.isRegularFile(jarPath)
-                        && jarPath.toString().endsWith(".jar")) {
-                    Path parent = jarPath.getParent();
-                    if (parent != null) {
-                        return parent.toAbsolutePath().normalize();
-                    }
-                } else if (Files.isDirectory(jarPath)) {
-                    return appRoot(jarPath);
-                }
-            }
-        } catch (Exception ignored) {
-            log.debug("解析应用目录失败,回退到 user.dir", ignored);
-        }
-        return Path.of(System.getProperty("user.dir"));
-    }
-
-    /**
-     * IDE 开发期 classpath 在 target/classes/,返回项目根目录避免 mvn clean 删除数据
-     *
-     * @param codeSourceDir 代码源目录(classpath 中的 classes 目录)
-     * @return 项目根目录或原始 codeSourceDir
-     */
-    private static Path appRoot(Path codeSourceDir) {
-        Path normalized = codeSourceDir.toAbsolutePath().normalize();
-        Path name = normalized.getFileName();
-        if (name != null && "classes".equalsIgnoreCase(name.toString())) {
-            Path target = normalized.getParent();
-            if (target != null && target.getFileName() != null
-                    && "target".equalsIgnoreCase(target.getFileName().toString())
-                    && target.getParent() != null) {
-                return target.getParent();
-            }
-        }
-        return normalized;
+        return AppConfig.resolveAppDir();
     }
 
     /**

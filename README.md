@@ -69,7 +69,7 @@ java -jar bin/fxdecomplie.jar --open /path/to/app.jar
 | 代码编辑器 | jfx.incubator.richtext CodeArea |
 | 反编译引擎 | Vineflower 1.11.2 / CFR 0.152 / Procyon 0.6.0 / JD-Core 1.1.3 |
 | 字节码分析 | ASM 9.9 |
-| 缓存 | Caffeine 3.2.0 + 自定义 L2/L3 缓存 |
+| 缓存 | 自定义 L2/L3 缓存 |
 | JSON | Gson 2.12.1 |
 | 日志 | SLF4J 2.0.17 + Logback 1.5.18 |
 | 原生窗口 | JNA 5.17.0（Windows DWM 边框/圆角/标题栏） |

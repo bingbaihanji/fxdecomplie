@@ -24,7 +24,6 @@
         <org.benf.cfr.version>0.152</org.benf.cfr.version>
         <org.bitbucket.procyon.version>0.6.0</org.bitbucket.procyon.version>
         <org.jd.core.version>1.1.3</org.jd.core.version>
-        <com.github.ben-manes.caffeine.version>3.2.0</com.github.ben-manes.caffeine.version>
     </properties>
 
     <dependencies>
@@ -122,12 +121,6 @@
             <groupId>org.jd</groupId>
             <artifactId>jd-core</artifactId>
             <version>${org.jd.core.version}</version>
-        </dependency>
-        <!-- Cache -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-            <version>${com.github.ben-manes.caffeine.version}</version>
         </dependency>
 
         <!-- Test -->

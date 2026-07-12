@@ -40,8 +40,8 @@ public final class IconHelper {
                 if (stream != null) {
                     cachedLogo = new Image(stream);
                 }
-            } catch (Exception ignored) {
-                log.debug("加载 Logo 图标失败", ignored);
+            } catch (Exception e) {
+                log.debug("图标加载失败: {}", LOGO_PATH, e);
             }
         }
         return cachedLogo;

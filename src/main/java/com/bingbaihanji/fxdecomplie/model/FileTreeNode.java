@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -26,8 +27,8 @@ public class FileTreeNode {
     private final NodeTypeEnum nodeType;
     /** 可选资源清理回调,例如关闭归档句柄通过 AtomicReference 保证单次执行 */
     private final AtomicReference<Runnable> cleanupRef = new AtomicReference<>();
-    /** 缓存的文件字节,按需加载后保留,避免重复读取同一打开文件 */
-    private volatile byte[] cachedBytes;
+    /** 缓存的文件字节,按需加载后保留,避免重复读取同一打开文件。使用 SoftReference 允许 GC 在内存压力下回收。 */
+    private volatile SoftReference<byte[]> cachedBytesRef;
     /** 懒加载字节来源,用于 JAR/ZIP/目录条目 */
     private volatile ByteLoader byteLoader;
     /** 条目原始大小,未知时为 -1 */
@@ -61,14 +62,15 @@ public class FileTreeNode {
         return nodeType;
     }
 
-    /** @return 缓存的字节码,可能为 null */
+    /** @return 缓存的字节码,可能为 null（SoftReference 可能已被 GC 回收） */
     public byte[] getCachedBytes() {
-        return cachedBytes;
+        SoftReference<byte[]> ref = cachedBytesRef;
+        return ref != null ? ref.get() : null;
     }
 
     /** @param cachedBytes 缓存的字节码 */
     public synchronized void setCachedBytes(byte[] cachedBytes) {
-        this.cachedBytes = cachedBytes;
+        this.cachedBytesRef = cachedBytes == null ? null : new SoftReference<>(cachedBytes);
         this.size = cachedBytes == null ? -1L : cachedBytes.length;
     }
 
@@ -108,15 +110,16 @@ public class FileTreeNode {
 
     /** @return 当前节点是否存在可读取的字节来源 */
     public boolean hasByteSource() {
-        return cachedBytes != null || byteLoader != null;
+        return getCachedBytes() != null || byteLoader != null;
     }
 
     /**
      * 读取字节但不写入节点缓存适合索引构建等批处理场景,避免预热阶段占用过多内存
      */
     public byte[] readBytes() throws IOException {
-        if (cachedBytes != null) {
-            return cachedBytes;
+        byte[] cached = getCachedBytes();
+        if (cached != null) {
+            return cached;
         }
         ByteLoader loader = this.byteLoader;
         return loader == null ? null : loader.load();
@@ -126,16 +129,18 @@ public class FileTreeNode {
      * 读取并缓存字节适合打开单个文件、导出当前节点等用户显式操作
      */
     public synchronized byte[] resolveBytes() throws IOException {
-        if (cachedBytes != null) {
-            return cachedBytes;
+        byte[] cached = getCachedBytes();
+        if (cached != null) {
+            return cached;
         }
         ByteLoader loader = this.byteLoader;
         if (loader != null) {
             try {
-                cachedBytes = loader.load();
-                if (cachedBytes != null) {
-                    this.size = cachedBytes.length;
+                byte[] bytes = loader.load();
+                if (bytes != null) {
+                    setCachedBytes(bytes);
                 }
+                return bytes;
             } catch (IOException e) {
                 log.debug("加载字节失败 [{}]: {}", fullPath, e.getMessage());
                 throw e;
@@ -143,7 +148,7 @@ public class FileTreeNode {
                 log.warn("加载字节时发生未知异常 [{}]", fullPath, e);
             }
         }
-        return cachedBytes;
+        return null;
     }
 
     /** @return 是否为 class 文件 */

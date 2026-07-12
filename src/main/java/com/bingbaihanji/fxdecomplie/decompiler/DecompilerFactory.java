@@ -44,7 +44,8 @@ public final class DecompilerFactory {
             } catch (Exception e) {
                 try {
                     engine.cleanup();
-                } catch (Exception ignored) {
+                } catch (Exception cleanupEx) {
+                    log.warn("Cleanup failed for engine", cleanupEx);
                 }
                 throw e;
             }

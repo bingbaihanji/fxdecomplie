@@ -29,6 +29,7 @@ public final class DiskCodeCache {
 
     private static final long MAX_CACHE_SIZE_BYTES = 500L * 1024 * 1024; // 500 MB
     private static final int CACHE_SCHEMA_VERSION = 2;
+    private static volatile boolean cleanupInProgress;
 
     private DiskCodeCache() {
         throw new AssertionError("utility class");
@@ -73,6 +74,8 @@ public final class DiskCodeCache {
         try {
             Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
             Files.createDirectories(file.getParent());
+            // 惰性检查：写入前检查缓存大小，超限时触发后台清理
+            checkAndCleanLazy();
             AtomicFile af = new AtomicFile(file.toFile());
             af.write(os -> {
                 try {
@@ -83,6 +86,33 @@ public final class DiskCodeCache {
             });
         } catch (IOException | RuntimeException e) {
             log.debug("保存磁盘代码缓存失败: {}/{}", workspaceHash, internalName, e);
+        }
+    }
+
+    private static void checkAndCleanLazy() {
+        if (cleanupInProgress) {
+            return;
+        }
+        try {
+            if (!Files.exists(CACHE_ROOT)) {
+                return;
+            }
+            long totalSize;
+            try (var stream = Files.walk(CACHE_ROOT)) {
+                totalSize = stream.filter(Files::isRegularFile)
+                        .mapToLong(p -> {
+                            try { return Files.size(p); }
+                            catch (IOException e) { return 0L; }
+                        }).sum();
+            }
+            if (totalSize > MAX_CACHE_SIZE_BYTES) {
+                cleanupInProgress = true;
+                cleanIfNeeded();
+            }
+        } catch (IOException e) {
+            log.warn("磁盘缓存惰性检查失败", e);
+        } finally {
+            cleanupInProgress = false;
         }
     }
 
@@ -189,7 +219,8 @@ public final class DiskCodeCache {
             }
             log.info("磁盘缓存清理完成: 删除 {} 个文件, 剩余 {} MB",
                     deleted, totalSize / (1024 * 1024));
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            log.warn("磁盘缓存清理失败", e);
         }
     }
 

@@ -82,13 +82,18 @@ public final class DecompilerRunner {
         return ex;
     }
 
+    /** 反编译成功时重置超时计数器（与 maybeRebuildExecutor 互斥） */
+    static synchronized void resetTimeoutCounter() {
+        consecutiveTimeouts.set(0);
+    }
+
     /**
      * 条件性重建线程池仅在连续超时计数达到阈值时执行,检查和重置均在内
      * 部锁保护下原子完成,避免多线程竞态导致双重重建或阈值检查被绕过
      *
      * @return true 表示线程池已被重建
      */
-    private static synchronized boolean maybeRebuildExecutor() {
+    static synchronized boolean maybeRebuildExecutor() {
         int timeouts = consecutiveTimeouts.incrementAndGet();
         if (timeouts < CONSECUTIVE_TIMEOUT_THRESHOLD) {
             return false;
@@ -179,7 +184,7 @@ public final class DecompilerRunner {
                 throw new CancellationException("反编译请求已被替换");
             }
             // 反编译成功,重置连续超时计数器
-            consecutiveTimeouts.set(0);
+            resetTimeoutCounter();
             long elapsed = System.currentTimeMillis() - decompileStart;
             boolean isFailure = isFailureOutput(source);
             log.debug("反编译完成: {} engine={} ({}ms) failure={}", classFilePath, engine, elapsed, isFailure);

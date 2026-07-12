@@ -52,7 +52,6 @@ public final class AppContext {
             }
             log.info("初始化应用上下文");
             config = AppConfig.getInstance();
-            DiskCodeCache.cleanIfNeeded();
             CommentManager.setRootDir(AppPaths.commentsDir());
             RenameService.setRootDir(AppPaths.renamesDir());
             started = true;
