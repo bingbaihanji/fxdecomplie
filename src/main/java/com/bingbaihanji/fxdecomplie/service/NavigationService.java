@@ -1,7 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.*;
-import javafx.scene.control.TabPane;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -37,42 +36,42 @@ public final class NavigationService {
      *
      * @param path          目标路径节点
      * @param workspace     当前工作区
-     * @param codeTabPane   代码标签页容器
+     * @param codeTabTarget   代码标签页容器
      * @param classOpener   打开类文件的回调
      * @param resourceOpener 打开资源文件的回调
      */
-    public synchronized void openPath(PathNode<?> path, Workspace workspace, TabPane codeTabPane,
-                                      BiConsumer<FileTreeNode, TabPane> classOpener,
-                                      BiConsumer<FileTreeNode, TabPane> resourceOpener) {
-        openPath(path, workspace, codeTabPane, classOpener, resourceOpener, true);
+    public synchronized <T> void openPath(PathNode<?> path, Workspace workspace, T codeTabTarget,
+                                          BiConsumer<FileTreeNode, T> classOpener,
+                                          BiConsumer<FileTreeNode, T> resourceOpener) {
+        openPath(path, workspace, codeTabTarget, classOpener, resourceOpener, true);
     }
 
     /**
      * 在历史中向后导航
      */
-    public synchronized void goBack(Workspace workspace, TabPane codeTabPane,
-                                    BiConsumer<FileTreeNode, TabPane> classOpener,
-                                    BiConsumer<FileTreeNode, TabPane> resourceOpener) {
+    public synchronized <T> void goBack(Workspace workspace, T codeTabTarget,
+                                        BiConsumer<FileTreeNode, T> classOpener,
+                                        BiConsumer<FileTreeNode, T> resourceOpener) {
         if (backStack.isEmpty() || currentPath == null) {
             return;
         }
         forwardStack.push(currentPath);
         PathNode<?> target = backStack.pop();
-        openPath(target, workspace, codeTabPane, classOpener, resourceOpener, false);
+        openPath(target, workspace, codeTabTarget, classOpener, resourceOpener, false);
     }
 
     /**
      * 在历史中向前导航
      */
-    public synchronized void goForward(Workspace workspace, TabPane codeTabPane,
-                                       BiConsumer<FileTreeNode, TabPane> classOpener,
-                                       BiConsumer<FileTreeNode, TabPane> resourceOpener) {
+    public synchronized <T> void goForward(Workspace workspace, T codeTabTarget,
+                                           BiConsumer<FileTreeNode, T> classOpener,
+                                           BiConsumer<FileTreeNode, T> resourceOpener) {
         if (forwardStack.isEmpty() || currentPath == null) {
             return;
         }
         backStack.push(currentPath);
         PathNode<?> target = forwardStack.pop();
-        openPath(target, workspace, codeTabPane, classOpener, resourceOpener, false);
+        openPath(target, workspace, codeTabTarget, classOpener, resourceOpener, false);
     }
 
     /** @return 如果后退栈中存在上一个路径则返回 true */
@@ -91,15 +90,15 @@ public final class NavigationService {
      *
      * @param path           目标路径节点
      * @param workspace      当前工作区
-     * @param codeTabPane    代码标签页容器
+     * @param codeTabTarget    代码标签页容器
      * @param classOpener    打开类文件的回调
      * @param resourceOpener 打开资源文件的回调
      * @param recordHistory  是否将当前路径记录到导航历史中(手动导航时为 true,历史前进/后退时为 false)
      */
-    private void openPath(PathNode<?> path, Workspace workspace, TabPane codeTabPane,
-                          BiConsumer<FileTreeNode, TabPane> classOpener,
-                          BiConsumer<FileTreeNode, TabPane> resourceOpener,
-                          boolean recordHistory) {
+    private <T> void openPath(PathNode<?> path, Workspace workspace, T codeTabTarget,
+                              BiConsumer<FileTreeNode, T> classOpener,
+                              BiConsumer<FileTreeNode, T> resourceOpener,
+                              boolean recordHistory) {
         FileTreeNode node;
         synchronized (this) {
             // ---- 路径解析: 从路径链中提取 FileTreeNode ----
@@ -123,9 +122,9 @@ public final class NavigationService {
         }
         // ---- 分发: 在锁外调用回调,避免回调重入 ----
         if (node.isClassFile()) {
-            classOpener.accept(node, codeTabPane);
+            classOpener.accept(node, codeTabTarget);
         } else if (node.isTextFile() || node.isBinaryFile()) {
-            resourceOpener.accept(node, codeTabPane);
+            resourceOpener.accept(node, codeTabTarget);
         }
     }
 }
