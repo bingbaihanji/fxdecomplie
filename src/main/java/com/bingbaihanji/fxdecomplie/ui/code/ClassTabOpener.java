@@ -662,9 +662,10 @@ public final class ClassTabOpener {
                     return;
                 }
                 Platform.runLater(() -> {
-                    com.bingbaihanji.fxdecomplie.ui.view.HexTabView hexView =
-                            new com.bingbaihanji.fxdecomplie.ui.view.HexTabView(editorTheme);
-                    hexView.load(bytes);
+                    com.bingbaihanji.fxdecomplie.ui.hex.HexView hexView =
+                            new com.bingbaihanji.fxdecomplie.ui.hex.HexView();
+                    hexView.setProvider(
+                            new com.bingbaihanji.fxdecomplie.ui.hex.ByteArrayProvider(bytes));
                     Tab tab = new Tab(node.getName() + " [Hex]", hexView);
                     tab.setUserData(node.getFullPath());
                     codeTabPane.getTabs().add(tab);
