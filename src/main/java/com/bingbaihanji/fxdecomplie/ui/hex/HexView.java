@@ -22,7 +22,9 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.geometry.Orientation;
 
 /**
@@ -45,7 +47,14 @@ public class HexView extends Region {
     private HexViewMetrics metrics;
     private Canvas canvas;
     private ScrollBar scrollBar;
-    private Pane canvasPane;
+    /** Resizable pane that fills available layout space. Pane defaults to non-resizable. */
+    private Pane canvasPane = new Pane() {
+        @Override public boolean isResizable() { return true; }
+        @Override public void resize(double w, double h) {
+            super.resize(w, h);
+            markDirty();
+        }
+    };
     private HexGridRenderer gridRenderer;
     private MiniMapRenderer miniMapRenderer;
 
@@ -200,8 +209,7 @@ public class HexView extends Region {
         var topBar = new VBox(menuBar, toolBar);
         topBar.setStyle("-fx-background-color: #1a1a1e;");
 
-        // Use a plain Pane — it does NOT auto-layout children, so we have full control
-        this.canvasPane = new Pane();
+        // Canvas pane: resizable Pane fills available space
         this.canvasPane.setStyle("-fx-background-color: #19191c;");
 
         this.canvas = new Canvas();
@@ -215,7 +223,7 @@ public class HexView extends Region {
         this.scrollBar.setVisibleAmount(10);
         this.scrollBar.setBlockIncrement(1);
 
-        // Search / goto overlay
+        // Search / goto overlay — positioned absolutely within canvasPane
         this.searchField = new TextField();
         this.searchField.setPromptText("Search (hex or text)...");
         this.searchField.setVisible(false);
@@ -238,14 +246,14 @@ public class HexView extends Region {
                 canvasPane.widthProperty().subtract(overlay.widthProperty()).subtract(8));
         overlay.setLayoutY(4);
 
-        // Canvas row: Pane + ScrollBar
-        var canvasRow = new javafx.scene.layout.HBox(canvasPane, scrollBar);
-        canvasRow.setFillHeight(true);
-        javafx.scene.layout.HBox.setHgrow(canvasPane, Priority.ALWAYS);
-
         canvasPane.getChildren().addAll(canvas, overlay);
 
-        // Root layout: topBar + canvasRow
+        // Canvas row: canvasPane fills available width, scrollBar on the right
+        var canvasRow = new HBox(canvasPane, scrollBar);
+        canvasRow.setFillHeight(true);
+        HBox.setHgrow(canvasPane, Priority.ALWAYS);
+
+        // Root layout: topBar (fixed height) + canvasRow (fills remaining)
         var root = new VBox(topBar, canvasRow);
         root.setFillWidth(true);
         VBox.setVgrow(canvasRow, Priority.ALWAYS);
@@ -420,7 +428,7 @@ public class HexView extends Region {
         double mmWidth = config.isShowMiniMap()
                 ? config.getMiniMapWidth() * 8 + 10 : 0;
         double mw = metrics != null ? metrics.getTotalWidth() : 600;
-        return mw + 20 + mmWidth;
+        return mw + 20 + mmWidth + scrollBar.prefWidth(-1);
     }
 
     @Override
@@ -430,8 +438,14 @@ public class HexView extends Region {
 
     @Override
     protected void layoutChildren() {
-        // Let the root VBox handle layout of children, then force redraw
-        super.layoutChildren();
+        double w = getWidth();
+        double h = getHeight();
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        // Resize the root VBox to fill the entire Region
+        var root = (VBox) getChildren().get(0);
+        root.resizeRelocate(0, 0, w, h);
         markDirty();
     }
 
