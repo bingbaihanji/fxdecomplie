@@ -467,6 +467,10 @@ public class HexView extends Region {
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
+        // Fill entire canvas with background to prevent tooltip ghosting
+        gc.setFill(javafx.scene.paint.Color.rgb(25, 25, 28));
+        gc.fillRect(0, 0, canvasW, canvasH);
+
         // Lazy-init / update renderers (only when metrics change)
         if (gridRenderer == null) {
             gridRenderer = new HexGridRenderer(gc, metrics);
