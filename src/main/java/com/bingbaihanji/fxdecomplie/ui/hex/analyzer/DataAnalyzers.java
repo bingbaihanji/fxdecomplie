@@ -6,7 +6,6 @@ import javafx.scene.paint.Color;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,16 +14,16 @@ import java.util.UUID;
  */
 public final class DataAnalyzers {
 
-    private DataAnalyzers() {}
-
     // ===== Shared colors =====
-    private static final Color C_HEX   = Color.rgb(0x88, 0xC0, 0xFF);
-    private static final Color C_DEC   = Color.rgb(0xC0, 0xE0, 0xC0);
+    private static final Color C_HEX = Color.rgb(0x88, 0xC0, 0xFF);
+    private static final Color C_DEC = Color.rgb(0xC0, 0xE0, 0xC0);
     private static final Color C_FLOAT = Color.rgb(0xFF, 0xC0, 0x80);
-    private static final Color C_STR   = Color.rgb(0xFF, 0xD0, 0x70);
-    private static final Color C_TIME  = Color.rgb(0x80, 0xC0, 0xFF);
-    private static final Color C_BIN   = Color.rgb(0xA0, 0xA0, 0xA0);
-    private static final Color C_GUID  = Color.rgb(0xC0, 0x80, 0xFF);
+    private static final Color C_STR = Color.rgb(0xFF, 0xD0, 0x70);
+    private static final Color C_TIME = Color.rgb(0x80, 0xC0, 0xFF);
+    private static final Color C_BIN = Color.rgb(0xA0, 0xA0, 0xA0);
+    private static final Color C_GUID = Color.rgb(0xC0, 0x80, 0xFF);
+    private DataAnalyzers() {
+    }
 
     public static void registerDefaults(HexViewController ctrl) {
         // Hex (raw byte)
@@ -167,24 +166,34 @@ public final class DataAnalyzers {
         List<DataAnalyzer.Result> apply(long addr, byte[] data, int offset, int length);
     }
 
-    private record SimpleAnalyzer(String name, Color colorHint, SimpleFn fn)
-            implements DataAnalyzer {
-        @Override public String getName() { return name; }
-        @Override public List<Result> analyze(long addr, byte[] data, int off, int len) {
-            return fn.apply(addr, data, off, len);
-        }
-    }
-
     @FunctionalInterface
     private interface MultiFn {
         List<DataAnalyzer.Result> apply(long addr, ByteBuffer buf);
     }
 
+    private record SimpleAnalyzer(String name, Color colorHint, SimpleFn fn)
+            implements DataAnalyzer {
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public List<Result> analyze(long addr, byte[] data, int off, int len) {
+            return fn.apply(addr, data, off, len);
+        }
+    }
+
     /** Analyzer that reads N bytes starting at offset, passes ByteBuffer to lambda */
     private record MultiAnalyzer(String name, int byteCount, MultiFn fn)
             implements DataAnalyzer {
-        @Override public String getName() { return name; }
-        @Override public List<Result> analyze(long addr, byte[] data, int off, int len) {
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public List<Result> analyze(long addr, byte[] data, int off, int len) {
             if (off + byteCount > len) {
                 return List.of(new Result(getName() + " (need " + byteCount + " bytes)",
                         "(insufficient data for multi-byte read)", Color.GRAY));

@@ -11,21 +11,14 @@ import com.bingbaihanji.fxdecomplie.ui.hex.tooltip.HexTooltipRenderer;
 import com.bingbaihanji.fxdecomplie.ui.hex.util.HexViewMetrics;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
-import javafx.geometry.Orientation;
+import javafx.scene.layout.*;
 
 /**
  * A reusable JavaFX hex editor view component.
@@ -47,36 +40,35 @@ public class HexView extends Region {
     private HexViewMetrics metrics;
     private Canvas canvas;
     private ScrollBar scrollBar;
-    /** Resizable pane that fills available layout space. Pane defaults to non-resizable. */
-    private Pane canvasPane = new Pane() {
-        @Override public boolean isResizable() { return true; }
-        @Override public void resize(double w, double h) {
-            super.resize(w, h);
-            markDirty();
-        }
-    };
     private HexGridRenderer gridRenderer;
     private MiniMapRenderer miniMapRenderer;
-
     // Scroll state
     private long scrollRow = 0;
     private long totalRows = 0;
-
     // Search / Goto UI
     private TextField searchField;
     private TextField gotoField;
-
     // Selection drag state
     private boolean dragging = false;
-
     // Hover tracking (for tooltip)
     private long hoveredAddress = -1;
     private double hoverMouseX, hoverMouseY;
     private java.util.function.BiConsumer<Long, Integer> onHoverCallback;
-
     // Pending repaint
     private volatile boolean dirty = true;
+    /** Resizable pane that fills available layout space. Pane defaults to non-resizable. */
+    private Pane canvasPane = new Pane() {
+        @Override
+        public boolean isResizable() {
+            return true;
+        }
 
+        @Override
+        public void resize(double w, double h) {
+            super.resize(w, h);
+            markDirty();
+        }
+    };
     // Animation timer for continuous rendering
     private AnimationTimer renderTimer;
 
@@ -110,6 +102,14 @@ public class HexView extends Region {
     }
 
     // ===================== Public API =====================
+
+    private static boolean looksLikeHexQuery(String query) {
+        String stripped = query.replaceAll("[^0-9a-fA-F]", "");
+        if (stripped.length() < 2 || stripped.length() % 2 != 0) {
+            return false;
+        }
+        return query.matches("(?i)^(0x)?[0-9a-f]{2}([\\s:_-]*(0x)?[0-9a-f]{2})*$");
+    }
 
     public HexDataProvider getProvider() {
         return provider;
@@ -195,12 +195,12 @@ public class HexView extends Region {
         markDirty();
     }
 
+    // ===================== Layout Setup =====================
+
     /** Force redraw on next pulse */
     public void markDirty() {
         dirty = true;
     }
-
-    // ===================== Layout Setup =====================
 
     private void setupLayout() {
         // Root: VBox with toolbar on top, canvas area below
@@ -290,6 +290,8 @@ public class HexView extends Region {
         parent.getItems().add(item);
     }
 
+    // ===================== Render Loop =====================
+
     private ToolBar buildToolBar() {
         var toolbar = new ToolBar();
         toolbar.setStyle("-fx-background-color: #1a1a1e; -fx-padding: 2 4;");
@@ -335,7 +337,9 @@ public class HexView extends Region {
         colsSpinner.setPrefWidth(65);
         colsSpinner.setTooltip(new Tooltip("Bytes per row (1-64)"));
         colsSpinner.getValueFactory().valueProperty().addListener((obs, o, n) -> {
-            if (n != null) config.setBytesPerRow(n);
+            if (n != null) {
+                config.setBytesPerRow(n);
+            }
         });
         // Sync spinner when config changes externally
         config.bytesPerRowProperty().addListener((obs, o, n) -> {
@@ -370,7 +374,7 @@ public class HexView extends Region {
         return toolbar;
     }
 
-    // ===================== Render Loop =====================
+    // ===================== Metrics =====================
 
     private void setupRenderLoop() {
         renderTimer = new AnimationTimer() {
@@ -384,8 +388,6 @@ public class HexView extends Region {
         };
         renderTimer.start();
     }
-
-    // ===================== Metrics =====================
 
     private void rebuildMetrics() {
         this.metrics = new HexViewMetrics(config.getFont(), config.getBytesPerRow(),
@@ -408,6 +410,8 @@ public class HexView extends Region {
         return (size + bpr - 1) / bpr;
     }
 
+    // ===================== Sizing =====================
+
     private void updateScrollbar() {
         scrollBar.setMin(0);
         double headerH = metrics != null ? metrics.getHeaderHeight() : 0;
@@ -420,8 +424,6 @@ public class HexView extends Region {
         scrollBar.setVisibleAmount(Math.max(1, visRows));
         scrollBar.setUnitIncrement(1);
     }
-
-    // ===================== Sizing =====================
 
     @Override
     protected double computePrefWidth(double height) {
@@ -436,6 +438,8 @@ public class HexView extends Region {
         return 600;
     }
 
+    // ===================== Rendering =====================
+
     @Override
     protected void layoutChildren() {
         double w = getWidth();
@@ -449,7 +453,7 @@ public class HexView extends Region {
         markDirty();
     }
 
-    // ===================== Rendering =====================
+    // ===================== Event Handling =====================
 
     private void drawCanvas() {
         if (metrics == null) {
@@ -515,8 +519,6 @@ public class HexView extends Region {
 
         updateScrollbar();
     }
-
-    // ===================== Event Handling =====================
 
     private void setupEventHandlers() {
         scrollBar.valueProperty().addListener((obs, old, val) -> {
@@ -599,12 +601,16 @@ public class HexView extends Region {
 
         // Mouse move — track hovered address for tooltip
         canvas.setOnMouseMoved(e -> {
-            if (metrics == null || provider.getSize() == 0) return;
+            if (metrics == null || provider.getSize() == 0) {
+                return;
+            }
             double headerH = metrics.getHeaderHeight();
             if (e.getY() < headerH) {
                 if (hoveredAddress >= 0) {
                     hoveredAddress = -1;
-                    if (onHoverCallback != null) onHoverCallback.accept(-1L, 0);
+                    if (onHoverCallback != null) {
+                        onHoverCallback.accept(-1L, 0);
+                    }
                     markDirty();
                 }
                 return;
@@ -622,17 +628,23 @@ public class HexView extends Region {
             } else {
                 if (hoveredAddress >= 0) {
                     hoveredAddress = -1;
-                    if (onHoverCallback != null) onHoverCallback.accept(-1L, 0);
+                    if (onHoverCallback != null) {
+                        onHoverCallback.accept(-1L, 0);
+                    }
                     markDirty();
                 }
                 return;
             }
-            if (newHover >= provider.getSize()) return;
+            if (newHover >= provider.getSize()) {
+                return;
+            }
             if (newHover != hoveredAddress) {
                 hoveredAddress = newHover;
                 hoverMouseX = e.getX();
                 hoverMouseY = e.getY();
-                if (onHoverCallback != null) onHoverCallback.accept(hoveredAddress, 1);
+                if (onHoverCallback != null) {
+                    onHoverCallback.accept(hoveredAddress, 1);
+                }
                 markDirty();
             }
         });
@@ -712,13 +724,5 @@ public class HexView extends Region {
             } catch (NumberFormatException ignored) {
             }
         });
-    }
-
-    private static boolean looksLikeHexQuery(String query) {
-        String stripped = query.replaceAll("[^0-9a-fA-F]", "");
-        if (stripped.length() < 2 || stripped.length() % 2 != 0) {
-            return false;
-        }
-        return query.matches("(?i)^(0x)?[0-9a-f]{2}([\\s:_-]*(0x)?[0-9a-f]{2})*$");
     }
 }

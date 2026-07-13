@@ -5,33 +5,42 @@ import com.bingbaihanji.fxdecomplie.ui.hex.HexViewConfig;
 import com.bingbaihanji.fxdecomplie.ui.hex.model.HighlightModel;
 import com.bingbaihanji.fxdecomplie.ui.hex.model.SelectionModel;
 import com.bingbaihanji.fxdecomplie.ui.hex.util.HexViewMetrics;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
-import javafx.geometry.VPos;
 
 /**
  * Renders the hex editor grid onto a JavaFX Canvas.
  */
 public class HexGridRenderer {
 
+    private static final Color ADDRESS_COLOR = Color.rgb(120, 120, 120);
+    private static final Color HEADER_BG = Color.rgb(35, 35, 40);
+    private static final Color HEADER_TEXT_COLOR = Color.rgb(180, 180, 180);
+    private static final Color HEADER_RULE_COLOR = Color.rgb(55, 55, 62);
+    private static final Color ASCII_SEPARATOR_COLOR = Color.rgb(80, 80, 80);
+    private static final Color SELECTION_FRAME_COLOR = Color.rgb(200, 200, 200);
+    private static final Color DEFAULT_TEXT_COLOR = Color.rgb(220, 220, 220);
+    private static final Color GRID_BG = Color.rgb(25, 25, 28);
     private final GraphicsContext gc;
     private HexViewMetrics metrics;
     private byte[] rowBuf; // reused buffer
 
-    private static final Color ADDRESS_COLOR        = Color.rgb(120, 120, 120);
-    private static final Color HEADER_BG            = Color.rgb(35, 35, 40);
-    private static final Color HEADER_TEXT_COLOR    = Color.rgb(180, 180, 180);
-    private static final Color HEADER_RULE_COLOR    = Color.rgb(55, 55, 62);
-    private static final Color ASCII_SEPARATOR_COLOR = Color.rgb(80, 80, 80);
-    private static final Color SELECTION_FRAME_COLOR = Color.rgb(200, 200, 200);
-    private static final Color DEFAULT_TEXT_COLOR   = Color.rgb(220, 220, 220);
-    private static final Color GRID_BG              = Color.rgb(25, 25, 28);
-
     public HexGridRenderer(GraphicsContext gc, HexViewMetrics metrics) {
         this.gc = gc;
         setMetrics(metrics);
+    }
+
+    private static boolean sameBackground(Color a, Color b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        return Double.compare(a.getRed(), b.getRed()) == 0
+                && Double.compare(a.getGreen(), b.getGreen()) == 0
+                && Double.compare(a.getBlue(), b.getBlue()) == 0
+                && Double.compare(a.getOpacity(), b.getOpacity()) == 0;
     }
 
     /** Call when metrics change (font, bytesPerRow, etc.) */
@@ -64,7 +73,9 @@ public class HexGridRenderer {
 
         for (int vy = 0; vy < visibleRows; vy++) {
             long rowIdx = scrollRow + vy;
-            if (rowIdx >= totalRows) break;
+            if (rowIdx >= totalRows) {
+                break;
+            }
 
             long baseAddr = rowIdx * bytesPerRow;
             double y = metrics.getRowY(vy);
@@ -77,7 +88,9 @@ public class HexGridRenderer {
 
             // --- Hex background regions ---
             for (int col = 0; col < bytesPerRow; col++) {
-                if (col >= bytesRead) continue;
+                if (col >= bytesRead) {
+                    continue;
+                }
 
                 long addr = baseAddr + col;
                 var bgOpt = highlights.getBackgroundColor(addr);
@@ -96,7 +109,9 @@ public class HexGridRenderer {
 
             // --- Hex columns ---
             for (int col = 0; col < bytesPerRow; col++) {
-                if (col >= bytesRead) continue;
+                if (col >= bytesRead) {
+                    continue;
+                }
                 double cellX = metrics.getHexCellX(col);
                 long addr = baseAddr + col;
                 byte data = rowBuf[col];
@@ -142,16 +157,6 @@ public class HexGridRenderer {
                 }
             }
         }
-    }
-
-    private static boolean sameBackground(Color a, Color b) {
-        if (a == null || b == null) {
-            return false;
-        }
-        return Double.compare(a.getRed(), b.getRed()) == 0
-                && Double.compare(a.getGreen(), b.getGreen()) == 0
-                && Double.compare(a.getBlue(), b.getBlue()) == 0
-                && Double.compare(a.getOpacity(), b.getOpacity()) == 0;
     }
 
     public void drawHeader(double y, HexViewConfig config) {

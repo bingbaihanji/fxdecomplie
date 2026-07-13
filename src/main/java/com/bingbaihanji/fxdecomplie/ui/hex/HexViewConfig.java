@@ -33,35 +33,101 @@ public class HexViewConfig {
         }
     }
 
-    public int getBytesPerRow() { return bytesPerRow.get(); }
-    public void setBytesPerRow(int v) { bytesPerRow.set(Math.max(1, Math.min(v, 128))); }
-    public IntegerProperty bytesPerRowProperty() { return bytesPerRow; }
+    public int getBytesPerRow() {
+        return bytesPerRow.get();
+    }
 
-    public boolean isUpperCaseHex() { return upperCaseHex.get(); }
-    public void setUpperCaseHex(boolean v) { upperCaseHex.set(v); }
-    public BooleanProperty upperCaseHexProperty() { return upperCaseHex; }
+    public void setBytesPerRow(int v) {
+        bytesPerRow.set(Math.max(1, Math.min(v, 128)));
+    }
 
-    public boolean isGrayOutZero() { return grayOutZero.get(); }
-    public void setGrayOutZero(boolean v) { grayOutZero.set(v); }
-    public BooleanProperty grayOutZeroProperty() { return grayOutZero; }
+    public IntegerProperty bytesPerRowProperty() {
+        return bytesPerRow;
+    }
 
-    public boolean isShowAscii() { return showAscii.get(); }
-    public void setShowAscii(boolean v) { showAscii.set(v); }
-    public BooleanProperty showAsciiProperty() { return showAscii; }
+    public boolean isUpperCaseHex() {
+        return upperCaseHex.get();
+    }
 
-    public boolean isShowMiniMap() { return showMiniMap.get(); }
-    public void setShowMiniMap(boolean v) { showMiniMap.set(v); }
-    public BooleanProperty showMiniMapProperty() { return showMiniMap; }
+    public void setUpperCaseHex(boolean v) {
+        upperCaseHex.set(v);
+    }
 
-    public int getMiniMapWidth() { return miniMapWidth.get(); }
-    public void setMiniMapWidth(int v) { miniMapWidth.set(Math.max(1, Math.min(v, 25))); }
-    public IntegerProperty miniMapWidthProperty() { return miniMapWidth; }
+    public BooleanProperty upperCaseHexProperty() {
+        return upperCaseHex;
+    }
 
-    public Font getFont() { return font.get(); }
-    public void setFont(Font v) { if (v != null) { font.set(v); } }
-    public ObjectProperty<Font> fontProperty() { return font; }
+    public boolean isGrayOutZero() {
+        return grayOutZero.get();
+    }
 
-    public int getAddressWidth() { return addressWidth.get(); }
-    public void setAddressWidth(int v) { addressWidth.set(v); }
-    public IntegerProperty addressWidthProperty() { return addressWidth; }
+    public void setGrayOutZero(boolean v) {
+        grayOutZero.set(v);
+    }
+
+    public BooleanProperty grayOutZeroProperty() {
+        return grayOutZero;
+    }
+
+    public boolean isShowAscii() {
+        return showAscii.get();
+    }
+
+    public void setShowAscii(boolean v) {
+        showAscii.set(v);
+    }
+
+    public BooleanProperty showAsciiProperty() {
+        return showAscii;
+    }
+
+    public boolean isShowMiniMap() {
+        return showMiniMap.get();
+    }
+
+    public void setShowMiniMap(boolean v) {
+        showMiniMap.set(v);
+    }
+
+    public BooleanProperty showMiniMapProperty() {
+        return showMiniMap;
+    }
+
+    public int getMiniMapWidth() {
+        return miniMapWidth.get();
+    }
+
+    public void setMiniMapWidth(int v) {
+        miniMapWidth.set(Math.max(1, Math.min(v, 25)));
+    }
+
+    public IntegerProperty miniMapWidthProperty() {
+        return miniMapWidth;
+    }
+
+    public Font getFont() {
+        return font.get();
+    }
+
+    public void setFont(Font v) {
+        if (v != null) {
+            font.set(v);
+        }
+    }
+
+    public ObjectProperty<Font> fontProperty() {
+        return font;
+    }
+
+    public int getAddressWidth() {
+        return addressWidth.get();
+    }
+
+    public void setAddressWidth(int v) {
+        addressWidth.set(v);
+    }
+
+    public IntegerProperty addressWidthProperty() {
+        return addressWidth;
+    }
 }

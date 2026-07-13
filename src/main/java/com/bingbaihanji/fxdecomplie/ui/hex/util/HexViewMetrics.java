@@ -42,17 +42,49 @@ public class HexViewMetrics {
         this.totalWidth = addressColWidth + bytesPerRow * hexColWidth + groupGaps * groupGapWidth + ASCII_GAP + asciiColWidth;
     }
 
-    public double getCharWidth() { return charWidth; }
-    public double getTextHeight() { return textHeight; }
-    public double getRowHeight() { return rowHeight; }
-    public int getBytesPerRow() { return bytesPerRow; }
-    public double getAddressColWidth() { return addressColWidth; }
-    public double getHexColWidth() { return hexColWidth; }
-    public double getGroupGapWidth() { return groupGapWidth; }
-    public double getHeaderHeight() { return headerHeight; }
-    public double getAsciiColWidth() { return asciiColWidth; }
-    public double getTotalWidth() { return totalWidth; }
-    public Font getFont() { return font; }
+    public double getCharWidth() {
+        return charWidth;
+    }
+
+    public double getTextHeight() {
+        return textHeight;
+    }
+
+    public double getRowHeight() {
+        return rowHeight;
+    }
+
+    public int getBytesPerRow() {
+        return bytesPerRow;
+    }
+
+    public double getAddressColWidth() {
+        return addressColWidth;
+    }
+
+    public double getHexColWidth() {
+        return hexColWidth;
+    }
+
+    public double getGroupGapWidth() {
+        return groupGapWidth;
+    }
+
+    public double getHeaderHeight() {
+        return headerHeight;
+    }
+
+    public double getAsciiColWidth() {
+        return asciiColWidth;
+    }
+
+    public double getTotalWidth() {
+        return totalWidth;
+    }
+
+    public Font getFont() {
+        return font;
+    }
 
     public double getHexCellX(int col) {
         double x = addressColWidth;
@@ -66,19 +98,27 @@ public class HexViewMetrics {
         return addressColWidth + bytesPerRow * hexColWidth + groupGaps * groupGapWidth + ASCII_GAP + col * charWidth;
     }
 
-    public double getRowY(int visibleRow) { return visibleRow * rowHeight; }
+    public double getRowY(int visibleRow) {
+        return visibleRow * rowHeight;
+    }
 
     public int pixelToHexColumn(double x) {
         double relX = x - addressColWidth;
-        if (relX < 0) return -1;
+        if (relX < 0) {
+            return -1;
+        }
         int col = 0;
         double curX = 0;
         while (col < bytesPerRow) {
             if (col > 0 && col % 8 == 0) {
-                if (relX >= curX && relX < curX + groupGapWidth) return -1;
+                if (relX >= curX && relX < curX + groupGapWidth) {
+                    return -1;
+                }
                 curX += groupGapWidth;
             }
-            if (relX >= curX && relX < curX + hexColWidth) return col;
+            if (relX >= curX && relX < curX + hexColWidth) {
+                return col;
+            }
             curX += hexColWidth;
             col++;
         }
@@ -88,10 +128,17 @@ public class HexViewMetrics {
     public int pixelToAsciiColumn(double x) {
         double asciiStart = getAsciiCellX(0);
         double asciiEnd = asciiStart + asciiColWidth;
-        if (x < asciiStart || x >= asciiEnd) return -1;
+        if (x < asciiStart || x >= asciiEnd) {
+            return -1;
+        }
         return (int) ((x - asciiStart) / charWidth);
     }
 
-    public int pixelToRow(double y) { return (int) (y / rowHeight); }
-    public int visibleRows(double viewportHeight) { return Math.max(1, (int) Math.ceil(viewportHeight / rowHeight)); }
+    public int pixelToRow(double y) {
+        return (int) (y / rowHeight);
+    }
+
+    public int visibleRows(double viewportHeight) {
+        return Math.max(1, (int) Math.ceil(viewportHeight / rowHeight));
+    }
 }

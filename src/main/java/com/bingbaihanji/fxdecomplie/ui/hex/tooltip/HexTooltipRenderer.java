@@ -20,19 +20,22 @@ public final class HexTooltipRenderer {
     private static final double PAD = 6;
     private static final double LINE_H = 16;
     private static final Color BG = Color.rgb(0x1E, 0x1E, 0x22, 0xF2 / 255.0);
-    private static final Color BORDER = Color.rgb(0x50, 0x50, 0x55, 0.9);
+    private static final Color BORDER = Color.rgb(0x00, 0x88, 0x88, 0.9);
     private static final Color LABEL_COLOR = Color.rgb(0xA0, 0xA0, 0xA0);
     private static final javafx.scene.text.Font MONO = HexFonts.firaCodeLight(12);
     private static final Text MEASURE = new Text();
 
-    private HexTooltipRenderer() {}
+    private HexTooltipRenderer() {
+    }
 
     public static double draw(GraphicsContext gc, double mouseX, double mouseY,
-                               long address, HexDataProvider provider, HexViewMetrics metrics,
-                               double canvasWidth, double canvasHeight) {
+                              long address, HexDataProvider provider, HexViewMetrics metrics,
+                              double canvasWidth, double canvasHeight) {
 
         long size = provider.getSize();
-        if (address >= size) return 0;
+        if (address >= size) {
+            return 0;
+        }
 
         int bufLen = (int) Math.min(16, size - address);
         byte[] buf = new byte[bufLen];
@@ -83,7 +86,9 @@ public final class HexTooltipRenderer {
         for (TooltipLine line : lines) {
             MEASURE.setText(line.text);
             double w = MEASURE.getLayoutBounds().getWidth();
-            if (w > maxW) maxW = w;
+            if (w > maxW) {
+                maxW = w;
+            }
         }
         double boxW = maxW + PAD * 2;
         double boxH = lines.size() * LINE_H + PAD * 2;
@@ -91,10 +96,18 @@ public final class HexTooltipRenderer {
         // Position
         double bx = mouseX + 16;
         double by = mouseY;
-        if (bx + boxW > canvasWidth)  bx = mouseX - boxW - 16;
-        if (by + boxH > canvasHeight) by = canvasHeight - boxH - 4;
-        if (bx < 0) bx = 4;
-        if (by < 0) by = 4;
+        if (bx + boxW > canvasWidth) {
+            bx = mouseX - boxW - 16;
+        }
+        if (by + boxH > canvasHeight) {
+            by = canvasHeight - boxH - 4;
+        }
+        if (bx < 0) {
+            bx = 4;
+        }
+        if (by < 0) {
+            by = 4;
+        }
 
         gc.save();
         // Draw box
@@ -119,5 +132,6 @@ public final class HexTooltipRenderer {
         return boxH;
     }
 
-    private record TooltipLine(String text, Color color) {}
+    private record TooltipLine(String text, Color color) {
+    }
 }

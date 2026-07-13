@@ -16,14 +16,14 @@ import javafx.scene.Node;
  */
 public class HexContentPanel extends AbstractCodeContentPanel {
 
-    private final byte[] classBytes;
-    private HexView hexView;
-    private volatile ThemeData theme;
-
     static {
         // 注册 Java 字节码结构高亮器
         HexViewController.getInstance().registerHighlighter(new JavaBytecodeHighlighter());
     }
+
+    private final byte[] classBytes;
+    private HexView hexView;
+    private volatile ThemeData theme;
 
     /**
      * 构造 HEX 内容面板
@@ -34,6 +34,13 @@ public class HexContentPanel extends AbstractCodeContentPanel {
     public HexContentPanel(byte[] classBytes, ThemeData theme) {
         this.classBytes = classBytes == null ? null : classBytes.clone();
         this.theme = theme;
+    }
+
+    private static String hexColor(javafx.scene.paint.Color c) {
+        return String.format("#%02X%02X%02X",
+                (int) (c.getRed() * 255),
+                (int) (c.getGreen() * 255),
+                (int) (c.getBlue() * 255));
     }
 
     /** @return 内容类型标识 "hex" */
@@ -70,18 +77,13 @@ public class HexContentPanel extends AbstractCodeContentPanel {
     }
 
     private void applyTheme(HexView hex) {
-        if (theme == null) return;
+        if (theme == null) {
+            return;
+        }
         String bg = hexColor(theme.editorBackground());
         String fg = hexColor(theme.editorForeground());
         hex.setStyle(String.format(
                 "-fx-background-color: %s; -fx-text-fill: %s;", bg, fg));
-    }
-
-    private static String hexColor(javafx.scene.paint.Color c) {
-        return String.format("#%02X%02X%02X",
-                (int) (c.getRed() * 255),
-                (int) (c.getGreen() * 255),
-                (int) (c.getBlue() * 255));
     }
 
     /** @return HEX 视图组件 */
