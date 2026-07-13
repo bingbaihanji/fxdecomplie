@@ -241,10 +241,10 @@ public final class CodeLinkHandler {
                                                      int localSegmentStart,
                                                      int localSegmentEnd) {
         String linePrefix = linePrefixBefore(text, qualifiedStart).stripLeading();
-        if (linePrefix.equals("package")) {
+        if ("package".equals(linePrefix)) {
             return navigableToken(qualified, qualifiedStart, qualifiedEnd);
         }
-        if (!linePrefix.equals("import") && !linePrefix.equals("import static")) {
+        if (!"import".equals(linePrefix) && !"import static".equals(linePrefix)) {
             return null;
         }
         boolean wildcardImport = hasImportWildcardSuffix(text, qualifiedEnd);
@@ -281,10 +281,10 @@ public final class CodeLinkHandler {
             return false;
         }
         String prefix = linePrefixBefore(text, token.startOffset()).stripLeading();
-        if (prefix.equals("package")) {
+        if ("package".equals(prefix)) {
             return true;
         }
-        if (!prefix.equals("import") && !prefix.equals("import static")) {
+        if (!"import".equals(prefix) && !"import static".equals(prefix)) {
             return false;
         }
         if (hasImportWildcardSuffix(text, token.endOffset())) {
@@ -319,7 +319,7 @@ public final class CodeLinkHandler {
         return Math.min(text.length(), lineStart + offset);
     }
 
-    /** @return true 若字符是 Java 名称字符(标识符字符、点号或美元符号) */
+    /** @return true 若字符是 Java 名称字符(标识符字符 点号或美元符号) */
     private static boolean isJavaNameChar(char ch) {
         return Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '$';
     }
@@ -331,7 +331,7 @@ public final class CodeLinkHandler {
 
     /**
      * 从限定名中选择适合导航的 token
-     * <p>处理 this./super. 前缀、静态成员访问、混淆类名等情况,返回最佳导航目标
+     * <p>处理 this./super. 前缀 静态成员访问 混淆类名等情况,返回最佳导航目标
      *
      * @param qualified    包含包名和类名的完整限定字符串
      * @param segmentStart 标识符段在 qualified 中的起始位置
@@ -393,7 +393,7 @@ public final class CodeLinkHandler {
             if (part.isEmpty()) {
                 return false;
             }
-            // 包名段全小写或纯数字开头(如 com、pig4cloud、service)
+            // 包名段全小写或纯数字开头(如 com pig4cloud service)
             if (!isPackageNameSegment(part) && !part.chars().allMatch(c -> Character.isDigit(c) || c == '_')) {
                 return false;
             }

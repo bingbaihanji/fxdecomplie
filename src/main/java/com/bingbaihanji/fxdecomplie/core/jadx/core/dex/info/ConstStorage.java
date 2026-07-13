@@ -163,7 +163,7 @@ public class ConstStorage {
 
     /**
      * 根据字面量参数查找对应的常量字段
-     * 根据参数的原始类型 (boolean、char、byte、short、int、long、float、double)
+     * 根据参数的原始类型 (boolean char byte short int long float double)
      * 将字面量转换为对应类型的值，然后委托 {@link #getConstField} 查找
      * 对于较小的绝对值，不搜索全局常量以减少误匹配
      *

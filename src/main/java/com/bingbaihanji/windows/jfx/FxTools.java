@@ -19,14 +19,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * JavaFX 窗口工具类 — 原生句柄获取、窗口定位、屏幕信息等跨平台工具
+ * JavaFX 窗口工具类 — 原生句柄获取 窗口定位 屏幕信息等跨平台工具
  *
  * <h3>主要能力</h3>
  * <ul>
  *   <li><b>原生句柄</b> — 通过 {@link WindowToolkit} 委托获取原生窗口句柄</li>
- *   <li><b>窗口定位</b> — 居中、相对于父窗口/屏幕定位</li>
- *   <li><b>屏幕信息</b> — 获取屏幕边界、视觉边界(排除任务栏)</li>
- *   <li><b>Stage 快捷操作</b> — 设置图标、安全关闭等</li>
+ *   <li><b>窗口定位</b> — 居中 相对于父窗口/屏幕定位</li>
+ *   <li><b>屏幕信息</b> — 获取屏幕边界 视觉边界(排除任务栏)</li>
+ *   <li><b>Stage 快捷操作</b> — 设置图标 安全关闭等</li>
  * </ul>
  *
  * <p>主题/DWM 相关功能已迁移至 {@link DefaultWindowTheme}</p>

@@ -11,7 +11,7 @@ import java.util.function.Predicate;
  * 面向 Java SE / SpringBoot 的轻量级 ArraySet
  *
  * <p>
- * 本类参考 Android {@code ArraySet} 的数据结构思想,但实现完全基于 Java SE,不依赖 Android、Lombok 或第三方库
+ * 本类参考 Android {@code ArraySet} 的数据结构思想,但实现完全基于 Java SE,不依赖 Android Lombok 或第三方库
  * 与它的姊妹类 {@link ArrayMap} 类似,内部使用两个平行数组保存数据：
  * <ul>
  * <li>{@code int[] hashes}：按升序保存元素的 hash</li>
@@ -20,17 +20,17 @@ import java.util.function.Predicate;
  *
  * <p>
  * 相比 {@link java.util.HashSet},ArraySet 用「二分查找 + 数组移位」换取更少的对象数量和更紧凑的内存布局
- * 它适合中小规模、创建频繁、读多写少的集合,例如权限码集合、标签集合、请求上下文的临时去重集合等场景
+ * 它适合中小规模 创建频繁 读多写少的集合,例如权限码集合 标签集合 请求上下文的临时去重集合等场景
  * 元素数量达到数千以上时,{@link java.util.HashSet} 仍是更好的选择
  *
  * <p>
  * <b>相较 Android 原版的现代化改造：</b>
  * <ul>
  * <li>移除了全局静态数组缓存({@code sBaseCache} / {@code sTwiceBaseCache} 及其锁)
- * 该缓存是为 Android 受限堆减少 GC 而设计的,在 JVM 上属于反模式(锁竞争、内存滞留、线程安全隐患)</li>
+ * 该缓存是为 Android 受限堆减少 GC 而设计的,在 JVM 上属于反模式(锁竞争 内存滞留 线程安全隐患)</li>
  * <li>移除了 {@code identityHashCode} 模式：始终使用 {@link Object#hashCode()} / {@link Object#equals(Object)},
  * 从而保证 {@link #hashCode()} 满足 {@link Set} 契约</li>
- * <li>移除了 Android {@code Log}、{@code UtilConfig} 等平台依赖</li>
+ * <li>移除了 Android {@code Log} {@code UtilConfig} 等平台依赖</li>
  * <li>引入 {@code modCount},迭代器具备 fail-fast 能力</li>
  * <li>采用 1.5 倍扩容(复用 {@link ContainerHelpers}),并在删除后按需收缩数组</li>
  * <li>{@link #toString()} 采用 Java 标准集合的 {@code [a, b, c]} 形式</li>
@@ -52,7 +52,7 @@ public final class ArraySet<E> implements Set<E>, Cloneable, Serializable {
      * 结构性修改次数,用于支持 fail-fast 迭代器
      *
      * <p>
-     * 新增、删除、清空属于结构性修改 仅遍历、查询不属于结构性修改
+     * 新增 删除 清空属于结构性修改 仅遍历 查询不属于结构性修改
      */
     private transient int modCount;
 
@@ -155,7 +155,7 @@ public final class ArraySet<E> implements Set<E>, Cloneable, Serializable {
      * 返回当前内部数组容量
      *
      * <p>
-     * 该值主要用于测试、调优和诊断,不等同于 {@link #size()}
+     * 该值主要用于测试 调优和诊断,不等同于 {@link #size()}
      *
      * @return 当前容量
      */
@@ -602,7 +602,7 @@ public final class ArraySet<E> implements Set<E>, Cloneable, Serializable {
      * 判断内容是否与另一个集合相同
      *
      * <p>
-     * 比较规则与 {@link Set#equals(Object)} 契约一致：对象也是 {@link Set}、元素数量相同、且互相包含
+     * 比较规则与 {@link Set#equals(Object)} 契约一致：对象也是 {@link Set} 元素数量相同 且互相包含
      *
      * @param object 比较对象
      * @return 内容相同时返回 true

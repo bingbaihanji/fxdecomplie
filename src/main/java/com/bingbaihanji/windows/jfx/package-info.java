@@ -9,7 +9,7 @@
  *
  * <p>迁移到另一个 JavaFX 项目的检查清单：</p>
  * <ul>
- *   <li>复制本包、{@code fx.win32} 包和 {@code jna} 包；</li>
+ *   <li>复制本包 {@code fx.win32} 包和 {@code jna} 包；</li>
  *   <li>保留 JNA 依赖({@code jna} 和 {@code jna-platform})；</li>
  *   <li>在 {@code module-info.java} 中导出顶层包；</li>
  *   <li>向 {@code com.sun.jna} 开放 {@code fx.win32} 包；</li>

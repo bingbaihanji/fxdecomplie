@@ -24,7 +24,7 @@ public class DecompileCache {
         }
     };
 
-    /** 构建缓存键,组合工作区标识、类内部名、引擎类型和选项哈希 */
+    /** 构建缓存键,组合工作区标识 类内部名 引擎类型和选项哈希 */
     private static String cacheKey(String workspaceKey, String internalName,
                                    DecompilerTypeEnum engine, String optionsHash) {
         return workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP

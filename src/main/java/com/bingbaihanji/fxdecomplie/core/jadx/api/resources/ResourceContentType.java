@@ -8,7 +8,7 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.resources;
 public enum ResourceContentType {
     /** 文本内容，可作为纯文本读取展示 */
     CONTENT_TEXT,
-    /** 二进制内容，如图片、字节码等非文本数据 */
+    /** 二进制内容，如图片 字节码等非文本数据 */
     CONTENT_BINARY,
     /** 无内容 */
     CONTENT_NONE,

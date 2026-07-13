@@ -45,9 +45,9 @@ import java.util.stream.Collectors;
 /**
  * DEX 文件的根节点，是整个反编译模型的顶层容器
  * <p>
- * 负责管理所有已加载的类 ({@link ClassNode})、包 ({@link PackageNode})、
+ * 负责管理所有已加载的类 ({@link ClassNode}) 包 ({@link PackageNode}) 
  * 类路径图 ({@link ClspGraph})以及反编译遍历器 ({@link IDexTreeVisitor})
- * 同时持有反编译参数 ({@link JadxArgs})、常量存储、信息存储和缓存等全局资源
+ * 同时持有反编译参数 ({@link JadxArgs}) 常量存储 信息存储和缓存等全局资源
  */
 public class RootNode {
     private static final Logger LOG = LoggerFactory.getLogger(RootNode.class);
@@ -141,7 +141,7 @@ public class RootNode {
     /**
      * 完成类加载后的处理流程：
      * 1. 检测并修复重复类名
-     * 2. 打印已加载类、方法和指令的统计信息
+     * 2. 打印已加载类 方法和指令的统计信息
      * 3. 按名称排序类 (顶层类排在内部类之前)
      * 4. 可选地检测并移动内部类到其父类中
      * 5. 排序包列表
@@ -241,7 +241,7 @@ public class RootNode {
 
     /**
      * 加载并处理 Android 资源文件解析 resources.arsc 或 resources.pb 文件，
-     * 处理资源存储、更新混淆的资源文件名，并初始化 Manifest 属性
+     * 处理资源存储 更新混淆的资源文件名，并初始化 Manifest 属性
      *
      * @param resLoader 资源加载器
      * @param resources 资源文件列表
@@ -280,7 +280,7 @@ public class RootNode {
     }
 
     /**
-     * 处理资源存储数据，设置资源名称常量、应用包名，并搜索应用资源类
+     * 处理资源存储数据，设置资源名称常量 应用包名，并搜索应用资源类
      *
      * @param resStorage 资源存储对象
      */
@@ -381,7 +381,7 @@ public class RootNode {
     }
 
     /**
-     * 合并自定义遍历器到反编译流程中对于预定义模式 (FALLBACK、SIMPLE)，
+     * 合并自定义遍历器到反编译流程中对于预定义模式 (FALLBACK SIMPLE)，
      * 忽略自定义遍历器 否则将自定义的准备阶段和反编译阶段遍历器合并到现有流程中
      * 同时处理调试检查和禁用遍历器的配置
      *

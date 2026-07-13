@@ -17,13 +17,13 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.trycatch.TryCatchBlockAtt
  */
 public final class AType<T extends IJadxAttribute> implements IJadxAttrType<T> {
 
-    // 类、方法、字段、指令
+    // 类 方法 字段 指令
     public static final AType<AttrList<CodeComment>> CODE_COMMENTS = new AType<>();
 
-    // 类、方法、字段
+    // 类 方法 字段
     public static final AType<RenameReasonAttr> RENAME_REASON = new AType<>();
 
-    // 类、方法
+    // 类 方法
     public static final AType<AttrList<JadxError>> JADX_ERROR = new AType<>(); // 代码反编译失败
     public static final AType<JadxCommentsAttr> JADX_COMMENTS = new AType<>(); // 关于反编译的附加信息
 

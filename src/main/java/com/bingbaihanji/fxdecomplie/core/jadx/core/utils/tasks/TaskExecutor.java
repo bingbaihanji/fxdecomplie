@@ -163,7 +163,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 停止执行：重置运行标志、置终止标志并关闭内部执行器
+     * 停止执行：重置运行标志 置终止标志并关闭内部执行器
      */
     private void stopExecution() {
         synchronized (executorSync) {
@@ -202,7 +202,7 @@ public class TaskExecutor implements ITaskExecutor {
     }
 
     /**
-     * 因发生错误而终止执行：记录错误信息、置终止标志并立即关闭执行器
+     * 因发生错误而终止执行：记录错误信息 置终止标志并立即关闭执行器
      * 错误将在 {@link #awaitTermination()} 时重新抛出
      *
      * @param error 触发终止的错误

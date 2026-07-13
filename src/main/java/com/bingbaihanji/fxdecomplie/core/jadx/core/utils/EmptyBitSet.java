@@ -6,9 +6,9 @@ import java.util.BitSet;
  * 不可变的空 {@link BitSet} 实现
  * <p>
  * 该类提供了一个永远为空的 BitSet 单例 ({@link #EMPTY})
- * 所有查询方法均返回空集合的预期结果 ({@link #cardinality()} 返回 0、
+ * 所有查询方法均返回空集合的预期结果 ({@link #cardinality()} 返回 0 
  * {@link #isEmpty()} 返回 {@code true} 等)，
- * 而所有修改方法 ({@code set}、{@code and}、{@code or}、{@code xor}、{@code andNot})
+ * 而所有修改方法 ({@code set} {@code and} {@code or} {@code xor} {@code andNot})
  * 均抛出 {@link UnsupportedOperationException}，确保不可变性
  * </p>
  * <p>

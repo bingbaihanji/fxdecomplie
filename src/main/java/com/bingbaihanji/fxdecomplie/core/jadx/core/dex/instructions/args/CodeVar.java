@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 代码变量
  * 表示反编译生成代码中的一个变量，可关联多个 SSA 变量，
- * 并携带名称、类型及 final/this/已声明等标记信息
+ * 并携带名称 类型及 final/this/已声明等标记信息
  */
 public class CodeVar {
     private String name;

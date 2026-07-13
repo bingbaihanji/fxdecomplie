@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.function.Supplier;
 
 /**
- * Set 工具类,提供判空、集合运算(交/并/差)、元素拼接、合并等常用操作
+ * Set 工具类,提供判空 集合运算(交/并/差) 元素拼接 合并等常用操作
  *
  * @author bingbaihanji
  * @date 2026-06-12

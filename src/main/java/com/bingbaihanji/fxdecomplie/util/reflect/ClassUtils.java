@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Class 工具类,借鉴 iBATIS Io 包的 ResolverUtil 类,提供包扫描、类查找、注解查找等功能
+ * Class 工具类,借鉴 iBATIS Io 包的 ResolverUtil 类,提供包扫描 类查找 注解查找等功能
  *
  * @author bingbaihanji
  * @date 2026-06-10
@@ -27,7 +27,7 @@ public class ClassUtils {
     private ClassLoader classLoader;
 
     /**
-     * 查询指定接口/类的实现类/子类(非自身、非抽象)
+     * 查询指定接口/类的实现类/子类(非自身 非抽象)
      *
      * @param parent       父接口或父类
      * @param packageNames 要扫描的包名列表(含子包)
@@ -130,7 +130,7 @@ public class ClassUtils {
         boolean matches(Class<?> type);
     }
 
-    /** 查询实现类：匹配继承自 parentType 且非自身、非抽象的类 */
+    /** 查询实现类：匹配继承自 parentType 且非自身 非抽象的类 */
     public static class IsA implements Test {
         private final Class<?> parent;
 

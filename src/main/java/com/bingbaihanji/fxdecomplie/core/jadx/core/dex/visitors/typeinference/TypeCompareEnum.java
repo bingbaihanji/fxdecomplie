@@ -28,7 +28,7 @@ public enum TypeCompareEnum {
      * 反转比较结果
      * <p>
      * 如果当前结果是 NARROW，则返回 WIDER 反之亦然
-     * EQUAL、CONFLICT 和 UNKNOWN 保持不变
+     * EQUAL CONFLICT 和 UNKNOWN 保持不变
      *
      * @return 反转后的比较结果
      */

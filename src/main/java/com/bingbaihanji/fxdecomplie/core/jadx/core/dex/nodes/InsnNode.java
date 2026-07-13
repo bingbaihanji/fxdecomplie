@@ -18,7 +18,7 @@ import java.util.function.Function;
 
 /**
  * DEX 指令节点，表示反编译过程中的单条指令
- * 继承自 {@link LineAttrNode}，包含指令类型、结果寄存器、参数列表和偏移量等信息
+ * 继承自 {@link LineAttrNode}，包含指令类型 结果寄存器 参数列表和偏移量等信息
  */
 public class InsnNode extends LineAttrNode {
     /** 指令类型 */
@@ -363,7 +363,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断指令是否为常量指令 (CONST、CONST_STR 或 CONST_CLASS)
+     * 判断指令是否为常量指令 (CONST CONST_STR 或 CONST_CLASS)
      *
      * @return 如果是常量指令则返回 true
      */
@@ -380,7 +380,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 判断指令是否为退出边指令 (RETURN、THROW、CONTINUE 或 BREAK)
+     * 判断指令是否为退出边指令 (RETURN THROW CONTINUE 或 BREAK)
      *
      * @return 如果是退出边指令则返回 true
      */
@@ -415,7 +415,7 @@ public class InsnNode extends LineAttrNode {
 
     /**
      * 判断该指令是否可以安全地重新排序 (不影响语义)
-     * 常量、类型转换、算术等无副作用的指令可以重排 字段读取等暂不允许重排
+     * 常量 类型转换 算术等无副作用的指令可以重排 字段读取等暂不允许重排
      *
      * @return 如果指令可以重排则返回 true
      */
@@ -608,7 +608,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 将当前指令的公共参数 (参数列表、属性、源码行、偏移量)复制到目标指令
+     * 将当前指令的公共参数 (参数列表 属性 源码行 偏移量)复制到目标指令
      *
      * @param copy 目标指令
      * @param <T>  指令类型
@@ -769,7 +769,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 从源指令继承元数据 (源码行、代码注释、偏移量等)
+     * 从源指令继承元数据 (源码行 代码注释 偏移量等)
      * 对 RETURN 指令做特殊处理：合成指令会重写偏移量和注释
      *
      * @param sourceInsn 源指令
@@ -854,7 +854,7 @@ public class InsnNode extends LineAttrNode {
     }
 
     /**
-     * 返回指令的基础字符串表示 (偏移量、类型、结果和参数)
+     * 返回指令的基础字符串表示 (偏移量 类型 结果和参数)
      *
      * @return 基础字符串
      */

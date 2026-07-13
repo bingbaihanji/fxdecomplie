@@ -25,7 +25,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.ProcessIn
 /**
  * Try/Catch 附加访问器
  * <p>
- * 将方法中的 try/catch 信息 (异常处理块、try 块边界)附加到对应的指令上，
+ * 将方法中的 try/catch 信息 (异常处理块 try 块边界)附加到对应的指令上，
  * 为后续的异常处理分析和代码生成做准备该访问器在
  * {@link ProcessInstructionsVisitor} 之前运行
  */

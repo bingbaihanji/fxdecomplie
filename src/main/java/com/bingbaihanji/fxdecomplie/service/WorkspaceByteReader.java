@@ -54,7 +54,7 @@ public final class WorkspaceByteReader {
     }
 
     /**
-     * 按内部名查找类的字节码,顺序尝试：节点树查找、归档 entry、磁盘文件
+     * 按内部名查找类的字节码,顺序尝试：节点树查找 归档 entry 磁盘文件
      *
      * @param cacheNode 读取成功后是否回存到节点缓存
      */

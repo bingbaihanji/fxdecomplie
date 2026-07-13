@@ -3,8 +3,8 @@ package com.bingbaihanji.fxdecomplie.core.jadx.core.plugins.versions;
 /**
  * 版本号比较器，用于对 jadx 插件版本号进行标准化后比较大小
  * <p>
- * 支持的版本号格式包括：{@code jadx-gui-1.2.3}、{@code jadx-1.2.3}、
- * {@code v1.2.3}、{@code r10} (发行号)等，统一清洗为纯数字点分格式后进行比较
+ * 支持的版本号格式包括：{@code jadx-gui-1.2.3} {@code jadx-1.2.3}
+ * {@code v1.2.3} {@code r10} (发行号)等，统一清洗为纯数字点分格式后进行比较
  * </p>
  */
 public class VersionComparator {
@@ -25,8 +25,8 @@ public class VersionComparator {
     }
 
     /**
-     * 清洗版本号字符串，去除常见前缀 (如 {@code jadx-gui-}、{@code jadx-}、
-     * {@code v}、发行号 {@code r})并转换为统一的点分数字格式
+     * 清洗版本号字符串，去除常见前缀 (如 {@code jadx-gui-} {@code jadx-}
+     * {@code v} 发行号 {@code r})并转换为统一的点分数字格式
      *
      * @param str 原始版本号字符串
      * @return 清洗后的版本号字符串，纯数字以 {@code .} 分隔

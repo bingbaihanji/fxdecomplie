@@ -348,7 +348,7 @@ public class SSAVar implements Comparable<SSAVar> {
     }
 
     /**
-     * 收集该 SSA 变量的详细信息，包含寄存器/版本号、调试名称集合与类型集合，用于调试输出
+     * 收集该 SSA 变量的详细信息，包含寄存器/版本号 调试名称集合与类型集合，用于调试输出
      *
      * @param mth 该变量所属的方法节点
      * @return 变量详细信息字符串
@@ -421,7 +421,7 @@ public class SSAVar implements Comparable<SSAVar> {
         return 31 * regNum + version;
     }
 
-    /** 按寄存器编号、版本号顺序比较两个 SSA 变量 */
+    /** 按寄存器编号 版本号顺序比较两个 SSA 变量 */
     @Override
     public int compareTo(@NotNull SSAVar o) {
         return SSA_VAR_COMPARATOR.compare(this, o);

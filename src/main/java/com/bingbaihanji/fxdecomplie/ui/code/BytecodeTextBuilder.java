@@ -10,8 +10,8 @@ import java.util.Map;
 /**
  * 自定义 ClassVisitor + 原始字节解析,生成 jadx 风格的字节码文本
  *
- * <p>包含：magic/version 头、访问标志(hex 值)、常量池逐条列出(含引用注释)、
- * 每个方法的 descriptor/flags/Code 属性(stack/locals/args_size)、
+ * <p>包含：magic/version 头 访问标志(hex 值) 常量池逐条列出(含引用注释) 
+ * 每个方法的 descriptor/flags/Code 属性(stack/locals/args_size) 
  * 指令 hex 偏移 + 原始字节 + | + 偏移 + 操作码</p>
  *
  * <p>两阶段处理：阶段1 从 raw bytes 解析常量池和 Code 属性文件偏移 
@@ -181,7 +181,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         }
     }
 
-    /** 格式化类头信息(magic、版本号、访问标志、this_class、super_class) */
+    /** 格式化类头信息(magic 版本号 访问标志 this_class super_class) */
     static String formatClassHeader(byte[] raw, String className, String superName,
                                     String[] interfaces) {
         if (raw == null || raw.length < 10) {
@@ -236,7 +236,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return h.toString();
     }
 
-    /** 解析类文件属性名(SourceFile、Signature 等) */
+    /** 解析类文件属性名(SourceFile Signature 等) */
     static String parseClassAttributes(byte[] raw) {
         if (raw == null || raw.length < 10) {
             return "";
@@ -344,7 +344,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return map;
     }
 
-    /** 获取方法的 Code 属性信息(stack、locals、code_length) */
+    /** 获取方法的 Code 属性信息(stack locals code_length) */
     static String formatCodeHeader(byte[] raw, String methodKey, boolean isStatic) {
         Map<String, Integer> offsets = scanCodeOffsets(raw);
         Integer codeOff = offsets.get(methodKey);
@@ -727,14 +727,14 @@ final class BytecodeTextBuilder extends ClassVisitor {
 
     // ==================== 阶段2：ASM Visitor ====================
 
-    /** 访问类头信息：输出版本号、访问标志、常量池、字段/方法计数等 */
+    /** 访问类头信息：输出版本号 访问标志 常量池 字段/方法计数等 */
     @Override
     public void visit(int version, int access, String name, String signature,
                       String superName, String[] interfaces) {
         this.className = name.replace('/', '.');
         this.internalName = name;
 
-        // 类头(magic、版本、标志、this_class、super_class)
+        // 类头(magic 版本 标志 this_class super_class)
         sb.append(formatClassHeader(raw, name, superName, interfaces));
 
         // 类属性(SourceFile 等)
@@ -766,7 +766,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         // 已通过 parseClassAttributes 处理,这里不再重复输出
     }
 
-    /** 访问字段：输出字段签名、访问标志及可选初始值 */
+    /** 访问字段：输出字段签名 访问标志及可选初始值 */
     @Override
     public FieldVisitor visitField(int access, String name, String descriptor,
                                    String signature, Object value) {
@@ -786,7 +786,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
         return null;
     }
 
-    /** 访问方法：输出方法签名、描述符、访问标志及 Code 属性字节码指令 */
+    /** 访问方法：输出方法签名 描述符 访问标志及 Code 属性字节码指令 */
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor,
                                      String signature, String[] exceptions) {
@@ -923,7 +923,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             sb.append(INDENT).append(".end method\n\n");
         }
 
-        /** 输出零操作数指令(如 return、dup、aconst_null 等) */
+        /** 输出零操作数指令(如 return dup aconst_null 等) */
         @Override
         public void visitInsn(int opcode) {
             appendInsnHex(opcode, 1);
@@ -931,7 +931,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += 1;
         }
 
-        /** 输出单操作数整数指令(如 bipush、sipush、newarray) */
+        /** 输出单操作数整数指令(如 bipush sipush newarray) */
         @Override
         public void visitIntInsn(int opcode, int operand) {
             int size = actualSize(raw, codeOffset + pc);
@@ -940,7 +940,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出局部变量指令(如 iload、istore、aload 等) */
+        /** 输出局部变量指令(如 iload istore aload 等) */
         @Override
         public void visitVarInsn(int opcode, int var) {
             int size = actualSize(raw, codeOffset + pc);
@@ -949,7 +949,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出类型指令(如 new、anewarray、checkcast、instanceof) */
+        /** 输出类型指令(如 new anewarray checkcast instanceof) */
         @Override
         public void visitTypeInsn(int opcode, String type) {
             int size = actualSize(raw, codeOffset + pc);
@@ -1012,7 +1012,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出跳转指令(如 ifeq、goto 等),含分支偏移量和目标地址 */
+        /** 输出跳转指令(如 ifeq goto 等),含分支偏移量和目标地址 */
         @Override
         public void visitJumpInsn(int opcode, Label label) {
             int size = actualSize(raw, codeOffset + pc);
@@ -1030,7 +1030,7 @@ final class BytecodeTextBuilder extends ClassVisitor {
             pc += size;
         }
 
-        /** 输出 LDC 系列指令(加载常量：字符串、整数、浮点数、类型等) */
+        /** 输出 LDC 系列指令(加载常量：字符串 整数 浮点数 类型等) */
         @Override
         public void visitLdcInsn(Object cst) {
             int size;

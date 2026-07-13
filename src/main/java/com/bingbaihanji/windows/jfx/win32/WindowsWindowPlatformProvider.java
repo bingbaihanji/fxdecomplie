@@ -16,7 +16,7 @@ import java.util.function.Function;
 /**
  * Windows 平台的 {@link WindowPlatformProvider} 实现,基于 JNA Win32/DWM API
  *
- * <p>通过 {@link NativeWindowsTools} 调用底层原生 API,提供窗口外观、状态控制等能力
+ * <p>通过 {@link NativeWindowsTools} 调用底层原生 API,提供窗口外观 状态控制等能力
  * 仅在 Windows 平台可用,其他平台应使用 {@code NoopWindowPlatformProvider}</p>
  */
 public final class WindowsWindowPlatformProvider implements WindowPlatformProvider {

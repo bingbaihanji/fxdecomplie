@@ -196,7 +196,7 @@ public class ProcyonDecompiler implements Decompiler {
         /**
          * 尝试加载指定内部名的类型字节码
          * <p>加载优先级：目标类本身 → 上下文依赖解析这样 Procyon 在反编译时
-         * 可以获取到依赖类的字节码信息,从而生成更准确的代码(如泛型参数、方法签名等)</p>
+         * 可以获取到依赖类的字节码信息,从而生成更准确的代码(如泛型参数 方法签名等)</p>
          *
          * @param internalName 类型内部名(如 com/example/Foo)
          * @param buffer       输出缓冲区,成功时写入字节码

@@ -16,7 +16,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenE
 
 /**
  * 包节点，表示 DEX 文件中的包结构
- * 维护包的层级关系 (父包、子包)、包含的类列表，以及包别名 (用于重命名)
+ * 维护包的层级关系 (父包 子包) 包含的类列表，以及包别名 (用于重命名)
  */
 public class PackageNode extends LineAttrNode
         implements IPackageUpdate, IDexNode, ICodeNodeRef, Comparable<PackageNode> {

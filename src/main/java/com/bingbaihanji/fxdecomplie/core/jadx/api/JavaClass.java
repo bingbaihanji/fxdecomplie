@@ -20,7 +20,7 @@ import java.util.*;
 /**
  * Java 类的表示，封装了反编译后的类信息
  * <p>
- * 提供对类的源码、字段、方法、内部类、依赖关系等的访问，
+ * 提供对类的源码 字段 方法 内部类 依赖关系等的访问，
  * 是 jadx 反编译引擎 API 的核心类之一
  * </p>
  */
@@ -73,7 +73,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 触发该类的反编译操作并加载内部列表 (字段、方法等)
+     * 触发该类的反编译操作并加载内部列表 (字段 方法等)
      * 如果已经加载过，则不会重复执行
      */
     public void decompile() {
@@ -169,7 +169,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 反编译该类并加载其内部的字段、方法等列表
+     * 反编译该类并加载其内部的字段 方法等列表
      * 如果已经加载过，则不执行任何操作
      *
      * @return 如果执行了反编译则返回代码信息，否则返回 null
@@ -428,7 +428,7 @@ public final class JavaClass implements JavaNode {
     }
 
     /**
-     * 获取该类的访问标志信息 (public、abstract 等)
+     * 获取该类的访问标志信息 (public abstract 等)
      *
      * @return 访问信息对象
      */

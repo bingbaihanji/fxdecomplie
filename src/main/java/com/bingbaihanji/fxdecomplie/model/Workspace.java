@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 工作区数据模型表示一个已打开的JAR/ZIP/目录,包含名称、源文件、树根节点和是否为归档文件
+ * 工作区数据模型表示一个已打开的JAR/ZIP/目录,包含名称 源文件 树根节点和是否为归档文件
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -35,7 +35,7 @@ public class Workspace implements AutoCloseable {
     private final ConcurrentMap<String, Map<String, String>> sourceSearchCaches = new ConcurrentHashMap<>();
     /** 当前 sourceSearchCaches 中所有条目的估算字节数 */
     private long sourceSearchCacheBytes;
-    /** 工作区索引,用于全局搜索、字节码搜索和后续分析 */
+    /** 工作区索引,用于全局搜索 字节码搜索和后续分析 */
     private volatile WorkspaceIndex index;
     /** 异步索引构建结果,供 UI 等待,避免在 JavaFX 线程兜底同步构建 */
     private volatile CompletableFuture<WorkspaceIndex> indexFuture = new CompletableFuture<>();
@@ -105,7 +105,7 @@ public class Workspace implements AutoCloseable {
     /**
      * 获取完整索引 如果异步索引还未完成,则在当前线程上构建一次
      *
-     * @return 可用于搜索、导出和导航分析的完整工作区索引
+     * @return 可用于搜索 导出和导航分析的完整工作区索引
      */
     public WorkspaceIndex getOrBuildIndex() {
         WorkspaceIndex current = index;

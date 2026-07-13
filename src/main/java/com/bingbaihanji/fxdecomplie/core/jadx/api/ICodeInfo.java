@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.api.metadata.ICodeMetadata;
 /**
  * 代码信息接口，表示反编译后的代码结果及其元数据
  * <p>
- * 该接口封装了反编译输出的代码字符串以及可选的元数据信息 (如定义位置、
+ * 该接口封装了反编译输出的代码字符串以及可选的元数据信息 (如定义位置 
  * 行号映射等)当无需元数据支持时，可使用 {@link #EMPTY} 常量作为空结果
  * </p>
  */

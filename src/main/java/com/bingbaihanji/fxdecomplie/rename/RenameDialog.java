@@ -80,7 +80,6 @@ public final class RenameDialog {
                 errorLabel.setManaged(true);
                 field.requestFocus();
                 event.consume();
-                return;
             }
         });
 

@@ -173,7 +173,7 @@ public final class InheritanceService {
     }
 
     /**
-     * 递归展开子类树,受深度、总数、超时三重限制
+     * 递归展开子类树,受深度 总数 超时三重限制
      * 通过 Counter 跨递归层级共享计数,避免装箱开销
      */
     private static void appendSubClasses(String targetName, TreeItem<InheritanceNode> parent,

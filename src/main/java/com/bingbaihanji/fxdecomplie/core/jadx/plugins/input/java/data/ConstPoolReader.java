@@ -23,7 +23,7 @@ import java.util.List;
  * 常量池读取器
  * <p>
  * 依据 {@link ClassOffsets} 记录的各常量池项偏移，从 class 文件的字节数据中
- * 按索引读取常量池条目，包括类引用、字段引用、方法引用、调用点、方法句柄
+ * 按索引读取常量池条目，包括类引用 字段引用 方法引用 调用点 方法句柄
  * 以及各类字面量常量，并将其转换为上层需要的数据结构
  */
 public class ConstPoolReader {

@@ -27,7 +27,7 @@ public record CommentScope(String workspaceHash, String optionsHash) {
 
     /**
      * 计算工作区的唯一哈希标识
-     * 基于源文件的绝对路径、最后修改时间和文件大小生成
+     * 基于源文件的绝对路径 最后修改时间和文件大小生成
      *
      * @param workspace 当前工作区
      * @return 工作区哈希字符串,workspace 为 null 或源文件不存在时返回空字符串

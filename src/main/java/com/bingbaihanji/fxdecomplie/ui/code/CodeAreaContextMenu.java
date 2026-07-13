@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 代码区右键上下文菜单,提供跳转声明、查看继承图、查看方法图、添加注释四个功能
+ * 代码区右键上下文菜单,提供跳转声明 查看继承图 查看方法图 添加注释四个功能
  *
  * @author bingbaihanji
  * @date 2026-06-21

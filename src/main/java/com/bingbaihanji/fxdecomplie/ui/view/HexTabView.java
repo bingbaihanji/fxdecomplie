@@ -244,7 +244,7 @@ public class HexTabView extends StackPane {
         engine.loadContent(formatHtml(currentData, theme));
     }
 
-    /** Hex 视图的配色方案,包含背景、文字、边框等颜色值 */
+    /** Hex 视图的配色方案,包含背景 文字 边框等颜色值 */
     public record HexColors(String bodyBg, String text, String border, String headerBg,
                             String secondaryText, String gridLine, String altRowBg) {
     }

@@ -9,7 +9,7 @@ import javax.swing.tree.TreeNode;
 /**
  * 树节点接口，扩展自 {@link TreeNode}，用于表示 GUI 树视图中的一个节点
  * <p>
- * 每个树节点具有唯一标识符、显示名称、图标以及与代码节点的关联引用
+ * 每个树节点具有唯一标识符 显示名称 图标以及与代码节点的关联引用
  * 该接口是 GUI 树组件与底层代码元数据之间的桥梁
  */
 public interface ITreeNode extends TreeNode {
@@ -44,7 +44,7 @@ public interface ITreeNode extends TreeNode {
     /**
      * 获取与此树节点关联的代码节点引用
      * <p>
-     * 通过该引用可以定位到反编译结果中对应的代码元素 (如类、方法、字段等)
+     * 通过该引用可以定位到反编译结果中对应的代码元素 (如类 方法 字段等)
      * 如果该节点没有关联的代码元素，则返回 {@code null}
      *
      * @return 关联的代码节点引用，可能为 {@code null}

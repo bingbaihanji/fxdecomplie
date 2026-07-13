@@ -10,12 +10,12 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 表示 DEX 字节码中的方法调用指令节点
  * <p>
- * 封装了被调用方法的元信息、调用类型 (如虚调用、静态调用、接口调用等)
+ * 封装了被调用方法的元信息 调用类型 (如虚调用 静态调用 接口调用等)
  * 以及参数绑定逻辑支持范围格式 (range)和非范围格式的指令解码
  */
 public class InvokeNode extends BaseInvokeNode {
 
-    /** 调用类型 (如 STATIC、VIRTUAL、DIRECT、INTERFACE 等) */
+    /** 调用类型 (如 STATIC VIRTUAL DIRECT INTERFACE 等) */
     private final InvokeType type;
     /** 被调用方法的元信息 */
     private final MethodInfo mth;
@@ -34,7 +34,7 @@ public class InvokeNode extends BaseInvokeNode {
     }
 
     /**
-     * 根据方法信息、指令数据和调用类型构造调用节点，可显式控制是否需要实例参数
+     * 根据方法信息 指令数据和调用类型构造调用节点，可显式控制是否需要实例参数
      *
      * @param mth          被调用方法信息
      * @param insn         原始 DEX 指令数据

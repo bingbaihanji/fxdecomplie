@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.utils.CodegenEscapeUtils.notEmpty;
 
 /**
- * 名称映射工具类，提供 Java 标识符验证、可打印字符检查以及无效字符移除等功能
+ * 名称映射工具类，提供 Java 标识符验证 可打印字符检查以及无效字符移除等功能
  */
 public class NameMapper {
 
@@ -95,7 +95,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定字符串是否为有效的 Java 标识符 (非空、非保留字且符合标识符规则)
+     * 判断给定字符串是否为有效的 Java 标识符 (非空 非保留字且符合标识符规则)
      *
      * @param str 待检查的字符串
      * @return 若为有效标识符则返回 true
@@ -169,7 +169,7 @@ public class NameMapper {
     }
 
     /**
-     * 判断给定码点是否可打印 (排除控制字符、格式字符、私有区、代理区及未分配字符，
+     * 判断给定码点是否可打印 (排除控制字符 格式字符 私有区 代理区及未分配字符，
      * 空白字符中仅允许标准空格)
      *
      * @param codePoint Unicode 码点

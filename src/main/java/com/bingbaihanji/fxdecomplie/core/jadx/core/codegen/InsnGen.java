@@ -38,7 +38,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.android.AndroidR
  * 指令代码生成器
  * <p>
  * 负责将单条 {@link InsnNode} 指令生成为 Java 源码表达式或语句，是代码生成的核心
- * 覆盖字段访问、方法调用、构造器、算术/三元/类型转换、数组操作、Lambda/方法引用、
+ * 覆盖字段访问 方法调用 构造器 算术/三元/类型转换 数组操作 Lambda/方法引用 
  * varargs 展开等各种指令类型 对无法在正常模式生成的指令仅在回退 (fallback)模式下输出
  */
 public class InsnGen {
@@ -1128,7 +1128,7 @@ public class InsnGen {
     /**
      * 生成方法调用的参数列表 (含括号)
      * <p>
-     * 处理 SKIP_FIRST_ARG、SKIP_MTH_ARGS 等跳过标记，以及 varargs 展开
+     * 处理 SKIP_FIRST_ARG SKIP_MTH_ARGS 等跳过标记，以及 varargs 展开
      *
      * @param code        代码写入器
      * @param insn        调用指令

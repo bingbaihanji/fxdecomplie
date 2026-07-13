@@ -33,7 +33,7 @@ public class VineflowerDecompiler implements Decompiler {
     /** Vineflower 默认反编译选项 */
     private static final Map<String, Object> DEFAULT_OPTIONS = createDefaultOptions();
 
-    /** @return 基于 Vineflower 默认值构建的增强默认选项(开启枚举、泛型、内部类等反编译特性) */
+    /** @return 基于 Vineflower 默认值构建的增强默认选项(开启枚举 泛型 内部类等反编译特性) */
     private static Map<String, Object> createDefaultOptions() {
         Map<String, Object> opts = new ArrayMap<>(IFernflowerPreferences.DEFAULTS);
         opts.put(IFernflowerPreferences.DECOMPILE_ENUM, "1");
@@ -88,7 +88,7 @@ public class VineflowerDecompiler implements Decompiler {
 
     /**
      * 将用户选项规格化为 Vineflower 识别的格式
-     * 包括：别名映射(通过 {@link DecompilerOptions#VINEFLOWER_OPTION_ALIASES})、
+     * 包括：别名映射(通过 {@link DecompilerOptions#VINEFLOWER_OPTION_ALIASES}) 
      * 布尔值转换为 "1"/"0"
      */
     private static Map<String, Object> normalizedOptions(Map<String, String> options) {

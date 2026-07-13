@@ -6,7 +6,7 @@ import java.util.*;
  * ArrayMap 集合视图使用的 fail-fast 迭代器
  *
  * <p>
- * 迭代器创建时会记录 Map 的结构性修改次数迭代过程中如果检测到 Map 被迭代器自身以外的方式新增、删除或清空,会抛出
+ * 迭代器创建时会记录 Map 的结构性修改次数迭代过程中如果检测到 Map 被迭代器自身以外的方式新增 删除或清空,会抛出
  * {@link ConcurrentModificationException}
  *
  * <p>
@@ -124,7 +124,7 @@ final class ArrayMapIterator<K, V, E> implements Iterator<E> {
      * entrySet 迭代时返回的实时 Entry 视图
      *
      * <p>
-     * 每次 {@link #next()} 都创建独立 Entry,避免 JDK {@code toArray()}、{@code contains()} 等集合操作拿到重复的 Entry 引用
+     * 每次 {@link #next()} 都创建独立 Entry,避免 JDK {@code toArray()} {@code contains()} 等集合操作拿到重复的 Entry 引用
      */
     private static final class EntryView<K, V> implements Map.Entry<K, V> {
 

@@ -10,10 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * 自动反混淆：扫描工作区中所有类、字段和方法,为混淆名称生成可读新名称
+ * 自动反混淆：扫描工作区中所有类 字段和方法,为混淆名称生成可读新名称
  *
  * <p>实现取 jadx 的核心策略：先用条件筛选需要重命名的节点,再用稳定的 alias
- * provider 生成类 C、字段 f、方法 m 前缀的新名称</p>
+ * provider 生成类 C 字段 f 方法 m 前缀的新名称</p>
  *
  * @author bingbaihanji
  * @date 2026-07-03
@@ -33,7 +33,7 @@ public final class AutoDeobfuscator {
     private static final Set<String> WHITELIST_PREFIXES = Set.of(
             "android/support/v4/", "android/support/v7/", "androidx/core/os/",
             "androidx/annotation/");
-    /** 永远不重命名的方法：构造器、静态初始化器、main 方法等 */
+    /** 永远不重命名的方法：构造器 静态初始化器 main 方法等 */
     private static final Set<String> NEVER_RENAME_METHODS = Set.of(
             "<init>", "<clinit>", "main", "values", "valueOf");
     /** java.lang.Object 的方法,不应重命名以避免破坏继承链 */
@@ -93,7 +93,7 @@ public final class AutoDeobfuscator {
         return suggestions;
     }
 
-    /** 根据完整索引扫描类、字段和方法 */
+    /** 根据完整索引扫描类 字段和方法 */
     public static List<RenameEntry> scan(WorkspaceIndex index) {
         if (index == null || index == WorkspaceIndex.EMPTY) {
             return Collections.emptyList();
@@ -151,14 +151,14 @@ public final class AutoDeobfuscator {
     /**
      * 判断名称是否为混淆名
      *
-     * <p>混淆名的判定条件：长度在 1-3 字符之间、不在常见短名集合中、
-     * 且所有字符为字母、数字、下划线或美元符号</p>
+     * <p>混淆名的判定条件：长度在 1-3 字符之间 不在常见短名集合中 
+     * 且所有字符为字母 数字 下划线或美元符号</p>
      */
     public static boolean isObfuscated(String name) {
         if (name == null || name.isEmpty()) {
             return false;
         }
-        // 常见短名(如 id、db)不算混淆名
+        // 常见短名(如 id db)不算混淆名
         if (isCommonShortName(name)) {
             return false;
         }
@@ -346,7 +346,7 @@ public final class AutoDeobfuscator {
                 || signatureCount.getOrDefault(method.name() + method.descriptor(), 0) > 1;
     }
 
-    /** 基础条件：混淆名、非法标识符、或非可打印 ASCII 字符 */
+    /** 基础条件：混淆名 非法标识符 或非可打印 ASCII 字符 */
     private static boolean shouldRenameName(String name) {
         return isObfuscated(name) || !RenameService.isValidName(name) || !isPrintableAscii(name);
     }
@@ -424,7 +424,7 @@ public final class AutoDeobfuscator {
      * 为成员生成唯一别名
      *
      * <p>如果建议的别名已被同一类的其他成员使用或不是合法 Java 标识符,
-     * 则在别名后添加 _2、_3 等后缀直到唯一</p>
+     * 则在别名后添加 _2 _3 等后缀直到唯一</p>
      */
     private static String uniqueMemberAlias(String alias, Set<String> usedNames) {
         String result = alias;
@@ -488,9 +488,9 @@ public final class AutoDeobfuscator {
     }
 
     /**
-     * 别名提供器：为类、字段、方法生成稳定递增的反混淆名称
+     * 别名提供器：为类 字段 方法生成稳定递增的反混淆名称
      *
-     * <p>类前缀 C、字段前缀 f、方法前缀 m、覆写方法前缀 mo,
+     * <p>类前缀 C 字段前缀 f 方法前缀 m 覆写方法前缀 mo,
      * 后接递增序号和原始名的合法字符部分</p>
      */
     private static final class AliasProvider {

@@ -328,7 +328,7 @@ public final class ReflectUtils {
     /**
      * 根据方法名和参数个数调用方法,自动进行参数类型转换
      * <p>
-     * 支持常用类型自动转换：String、Integer、Long、Double、Float、Boolean 适用于参数类型不明确或由外部传入的场景
+     * 支持常用类型自动转换：String Integer Long Double Float Boolean 适用于参数类型不明确或由外部传入的场景
      * </p>
      * @param obj 目标对象
      * @param methodName 方法名
@@ -521,7 +521,7 @@ public final class ReflectUtils {
 
     /**
      * 检查元素是否标注了指定注解
-     * @param element 被注解的元素(类、方法、字段等)
+     * @param element 被注解的元素(类 方法 字段等)
      * @param annotationClass 注解类型
      * @return 如果存在该注解返回 true
      */

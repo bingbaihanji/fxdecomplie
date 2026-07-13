@@ -98,7 +98,7 @@ public class MethodSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.METHOD;
     }
 
-    /** 高级搜索：支持正则、大小写、全词匹配等选项的方法名搜索 */
+    /** 高级搜索：支持正则 大小写 全词匹配等选项的方法名搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

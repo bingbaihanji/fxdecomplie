@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 类信息视图展示 class 文件的版本号、访问标志、常量池数量、父类、接口列表等结构化元数据
+ * 类信息视图展示 class 文件的版本号 访问标志 常量池数量 父类 接口列表等结构化元数据
  *
  * @author bingbaihanji
  * @date 2026-06-17

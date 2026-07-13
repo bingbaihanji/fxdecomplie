@@ -45,7 +45,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Jadx 反编译器的核心入口类，提供加载、反编译和保存功能
+ * Jadx 反编译器的核心入口类，提供加载 反编译和保存功能
  * <p>
  * 实现了 {@link Closeable} 接口，支持 try-with-resources 自动释放资源
  * <p>
@@ -197,7 +197,7 @@ public final class JadxDecompiler implements Closeable {
         }
     }
 
-    /** 重置反编译器状态，卸载插件并清空根节点、类列表和资源列表 */
+    /** 重置反编译器状态，卸载插件并清空根节点 类列表和资源列表 */
     private void reset() {
         unloadPlugins();
         root = null;
@@ -383,7 +383,7 @@ public final class JadxDecompiler implements Closeable {
                 continue;
             }
             if (codeSources.contains(resOriginalName)) {
-                // 不输出代码源资源 (.dex、.class 等)
+                // 不输出代码源资源 (.dex .class 等)
                 // 不要信任文件扩展名，仅使用被设置为类输入的源
                 continue;
             }

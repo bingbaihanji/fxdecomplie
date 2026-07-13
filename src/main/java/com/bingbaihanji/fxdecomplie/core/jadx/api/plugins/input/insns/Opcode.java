@@ -3,8 +3,8 @@ package com.bingbaihanji.fxdecomplie.core.jadx.api.plugins.input.insns;
 /**
  * 指令操作码枚举
  * <p>
- * 统一表示来自不同字节码格式 (Dalvik DEX、Java 字节码等)的指令类型，
- * 供反编译引擎在解析、分析和转换指令时使用
+ * 统一表示来自不同字节码格式 (Dalvik DEX Java 字节码等)的指令类型，
+ * 供反编译引擎在解析 分析和转换指令时使用
  */
 public enum Opcode {
     UNKNOWN,

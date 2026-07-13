@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * 代码变量初始化访问器
  * <p>
  * 在 SSA 转换 ({@link SSATransform})之后运行，为方法中的 {@link SSAVar} 创建并初始化
- * 对应的代码变量 ({@link CodeVar})，处理 this 引用、方法参数标记，并通过 Phi 指令
+ * 对应的代码变量 ({@link CodeVar})，处理 this 引用 方法参数标记，并通过 Phi 指令
  * 将相互连接的 SSA 变量合并到同一个代码变量上，从而在反编译输出中还原源码级的局部变量
  */
 @JadxVisitor(
@@ -77,7 +77,7 @@ public class InitCodeVariables extends AbstractVisitor {
     /**
      * 为指定的 SSA 变量初始化其代码变量
      * <p>
-     * 若代码变量已设置则直接返回 否则根据赋值参数上的标志设置 this、名称、
+     * 若代码变量已设置则直接返回 否则根据赋值参数上的标志设置 this 名称 
      * 以及是否为已声明 (方法参数或自定义声明)等属性
      *
      * @param ssaVar 目标 SSA 变量

@@ -11,7 +11,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * 字节、十六进制、摘要和简单文件魔数工具
+ * 字节 十六进制 摘要和简单文件魔数工具
  *
  * @author bingbaihanji
  * @date 2025-12-08

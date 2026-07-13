@@ -15,10 +15,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 管理五种代码内容视图(Code/Smali/Bytecode/Simple/HEX)的懒加载、切换和销毁
+ * 管理五种代码内容视图(Code/Smali/Bytecode/Simple/HEX)的懒加载 切换和销毁
  *
  * <p>底部使用 HBox + ToggleButton ToggleGroup 而非嵌套 TabPane,
- * 避免与主代码标签、Split view、拖拽之间互相干扰</p>
+ * 避免与主代码标签 Split view 拖拽之间互相干扰</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -71,7 +71,7 @@ public class CodeContentDeck extends VBox {
     }
 
     /**
-     * 完整构造器,指定字体族、字号和行号开关
+     * 完整构造器,指定字体族 字号和行号开关
      *
      * @param sourceCode          反编译源码内容
      * @param classBytes          类文件字节码
@@ -101,7 +101,7 @@ public class CodeContentDeck extends VBox {
         selectTab(TAB_CODE);
     }
 
-    /** 从任意面板中提取 CodeArea 编辑器引用(用于统一操作字体、行号等) */
+    /** 从任意面板中提取 CodeArea 编辑器引用(用于统一操作字体 行号等) */
     private static jfx.incubator.scene.control.richtext.CodeArea getCodeArea(AbstractCodeContentPanel panel) {
         return switch (panel) {
             case SourceContentPanel p -> p.getCodeArea();

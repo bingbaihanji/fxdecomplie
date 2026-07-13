@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxExceptio
 /**
  * DEX 树遍历访问者接口
  * <p>
- * 定义了对 DEX 文件结构 (根节点、类节点、方法节点)进行遍历时的访问回调方法
+ * 定义了对 DEX 文件结构 (根节点 类节点 方法节点)进行遍历时的访问回调方法
  * 实现此接口可对 DEX 树的各个层级执行自定义处理逻辑
  * </p>
  */
@@ -22,7 +22,7 @@ public interface IDexTreeVisitor {
     String getName();
 
     /**
-     * 初始化回调，在 DEX 树加载完成后、访问者遍历开始前调用
+     * 初始化回调，在 DEX 树加载完成后 访问者遍历开始前调用
      * <p>
      * 可用于执行前置准备工作，例如初始化数据结构或解析依赖信息
      * </p>

@@ -29,7 +29,7 @@ import java.util.TreeMap;
 /**
  * Android 资源相关的专用处理工具类
  * <p>
- * 负责搜索应用的 R 类、将资源 ID 注入 R 类内部类字段，
+ * 负责搜索应用的 R 类 将资源 ID 注入 R 类内部类字段，
  * 以及在代码生成阶段处理资源字段的引用输出
  */
 public class AndroidResourcesUtils {
@@ -170,7 +170,7 @@ public class AndroidResourcesUtils {
      *
      * @param resCls     R 资源类节点
      * @param rClsExists R 类是否为已存在的类
-     * @param typeName   资源类型名 (如 string、layout)
+     * @param typeName   资源类型名 (如 string layout)
      * @return 对应资源类型类的信息
      */
     private static ResClsInfo getClassForResType(ClassNode resCls, boolean rClsExists, String typeName) {
@@ -216,7 +216,7 @@ public class AndroidResourcesUtils {
     }
 
     /**
-     * 资源类型类信息，持有某一资源类型 (如 string、drawable)对应的内部类节点
+     * 资源类型类信息，持有某一资源类型 (如 string drawable)对应的内部类节点
      * 及其字段名到字段节点的映射
      */
     private static final class ResClsInfo {

@@ -32,7 +32,7 @@ public final class ImageViewer extends BorderPane {
     private final ImageView imageView = new ImageView();
     /** 图片容器(StackPane 居中,支持拖拽平移) */
     private final StackPane canvas = new StackPane(imageView);
-    /** 底部状态信息标签(尺寸、缩放、旋转角度) */
+    /** 底部状态信息标签(尺寸 缩放 旋转角度) */
     private final Label infoLabel = new Label("");
 
     /** 当前缩放比例 */
@@ -231,7 +231,7 @@ public final class ImageViewer extends BorderPane {
         imageView.setTranslateY(ty);
     }
 
-    /** 更新状态栏显示的图片尺寸、缩放、旋转信息 */
+    /** 更新状态栏显示的图片尺寸 缩放 旋转信息 */
     private void updateInfo() {
         Image img = imageView.getImage();
         if (img == null) {

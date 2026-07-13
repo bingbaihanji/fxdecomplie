@@ -83,7 +83,7 @@ public final class DialogHelper {
         alert.showAndWait();
     }
 
-    /** 为 JavaFX Dialog/Alert 应用应用暗色 CSS、native 窗口暗色边框和窗口图标 */
+    /** 为 JavaFX Dialog/Alert 应用应用暗色 CSS native 窗口暗色边框和窗口图标 */
     public static void applyNativeStyle(Dialog<?> dialog) {
         if (dialog == null) {
             return;

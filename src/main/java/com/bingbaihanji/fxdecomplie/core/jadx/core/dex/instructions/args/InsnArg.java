@@ -17,7 +17,7 @@ import java.util.Objects;
 
 /**
  * 指令参数
- * 可以是：寄存器、字面量、指令或名称
+ * 可以是：寄存器 字面量 指令或名称
  */
 public abstract class InsnArg extends Typed {
 
@@ -361,7 +361,7 @@ public abstract class InsnArg extends Typed {
         return InsnUtils.containsVar(this, arg);
     }
 
-    /** 将公共参数 (属性、父指令)复制到副本上 */
+    /** 将公共参数 (属性 父指令)复制到副本上 */
     protected final <T extends InsnArg> T copyCommonParams(T copy) {
         copy.copyAttributesFrom(this);
         copy.setParentInsn(parentInsn);

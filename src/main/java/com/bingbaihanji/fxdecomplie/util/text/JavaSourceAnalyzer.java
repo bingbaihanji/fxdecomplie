@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import java.util.regex.Pattern;
 
 /**
- * Java 源码静态分析工具:声明行识别、令牌规范化、类引用判定、偏移换算等
+ * Java 源码静态分析工具:声明行识别 令牌规范化 类引用判定 偏移换算等
  * 从 {@code MainWindow} 抽取的纯静态方法集合
  */
 public final class JavaSourceAnalyzer {
@@ -104,7 +104,7 @@ public final class JavaSourceAnalyzer {
         if (trimmed.isEmpty()) {
             return false;
         }
-        // 跳过行首注解(如 @Override、@Deprecated)
+        // 跳过行首注解(如 @Override @Deprecated)
         while (trimmed.startsWith("@")) {
             int end = trimmed.indexOf(' ');
             if (end < 0) {
@@ -159,7 +159,7 @@ public final class JavaSourceAnalyzer {
         for (int i = 0; i < line.length() - 1; i++) {
             char c = line.charAt(i);
             if (c == '\'' && !inString) {
-                // 跳过字符字面量(如 '"'、'\''、'\\')
+                // 跳过字符字面量(如 '"' '\'' '\\')
                 i++;
                 if (i < line.length() && line.charAt(i) == '\\') {
                     i++; // 跳过转义字符
@@ -231,7 +231,7 @@ public final class JavaSourceAnalyzer {
         return result;
     }
 
-    /** @return true 若字符是声明 token 的有效字符(Java 标识符、点号、美元符、斜杠) */
+    /** @return true 若字符是声明 token 的有效字符(Java 标识符 点号 美元符 斜杠) */
     public static boolean isDeclarationTokenChar(char ch) {
         return !Character.isJavaIdentifierPart(ch) && ch != '.' && ch != '$' && ch != '/';
     }
@@ -243,7 +243,7 @@ public final class JavaSourceAnalyzer {
         return slash >= 0 ? normalized.substring(slash + 1) : normalized;
     }
 
-    /** @return true 若 token 首字母大写、下划线或美元符号开头(相对类引用) */
+    /** @return true 若 token 首字母大写 下划线或美元符号开头(相对类引用) */
     public static boolean isRelativeClassToken(String token) {
         if (token == null || token.isBlank()) {
             return false;
@@ -270,7 +270,7 @@ public final class JavaSourceAnalyzer {
         return token.contains(".") || isRelativeClassToken(simpleToken);
     }
 
-    /** @return true 若 token 应在工作区中进行类查找(限定名、相对类引用或混淆短名) */
+    /** @return true 若 token 应在工作区中进行类查找(限定名 相对类引用或混淆短名) */
     public static boolean shouldSearchWorkspaceForClassToken(String token) {
         if (shouldPreferClassNavigation(token)) {
             return true;
@@ -281,7 +281,7 @@ public final class JavaSourceAnalyzer {
         return isShortObfuscatedClassToken(simpleToken);
     }
 
-    /** @return true 若 token 是可能的混淆类名(短名、非常见词汇、仅含合法字符) */
+    /** @return true 若 token 是可能的混淆类名(短名 非常见词汇 仅含合法字符) */
     public static boolean isShortObfuscatedClassToken(String token) {
         if (token == null || token.isBlank() || token.length() > 2) {
             return false;

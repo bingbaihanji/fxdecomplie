@@ -361,7 +361,7 @@ public final class SplitEditorPane extends StackPane {
         }
     }
 
-    /** 为指定 TabPane 安装右键上下文菜单(固定、切换引擎、分屏、关闭等操作),缓存菜单实例避免每次右键重建 */
+    /** 为指定 TabPane 安装右键上下文菜单(固定 切换引擎 分屏 关闭等操作),缓存菜单实例避免每次右键重建 */
     private void installContextMenu(TabPane pane) {
         ContextMenu cachedMenu = new ContextMenu();
         cachedMenu.setOnShowing(e -> rebuildContextMenuItems(cachedMenu, pane));

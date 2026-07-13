@@ -84,7 +84,7 @@ public final class BracketHighlighter {
     }
 
     /**
-     * 在光标附近查找括号字符依次检查光标前一个字符、光标所在字符
+     * 在光标附近查找括号字符依次检查光标前一个字符 光标所在字符
      *
      * @param text     完整文本
      * @param docOff   光标文档偏移量
@@ -236,7 +236,7 @@ public final class BracketHighlighter {
     /**
      * 从闭括号反推开括号字符
      *
-     * @param close 闭括号字符(如 ')'、'}'、']'、'>')
+     * @param close 闭括号字符(如 ')' '}' ']' '>')
      * @return 对应的开括号字符,未找到返回 '\0'
      */
     private static char findOpenForClose(char close) {

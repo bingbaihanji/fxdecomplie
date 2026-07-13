@@ -45,8 +45,8 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 /**
  * 方法节点，表示 DEX 字节码中的一个方法
  * <p>
- * 继承自 {@link NotificationAttrNode}，实现了方法详情、可加载、代码节点等接口
- * 包含方法的字节码指令、基本块、异常处理器、循环信息、SSA 变量等反编译所需数据
+ * 继承自 {@link NotificationAttrNode}，实现了方法详情 可加载 代码节点等接口
+ * 包含方法的字节码指令 基本块 异常处理器 循环信息 SSA 变量等反编译所需数据
  * </p>
  */
 public class MethodNode extends NotificationAttrNode implements IMethodDetails, ILoadable, ICodeNode, Comparable<MethodNode> {
@@ -54,7 +54,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     /** 空指令数组，用于无代码的方法 */
     private static final InsnNode[] EMPTY_INSN_ARRAY = new InsnNode[0];
 
-    /** 方法元信息 (名称、签名等) */
+    /** 方法元信息 (名称 签名等) */
     private final MethodInfo mthInfo;
     /** 所属父类节点 */
     private final ClassNode parentClass;
@@ -64,7 +64,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     private final int insnsCount;
     /** 访问标志 (public/private/static 等) */
     private AccessInfo accFlags;
-    /** 标识该方法是否无代码 (如抽象方法、接口方法) */
+    /** 标识该方法是否无代码 (如抽象方法 接口方法) */
     private boolean noCode;
     /** 寄存器总数 */
     private int regsCount;
@@ -149,12 +149,12 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 卸载方法的反编译数据，释放内存返回类型、参数类型和类型参数不会被卸载
+     * 卸载方法的反编译数据，释放内存返回类型 参数类型和类型参数不会被卸载
      */
     @Override
     public void unload() {
         loaded = false;
-        // 不卸载 retType、argTypes、typeParameters
+        // 不卸载 retType argTypes typeParameters
         thisArg = null;
         argsList = null;
         sVars = Collections.emptyList();
@@ -483,7 +483,7 @@ public class MethodNode extends NotificationAttrNode implements IMethodDetails, 
     }
 
     /**
-     * 判断方法是否无代码 (抽象方法、接口方法或加载失败)
+     * 判断方法是否无代码 (抽象方法 接口方法或加载失败)
      *
      * @return 无代码返回 true
      */

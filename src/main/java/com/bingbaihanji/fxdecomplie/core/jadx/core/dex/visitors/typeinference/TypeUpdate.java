@@ -173,7 +173,7 @@ public final class TypeUpdate {
      */
     public @Nullable TypeUpdateResult queueTypeUpdate(TypeUpdateInfo updateInfo,
                                                       InsnArg arg, ArgType candidateType, @Nullable ITypeUpdateCallback callback) {
-        // 校验本可以在队列处理时、请求运行前完成，但这里提前执行以加快处理速度
+        // 校验本可以在队列处理时 请求运行前完成，但这里提前执行以加快处理速度
         // 这可能会增加代码复杂度，因为每次都需要检查结果是否为 null
         TypeUpdateResult res = verifyType(updateInfo, arg, candidateType);
         if (res != null) {

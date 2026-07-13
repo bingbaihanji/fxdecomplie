@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 注释列表面板,以表格形式展示当前类的用户注释,支持过滤、双击跳转、删除
+ * 注释列表面板,以表格形式展示当前类的用户注释,支持过滤 双击跳转 删除
  *
  * @author bingbaihanji
  * @date 2026-07-03
@@ -32,7 +32,7 @@ public final class CommentListPane extends VBox {
     private String className;
 
     /**
-     * 构建注释列表面板,包含过滤器输入框和四列表格(行号、成员、摘要、时间)
+     * 构建注释列表面板,包含过滤器输入框和四列表格(行号 成员 摘要 时间)
      */
     public CommentListPane() {
         setPadding(new Insets(4));

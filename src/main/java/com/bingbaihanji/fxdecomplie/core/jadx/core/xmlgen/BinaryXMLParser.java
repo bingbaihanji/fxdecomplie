@@ -21,9 +21,9 @@ import java.util.*;
 /**
  * Android 二进制 XML (AXML)解析器
  * <p>
- * 将编译后的二进制 XML (如 AndroidManifest.xml、layout 等资源)解码还原为可读的文本 XML
- * 处理内容包括：字符串池、资源映射表、命名空间、元素与属性、CDATA 等各类数据块，
- * 并在解码过程中完成属性反混淆、资源引用还原以及类名注解附加等工作
+ * 将编译后的二进制 XML (如 AndroidManifest.xml layout 等资源)解码还原为可读的文本 XML
+ * 处理内容包括：字符串池 资源映射表 命名空间 元素与属性 CDATA 等各类数据块，
+ * 并在解码过程中完成属性反混淆 资源引用还原以及类名注解附加等工作
  */
 public class BinaryXMLParser extends CommonBinaryParser {
     private static final Logger LOG = LoggerFactory.getLogger(BinaryXMLParser.class);

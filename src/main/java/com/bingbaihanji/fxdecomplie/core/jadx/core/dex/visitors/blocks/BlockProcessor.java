@@ -33,7 +33,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.visitors.blocks.Bl
 
 /**
  * 基本块处理器，负责构建和优化方法的控制流图 (CFG)
- * 主要职责包括：计算支配树、识别循环结构、拆分和合并基本块、消除不可达块等
+ * 主要职责包括：计算支配树 识别循环结构 拆分和合并基本块 消除不可达块等
  */
 public class BlockProcessor extends AbstractVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(BlockProcessor.class);
@@ -41,8 +41,8 @@ public class BlockProcessor extends AbstractVisitor {
     private static final boolean DEBUG_MODS = false;
 
     /**
-     * 处理基本块树的主流程，包括：移除不可达块、计算支配树、修复多入口循环、
-     * 迭代修改块树 (合并常量返回、拆分循环等)、注册循环信息、计算后支配树
+     * 处理基本块树的主流程，包括：移除不可达块 计算支配树 修复多入口循环 
+     * 迭代修改块树 (合并常量返回 拆分循环等) 注册循环信息 计算后支配树
      */
     private static void processBlocksTree(MethodNode mth) {
         removeUnreachableBlocks(mth);

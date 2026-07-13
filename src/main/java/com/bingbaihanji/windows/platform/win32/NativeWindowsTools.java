@@ -13,7 +13,7 @@ import com.sun.jna.ptr.IntByReference;
 /**
  * Windows 原生窗口操作工具类
  *
- * <p>封装基于 JNA 的 Win32 / DWM API,提供窗口样式、透明度、状态控制等常用操作</p>
+ * <p>封装基于 JNA 的 Win32 / DWM API,提供窗口样式 透明度 状态控制等常用操作</p>
  *
  * @author bingbaihanji
  */
@@ -649,7 +649,7 @@ public final class NativeWindowsTools {
      * 以指定的显示命令控制窗口状态
      *
      * @param hwnd        窗口句柄
-     * @param showCommand 显示命令常量(如 {@code SW_SHOW}、{@code SW_HIDE}、{@code SW_MAXIMIZE} 等)
+     * @param showCommand 显示命令常量(如 {@code SW_SHOW} {@code SW_HIDE} {@code SW_MAXIMIZE} 等)
      * @return 操作结果
      */
     public static WindowOperationResult showWindow(WinDef.HWND hwnd, int showCommand) {
@@ -672,10 +672,10 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 向窗口发送系统命令(WM_SYSCOMMAND),如最大化、最小化、关闭等
+     * 向窗口发送系统命令(WM_SYSCOMMAND),如最大化 最小化 关闭等
      *
      * @param hwnd    窗口句柄
-     * @param command 系统命令常量(如 {@code SC_MAXIMIZE}、{@code SC_MINIMIZE} 等)
+     * @param command 系统命令常量(如 {@code SC_MAXIMIZE} {@code SC_MINIMIZE} 等)
      * @return 操作结果
      */
     public static WindowOperationResult sendSystemCommand(WinDef.HWND hwnd, int command) {
@@ -757,7 +757,7 @@ public final class NativeWindowsTools {
         return foreground || top || positioned
                 ? WindowOperationResult.success("bringToFront")
                 : WindowOperationResult.failed("bringToFront", Native.getLastError(),
-                "SetForegroundWindow、BringWindowToTop 和 SetWindowPos 均失败");
+                "SetForegroundWindow BringWindowToTop 和 SetWindowPos 均失败");
     }
 
     /** 判断窗口是否可见 */
@@ -1171,9 +1171,9 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 获取系统度量值(如屏幕尺寸、边框宽度等)
+     * 获取系统度量值(如屏幕尺寸 边框宽度等)
      *
-     * @param metric 系统度量索引常量(如 {@code SM_CXSCREEN}、{@code SM_CYSCREEN} 等)
+     * @param metric 系统度量索引常量(如 {@code SM_CXSCREEN} {@code SM_CYSCREEN} 等)
      * @return 对应的系统度量值
      */
     public static int getSystemMetric(int metric) {
@@ -1315,7 +1315,7 @@ public final class NativeWindowsTools {
     }
 
     /**
-     * 设置窗口的 Z 序位置、屏幕位置和大小(一步完成)
+     * 设置窗口的 Z 序位置 屏幕位置和大小(一步完成)
      *
      * @param hwnd        窗口句柄
      * @param insertAfter Z 序插入位置(可为 null 保持当前 Z 序)

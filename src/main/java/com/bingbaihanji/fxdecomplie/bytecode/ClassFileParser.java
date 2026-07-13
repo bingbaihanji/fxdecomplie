@@ -13,8 +13,8 @@ import java.util.*;
  * 最小化的 class 文件解析器,用于元数据路径,
  * 确保在 ASM 尚不支持最新 class 文件主版本号时仍可正常工作
  * <p>
- * 该解析器只读取 class 文件的基本结构信息(版本、类名、父类、接口、字段、方法签名),
- * 不解析方法体、属性等详细内容,因此轻量且能兼容任意版本的 class 文件
+ * 该解析器只读取 class 文件的基本结构信息(版本 类名 父类 接口 字段 方法签名),
+ * 不解析方法体 属性等详细内容,因此轻量且能兼容任意版本的 class 文件
  *
  * @author bingbaihanji
  */
@@ -49,12 +49,12 @@ public final class ClassFileParser {
      * 解析 class 文件字节数组,提取基本元数据
      * <p>
      * 解析流程：魔数校验 → 版本号 → 常量池 → 访问标志 → 类名/父类/接口 → 字段/方法列表
-     * 方法体、属性表等详细内容不会被解析,仅跳过
+     * 方法体 属性表等详细内容不会被解析,仅跳过
      *
      * @param bytes class 文件原始字节
      * @return 解析出的元数据对象
      * @throws IOException           读取 class 文件发生 I/O 错误
-     * @throws ClassFormatException class 文件格式不合法(魔数错误、结构截断等)
+     * @throws ClassFormatException class 文件格式不合法(魔数错误 结构截断等)
      * @throws NullPointerException  bytes 为 null
      */
     public static ClassFileMetadata parse(byte[] bytes) throws IOException, ClassFormatException {
@@ -106,7 +106,7 @@ public final class ClassFileParser {
     }
 
     /**
-     * 将元数据对象格式化为人类可读的摘要字符串,包括版本、类名、父类、接口、字段和方法信息
+     * 将元数据对象格式化为人类可读的摘要字符串,包括版本 类名 父类 接口 字段和方法信息
      *
      * @param metadata class 文件元数据
      * @return 格式化的摘要文本
@@ -144,7 +144,7 @@ public final class ClassFileParser {
      * 对于主版本号小于 45 的情况(理论上不存在),直接返回原值
      *
      * @param majorVersion class 文件主版本号
-     * @return 对应的 Java 主版本号(如 8、11、17 等)
+     * @return 对应的 Java 主版本号(如 8 11 17 等)
      */
     public static int javaVersion(int majorVersion) {
         return majorVersion >= 45 ? majorVersion - 44 : majorVersion;
@@ -165,7 +165,7 @@ public final class ClassFileParser {
         for (int i = 1; i < count; i++) {
             int tag = in.readUnsignedByte();
             switch (tag) {
-                // CONSTANT_Utf8: 存储 UTF-8 字符串,后续解析类名、方法名需要
+                // CONSTANT_Utf8: 存储 UTF-8 字符串,后续解析类名 方法名需要
                 case 1 -> cp[i] = in.readUTF();
                 // CONSTANT_Integer(3), CONSTANT_Float(4): 4 字节数值,直接跳过
                 case 3, 4 -> skipFully(in, 4);
@@ -195,7 +195,7 @@ public final class ClassFileParser {
     }
 
     /**
-     * 读取字段或方法表,提取访问标志、名称和描述符,然后跳过属性表
+     * 读取字段或方法表,提取访问标志 名称和描述符,然后跳过属性表
      *
      * @param in 数据输入流
      * @param cp 已解析的常量池
@@ -236,7 +236,7 @@ public final class ClassFileParser {
     }
 
     /**
-     * 过滤数组、方法句柄等非普通内部类名引用 
+     * 过滤数组 方法句柄等非普通内部类名引用 
      */
     private static boolean isLoadableClassReference(String className) {
         return className != null

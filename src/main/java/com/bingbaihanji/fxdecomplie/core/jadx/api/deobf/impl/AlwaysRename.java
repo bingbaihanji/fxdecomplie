@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.*;
 /**
  * 始终重命名条件的实现
  * <p>
- * {@link IRenameCondition} 接口的实现，对任意包、类、字段和方法均返回需要重命名，
+ * {@link IRenameCondition} 接口的实现，对任意包 类 字段和方法均返回需要重命名，
  * 即无条件地对所有节点执行重命名采用单例模式，通过 {@link #INSTANCE} 获取实例
  */
 public class AlwaysRename implements IRenameCondition {

@@ -16,8 +16,8 @@ import java.util.Map;
  * 资源值解析器
  * <p>
  * 负责将资源表 (resources.arsc)中的原始数据 (数据类型 + 数据值)解码为可读的字符串表示，
- * 支持字符串、整型、布尔、浮点、颜色、尺寸、分数以及资源引用、属性引用等各类数据类型，
- * 同时可解析简单值、命名值列表以及资源名称引用
+ * 支持字符串 整型 布尔 浮点 颜色 尺寸 分数以及资源引用 属性引用等各类数据类型，
+ * 同时可解析简单值 命名值列表以及资源名称引用
  */
 public class ValuesParser extends ParserConstants {
     private static final Logger LOG = LoggerFactory.getLogger(ValuesParser.class);
@@ -58,7 +58,7 @@ public class ValuesParser extends ParserConstants {
     /**
      * 获取资源条目的完整值字符串
      * <p>
-     * 依次处理 proto 值、简单值和命名值列表：命名值以 {@code name=value} 形式拼接为列表
+     * 依次处理 proto 值 简单值和命名值列表：命名值以 {@code name=value} 形式拼接为列表
      *
      * @param ri 资源条目
      * @return 值字符串，若不存在则返回 {@code null}

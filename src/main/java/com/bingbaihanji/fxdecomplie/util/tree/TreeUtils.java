@@ -5,7 +5,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * 通用树形结构工具,提供列表→树、树→列表、叶子节点查找、祖先链追溯等常用操作
+ * 通用树形结构工具,提供列表→树 树→列表 叶子节点查找 祖先链追溯等常用操作
  *
  * <h3>使用示例</h3> <pre>{@code
  * public class DeptVO implements TreeUtils.TreeNode<Long, DeptVO> {
@@ -260,7 +260,7 @@ public final class TreeUtils {
      * 符合 CRTP(Curiously Recurring Template Pattern)设计： 子类将自己作为类型参数传入,避免调用方手动强转
      * </p>
      *
-     * @param <T> 节点 ID 的类型(如 Long、Integer、String)
+     * @param <T> 节点 ID 的类型(如 Long Integer String)
      * @param <N> 节点自身类型(实现类的类型)
      */
     public interface TreeNode<T, N extends TreeNode<T, N>> {

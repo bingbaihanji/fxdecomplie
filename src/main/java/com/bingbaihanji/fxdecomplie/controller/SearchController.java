@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * 搜索与用法查找控制器：工作区搜索对话框、Find Usages、包搜索、
+ * 搜索与用法查找控制器：工作区搜索对话框 Find Usages 包搜索 
  * 全文源码缓存构建与工作区索引就绪等待
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
@@ -77,10 +77,10 @@ public final class SearchController {
         withWorkspaceIndex(view.workspace(), index -> openSearchWithIndex(view, index, initialQuery));
     }
 
-    /** 装配所有搜索 Provider、构建源码缓存并弹出搜索对话框 */
+    /** 装配所有搜索 Provider 构建源码缓存并弹出搜索对话框 */
     private void openSearchWithIndex(WorkspaceView view, WorkspaceIndex index, String initialQuery) {
         // 从已打开标签页构建源码缓存
-        java.util.Map<String, String> sourceCache = new HashMap<>();
+        Map<String, String> sourceCache = new HashMap<>();
         for (TabPane pane : view.splitEditorPane().allTabPanes()) {
             for (javafx.scene.control.Tab tab : pane.getTabs()) {
                 if (tab instanceof CodeEditorTab codeTab
@@ -95,7 +95,7 @@ public final class SearchController {
         // 构建 classPath → displayName 映射(支持搜索反混淆/重命名后的名称)
         String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                 .of(view.workspace(), "").workspaceHash();
-        java.util.Map<String, String> displayNamesByPath = new HashMap<>();
+        Map<String, String> displayNamesByPath = new HashMap<>();
         for (String classPath : index.classPaths()) {
             String display = com.bingbaihanji.fxdecomplie.rename.RenameService
                     .displayClassName(classPath, wsHash);

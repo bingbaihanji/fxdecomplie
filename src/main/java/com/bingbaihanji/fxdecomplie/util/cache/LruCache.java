@@ -30,7 +30,7 @@ import java.util.Map;
  *     }
  *   }}</pre>
  * <p>
- * 此类不允许使用 null 作为键或值 从 {@link #get}、{@link #put} 或 {@link #remove}
+ * 此类不允许使用 null 作为键或值 从 {@link #get} {@link #put} 或 {@link #remove}
  * 返回 null 是明确的：表示该键不在缓存中 
  * <p>
  * 此类源自 Android 3.1(Honeycomb MR1) 对于早期版本,可作为 Android 支持库的一部分使用 
@@ -243,7 +243,7 @@ public class LruCache<K, V> {
     }
 
     /**
-     * 当条目被逐出或移除时调用此方法 在值被逐出以腾出空间、通过调用 {@link #remove}
+     * 当条目被逐出或移除时调用此方法 在值被逐出以腾出空间 通过调用 {@link #remove}
      * 移除或通过调用 {@link #put} 替换时,会调用此方法 默认实现不做任何事 
      *
      * <p>此方法在无同步的情况下调用：其他线程可能在此方法执行期间访问缓存 

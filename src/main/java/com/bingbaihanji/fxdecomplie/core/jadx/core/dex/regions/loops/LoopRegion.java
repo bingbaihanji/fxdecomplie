@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * 循环区域
  * <p>
- * 表示反编译过程中的循环结构 (如 for/while/do-while)，包含循环信息、条件头块、
+ * 表示反编译过程中的循环结构 (如 for/while/do-while)，包含循环信息 条件头块 
  * 循环体以及可选的前置条件块当 {@code header} 为 null 时表示无限循环
  */
 public final class LoopRegion extends ConditionRegion {

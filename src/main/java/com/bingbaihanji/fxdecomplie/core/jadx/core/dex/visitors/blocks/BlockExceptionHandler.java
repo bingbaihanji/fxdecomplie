@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 
 /**
  * 块异常处理器，负责处理方法的 try-catch 块结构
- * 主要职责包括：解析异常处理器、构建 try-catch 块关系、
+ * 主要职责包括：解析异常处理器 构建 try-catch 块关系 
  * 包裹 try 块并连接到对应的处理器块
  */
 public class BlockExceptionHandler {

@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 /**
  * 表示一个 try-catch 块的属性
- * 封装了 try 块所包含的基础块、异常处理器、以及 try 块之间的嵌套关系
+ * 封装了 try 块所包含的基础块 异常处理器 以及 try 块之间的嵌套关系
  * 提供了 try 边 ({@link TryEdge})的计算方法，用于确定 try-catch-finally 的控制流离开路径
  */
 public class TryCatchBlockAttr implements IJadxAttribute {
@@ -77,7 +77,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 判断该 try 块是否仅用于抛出异常 (即块内只有 throw、move-exception 或 monitor-exit 指令)
+     * 判断该 try 块是否仅用于抛出异常 (即块内只有 throw move-exception 或 monitor-exit 指令)
      *
      * @return 若该 try 块仅抛出异常则返回 true
      */
@@ -320,7 +320,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 从给定的起始块出发，深度优先探索 try 体的控制流路径，识别各类离开 try 的边 (fallthrough、循环退出、提前退出等)
+     * 从给定的起始块出发，深度优先探索 try 体的控制流路径，识别各类离开 try 的边 (fallthrough 循环退出 提前退出等)
      *
      * @param edges          用于收集识别出的 try 边的列表
      * @param blk            当前正在探索的基础块
@@ -494,7 +494,7 @@ public class TryCatchBlockAttr implements IJadxAttribute {
     }
 
     /**
-     * 获取处理器的 fallthrough 分组，即以作用域结束块为键、对应 try 边列表为值的映射
+     * 获取处理器的 fallthrough 分组，即以作用域结束块为键 对应 try 边列表为值的映射
      *
      * @param mth         所属方法节点
      * @param scopeGroups try 边作用域分组映射

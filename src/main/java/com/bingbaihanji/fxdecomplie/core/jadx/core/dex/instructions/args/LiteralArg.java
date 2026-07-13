@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * 字面量指令参数
- * 以 long 存储原始位值，配合类型 (如整型、浮点型、布尔型等)解释其含义
+ * 以 long 存储原始位值，配合类型 (如整型 浮点型 布尔型等)解释其含义
  */
 public final class LiteralArg extends InsnArg {
 
@@ -90,7 +90,7 @@ public final class LiteralArg extends InsnArg {
         }
     }
 
-    /** 是否为负数 (整型、浮点型或双精度型的负值) */
+    /** 是否为负数 (整型 浮点型或双精度型的负值) */
     public boolean isNegative() {
         if (isInteger()) {
             return literal < 0;

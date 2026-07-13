@@ -10,15 +10,17 @@ import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.fxdecomplie.util.text.JavaSourceAnalyzer;
+import javafx.animation.PauseTransition;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 /**
- * 代码导航控制器：Ctrl+Click 跳转声明、引用解析、类名/令牌到文件树节点的多策略查找
+ * 代码导航控制器：Ctrl+Click 跳转声明 引用解析 类名/令牌到文件树节点的多策略查找
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
@@ -252,9 +254,6 @@ public final class NavigationController {
             boolean leftBoundary = idx == 0 || !Character.isJavaIdentifierPart(line.charAt(idx - 1));
             boolean rightBoundary = end >= line.length() || !Character.isJavaIdentifierPart(line.charAt(end));
             if (leftBoundary && rightBoundary) {
-                if (best < 0) {
-                    best = idx;
-                }
                 int tokenSimpleStart = cleanToken.lastIndexOf('.') + 1;
                 if (tokenSimpleStart <= 0 || idx + tokenSimpleStart >= line.length()) {
                     return idx;
@@ -322,10 +321,7 @@ public final class NavigationController {
             if (bestWithColumn != null) {
                 return bestWithColumn;
             }
-            if (fallbackNoColumn != null) {
-                return fallbackNoColumn;
-            }
-            return null;
+            return fallbackNoColumn;
         }
         return refs.getFirst();
     }
@@ -410,14 +406,14 @@ public final class NavigationController {
         if (!owner.tabManager().isWorkspaceActive(view)) {
             return; // 工作区已关闭
         }
-        javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(
-                javafx.util.Duration.millis(100));
+        PauseTransition delay = new PauseTransition(
+                Duration.millis(100));
         delay.setOnFinished(e -> {
             if (!owner.tabManager().isWorkspaceActive(view)) {
                 return;
             }
             for (TabPane pane : view.splitEditorPane().allTabPanes()) {
-                for (javafx.scene.control.Tab tab : pane.getTabs()) {
+                for (Tab tab : pane.getTabs()) {
                     if (tab instanceof CodeEditorTab codeTab
                             && codeTab.getOpenFile() != null
                             && codeTab.getOpenFile().fullPath().equals(fullPath)) {

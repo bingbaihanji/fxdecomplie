@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /**
  * 带父节点链接的路径节点基类
- * 存储父节点引用、值及其运行时类型,用于类型安全的检索
+ * 存储父节点引用 值及其运行时类型,用于类型安全的检索
  *
  * @param <T> 包装的值类型
  * @author bingbaihanji

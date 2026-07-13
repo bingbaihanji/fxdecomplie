@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
 /**
  * Smali 视图语法高亮器,用于 jadx 风格的 smali 输出
  *
- * <p>高亮元素：标题行(######)、注释(# 开头)、smali 指令关键字
- * (.class/.method/.field/.registers 等)、smali 风格操作码
- * (invoke-virtual/const/4/return-void 等)、字符串和数字</p>
+ * <p>高亮元素：标题行(######) 注释(# 开头) smali 指令关键字
+ * (.class/.method/.field/.registers 等) smali 风格操作码
+ * (invoke-virtual/const/4/return-void 等) 字符串和数字</p>
  *
  * @author bingbaihanji
  * @date 2026-06-23
@@ -170,7 +170,7 @@ final class SmaliHighlighter implements SyntaxDecorator {
     }
 
     /**
-     * 对单行进行词法分析,按优先级匹配：注释、字符串、标签、指令、寄存器、数字、操作码、默认文本
+     * 对单行进行词法分析,按优先级匹配：注释 字符串 标签 指令 寄存器 数字 操作码 默认文本
      */
     private List<Token> tokenize(String line) {
         List<Token> tokens = new ArrayList<>();

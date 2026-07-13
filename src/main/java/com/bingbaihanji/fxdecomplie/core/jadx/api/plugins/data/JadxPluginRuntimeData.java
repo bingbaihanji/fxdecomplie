@@ -15,7 +15,7 @@ import java.util.List;
  * 插件运行时数据
  * <p>
  * 承载单个插件在运行期间的状态与相关信息，
- * 包括插件实例、代码输入、配置选项等
+ * 包括插件实例 代码输入 配置选项等
  */
 public interface JadxPluginRuntimeData {
     /**

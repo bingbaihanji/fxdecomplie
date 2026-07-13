@@ -37,7 +37,7 @@ public class CodeViewPanel extends VBox {
     private javafx.event.EventHandler<javafx.scene.input.KeyEvent> findKeyHandler;
     private jfx.incubator.scene.control.richtext.CodeArea findKeyArea;
 
-    /** 便捷构造器：使用默认 SourcePanel、字体和行号 */
+    /** 便捷构造器：使用默认 SourcePanel 字体和行号 */
     public CodeViewPanel(String sourceCode, byte[] classBytes) {
         this(sourceCode, classBytes, null, "Consolas", 14, true);
     }
@@ -48,7 +48,7 @@ public class CodeViewPanel extends VBox {
     }
 
     /**
-     * 完整参数构造器：指定源码、字节码、SourcePanel、字体族、字号和行号开关
+     * 完整参数构造器：指定源码 字节码 SourcePanel 字体族 字号和行号开关
      *
      * @param sourceCode          反编译源码文本
      * @param classBytes          类文件原始字节码
@@ -125,7 +125,7 @@ public class CodeViewPanel extends VBox {
     }
 
     /**
-     * 在源码 CodeArea 上安装右键上下文菜单和快捷键(Ctrl+; 注释、Shift+F6 重命名)
+     * 在源码 CodeArea 上安装右键上下文菜单和快捷键(Ctrl+; 注释 Shift+F6 重命名)
      *
      * @param ctx     代码视图上下文
      * @param handler 右键菜单和快捷键的操作处理器

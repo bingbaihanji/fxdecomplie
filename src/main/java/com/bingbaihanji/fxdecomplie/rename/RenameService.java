@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * 重命名服务：验证、持久化、查询和应用重命名映射
+ * 重命名服务：验证 持久化 查询和应用重命名映射
  *
  * @author bingbaihanji
  * @date 2026-07-03
@@ -559,7 +559,7 @@ public final class RenameService {
      * 构建显示名 → 原始内部名候选列表的映射
      *
      * <p>该映射用于反向查找：给定一个显示类名,找出所有可能的原始内部名
-     * 会注册多个别名变体(斜杠形、包名+新名、叶子名),以应对短名冲突场景</p>
+     * 会注册多个别名变体(斜杠形 包名+新名 叶子名),以应对短名冲突场景</p>
      */
     private static Map<String, List<String>> buildOriginalByDisplayName(String workspaceHash) {
         List<RenameEntry> entries = loadAll(workspaceHash);
@@ -1119,7 +1119,7 @@ public final class RenameService {
     /**
      * 将类重命名应用到源码中
      *
-     * <p>分两步：先替换类声明中的类名,再替换源码中对该类的引用(类型使用、import、限定名等)
+     * <p>分两步：先替换类声明中的类名,再替换源码中对该类的引用(类型使用 import 限定名等)
      * 跳过注释和字符串字面量,根据上下文(声明/构造器/类型使用/静态限定符)判断是否需要替换</p>
      */
     private static String applyClassRenames(String sourceCode, List<RenameEntry> entries,
@@ -1347,7 +1347,7 @@ public final class RenameService {
             return current;
         }
         // 不再按简单名称全局回退匹配
-        // 混淆代码中大量类共享相同简单名(如 a、b),全局匹配会导致跨包误重命名
+        // 混淆代码中大量类共享相同简单名(如 a b),全局匹配会导致跨包误重命名
         // 仅当 import 或同包能精确解析到目标类时才应用重命名
         return null;
     }
@@ -1777,7 +1777,7 @@ public final class RenameService {
 
     /**
      * 在类上下文中查找匹配的类重命名条目
-     * 必须通过 import、同包或当前类上下文验证,避免跨包误匹配
+     * 必须通过 import 同包或当前类上下文验证,避免跨包误匹配
      */
     private static String firstClassReplacement(String source, List<RenameEntry> entries,
                                                 String oldName, String currentClass) {
@@ -1811,7 +1811,7 @@ public final class RenameService {
      * 判断 class rename 条目是否针对给定的内部类名
      *
      * <p>仅按 className 字段精确匹配不按 oldName(简单名)回退匹配,
-     * 因为混淆代码中大量类共享相同简单名(如 a、b),会导致跨包误匹配</p>
+     * 因为混淆代码中大量类共享相同简单名(如 a b),会导致跨包误匹配</p>
      */
     private static boolean classEntryTargetsInternalName(RenameEntry entry, String internalName) {
         if (entry == null || !TYPE_CLASS.equals(entry.type())) {
@@ -2161,7 +2161,7 @@ public final class RenameService {
      * 解析源码中所有方法的作用域
      *
      * <p>逐行扫描源码,识别方法签名行(包含方法名和括号,后跟大括号),
-     * 提取方法名、参数名、以及方法体内的局部变量名用于后续按作用域精确替换符号</p>
+     * 提取方法名 参数名 以及方法体内的局部变量名用于后续按作用域精确替换符号</p>
      */
     private static List<MethodScope> findMethodScopes(String source, String classSimpleName) {
         if (source == null || source.isEmpty()) {
@@ -2260,7 +2260,7 @@ public final class RenameService {
      * 解析方法体内的局部变量名
      *
      * <p>先将注释和字符串字面量替换为空白(避免误匹配),
-     * 然后分别解析：普通局部变量声明、catch/for 变量、Lambda 参数</p>
+     * 然后分别解析：普通局部变量声明 catch/for 变量 Lambda 参数</p>
      */
     private static Set<String> parseLocalVariableNames(String source, int bodyStart, int bodyEnd) {
         if (source == null || source.isEmpty() || bodyStart < 0 || bodyEnd <= bodyStart) {
@@ -2330,7 +2330,7 @@ public final class RenameService {
      * 将源码中的注释和字符串字面量替换为空白字符
      *
      * <p>保留换行符位置不变,确保后续的行号/偏移计算不受影响
-     * 支持：// 单行注释、/* 多行注释、双引号字符串、单引号字符字面量</p>
+     * 支持：// 单行注释 /* 多行注释 双引号字符串 单引号字符字面量</p>
      */
     private static String maskCommentsAndStrings(String source) {
         char[] chars = source.toCharArray();
@@ -2639,8 +2639,8 @@ public final class RenameService {
     }
 
     /**
-     * 规范化 RenameEntry：统一字段格式(类型小写、类名标准化为内部名、空值兜底)
-     * 用于消除不同来源(用户输入、ProGuard解析、反混淆建议)的格式差异
+     * 规范化 RenameEntry：统一字段格式(类型小写 类名标准化为内部名 空值兜底)
+     * 用于消除不同来源(用户输入 ProGuard解析 反混淆建议)的格式差异
      */
     private static RenameEntry normalize(RenameEntry entry) {
         String type = safe(entry.type()).toLowerCase(Locale.ROOT);
@@ -2872,7 +2872,7 @@ public final class RenameService {
     }
 
     /**
-     * 方法作用域：记录方法名、源码范围、参数名和局部变量名集合
+     * 方法作用域：记录方法名 源码范围 参数名和局部变量名集合
      * 用于方法级别替换时的作用域匹配
      */
     private record MethodScope(String name, int start, int end,

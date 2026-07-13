@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * if 语句区域
  * <p>
- * 表示反编译过程中的 if 条件分支结构，包含条件、then 分支区域和可选的 else 分支区域
+ * 表示反编译过程中的 if 条件分支结构，包含条件 then 分支区域和可选的 else 分支区域
  */
 public final class IfRegion extends ConditionRegion implements IBranchRegion {
     /** then 分支区域 (条件成立时执行的代码块) */

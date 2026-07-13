@@ -516,7 +516,7 @@ public final class SettingsDialog {
      * 构建单个引擎的参数面板,包含通用和高级两个折叠区域
      *
      * @param config     应用配置
-     * @param engineName 引擎名称(如 CFR、PROCYON)
+     * @param engineName 引擎名称(如 CFR PROCYON)
      * @param params     该引擎的参数定义列表
      * @param jsonArea   JSON 编辑器文本区域,用于双向同步
      * @param controlMap 用于存储参数 key 到控件的映射

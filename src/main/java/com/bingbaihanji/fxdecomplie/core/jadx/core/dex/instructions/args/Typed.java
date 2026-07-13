@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.attributes.AttrNode;
  * 带类型信息的抽象节点基类
  * <p>
  * 继承自 {@link AttrNode}，增加一个 {@link ArgType} 类型字段，
- * 为指令参数、SSA 变量等具有类型特征的节点提供统一的类型存取接口
+ * 为指令参数 SSA 变量等具有类型特征的节点提供统一的类型存取接口
  * 子类可以通过重写 {@link #isTypeImmutable()} 来声明类型是否不可变
  * </p>
  */

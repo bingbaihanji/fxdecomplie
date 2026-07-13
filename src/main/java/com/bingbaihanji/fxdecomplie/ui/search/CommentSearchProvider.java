@@ -23,7 +23,7 @@ public class CommentSearchProvider implements SearchProvider {
 
     /**
      * 判断给定行是否为注释行
-     * 支持 // 单行注释、&#47;* 和 * 多行注释、*&#47; 结束注释
+     * 支持 // 单行注释 &#47;* 和 * 多行注释 *&#47; 结束注释
      */
     private static boolean isCommentLine(String trimmed) {
         return trimmed.startsWith("//") || trimmed.startsWith("/*") || trimmed.startsWith("* ")
@@ -64,7 +64,7 @@ public class CommentSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.COMMENT;
     }
 
-    /** 高级搜索：支持正则、大小写、全词匹配等选项的注释搜索 */
+    /** 高级搜索：支持正则 大小写 全词匹配等选项的注释搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

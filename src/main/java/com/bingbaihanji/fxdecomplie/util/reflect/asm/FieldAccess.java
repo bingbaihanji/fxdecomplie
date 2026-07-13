@@ -31,7 +31,7 @@ public abstract class FieldAccess {
 
     /**
      * 获取指定类的字段访问器实例
-     * @param type 目标类,不能为 Object、接口、基本类型或 void
+     * @param type 目标类,不能为 Object 接口 基本类型或 void
      * @return 字段访问器实例
      */
     public static FieldAccess get(Class type) {
@@ -41,7 +41,7 @@ public abstract class FieldAccess {
         }
 
         if (type.getSuperclass() == null) {
-            throw new IllegalArgumentException("类型不能为 Object、接口、基本类型或 void");
+            throw new IllegalArgumentException("类型不能为 Object 接口 基本类型或 void");
         }
 
         ArrayList<Field> fields = new ArrayList<Field>();

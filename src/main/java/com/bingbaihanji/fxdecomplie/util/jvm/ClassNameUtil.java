@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * JVM 内部类名/路径规范化的集中式工具类
  * <p>
- * 提供类名的规范化、路径转换、容器前缀剥离、简单名/包名提取、
+ * 提供类名的规范化 路径转换 容器前缀剥离 简单名/包名提取 
  * 以及内部类候选路径生成等功能所有方法均为静态方法,不可实例化
  * </p>
  *
@@ -37,7 +37,7 @@ public final class ClassNameUtil {
      *   <li>若无斜杠则把 {@code .} 替换为 {@code /}</li>
      * </ul>
      *
-     * @param className 原始类名,可能包含 {@code \}、{@code .}、后缀等
+     * @param className 原始类名,可能包含 {@code \} {@code .} 后缀等
      * @return 规范化后的内部类名,{@code null} 时返回空字符串
      */
     public static String normalizeInternalName(String className) {
@@ -196,7 +196,7 @@ public final class ClassNameUtil {
     }
 
     /**
-     * 向候选列表中添加不重复、非空的路径值
+     * 向候选列表中添加不重复 非空的路径值
      *
      * @param candidates 候选路径列表
      * @param value      待添加的路径值

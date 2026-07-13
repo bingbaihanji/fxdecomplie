@@ -6,7 +6,7 @@ import jfx.incubator.scene.control.richtext.TextPos;
 /**
  * 代码视图操作回调接口,定义 CodeViewPanel 需要调用的外部操作
  *
- * <p>实现方(如 MainWindow)负责具体逻辑：导航、图形展示、注释管理等</p>
+ * <p>实现方(如 MainWindow)负责具体逻辑：导航 图形展示 注释管理等</p>
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -59,7 +59,7 @@ public interface CodeActionHandler {
     }
 
     /** 重命名光标处的标识符 */
-    default void renameAtCaret(CodeViewContext context, jfx.incubator.scene.control.richtext.TextPos caret) {
+    default void renameAtCaret(CodeViewContext context, TextPos caret) {
     }
 
     /** 在 workspace 内搜索选中文本 */

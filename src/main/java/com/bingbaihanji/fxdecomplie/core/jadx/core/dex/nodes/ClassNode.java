@@ -47,8 +47,8 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState
 
 /**
  * 类节点，表示 DEX 文件中的一个类
- * 负责管理类的字段、方法、内部类、泛型信息以及反编译缓存等
- * 实现了加载/卸载生命周期、代码生成、依赖管理和包更新通知等功能
+ * 负责管理类的字段 方法 内部类 泛型信息以及反编译缓存等
+ * 实现了加载/卸载生命周期 代码生成 依赖管理和包更新通知等功能
  */
 public class ClassNode extends NotificationAttrNode
         implements ILoadable, ICodeNode, IPackageUpdate, Comparable<ClassNode> {
@@ -58,7 +58,7 @@ public class ClassNode extends NotificationAttrNode
     private final RootNode root;
     /** 原始类数据 */
     private final IClassData clsData;
-    /** 类的元信息 (包名、类名等) */
+    /** 类的元信息 (包名 类名等) */
     private final ClassInfo clsInfo;
     /** 所属包节点 */
     private PackageNode packageNode;
@@ -230,7 +230,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 从类数据加载类信息，包括访问标志、父类、接口、字段和方法等
+     * 从类数据加载类信息，包括访问标志 父类 接口 字段和方法等
      *
      * @param cls       类数据
      * @param reloading 是否为重新加载 (重新加载时会恢复使用信息)
@@ -298,7 +298,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 更新类的泛型数据 (泛型参数、父类类型、接口类型)
+     * 更新类的泛型数据 (泛型参数 父类类型 接口类型)
      */
     public void updateGenericClsData(List<ArgType> generics, ArgType superClass, List<ArgType> interfaces) {
         this.generics = generics;
@@ -338,7 +338,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 检查源文件名属性是否有效无效的源文件名 (如默认名、与类名重复等)将被移除
+     * 检查源文件名属性是否有效无效的源文件名 (如默认名 与类名重复等)将被移除
      *
      * @return true 如果源文件名有效，false 如果应该被移除
      */
@@ -551,7 +551,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 卸载本类：卸载所有方法、内部类、字段及属性，并重置状态为未加载
+     * 卸载本类：卸载所有方法 内部类 字段及属性，并重置状态为未加载
      */
     @Override
     public void unload() {
@@ -948,7 +948,7 @@ public class ClassNode extends NotificationAttrNode
     }
 
     /**
-     * 获取本类及其所有内部类、内联类的 smali 反汇编代码 (结果会被缓存)
+     * 获取本类及其所有内部类 内联类的 smali 反汇编代码 (结果会被缓存)
      */
     public String getDisassembledCode() {
         if (smali == null) {

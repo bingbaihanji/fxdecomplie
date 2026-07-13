@@ -72,9 +72,9 @@ public final class CfgAnalyzer {
      *
      * <p>算法步骤：</p>
      * <ol>
-     *   <li>标记基本块起始位置(leaders)：方法入口、异常处理器入口、跳转目标、跳转后继</li>
+     *   <li>标记基本块起始位置(leaders)：方法入口 异常处理器入口 跳转目标 跳转后继</li>
      *   <li>根据 leaders 将指令序列划分为基本块</li>
-     *   <li>分析基本块末尾指令确定控制流边(无条件跳转、条件跳转、switch、异常边)</li>
+     *   <li>分析基本块末尾指令确定控制流边(无条件跳转 条件跳转 switch 异常边)</li>
      *   <li>组装 DOT 字符串输出</li>
      * </ol>
      *
@@ -291,7 +291,7 @@ public final class CfgAnalyzer {
     }
 
     /**
-     * 转义 DOT 标签中的特殊字符(反斜杠、引号、换行、尖括号、花括号)
+     * 转义 DOT 标签中的特殊字符(反斜杠 引号 换行 尖括号 花括号)
      *
      * @param s 原始字符串,可为 null
      * @return 转义后的字符串,null 返回空串

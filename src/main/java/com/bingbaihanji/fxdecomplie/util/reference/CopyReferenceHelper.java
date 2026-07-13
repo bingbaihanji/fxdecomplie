@@ -39,7 +39,7 @@ public final class CopyReferenceHelper {
 
     /**
      * 匹配注解使用语法(单行)，包括注解名及可选的括号内参数
-     * 例如：@Override、@SuppressWarnings("unchecked") 等
+     * 例如：@Override @SuppressWarnings("unchecked") 等
      * 不处理嵌套注解或复杂表达式
      */
     private static final Pattern ANNOTATION_PATTERN = Pattern.compile("@\\w+(?:\\s*\\([^)]*\\))?\\s*");
@@ -61,9 +61,9 @@ public final class CopyReferenceHelper {
             "boolean", "byte", "short", "int", "long", "float", "double", "char", "void");
 
     /**
-     * 包含 java.lang 包中常用的类、接口、异常、错误等类型的简单名称
+     * 包含 java.lang 包中常用的类 接口 异常 错误等类型的简单名称
      * 这些类型默认由编译器自动导入，因此在分析导入依赖时可忽略它们
-     * 集合覆盖了核心类型(String, Object)、包装类、常用工具类以及常见异常和错误
+     * 集合覆盖了核心类型(String, Object) 包装类 常用工具类以及常见异常和错误
      */
     private static final Set<String> JAVA_LANG_TYPES = Set.of(
             "String", "Object", "Integer", "Long", "Boolean", "Double", "Float",
@@ -268,7 +268,7 @@ public final class CopyReferenceHelper {
      */
     private static String resolveOneParam(String paramText, Map<String, String> importMap,
                                           String currentPackage) {
-        // 去除注解：@Foo、@Foo("bar")、@Foo(value = "bar")
+        // 去除注解：@Foo @Foo("bar") @Foo(value = "bar")
         String cleaned = ANNOTATION_PATTERN.matcher(paramText).replaceAll("").trim();
         // 去除参数名(最后一个空格后的单词),处理 varargs "..."
         int lastSpace = cleaned.lastIndexOf(' ');

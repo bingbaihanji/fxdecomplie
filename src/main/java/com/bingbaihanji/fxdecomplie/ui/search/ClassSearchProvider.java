@@ -95,7 +95,7 @@ public class ClassSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.CLASS;
     }
 
-    /** 高级搜索：支持正则、大小写、全词匹配等选项的类名搜索 */
+    /** 高级搜索：支持正则 大小写 全词匹配等选项的类名搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

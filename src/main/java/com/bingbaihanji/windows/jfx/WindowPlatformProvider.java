@@ -19,7 +19,7 @@ import java.util.Optional;
 public interface WindowPlatformProvider {
 
     /**
-     * 返回平台标识符,如 "win32"、"generic"
+     * 返回平台标识符,如 "win32" "generic"
      */
     String platformId();
 
@@ -38,7 +38,7 @@ public interface WindowPlatformProvider {
     Optional<NativeWindowHandle> nativeHandle(Stage stage, Duration timeout);
 
     /**
-     * 应用原生窗口外观属性(暗色模式、阴影、背景材质等)
+     * 应用原生窗口外观属性(暗色模式 阴影 背景材质等)
      *
      * @param stage      目标 Stage
      * @param appearance 原生外观配置

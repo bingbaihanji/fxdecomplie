@@ -225,7 +225,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 复制当前寄存器参数，保持相同的寄存器编号、初始类型和 SSA 变量
+     * 复制当前寄存器参数，保持相同的寄存器编号 初始类型和 SSA 变量
      *
      * @return 复制后的寄存器参数
      */
@@ -268,7 +268,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 使用指定的寄存器编号、初始类型和 SSA 变量创建寄存器参数副本
+     * 使用指定的寄存器编号 初始类型和 SSA 变量创建寄存器参数副本
      *
      * @param regNum   寄存器编号
      * @param initType 初始类型
@@ -413,7 +413,7 @@ public class RegisterArg extends InsnArg implements Named {
     }
 
     /**
-     * 返回完整的字符串表示，包含寄存器编号、SSA 版本、名称、类型、初始类型和属性信息
+     * 返回完整的字符串表示，包含寄存器编号 SSA 版本 名称 类型 初始类型和属性信息
      *
      * @return 完整字符串表示
      */

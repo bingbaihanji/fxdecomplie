@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.model.CommentScope;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * 导出源码时插入持久化注释的装饰器
@@ -89,9 +90,9 @@ public final class CommentExportDecorator {
             int dotIdx = methodName.lastIndexOf('.');
             String simpleName = dotIdx >= 0 ? methodName.substring(dotIdx + 1) : methodName;
             if (!simpleName.isBlank()) {
-                java.util.regex.Pattern namePattern = java.util.regex.Pattern.compile(
-                        "(?<![\\p{javaJavaIdentifierPart}])" + java.util.regex.Pattern.quote(simpleName)
-                                + "(?![\\p{javaJavaIdentifierPart}])");
+                Pattern namePattern = Pattern.compile(
+                        "(?<!\\p{javaJavaIdentifierPart})" + Pattern.quote(simpleName)
+                                + "(?!\\p{javaJavaIdentifierPart})");
                 for (int i = 0; i < lines.length; i++) {
                     if (namePattern.matcher(lines[i]).find()) {
                         return Math.max(1, i + 2);

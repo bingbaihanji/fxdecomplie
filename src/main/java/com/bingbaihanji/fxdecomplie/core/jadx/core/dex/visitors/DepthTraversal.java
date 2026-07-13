@@ -8,7 +8,7 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
  * 深度优先遍历工具类
  * <p>
  * 提供对 {@link ClassNode} 和 {@link MethodNode} 的深度优先访问能力，
- * 将访问者 ({@link IDexTreeVisitor})逐层应用到类节点及其内部类、方法上
+ * 将访问者 ({@link IDexTreeVisitor})逐层应用到类节点及其内部类 方法上
  * 遍历过程中捕获异常并记录到对应的节点错误信息中，防止因单个节点异常导致整个遍历中断
  * </p>
  */
@@ -22,7 +22,7 @@ public class DepthTraversal {
      * 以深度优先方式访问类节点
      * <p>
      * 首先调用访问者的 {@code visit(ClassNode)} 方法，若返回 {@code true}，
-     * 则递归访问该类的所有内部类和所有方法遍历过程中若发生栈溢出、
+     * 则递归访问该类的所有内部类和所有方法遍历过程中若发生栈溢出 
      * 引导方法错误或其他异常，将错误信息附加到类节点上
      * </p>
      *

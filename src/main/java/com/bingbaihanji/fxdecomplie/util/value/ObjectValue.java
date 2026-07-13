@@ -84,7 +84,7 @@ public non-sealed interface ObjectValue extends ReValue {
      * @param nullness
      * 		字符串的空值状态
      *
-     * @return 给定空值状态、类型为 {@link Object} 的对象值
+     * @return 给定空值状态 类型为 {@link Object} 的对象值
      */
 
     static ObjectValue object(Nullness nullness) {

@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 文件树节点数据模型表示文件树中的单个节点,可以是包、类文件、Java源文件等
+ * 文件树节点数据模型表示文件树中的单个节点,可以是包 类文件 Java源文件等
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -126,7 +126,7 @@ public class FileTreeNode {
     }
 
     /**
-     * 读取并缓存字节适合打开单个文件、导出当前节点等用户显式操作
+     * 读取并缓存字节适合打开单个文件 导出当前节点等用户显式操作
      */
     public synchronized byte[] resolveBytes() throws IOException {
         byte[] cached = getCachedBytes();

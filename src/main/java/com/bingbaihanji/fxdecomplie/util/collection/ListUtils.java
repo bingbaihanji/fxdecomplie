@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * List 工具类,提供判空、元素拼接、类型转换、去重、合并等常用操作
+ * List 工具类,提供判空 元素拼接 类型转换 去重 合并等常用操作
  *
  * @author bingbaihanji
  * @date 2026-06-12

@@ -7,11 +7,11 @@ import java.util.*;
 
 /**
  * 资源存储类，用于管理和存储Android资源条目
- * 提供资源条目的添加、替换、重命名和查询功能
+ * 提供资源条目的添加 替换 重命名和查询功能
  */
 public class ResourceStorage {
     /**
-     * 资源条目名称比较器，按配置、类型名、键名依次排序
+     * 资源条目名称比较器，按配置 类型名 键名依次排序
      */
     private static final Comparator<ResourceEntry> RES_ENTRY_NAME_COMPARATOR = Comparator
             .comparing(ResourceEntry::getConfig)

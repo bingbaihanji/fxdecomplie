@@ -44,7 +44,7 @@ public class NumberUtil {
      * 		</ul>
      *
      * @return 从文本解析出的数字
-     * 可以是 {@link Integer}、{@link Long}、{@link Float} 或 {@link Double}
+     * 可以是 {@link Integer} {@link Long} {@link Float} 或 {@link Double}
      *
      * @throws NumberFormatException
      * 		当输入无法被解析时抛出

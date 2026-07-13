@@ -8,7 +8,7 @@ import java.util.*;
  *
  * <p>
  * {@link ArrayMap} 的核心存储不是链表或哈希桶,而是紧凑数组JDK 的 {@link Map} 接口要求暴露
- * {@link Map#entrySet()}、{@link Map#keySet()} 和 {@link Map#values()} 三个视图,本类把数组下标操作适配为标准集合视图
+ * {@link Map#entrySet()} {@link Map#keySet()} 和 {@link Map#values()} 三个视图,本类把数组下标操作适配为标准集合视图
  *
  * <p>
  * 本类是包内实现细节,不对外暴露所有视图都是实时视图,对视图的删除会直接作用到原 Map

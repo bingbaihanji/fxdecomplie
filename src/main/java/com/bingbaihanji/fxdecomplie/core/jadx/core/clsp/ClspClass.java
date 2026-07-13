@@ -9,8 +9,8 @@ import java.util.*;
 /**
  * 类路径图中的类节点
  * <p>
- * 表示在类路径图上解析到的一个类，包含类型信息、访问标志、父类/接口、
- * 方法列表、类型参数等元数据，用于支持类型推断和方法重载解析
+ * 表示在类路径图上解析到的一个类，包含类型信息 访问标志 父类/接口 
+ * 方法列表 类型参数等元数据，用于支持类型推断和方法重载解析
  */
 public class ClspClass {
 
@@ -18,7 +18,7 @@ public class ClspClass {
     private final ArgType clsType;
     /** 类在类路径图中的唯一标识 ID */
     private final int id;
-    /** 类的访问标志 (public、interface、abstract 等) */
+    /** 类的访问标志 (public interface abstract 等) */
     private final int accFlags;
     /** 类来源 (标识该类来自哪个类路径源) */
     private final ClspClassSource source;

@@ -9,7 +9,7 @@ import java.util.List;
  * 自定义 ASM ClassVisitor,生成 jadx 风格的 smali 文本
  *
  * <p>输出格式：.class / .super / .source 头信息 + .field / .method 定义,
- * 方法体包含 .registers / .line / .local 和 smali 风格操作码(小写、带连字符)</p>
+ * 方法体包含 .registers / .line / .local 和 smali 风格操作码(小写 带连字符)</p>
  *
  * @author bingbaihanji
  * @date 2026-06-23
@@ -116,7 +116,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         return String.valueOf(value);
     }
 
-    /** 将 ASM 操作码转为 smali 风格操作码(小写、连字符分隔) */
+    /** 将 ASM 操作码转为 smali 风格操作码(小写 连字符分隔) */
     static String toSmaliOpcode(int opcode) {
         return switch (opcode) {
             case Opcodes.NOP -> "nop";
@@ -367,7 +367,7 @@ final class SmaliTextBuilder extends ClassVisitor {
         };
     }
 
-    /** 记录类基本信息：版本、访问标志、类名、父类、接口 */
+    /** 记录类基本信息：版本 访问标志 类名 父类 接口 */
     @Override
     public void visit(int version, int access, String name, String signature,
                       String superName, String[] interfaces) {
@@ -514,7 +514,7 @@ final class SmaliTextBuilder extends ClassVisitor {
 
     // -- 内部数据结构 --
 
-    /** 字段元数据：访问标志、名称、描述符、签名、默认值 */
+    /** 字段元数据：访问标志 名称 描述符 签名 默认值 */
     private static class FieldInfo {
         int access;
         String name;
@@ -581,14 +581,14 @@ final class SmaliTextBuilder extends ClassVisitor {
 
         // -- 指令访问 --
 
-        /** 无操作数指令(如 return-void、nop 等) */
+        /** 无操作数指令(如 return-void nop 等) */
         @Override
         public void visitInsn(int opcode) {
             mb.append(METHOD_INDENT).append(METHOD_INDENT)
                     .append(toSmaliOpcode(opcode)).append('\n');
         }
 
-        /** 单整数操作数指令(如 bipush、sipush、newarray) */
+        /** 单整数操作数指令(如 bipush sipush newarray) */
         @Override
         public void visitIntInsn(int opcode, int operand) {
             String prefix = opcodePrefixSmali(opcode);
@@ -601,7 +601,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append(' ').append(operand).append('\n');
         }
 
-        /** 局部变量存取指令(如 iload、istore、aload 等) */
+        /** 局部变量存取指令(如 iload istore aload 等) */
         @Override
         public void visitVarInsn(int opcode, int var) {
             String prefix = opcodePrefixSmali(opcode);
@@ -617,7 +617,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append(' ').append(var).append('\n');
         }
 
-        /** 类型操作指令(如 new、checkcast、instanceof) */
+        /** 类型操作指令(如 new checkcast instanceof) */
         @Override
         public void visitTypeInsn(int opcode, String type) {
             String prefix = opcodePrefixSmali(opcode);
@@ -627,7 +627,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append(' ').append(typeDesc).append('\n');
         }
 
-        /** 字段存取指令(如 getfield、putstatic 等) */
+        /** 字段存取指令(如 getfield putstatic 等) */
         @Override
         public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
             String prefix = opcodePrefixSmali(opcode);
@@ -638,7 +638,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # ").append(fallbackOpcode(opcode)).append('\n');
         }
 
-        /** 方法调用指令(如 invoke-virtual、invoke-static 等),解析参数和返回类型 */
+        /** 方法调用指令(如 invoke-virtual invoke-static 等),解析参数和返回类型 */
         @Override
         public void visitMethodInsn(int opcode, String owner, String name,
                                     String descriptor, boolean isInterface) {
@@ -669,7 +669,7 @@ final class SmaliTextBuilder extends ClassVisitor {
             mb.append("    # invokedynamic\n");
         }
 
-        /** 跳转指令(如 if-eq、goto 等),label 暂用占位符表示 */
+        /** 跳转指令(如 if-eq goto 等),label 暂用占位符表示 */
         @Override
         public void visitJumpInsn(int opcode, Label label) {
             String prefix = opcodePrefixSmali(opcode);
@@ -757,8 +757,8 @@ final class SmaliTextBuilder extends ClassVisitor {
             Type[] argTypes = Type.getArgumentTypes(methodDesc);
             Type retType = Type.getReturnType(methodDesc);
             header.append('(');
-            for (int i = 0; i < argTypes.length; i++) {
-                header.append(formatTypeReadable(argTypes[i]));
+            for (Type argType : argTypes) {
+                header.append(formatTypeReadable(argType));
             }
             header.append(')').append(formatTypeReadable(retType));
             header.append('\n');

@@ -53,7 +53,7 @@ public class ErrorsCounter {
     }
 
     /**
-     * 格式化错误/警告消息，包含节点类型、节点名称和输入文件名
+     * 格式化错误/警告消息，包含节点类型 节点名称和输入文件名
      *
      * @param node 相关的 dex 节点
      * @param msg  原始消息文本

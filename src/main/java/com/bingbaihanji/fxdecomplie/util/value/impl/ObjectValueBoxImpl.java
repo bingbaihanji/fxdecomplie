@@ -57,7 +57,7 @@ public abstract class ObjectValueBoxImpl<T> extends ObjectValueImpl {
      * @param nullness
      * 		值的空值状态
      *
-     * @return 内容未知、具有给定空值状态的装箱值实例
+     * @return 内容未知 具有给定空值状态的装箱值实例
      */
     protected abstract ObjectValueBoxImpl<T> wrapUnknown(Nullness nullness);
 

@@ -7,7 +7,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 
 /**
- * 工作区视图,关联 workspace、文件树、分屏编辑器和工作区标签页
+ * 工作区视图,关联 workspace 文件树 分屏编辑器和工作区标签页
  *
  * <p>使用 Java record 不可变数据载体,通过 {@link #codeTabPane()} 向后兼容
  * 返回主 TabPane(cell 0)</p>

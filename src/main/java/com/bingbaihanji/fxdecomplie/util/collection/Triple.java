@@ -6,8 +6,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * 通用三元组,包含三个元素 该类是一个不可变的记录(record),默认提供了构造器、访问器、equals、hashCode和toString方法
- * 此外,还添加了常用的实用方法,如转换、映射和聚合操作
+ * 通用三元组,包含三个元素 该类是一个不可变的记录(record),默认提供了构造器 访问器 equals hashCode和toString方法
+ * 此外,还添加了常用的实用方法,如转换 映射和聚合操作
  *
  * @param <A> 第一个元素的类型
  * @param <B> 第二个元素的类型

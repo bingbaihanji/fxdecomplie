@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  * <p>
  * 同时实现 {@link JadxPluginContext} (提供给插件访问反编译器能力的接口)与
  * {@link JadxPluginRuntimeData} (对外暴露插件运行时数据)，并负责在正确的类加载器下
- * 初始化/卸载插件、注册代码输入、处理选项与输入哈希等
+ * 初始化/卸载插件 注册代码输入 处理选项与输入哈希等
  */
 public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, Comparable<PluginContext> {
     /** 所属的反编译器实例 */
@@ -53,7 +53,7 @@ public class PluginContext implements JadxPluginContext, JadxPluginRuntimeData, 
     private final ClassLoader pluginClassLoader;
     /** 插件注册的代码输入列表 */
     private final List<JadxCodeInput> codeInputs = new ArrayList<>();
-    /** 应用级上下文 (提供 GUI 上下文、文件获取器等) */
+    /** 应用级上下文 (提供 GUI 上下文 文件获取器等) */
     private AppContext appContext;
     /** 插件注册的选项 (可能为空) */
     private @Nullable JadxPluginOptions options;

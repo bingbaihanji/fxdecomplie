@@ -91,7 +91,7 @@ public class EdgeInsnAttr implements IJadxAttribute {
     }
 
     /**
-     * 基于起始块、结束块与指令内容判断两个属性是否相等
+     * 基于起始块 结束块与指令内容判断两个属性是否相等
      */
     @Override
     public boolean equals(Object o) {
@@ -108,7 +108,7 @@ public class EdgeInsnAttr implements IJadxAttribute {
     }
 
     /**
-     * 基于起始块、结束块与指令计算哈希码
+     * 基于起始块 结束块与指令计算哈希码
      */
     @Override
     public int hashCode() {

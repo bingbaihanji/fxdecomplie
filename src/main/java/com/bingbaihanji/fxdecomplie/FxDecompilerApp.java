@@ -93,7 +93,7 @@ public final class FxDecompilerApp {
     }
 
     /**
-     * JavaFX Application 实现,负责窗口创建、配置加载、启动参数处理与应用生命周期管理
+     * JavaFX Application 实现,负责窗口创建 配置加载 启动参数处理与应用生命周期管理
      */
     public static final class FxApplication extends Application {
 
@@ -104,7 +104,7 @@ public final class FxDecompilerApp {
         /** 主 Stage,用于在所有退出路径上持久化窗口状态 */
         private Stage primaryStage;
 
-        /** 根据应用配置构建 Windows 原生窗口外观(DWM 暗色对话框、边框颜色、圆角偏好) */
+        /** 根据应用配置构建 Windows 原生窗口外观(DWM 暗色对话框 边框颜色 圆角偏好) */
         private static WindowAppearance windowAppearance(AppConfig config) {
             AppConfig.Platform platform = config == null ? null : config.platform();
             int borderColor = platform == null ? 0x00888800 : platform.windowBorderColor();
@@ -125,7 +125,7 @@ public final class FxDecompilerApp {
             }
         }
 
-        /** 为主窗口应用平台原生窗口外观(DWM 暗色主题、阴影、圆角等) */
+        /** 为主窗口应用平台原生窗口外观(DWM 暗色主题 阴影 圆角等) */
         public void initWindows(Stage primaryStage) {
             DefaultWindowTheme.applyWindowDarkMode(primaryStage);
         }
@@ -144,7 +144,7 @@ public final class FxDecompilerApp {
         }
 
         /**
-         * 启动 JavaFX 应用主流程:加载配置、初始化缓存与重命名服务、设置国际化、创建主窗口
+         * 启动 JavaFX 应用主流程:加载配置 初始化缓存与重命名服务 设置国际化 创建主窗口
          *
          * <p>initStyle(EXTENDED) 在 JavaFX 中被标记为 deprecated,
          * 当前配合 AppHeaderBar 提供完整窗口交互,功能正常,暂时保留</p>
@@ -219,7 +219,7 @@ public final class FxDecompilerApp {
         }
 
         /**
-         * 应用关闭时释放资源:保存窗口状态与配置、停止后台任务、关闭反编译缓存
+         * 应用关闭时释放资源:保存窗口状态与配置 停止后台任务 关闭反编译缓存
          */
         @Override
         public void stop() {
@@ -237,7 +237,7 @@ public final class FxDecompilerApp {
         }
 
         /**
-         * 将当前窗口的位置、大小和最大化状态保存到配置对象
+         * 将当前窗口的位置 大小和最大化状态保存到配置对象
          *
          * @param stage 主窗口 Stage
          */

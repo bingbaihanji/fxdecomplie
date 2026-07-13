@@ -9,8 +9,8 @@ import java.util.Map;
 /**
  * jadx 选项 schema — 单一定义源
  * <p>
- * {@link com.bingbaihanji.fxdecomplie.decompiler.JadxParameters}、
- * {@link com.bingbaihanji.fxdecomplie.util.jadx.JadxOptionsBridge}、
+ * {@link com.bingbaihanji.fxdecomplie.decompiler.JadxParameters}
+ * {@link com.bingbaihanji.fxdecomplie.util.jadx.JadxOptionsBridge}
  * 和 {@link com.bingbaihanji.fxdecomplie.service.DecompilerOptions#hash}
  * 均消费此 schema，确保 key/默认值/类型定义一致
  *

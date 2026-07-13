@@ -7,7 +7,7 @@ import java.nio.file.Path;
 /**
  * 将所有 jadx 文件统一存放在同一个基础目录下的文件目录提供者
  * <p>
- * 配置、缓存与临时文件分别对应基础目录下的 {@code config}、{@code cache}、{@code temp} 子目录
+ * 配置 缓存与临时文件分别对应基础目录下的 {@code config} {@code cache} {@code temp} 子目录
  * </p>
  */
 public class SingleDirFilesGetter implements IJadxFilesGetter {

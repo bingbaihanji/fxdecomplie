@@ -25,8 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 工作区/文件/项目生命周期控制器：打开文件/目录/项目、保存项目、
- * 关闭工作区、保存当前文件、树中定位、快速打开类、最近文件、新窗口及异步工作区加载
+ * 工作区/文件/项目生命周期控制器：打开文件/目录/项目 保存项目 
+ * 关闭工作区 保存当前文件 树中定位 快速打开类 最近文件 新窗口及异步工作区加载
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
@@ -211,7 +211,7 @@ public final class WorkspaceController {
         if (view == null) {
             return;
         }
-        java.util.List<String> classNames = new java.util.ArrayList<>();
+        java.util.List<String> classNames = new ArrayList<>();
         collectClassNames(view.workspace().getTreeRoot(), classNames);
         QuickOpenDialog.show(owner.stage(), classNames, fullPath -> {
             FileTreeNode node = view.workspace().findNodeByPath(fullPath);

@@ -7,13 +7,13 @@ import org.intellij.lang.annotations.MagicConstant;
 /**
  * 访问修饰符信息封装类
  * <p>
- * 用于封装类、字段、方法的访问标志 (access flags)，
- * 提供标志位的判断、修改、可见性比较及字符串表示等功能
+ * 用于封装类 字段 方法的访问标志 (access flags)，
+ * 提供标志位的判断 修改 可见性比较及字符串表示等功能
  * </p>
  */
 public class AccessInfo {
 
-    /** 可见性标志掩码，包含 public、protected、private 三个标志位 */
+    /** 可见性标志掩码，包含 public protected private 三个标志位 */
     public static final int VISIBILITY_FLAGS = AccessFlags.PUBLIC | AccessFlags.PROTECTED | AccessFlags.PRIVATE;
     private final int accFlags;
     private final AFType type;
@@ -22,7 +22,7 @@ public class AccessInfo {
      * 构造访问信息对象
      *
      * @param accessFlags 访问标志位值
-     * @param type        所属类型 (类、字段、方法)
+     * @param type        所属类型 (类 字段 方法)
      */
     public AccessInfo(int accessFlags, AFType type) {
         this.accFlags = accessFlags;
@@ -182,7 +182,7 @@ public class AccessInfo {
 
     /**
      * 判断是否为包私有 (package-private)访问级别
-     * 即不包含 public、protected、private 任一可见性标志位
+     * 即不包含 public protected private 任一可见性标志位
      *
      * @return 如果是包私有则返回 {@code true}
      */
@@ -264,7 +264,7 @@ public class AccessInfo {
 
     /**
      * 判断是否为 synthetic (编译器合成)
-     * 编译器自动生成的成员 (如桥接方法、内部类访问方法等)会被标记为 synthetic
+     * 编译器自动生成的成员 (如桥接方法 内部类访问方法等)会被标记为 synthetic
      *
      * @return 如果是 synthetic 则返回 {@code true}
      */
@@ -340,7 +340,7 @@ public class AccessInfo {
     /**
      * 获取访问标志所属类型
      *
-     * @return 所属类型 (类、字段或方法)
+     * @return 所属类型 (类 字段或方法)
      */
     public AFType getType() {
         return type;
@@ -349,12 +349,12 @@ public class AccessInfo {
     /**
      * 根据访问标志生成 Java 源码风格的修饰符字符串 (以空格分隔并带尾随空格)
      * <p>
-     * 会按照类型 (方法、字段、类)追加相应的修饰符，例如 synchronized、volatile、strict 等
+     * 会按照类型 (方法 字段 类)追加相应的修饰符，例如 synchronized volatile strict 等
      * 当 {@code showHidden} 为 {@code true} 时，还会以注释形式追加隐藏标志，
-     * 如 {@code /* bridge *}{@code /}、{@code /* synthetic *}{@code /} 等
+     * 如 {@code /* bridge *}{@code /} {@code /* synthetic *}{@code /} 等
      * </p>
      *
-     * @param showHidden 是否输出隐藏的合成、桥接、数据类等标注
+     * @param showHidden 是否输出隐藏的合成 桥接 数据类等标注
      * @return 拼接后的修饰符字符串
      */
     public String makeString(boolean showHidden) {
@@ -435,7 +435,7 @@ public class AccessInfo {
     /**
      * 获取可见性级别的名称
      *
-     * @return 可见性名称，取值为 {@code "package-private"}、{@code "public"}、
+     * @return 可见性名称，取值为 {@code "package-private"} {@code "public"}
      *         {@code "private"} 或 {@code "protected"}
      * @throws JadxRuntimeException 如果可见性标志位无法识别
      */
@@ -465,7 +465,7 @@ public class AccessInfo {
     }
 
     /**
-     * 返回访问信息的调试字符串表示，包含所属类型、十六进制标志值及修饰符字符串
+     * 返回访问信息的调试字符串表示，包含所属类型 十六进制标志值及修饰符字符串
      *
      * @return 调试用字符串
      */

@@ -582,7 +582,7 @@ public final class WorkspaceTabManager {
         SplitPane splitPane = new SplitPane(treeView, editorSplitPane);
         splitPane.setDividerPositions(0.25);
 
-        // 代码标签页切换时更新大纲、继承和注释面板
+        // 代码标签页切换时更新大纲 继承和注释面板
         codeTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab instanceof CodeEditorTab codeTab) {
                 outlinePane.update(codeTab.getOpenFile().sourceCode());
@@ -713,7 +713,7 @@ public final class WorkspaceTabManager {
         return view.splitEditorPane().currentCodeTab();
     }
 
-    /** 根据指定标签页的工作区状态更新状态栏(文件路径、编码、引擎、光标位置) */
+    /** 根据指定标签页的工作区状态更新状态栏(文件路径 编码 引擎 光标位置) */
     public void updateStatusForWorkspace(Tab tab) {
         WorkspaceView view = tab == null ? null : workspaceViews.get(tab);
         if (view == null) {

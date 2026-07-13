@@ -20,7 +20,7 @@ import java.util.List;
  * <p>
  * 用于代码收缩 (shrink)阶段记录单条指令及其寄存器参数的分布情况，
  * 并判断某条赋值指令能否安全地向下移动并内联 (inline，即包装)到使用它的指令中，
- * 从而在保证语义不变的前提下减少中间变量、生成更紧凑的表达式
+ * 从而在保证语义不变的前提下减少中间变量 生成更紧凑的表达式
  */
 final class ArgsInfo {
     private final InsnNode insn;

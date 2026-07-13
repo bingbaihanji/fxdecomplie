@@ -30,7 +30,7 @@ public final class Win32Api {
     public interface DwmApi extends Library {
         DwmApi INSTANCE = Native.load("dwmapi", DwmApi.class);
 
-        /** 设置 DWM 窗口属性(如暗色模式、圆角、背景材质等) */
+        /** 设置 DWM 窗口属性(如暗色模式 圆角 背景材质等) */
         int DwmSetWindowAttribute(WinDef.HWND hwnd, int dwAttribute, IntByReference pvAttribute, int cbAttribute);
 
         /** 获取 DWM 窗口属性 */

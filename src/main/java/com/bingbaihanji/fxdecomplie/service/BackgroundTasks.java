@@ -130,9 +130,9 @@ public final class BackgroundTasks {
 
     /** 任务池类型，调用方据此将任务路由到合适的池 */
     public enum PoolType {
-        /** 搜索、打开类、Ctrl+Click、UI 触发的交互操作 */
+        /** 搜索 打开类 Ctrl+Click UI 触发的交互操作 */
         INTERACTIVE,
-        /** 磁盘缓存写入、索引构建 — 磁盘/CPU 密集型批处理 */
+        /** 磁盘缓存写入 索引构建 — 磁盘/CPU 密集型批处理 */
         IO,
         /** 导出任务专用 */
         EXPORT

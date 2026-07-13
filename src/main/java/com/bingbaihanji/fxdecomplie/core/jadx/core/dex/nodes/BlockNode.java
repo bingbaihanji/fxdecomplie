@@ -19,7 +19,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils.lockList;
 /**
  * 基本块节点，表示控制流图中的一个基本块
  * <p>
- * 包含指令列表、前驱/后继节点关系以及支配树相关信息 (支配节点、后支配节点、支配边界等)
+ * 包含指令列表 前驱/后继节点关系以及支配树相关信息 (支配节点 后支配节点 支配边界等)
  * </p>
  */
 public final class BlockNode extends AttrNode implements IBlock, Comparable<BlockNode> {

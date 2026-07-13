@@ -35,7 +35,7 @@ import java.util.List;
  * <p>
  * 将此前在 {@link MarkMethodsForInline} 中标记为可内联的方法调用替换为方法体本身，
  * 从而在反编译结果中消除多余的间接调用 (如简单的 getter/setter 访问器)
- * 内联过程中会完成寄存器重映射、结果值处理，并同步更新方法/字段/类的使用 (usage)信息
+ * 内联过程中会完成寄存器重映射 结果值处理，并同步更新方法/字段/类的使用 (usage)信息
  */
 public class InlineMethods extends AbstractVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(InlineMethods.class);

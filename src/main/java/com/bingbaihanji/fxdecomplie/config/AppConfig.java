@@ -16,8 +16,8 @@ import java.util.*;
 
 /**
  * 应用配置 POJO,从 {@code <appDir>/config/config.json} 加载并持久化
- * 包含窗口几何信息、主题设置、反编译器偏好、导出默认值、
- * 搜索选项、语言选择及最近文件历史
+ * 包含窗口几何信息 主题设置 反编译器偏好 导出默认值 
+ * 搜索选项 语言选择及最近文件历史
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -60,7 +60,7 @@ public class AppConfig {
 
     /**
      * 解析应用根目录:优先取 JAR 包所在目录,开发期回退到 user.dir
-     * 所有应用数据(配置、缓存、日志)均存放在此目录下
+     * 所有应用数据(配置 缓存 日志)均存放在此目录下
      */
     public static Path appDir() {
         return APP_DIR;
@@ -436,7 +436,7 @@ public class AppConfig {
     }
 
     /**
-     * 规范化配置值:填充 null 字段为默认值、修正越界数值、清理空白/无效的最近文件条目
+     * 规范化配置值:填充 null 字段为默认值 修正越界数值 清理空白/无效的最近文件条目
      */
     private void normalize() {
         if (window == null) {

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * 代码重命名访问器，负责将外部传入的重命名数据应用到方法中的变量和参数上
  * <p>
  * 该访问器在变量初始化和调试信息应用之后执行，通过 {@link ICodeRename} 数据将
- * 变量、方法参数等实体重命名为指定的新名称
+ * 变量 方法参数等实体重命名为指定的新名称
  * </p>
  */
 @JadxVisitor(
@@ -43,7 +43,7 @@ public class CodeRenameVisitor extends AbstractVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(CodeRenameVisitor.class);
 
     /**
-     * 以类全限定名为键、该类的所有重命名列表为值的映射表
+     * 以类全限定名为键 该类的所有重命名列表为值的映射表
      */
     private Map<String, List<ICodeRename>> clsRenamesMap;
 

@@ -8,8 +8,8 @@ import java.util.List;
 /**
  * 类数据接口
  * <p>
- * 表示从输入源解析出的单个类的完整信息，包括类型、访问标志、父类、实现接口、
- * 字段、方法及其它属性等用于在反编译流程中承载类级别的元数据
+ * 表示从输入源解析出的单个类的完整信息，包括类型 访问标志 父类 实现接口 
+ * 字段 方法及其它属性等用于在反编译流程中承载类级别的元数据
  */
 public interface IClassData {
 
@@ -74,7 +74,7 @@ public interface IClassData {
     void visitFieldsAndMethods(ISeqConsumer<IFieldData> fieldsConsumer, ISeqConsumer<IMethodData> mthConsumer);
 
     /**
-     * 获取该类上附加的属性列表 (如注解、签名等)
+     * 获取该类上附加的属性列表 (如注解 签名等)
      *
      * @return 类属性列表
      */

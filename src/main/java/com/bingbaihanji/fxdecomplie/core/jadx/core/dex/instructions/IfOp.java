@@ -33,7 +33,7 @@ public enum IfOp {
     /**
      * 获取操作符的符号字符串
      *
-     * @return 符号字符串，如 "=="、"<" 等
+     * @return 符号字符串，如 "==" "<" 等
      */
     public String getSymbol() {
         return symbol;

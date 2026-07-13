@@ -49,7 +49,7 @@ public final class FillArrayData extends InsnNode {
     }
 
     /**
-     * 根据原始数据、元素个数和元素大小构造填充数组数据指令
+     * 根据原始数据 元素个数和元素大小构造填充数组数据指令
      *
      * @param data    原始数组数据
      * @param size    元素个数

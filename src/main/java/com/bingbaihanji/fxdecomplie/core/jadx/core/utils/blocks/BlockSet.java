@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * 基于 {@link BitSet} 实现的 {@link BlockNode} 块集合
  * <p>
  * 每个块通过其在方法基本块列表中的位置 ({@link BlockNode#getPos()})映射到位图的一位，
- * 从而以极低的内存开销完成集合的增删查、交集、并集等操作
+ * 从而以极低的内存开销完成集合的增删查 交集 并集等操作
  */
 public class BlockSet implements Iterable<BlockNode> {
 

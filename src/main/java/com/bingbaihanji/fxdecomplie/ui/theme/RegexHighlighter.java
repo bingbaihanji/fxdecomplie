@@ -283,7 +283,7 @@ public class RegexHighlighter implements SyntaxDecorator {
                 // ---- 注解: @Override, @Deprecated 等 ----
             } else if (matcher.group("ANNOTATION") != null) {
                 style = styleAnnotation;
-                // ---- 数字字面量: 整数、浮点数,可带后缀(L, F, D) ----
+                // ---- 数字字面量: 整数 浮点数,可带后缀(L, F, D) ----
             } else if (matcher.group("NUMBER") != null) {
                 style = styleNumber;
                 // ---- 标识符: 词边界 token,需根据上下文消歧 ----

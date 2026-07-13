@@ -16,13 +16,13 @@ import java.util.List;
  * 字段节点，表示 DEX 中的一个字段定义
  * <p>
  * 继承自 {@link NotificationAttrNode}，实现了 {@link ICodeNode} 和 {@link IFieldInfoRef} 接口，
- * 提供字段的访问标志、类型、使用位置等信息的管理能力
+ * 提供字段的访问标志 类型 使用位置等信息的管理能力
  */
 public class FieldNode extends NotificationAttrNode implements ICodeNode, IFieldInfoRef {
 
     /** 字段所属的父类节点 */
     private final ClassNode parentClass;
-    /** 字段的基本信息 (名称、类型描述符、所属类) */
+    /** 字段的基本信息 (名称 类型描述符 所属类) */
     private final FieldInfo fieldInfo;
     /** 字段的访问标志 (public/private/protected/static/final 等) */
     private AccessInfo accFlags;

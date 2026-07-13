@@ -197,7 +197,7 @@ public final class SearchDialog {
                 boolean includeFullSource = fullSourceLoader != null
                         && fullSourceSearch.isSelected()
                         && scope.sourceCacheRelevant();
-                // 构建搜索选项：正则、大小写、全词匹配
+                // 构建搜索选项：正则 大小写 全词匹配
                 SearchOptions options = new SearchOptions(
                         regexToggle.isSelected(),
                         caseToggle.isSelected(),

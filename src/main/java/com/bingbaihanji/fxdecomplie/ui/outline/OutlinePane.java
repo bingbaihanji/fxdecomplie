@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 大纲面板显示当前类的字段、方法、内部类列表,支持实时过滤和点击跳转
+ * 大纲面板显示当前类的字段 方法 内部类列表,支持实时过滤和点击跳转
  *
  * @author bingbaihanji
  * @date 2026-06-17

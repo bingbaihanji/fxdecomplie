@@ -4,6 +4,8 @@ import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
+import com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator;
+import com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog;
 import com.bingbaihanji.fxdecomplie.rename.RenameEntry;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
@@ -19,10 +21,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 
 /**
- * 反混淆与 ProGuard 映射控制器：自动反混淆扫描与预览、ProGuard 映射导入/导出、重命名快照恢复
+ * 反混淆与 ProGuard 映射控制器：自动反混淆扫描与预览 ProGuard 映射导入/导出 重命名快照恢复
  * <p>
  * 从 RenameController 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 与 RenameController 共用 {@code owner.refreshWorkspaceTree(...)} 刷新文件树
@@ -52,14 +58,13 @@ public final class DeobfuscationController {
         // 将树遍历和扫描移至后台线程,避免阻塞 FX 线程
         BackgroundTasks.run("Deobfuscate-Scan", () -> {
             try {
-                java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
+                List<FileTreeNode> nodesSnapshot = new ArrayList<>();
                 owner.collectTreeNodes(workspace.getTreeRoot(), nodesSnapshot);
                 long classNodeCount = nodesSnapshot.stream().filter(FileTreeNode::isClassFile).count();
                 WorkspaceIndex index = workspace.isIndexReady()
                         ? workspace.getIndex()
                         : WorkspaceIndex.EMPTY;
-                java.util.List<RenameEntry> suggestions =
-                        com.bingbaihanji.fxdecomplie.rename.AutoDeobfuscator.scan(nodesSnapshot, index);
+                List<RenameEntry> suggestions = AutoDeobfuscator.scan(nodesSnapshot, index);
                 boolean memberScanComplete = index != WorkspaceIndex.EMPTY;
                 log.info("deobfuscate: scan returned {} suggestions (nodes={}, memberScanComplete={})",
                         suggestions.size(), nodesSnapshot.size(), memberScanComplete);
@@ -80,12 +85,12 @@ public final class DeobfuscationController {
 
     /** 显示反混淆预览对话框,提交用户选择的重命名条目并刷新所有相关标签页 */
     private void showDeobfuscatePreview(Workspace workspace,
-                                        java.util.List<RenameEntry> suggestions,
+                                        List<RenameEntry> suggestions,
                                         boolean memberScanComplete,
                                         long classNodeCount) {
         owner.statusBar().clearTask();
         if (suggestions == null || suggestions.isEmpty()) {
-            com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog.show(owner.stage(), List.of());
+            DeobfuscatePreviewDialog.show(owner.stage(), List.of());
             if (!memberScanComplete) {
                 owner.statusBar().setFilePath("No obfuscated names found in " + classNodeCount
                         + " class nodes. Indexing continues for fields and methods.");
@@ -94,8 +99,8 @@ public final class DeobfuscationController {
         }
         log.info("showDeobfuscatePreview: {} suggestions to show", suggestions.size());
         String wsHash = CommentScope.workspaceHash(workspace);
-        java.util.List<RenameEntry> selected =
-                com.bingbaihanji.fxdecomplie.rename.DeobfuscatePreviewDialog.show(owner.stage(), suggestions);
+        List<RenameEntry> selected =
+                DeobfuscatePreviewDialog.show(owner.stage(), suggestions);
         log.info("showDeobfuscatePreview: dialog returned {} selected entries", selected.size());
         if (selected.isEmpty()) {
             owner.statusBar().setFilePath("Deobfuscate cancelled or no entries selected");
@@ -136,8 +141,8 @@ public final class DeobfuscationController {
             return;
         }
         try {
-            String text = java.nio.file.Files.readString(file.toPath());
-            java.util.List<RenameEntry> entries =
+            String text = Files.readString(file.toPath());
+            List<RenameEntry> entries =
                     RenameService.parseProGuardMapping(text);
             if (entries.isEmpty()) {
                 owner.showWarning("Import ProGuard Mapping", "No mapping entries found.");
@@ -182,7 +187,7 @@ public final class DeobfuscationController {
             return;
         }
         try {
-            java.nio.file.Files.writeString(file.toPath(), mapping);
+            Files.writeString(file.toPath(), mapping);
             owner.statusBar().setFilePath("Exported mapping: " + file.getAbsolutePath());
         } catch (java.io.IOException e) {
             log.error("导出 ProGuard mapping 失败", e);
@@ -224,11 +229,11 @@ public final class DeobfuscationController {
             return 0;
         }
         owner.classTabOpener().cancelCurrentTask();
-        java.util.List<java.util.Map.Entry<TabPane, CodeEditorTab>> tabs = new java.util.ArrayList<>();
+        List<Map.Entry<TabPane, CodeEditorTab>> tabs = new ArrayList<>();
         for (TabPane pane : view.splitEditorPane().allTabPanes()) {
             for (Tab tab : pane.getTabs()) {
                 if (tab instanceof CodeEditorTab codeTab && codeTab.getOpenFile() != null) {
-                    tabs.add(java.util.Map.entry(pane, codeTab));
+                    tabs.add(Map.entry(pane, codeTab));
                 }
             }
         }

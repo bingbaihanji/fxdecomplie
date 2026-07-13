@@ -14,8 +14,8 @@ import java.util.Map;
 /**
  * 不包含元信息支持的 CodeWriter 实现
  * <p>
- * 这是一个简化的代码写入器，不支持附加元数据注解 (如定义位置、源码行映射等)
- * 适用于仅需要生成纯文本代码、不关心代码导航和元信息的场景
+ * 这是一个简化的代码写入器，不支持附加元数据注解 (如定义位置 源码行映射等)
+ * 适用于仅需要生成纯文本代码 不关心代码导航和元信息的场景
  * </p>
  */
 public class SimpleCodeWriter implements ICodeWriter {

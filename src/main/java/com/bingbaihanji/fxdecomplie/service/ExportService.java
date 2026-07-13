@@ -24,7 +24,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * 导出服务支持单文件保存、批量导出到目录和 ZIP 归档
+ * 导出服务支持单文件保存 批量导出到目录和 ZIP 归档
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -88,15 +88,15 @@ public final class ExportService {
     }
 
     /**
-     * 执行完整的导出流水线：过滤、反编译、写入目标(目录或 ZIP)
+     * 执行完整的导出流水线：过滤 反编译 写入目标(目录或 ZIP)
      *
      * @param nodes         可导出的文件节点列表(须在 FX 线程提取)
-     * @param config        导出配置(格式、引擎、路径、冲突策略等)
+     * @param config        导出配置(格式 引擎 路径 冲突策略等)
      * @param index         工作区索引,用于字节码解析上下文
      * @param commentScope  注释导出范围,null 表示不导出注释
      * @param onProgress    进度回调,接收当前路径和百分比
      * @param canceled      用户取消标志 supplier,非 null 时每轮迭代检查
-     * @return 导出结果摘要(总数、成功数、错误列表)
+     * @return 导出结果摘要(总数 成功数 错误列表)
      * @throws IOException 输出目录或 ZIP 创建失败时抛出
      */
     public static ExportResult exportAll(List<FileTreeNode> nodes, ExportConfig config,
@@ -561,7 +561,7 @@ public final class ExportService {
     private record ExportContent(String relativePath, byte[] bytes) {
     }
 
-    /** 导出进度状态跟踪器：记录总数、完成数、成功数和错误列表 */
+    /** 导出进度状态跟踪器：记录总数 完成数 成功数和错误列表 */
     private static final class ExportState {
         private final int totalFiles;
         private final BiConsumer<String, Integer> onProgress;

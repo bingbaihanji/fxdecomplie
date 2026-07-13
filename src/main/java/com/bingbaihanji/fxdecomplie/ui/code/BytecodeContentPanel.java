@@ -5,7 +5,7 @@ import jfx.incubator.scene.control.richtext.CodeArea;
 import org.objectweb.asm.ClassReader;
 
 /**
- * 字节码内容面板,使用自定义 BytecodeTextBuilder 生成含常量池、hex 偏移、完整结构信息的字节码文本
+ * 字节码内容面板,使用自定义 BytecodeTextBuilder 生成含常量池 hex 偏移 完整结构信息的字节码文本
  *
  * @author bingbaihanji
  * @date 2026-06-21

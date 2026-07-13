@@ -6,7 +6,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxDecompilerRequest;
 /**
  * jadx 反编译引擎适配器
  * <p>
- * 该类只保留 {@link Decompiler} 接口适配,实际项目状态、输入构建和移植内核调用由
+ * 该类只保留 {@link Decompiler} 接口适配,实际项目状态 输入构建和移植内核调用由
  * {@link JadxDecompilerFacade} 管理 
  *
  * @author bingbaihanji

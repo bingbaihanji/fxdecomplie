@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * Jadx 插件管理器，负责插件的加载、注册、卸载、解析和初始化
+ * Jadx 插件管理器，负责插件的加载 注册 卸载 解析和初始化
  * <p>
  * 管理所有插件的生命周期，处理插件间的冲突 (通过 {@code provides} 机制)，
  * 并维护已解析的插件集合供反编译器使用
@@ -94,7 +94,7 @@ public class JadxPluginManager {
     /**
      * 添加插件到所有插件集合中
      * <p>
-     * 会检查插件是否被禁用、Jadx 版本是否兼容，以及是否存在重复的插件 ID
+     * 会检查插件是否被禁用 Jadx 版本是否兼容，以及是否存在重复的插件 ID
      *
      * @param plugin                 要添加的插件
      * @param verifyRequiredVersion  版本验证器
@@ -257,7 +257,7 @@ public class JadxPluginManager {
     /**
      * 校验插件选项描述的合法性
      * <p>
-     * 要求选项描述非空、每个选项名以「插件 ID.」为前缀、描述文本非空、取值列表非空，
+     * 要求选项描述非空 每个选项名以「插件 ID.」为前缀 描述文本非空 取值列表非空，
      * 任一条件不满足即抛出异常
      *
      * @param pluginContext 插件上下文

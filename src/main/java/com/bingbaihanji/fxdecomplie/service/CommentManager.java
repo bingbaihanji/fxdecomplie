@@ -41,7 +41,7 @@ public final class CommentManager {
     /**
      * 分段锁数组：按 lockKey 的哈希映射到固定数量的锁，保证同一文件始终映射到同一把锁
      * <p>
-     * 相比"每 key 一把锁的 ConcurrentHashMap"，分段锁内存有界 (永不增长、无泄漏)，
+     * 相比"每 key 一把锁的 ConcurrentHashMap"，分段锁内存有界 (永不增长 无泄漏)，
      * 且不存在"移除锁条目 → 其他线程重建新锁"导致两个线程持不同锁进入临界区的竞态
      * 不同文件偶发共享同一分段锁只会带来可忽略的额外串行化，不影响正确性
      */
@@ -222,7 +222,7 @@ public final class CommentManager {
      * CommentData 的自定义 Gson 反序列化器
      *
      * <p>Gson 可能通过 {@code UnsafeAllocator} 绕过 Record 的紧凑构造器直接创建实例,
-     * 导致反序列化后 {@code text()}、{@code memberSignature()} 等字段为 null,
+     * 导致反序列化后 {@code text()} {@code memberSignature()} 等字段为 null,
      * 调用方({@code CommentExportDecorator.insert()} 等)会抛出 NPE</p>
      *
      * <p>此反序列化器从 JSON 中逐字段提取值,对缺失或 null 的字段填入默认值,

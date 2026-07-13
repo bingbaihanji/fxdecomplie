@@ -12,14 +12,14 @@ import java.util.regex.Pattern;
  *
  * <p>支持的 DOT 语法子集：</p>
  * <ul>
- *   <li>digraph 声明、rankdir(LR / BT)</li>
+ *   <li>digraph 声明 rankdir(LR / BT)</li>
  *   <li>含引号或裸标识符的节点(id [key=value, ...])</li>
  *   <li>边(a -> b)</li>
- *   <li>属性：label、fillcolor、fontcolor</li>
+ *   <li>属性：label fillcolor fontcolor</li>
  *   <li>全局 label(用于方法图截断提示等)</li>
  * </ul>
  *
- * <p>不支持的语法(会被忽略)：subgraph、HTML label、record shape、port 等</p>
+ * <p>不支持的语法(会被忽略)：subgraph HTML label record shape port 等</p>
  *
  * @author bingbaihanji
  * @date 2026-06-22
@@ -74,7 +74,7 @@ final class DotGraphParser {
 
         for (String rawLine : dot.split("\\R")) {
             String line = rawLine.strip();
-            // 跳过空行、注释、digraph 声明、大括号
+            // 跳过空行 注释 digraph 声明 大括号
             if (line.isEmpty() || line.startsWith("//") || line.startsWith("digraph")
                     || "{".equals(line) || "}".equals(line)) {
                 continue;
@@ -88,7 +88,7 @@ final class DotGraphParser {
                 // 边引用的节点若未声明,用默认样式补一个隐式节点
                 nodes.putIfAbsent(from, DotNode.defaultNode(from));
                 nodes.putIfAbsent(to, DotNode.defaultNode(to));
-                // 提取边属性(label、style)
+                // 提取边属性(label style)
                 String edgeLabel = "";
                 String edgeStyle = "";
                 int bracketStart = line.indexOf('[');
@@ -154,7 +154,7 @@ final class DotGraphParser {
 
     /**
      * 从方括号内的属性字符串中提取 key=value 对
-     * value 可能是双引号字符串(支持转义)或裸值(颜色代码、数字等)
+     * value 可能是双引号字符串(支持转义)或裸值(颜色代码 数字等)
      *
      * @param text 方括号内的属性文本,不可为 null
      * @return 属性键值对映射(保持声明顺序)
@@ -183,7 +183,7 @@ final class DotGraphParser {
 
     /**
      * 反转义 DOT 字符串中的反斜杠转义序列
-     * 处理 \\n、\\"、\\\\ 等常见转义,未识别的转义字符保留原样
+     * 处理 \\n \\" \\\\ 等常见转义,未识别的转义字符保留原样
      *
      * @param text 可能包含转义序列的原始字符串,不可为 null
      * @return 反转义后的字符串
@@ -197,7 +197,7 @@ final class DotGraphParser {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             if (escaping) {
-                // 仅处理 n → 换行,其余字符(包括 "、\\ 等)直接保留
+                // 仅处理 n → 换行,其余字符(包括 " \\ 等)直接保留
                 sb.append(c == 'n' ? '\n' : c);
                 escaping = false;
             } else if (c == '\\') {

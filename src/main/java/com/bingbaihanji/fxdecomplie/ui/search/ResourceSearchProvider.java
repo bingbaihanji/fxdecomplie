@@ -76,7 +76,7 @@ public class ResourceSearchProvider implements SearchProvider {
         return scope == SearchScope.ALL || scope == SearchScope.RESOURCE;
     }
 
-    /** 高级搜索：支持正则、大小写、全词匹配等选项的资源文件搜索 */
+    /** 高级搜索：支持正则 大小写 全词匹配等选项的资源文件搜索 */
     @Override
     public List<SearchResult> search(String query, Map<String, String> sourceCache,
                                      SearchOptions options) {

@@ -8,7 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 文本差异比对、匹配与补丁应用工具
+ * 文本差异比对 匹配与补丁应用工具
  * <p>
  * 计算两段文本之间的差异并生成补丁,支持将补丁应用到另一段文本 源自 Google diff-match-patch 算法实现
  * </p>
@@ -412,7 +412,7 @@ public final class DiffMatchPatch {
      * 将两段文本拆分为字符串列表,将文本缩减为哈希字符串,每个 Unicode 字符代表一行
      * @param text1 第一段文本
      * @param text2 第二段文本
-     * @return 包含编码后的 text1、text2 以及唯一字符串列表的结果对象(列表第 0 个元素故意留空)
+     * @return 包含编码后的 text1 text2 以及唯一字符串列表的结果对象(列表第 0 个元素故意留空)
      */
     public LinesToCharsResult diffLinesToChars(String text1, String text2) {
         List<String> lineArray = new ArrayList<>();
@@ -562,7 +562,7 @@ public final class DiffMatchPatch {
      * 检测两段文本是否共享一个至少为较长文本一半长度的公共子串 此加速可能产生非最优差异结果
      * @param text1 第一段字符串
      * @param text2 第二段字符串
-     * @return 五元素字符串数组,包含 text1 的前缀、text1 的后缀、text2 的前缀、text2 的后缀以及公共中间部分 无匹配时返回 null
+     * @return 五元素字符串数组,包含 text1 的前缀 text1 的后缀 text2 的前缀 text2 的后缀以及公共中间部分 无匹配时返回 null
      */
     public String[] diffHalfMatch(String text1, String text2) {
         if (diffTimeout <= 0) {
@@ -604,7 +604,7 @@ public final class DiffMatchPatch {
      * @param longText 较长字符串
      * @param shortText 较短字符串
      * @param i longText 中四分之一长度子串的起始索引
-     * @return 五元素字符串数组,包含 longText 的前缀、longText 的后缀、shortText 的前缀、shortText
+     * @return 五元素字符串数组,包含 longText 的前缀 longText 的后缀 shortText 的前缀 shortText
      * 的后缀以及公共中间部分 无匹配时返回 null
      */
     private String[] diffHalfMatchI(String longText, String shortText, int i) {
@@ -1230,7 +1230,7 @@ public final class DiffMatchPatch {
     }
 
     /**
-     * 计算 Levenshtein 距离,即插入、删除或替换的字符总数
+     * 计算 Levenshtein 距离,即插入 删除或替换的字符总数
      * @param diffs Diff 对象链表
      * @return 变更数量
      */
@@ -1310,7 +1310,7 @@ public final class DiffMatchPatch {
                 // 允许空白标记(来自末尾的 \t)
                 continue;
             }
-            // 每个标记以单字符参数开头,指定此标记的操作(删除、插入、相等)
+            // 每个标记以单字符参数开头,指定此标记的操作(删除 插入 相等)
             String param = token.substring(1);
             switch (token.charAt(0)) {
                 case '+':
@@ -2105,7 +2105,7 @@ public final class DiffMatchPatch {
     public static class Diff {
 
         /**
-         * 操作类型：INSERT、DELETE 或 EQUAL
+         * 操作类型：INSERT DELETE 或 EQUAL
          */
         public Operation operation;
 
@@ -2116,7 +2116,7 @@ public final class DiffMatchPatch {
 
         /**
          * 使用指定操作和文本构造 Diff 对象
-         * @param operation INSERT、DELETE 或 EQUAL 之一
+         * @param operation INSERT DELETE 或 EQUAL 之一
          * @param text 待应用的文本
          */
         public Diff(Operation operation, String text) {

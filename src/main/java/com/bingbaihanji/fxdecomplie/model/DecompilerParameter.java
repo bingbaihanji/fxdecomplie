@@ -2,11 +2,11 @@ package com.bingbaihanji.fxdecomplie.model;
 
 /**
  * 反编译引擎单个可配置参数的定义
- * <p>每个参数包含键名、类型、默认值、国际化 key 和分类信息,
+ * <p>每个参数包含键名 类型 默认值 国际化 key 和分类信息,
  * 枚举型参数还可指定可选值列表</p>
  *
  * @param key          参数键名,对应反编译引擎的配置属性名(camelCase 格式)
- * @param type         参数类型(布尔、整数、字符串、枚举)
+ * @param type         参数类型(布尔 整数 字符串 枚举)
  * @param defaultValue 默认值字符串,由 UI 层解析为对应类型
  * @param i18nKey      国际化标签 key,用于在 UI 中显示参数名称
  * @param helpKey      国际化帮助文本 key,用于在 UI 中显示参数说明
@@ -46,9 +46,9 @@ public record DecompilerParameter(
         return sb.toString();
     }
 
-    /** 参数类型：布尔开关、整数、字符串、枚举 */
+    /** 参数类型：布尔开关 整数 字符串 枚举 */
     public enum ParamType {BOOLEAN, INTEGER, STRING, ENUM}
 
-    /** 参数分类：常用参数、高级参数 */
+    /** 参数分类：常用参数 高级参数 */
     public enum Category {COMMON, ADVANCED}
 }

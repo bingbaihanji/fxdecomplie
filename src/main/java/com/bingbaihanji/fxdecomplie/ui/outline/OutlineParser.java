@@ -13,7 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 从反编译 Java 源码中提取字段、方法、内部类的大纲信息使用正则逐行匹配
+ * 从反编译 Java 源码中提取字段 方法 内部类的大纲信息使用正则逐行匹配
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -48,7 +48,7 @@ public final class OutlineParser {
     }
 
     /**
-     * 从反编译 Java 源码提取大纲成员(字段、方法、内部类)
+     * 从反编译 Java 源码提取大纲成员(字段 方法 内部类)
      *
      * <p>逐行扫描源码,用大括号计数跟踪嵌套深度方法匹配采用两步策略：
      * 先用 {@link #METHOD_PATTERN} 匹配方法名前缀,再从开括号位置逐字符扫描
@@ -195,7 +195,7 @@ public final class OutlineParser {
 
     /**
      * 从反编译源码中提取代码元数据,用于 Ctrl+Click 导航
-     * 逐行扫描类引用、方法调用和字段访问
+     * 逐行扫描类引用 方法调用和字段访问
      */
     public static CodeMetadata extractMetadata(String sourceCode) {
         Map<Integer, List<CodeMetadata.Reference>> refsByLine = new HashMap<>();
@@ -552,7 +552,7 @@ public final class OutlineParser {
 
     /**
      * 判断是否为可导航的简单类型参数
-     * 排除通配符(?)、类型变量(T, E 等大写单字母)、基本类型包装类
+     * 排除通配符(?) 类型变量(T, E 等大写单字母) 基本类型包装类
      */
     private static boolean isSimpleTypeArg(String arg) {
         if (arg.isEmpty() || "?".equals(arg)) {

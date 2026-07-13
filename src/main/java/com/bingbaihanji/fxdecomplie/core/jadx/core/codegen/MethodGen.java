@@ -45,8 +45,8 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.MethodGen.Fall
 /**
  * 方法代码生成器
  * <p>
- * 负责将 {@link MethodNode} 生成为 Java 源码文本，包括方法定义 (修饰符、返回类型、方法名、
- * 参数列表、throws、注解等)与方法体方法体根据反编译模式 (AUTO/RESTRUCTURE/SIMPLE/FALLBACK)
+ * 负责将 {@link MethodNode} 生成为 Java 源码文本，包括方法定义 (修饰符 返回类型 方法名 
+ * 参数列表 throws 注解等)与方法体方法体根据反编译模式 (AUTO/RESTRUCTURE/SIMPLE/FALLBACK)
  * 采用不同的生成策略，并在生成失败时回退到指令转储 (fallback dump)
  */
 public class MethodGen {
@@ -175,7 +175,7 @@ public class MethodGen {
     /**
      * 生成方法定义部分 (不含方法体的花括号内容)
      * <p>
-     * 处理静态初始化块、匿名构造器、覆盖注解、访问修饰符、返回类型/构造器名、参数列表、
+     * 处理静态初始化块 匿名构造器 覆盖注解 访问修饰符 返回类型/构造器名 参数列表 
      * throws 声明以及注解默认值等
      *
      * @param code 代码写入器

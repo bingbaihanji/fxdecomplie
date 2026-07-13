@@ -78,7 +78,7 @@ public final class ContainerHelpers {
      * </pre>
      *
      * <p>
-     * Android 原版按 {@code 4、8、12、18……} 固定步长增长 JVM 上改用 1.5 倍增长,可在批量写入时摊薄数组复制次数
+     * Android 原版按 {@code 4 8 12 18……} 固定步长增长 JVM 上改用 1.5 倍增长,可在批量写入时摊薄数组复制次数
      *
      * @param currentCapacity 当前容量
      * @return 扩容后的新容量

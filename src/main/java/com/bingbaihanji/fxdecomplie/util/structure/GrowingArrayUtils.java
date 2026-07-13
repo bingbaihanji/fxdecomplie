@@ -6,7 +6,7 @@ import java.lang.reflect.Array;
  * 稀疏数组(Sparse*)使用的动态数组增长工具
  *
  * <p>
- * 本类为 {@link SparseArray}、{@link SparseIntArray}、{@link SparseLongArray}、{@link SparseBooleanArray}
+ * 本类为 {@link SparseArray} {@link SparseIntArray} {@link SparseLongArray} {@link SparseBooleanArray}
  * 提供「按需扩容 + 追加 / 插入」的底层数组操作参考 Android {@code com.android.internal.util.GrowingArrayUtils} 的思路,
  * 但完全基于 Java SE 实现,不依赖 Android 平台(原版通过 {@code VMRuntime.newUnpaddedArray} 分配无填充数组,
  * 这里直接使用普通 {@code new} 分配)

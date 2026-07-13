@@ -28,7 +28,7 @@ import java.util.Map;
 import static com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.ProcessState.*;
 
 /**
- * 类处理核心组件，负责类的加载、处理和代码生成
+ * 类处理核心组件，负责类的加载 处理和代码生成
  * 管理反编译过程中的各个阶段 (pass)，协调类的依赖处理和代码生成流程
  */
 public class ProcessClass {
@@ -221,7 +221,7 @@ public class ProcessClass {
 
     /**
      * 使用指定的反编译模式为类生成代码
-     * 根据不同的反编译模式 (如 SIMPLE、FALLBACK)使用不同的处理流程
+     * 根据不同的反编译模式 (如 SIMPLE FALLBACK)使用不同的处理流程
      *
      * @param cls  待生成代码的类节点
      * @param mode 反编译模式

@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import java.util.Objects;
 
 /**
- * 打开文件数据模型表示一个在编辑器中打开的类文件,包含类名、完整路径、反编译源码和所使用的反编译引擎
+ * 打开文件数据模型表示一个在编辑器中打开的类文件,包含类名 完整路径 反编译源码和所使用的反编译引擎
  *
  * <p><b>相等性语义</b>：仅基于 {@code fullPath} 和 {@code engine} 判断相等，
  * {@code sourceCode} 不参与相等性比较这允许同一类用同一引擎的两次反编译结果

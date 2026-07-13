@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 /**
  * Jadx 反编译器参数配置类
  * <p>
- * 包含反编译过程中的所有可配置选项，如输入/输出路径、反编译模式、
- * 去混淆设置、代码格式化选项、插件配置等
+ * 包含反编译过程中的所有可配置选项，如输入/输出路径 反编译模式 
+ * 去混淆设置 代码格式化选项 插件配置等
  * <p>
  * 实现 {@link Closeable} 接口，用于释放内部缓存和插件加载器资源
  */
@@ -71,7 +71,7 @@ public class JadxArgs implements Closeable {
     /** 代码缓存，用于缓存反编译结果 */
     private ICodeCache codeCache = new InMemoryCodeCache();
     /**
-     * 使用数据缓存在代码重新加载之间保存类、方法和字段的使用位置信息
+     * 使用数据缓存在代码重新加载之间保存类 方法和字段的使用位置信息
      * 如果不需要代码重新加载，可以设置为 {@link EmptyUsageInfoCache}
      */
     private IUsageInfoCache usageInfoCache = new InMemoryUsageInfoCache();
@@ -263,7 +263,7 @@ public class JadxArgs implements Closeable {
     }
 
     /**
-     * 关闭并释放所有内部资源，包括代码缓存、使用数据缓存和插件加载器
+     * 关闭并释放所有内部资源，包括代码缓存 使用数据缓存和插件加载器
      * 关闭过程中的异常会被记录到日志，不会抛出
      */
     @Override

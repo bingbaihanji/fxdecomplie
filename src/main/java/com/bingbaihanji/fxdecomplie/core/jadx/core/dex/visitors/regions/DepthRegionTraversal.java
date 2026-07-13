@@ -15,7 +15,7 @@ import java.util.Objects;
  * 区域的深度优先遍历工具类
  * <p>
  * 提供对方法区域树 ({@link IRegion} / {@link IContainer} / {@link IBlock})的多种遍历方式：
- * 普通遍历、部分遍历 (可提前返回结果)以及迭代式遍历 (可重复直到访问者不再要求重复)
+ * 普通遍历 部分遍历 (可提前返回结果)以及迭代式遍历 (可重复直到访问者不再要求重复)
  */
 public class DepthRegionTraversal {
 

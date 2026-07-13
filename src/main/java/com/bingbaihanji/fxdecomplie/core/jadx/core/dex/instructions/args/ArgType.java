@@ -19,16 +19,16 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * 抽象参数类型表示类，用于描述 Dalvik 字节码中寄存器、字段、方法参数和返回值的类型
+ * 抽象参数类型表示类，用于描述 Dalvik 字节码中寄存器 字段 方法参数和返回值的类型
  * <p>
  * 采用不可变设计 ({@code @Immutable})，通过静态工厂方法创建各类类型的实例
- * 支持基本类型、对象类型、数组类型、泛型类型、通配符类型和未知类型等多种类型表示
+ * 支持基本类型 对象类型 数组类型 泛型类型 通配符类型和未知类型等多种类型表示
  * <p>
  * 类型层次结构：
  * <ul>
- *   <li>{@link PrimitiveArg} - 基本类型 (int、boolean、long 等)</li>
+ *   <li>{@link PrimitiveArg} - 基本类型 (int boolean long 等)</li>
  *   <li>{@link ObjectType} - 对象类型</li>
- *   <li>{@link GenericType} - 泛型类型参数 (如 {@code T}、{@code E extends Comparable})</li>
+ *   <li>{@link GenericType} - 泛型类型参数 (如 {@code T} {@code E extends Comparable})</li>
  *   <li>{@link GenericObject} - 参数化泛型对象 (如 {@code List<String>})</li>
  *   <li>{@link OuterGenericObject} - 外部泛型对象 (如 {@code Outer<T>.Inner})</li>
  *   <li>{@link WildcardType} - 通配符类型 (如 {@code ? extends Number})</li>
@@ -94,31 +94,31 @@ public abstract class ArgType {
     /** 未知数组类型 */
     public static final ArgType UNKNOWN_ARRAY = array(UNKNOWN);
 
-    /** 窄类型：可能为任意窄类型、对象或数组 */
+    /** 窄类型：可能为任意窄类型 对象或数组 */
     public static final ArgType NARROW = unknown(
             PrimitiveType.INT, PrimitiveType.FLOAT,
             PrimitiveType.BOOLEAN, PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR,
             PrimitiveType.OBJECT, PrimitiveType.ARRAY);
 
-    /** 窄数值类型：可能为 boolean、int、float、short、byte、char */
+    /** 窄数值类型：可能为 boolean int float short byte char */
     public static final ArgType NARROW_NUMBERS = unknown(
             PrimitiveType.BOOLEAN, PrimitiveType.INT, PrimitiveType.FLOAT,
             PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR);
 
-    /** 窄整数类型：可能为 int、short、byte、char */
+    /** 窄整数类型：可能为 int short byte char */
     public static final ArgType NARROW_INTEGRAL = unknown(
             PrimitiveType.INT, PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR);
 
-    /** 窄数值类型 (不含 boolean)：可能为 int、float、short、byte、char */
+    /** 窄数值类型 (不含 boolean)：可能为 int float short byte char */
     public static final ArgType NARROW_NUMBERS_NO_BOOL = unknown(
             PrimitiveType.INT, PrimitiveType.FLOAT,
             PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR);
 
-    /** 窄负数值类型：可能为 int、short、byte、float */
+    /** 窄负数值类型：可能为 int short byte float */
     public static final ArgType NARROW_NEG_NUMBERS = unknown(
             PrimitiveType.INT, PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.FLOAT);
 
-    /** 窄数值类型 (不含 float)：可能为 int、boolean、short、byte、char */
+    /** 窄数值类型 (不含 float)：可能为 int boolean short byte char */
     public static final ArgType NARROW_NUMBERS_NO_FLOAT = unknown(
             PrimitiveType.INT, PrimitiveType.BOOLEAN,
             PrimitiveType.SHORT, PrimitiveType.BYTE, PrimitiveType.CHAR);
@@ -154,7 +154,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 根据类名创建对象类型常用类型 (Object、String、Class、Throwable、Exception)
+     * 根据类名创建对象类型常用类型 (Object String Class Throwable Exception)
      * 会返回预定义的常量实例
      *
      * @param obj 类的内部名称 (如 "java/lang/String")
@@ -218,7 +218,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 创建参数化泛型对象类型 (如 {@code List<String>}、{@code Map<K, V>})
+     * 创建参数化泛型对象类型 (如 {@code List<String>} {@code Map<K, V>})
      *
      * @param obj      基础对象类型 (必须为对象类型)
      * @param generics 泛型参数列表
@@ -260,7 +260,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 创建一维数组类型 (如 {@code int[]}、{@code String[]})
+     * 创建一维数组类型 (如 {@code int[]} {@code String[]})
      *
      * @param vtype 数组元素类型
      * @return 数组类型实例
@@ -369,7 +369,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 解析类型描述符字符串 (如 {@code "Ljava/lang/String;"}、{@code "[I"}、{@code "TT;"})为 {@link ArgType}
+     * 解析类型描述符字符串 (如 {@code "Ljava/lang/String;"} {@code "[I"} {@code "TT;"})为 {@link ArgType}
      *
      * @param type 类型描述符字符串
      * @return 解析得到的类型
@@ -429,7 +429,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 尝试将类型中的类名解析为其别名 (如反混淆后的重命名)，递归处理数组元素、通配符与泛型实参
+     * 尝试将类型中的类名解析为其别名 (如反混淆后的重命名)，递归处理数组元素 通配符与泛型实参
      *
      * @param root 根节点，提供类信息与别名查询
      * @param type 待解析的类型
@@ -642,7 +642,7 @@ public abstract class ArgType {
         return false;
     }
 
-    /** 递归判断该类型是否包含类型变量 (泛型参数、通配符、泛型实参、外部类型或数组元素中的类型变量) */
+    /** 递归判断该类型是否包含类型变量 (泛型参数 通配符 泛型实参 外部类型或数组元素中的类型变量) */
     public boolean containsTypeVariable() {
         if (isGenericType()) {
             return true;
@@ -681,7 +681,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 递归访问此类型的所有子类型 (数组元素、通配符类型、泛型参数)
+     * 递归访问此类型的所有子类型 (数组元素 通配符类型 泛型参数)
      * 若需提前退出遍历，令 visitor 返回非 null 值即可，该值将作为结果返回
      *
      * @param visitor 类型访问器
@@ -809,7 +809,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 基本类型实现，表示 Java 基本数据类型 (int、boolean、long 等)
+     * 基本类型实现，表示 Java 基本数据类型 (int boolean long 等)
      */
     private static final class PrimitiveArg extends KnownType {
         private final PrimitiveType type;
@@ -841,7 +841,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 对象类型实现，表示 Java 引用类型 (类、接口等)
+     * 对象类型实现，表示 Java 引用类型 (类 接口等)
      */
     private static class ObjectType extends KnownType {
         protected final String objName;
@@ -878,7 +878,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 泛型类型参数实现，表示未实例化的类型变量 (如 {@code T}、{@code E extends Comparable})
+     * 泛型类型参数实现，表示未实例化的类型变量 (如 {@code T} {@code E extends Comparable})
      */
     private static final class GenericType extends ObjectType {
         private List<ArgType> extendTypes;
@@ -928,7 +928,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 通配符类型实现 (如 {@code ? extends Number}、{@code ? super String}、{@code ?})
+     * 通配符类型实现 (如 {@code ? extends Number} {@code ? super String} {@code ?})
      */
     private static final class WildcardType extends ObjectType {
         private final ArgType type;
@@ -977,7 +977,7 @@ public abstract class ArgType {
     }
 
     /**
-     * 参数化泛型对象类型实现 (如 {@code List<String>}、{@code Map<String, Integer>})
+     * 参数化泛型对象类型实现 (如 {@code List<String>} {@code Map<String, Integer>})
      */
     private static class GenericObject extends ObjectType {
         private final List<ArgType> generics;

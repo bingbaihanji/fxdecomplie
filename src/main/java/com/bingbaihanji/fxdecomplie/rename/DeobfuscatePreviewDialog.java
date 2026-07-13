@@ -92,7 +92,7 @@ public final class DeobfuscatePreviewDialog {
         filterField.textProperty().addListener((obs, oldValue, newValue) ->
                 filteredItems.setPredicate(entry -> matchesFilter(entry, newValue)));
 
-        // 工具栏按钮：全选、全不选、选择/清除可见、清除常见短名
+        // 工具栏按钮：全选 全不选 选择/清除可见 清除常见短名
         Button selectAll = new Button(I18nUtil.getString("deobfuscate.all"));
         selectAll.setOnAction(e -> items.forEach(item -> selected.get(item).set(true)));
         Button selectNone = new Button(I18nUtil.getString("deobfuscate.none"));
@@ -138,7 +138,7 @@ public final class DeobfuscatePreviewDialog {
         return slash < 0 ? className : className.substring(slash + 1);
     }
 
-    /** 过滤匹配：在类型、类名、旧名、新名中搜索关键字(忽略大小写) */
+    /** 过滤匹配：在类型 类名 旧名 新名中搜索关键字(忽略大小写) */
     private static boolean matchesFilter(RenameEntry entry, String filter) {
         if (entry == null || filter == null || filter.isBlank()) {
             return true;

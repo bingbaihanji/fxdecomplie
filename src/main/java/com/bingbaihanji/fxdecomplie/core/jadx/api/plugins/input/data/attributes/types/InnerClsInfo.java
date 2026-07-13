@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 内部类信息
  * <p>
- * 表示 class 文件中 InnerClasses 属性的一条记录，包含内部类的全限定名、
- * 外部类全限定名 (若为顶层内部类则为 null)、原始简单名称 (匿名类时为 null)
+ * 表示 class 文件中 InnerClasses 属性的一条记录，包含内部类的全限定名 
+ * 外部类全限定名 (若为顶层内部类则为 null) 原始简单名称 (匿名类时为 null)
  * 以及内部类的访问标志
  * </p>
  */

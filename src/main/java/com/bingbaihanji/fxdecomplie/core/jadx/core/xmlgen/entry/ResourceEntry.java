@@ -5,8 +5,8 @@ import java.util.List;
 /**
  * 资源条目
  * <p>
- * 表示 Android 资源表 (resources.arsc)中的单个资源项，包含其 32 位资源 ID、
- * 所属包名、类型名、键名、配置限定符，以及对应的取值 (proto 值 / 简单值 / 命名值列表)
+ * 表示 Android 资源表 (resources.arsc)中的单个资源项，包含其 32 位资源 ID 
+ * 所属包名 类型名 键名 配置限定符，以及对应的取值 (proto 值 / 简单值 / 命名值列表)
  * 和父样式引用该对象为不可变的标识信息载体，取值部分可通过 setter 补充填充
  */
 public final class ResourceEntry {

@@ -38,8 +38,8 @@ import java.util.stream.Stream;
 /**
  * 类代码生成器
  * <p>
- * 负责将 {@link ClassNode} 中间表示生成为 Java 源码文本，包括包声明、导入语句、类声明、
- * 字段、方法、内部类以及枚举字段等同时管理导入集合、类型/类名的书写方式 (短名或全名)
+ * 负责将 {@link ClassNode} 中间表示生成为 Java 源码文本，包括包声明 导入语句 类声明 
+ * 字段 方法 内部类以及枚举字段等同时管理导入集合 类型/类名的书写方式 (短名或全名)
  * 与导入冲突检测内部类通过创建带 parentGen 的子 ClassGen 递归生成，导入统一汇聚到顶层
  */
 public class ClassGen {
@@ -184,7 +184,7 @@ public class ClassGen {
     /**
      * 生成完整的类源码
      * <p>
-     * 先生成类体，再依次拼接包声明、导入语句和类体，返回带元数据的代码信息
+     * 先生成类体，再依次拼接包声明 导入语句和类体，返回带元数据的代码信息
      * 若类为 package-info 则走 {@link #makePackageInfo()} 分支
      *
      * @return 生成的代码信息
@@ -257,7 +257,7 @@ public class ClassGen {
     /**
      * 生成类的声明部分
      * <p>
-     * 包含注释、注解、访问修饰符、class/interface/enum 关键字、类名、泛型参数、
+     * 包含注释 注解 访问修饰符 class/interface/enum 关键字 类名 泛型参数 
      * 父类 (extends)与实现接口 (implements)等
      *
      * @param clsCode 代码写入器
@@ -375,7 +375,7 @@ public class ClassGen {
     }
 
     /**
-     * 生成类体 (花括号内的内容)，字段、内部类与方法
+     * 生成类体 (花括号内的内容)，字段 内部类与方法
      *
      * @param clsCode 代码写入器
      * @throws CodegenException 代码生成失败时抛出
@@ -517,7 +517,7 @@ public class ClassGen {
     /**
      * 生成单个方法的完整代码 (方法定义 + 方法体)
      * <p>
-     * 无代码的方法 (抽象/接口方法)只生成定义并以分号结尾 对于代码异常、回退模式或
+     * 无代码的方法 (抽象/接口方法)只生成定义并以分号结尾 对于代码异常 回退模式或
      * 标记不一致的方法使用回退方式生成方法体
      *
      * @param code 代码写入器
@@ -561,7 +561,7 @@ public class ClassGen {
     }
 
     /**
-     * 生成单个字段的代码，包含注释、注解、访问修饰符、类型、字段名以及初始化值/常量值
+     * 生成单个字段的代码，包含注释 注解 访问修饰符 类型 字段名以及初始化值/常量值
      *
      * @param code 代码写入器
      * @param f    字段节点
@@ -696,7 +696,7 @@ public class ClassGen {
     }
 
     /**
-     * 将类型写入代码，自动处理基本类型、对象类型、数组类型与泛型类型
+     * 将类型写入代码，自动处理基本类型 对象类型 数组类型与泛型类型
      *
      * @param code 代码写入器
      * @param type 待写入的类型
@@ -730,7 +730,7 @@ public class ClassGen {
     }
 
     /**
-     * 按类型写入类引用，处理外部类、内部类嵌套与泛型信息
+     * 按类型写入类引用，处理外部类 内部类嵌套与泛型信息
      *
      * @param code 代码写入器
      * @param type 类类型

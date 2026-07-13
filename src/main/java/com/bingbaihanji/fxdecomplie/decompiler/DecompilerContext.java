@@ -79,7 +79,7 @@ public final class DecompilerContext implements AutoCloseable {
     }
 
     /**
-     * 使用指定字节码提供器、选项和可关闭资源创建上下文(默认 closeAfterUse=true)
+     * 使用指定字节码提供器 选项和可关闭资源创建上下文(默认 closeAfterUse=true)
      *
      * @param bytecodeProvider 字节码提供器
      * @param options          反编译选项(不可变拷贝)

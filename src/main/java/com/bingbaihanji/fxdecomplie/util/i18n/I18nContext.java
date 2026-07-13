@@ -10,9 +10,9 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * 国际化语言环境上下文(单例、线程安全)
+ * 国际化语言环境上下文(单例 线程安全)
  * <p>
- * 负责管理当前语言环境、资源包加载以及语言变化通知
+ * 负责管理当前语言环境 资源包加载以及语言变化通知
  * 加载优先级：外部文件(JAR 同级目录)→ classpath
  * 语言回退链：zh_CN_Variant → zh_CN → zh → root
  * </p>
@@ -23,7 +23,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * I18nContext ctx = I18nContext.getInstance();
  * String text = ctx.getBundle().getString("menu.file");
  *
- * // 独立上下文(测试、多租户)
+ * // 独立上下文(测试 多租户)
  * I18nContext independent = I18nContext.of(Locale.US);
  *
  * // 自定义基名的独立上下文

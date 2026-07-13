@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 类型更新信息管理类，负责收集、排队、应用和回滚类型更新
+ * 类型更新信息管理类，负责收集 排队 应用和回滚类型更新
  * 维护一个更新映射表，以 IdentityHashMap 按参数对象身份存储待应用的更新，
  * 并在更新序列超过限制时抛出溢出异常支持队列化请求和回调处理
  */

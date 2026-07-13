@@ -7,7 +7,7 @@ import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 
 /**
- * 设置控制器：设置对话框的打开与配置应用 (引擎切换、行号、字体、主题)
+ * 设置控制器：设置对话框的打开与配置应用 (引擎切换 行号 字体 主题)
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
  *
@@ -48,7 +48,7 @@ public final class SettingsController {
         });
     }
 
-    /** 应用设置对话框确认后的配置变更：切换引擎、更新行号显示和字体设置,返回是否切换了引擎 */
+    /** 应用设置对话框确认后的配置变更：切换引擎 更新行号显示和字体设置,返回是否切换了引擎 */
     private boolean applySettings(AppConfig updated) {
         DecompilerTypeEnum configuredEngine = updated.decompiler().defaultEngine();
         boolean engineSwitched = false;

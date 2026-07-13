@@ -171,7 +171,7 @@ public final class AtomicFile {
 
     /**
      * 当您已成功完成对 {@link #startWrite()} 返回的流的写入后调用此方法
-     * 此方法将关闭、同步并提交新数据下一次尝试读取原子文件将返回新文件流
+     * 此方法将关闭 同步并提交新数据下一次尝试读取原子文件将返回新文件流
      *
      * @param str 要完成的输出流(不能为 null)
      */
@@ -287,7 +287,7 @@ public final class AtomicFile {
     }
 
     /**
-     * 使用给定的写入器(Consumer)执行写入操作此方法会自动处理开始、完成或失败提交
+     * 使用给定的写入器(Consumer)执行写入操作此方法会自动处理开始 完成或失败提交
      *
      * @param writeContent 接收 FileOutputStream 并执行写入的 Consumer
      */

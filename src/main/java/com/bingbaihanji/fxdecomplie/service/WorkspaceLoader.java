@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
- * 工作区加载器处理文件发现、树构建和工作区创建流水线
+ * 工作区加载器处理文件发现 树构建和工作区创建流水线
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -111,7 +111,7 @@ public final class WorkspaceLoader {
 
     /**
      * 计算文件/目录的内容指纹,用于检测工作区内容是否变更
-     * 文件：基于 lastModified + 文件大小 目录：遍历所有文件取最大修改时间、总大小、文件计数
+     * 文件：基于 lastModified + 文件大小 目录：遍历所有文件取最大修改时间 总大小 文件计数
      */
     private static String computeContentStamp(File file) throws IOException {
         if (!file.isDirectory()) {

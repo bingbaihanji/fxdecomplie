@@ -14,7 +14,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * 源码内容面板,封装 CodeArea 的创建、样式、高亮和导航
+ * 源码内容面板,封装 CodeArea 的创建 样式 高亮和导航
  *
  * @author bingbaihanji
  * @date 2026-06-21
@@ -80,7 +80,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
     }
 
     /**
-     * 构建 CodeArea,配置字体、换行、行号、语法高亮和括号匹配
+     * 构建 CodeArea,配置字体 换行 行号 语法高亮和括号匹配
      * 超大源码(超过 500KB)禁用正则高亮和链接导航以提升性能
      */
     private void buildCodeArea() {
@@ -166,7 +166,7 @@ public class SourceContentPanel extends AbstractCodeContentPanel {
         this.onCodeAreaRebuilt = callback;
     }
 
-    /** 仅替换当前 CodeArea 文本,保留右键菜单、光标监听和搜索栏绑定 */
+    /** 仅替换当前 CodeArea 文本,保留右键菜单 光标监听和搜索栏绑定 */
     public void setDisplayedSourceCode(String newSource) {
         this.sourceCode = newSource;
         cachedLineCount = -1;

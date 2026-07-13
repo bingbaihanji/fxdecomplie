@@ -2,7 +2,9 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.model.CodeMetadata;
+import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.OpenFile;
+import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.service.DecompilerRunner;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
@@ -130,7 +132,7 @@ public class CodeEditorTab extends Tab {
         label.getStyleClass().add("code-tab-title");
         label.setMaxWidth(240);
         label.setMinWidth(0);
-        label.setTextOverrun(javafx.scene.control.OverrunStyle.CENTER_ELLIPSIS);
+        label.setTextOverrun(OverrunStyle.CENTER_ELLIPSIS);
         return label;
     }
 
@@ -223,8 +225,8 @@ public class CodeEditorTab extends Tab {
     }
 
     /** 存储工作区和节点引用(用于分屏时查找同 class) */
-    public void setWorkspaceContext(com.bingbaihanji.fxdecomplie.model.Workspace workspace,
-                                    com.bingbaihanji.fxdecomplie.model.FileTreeNode node) {
+    public void setWorkspaceContext(Workspace workspace,
+                                    FileTreeNode node) {
         getProperties().put("workspace", workspace);
         getProperties().put("fileTreeNode", node);
     }

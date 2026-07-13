@@ -40,7 +40,7 @@ public abstract class MethodAccess {
 
         boolean isInterface = type.isInterface();
         if (!isInterface && type.getSuperclass() == null && type != Object.class) {
-            throw new IllegalArgumentException("类型不能为接口、基本类型或 void");
+            throw new IllegalArgumentException("类型不能为接口 基本类型或 void");
         }
 
         ArrayList<Method> methods = new ArrayList<Method>();

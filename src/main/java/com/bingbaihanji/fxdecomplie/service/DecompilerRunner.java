@@ -22,7 +22,7 @@ import java.util.function.BooleanSupplier;
 import java.util.zip.ZipFile;
 
 /**
- * 共享的带保护的反编译运行器,用于标签页、全文搜索和导出
+ * 共享的带保护的反编译运行器,用于标签页 全文搜索和导出
  *
  * <h3>整体流水线</h3>
  * <ol>

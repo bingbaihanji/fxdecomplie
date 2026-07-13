@@ -359,7 +359,7 @@ public final class I18nUtil {
      * 创建独立于全局语言环境的国际化消息提供者
      * <p>
      * 返回的提供者持有指定语言的资源包,不受 {@link #switchLocale} 影响
-     * 适用于测试、多租户或临时使用不同语言的场景
+     * 适用于测试 多租户或临时使用不同语言的场景
      * </p>
      * <pre>{@code
      * I18nMessageProvider en = I18nUtil.createInstance(Locale.US);
@@ -377,7 +377,7 @@ public final class I18nUtil {
         return new LocalizedMessageProvider(context);
     }
 
-    // ======================== 独立实例(测试、多租户等场景) ========================
+    // ======================== 独立实例(测试 多租户等场景) ========================
 
     /**
      * 创建使用自定义资源基名的独立提供者
@@ -408,7 +408,7 @@ public final class I18nUtil {
     // ======================== 内部实现 ========================
 
     /**
-     * 国际化消息提供者(可注入、可 mock 的抽象)
+     * 国际化消息提供者(可注入 可 mock 的抽象)
      */
     public interface I18nMessageProvider {
 

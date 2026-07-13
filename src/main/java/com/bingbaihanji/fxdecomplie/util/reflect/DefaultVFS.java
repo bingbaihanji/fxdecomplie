@@ -16,7 +16,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 /**
- * 默认 VFS 实现,适用于大多数应用服务器(如 Tomcat、Jetty)
+ * 默认 VFS 实现,适用于大多数应用服务器(如 Tomcat Jetty)
  *
  * @author bingbaihanji
  * @date 2026-06-10

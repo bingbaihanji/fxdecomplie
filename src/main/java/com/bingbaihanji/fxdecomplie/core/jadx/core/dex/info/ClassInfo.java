@@ -13,7 +13,7 @@ import java.util.Objects;
 
 /**
  * 类信息类，用于表示 DEX 文件中类的元数据信息
- * 包含类的类型、名称、包名、父类信息以及别名等信息
+ * 包含类的类型 名称 包名 父类信息以及别名等信息
  * 支持内部类的解析和别名管理功能
  */
 public final class ClassInfo implements Comparable<ClassInfo> {
@@ -89,7 +89,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
 
     /**
      * 检查并验证类类型
-     * 确保类型非空、非数组、非泛型类型，并返回标准化的类类型
+     * 确保类型非空 非数组 非泛型类型，并返回标准化的类类型
      *
      * @param type 待检查的类型
      * @return 标准化后的类类型
@@ -114,7 +114,7 @@ public final class ClassInfo implements Comparable<ClassInfo> {
 
     /**
      * 构建完整的类名
-     * 根据包名、短名称、父类信息以及是否使用别名和原始格式来生成完整类名
+     * 根据包名 短名称 父类信息以及是否使用别名和原始格式来生成完整类名
      * 内部类使用 '.' 或 '$' 作为分隔符
      *
      * @param pkg         包名

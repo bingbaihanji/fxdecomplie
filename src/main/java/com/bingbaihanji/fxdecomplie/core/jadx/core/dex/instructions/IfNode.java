@@ -29,7 +29,7 @@ public class IfNode extends GotoNode {
             PrimitiveType.BYTE, PrimitiveType.SHORT, PrimitiveType.CHAR);
     private static final ArgType NUMBERS_TYPE = ArgType.unknown(
             PrimitiveType.INT, PrimitiveType.BYTE, PrimitiveType.SHORT, PrimitiveType.CHAR);
-    /** 条件比较操作符 (如 EQ、NE、LT、GE 等) */
+    /** 条件比较操作符 (如 EQ NE LT GE 等) */
     protected IfOp op;
     /** 条件成立时跳转到的目标基本块 */
     private BlockNode thenBlock;
@@ -82,7 +82,7 @@ public class IfNode extends GotoNode {
 
     /**
      * 根据操作符收窄参数的候选类型
-     * 相等/不等比较 (EQ/NE)允许更宽泛的类型 (含布尔、对象、数组等)，
+     * 相等/不等比较 (EQ/NE)允许更宽泛的类型 (含布尔 对象 数组等)，
      * 其他数值比较仅允许数值类型
      *
      * @param op 条件比较操作符

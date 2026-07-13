@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Map 工具类,提供判空、空值移除、排序、值转换、合并等常用操作
+ * Map 工具类,提供判空 空值移除 排序 值转换 合并等常用操作
  *
  * @author bingbaihanji
  * @date 2026-06-12

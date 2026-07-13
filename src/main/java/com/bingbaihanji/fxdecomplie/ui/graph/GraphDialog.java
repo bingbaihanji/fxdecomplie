@@ -143,7 +143,7 @@ public class GraphDialog extends Dialog<Void> {
 
     // ======================== 内部视图切换 ========================
 
-    /** 弹窗共享初始化：布局、样式、事件绑定 */
+    /** 弹窗共享初始化：布局 样式 事件绑定 */
     private void init(javafx.stage.Window owner, String title) {
         if (owner != null) {
             initOwner(owner);

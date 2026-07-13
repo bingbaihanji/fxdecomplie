@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
  * Java 局部变量信息
  * <p>
  * 实现 {@link ILocalVar} 接口，表示 class 文件中 LocalVariableTable 属性
- * 的单个变量条目包含变量名、类型描述符、泛型签名、寄存器编号以及
+ * 的单个变量条目包含变量名 类型描述符 泛型签名 寄存器编号以及
  * 在字节码中的有效范围 (起止偏移量)
  * </p>
  */

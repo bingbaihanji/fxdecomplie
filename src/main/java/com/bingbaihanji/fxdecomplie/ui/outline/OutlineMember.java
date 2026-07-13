@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.outline;
 
 /**
- * 大纲成员记录从反编译源码中提取的字段、方法或内部类
+ * 大纲成员记录从反编译源码中提取的字段 方法或内部类
  *
  * @param name      成员名称
  * @param type      成员类型

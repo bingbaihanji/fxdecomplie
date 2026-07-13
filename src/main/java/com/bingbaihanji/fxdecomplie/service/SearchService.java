@@ -122,13 +122,7 @@ public class SearchService {
                 }
             }
         }
-        all.sort((a, b) -> {
-            int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
-            if (typeCmp != 0) {
-                return typeCmp;
-            }
-            return Integer.compare(a.lineNumber(), b.lineNumber());
-        });
+        all.sort(Comparator.comparingInt((SearchResult a) -> a.matchType().ordinal()).thenComparingInt(SearchResult::lineNumber));
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
     }
 
@@ -179,13 +173,7 @@ public class SearchService {
                 }
             }
         }
-        all.sort((a, b) -> {
-            int typeCmp = Integer.compare(a.matchType().ordinal(), b.matchType().ordinal());
-            if (typeCmp != 0) {
-                return typeCmp;
-            }
-            return Integer.compare(a.lineNumber(), b.lineNumber());
-        });
+        all.sort(Comparator.comparingInt((SearchResult a) -> a.matchType().ordinal()).thenComparingInt(SearchResult::lineNumber));
         return all.size() > resultLimit ? all.subList(0, resultLimit) : all;
     }
 

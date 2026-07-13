@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 自定义资源加载器接口
  * <p>
- * 实现此接口以支持从文件中加载自定义资源 (如图片、配置文件等)，
+ * 实现此接口以支持从文件中加载自定义资源 (如图片 配置文件等)，
  * 并将其添加到资源列表中加载完成后应关闭资源
  */
 public interface CustomResourcesLoader extends Closeable {

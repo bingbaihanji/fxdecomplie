@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * 临时文件目录提供者，将 jadx 的配置、缓存与临时文件统一存放在系统临时目录下
+ * 临时文件目录提供者，将 jadx 的配置 缓存与临时文件统一存放在系统临时目录下
  * <p>
  * 所有文件位于一个进程启动时创建的临时根目录中，并在 JVM 退出时自动删除
  * 该类为单例，通过 {@link #INSTANCE} 访问

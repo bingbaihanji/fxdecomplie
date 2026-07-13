@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.export;
 
 /**
- * Gradle 信息存储器，保存从 APK/资源中提取的、用于生成 Gradle 构建脚本的配置标志
+ * Gradle 信息存储器，保存从 APK/资源中提取的 用于生成 Gradle 构建脚本的配置标志
  */
 public class GradleInfoStorage {
 

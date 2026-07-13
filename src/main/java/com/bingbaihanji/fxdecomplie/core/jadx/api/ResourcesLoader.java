@@ -32,7 +32,7 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils.RE
 // TODO: 移动到 core 包
 
 /**
- * 资源加载器，负责加载和解析 Android 应用中的各类资源文件 (如二进制 XML、ARSC 资源表、图片等)
+ * 资源加载器，负责加载和解析 Android 应用中的各类资源文件 (如二进制 XML ARSC 资源表 图片等)
  * 实现了 {@link IResourcesLoader} 接口，支持自定义资源容器工厂和资源表解析器的扩展
  */
 public final class ResourcesLoader implements IResourcesLoader {
@@ -211,7 +211,7 @@ public final class ResourcesLoader implements IResourcesLoader {
 
     /**
      * 根据资源类型将输入流解析为对应的内容容器
-     * 会优先尝试自定义资源容器工厂，其次按类型 (清单/XML、ARSC、图片等)分别处理
+     * 会优先尝试自定义资源容器工厂，其次按类型 (清单/XML ARSC 图片等)分别处理
      *
      * @param resFile     资源文件
      * @param inputStream 资源输入流

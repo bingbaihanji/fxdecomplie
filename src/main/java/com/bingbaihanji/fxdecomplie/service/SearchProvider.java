@@ -57,7 +57,7 @@ public interface SearchProvider {
      *
      * @param line    待匹配的行文本
      * @param query   搜索字符串或正则
-     * @param options 搜索选项(正则、大小写、整词匹配)
+     * @param options 搜索选项(正则 大小写 整词匹配)
      * @return 匹配成功返回 true
      */
     default boolean lineMatches(String line, String query, SearchOptions options) {
@@ -72,7 +72,7 @@ public interface SearchProvider {
      *
      * @param line         待匹配的行文本
      * @param query        搜索字符串或正则
-     * @param options      搜索选项(正则、大小写、整词匹配)
+     * @param options      搜索选项(正则 大小写 整词匹配)
      * @param precompiled  预编译的 Pattern(由 {@link #compileSearchPattern} 生成),
      *                     非正则模式时为 null
      * @return 匹配成功返回 true

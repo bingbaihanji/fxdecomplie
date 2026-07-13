@@ -13,7 +13,7 @@ import java.util.Objects;
 
 /**
  * 方法信息类，表示 DEX 字节码中的一个方法
- * 包含方法名称、返回类型、参数类型、所属类等元数据信息
+ * 包含方法名称 返回类型 参数类型 所属类等元数据信息
  * 支持方法别名机制和方法签名生成
  */
 public final class MethodInfo implements Comparable<MethodInfo> {

@@ -14,28 +14,28 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.api.resources.ResourceConte
  * 根据文件扩展名对资源进行分类，用于确定文件的内容类型 (二进制/文本/未知)
  */
 public enum ResourceType {
-    /** 代码文件：DEX 字节码、JAR 归档、Java 类文件 */
+    /** 代码文件：DEX 字节码 JAR 归档 Java 类文件 */
     CODE(CONTENT_BINARY, ".dex", ".jar", ".class"),
     /** XML 文件 */
     XML(CONTENT_TEXT, ".xml"),
     /** Android 资源编译表 (Android Resource Table) */
     ARSC(CONTENT_TEXT, ".arsc"),
-    /** APK 安装包及其变体 (APKM、APKS) */
+    /** APK 安装包及其变体 (APKM APKS) */
     APK(CONTENT_BINARY, ".apk", ".apkm", ".apks"),
-    /** 字体文件：TrueType、OpenType */
+    /** 字体文件：TrueType OpenType */
     FONT(CONTENT_BINARY, ".ttf", ".ttc", ".otf"),
-    /** 图片文件：PNG、GIF、JPEG、WebP、BMP、TIFF */
+    /** 图片文件：PNG GIF JPEG WebP BMP TIFF */
     IMG(CONTENT_BINARY, ".png", ".gif", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"),
-    /** 压缩归档文件：ZIP、RAR、7z、TAR、GZ 等 */
+    /** 压缩归档文件：ZIP RAR 7z TAR GZ 等 */
     ARCHIVE(CONTENT_BINARY, ".zip", ".rar", ".7zip", ".7z", ".arj", ".tar", ".gzip", ".bzip", ".bzip2", ".cab", ".cpio", ".ar", ".gz",
             ".tgz", ".bz2"),
-    /** 视频文件：MP4、MKV、WebM、AVI 等 */
+    /** 视频文件：MP4 MKV WebM AVI 等 */
     VIDEOS(CONTENT_BINARY, ".mp4", ".mkv", ".webm", ".avi", ".flv", ".3gp"),
-    /** 音频文件：AAC、OGG、MP3、WAV 等 */
+    /** 音频文件：AAC OGG MP3 WAV 等 */
     SOUNDS(CONTENT_BINARY, ".aac", ".ogg", ".opus", ".mp3", ".wav", ".wma", ".mid", ".midi"),
     /** JSON 文件 */
     JSON(CONTENT_TEXT, ".json"),
-    /** 文本文件：纯文本、配置文件、脚本、Markdown 等 */
+    /** 文本文件：纯文本 配置文件 脚本 Markdown 等 */
     TEXT(CONTENT_TEXT, ".txt", ".ini", ".conf", ".yaml", ".properties", ".js", ".java", ".kt", ".md"),
     /** HTML 网页文件 */
     HTML(CONTENT_TEXT, ".html", ".htm"),

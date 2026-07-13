@@ -12,11 +12,14 @@ import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import com.bingbaihanji.fxdecomplie.util.text.JavaSourceAnalyzer;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import jfx.incubator.scene.control.richtext.TextPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 /**
- * 光标处重命名控制器：光标处标识符/类重命名、类重命名目标推断、重命名后标签页与文件树刷新
+ * 光标处重命名控制器：光标处标识符/类重命名 类重命名目标推断 重命名后标签页与文件树刷新
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 反混淆/ProGuard 映射/快照恢复已拆分至 {@link DeobfuscationController}
@@ -51,7 +54,7 @@ public final class RenameController {
     }
 
     public void renameAtCaret(CodeViewContext context,
-                              jfx.incubator.scene.control.richtext.TextPos caret) {
+                              TextPos caret) {
         if (context == null || caret == null) {
             owner.statusBar().setFilePath("Rename unavailable: no code context");
             return;
@@ -109,7 +112,7 @@ public final class RenameController {
                         baseEntry.desc());
         String currentRenamedSource = RenameService
                 .applySingleRename(text, visibleEntry, codeTab.getOpenFile().fullPath(), wsHash);
-        if (java.util.Objects.equals(currentRenamedSource, text)
+        if (Objects.equals(currentRenamedSource, text)
                 && allowVisibleIdentifierFallback(visibleEntry)) {
             currentRenamedSource = RenameService
                     .replaceVisibleIdentifier(text, oldName, newName);
@@ -119,7 +122,7 @@ public final class RenameController {
                     .replaceVisibleClassDeclaration(currentRenamedSource, oldName, newName);
         }
         boolean currentTabChanged = false;
-        if (!java.util.Objects.equals(currentRenamedSource, text)) {
+        if (!Objects.equals(currentRenamedSource, text)) {
             String displayClass = RenameService
                     .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
             codeTab.updateSourceCode(displayClass, currentRenamedSource);
@@ -136,7 +139,7 @@ public final class RenameController {
                 entry);
         String postSaveSource = RenameService
                 .applySingleRename(text, visibleEntry, codeTab.getOpenFile().fullPath(), wsHash);
-        if (java.util.Objects.equals(postSaveSource, text)
+        if (Objects.equals(postSaveSource, text)
                 && allowVisibleIdentifierFallback(visibleEntry)) {
             postSaveSource = RenameService
                     .replaceVisibleIdentifier(text, oldName, newName);
@@ -149,8 +152,8 @@ public final class RenameController {
                 .displayClassName(codeTab.getOpenFile().fullPath(), wsHash);
         String currentVisibleSource = codeTab.getCodeArea() == null
                 ? codeTab.getOpenFile().sourceCode() : codeTab.getCodeArea().getText();
-        if (!java.util.Objects.equals(postSaveSource, currentVisibleSource)
-                || !java.util.Objects.equals(savedDisplayClass, codeTab.getOpenFile().className())) {
+        if (!Objects.equals(postSaveSource, currentVisibleSource)
+                || !Objects.equals(savedDisplayClass, codeTab.getOpenFile().className())) {
             codeTab.updateSourceCode(savedDisplayClass, postSaveSource);
             reinstallCodeContext(codeTab, postSaveSource);
             currentTabChanged = true;
@@ -326,14 +329,14 @@ public final class RenameController {
                     renamedSource = RenameService
                             .applySingleRename(currentVisibleSource, visibleEntry,
                                     openFile.fullPath(), workspaceHash);
-                    if (java.util.Objects.equals(renamedSource, currentVisibleSource)
+                    if (Objects.equals(renamedSource, currentVisibleSource)
                             && allowVisibleIdentifierFallback(visibleEntry)) {
                         renamedSource = RenameService
                                 .replaceVisibleIdentifier(currentVisibleSource,
                                         visibleEntry.oldName(), visibleEntry.newName());
                     }
                 }
-                if (java.util.Objects.equals(renamedSource, currentVisibleSource)) {
+                if (Objects.equals(renamedSource, currentVisibleSource)) {
                     continue;
                 }
                 String displayClass = RenameService

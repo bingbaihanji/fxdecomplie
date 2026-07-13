@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.ui.theme.RegexHighlighter;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
+import javafx.scene.Node;
 import jfx.incubator.scene.control.richtext.CodeArea;
 
 /**
@@ -128,7 +129,7 @@ public class SimpleContentPanel extends AbstractCodeContentPanel {
 
     /** 创建简化代码展示区域 */
     @Override
-    protected javafx.scene.Node createContent(Object contentData) {
+    protected Node createContent(Object contentData) {
         CodeArea area = new CodeArea();
         area.getStyleClass().add("code-editor");
         area.setEditable(false);

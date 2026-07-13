@@ -33,7 +33,7 @@ public class LoadConstDecoder implements IJavaInsnDecoder {
     /**
      * 解码常量加载指令：读取常量池索引，按常量类型设置指令的操作码与字面量/索引，并更新操作数栈状态
      *
-     * @param state 当前代码解码状态 (包含读取器、当前指令及栈操作)
+     * @param state 当前代码解码状态 (包含读取器 当前指令及栈操作)
      * @throws JavaClassParseException 当遇到不支持的常量类型时抛出
      */
     @Override

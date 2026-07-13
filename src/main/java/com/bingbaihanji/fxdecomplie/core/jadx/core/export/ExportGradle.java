@@ -17,8 +17,8 @@ import java.util.List;
 /**
  * Gradle 项目导出器
  * <p>
- * 负责根据输入的根节点、项目目录和资源文件列表，
- * 自动检测导出类型 (Android 应用、Android 库或简单 Java 项目)，
+ * 负责根据输入的根节点 项目目录和资源文件列表，
+ * 自动检测导出类型 (Android 应用 Android 库或简单 Java 项目)，
  * 并生成对应的 Gradle 构建文件
  */
 public class ExportGradle {

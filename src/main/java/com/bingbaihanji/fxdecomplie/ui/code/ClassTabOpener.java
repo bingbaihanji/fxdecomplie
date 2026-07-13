@@ -5,6 +5,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerContext;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.decompiler.jadx.JadxProjectRenameSynchronizer;
 import com.bingbaihanji.fxdecomplie.model.*;
+import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.*;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
@@ -17,6 +18,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.text.Font;
+import jfx.incubator.scene.control.richtext.CodeArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,7 +129,7 @@ public final class ClassTabOpener {
         return Thread.currentThread().isInterrupted();
     }
 
-    /** 检测字节数组的文本编码并解码为字符串(支持 BOM、UTF-8、UTF-16、ISO-8859-1 回退) */
+    /** 检测字节数组的文本编码并解码为字符串(支持 BOM UTF-8 UTF-16 ISO-8859-1 回退) */
     private static String decodeText(byte[] bytes) {
         if (bytes.length >= 3 && (bytes[0] & 0xFF) == 0xEF
                 && (bytes[1] & 0xFF) == 0xBB && (bytes[2] & 0xFF) == 0xBF) {
@@ -388,7 +391,7 @@ public final class ClassTabOpener {
 
                 String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                         .of(workspace, "").workspaceHash();
-                int renameCountBeforeDecompile = com.bingbaihanji.fxdecomplie.rename.RenameService
+                int renameCountBeforeDecompile = RenameService
                         .loadAll(wsHash).size();
                 DecompileResult result = decompileWithCache(internalName, effectiveEngine, bytes, node, workspace,
                         () -> isRequestCurrent(requestId, cancelPrevious));
@@ -396,7 +399,7 @@ public final class ClassTabOpener {
                     return;
                 }
                 String sourceCode = result.sourceCode();
-                sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
+                sourceCode = RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
                 // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致
                 CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
@@ -405,9 +408,9 @@ public final class ClassTabOpener {
                 DecompilerTypeEnum usedEngine = result.engine();
                 Consumer<CodeMetadata.Reference> completedNavigate = createNavigationHandler(
                         workspace, codeTabPane, usedEngine, lineNumbersEnabled);
-                String displayName = com.bingbaihanji.fxdecomplie.rename.RenameService
+                String displayName = RenameService
                         .displayClassName(internalName, wsHash);
-                int renameCountAfterDisplay = com.bingbaihanji.fxdecomplie.rename.RenameService
+                int renameCountAfterDisplay = RenameService
                         .loadAll(wsHash).size();
                 if (renameCountAfterDisplay != renameCountBeforeDecompile && workspace != null) {
                     workspace.clearSourceSearchCaches();
@@ -553,14 +556,13 @@ public final class ClassTabOpener {
 
                 String internalName = fullPath.endsWith(".class") ? fullPath.substring(0, fullPath.length() - 6) : fullPath;
                 if (bypassCache) {
-                    String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
-                    String cacheWsKey = wsKey;
+                    String cacheWsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
                     decompileCache.invalidate(cacheWsKey, internalName);
                     DiskCodeCache.invalidate(cacheWsKey, internalName);
                 }
                 String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
                         .of(workspace, "").workspaceHash();
-                int renameCountBeforeDecompile = com.bingbaihanji.fxdecomplie.rename.RenameService
+                int renameCountBeforeDecompile = RenameService
                         .loadAll(wsHash).size();
                 DecompileResult result = bypassCache
                         ? decompileFresh(internalName, engine, bytes, node, workspace,
@@ -571,18 +573,18 @@ public final class ClassTabOpener {
                     return;
                 }
                 String sourceCode = result.sourceCode();
-                sourceCode = com.bingbaihanji.fxdecomplie.rename.RenameService
+                sourceCode = RenameService
                         .applyRenames(sourceCode, wsHash, internalName);
                 // 元数据从最终展示源码重建,保证 Ctrl+Click 坐标和可见名称一致
                 CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
                         ? OutlineParser.extractMetadata(sourceCode, bytes)
                         : emptyMetadata();
                 DecompilerTypeEnum usedEngine = result.engine();
-                String displayName = com.bingbaihanji.fxdecomplie.rename.RenameService
+                String displayName = RenameService
                         .displayClassName(internalName, wsHash);
-                int renameCountAfterDisplay = com.bingbaihanji.fxdecomplie.rename.RenameService
+                int renameCountAfterDisplay = RenameService
                         .loadAll(wsHash).size();
-                if (renameCountAfterDisplay != renameCountBeforeDecompile && workspace != null) {
+                if (renameCountAfterDisplay != renameCountBeforeDecompile) {
                     workspace.clearSourceSearchCaches();
                     notifyRenameStateChanged(workspace);
                 }
@@ -760,16 +762,14 @@ public final class ClassTabOpener {
                 String text = decodeText(bytes);
 
                 Platform.runLater(() -> {
-                    jfx.incubator.scene.control.richtext.CodeArea codeArea =
-                            new jfx.incubator.scene.control.richtext.CodeArea();
+                    CodeArea codeArea = new CodeArea();
                     codeArea.getStyleClass().add("code-editor");
-                    codeArea.setSyntaxDecorator(
-                            com.bingbaihanji.fxdecomplie.ui.code.TextFileDecorator.instance());
+                    codeArea.setSyntaxDecorator(TextFileDecorator.instance());
                     codeArea.setEditable(false);
                     codeArea.setWrapText(config.decompiler().wrapText());
                     LineNumberGutter.setEnabled(codeArea, true);
                     codeArea.setText(text);
-                    codeArea.setFont(javafx.scene.text.Font.font(config.theme().fontFamily(), config.theme().fontSize()));
+                    codeArea.setFont(Font.font(config.theme().fontFamily(), config.theme().fontSize()));
 
                     Tab tab = new Tab(node.getName(), codeArea);
                     tab.setUserData(node.getFullPath());
@@ -783,7 +783,7 @@ public final class ClassTabOpener {
                     statusBar.clearTask();
                 });
             } catch (Exception ex) {
-                if (ex instanceof InterruptedException || Thread.currentThread().isInterrupted()) {
+                if (Thread.currentThread().isInterrupted()) {
                     Thread.interrupted();
                     return;
                 }
@@ -967,9 +967,9 @@ public final class ClassTabOpener {
                 return direct;
             }
         }
-        String wsHash = com.bingbaihanji.fxdecomplie.model.CommentScope
+        String wsHash = CommentScope
                 .of(workspace, "").workspaceHash();
-        java.util.List<String> originals = com.bingbaihanji.fxdecomplie.rename.RenameService
+        java.util.List<String> originals = RenameService
                 .originalInternalNameCandidates(targetClass, wsHash);
         for (String original : originals) {
             if (ClassNameUtil.sameInternalName(original, normalized)) {
@@ -1008,7 +1008,7 @@ public final class ClassTabOpener {
         while (!queue.isEmpty()) {
             FileTreeModel item = queue.removeFirst();
             FileTreeNode node = item.getValue();
-            if (node != null && node.isClassFile()) {
+            if (node.isClassFile()) {
                 String path = node.getFullPath().replace('\\', '/');
                 if (path.equals(suffix) || path.endsWith("/" + suffix)) {
                     return node;
@@ -1128,7 +1128,7 @@ public final class ClassTabOpener {
         return null;
     }
 
-    /** 读取类字节码(依次尝试节点缓存、工作区索引、全局缓存、磁盘读取) */
+    /** 读取类字节码(依次尝试节点缓存 工作区索引 全局缓存 磁盘读取) */
     private byte[] readClassBytes(FileTreeNode node, Workspace workspace) throws IOException {
         byte[] bytes = WorkspaceByteReader.readNodeBytes(workspace, node, true);
         if (bytes != null) {
@@ -1166,7 +1166,7 @@ public final class ClassTabOpener {
     }
 
     /**
-     * 共享的反编译+缓存逻辑：依次查询 L2 内存缓存、L3 磁盘缓存,最后执行反编译
+     * 共享的反编译+缓存逻辑：依次查询 L2 内存缓存 L3 磁盘缓存,最后执行反编译
      * 命中 L3 时回填 L2,反编译结果同时写入 L2 和 L3
      * workspaceKey 使用路径 + mtime + size,避免同路径文件替换后命中旧缓存
      */
@@ -1176,9 +1176,8 @@ public final class ClassTabOpener {
         DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
         String optionsHash = cacheOptionsHash(effectiveEngine, engineOptions);
-        String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
 
-        String cacheWsKey = wsKey;
+        String cacheWsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
 
         // ---- L2: 内存反编译缓存(最快路径) ----
         String sourceCode = decompileCache.get(cacheWsKey, internalName, effectiveEngine, optionsHash);
@@ -1237,9 +1236,8 @@ public final class ClassTabOpener {
         DecompilerTypeEnum effectiveEngine = effectiveEngineFor(bytes, engine);
         var engineOptions = DecompilerOptions.forEngine(config, effectiveEngine);
         String optionsHash = cacheOptionsHash(effectiveEngine, engineOptions);
-        String wsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
 
-        String cacheWsKey = wsKey;
+        String cacheWsKey = computeWorkspaceKey(workspace) + "_" + computeClassFingerprint(bytes);
 
         decompileCache.invalidate(cacheWsKey, internalName);
         DiskCodeCache.invalidate(cacheWsKey, internalName);

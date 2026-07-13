@@ -14,11 +14,16 @@ import javafx.scene.control.TreeItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * 导出控制器：批量导出所有类、右键子树导出、导出配置持久化、
+ * 导出控制器：批量导出所有类 右键子树导出 导出配置持久化 
  * 导出进度/结果对话框及打开输出目录
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
@@ -46,7 +51,7 @@ public final class ExportController {
         owner.searchController().withWorkspaceIndex(view.workspace(), index -> {
             // 将树遍历移至后台线程,避免阻塞 FX 线程
             BackgroundTasks.run("Export-CollectNodes", () -> {
-                java.util.List<FileTreeNode> nodes = new java.util.ArrayList<>();
+                List<FileTreeNode> nodes = new ArrayList<>();
                 owner.collectTreeNodes(view.workspace().getTreeRoot(), nodes);
                 Platform.runLater(() -> doExport(nodes, index, view.workspace()));
             });
@@ -65,7 +70,7 @@ public final class ExportController {
         // 将树遍历移至后台线程,避免阻塞 FX 线程
         BackgroundTasks.run("Index-ExportNode", () -> {
             try {
-                java.util.List<FileTreeNode> nodesSnapshot = new java.util.ArrayList<>();
+                List<FileTreeNode> nodesSnapshot = new ArrayList<>();
                 collectTreeNodes(rootItem, nodesSnapshot);
                 WorkspaceIndex index = exportWorkspace == null
                         ? WorkspaceIndex.build(nodesSnapshot)
@@ -84,7 +89,7 @@ public final class ExportController {
     }
 
     /** 弹出导出配置对话框,提交后台导出任务并显示进度条,支持取消操作 */
-    private void doExport(java.util.List<FileTreeNode> nodes,
+    private void doExport(List<FileTreeNode> nodes,
                           WorkspaceIndex index, Workspace workspace) {
         var configOpt = ExportDialog.show(owner.stage(), owner.config(), owner.currentEngine());
         if (configOpt.isEmpty()) {
@@ -94,7 +99,7 @@ public final class ExportController {
         persistExportConfig(exportConfig);
 
         ExportDialog.ProgressHandle progressHandle = ExportDialog.showProgress(owner.stage());
-        java.util.concurrent.atomic.AtomicReference<Future<?>> exportTaskRef = new java.util.concurrent.atomic.AtomicReference<>();
+        AtomicReference<Future<?>> exportTaskRef = new AtomicReference<>();
         AtomicBoolean exportCanceled = new AtomicBoolean(false);
         // 必须在提交任务前注册取消回调,避免用户点击取消时 exportTaskRef 尚未设置
         progressHandle.setOnCancel(() -> {
@@ -207,7 +212,7 @@ public final class ExportController {
 
     /** 递归收集树节点数据(在 FX 线程调用,避免后台线程访问 TreeItem) */
     private void collectTreeNodes(TreeItem<FileTreeNode> item,
-                                  java.util.List<FileTreeNode> result) {
+                                  List<FileTreeNode> result) {
         FileTreeNode data = item.getValue();
         if (data != null) {
             result.add(data);
@@ -218,13 +223,13 @@ public final class ExportController {
     }
 
     /** 显示导出成功对话框(无错误详情列表) */
-    private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath) {
-        showExportDoneDialog(title, message, outputPath, java.util.List.of());
+    private void showExportDoneDialog(String title, String message, Path outputPath) {
+        showExportDoneDialog(title, message, outputPath, List.of());
     }
 
     /** 显示导出完成对话框(含错误详情列表及打开输出目录/复制详情按钮) */
-    private void showExportDoneDialog(String title, String message, java.nio.file.Path outputPath,
-                                      java.util.List<String> details) {
+    private void showExportDoneDialog(String title, String message, Path outputPath,
+                                      List<String> details) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.initOwner(owner.stage());
         alert.setTitle(title);
@@ -254,11 +259,11 @@ public final class ExportController {
     }
 
     /** 使用操作系统资源管理器打开导出目录(依赖 HostServices) */
-    private void openOutputLocation(java.nio.file.Path outputPath) {
+    private void openOutputLocation(Path outputPath) {
         if (outputPath == null) {
             return;
         }
-        java.nio.file.Path target = java.nio.file.Files.isDirectory(outputPath)
+        Path target = Files.isDirectory(outputPath)
                 ? outputPath : outputPath.getParent();
         if (target != null && owner.hostServices() != null) {
             owner.hostServices().showDocument(target.toUri().toString());

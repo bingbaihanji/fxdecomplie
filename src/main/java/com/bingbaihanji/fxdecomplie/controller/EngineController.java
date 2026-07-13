@@ -17,9 +17,11 @@ import javafx.scene.control.TabPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Function;
+
 /**
- * 引擎切换与图形展示控制器：反编译引擎切换、当前标签页刷新、
- * 继承图 / 控制流图 / 方法调用图展示、多引擎对比
+ * 引擎切换与图形展示控制器：反编译引擎切换 当前标签页刷新 
+ * 继承图 / 控制流图 / 方法调用图展示 多引擎对比
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/classTabOpener 延迟初始化
@@ -280,8 +282,8 @@ public final class EngineController {
         return currentTab.getOpenFile().engine();
     }
 
-    /** 一次图形渲染请求：对话框标题、后台任务名、失败提示路径、以及从类字节构建 DOT 的闭包 */
+    /** 一次图形渲染请求：对话框标题 后台任务名 失败提示路径 以及从类字节构建 DOT 的闭包 */
     private record GraphSpec(String title, String taskName, String failurePath,
-                             java.util.function.Function<byte[], String> dotBuilder) {
+                             Function<byte[], String> dotBuilder) {
     }
 }

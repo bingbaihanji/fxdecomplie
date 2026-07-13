@@ -12,7 +12,7 @@ import com.bingbaihanji.fxdecomplie.util.collection.EmptyArray;
  * {@code Integer → Long},它更省内存：既避免了键和值的自动装箱,也不需要为每个映射额外创建 Entry 对象
  *
  * <p>
- * 内部用两个平行数组保存数据,并按键升序排列,查找走二分因此不适合超大规模数据：查找是二分、增删要移动数组元素
+ * 内部用两个平行数组保存数据,并按键升序排列,查找走二分因此不适合超大规模数据：查找是二分 增删要移动数组元素
  * 对于数百量级的容器,性能差距通常小于 50%可通过 {@link #keyAt(int)} 与 {@link #valueAt(int)} 按升序下标遍历
  *
  * <p>

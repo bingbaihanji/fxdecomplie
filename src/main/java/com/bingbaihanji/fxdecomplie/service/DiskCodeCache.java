@@ -193,7 +193,7 @@ public final class DiskCodeCache {
             }
             log.info("磁盘缓存超过阈值: {} MB > {} MB, 开始清理",
                     totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
-            // 第二遍扫描:收集、按时间排序,删除最旧的直至低于目标大小
+            // 第二遍扫描:收集 按时间排序,删除最旧的直至低于目标大小
             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
             List<Path> files;
             try (var stream = Files.walk(CACHE_ROOT)) {

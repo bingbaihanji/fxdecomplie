@@ -140,7 +140,7 @@ public final class DecompilerOptions {
 
     /**
      * 为选项 Map 生成稳定的内容哈希
-     * 使用 SHA-256 避免特殊字符(=、,)导致的键值碰撞
+     * 使用 SHA-256 避免特殊字符(= ,)导致的键值碰撞
      *
      * @param options 引擎选项键值对
      * @return 选项哈希,空选项返回 "default"

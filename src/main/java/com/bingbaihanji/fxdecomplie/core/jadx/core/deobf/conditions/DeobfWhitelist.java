@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * 反混淆白名单条件
  * <p>
- * 对处于白名单中的包或类禁止重命名 (反混淆)，常用于保留 Android 支持库、
+ * 对处于白名单中的包或类禁止重命名 (反混淆)，常用于保留 Android 支持库 
  * AndroidX 等已知库的原始名称白名单项支持以 {@code .*} 结尾表示整个包
  */
 public class DeobfWhitelist extends AbstractDeobfCondition {

@@ -105,7 +105,7 @@ public class JavaInputPlugin implements JadxPlugin {
     }
 
     /**
-     * 返回该插件的基本信息 (唯一标识、显示名称、描述)
+     * 返回该插件的基本信息 (唯一标识 显示名称 描述)
      *
      * @return 插件信息
      */

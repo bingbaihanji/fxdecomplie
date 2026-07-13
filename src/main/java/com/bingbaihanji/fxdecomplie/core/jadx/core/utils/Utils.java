@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * 通用工具类，提供字符串处理、集合操作、堆栈跟踪、线程工具等常用功能
+ * 通用工具类，提供字符串处理 集合操作 堆栈跟踪 线程工具等常用功能
  */
 public class Utils {
 
@@ -71,7 +71,7 @@ public class Utils {
     /**
      * 将 Smali 类型描述符转换为 Java 类型名称
      * <p>
-     * 支持基本类型 (V→void, Z→boolean, C→char, B→byte, S→short, I→int, F→float, J→long, D→double)、
+     * 支持基本类型 (V→void, Z→boolean, C→char, B→byte, S→short, I→int, F→float, J→long, D→double) 
      * 对象类型 (L...;)和数组类型 ([...)
      *
      * @param descString Smali 类型描述符

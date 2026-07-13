@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 对方法节点 ({@link MethodNode})的对外封装，向 API 使用者提供方法的名称、
- * 参数、返回类型、引用关系等信息
+ * 对方法节点 ({@link MethodNode})的对外封装，向 API 使用者提供方法的名称 
+ * 参数 返回类型 引用关系等信息
  */
 public final class JavaMethod implements JavaNode {
     /** 被封装的底层方法节点 */
@@ -87,7 +87,7 @@ public final class JavaMethod implements JavaNode {
         return getDeclaringClass().getRootDecompiler().convertNodes(mth.getUsed());
     }
 
-    /** 获取本方法使用到的、但未能解析的方法信息列表 */
+    /** 获取本方法使用到的 但未能解析的方法信息列表 */
     public List<MethodInfo> getUnresolvedUsed() {
         return mth.getUnresolvedUsed();
     }

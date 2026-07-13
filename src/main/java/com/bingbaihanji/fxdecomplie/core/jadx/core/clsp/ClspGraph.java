@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * 类层次结构图，包含方法的附加信息
  * <p>
- * 用于管理类的继承关系、接口实现关系，并提供方法详情查询功能
+ * 用于管理类的继承关系 接口实现关系，并提供方法详情查询功能
  * 支持从类集合文件加载类路径信息，以及添加应用程序自身的类
  * </p>
  */
@@ -249,7 +249,7 @@ public class ClspGraph {
     }
 
     /**
-     * 获取指定类的所有父类型 (包含直接与间接祖先、接口)
+     * 获取指定类的所有父类型 (包含直接与间接祖先 接口)
      *
      * @param clsName 类名
      * @return 父类型名集合，若无则返回空集合
@@ -261,7 +261,7 @@ public class ClspGraph {
 
     /**
      * 填充父类型缓存，为每个类计算其全部祖先类型集合
-     * 针对空集合、单元素集合 (尤其是 Object)做了内存优化
+     * 针对空集合 单元素集合 (尤其是 Object)做了内存优化
      */
     private void fillSuperTypesCache() {
         Map<String, Set<String>> map = new HashMap<>(nameMap.size());

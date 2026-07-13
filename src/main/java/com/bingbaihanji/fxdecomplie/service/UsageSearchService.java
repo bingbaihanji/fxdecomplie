@@ -17,7 +17,7 @@ import java.util.*;
  *
  * <p>逐类扫描工作区索引中的所有 class 字节码,在以下位置匹配目标：
  * <ul>
- *   <li>类继承/实现关系(superName、interfaces)</li>
+ *   <li>类继承/实现关系(superName interfaces)</li>
  *   <li>字段访问指令(GETFIELD/PUTFIELD/GETSTATIC/PUTSTATIC)</li>
  *   <li>方法调用指令(INVOKEVIRTUAL/INVOKESPECIAL/INVOKESTATIC/INVOKEINTERFACE)</li>
  *   <li>类型操作指令(NEW/ANEWARRAY/CHECKCAST/INSTANCEOF)</li>
@@ -194,7 +194,7 @@ public final class UsageSearchService {
     }
 
     /**
-     * 扫描类文件头信息(超类、接口、字段/方法描述符),补充 ASM visitor 无法覆盖的引用
+     * 扫描类文件头信息(超类 接口 字段/方法描述符),补充 ASM visitor 无法覆盖的引用
      *
      * @param cls     工作区索引中的类条目
      * @param target  解析后的搜索目标
@@ -332,7 +332,7 @@ public final class UsageSearchService {
     /**
      * 检查 ASM 字段/方法描述符是否引用了目标类
      *
-     * JVM 描述符中对象类型以 {@code L} 开头、{@code ;} 结尾,例如 {@code Ljava/lang/String;}
+     * JVM 描述符中对象类型以 {@code L} 开头 {@code ;} 结尾,例如 {@code Ljava/lang/String;}
      * 本方法先将描述符整体转小写,使前缀 {@code L} 变为 {@code 'l'},再检查类路径或简单名是否匹配
      *
      * @param target     用户查询解析结果,{@code classPart} 已统一为小写内部路径(如 {@code java/lang/string})
@@ -420,7 +420,7 @@ public final class UsageSearchService {
     /**
      * 用户查询解析结果 — 将原始输入拆分为类名部分和可选的成员名部分
      *
-     * @param raw        原始查询字符串(已规范化：小写、分隔符统一为 {@code /})
+     * @param raw        原始查询字符串(已规范化：小写 分隔符统一为 {@code /})
      * @param classPart  类名部分(JVM 内部名格式,如 {@code com/example/myclass})
      * @param memberPart 成员名部分({@code #} 之后的内容),无成员时为空字符串
      */

@@ -12,15 +12,15 @@ import java.util.function.BiFunction;
  * <p>
  * 本类是一个「key → value」映射结构,设计目标是在中小规模数据下比 {@link java.util.HashMap} 占用更少内存
  * 它参考 Android {@code android.util.ArrayMap} 的数据结构思想,公开方法签名尽量与其对齐,但实现完全基于
- * Java SE,不依赖 Android、Lombok 或任何第三方库内部使用两个平行数组保存数据：
+ * Java SE,不依赖 Android Lombok 或任何第三方库内部使用两个平行数组保存数据：
  * <ul>
  * <li>{@code int[] hashes}：按升序保存各 key 的 hash</li>
  * <li>{@code Object[] array}：按 {@code key0,value0,key1,value1,...} 交错保存键和值</li>
  * </ul>
  *
  * <p>
- * 相比 {@link java.util.HashMap},本类用「二分查找 + 数组移位」换取更少的对象数量和更紧凑的内存布局它适合中小规模、
- * 创建频繁、读多写少的映射,例如配置项、请求上下文、元数据、DTO 附加属性等场景元素数量达到数千以上时,
+ * 相比 {@link java.util.HashMap},本类用「二分查找 + 数组移位」换取更少的对象数量和更紧凑的内存布局它适合中小规模 
+ * 创建频繁 读多写少的映射,例如配置项 请求上下文 元数据 DTO 附加属性等场景元素数量达到数千以上时,
  * {@link java.util.HashMap} 仍是更好的选择
  *
  * <p>
@@ -28,7 +28,7 @@ import java.util.function.BiFunction;
  * <ul>
  * <li>去掉了 {@code SimpleArrayMap} 基类,核心存储直接内聚到本类,与 Android 的单类结构一致</li>
  * <li>移除了全局静态数组缓存({@code mBaseCache} / {@code mTwiceBaseCache} 及其锁)
- * 该缓存是为 Android 受限堆减少 GC 而设计的,在 JVM 上属于反模式(锁竞争、内存滞留、线程安全隐患)</li>
+ * 该缓存是为 Android 受限堆减少 GC 而设计的,在 JVM 上属于反模式(锁竞争 内存滞留 线程安全隐患)</li>
  * <li>移除了 {@code identityHashCode} 模式：始终使用 {@link Object#hashCode()} / {@link Object#equals(Object)}</li>
  * <li>移除了 Android 的 {@code Log} / {@code Slog} / {@code UtilConfig} / {@code ArrayUtils} 等平台依赖</li>
  * <li>引入 {@code modCount},视图迭代器具备真正的 fail-fast 能力</li>
@@ -50,7 +50,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
     private static final long serialVersionUID = 2001030720020720L;
 
     /**
-     * 每个 Entry 在 {@link #array} 中占用两个槽位(key、value)
+     * 每个 Entry 在 {@link #array} 中占用两个槽位(key value)
      */
     private static final int ENTRY_WIDTH = 2;
 
@@ -58,7 +58,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      * 结构性修改次数,用于支持 fail-fast 迭代器
      *
      * <p>
-     * 新增、删除、清空属于结构性修改 仅替换已有 key 的 value 不属于结构性修改
+     * 新增 删除 清空属于结构性修改 仅替换已有 key 的 value 不属于结构性修改
      */
     private transient int modCount;
 
@@ -171,7 +171,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      * 返回当前内部数组容量
      *
      * <p>
-     * 该值主要用于测试、调优和诊断,不等同于 {@link #size()}
+     * 该值主要用于测试 调优和诊断,不等同于 {@link #size()}
      *
      * @return 当前容量
      */
@@ -599,7 +599,7 @@ public final class ArrayMap<K, V> implements Map<K, V>, Cloneable, Serializable 
      * 清空所有 Entry,但保留当前容量(不释放底层数组)
      *
      * <p>
-     * 对应 Android 的 {@code erase}适合需要反复清空并重新灌入、希望复用底层数组以减少分配的场景
+     * 对应 Android 的 {@code erase}适合需要反复清空并重新灌入 希望复用底层数组以减少分配的场景
      */
     public void erase() {
         if (this.size == 0) {

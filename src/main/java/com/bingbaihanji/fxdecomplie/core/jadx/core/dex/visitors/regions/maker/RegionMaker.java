@@ -27,8 +27,8 @@ import static com.bingbaihanji.fxdecomplie.core.jadx.core.utils.BlockUtils.getNe
  * 区域构建器
  * <p>
  * 负责将方法的基本块 ({@link BlockNode})转换为结构化的区域 ({@link Region})树，
- * 作为反编译流程中控制流重建的核心组件内部委托 {@link IfRegionMaker}、
- * {@link LoopRegionMaker}、{@link SwitchRegionMaker}、{@link SynchronizedRegionMaker}
+ * 作为反编译流程中控制流重建的核心组件内部委托 {@link IfRegionMaker}
+ * {@link LoopRegionMaker} {@link SwitchRegionMaker} {@link SynchronizedRegionMaker}
  * 等子构建器处理各类控制流结构
  * </p>
  */
@@ -165,7 +165,7 @@ public class RegionMaker {
     }
 
     /**
-     * 向区域中插入边界指令 (如 {@code break}、{@code continue})
+     * 向区域中插入边界指令 (如 {@code break} {@code continue})
      * <p>
      * 当遍历到达退出块时，将块上携带的边界指令按类型 (先 break 后 continue)
      * 插入到区域中，以保证控制流语义正确

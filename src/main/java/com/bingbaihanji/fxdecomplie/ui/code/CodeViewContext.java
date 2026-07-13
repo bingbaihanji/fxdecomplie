@@ -5,7 +5,7 @@ import com.bingbaihanji.fxdecomplie.model.*;
 /**
  * 代码视图上下文,聚合 CodeViewPanel 所需的所有数据,不依赖 MainWindow
  *
- * <p>通过 record 和 CodeActionHandler 解耦,主窗口、独立代码窗口、未来多窗口共享同一套代码视图</p>
+ * <p>通过 record 和 CodeActionHandler 解耦,主窗口 独立代码窗口 未来多窗口共享同一套代码视图</p>
  *
  * @param workspace      当前工作区
  * @param node           文件树节点

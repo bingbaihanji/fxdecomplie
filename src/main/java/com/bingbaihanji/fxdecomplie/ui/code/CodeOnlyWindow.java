@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 
 /**
  * 轻量级纯代码窗口,用于分离的编辑器标签页
@@ -416,10 +417,10 @@ public final class CodeOnlyWindow {
         }
         Object splitHandler = tab.getProperties().remove(ORIGINAL_SPLIT_HANDLER);
         Object engineHandler = tab.getProperties().remove(ORIGINAL_ENGINE_HANDLER);
-        tab.setOnSplitRequested(splitHandler instanceof java.util.function.Consumer<?>
-                ? (java.util.function.Consumer<CodeEditorTab>) splitHandler : null);
-        tab.setOnSwitchEngine(engineHandler instanceof java.util.function.Consumer<?>
-                ? (java.util.function.Consumer<DecompilerTypeEnum>) engineHandler : null);
+        tab.setOnSplitRequested(splitHandler instanceof Consumer<?>
+                ? (Consumer<CodeEditorTab>) splitHandler : null);
+        tab.setOnSwitchEngine(engineHandler instanceof Consumer<?>
+                ? (Consumer<DecompilerTypeEnum>) engineHandler : null);
     }
 
     private static void installCloseCleanup(CodeEditorTab tab) {

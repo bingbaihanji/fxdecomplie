@@ -5,7 +5,7 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 
 /**
- * 编辑器动作控制器：剪贴板、缩放、行号、折叠、工具窗口等编辑区操作
+ * 编辑器动作控制器：剪贴板 缩放 行号 折叠 工具窗口等编辑区操作
  * <p>
  * 从 MainWindow 拆分而来，通过 owner 访问共享状态与协作者 (Mediator 模式)
  * 所有协作者均在调用时通过 owner 访问，以适应 tabManager/toolBar 延迟初始化

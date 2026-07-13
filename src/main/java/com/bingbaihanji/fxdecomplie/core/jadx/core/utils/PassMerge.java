@@ -160,7 +160,7 @@ public class PassMerge {
     }
 
     /**
-     * 合并过程中使用的 Pass 包装对象，保存原始 Pass、对应的访问者以及可修改的依赖列表
+     * 合并过程中使用的 Pass 包装对象，保存原始 Pass 对应的访问者以及可修改的依赖列表
      */
     private static final class MergePass {
         private final JadxPass pass;

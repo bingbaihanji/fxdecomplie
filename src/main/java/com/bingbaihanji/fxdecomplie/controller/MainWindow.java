@@ -23,6 +23,7 @@ import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
@@ -34,12 +35,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
  * FxDecompiler 应用窗口的中央控制器
- * 管理外层工作区 TabPane、内部代码标签页、菜单栏操作、
- * 文件加载、搜索、导出及所有用户交互
+ * 管理外层工作区 TabPane 内部代码标签页 菜单栏操作 
+ * 文件加载 搜索 导出及所有用户交互
  *
  * @author bingbaihanji
  * @date 2026-06-18
@@ -48,7 +50,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(MainWindow.class);
 
-    /** 应用全局配置(窗口、主题、引擎偏好等) */
+    /** 应用全局配置(窗口 主题 引擎偏好等) */
     private final AppConfig config;
     /** 是否使用自定义标题栏(Windows 原生窗口控制) */
     private final boolean useHeaderBar;
@@ -70,7 +72,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     private final SettingsController settingsController = new SettingsController(this);
     /** 导出控制器 (批量导出/子树导出/导出配置持久化/导出结果对话框) */
     private final ExportController exportController = new ExportController(this);
-    /** 工作区控制器 (打开文件/目录/项目、保存项目、关闭工作区、快速打开、最近文件、工作区加载) */
+    /** 工作区控制器 (打开文件/目录/项目 保存项目 关闭工作区 快速打开 最近文件 工作区加载) */
     private final WorkspaceController workspaceController = new WorkspaceController(this);
     /** 编辑器当前主题数据(语法高亮颜色等) */
     private VsCodeThemeLoader.ThemeData editorTheme;
@@ -103,7 +105,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         this(config, useHeaderBar, null);
     }
 
-    /** 完整构造主窗口,初始化配置、主题、引擎和行号等设置 */
+    /** 完整构造主窗口,初始化配置 主题 引擎和行号等设置 */
     public MainWindow(AppConfig config, boolean useHeaderBar, HostServices hostServices) {
         this.config = config;
         this.useHeaderBar = useHeaderBar;
@@ -525,9 +527,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         final CodeViewContext context = ctx;
         String text = context.openFile() != null ? context.openFile().sourceCode() : "";
-        String memberSig = com.bingbaihanji.fxdecomplie.ui.code.CodeSyncHelper.findMethodAtLine(text, line);
+        String memberSig = CodeSyncHelper.findMethodAtLine(text, line);
         final String effectiveSig = (memberSig != null) ? memberSig : "";
-        java.util.List<CommentData> existing = CommentManager.load(
+        List<CommentData> existing = CommentManager.load(
                 context.workspaceHash(), context.classInternalName());
         CommentData toDelete = null;
         for (CommentData c : existing) {
@@ -617,7 +619,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
                 .orElse(null);
     }
 
-    /** 获取上下文中类的字节码(优先从上下文、节点缓存、工作区中获取) */
+    /** 获取上下文中类的字节码(优先从上下文 节点缓存 工作区中获取) */
     byte[] classBytesForContext(CodeViewContext context) throws IOException {
         if (context == null) {
             return null;
@@ -780,13 +782,13 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
             }
         });
 
-        javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(8,
-                new javafx.scene.control.Label(I18nUtil.getString("about.description")),
-                new javafx.scene.control.Label(I18nUtil.getString("about.engines")),
-                new javafx.scene.control.Label(""),
-                new javafx.scene.control.Label(I18nUtil.getString("about.developer")),
-                new javafx.scene.control.Label(I18nUtil.getString("about.date")),
-                new javafx.scene.control.Label(I18nUtil.getString("about.website")),
+        VBox content = new VBox(8,
+                new Label(I18nUtil.getString("about.description")),
+                new Label(I18nUtil.getString("about.engines")),
+                new Label(""),
+                new Label(I18nUtil.getString("about.developer")),
+                new Label(I18nUtil.getString("about.date")),
+                new Label(I18nUtil.getString("about.website")),
                 link);
         alert.getDialogPane().setContent(content);
         log.info("显示关于对话框");

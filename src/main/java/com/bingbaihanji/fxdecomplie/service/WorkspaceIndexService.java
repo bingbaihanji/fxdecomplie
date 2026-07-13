@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 
 /**
  * 按需构建工作区完整索引打开 JAR 时不自动读取/解析全部 class,
- * 只有搜索、用法、导出等功能真正需要时才启动
+ * 只有搜索 用法 导出等功能真正需要时才启动
  *
  * @author bingbaihanji
  * @date 2026-07-07

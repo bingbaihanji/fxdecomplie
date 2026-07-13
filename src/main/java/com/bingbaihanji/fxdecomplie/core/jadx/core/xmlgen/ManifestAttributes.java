@@ -233,7 +233,7 @@ public class ManifestAttributes {
         }
     }
 
-    /** 属性值类型：ENUM (枚举，单值)、FLAG (标志位，可按位组合) */
+    /** 属性值类型：ENUM (枚举，单值) FLAG (标志位，可按位组合) */
     private enum MAttrType {
         ENUM, FLAG
     }

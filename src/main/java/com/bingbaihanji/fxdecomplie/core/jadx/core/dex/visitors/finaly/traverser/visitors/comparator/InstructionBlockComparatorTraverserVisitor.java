@@ -18,7 +18,7 @@ import java.util.List;
  * <p>
  * 用于比较两个遍历路径 (finally 路径和候选路径)中对应指令块的指令序列，
  * 判断它们是否匹配，并根据匹配结果生成相应的下一遍历状态
- * 支持完全匹配、不均匀匹配、块跳过和终止等场景
+ * 支持完全匹配 不均匀匹配 块跳过和终止等场景
  * </p>
  */
 public final class InstructionBlockComparatorTraverserVisitor extends AbstractTraverserComparatorVisitor {
@@ -181,7 +181,7 @@ public final class InstructionBlockComparatorTraverserVisitor extends AbstractTr
      * 访问遍历活跃路径状态，比较 finally 路径和候选路径中当前块的指令序列
      * <p>
      * 核心逻辑：从每个块的指令列表中从后往前逐条比较指令是否相同，
-     * 根据匹配结果 (完全匹配、不完全匹配、无匹配)决定下一遍历状态
+     * 根据匹配结果 (完全匹配 不完全匹配 无匹配)决定下一遍历状态
      * </p>
      *
      * @param state 当前的遍历活跃路径状态

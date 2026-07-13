@@ -499,7 +499,7 @@ final class DotGraphRenderer {
     }
 
     /**
-     * 检查字符串是否为合法 CSS 颜色(#rrggbb、命名颜色等)
+     * 检查字符串是否为合法 CSS 颜色(#rrggbb 命名颜色等)
      *
      * @param value 待检查的颜色字符串
      * @return true 表示可被 {@link Color#web(String)} 解析
@@ -519,7 +519,7 @@ final class DotGraphRenderer {
     /**
      * 安全解析 CSS 颜色,失败返回缺省值
      *
-     * @param value    颜色字符串(#rrggbb、命名颜色等),可为 null
+     * @param value    颜色字符串(#rrggbb 命名颜色等),可为 null
      * @param fallback 解析失败时的回退颜色
      * @return 解析成功的 Color 对象或回退值
      */

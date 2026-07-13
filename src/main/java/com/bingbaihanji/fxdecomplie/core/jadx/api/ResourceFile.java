@@ -12,7 +12,7 @@ import java.io.File;
 
 /**
  * 资源文件类，表示反编译过程中的资源文件
- * 封装了资源文件的元数据信息，包括文件名、类型、混淆名称以及对应的 ZIP 条目
+ * 封装了资源文件的元数据信息，包括文件名 类型 混淆名称以及对应的 ZIP 条目
  */
 public class ResourceFile {
     private final JadxDecompiler decompiler;
