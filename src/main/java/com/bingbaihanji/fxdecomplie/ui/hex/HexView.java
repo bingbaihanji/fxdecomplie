@@ -13,12 +13,14 @@ import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.ScrollBar;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Orientation;
@@ -192,12 +194,17 @@ public class HexView extends Region {
     // ===================== Layout Setup =====================
 
     private void setupLayout() {
+        // Root: VBox with toolbar on top, canvas area below
+        var menuBar = buildMenuBar();
+        var toolBar = buildToolBar();
+        var topBar = new VBox(menuBar, toolBar);
+        topBar.setStyle("-fx-background-color: #1a1a1e;");
+
         // Use a plain Pane — it does NOT auto-layout children, so we have full control
         this.canvasPane = new Pane();
         this.canvasPane.setStyle("-fx-background-color: #19191c;");
 
         this.canvas = new Canvas();
-        // Bind canvas size to pane size — canvas auto-fills
         this.canvas.widthProperty().bind(this.canvasPane.widthProperty());
         this.canvas.heightProperty().bind(this.canvasPane.heightProperty());
 
@@ -225,17 +232,134 @@ public class HexView extends Region {
 
         var overlay = new VBox(4, searchField, gotoField);
         overlay.setPadding(new Insets(4));
-        overlay.setPickOnBounds(false); // clicks pass through to canvas
+        overlay.setPickOnBounds(false);
 
-        // Position overlay at top-right
         overlay.layoutXProperty().bind(
                 canvasPane.widthProperty().subtract(overlay.widthProperty()).subtract(8));
         overlay.setLayoutY(4);
 
+        // Canvas row: Pane + ScrollBar
+        var canvasRow = new javafx.scene.layout.HBox(canvasPane, scrollBar);
+        canvasRow.setFillHeight(true);
+        javafx.scene.layout.HBox.setHgrow(canvasPane, Priority.ALWAYS);
+
         canvasPane.getChildren().addAll(canvas, overlay);
 
-        // Add to Region
-        this.getChildren().addAll(canvasPane, scrollBar);
+        // Root layout: topBar + canvasRow
+        var root = new VBox(topBar, canvasRow);
+        root.setFillWidth(true);
+        VBox.setVgrow(canvasRow, Priority.ALWAYS);
+        this.getChildren().add(root);
+    }
+
+    private MenuBar buildMenuBar() {
+        var menuBar = new MenuBar();
+        menuBar.setStyle("-fx-background-color: #1a1a1e;");
+
+        var copyMenu = new Menu("Copy As");
+        addCopyMenuItem(copyMenu, "Hex String  (Ctrl+C)", BuiltinFormatters.HEX_SPACED);
+        addCopyMenuItem(copyMenu, "C Array    (Ctrl+Shift+C)", BuiltinFormatters.C_ARRAY);
+        addCopyMenuItem(copyMenu, "Java Array (Ctrl+Shift+J)", BuiltinFormatters.JAVA_ARRAY);
+        addCopyMenuItem(copyMenu, "Rust Array (Ctrl+Shift+R)", BuiltinFormatters.RUST_ARRAY);
+        addCopyMenuItem(copyMenu, "Python     (Ctrl+Shift+P)", BuiltinFormatters.PYTHON_BYTES);
+        addCopyMenuItem(copyMenu, "JS Array   (Ctrl+Shift+S)", BuiltinFormatters.JS_ARRAY);
+        addCopyMenuItem(copyMenu, "ASCII Dump", BuiltinFormatters.ASCII_ART);
+
+        var searchMenu = new Menu("Search");
+        var miFind = new MenuItem("Find...  Ctrl+F");
+        miFind.setOnAction(e -> showSearch());
+        var miGoto = new MenuItem("Goto...  Ctrl+G");
+        miGoto.setOnAction(e -> showGoto());
+        searchMenu.getItems().addAll(miFind, miGoto);
+
+        menuBar.getMenus().addAll(copyMenu, searchMenu);
+        return menuBar;
+    }
+
+    private void addCopyMenuItem(Menu parent, String name, CopyFormatter fmt) {
+        var item = new MenuItem(name);
+        item.setOnAction(e -> copyAs(fmt));
+        parent.getItems().add(item);
+    }
+
+    private ToolBar buildToolBar() {
+        var toolbar = new ToolBar();
+        toolbar.setStyle("-fx-background-color: #1a1a1e; -fx-padding: 2 4;");
+
+        // Copy buttons
+        var copyHexBtn = new Button("Hex");
+        copyHexBtn.setTooltip(new Tooltip("Copy as hex string (Ctrl+C)"));
+        copyHexBtn.setOnAction(e -> copyAs(BuiltinFormatters.HEX_SPACED));
+
+        var copyCBtn = new Button("C");
+        copyCBtn.setTooltip(new Tooltip("Copy as C array (Ctrl+Shift+C)"));
+        copyCBtn.setOnAction(e -> copyAs(BuiltinFormatters.C_ARRAY));
+
+        var copyJavaBtn = new Button("Java");
+        copyJavaBtn.setTooltip(new Tooltip("Copy as Java array (Ctrl+Shift+J)"));
+        copyJavaBtn.setOnAction(e -> copyAs(BuiltinFormatters.JAVA_ARRAY));
+
+        // Config checkboxes
+        var upperCaseChk = new CheckBox("Upper");
+        upperCaseChk.setTooltip(new Tooltip("Show hex digits as uppercase"));
+        upperCaseChk.setSelected(config.isUpperCaseHex());
+        upperCaseChk.selectedProperty().bindBidirectional(config.upperCaseHexProperty());
+
+        var grayZeroChk = new CheckBox("Gray 0");
+        grayZeroChk.setTooltip(new Tooltip("Show zero bytes (0x00) dimmed"));
+        grayZeroChk.setSelected(config.isGrayOutZero());
+        grayZeroChk.selectedProperty().bindBidirectional(config.grayOutZeroProperty());
+
+        var asciiChk = new CheckBox("ASCII");
+        asciiChk.setTooltip(new Tooltip("Show ASCII column"));
+        asciiChk.setSelected(config.isShowAscii());
+        asciiChk.selectedProperty().bindBidirectional(config.showAsciiProperty());
+
+        var miniMapChk = new CheckBox("MiniMap");
+        miniMapChk.setTooltip(new Tooltip("Show MiniMap overview strip"));
+        miniMapChk.setSelected(config.isShowMiniMap());
+        miniMapChk.selectedProperty().bindBidirectional(config.showMiniMapProperty());
+
+        // Cols spinner
+        var colsLabel = new Label("Cols:");
+        var colsSpinner = new Spinner<Integer>(1, 64, config.getBytesPerRow());
+        colsSpinner.setEditable(true);
+        colsSpinner.setPrefWidth(65);
+        colsSpinner.setTooltip(new Tooltip("Bytes per row (1-64)"));
+        colsSpinner.getValueFactory().valueProperty().addListener((obs, o, n) -> {
+            if (n != null) config.setBytesPerRow(n);
+        });
+        // Sync spinner when config changes externally
+        config.bytesPerRowProperty().addListener((obs, o, n) -> {
+            if (n != null && !n.equals(colsSpinner.getValue())) {
+                colsSpinner.getValueFactory().setValue(n.intValue());
+            }
+        });
+
+        // Style all controls for dark theme
+        String ctrlStyle = "-fx-text-fill: #ddd;";
+        for (var ctrl : new Control[]{copyHexBtn, copyCBtn, copyJavaBtn,
+                upperCaseChk, grayZeroChk, asciiChk, miniMapChk, colsSpinner}) {
+            if (ctrl instanceof CheckBox cb) {
+                cb.setStyle(ctrlStyle);
+            } else if (ctrl instanceof Button b) {
+                b.setStyle("-fx-text-fill: #ddd; -fx-background-color: #2a2a2e;");
+            } else if (ctrl instanceof Spinner<?> s) {
+                s.setStyle(ctrlStyle);
+                s.getEditor().setStyle("-fx-text-fill: #ddd; -fx-background-color: #2a2a2e;");
+            }
+        }
+        colsLabel.setStyle("-fx-text-fill: #aaa;");
+        upperCaseChk.setStyle("-fx-text-fill: #ddd;");
+        grayZeroChk.setStyle("-fx-text-fill: #ddd;");
+        asciiChk.setStyle("-fx-text-fill: #ddd;");
+        miniMapChk.setStyle("-fx-text-fill: #ddd;");
+
+        toolbar.getItems().addAll(
+                copyHexBtn, copyCBtn, copyJavaBtn, new Separator(),
+                upperCaseChk, grayZeroChk, asciiChk, miniMapChk, new Separator(),
+                colsLabel, colsSpinner);
+        return toolbar;
     }
 
     // ===================== Render Loop =====================
@@ -306,22 +430,8 @@ public class HexView extends Region {
 
     @Override
     protected void layoutChildren() {
-        double w = getWidth();
-        double h = getHeight();
-        if (w <= 0 || h <= 0) {
-            return;
-        }
-
-        double scrollW = scrollBar.prefWidth(-1);
-        double canvasW = w - scrollW;
-
-        // Pane fills the left area
-        canvasPane.resizeRelocate(0, 0, canvasW, h);
-
-        // Scrollbar on the right edge
-        scrollBar.resizeRelocate(canvasW, 0, scrollW, h);
-
-        // Canvas size is bound to pane, but force a redraw after resize
+        // Let the root VBox handle layout of children, then force redraw
+        super.layoutChildren();
         markDirty();
     }
 
