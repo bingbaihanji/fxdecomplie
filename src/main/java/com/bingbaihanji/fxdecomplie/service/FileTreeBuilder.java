@@ -75,12 +75,14 @@ public final class FileTreeBuilder {
             FileTreeModel root, String fullPath,
             Map<String, FileTreeModel> pathMap) {
         int lastSlash = fullPath.lastIndexOf('/');
-        if (lastSlash < 0) {
+        int lastColon = fullPath.lastIndexOf(':');
+        int lastSeparator = Math.max(lastSlash, lastColon);
+        if (lastSeparator < 0) {
             return root;
         }
 
-        String parentPath = fullPath.substring(0, lastSlash);
-        String[] parts = parentPath.split("/");
+        String parentPath = fullPath.substring(0, lastSeparator);
+        String[] parts = parentPath.split("[/:]");
 
         FileTreeModel current = root;
         StringBuilder pathBuilder = new StringBuilder();

@@ -59,6 +59,25 @@ class WorkspaceTest {
     }
 
     @Test
+    void findNodeByPathMatchesClassInsideNestedJarByInternalPath() {
+        FileTreeNode clsNode = new FileTreeNode("ExceptionMatchEvaluator.class",
+                "BOOT-INF/lib/logback-classic-1.5.18.jar:"
+                        + "ch/qos/logback/classic/boolex/ExceptionMatchEvaluator.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+        root.getChildren().add(new FileTreeModel(clsNode));
+
+        Workspace workspace = new Workspace("boot.jar", tempDir.toFile(), root, true);
+
+        assertSame(clsNode, workspace.findNodeByPath(
+                "ch/qos/logback/classic/boolex/ExceptionMatchEvaluator.class"));
+        assertSame(clsNode, workspace.findNodeByPath(
+                "ch/qos/logback/classic/boolex/ExceptionMatchEvaluator"));
+    }
+
+    @Test
     void failedIndexBuildCanBeRetriedWithNewFuture() {
         FileTreeModel root = new FileTreeModel(
                 new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));

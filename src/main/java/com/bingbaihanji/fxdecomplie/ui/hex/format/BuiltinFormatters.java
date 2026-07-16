@@ -31,8 +31,8 @@ public final class BuiltinFormatters {
         return sb.toString();
     };
     public static final CopyFormatter JAVA_ARRAY = (data, offset) -> {
-        var sb = new StringBuilder(data.length * 8 + 10);
-        sb.append("(byte) {");
+        var sb = new StringBuilder(data.length * 10 + 12);
+        sb.append("new byte[] {");
         for (int i = 0; i < data.length; i++) {
             if (i > 0) {
                 sb.append(", ");
@@ -88,9 +88,7 @@ public final class BuiltinFormatters {
             for (int i = row; i < end; i++) {
                 sb.append(String.format("%02X ", data[i] & 0xFF));
             }
-            for (int i = end; i < row + bytesPerRow; i++) {
-                sb.append("   ");
-            }
+            sb.repeat("   ", Math.max(0, row + bytesPerRow - end));
             sb.append(' ');
             for (int i = row; i < end; i++) {
                 int c = data[i] & 0xFF;

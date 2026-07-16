@@ -91,6 +91,14 @@ public class Workspace implements AutoCloseable {
                     for (String candidate : ClassNameUtil.classFilePathCandidates(fullPath)) {
                         result.putIfAbsent(candidate, node);
                     }
+                    int nestedSourceIndex = fullPath.lastIndexOf(':');
+                    if (nestedSourceIndex >= 0 && nestedSourceIndex + 1 < fullPath.length()) {
+                        String nestedClassPath = fullPath.substring(nestedSourceIndex + 1);
+                        result.putIfAbsent(nestedClassPath, node);
+                        for (String candidate : ClassNameUtil.classFilePathCandidates(nestedClassPath)) {
+                            result.putIfAbsent(candidate, node);
+                        }
+                    }
                     String stripped = ClassNameUtil.stripContainerClassPrefix(fullPath);
                     if (!stripped.isBlank()) {
                         result.putIfAbsent(stripped + ".class", node);

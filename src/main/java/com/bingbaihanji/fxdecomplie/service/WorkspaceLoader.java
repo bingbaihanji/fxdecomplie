@@ -42,11 +42,23 @@ public final class WorkspaceLoader {
     public static void loadAsync(File file, AppConfig config, Executor uiExecutor,
                                  Consumer<Workspace> onSuccess,
                                  Consumer<String> onError) {
+        if (file == null) {
+            notifyError(uiExecutor, onError, "File is null");
+            return;
+        }
+        if (!file.exists()) {
+            notifyError(uiExecutor, onError, "File not found: " + file.getAbsolutePath());
+            return;
+        }
+        if (!file.canRead()) {
+            notifyError(uiExecutor, onError, "File is not readable: " + file.getAbsolutePath());
+            return;
+        }
         String name = file.getName();
         log.info("开始加载文件: {} ({}), isDir={}", file.getAbsolutePath(),
                 file.length(), file.isDirectory());
         long loadStart = System.currentTimeMillis();
-        BackgroundTasks.run("FileLoader-" + name, () -> {
+        BackgroundTasks.run(BackgroundTasks.PoolType.IO, "FileLoader-" + name, () -> {
             try {
                 // ---- 步骤 1: 扫描 JAR/ZIP/目录中的所有 .class 和资源条目 ----
                 long t1 = System.currentTimeMillis();
@@ -64,32 +76,44 @@ public final class WorkspaceLoader {
                 log.info("工作区创建完成: {} (archive={}, {}ms)", name, isArchive, totalElapsed);
                 // ---- 步骤 4: 在 UI 线程上通知 UI完整索引按需构建 ----
                 uiExecutor.execute(() -> {
-                    if (onSuccess != null) {
-                        onSuccess.accept(workspace);
+                    try {
+                        if (onSuccess != null) {
+                            onSuccess.accept(workspace);
+                        }
+                        if (config != null) {
+                            config.addRecentFile(file.getAbsolutePath());
+                        }
+                    } catch (RuntimeException callbackError) {
+                        log.error("工作区加载成功回调失败: {}", file.getAbsolutePath(), callbackError);
+                        workspace.close();
+                        if (onError != null) {
+                            onError.accept(callbackError.getMessage() != null
+                                    ? callbackError.getMessage()
+                                    : callbackError.getClass().getSimpleName());
+                        }
                     }
-                    config.addRecentFile(file.getAbsolutePath());
                 });
             } catch (Exception e) {
                 long totalElapsed = System.currentTimeMillis() - loadStart;
                 String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
                 log.error("文件加载失败: {} ({}ms): {}", file.getAbsolutePath(), totalElapsed, msg, e);
-                uiExecutor.execute(() -> {
-                    if (onError != null) {
-                        onError.accept(msg);
-                    }
-                });
+                notifyError(uiExecutor, onError, msg);
             } catch (Error e) {
                 // OOM / StackOverflow 等致命错误：通知 UI 后重新抛出以保留原始语义
                 log.error("文件加载致命错误: {}: {}", file.getAbsolutePath(),
                         e.getClass().getSimpleName(), e);
-                uiExecutor.execute(() -> {
-                    if (onError != null) {
-                        onError.accept("Fatal: " + e.getClass().getSimpleName());
-                    }
-                });
+                notifyError(uiExecutor, onError, "Fatal: " + e.getClass().getSimpleName());
                 throw e;
             }
-        });
+        }, rejected -> notifyError(uiExecutor, onError, "Loading queue is full"));
+    }
+
+    private static void notifyError(Executor uiExecutor, Consumer<String> onError, String message) {
+        if (onError == null) {
+            return;
+        }
+        Executor executor = uiExecutor == null ? Runnable::run : uiExecutor;
+        executor.execute(() -> onError.accept(message));
     }
 
     /** 判断文件是否为归档文件(JAR/ZIP),验证扩展名 + 文件头 ZIP 魔数 */

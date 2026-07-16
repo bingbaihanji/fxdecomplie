@@ -22,6 +22,7 @@ public final class DataAnalyzers {
     private static final Color C_TIME = Color.rgb(0x80, 0xC0, 0xFF);
     private static final Color C_BIN = Color.rgb(0xA0, 0xA0, 0xA0);
     private static final Color C_GUID = Color.rgb(0xC0, 0x80, 0xFF);
+
     private DataAnalyzers() {
     }
 

@@ -26,11 +26,6 @@ public final class BackgroundTasks {
     private static final ThreadPoolExecutor IO_POOL = createPool(
             IO_THREADS, Integer.MAX_VALUE, "bg-io");
 
-    static {
-        INTERACTIVE_POOL.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-        EXPORT_POOL.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-    }
-
     private BackgroundTasks() {
         throw new AssertionError("utility class");
     }
@@ -79,16 +74,19 @@ public final class BackgroundTasks {
         try {
             log.debug("提交后台任务[{}]: {} (队列: {})", type, name, pool.getQueue().size());
             return pool.submit(() -> {
+                String previousName = Thread.currentThread().getName();
                 Thread.currentThread().setName(name);
-                if (Thread.currentThread().isInterrupted()) {
-                    log.debug("后台任务在启动前被取消: {}", name);
-                    return;
-                }
                 try {
+                    if (Thread.currentThread().isInterrupted()) {
+                        log.debug("后台任务在启动前被取消: {}", name);
+                        return;
+                    }
                     task.run();
                 } catch (Exception e) {
                     log.error("后台任务异常: {}", name, e);
                     throw e;
+                } finally {
+                    Thread.currentThread().setName(previousName);
                 }
             });
         } catch (RejectedExecutionException e) {

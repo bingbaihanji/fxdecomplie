@@ -1,10 +1,10 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -93,6 +94,9 @@ public final class ClassDiscoverer {
                 String displayName = path.substring(path.lastIndexOf('/') + 1);
                 entries.add(new ClassEntry(displayName, path, type, null, loader,
                         normalizedSize(entry.getSize()), cleanup));
+                if (isArchivePath(path)) {
+                    discoverNestedArchive(archive, List.of(path), entries, 1);
+                }
             }
             success = true;
             return entries;
@@ -101,6 +105,70 @@ public final class ClassDiscoverer {
                 archive.close();
             }
         }
+    }
+
+    private static void discoverNestedArchive(SharedJarArchive archive,
+                                              List<String> archiveChain,
+                                              List<ClassEntry> entries,
+                                              int depth) {
+        if (depth > 8) {
+            log.warn("嵌套归档层级过深,已跳过: {}", sourcePath(archiveChain));
+            return;
+        }
+        String parentSource = sourcePath(archiveChain);
+        byte[] archiveBytes;
+        try {
+            archiveBytes = archive.readNested(archiveChain);
+        } catch (IOException e) {
+            log.warn("读取嵌套归档失败: {}", parentSource, e);
+            return;
+        }
+
+        try (JarInputStream in = new JarInputStream(new ByteArrayInputStream(archiveBytes))) {
+            JarEntry entry;
+            while ((entry = in.getNextJarEntry()) != null) {
+                if (entry.isDirectory()) {
+                    continue;
+                }
+                String entryName = entry.getName();
+                String fullPath = parentSource + ':' + entryName;
+                FileTreeNode.NodeTypeEnum type = guessType(entryName);
+                FileTreeNode.ByteLoader loader = null;
+                Runnable cleanup = null;
+                if (type == FileTreeNode.NodeTypeEnum.CLASS_FILE
+                        || type == FileTreeNode.NodeTypeEnum.RESOURCE
+                        || type == FileTreeNode.NodeTypeEnum.JAVA_FILE) {
+                    List<String> classChain = append(archiveChain, entryName);
+                    archive.retain();
+                    loader = () -> archive.readNested(classChain);
+                    cleanup = archive::release;
+                }
+                String displayName = entryName.substring(entryName.lastIndexOf('/') + 1);
+                entries.add(new ClassEntry(displayName, fullPath, type, null, loader,
+                        normalizedSize(entry.getSize()), cleanup));
+                if (isArchivePath(entryName)) {
+                    discoverNestedArchive(archive, append(archiveChain, entryName), entries, depth + 1);
+                }
+            }
+        } catch (IOException e) {
+            log.warn("解析嵌套归档失败: {}", parentSource, e);
+        }
+    }
+
+    private static boolean isArchivePath(String path) {
+        String lower = path.toLowerCase();
+        return lower.endsWith(".jar") || lower.endsWith(".zip");
+    }
+
+    private static String sourcePath(List<String> chain) {
+        return String.join(":", chain);
+    }
+
+    private static List<String> append(List<String> chain, String entryName) {
+        List<String> next = new ArrayList<>(chain.size() + 1);
+        next.addAll(chain);
+        next.add(entryName);
+        return List.copyOf(next);
     }
 
     private static long normalizedSize(long size) {
@@ -203,6 +271,19 @@ public final class ClassDiscoverer {
             this.jar = new JarFile(file);
         }
 
+        private static byte[] readEntryFromArchiveBytes(byte[] archiveBytes, String entryName)
+                throws IOException {
+            try (JarInputStream in = new JarInputStream(new ByteArrayInputStream(archiveBytes))) {
+                JarEntry entry;
+                while ((entry = in.getNextJarEntry()) != null) {
+                    if (!entry.isDirectory() && entry.getName().equals(entryName)) {
+                        return in.readAllBytes();
+                    }
+                }
+            }
+            throw new IOException("嵌套归档条目未找到: " + entryName);
+        }
+
         private Enumeration<JarEntry> entries() {
             return jar.entries();
         }
@@ -235,6 +316,17 @@ public final class ClassDiscoverer {
                     return in.readAllBytes();
                 }
             }
+        }
+
+        private byte[] readNested(List<String> chain) throws IOException {
+            if (chain == null || chain.isEmpty()) {
+                return null;
+            }
+            byte[] bytes = read(chain.getFirst());
+            for (int i = 1; i < chain.size(); i++) {
+                bytes = readEntryFromArchiveBytes(bytes, chain.get(i));
+            }
+            return bytes;
         }
 
         @Override

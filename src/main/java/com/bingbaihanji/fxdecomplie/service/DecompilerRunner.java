@@ -11,6 +11,7 @@ import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -19,6 +20,8 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.zip.ZipFile;
 
 /**
@@ -474,6 +477,18 @@ public final class DecompilerRunner {
             this.workspace = workspace;
         }
 
+        private static byte[] readNestedEntry(byte[] archiveBytes, String entryPath) throws IOException {
+            try (JarInputStream in = new JarInputStream(new ByteArrayInputStream(archiveBytes))) {
+                JarEntry entry;
+                while ((entry = in.getNextJarEntry()) != null) {
+                    if (!entry.isDirectory() && entry.getName().equals(entryPath)) {
+                        return in.readAllBytes();
+                    }
+                }
+            }
+            return null;
+        }
+
         private byte[] getClassBytes(String internalName) {
             String normalized = DecompilerContext.normalizeInternalName(internalName);
             byte[] cached = hitCache.get(normalized);
@@ -527,13 +542,22 @@ public final class DecompilerRunner {
             if (zipFile == null) {
                 zipFile = new ZipFile(workspace.getSourceFile());
             }
-            var entry = zipFile.getEntry(path);
+            String[] chain = path.replace('\\', '/').split(":");
+            var entry = zipFile.getEntry(chain[0]);
             if (entry == null || entry.isDirectory()) {
                 return null;
             }
+            byte[] bytes;
             try (var in = zipFile.getInputStream(entry)) {
-                return in.readAllBytes();
+                bytes = in.readAllBytes();
             }
+            for (int i = 1; i < chain.length; i++) {
+                bytes = readNestedEntry(bytes, chain[i]);
+                if (bytes == null) {
+                    return null;
+                }
+            }
+            return bytes;
         }
 
         @Override

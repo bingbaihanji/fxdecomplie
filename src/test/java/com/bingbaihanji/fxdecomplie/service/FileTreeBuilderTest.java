@@ -54,4 +54,30 @@ class FileTreeBuilderTest {
         assertNotNull(root);
         assertTrue(root.getChildren().isEmpty());
     }
+
+    @Test
+    void treatsNestedJarSourceSeparatorAsTreeLevel() {
+        FileTreeModel root = FileTreeBuilder.build("boot.jar", List.of(
+                new ClassDiscoverer.ClassEntry("ExceptionMatchEvaluator.class",
+                        "BOOT-INF/lib/logback-classic-1.5.18.jar:"
+                                + "ch/qos/logback/classic/boolex/ExceptionMatchEvaluator.class",
+                        FileTreeNode.NodeTypeEnum.CLASS_FILE, new byte[]{1})));
+
+        FileTreeModel bootInf = child(root, "BOOT-INF");
+        FileTreeModel lib = child(bootInf, "lib");
+        FileTreeModel logback = child(lib, "logback-classic-1.5.18.jar");
+        FileTreeModel ch = child(logback, "ch");
+
+        assertNotNull(ch);
+        assertEquals("ExceptionMatchEvaluator.class",
+                child(child(child(child(child(ch, "qos"), "logback"), "classic"), "boolex"),
+                        "ExceptionMatchEvaluator.class").getValue().getName());
+    }
+
+    private static FileTreeModel child(FileTreeModel parent, String name) {
+        return parent.getChildren().stream()
+                .filter(item -> item.getValue().getName().equals(name))
+                .findFirst()
+                .orElseThrow();
+    }
 }

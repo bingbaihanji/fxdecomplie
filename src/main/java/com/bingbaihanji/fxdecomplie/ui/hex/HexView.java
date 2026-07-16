@@ -3,12 +3,14 @@ package com.bingbaihanji.fxdecomplie.ui.hex;
 import com.bingbaihanji.fxdecomplie.ui.hex.format.BuiltinFormatters;
 import com.bingbaihanji.fxdecomplie.ui.hex.format.CopyFormatter;
 import com.bingbaihanji.fxdecomplie.ui.hex.model.HighlightModel;
+import com.bingbaihanji.fxdecomplie.ui.hex.model.PatternModel;
 import com.bingbaihanji.fxdecomplie.ui.hex.model.SearchModel;
 import com.bingbaihanji.fxdecomplie.ui.hex.model.SelectionModel;
 import com.bingbaihanji.fxdecomplie.ui.hex.renderer.HexGridRenderer;
 import com.bingbaihanji.fxdecomplie.ui.hex.renderer.MiniMapRenderer;
 import com.bingbaihanji.fxdecomplie.ui.hex.tooltip.HexTooltipRenderer;
 import com.bingbaihanji.fxdecomplie.ui.hex.util.HexViewMetrics;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -36,6 +38,7 @@ public class HexView extends Region {
     private final SelectionModel selection;
     private final HighlightModel highlights;
     private final SearchModel search;
+    private final PatternModel patternModel;
     private HexDataProvider provider = new ByteArrayProvider(new byte[0]);
     private HexViewMetrics metrics;
     private Canvas canvas;
@@ -77,6 +80,7 @@ public class HexView extends Region {
         this.selection = new SelectionModel(0);
         this.highlights = new HighlightModel();
         this.search = new SearchModel();
+        this.patternModel = new PatternModel();
 
         // Sync grayOutZero
         this.config.grayOutZeroProperty().addListener((o, old, val) ->
@@ -111,6 +115,10 @@ public class HexView extends Region {
         return query.matches("(?i)^(0x)?[0-9a-f]{2}([\\s:_-]*(0x)?[0-9a-f]{2})*$");
     }
 
+    private static String tr(String key, String fallback, Object... args) {
+        return I18nUtil.getStringOrDefault(key, fallback, args);
+    }
+
     public HexDataProvider getProvider() {
         return provider;
     }
@@ -123,7 +131,7 @@ public class HexView extends Region {
         this.scrollRow = 0;
         updateScrollbar();
         // Auto-apply builtin highlighters
-        HexViewController.getInstance().applyHighlights(provider);
+        HexViewController.getInstance().applyHighlights(provider, patternModel);
         markDirty();
     }
 
@@ -141,6 +149,10 @@ public class HexView extends Region {
 
     public SearchModel getSearch() {
         return search;
+    }
+
+    public PatternModel getPatternModel() {
+        return patternModel;
     }
 
     /**
@@ -170,6 +182,17 @@ public class HexView extends Region {
         var content = new ClipboardContent();
         content.putString(text);
         Clipboard.getSystemClipboard().setContent(content);
+    }
+
+    public void showDetails() {
+        long address = detailAddress();
+        if (address < 0 || address >= provider.getSize()) {
+            return;
+        }
+        long selectionStart = selection.hasSelection() ? selection.getMinAddress() : -1;
+        long selectionEnd = selection.hasSelection() ? selection.getMaxAddress() : -1;
+        HexDetailsDialog.show(getScene() == null ? null : getScene().getWindow(),
+                provider, patternModel, address, selectionStart, selectionEnd);
     }
 
     /** Show search bar */
@@ -225,14 +248,14 @@ public class HexView extends Region {
 
         // Search / goto overlay — positioned absolutely within canvasPane
         this.searchField = new TextField();
-        this.searchField.setPromptText("Search (hex or text)...");
+        this.searchField.setPromptText(tr("hex.search.prompt", "Search (hex or text)..."));
         this.searchField.setVisible(false);
         this.searchField.setMaxWidth(300);
         this.searchField.setStyle(
                 "-fx-background-color: #2a2a2e; -fx-text-fill: #ddd; -fx-prompt-text-fill: #888;");
 
         this.gotoField = new TextField();
-        this.gotoField.setPromptText("Goto offset (hex)...");
+        this.gotoField.setPromptText(tr("hex.goto.prompt", "Goto offset (hex)..."));
         this.gotoField.setVisible(false);
         this.gotoField.setMaxWidth(250);
         this.gotoField.setStyle(
@@ -264,23 +287,37 @@ public class HexView extends Region {
         var menuBar = new MenuBar();
         menuBar.setStyle("-fx-background-color: #1a1a1e;");
 
-        var copyMenu = new Menu("Copy As");
-        addCopyMenuItem(copyMenu, "Hex String  (Ctrl+C)", BuiltinFormatters.HEX_SPACED);
-        addCopyMenuItem(copyMenu, "C Array    (Ctrl+Shift+C)", BuiltinFormatters.C_ARRAY);
-        addCopyMenuItem(copyMenu, "Java Array (Ctrl+Shift+J)", BuiltinFormatters.JAVA_ARRAY);
-        addCopyMenuItem(copyMenu, "Rust Array (Ctrl+Shift+R)", BuiltinFormatters.RUST_ARRAY);
-        addCopyMenuItem(copyMenu, "Python     (Ctrl+Shift+P)", BuiltinFormatters.PYTHON_BYTES);
-        addCopyMenuItem(copyMenu, "JS Array   (Ctrl+Shift+S)", BuiltinFormatters.JS_ARRAY);
-        addCopyMenuItem(copyMenu, "ASCII Dump", BuiltinFormatters.ASCII_ART);
+        var copyMenu = new Menu(tr("hex.menu.copyAs", "Copy As"));
+        addCopyMenuItem(copyMenu, tr("hex.copy.hexSpaced", "Hex String") + "  (Ctrl+C)",
+                BuiltinFormatters.HEX_SPACED);
+        addCopyMenuItem(copyMenu, tr("hex.copy.hexPlain", "Plain Hex"),
+                BuiltinFormatters.HEX_PLAIN);
+        addCopyMenuItem(copyMenu, tr("hex.copy.cArray", "C Array") + "  (Ctrl+Shift+C)",
+                BuiltinFormatters.C_ARRAY);
+        addCopyMenuItem(copyMenu, tr("hex.copy.javaArray", "Java Array") + "  (Ctrl+Shift+J)",
+                BuiltinFormatters.JAVA_ARRAY);
+        addCopyMenuItem(copyMenu, tr("hex.copy.rustArray", "Rust Array") + "  (Ctrl+Shift+R)",
+                BuiltinFormatters.RUST_ARRAY);
+        addCopyMenuItem(copyMenu, tr("hex.copy.pythonBytes", "Python Bytes") + "  (Ctrl+Shift+P)",
+                BuiltinFormatters.PYTHON_BYTES);
+        addCopyMenuItem(copyMenu, tr("hex.copy.jsArray", "JS Array") + "  (Ctrl+Shift+S)",
+                BuiltinFormatters.JS_ARRAY);
+        addCopyMenuItem(copyMenu, tr("hex.copy.asciiDump", "ASCII Dump"),
+                BuiltinFormatters.ASCII_ART);
 
-        var searchMenu = new Menu("Search");
-        var miFind = new MenuItem("Find...  Ctrl+F");
+        var searchMenu = new Menu(tr("hex.menu.search", "Search"));
+        var miFind = new MenuItem(tr("hex.find", "Find...") + "  Ctrl+F");
         miFind.setOnAction(e -> showSearch());
-        var miGoto = new MenuItem("Goto...  Ctrl+G");
+        var miGoto = new MenuItem(tr("hex.goto", "Goto...") + "  Ctrl+G");
         miGoto.setOnAction(e -> showGoto());
         searchMenu.getItems().addAll(miFind, miGoto);
 
-        menuBar.getMenus().addAll(copyMenu, searchMenu);
+        var viewMenu = new Menu(tr("hex.menu.view", "View"));
+        var miDetails = new MenuItem(tr("hex.details", "Details..."));
+        miDetails.setOnAction(e -> showDetails());
+        viewMenu.getItems().add(miDetails);
+
+        menuBar.getMenus().addAll(copyMenu, searchMenu, viewMenu);
         return menuBar;
     }
 
@@ -297,45 +334,49 @@ public class HexView extends Region {
         toolbar.setStyle("-fx-background-color: #1a1a1e; -fx-padding: 2 4;");
 
         // Copy buttons
-        var copyHexBtn = new Button("Hex");
-        copyHexBtn.setTooltip(new Tooltip("Copy as hex string (Ctrl+C)"));
+        var copyHexBtn = new Button(tr("hex.copy.hex", "Hex"));
+        copyHexBtn.setTooltip(new Tooltip(tr("hex.tooltip.copyHex", "Copy as hex string (Ctrl+C)")));
         copyHexBtn.setOnAction(e -> copyAs(BuiltinFormatters.HEX_SPACED));
 
         var copyCBtn = new Button("C");
-        copyCBtn.setTooltip(new Tooltip("Copy as C array (Ctrl+Shift+C)"));
+        copyCBtn.setTooltip(new Tooltip(tr("hex.tooltip.copyC", "Copy as C array (Ctrl+Shift+C)")));
         copyCBtn.setOnAction(e -> copyAs(BuiltinFormatters.C_ARRAY));
 
         var copyJavaBtn = new Button("Java");
-        copyJavaBtn.setTooltip(new Tooltip("Copy as Java array (Ctrl+Shift+J)"));
+        copyJavaBtn.setTooltip(new Tooltip(tr("hex.tooltip.copyJava", "Copy as Java array (Ctrl+Shift+J)")));
         copyJavaBtn.setOnAction(e -> copyAs(BuiltinFormatters.JAVA_ARRAY));
 
+        var detailsBtn = new Button(tr("hex.details", "Details"));
+        detailsBtn.setTooltip(new Tooltip(tr("hex.tooltip.details", "Show selected byte details")));
+        detailsBtn.setOnAction(e -> showDetails());
+
         // Config checkboxes
-        var upperCaseChk = new CheckBox("Upper");
-        upperCaseChk.setTooltip(new Tooltip("Show hex digits as uppercase"));
+        var upperCaseChk = new CheckBox(tr("hex.option.upper", "Upper"));
+        upperCaseChk.setTooltip(new Tooltip(tr("hex.tooltip.upper", "Show hex digits as uppercase")));
         upperCaseChk.setSelected(config.isUpperCaseHex());
         upperCaseChk.selectedProperty().bindBidirectional(config.upperCaseHexProperty());
 
-        var grayZeroChk = new CheckBox("Gray 0");
-        grayZeroChk.setTooltip(new Tooltip("Show zero bytes (0x00) dimmed"));
+        var grayZeroChk = new CheckBox(tr("hex.option.grayZero", "Gray 0"));
+        grayZeroChk.setTooltip(new Tooltip(tr("hex.tooltip.grayZero", "Show zero bytes (0x00) dimmed")));
         grayZeroChk.setSelected(config.isGrayOutZero());
         grayZeroChk.selectedProperty().bindBidirectional(config.grayOutZeroProperty());
 
         var asciiChk = new CheckBox("ASCII");
-        asciiChk.setTooltip(new Tooltip("Show ASCII column"));
+        asciiChk.setTooltip(new Tooltip(tr("hex.tooltip.ascii", "Show ASCII column")));
         asciiChk.setSelected(config.isShowAscii());
         asciiChk.selectedProperty().bindBidirectional(config.showAsciiProperty());
 
-        var miniMapChk = new CheckBox("MiniMap");
-        miniMapChk.setTooltip(new Tooltip("Show MiniMap overview strip"));
+        var miniMapChk = new CheckBox(tr("hex.option.minimap", "MiniMap"));
+        miniMapChk.setTooltip(new Tooltip(tr("hex.tooltip.minimap", "Show MiniMap overview strip")));
         miniMapChk.setSelected(config.isShowMiniMap());
         miniMapChk.selectedProperty().bindBidirectional(config.showMiniMapProperty());
 
         // Cols spinner
-        var colsLabel = new Label("Cols:");
+        var colsLabel = new Label(tr("hex.option.cols", "Cols:"));
         var colsSpinner = new Spinner<Integer>(1, 64, config.getBytesPerRow());
         colsSpinner.setEditable(true);
         colsSpinner.setPrefWidth(65);
-        colsSpinner.setTooltip(new Tooltip("Bytes per row (1-64)"));
+        colsSpinner.setTooltip(new Tooltip(tr("hex.tooltip.cols", "Bytes per row (1-64)")));
         colsSpinner.getValueFactory().valueProperty().addListener((obs, o, n) -> {
             if (n != null) {
                 config.setBytesPerRow(n);
@@ -350,7 +391,7 @@ public class HexView extends Region {
 
         // Style all controls for dark theme
         String ctrlStyle = "-fx-text-fill: #ddd;";
-        for (var ctrl : new Control[]{copyHexBtn, copyCBtn, copyJavaBtn,
+        for (var ctrl : new Control[]{copyHexBtn, copyCBtn, copyJavaBtn, detailsBtn,
                 upperCaseChk, grayZeroChk, asciiChk, miniMapChk, colsSpinner}) {
             if (ctrl instanceof CheckBox cb) {
                 cb.setStyle(ctrlStyle);
@@ -368,10 +409,43 @@ public class HexView extends Region {
         miniMapChk.setStyle("-fx-text-fill: #ddd;");
 
         toolbar.getItems().addAll(
-                copyHexBtn, copyCBtn, copyJavaBtn, new Separator(),
+                copyHexBtn, copyCBtn, copyJavaBtn, detailsBtn, new Separator(),
                 upperCaseChk, grayZeroChk, asciiChk, miniMapChk, new Separator(),
                 colsLabel, colsSpinner);
         return toolbar;
+    }
+
+    private ContextMenu buildContextMenu() {
+        ContextMenu menu = new ContextMenu();
+        MenuItem copyHex = new MenuItem(tr("hex.copy.hexSpaced", "Hex String"));
+        copyHex.setOnAction(e -> copyAs(BuiltinFormatters.HEX_SPACED));
+        MenuItem copyPlain = new MenuItem(tr("hex.copy.hexPlain", "Plain Hex"));
+        copyPlain.setOnAction(e -> copyAs(BuiltinFormatters.HEX_PLAIN));
+        MenuItem copyAscii = new MenuItem(tr("hex.copy.asciiDump", "ASCII Dump"));
+        copyAscii.setOnAction(e -> copyAs(BuiltinFormatters.ASCII_ART));
+        MenuItem selectAll = new MenuItem(tr("hex.selectAll", "Select All"));
+        selectAll.setOnAction(e -> {
+            long size = provider.getSize();
+            if (size > 0) {
+                selection.select(0, size - 1);
+                markDirty();
+            }
+        });
+        MenuItem details = new MenuItem(tr("hex.details", "Details..."));
+        details.setOnAction(e -> showDetails());
+        menu.getItems().addAll(copyHex, copyPlain, copyAscii,
+                new SeparatorMenuItem(), selectAll, details);
+        return menu;
+    }
+
+    private long detailAddress() {
+        if (selection.hasSelection()) {
+            return selection.getMinAddress();
+        }
+        if (hoveredAddress >= 0) {
+            return hoveredAddress;
+        }
+        return selection.getCursorPosition();
     }
 
     // ===================== Metrics =====================
@@ -514,7 +588,7 @@ public class HexView extends Region {
         if (hoveredAddress >= 0 && hoveredAddress < provider.getSize()) {
             // Translate back to canvas coords for tooltip positioning
             HexTooltipRenderer.draw(gc, hoverMouseX, hoverMouseY,
-                    hoveredAddress, provider, metrics, canvasW - 2, canvasH);
+                    hoveredAddress, provider, patternModel, metrics, canvasW - 2, canvasH);
         }
 
         updateScrollbar();
@@ -537,6 +611,10 @@ public class HexView extends Region {
 
         canvas.setOnMousePressed(e -> {
             canvas.requestFocus();
+            if (e.isSecondaryButtonDown()) {
+                buildContextMenu().show(canvas, e.getScreenX(), e.getScreenY());
+                return;
+            }
             if (metrics == null) {
                 return;
             }
@@ -701,7 +779,7 @@ public class HexView extends Region {
                 selection.select(addr, addr + needleLen - 1);
                 // Highlight all matches as background
                 highlights.clearAll();
-                HexViewController.getInstance().applyHighlights(provider);
+                HexViewController.getInstance().applyHighlights(provider, patternModel);
                 for (long matchAddr : search.getMatchAddresses()) {
                     highlights.addBackgroundRegion(matchAddr, needleLen,
                             javafx.scene.paint.Color.rgb(255, 200, 0, 0.35));

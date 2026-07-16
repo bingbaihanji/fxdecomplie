@@ -29,7 +29,8 @@ public final class HexTooltipRenderer {
     }
 
     public static double draw(GraphicsContext gc, double mouseX, double mouseY,
-                              long address, HexDataProvider provider, HexViewMetrics metrics,
+                              long address, HexDataProvider provider, PatternModel patternModel,
+                              HexViewMetrics metrics,
                               double canvasWidth, double canvasHeight) {
 
         long size = provider.getSize();
@@ -42,7 +43,7 @@ public final class HexTooltipRenderer {
         provider.read(address, buf, 0, bufLen);
 
         HexViewController ctrl = HexViewController.getInstance();
-        PatternModel pm = ctrl.getPatternModel();
+        PatternModel pm = patternModel;
 
         // Build lines
         var lines = new java.util.ArrayList<TooltipLine>();

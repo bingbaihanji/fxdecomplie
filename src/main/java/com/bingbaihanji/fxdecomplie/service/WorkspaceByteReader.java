@@ -3,9 +3,12 @@ package com.bingbaihanji.fxdecomplie.service;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.zip.ZipFile;
 
 /**
@@ -39,7 +42,9 @@ public final class WorkspaceByteReader {
         }
 
         if (workspace != null && workspace.isArchive()) {
-            byte[] bytes = readArchiveEntry(workspace.getSourceFile(), node.getFullPath());
+            byte[] bytes = node.hasByteSource()
+                    ? node.resolveBytes()
+                    : readArchiveEntry(workspace.getSourceFile(), node.getFullPath());
             if (cacheNode && bytes != null) {
                 node.setCachedBytes(bytes);
             }
@@ -90,15 +95,39 @@ public final class WorkspaceByteReader {
             return null;
         }
         String normalized = entryPath.replace('\\', '/');
+        String[] chain = normalized.split(":");
         try (ZipFile zip = new ZipFile(archive)) {
-            var entry = zip.getEntry(normalized);
+            var entry = zip.getEntry(chain[0]);
             if (entry == null || entry.isDirectory()) {
                 return null;
             }
+            byte[] bytes;
             try (var in = zip.getInputStream(entry)) {
-                return in.readAllBytes();
+                bytes = in.readAllBytes();
+            }
+            for (int i = 1; i < chain.length; i++) {
+                bytes = readNestedEntry(bytes, chain[i]);
+                if (bytes == null) {
+                    return null;
+                }
+            }
+            return bytes;
+        }
+    }
+
+    private static byte[] readNestedEntry(byte[] archiveBytes, String entryPath) throws IOException {
+        if (archiveBytes == null || entryPath == null || entryPath.isBlank()) {
+            return null;
+        }
+        try (JarInputStream in = new JarInputStream(new ByteArrayInputStream(archiveBytes))) {
+            JarEntry entry;
+            while ((entry = in.getNextJarEntry()) != null) {
+                if (!entry.isDirectory() && entry.getName().equals(entryPath)) {
+                    return in.readAllBytes();
+                }
             }
         }
+        return null;
     }
 
     /** 将内部名统一为以 .class 结尾的标准路径格式 */

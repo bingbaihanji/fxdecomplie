@@ -19,7 +19,6 @@ public final class HexViewController {
 
     private final List<DataAnalyzer> analyzers = new CopyOnWriteArrayList<>();
     private final List<BuiltinHighlighter> highlighters = new CopyOnWriteArrayList<>();
-    private final PatternModel patternModel = new PatternModel();
     private final Color selectionColor = rgba(0x60, 0xC0, 0x80, 0x80);
     private final Color tooltipBgColor = rgba(0x1E, 0x1E, 0x22, 0xF0);
     private final Color tooltipBorderColor = Color.rgb(0x50, 0x50, 0x55, 1.0);
@@ -32,7 +31,6 @@ public final class HexViewController {
     private final Color interfaceColor = rgba(0x40, 0xC0, 0xC0, 0x40);
     private final Color attributeColor = rgba(0xC0, 0xC0, 0x40, 0x40);
     private final Color unknownColor = rgba(0x80, 0x80, 0x80, 0x30);
-    private HexView hexView;
 
     private HexViewController() {
         DataAnalyzers.registerDefaults(this);
@@ -47,13 +45,8 @@ public final class HexViewController {
     }
 
     public void attach(HexView hexView) {
-        this.hexView = hexView;
-        hexView.getHighlights().setPatternProvider(addr -> patternModel.getColorAt(addr));
+        hexView.getHighlights().setPatternProvider(addr -> hexView.getPatternModel().getColorAt(addr));
         hexView.setOnHover(this::onHover);
-    }
-
-    public HexView getHexView() {
-        return hexView;
     }
 
     public void registerAnalyzer(DataAnalyzer analyzer) {
@@ -80,7 +73,10 @@ public final class HexViewController {
         return highlighters;
     }
 
-    public void applyHighlights(HexDataProvider provider) {
+    public void applyHighlights(HexDataProvider provider, PatternModel patternModel) {
+        if (patternModel == null) {
+            return;
+        }
         patternModel.clear();
         for (BuiltinHighlighter h : highlighters) {
             if (h.matches(provider)) {
@@ -88,13 +84,6 @@ public final class HexViewController {
                 break;
             }
         }
-        if (hexView != null) {
-            hexView.markDirty();
-        }
-    }
-
-    public PatternModel getPatternModel() {
-        return patternModel;
     }
 
     private void onHover(long address, int size) {
