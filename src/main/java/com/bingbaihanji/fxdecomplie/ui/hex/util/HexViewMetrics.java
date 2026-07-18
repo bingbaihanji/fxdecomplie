@@ -89,7 +89,7 @@ public class HexViewMetrics {
     public double getHexCellX(int col) {
         double x = addressColWidth;
         x += col * hexColWidth;
-        x += (col / 8) * groupGapWidth;
+        x += ((double) col / 8) * groupGapWidth;
         return x;
     }
 

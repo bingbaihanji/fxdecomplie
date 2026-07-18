@@ -92,6 +92,15 @@ public final class BytecodeSignatureParser {
             super(Opcodes.ASM9);
         }
 
+
+        public String getSuperName() {
+            return superName;
+        }
+
+        public List<String> getInterfaceNames() {
+            return interfaceNames;
+        }
+
         @Override
         public void visit(int version, int access, String name, String signature,
                           String superName, String[] interfaces) {

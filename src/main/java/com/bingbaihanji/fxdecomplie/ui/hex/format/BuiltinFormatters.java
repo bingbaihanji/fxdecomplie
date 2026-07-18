@@ -1,6 +1,24 @@
 package com.bingbaihanji.fxdecomplie.ui.hex.format;
 
+/**
+ * 内置的复制格式化器({@link CopyFormatter})集合 
+ * <p>
+ * 该类为工具类,提供一系列预定义的格式化实现,用于将字节数据转换为不同编程语言
+ * 的数组字面量、十六进制字符串、ASCII 转储等格式,方便用户复制到剪贴板后粘贴到
+ * 代码、文档或分析工具中 
+ * </p>
+ *
+ * @author BingBaiHanJi
+ * @see CopyFormatter
+ */
 public final class BuiltinFormatters {
+
+    /**
+     * 带空格的十六进制字符串 
+     * <p>
+     * 例如：{@code "00 01 02 0A FF"},每两个十六进制字符之间用一个空格分隔 
+     * </p>
+     */
     public static final CopyFormatter HEX_SPACED = (data, offset) -> {
         var sb = new StringBuilder(data.length * 3);
         for (int i = 0; i < data.length; i++) {
@@ -11,6 +29,13 @@ public final class BuiltinFormatters {
         }
         return sb.toString();
     };
+
+    /**
+     * 紧凑的十六进制字符串(无分隔符) 
+     * <p>
+     * 例如：{@code "0001020AFF"} 
+     * </p>
+     */
     public static final CopyFormatter HEX_PLAIN = (data, offset) -> {
         var sb = new StringBuilder(data.length * 2);
         for (byte b : data) {
@@ -18,6 +43,13 @@ public final class BuiltinFormatters {
         }
         return sb.toString();
     };
+
+    /**
+     * C 语言风格的数组初始化列表 
+     * <p>
+     * 例如：{@code {0x00, 0x01, 0x02, 0x0A, 0xFF}} 
+     * </p>
+     */
     public static final CopyFormatter C_ARRAY = (data, offset) -> {
         var sb = new StringBuilder(data.length * 6 + 2);
         sb.append('{');
@@ -30,6 +62,14 @@ public final class BuiltinFormatters {
         sb.append('}');
         return sb.toString();
     };
+
+    /**
+     * Java 语言风格的字节数组初始化 
+     * <p>
+     * 例如：{@code new byte[] {0x00, 0x01, (byte)0xFF}} 
+     * 对于大于 0x7F 的值会添加 {@code (byte)} 强制转换,以避免编译错误 
+     * </p>
+     */
     public static final CopyFormatter JAVA_ARRAY = (data, offset) -> {
         var sb = new StringBuilder(data.length * 10 + 12);
         sb.append("new byte[] {");
@@ -46,6 +86,13 @@ public final class BuiltinFormatters {
         sb.append('}');
         return sb.toString();
     };
+
+    /**
+     * Rust 语言风格的数组字面量 
+     * <p>
+     * 例如：{@code [0x00, 0x01, 0x02, 0x0A, 0xFF]} 
+     * </p>
+     */
     public static final CopyFormatter RUST_ARRAY = (data, offset) -> {
         var sb = new StringBuilder(data.length * 6 + 2);
         sb.append('[');
@@ -58,6 +105,13 @@ public final class BuiltinFormatters {
         sb.append(']');
         return sb.toString();
     };
+
+    /**
+     * Python 字节串字面量 
+     * <p>
+     * 例如：{@code b'\x00\x01\x02\x0a\xff'}(全部转义为十六进制) 
+     * </p>
+     */
     public static final CopyFormatter PYTHON_BYTES = (data, offset) -> {
         var sb = new StringBuilder(data.length * 5 + 3);
         sb.append("b'");
@@ -67,6 +121,13 @@ public final class BuiltinFormatters {
         sb.append('\'');
         return sb.toString();
     };
+
+    /**
+     * JavaScript 语言风格的数组字面量 
+     * <p>
+     * 例如：{@code [0x00, 0x01, 0x02, 0x0A, 0xFF]} 
+     * </p>
+     */
     public static final CopyFormatter JS_ARRAY = (data, offset) -> {
         var sb = new StringBuilder(data.length * 6 + 2);
         sb.append('[');
@@ -79,6 +140,21 @@ public final class BuiltinFormatters {
         sb.append(']');
         return sb.toString();
     };
+
+    /**
+     * ASCII 转储格式,类似 hexdump 输出 
+     * <p>
+     * 每行 16 字节,显示地址偏移、十六进制字节(空格分隔)以及右侧的 ASCII 可打印字符,
+     * 不可打印字符显示为点({@code .}) 
+     * </p>
+     * <p>
+     * 示例输出(每行)：
+     * <pre>
+     * 00000000  00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F  ................
+     * 00000010  41 42 43 44                                      ABCD
+     * </pre>
+     * </p>
+     */
     public static final CopyFormatter ASCII_ART = (data, offset) -> {
         var sb = new StringBuilder();
         int bytesPerRow = 16;
@@ -99,6 +175,9 @@ public final class BuiltinFormatters {
         return sb.toString();
     };
 
+    /**
+     * 私有构造方法,防止实例化(工具类) 
+     */
     private BuiltinFormatters() {
     }
 }

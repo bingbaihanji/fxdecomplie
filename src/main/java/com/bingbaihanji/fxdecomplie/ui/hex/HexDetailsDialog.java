@@ -15,12 +15,41 @@ import javafx.stage.Window;
 
 import java.util.List;
 
+/**
+ * 十六进制详情对话框,用于展示指定地址处的详细字节信息 
+ * <p>
+ * 该类为工具类,提供静态方法 {@link #show} 弹出一个模态对话框,
+ * 内容包括当前地址的偏移量、原始字节值、选区范围、所在区域路径、
+ * 数据预览、结构区域列表以及数据分析器生成的解释值 
+ * </p>
+ * <p>
+ * 对话框提供“复制详情”按钮,可将所有信息以文本形式复制到系统剪贴板 
+ * </p>
+ *
+ * @author bingbaihanji
+ * @see HexDataProvider
+ * @see PatternModel
+ * @see DataAnalyzer
+ */
 public final class HexDetailsDialog {
 
+    /**
+     * 私有构造方法,防止实例化 
+     */
     private HexDetailsDialog() {
         throw new AssertionError("utility class");
     }
 
+    /**
+     * 显示字节详情对话框 
+     *
+     * @param owner          所属窗口(可为 null)
+     * @param provider       数据提供者,用于读取字节内容
+     * @param patternModel   模式模型,提供区域信息(可为 null)
+     * @param address        当前焦点地址
+     * @param selectionStart 选区起始地址(若无可传 -1)
+     * @param selectionEnd   选区结束地址(若无可传 -1)
+     */
     public static void show(Window owner, HexDataProvider provider, PatternModel patternModel,
                             long address, long selectionStart, long selectionEnd) {
         if (provider == null || address < 0 || address >= provider.getSize()) {
@@ -41,6 +70,7 @@ public final class HexDetailsDialog {
                 ButtonBar.ButtonData.LEFT);
         dialog.getDialogPane().getButtonTypes().addAll(copyType, ButtonType.CLOSE);
 
+        // 顶部摘要网格
         GridPane summary = new GridPane();
         summary.setHgap(12);
         summary.setVgap(6);
@@ -51,6 +81,7 @@ public final class HexDetailsDialog {
         addRow(summary, 3, tr("hex.details.selection", "Selection"), data.selectionLine());
         addRow(summary, 4, tr("hex.details.region", "Region"), data.regionLine());
 
+        // 详细文本区域
         TextArea detailArea = new TextArea(data.text());
         detailArea.setEditable(false);
         detailArea.setWrapText(false);
@@ -74,6 +105,16 @@ public final class HexDetailsDialog {
         dialog.show();
     }
 
+    /**
+     * 构建详情数据对象 
+     *
+     * @param provider       数据提供者
+     * @param patternModel   模式模型
+     * @param address        当前地址
+     * @param selectionStart 选区起始
+     * @param selectionEnd   选区结束
+     * @return 包含摘要信息和完整文本的 {@link DetailData} 对象
+     */
     private static DetailData buildDetailData(HexDataProvider provider, PatternModel patternModel,
                                               long address, long selectionStart, long selectionEnd) {
         long size = provider.getSize();
@@ -138,6 +179,13 @@ public final class HexDetailsDialog {
         return new DetailData(byteLine, selectionLine, regionLine, text.toString());
     }
 
+    /**
+     * 将字节数组格式化为十六进制预览字符串(每行 16 字节) 
+     *
+     * @param bytes   要格式化的字节数组
+     * @param address 起始地址,用于显示偏移
+     * @return 格式化后的多行文本
+     */
     private static String formatPreview(byte[] bytes, long address) {
         StringBuilder sb = new StringBuilder();
         for (int row = 0; row < bytes.length; row += 16) {
@@ -146,9 +194,7 @@ public final class HexDetailsDialog {
             for (int i = row; i < end; i++) {
                 sb.append(String.format("%02X ", bytes[i] & 0xFF));
             }
-            for (int i = end; i < row + 16; i++) {
-                sb.append("   ");
-            }
+            sb.repeat("   ", Math.max(0, row + 16 - end));
             sb.append(' ');
             for (int i = row; i < end; i++) {
                 int c = bytes[i] & 0xFF;
@@ -159,6 +205,14 @@ public final class HexDetailsDialog {
         return sb.toString();
     }
 
+    /**
+     * 向摘要网格中添加一行(标签 + 值) 
+     *
+     * @param grid  目标 GridPane
+     * @param row   行索引
+     * @param label 标签文本
+     * @param value 值文本
+     */
     private static void addRow(GridPane grid, int row, String label, String value) {
         Label labelNode = new Label(label + ":");
         Label valueNode = new Label(value);
@@ -167,14 +221,37 @@ public final class HexDetailsDialog {
         grid.add(valueNode, 1, row);
     }
 
+    /**
+     * 将长整型数值格式化为指定宽度的十六进制字符串(大写) 
+     *
+     * @param value 数值
+     * @param width 宽度(不足前补零)
+     * @return 格式化后的字符串
+     */
     private static String hex(long value, int width) {
         return String.format("%0" + width + "X", value);
     }
 
+    /**
+     * 本地化字符串获取(带默认值) 
+     *
+     * @param key     国际化键
+     * @param fallback 默认文本
+     * @param args     格式化参数
+     * @return 本地化后的字符串
+     */
     private static String tr(String key, String fallback, Object... args) {
         return I18nUtil.getStringOrDefault(key, fallback, args);
     }
 
+    /**
+     * 详情数据记录,封装了摘要信息和完整文本 
+     *
+     * @param byteLine     字节信息摘要行
+     * @param selectionLine 选区摘要行
+     * @param regionLine   区域摘要行
+     * @param text         完整的详情文本(用于复制和显示)
+     */
     private record DetailData(String byteLine, String selectionLine,
                               String regionLine, String text) {
     }
