@@ -121,7 +121,7 @@ public final class WorkspaceIndex {
         // 使用 node::resolveBytes 延迟加载：索引构建时只解析元数据,
         // 字节码在首次打开 class 时才缓存到节点,避免大型 JAR 预热阶段占用过多内存
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
-                node::resolveBytes, methods, fields, superName, interfaces);
+                node::resolveBytes, methods, fields, superName, interfaces, node);
     }
 
     private static boolean shouldIndexResource(FileTreeNode node) {

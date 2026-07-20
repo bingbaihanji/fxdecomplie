@@ -32,19 +32,20 @@ public final class ClassIndexEntry {
     private final List<MemberIndexEntry> fields;
     private final String superName;
     private final List<String> interfaces;
+    private final FileTreeNode node;
     private volatile String bytecodeText;
 
     public ClassIndexEntry(String fullPath, String internalName, String simpleName,
                            byte[] bytes, List<MemberIndexEntry> methods,
                            List<MemberIndexEntry> fields) {
-        this(fullPath, internalName, simpleName, () -> bytes, methods, fields, null, List.of());
+        this(fullPath, internalName, simpleName, () -> bytes, methods, fields, null, List.of(), null);
     }
 
     public ClassIndexEntry(String fullPath, String internalName, String simpleName,
                            FileTreeNode.ByteLoader byteLoader,
                            List<MemberIndexEntry> methods,
                            List<MemberIndexEntry> fields) {
-        this(fullPath, internalName, simpleName, byteLoader, methods, fields, null, List.of());
+        this(fullPath, internalName, simpleName, byteLoader, methods, fields, null, List.of(), null);
     }
 
     public ClassIndexEntry(String fullPath, String internalName, String simpleName,
@@ -53,6 +54,16 @@ public final class ClassIndexEntry {
                            List<MemberIndexEntry> fields,
                            String superName,
                            List<String> interfaces) {
+        this(fullPath, internalName, simpleName, byteLoader, methods, fields, superName, interfaces, null);
+    }
+
+    public ClassIndexEntry(String fullPath, String internalName, String simpleName,
+                           FileTreeNode.ByteLoader byteLoader,
+                           List<MemberIndexEntry> methods,
+                           List<MemberIndexEntry> fields,
+                           String superName,
+                           List<String> interfaces,
+                           FileTreeNode node) {
         this.fullPath = Objects.requireNonNull(fullPath, "fullPath");
         this.internalName = Objects.requireNonNull(internalName, "internalName");
         this.simpleName = Objects.requireNonNull(simpleName, "simpleName");
@@ -61,6 +72,7 @@ public final class ClassIndexEntry {
         this.fields = List.copyOf(fields == null ? List.of() : fields);
         this.superName = superName;
         this.interfaces = List.copyOf(interfaces == null ? List.of() : interfaces);
+        this.node = node;
     }
 
     private static String toBytecodeText(byte[] bytes) {
@@ -128,6 +140,11 @@ public final class ClassIndexEntry {
     /** @return 当前类直接实现的接口内部名称列表 */
     public List<String> interfaces() {
         return interfaces;
+    }
+
+    /** @return 构造索引时对应的文件树节点,可能为 null */
+    public FileTreeNode node() {
+        return node;
     }
 
     /**

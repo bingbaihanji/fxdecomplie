@@ -43,27 +43,27 @@ public final class ClassInfo extends ScanResultObject implements Comparable<Clas
     public boolean isFinal() { return java.lang.reflect.Modifier.isFinal(modifiers); }
 
     public ClassInfo getSuperclass() { return superclass; }
-    void setSuperclass(ClassInfo superclass) { this.superclass = superclass; }
+    public void setSuperclass(ClassInfo superclass) { this.superclass = superclass; }
 
     public ClassInfoList getInterfaces() { return interfaces; }
-    void setInterfaces(ClassInfoList interfaces) { this.interfaces = interfaces != null ? interfaces : new ClassInfoList(); }
+    public void setInterfaces(ClassInfoList interfaces) { this.interfaces = interfaces != null ? interfaces : new ClassInfoList(); }
 
     public ClassInfoList getSubclasses() { return subclasses; }
-    void addSubclass(ClassInfo subclass) {
+    public void addSubclass(ClassInfo subclass) {
         if (subclass != null && !subclasses.contains(subclass)) {
             subclasses.add(subclass);
         }
     }
 
     public ClassInfoList getImplementingClasses() { return implementingClasses; }
-    void addImplementingClass(ClassInfo impl) {
+    public void addImplementingClass(ClassInfo impl) {
         if (impl != null && !implementingClasses.contains(impl)) {
             implementingClasses.add(impl);
         }
     }
 
     public AnnotationInfoList getAnnotationInfo() { return annotationInfo; }
-    void setAnnotationInfo(AnnotationInfoList annotationInfo) { this.annotationInfo = annotationInfo != null ? annotationInfo : new AnnotationInfoList(); }
+    public void setAnnotationInfo(AnnotationInfoList annotationInfo) { this.annotationInfo = annotationInfo != null ? annotationInfo : new AnnotationInfoList(); }
 
     public ClassInfoList getAnnotations() {
         ClassInfoList list = new ClassInfoList();
@@ -79,16 +79,16 @@ public final class ClassInfo extends ScanResultObject implements Comparable<Clas
     }
 
     public String getSourceFile() { return sourceFile; }
-    void setSourceFile(String sourceFile) { this.sourceFile = sourceFile; }
+    public void setSourceFile(String sourceFile) { this.sourceFile = sourceFile; }
 
     public boolean isExternalClass() { return externalClass; }
-    void setExternalClass(boolean externalClass) { this.externalClass = externalClass; }
+    public void setExternalClass(boolean externalClass) { this.externalClass = externalClass; }
 
     public boolean isScannedClass() { return scannedClass; }
-    void setScannedClass(boolean scannedClass) { this.scannedClass = scannedClass; }
+    public void setScannedClass(boolean scannedClass) { this.scannedClass = scannedClass; }
 
     public String getFullPath() { return fullPath; }
-    void setFullPath(String fullPath) { this.fullPath = fullPath; }
+    public void setFullPath(String fullPath) { this.fullPath = fullPath; }
 
     @Override
     public int compareTo(ClassInfo o) { return name.compareTo(o.name); }
