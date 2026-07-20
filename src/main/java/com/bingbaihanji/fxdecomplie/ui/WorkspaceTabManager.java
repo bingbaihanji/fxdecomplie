@@ -12,7 +12,9 @@ import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentListPane;
-import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritancePane;
+import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceNode;
+import com.bingbaihanji.fxdecomplie.service.reference.InheritanceReferenceIndexService;
+import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceReferencePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeModelConverter;
@@ -373,7 +375,7 @@ public final class WorkspaceTabManager {
 
     /** 根据代码标签页当前选中的类刷新继承面板 */
     private static void refreshInheritanceForCurrentSelection(Workspace workspace, TabPane codeTabPane,
-                                                              InheritancePane inheritancePane,
+                                                              InheritanceReferencePane inheritancePane,
                                                               boolean startIndexIfNeeded) {
         Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
         if (selected instanceof CodeEditorTab codeTab) {
@@ -385,7 +387,7 @@ public final class WorkspaceTabManager {
 
     /** 加载指定类的继承信息到继承面板,索引未就绪时显示等待状态 */
     private static void refreshInheritancePane(Workspace workspace, TabPane codeTabPane,
-                                               InheritancePane inheritancePane,
+                                               InheritanceReferencePane inheritancePane,
                                                CodeEditorTab codeTab,
                                                boolean startIndexIfNeeded) {
         if (workspace == null || inheritancePane == null || codeTab == null
@@ -394,40 +396,34 @@ public final class WorkspaceTabManager {
         }
         String selectedPath = codeTab.getOpenFile().fullPath();
         byte[] classBytes = codeTab.getClassBytes();
-        if (workspace.isIndexReady()) {
-            inheritancePane.load(selectedPath, workspace.getIndex(), classBytes);
-            return;
-        }
-        if (classBytes != null && classBytes.length > 0) {
-            inheritancePane.load(selectedPath, WorkspaceIndex.EMPTY, classBytes);
-        }
+        inheritancePane.load(workspace, selectedPath, classBytes);
         if (!startIndexIfNeeded) {
-            if (classBytes == null || classBytes.length == 0) {
-                inheritancePane.showIndexPending();
-            }
             return;
         }
 
         if (!workspace.isIndexBuildStarted()) {
             WorkspaceIndexService.ensureIndexingStarted(workspace);
         }
-        workspace.getIndexFuture().whenComplete((index, error) -> Platform.runLater(() -> {
-            if (error != null) {
-                inheritancePane.showUnavailable();
-                return;
-            }
-            Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
-            if (selected instanceof CodeEditorTab selectedCodeTab
-                    && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
-                inheritancePane.load(selectedPath, index, selectedCodeTab.getClassBytes());
-            }
-        }));
+        InheritanceReferenceIndexService.getOrStart(workspace);
+        var future = InheritanceReferenceIndexService.getFuture(workspace);
+        if (future != null) {
+            future.whenComplete((index, error) -> Platform.runLater(() -> {
+                if (error != null) {
+                    return;
+                }
+                Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
+                if (selected instanceof CodeEditorTab selectedCodeTab
+                        && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
+                    inheritancePane.load(workspace, selectedPath, selectedCodeTab.getClassBytes());
+                }
+            }));
+        }
     }
 
     private static void refreshToolWindowsForTab(Workspace workspace, TabPane codeTabPane,
                                                  TabPane sideTabPane, Tab inheritTab,
                                                  OutlinePane outlinePane,
-                                                 InheritancePane inheritancePane,
+                                                 InheritanceReferencePane inheritancePane,
                                                  CommentListPane commentListPane,
                                                  CodeEditorTab codeTab) {
         if (codeTab == null || codeTab.getOpenFile() == null) {
@@ -585,7 +581,7 @@ public final class WorkspaceTabManager {
                 onFindUsage, onSearchPackage, onHexClick);
 
         OutlinePane outlinePane = new OutlinePane();
-        InheritancePane inheritancePane = new InheritancePane();
+        InheritanceReferencePane inheritancePane = new InheritanceReferencePane();
         CommentListPane commentListPane = new CommentListPane();
 
         javafx.scene.control.Tab outlineTab = new javafx.scene.control.Tab(I18nUtil.getString("tab.outline"), outlinePane);
@@ -654,11 +650,28 @@ public final class WorkspaceTabManager {
             }
         });
 
-        // 绑定继承树双击打开
-        inheritancePane.setOpenHandler(className -> {
-            FileTreeNode node = findClassNode(treeView.getRoot(), className);
-            if (node != null) {
-                onClassClick.accept(node, codeTabPane);
+        // 绑定继承引用刷新按钮
+        inheritancePane.setRefreshAction(() -> {
+            InheritanceReferenceIndexService.invalidate(workspace);
+            refreshInheritanceForCurrentSelection(workspace, codeTabPane, inheritancePane, true);
+        });
+
+        // 绑定继承引用双击打开
+        inheritancePane.setOpenHandler(node -> {
+            FileTreeNode target = workspace.findNodeByPath(node.fullPath());
+            if (target == null && workspace.getIndex() != null) {
+                var entry = workspace.getIndex().findClass(node.className());
+                if (entry != null) {
+                    target = workspace.findNodeByPath(entry.fullPath());
+                }
+            }
+            if (target == null) {
+                target = findClassNode(treeView.getRoot(), node.className());
+            }
+            if (target != null) {
+                onClassClick.accept(target, codeTabPane);
+            } else {
+                statusBar.setFilePath(I18nUtil.getString("status.locateFailed", node.className()));
             }
         });
 
