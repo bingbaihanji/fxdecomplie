@@ -582,7 +582,7 @@ public final class SplitEditorPane extends StackPane {
 
     /** 重新打开最近关闭的标签页 */
     public void reopenLastClosedTab() {
-        ClosedTabRecord record = closedTabs.pollLast();
+        ClosedTabRecord record = closedTabs.pollFirst();
         if (record == null) {
             return;
         }

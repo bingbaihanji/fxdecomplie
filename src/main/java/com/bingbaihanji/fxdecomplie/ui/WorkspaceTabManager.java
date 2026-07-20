@@ -4,6 +4,7 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.model.CommentScope;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
@@ -376,8 +377,7 @@ public final class WorkspaceTabManager {
                                                               boolean startIndexIfNeeded) {
         Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
         if (selected instanceof CodeEditorTab codeTab) {
-            refreshInheritancePane(workspace, codeTabPane, inheritancePane,
-                    codeTab.getOpenFile().fullPath(), startIndexIfNeeded);
+            refreshInheritancePane(workspace, codeTabPane, inheritancePane, codeTab, startIndexIfNeeded);
         } else {
             inheritancePane.clear();
         }
@@ -386,21 +386,28 @@ public final class WorkspaceTabManager {
     /** 加载指定类的继承信息到继承面板,索引未就绪时显示等待状态 */
     private static void refreshInheritancePane(Workspace workspace, TabPane codeTabPane,
                                                InheritancePane inheritancePane,
-                                               String selectedPath,
+                                               CodeEditorTab codeTab,
                                                boolean startIndexIfNeeded) {
-        if (workspace == null || inheritancePane == null || selectedPath == null || selectedPath.isBlank()) {
+        if (workspace == null || inheritancePane == null || codeTab == null
+                || codeTab.getOpenFile() == null) {
             return;
         }
+        String selectedPath = codeTab.getOpenFile().fullPath();
+        byte[] classBytes = codeTab.getClassBytes();
         if (workspace.isIndexReady()) {
-            inheritancePane.load(selectedPath, workspace.getIndex());
+            inheritancePane.load(selectedPath, workspace.getIndex(), classBytes);
             return;
+        }
+        if (classBytes != null && classBytes.length > 0) {
+            inheritancePane.load(selectedPath, WorkspaceIndex.EMPTY, classBytes);
         }
         if (!startIndexIfNeeded) {
-            inheritancePane.showIndexPending();
+            if (classBytes == null || classBytes.length == 0) {
+                inheritancePane.showIndexPending();
+            }
             return;
         }
 
-        inheritancePane.showIndexing();
         if (!workspace.isIndexBuildStarted()) {
             WorkspaceIndexService.ensureIndexingStarted(workspace);
         }
@@ -412,9 +419,28 @@ public final class WorkspaceTabManager {
             Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
             if (selected instanceof CodeEditorTab selectedCodeTab
                     && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
-                inheritancePane.load(selectedPath, index);
+                inheritancePane.load(selectedPath, index, selectedCodeTab.getClassBytes());
             }
         }));
+    }
+
+    private static void refreshToolWindowsForTab(Workspace workspace, TabPane codeTabPane,
+                                                 TabPane sideTabPane, Tab inheritTab,
+                                                 OutlinePane outlinePane,
+                                                 InheritancePane inheritancePane,
+                                                 CommentListPane commentListPane,
+                                                 CodeEditorTab codeTab) {
+        if (codeTab == null || codeTab.getOpenFile() == null) {
+            outlinePane.clear();
+            inheritancePane.clear();
+            commentListPane.clear();
+            return;
+        }
+        outlinePane.update(codeTab.getOpenFile().sourceCode());
+        boolean inheritanceSelected = sideTabPane.getSelectionModel().getSelectedItem() == inheritTab;
+        refreshInheritancePane(workspace, codeTabPane, inheritancePane, codeTab, inheritanceSelected);
+        String wsHash = CommentScope.of(workspace, "").workspaceHash();
+        commentListPane.load(wsHash, codeTab.getOpenFile().fullPath());
     }
 
     /** 深度优先递归查找具有指定完整路径的树节点 */
@@ -596,12 +622,14 @@ public final class WorkspaceTabManager {
         // 代码标签页切换时更新大纲 继承和注释面板
         codeTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab instanceof CodeEditorTab codeTab) {
-                outlinePane.update(codeTab.getOpenFile().sourceCode());
-                String selectedPath = codeTab.getOpenFile().fullPath();
-                boolean inheritanceSelected = sideTabPane.getSelectionModel().getSelectedItem() == inheritTab;
-                refreshInheritancePane(workspace, codeTabPane, inheritancePane, selectedPath, inheritanceSelected);
-                String wsHash = CommentScope.of(workspace, "").workspaceHash();
-                commentListPane.load(wsHash, selectedPath);
+                codeTab.setOnContentUpdated(() -> {
+                    if (codeTabPane.getSelectionModel().getSelectedItem() == codeTab) {
+                        refreshToolWindowsForTab(workspace, codeTabPane, sideTabPane, inheritTab,
+                                outlinePane, inheritancePane, commentListPane, codeTab);
+                    }
+                });
+                refreshToolWindowsForTab(workspace, codeTabPane, sideTabPane, inheritTab,
+                        outlinePane, inheritancePane, commentListPane, codeTab);
             } else {
                 outlinePane.clear();
                 inheritancePane.clear();
@@ -884,6 +912,9 @@ public final class WorkspaceTabManager {
         MenuItem showInExplorer = new MenuItem(I18nUtil.getString("tab.showInExplorer"));
         showInExplorer.setOnAction(e -> {
             try {
+                if (!java.awt.Desktop.isDesktopSupported()) {
+                    return;
+                }
                 java.io.File file = workspace.getSourceFile();
                 java.awt.Desktop.getDesktop().open(
                         file.isFile() ? file.getParentFile() : file);

@@ -30,24 +30,37 @@ public final class ClassIndexEntry {
     private final FileTreeNode.ByteLoader byteLoader;
     private final List<MemberIndexEntry> methods;
     private final List<MemberIndexEntry> fields;
+    private final String superName;
+    private final List<String> interfaces;
     private volatile String bytecodeText;
 
     public ClassIndexEntry(String fullPath, String internalName, String simpleName,
                            byte[] bytes, List<MemberIndexEntry> methods,
                            List<MemberIndexEntry> fields) {
-        this(fullPath, internalName, simpleName, () -> bytes, methods, fields);
+        this(fullPath, internalName, simpleName, () -> bytes, methods, fields, null, List.of());
     }
 
     public ClassIndexEntry(String fullPath, String internalName, String simpleName,
                            FileTreeNode.ByteLoader byteLoader,
                            List<MemberIndexEntry> methods,
                            List<MemberIndexEntry> fields) {
+        this(fullPath, internalName, simpleName, byteLoader, methods, fields, null, List.of());
+    }
+
+    public ClassIndexEntry(String fullPath, String internalName, String simpleName,
+                           FileTreeNode.ByteLoader byteLoader,
+                           List<MemberIndexEntry> methods,
+                           List<MemberIndexEntry> fields,
+                           String superName,
+                           List<String> interfaces) {
         this.fullPath = Objects.requireNonNull(fullPath, "fullPath");
         this.internalName = Objects.requireNonNull(internalName, "internalName");
         this.simpleName = Objects.requireNonNull(simpleName, "simpleName");
         this.byteLoader = byteLoader;
         this.methods = List.copyOf(methods == null ? List.of() : methods);
         this.fields = List.copyOf(fields == null ? List.of() : fields);
+        this.superName = superName;
+        this.interfaces = List.copyOf(interfaces == null ? List.of() : interfaces);
     }
 
     private static String toBytecodeText(byte[] bytes) {
@@ -105,6 +118,16 @@ public final class ClassIndexEntry {
     /** @return 已索引的字段成员列表(不可变) */
     public List<MemberIndexEntry> fields() {
         return fields;
+    }
+
+    /** @return 父类内部名称,未知或 Object 顶层时可能为 null */
+    public String superName() {
+        return superName;
+    }
+
+    /** @return 当前类直接实现的接口内部名称列表 */
+    public List<String> interfaces() {
+        return interfaces;
     }
 
     /**

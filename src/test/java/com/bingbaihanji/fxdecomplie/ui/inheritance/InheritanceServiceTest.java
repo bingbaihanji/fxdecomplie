@@ -70,6 +70,38 @@ class InheritanceServiceTest {
     }
 
     @Test
+    void buildsImmediateTreeFromCurrentClassBytesWithoutWorkspaceIndex() throws Exception {
+        Path sourceDir = tempDir.resolve("immediate-src/com/example");
+        Files.createDirectories(sourceDir);
+        Files.writeString(sourceDir.resolve("Parent.java"), """
+                package com.example;
+                public class Parent {}
+                """, StandardCharsets.UTF_8);
+        Files.writeString(sourceDir.resolve("Child.java"), """
+                package com.example;
+                public class Child extends Parent {}
+                """, StandardCharsets.UTF_8);
+
+        Path classesDir = tempDir.resolve("immediate-classes");
+        int exit = ToolProvider.getSystemJavaCompiler().run(null, null, null,
+                "--release", "17",
+                "-d", classesDir.toString(),
+                sourceDir.resolve("Parent.java").toString(),
+                sourceDir.resolve("Child.java").toString());
+        assertTrue(exit == 0, "test classes should compile");
+
+        byte[] childBytes = withMajorVersion(
+                Files.readAllBytes(classesDir.resolve("com/example/Child.class")), 69);
+
+        TreeItem<InheritanceNode> tree = InheritanceService.buildTree(
+                "com/example/Child.class", WorkspaceIndex.EMPTY, childBytes);
+
+        assertNotNull(tree);
+        assertTrue(tree.getChildren().stream()
+                .anyMatch(item -> "com/example/Parent".equals(item.getValue().className())));
+    }
+
+    @Test
     void expandsSubClassesRecursively() throws Exception {
         Path sourceDir = tempDir.resolve("recursive-src/com/example");
         Files.createDirectories(sourceDir);

@@ -28,6 +28,7 @@ public final class WorkspaceIndex {
     private final List<ResourceIndexEntry> resources;
     private final Map<String, ClassIndexEntry> classesByInternalName;
     private volatile Map<String, byte[]> resourceBytesByPathCache;
+    private volatile Map<String, List<String>> subclassesByParentCache;
 
     private WorkspaceIndex(List<ClassIndexEntry> classes, List<ResourceIndexEntry> resources,
                            Map<String, ClassIndexEntry> classesByInternalName) {
@@ -95,6 +96,8 @@ public final class WorkspaceIndex {
         String fullPath = node.getFullPath();
         String internalName = ClassNameUtil.normalizeInternalName(fullPath);
         String simpleName = ClassNameUtil.simpleName(internalName);
+        String superName = null;
+        List<String> interfaces = List.of();
         List<MemberIndexEntry> methods = new ArrayList<>();
         List<MemberIndexEntry> fields = new ArrayList<>();
 
@@ -103,6 +106,8 @@ public final class WorkspaceIndex {
             ClassFileMetadata meta = metadata.get();
             internalName = meta.internalName();
             simpleName = ClassNameUtil.simpleName(internalName);
+            superName = meta.superName();
+            interfaces = meta.interfaces();
             for (ClassFileMetadata.MemberInfo field : meta.fields()) {
                 fields.add(new MemberIndexEntry(node.getFullPath(), field.name(), field.descriptor()));
             }
@@ -116,7 +121,7 @@ public final class WorkspaceIndex {
         // 使用 node::resolveBytes 延迟加载：索引构建时只解析元数据,
         // 字节码在首次打开 class 时才缓存到节点,避免大型 JAR 预热阶段占用过多内存
         return new ClassIndexEntry(node.getFullPath(), internalName, simpleName,
-                node::resolveBytes, methods, fields);
+                node::resolveBytes, methods, fields, superName, interfaces);
     }
 
     private static boolean shouldIndexResource(FileTreeNode node) {
@@ -179,12 +184,23 @@ public final class WorkspaceIndex {
      * @return 该类对应的字节码字节数组,若未找到则返回 null
      */
     public byte[] getClassBytes(String internalName) {
+        ClassIndexEntry entry = findClass(internalName);
+        return entry == null ? null : entry.bytes();
+    }
+
+    /**
+     * 根据内部名称获取类索引条目,支持容器前缀和 nested jar 前缀剥离后的别名
+     *
+     * @param internalName 类内部名称或完整 class 路径
+     * @return 匹配的类索引条目,未找到返回 null
+     */
+    public ClassIndexEntry findClass(String internalName) {
         String normalized = ClassNameUtil.normalizeInternalName(internalName);
         ClassIndexEntry entry = classesByInternalName.get(normalized);
         if (entry == null) {
             entry = classesByInternalName.get(ClassNameUtil.stripContainerClassPrefix(normalized));
         }
-        return entry == null ? null : entry.bytes();
+        return entry;
     }
 
     /** @return 该工作区中所有类的完整路径列表 */
@@ -212,6 +228,48 @@ public final class WorkspaceIndex {
                 resourceBytesByPathCache = Collections.unmodifiableMap(map);
             }
             return resourceBytesByPathCache;
+        }
+    }
+
+    /**
+     * 懒构建父类/接口到子类的反向映射,继承视图多次打开时可复用
+     *
+     * @return parent internal name -> child internal names
+     */
+    public Map<String, List<String>> subclassesByParent() {
+        Map<String, List<String>> cached = subclassesByParentCache;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (this) {
+            if (subclassesByParentCache == null) {
+                Map<String, List<String>> map = new LinkedHashMap<>();
+                for (ClassIndexEntry cls : classes) {
+                    addSubclass(map, cls.superName(), cls.internalName());
+                    for (String itf : cls.interfaces()) {
+                        addSubclass(map, itf, cls.internalName());
+                    }
+                }
+                Map<String, List<String>> frozen = new LinkedHashMap<>();
+                for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+                    frozen.put(entry.getKey(), List.copyOf(entry.getValue()));
+                }
+                subclassesByParentCache = Collections.unmodifiableMap(frozen);
+            }
+            return subclassesByParentCache;
+        }
+    }
+
+    private static void addSubclass(Map<String, List<String>> map,
+                                    String parentName, String childName) {
+        if (parentName == null || parentName.isBlank()
+                || childName == null || childName.isBlank()
+                || parentName.equals(childName)) {
+            return;
+        }
+        List<String> children = map.computeIfAbsent(parentName, key -> new ArrayList<>());
+        if (!children.contains(childName)) {
+            children.add(childName);
         }
     }
 

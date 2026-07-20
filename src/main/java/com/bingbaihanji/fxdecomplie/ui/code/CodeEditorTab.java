@@ -60,6 +60,8 @@ public class CodeEditorTab extends Tab {
     private Consumer<CodeEditorTab> onSplitRequested;
     /** 切换引擎回调(由外部设置,传入目标引擎进行原地重反编译) */
     private Consumer<DecompilerTypeEnum> onSwitchEngine;
+    /** 源码内容更新回调,用于刷新大纲 继承等依赖当前 tab 内容的工具窗口 */
+    private Runnable onContentUpdated;
 
     /** 简化构造器,使用默认暗色主题和 Consolas 14pt 字体配置 */
     public CodeEditorTab(OpenFile openFile) {
@@ -217,6 +219,11 @@ public class CodeEditorTab extends Tab {
         this.onSwitchEngine = callback;
     }
 
+    /** 设置源码内容更新回调 */
+    public void setOnContentUpdated(Runnable callback) {
+        this.onContentUpdated = callback;
+    }
+
     /** 触发切换引擎(由外部菜单调用) */
     public void switchEngine(DecompilerTypeEnum engine) {
         if (onSwitchEngine != null) {
@@ -294,6 +301,7 @@ public class CodeEditorTab extends Tab {
         titleLabel.setText(pinned ? "📌 " + displayTitle : displayTitle);
         setGraphic(null);
         setGraphic(titleLabel);
+        notifyContentUpdated();
     }
 
     /** 更新源码模型和可见 Code 面板,用于重命名等不需要重新反编译的场景 */
@@ -315,6 +323,7 @@ public class CodeEditorTab extends Tab {
         titleLabel.setText(pinned ? "📌 " + displayTitle : displayTitle);
         setGraphic(null);
         setGraphic(titleLabel);
+        notifyContentUpdated();
     }
 
     /**
@@ -324,6 +333,12 @@ public class CodeEditorTab extends Tab {
     public void updateVisibleSource(String displaySource) {
         codeViewPanel.refreshDisplayedSource(displaySource == null ? "" : displaySource);
         codeArea = codeViewPanel.getSourceCodeArea();
+    }
+
+    private void notifyContentUpdated() {
+        if (onContentUpdated != null) {
+            onContentUpdated.run();
+        }
     }
 
     /** @return 标签页显示标题 */

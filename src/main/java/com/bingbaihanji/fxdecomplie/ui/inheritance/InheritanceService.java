@@ -2,6 +2,7 @@ package com.bingbaihanji.fxdecomplie.ui.inheritance;
 
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
+import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import javafx.scene.control.TreeItem;
@@ -135,18 +136,14 @@ public final class InheritanceService {
             return; // 到达继承链顶端,停止追溯
         }
 
-        byte[] bytes = getBytes(index, internalName);
-        if (bytes == null) {
+        ClassFileMetadata meta = metadataFromIndex(index, internalName).orElseGet(() -> {
+            byte[] bytes = getBytes(index, internalName);
+            return bytes == null ? null : ClassFileParser.tryParse(bytes).orElse(null);
+        });
+        if (meta == null) {
             return;
         }
 
-        Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
-        if (metadata.isEmpty()) {
-            log.warn("解析类元数据用于继承树失败: {}", internalName);
-            return;
-        }
-
-        ClassFileMetadata meta = metadata.get();
         String superName = meta.superName();
         if (superName != null) {
             buildSuperChain(superName, node, depth + 1, visited, index);
@@ -206,6 +203,18 @@ public final class InheritanceService {
         return index == null ? null : index.getClassBytes(internalName);
     }
 
+    private static Optional<ClassFileMetadata> metadataFromIndex(WorkspaceIndex index, String internalName) {
+        if (index == null) {
+            return Optional.empty();
+        }
+        ClassIndexEntry entry = index.findClass(internalName);
+        if (entry == null || (entry.superName() == null && entry.interfaces().isEmpty())) {
+            return Optional.empty();
+        }
+        return Optional.of(new ClassFileMetadata(0, 0, 0, entry.internalName(), entry.superName(),
+                entry.interfaces(), List.of(), 0, List.of(), List.of()));
+    }
+
     /** 将文件路径转为 JVM 内部名称格式(去除 .class 后缀,反斜杠替换为正斜杠) */
     private static String toInternal(String path) {
         if (path.endsWith(".class")) {
@@ -236,52 +245,13 @@ public final class InheritanceService {
         }
 
         static SubclassIndex build(WorkspaceIndex index, long deadline) {
-            Map<String, List<String>> childrenByParent = new LinkedHashMap<>();
             if (index == null) {
-                return new SubclassIndex(childrenByParent);
+                return new SubclassIndex(Map.of());
             }
-
-            int scanned = 0;
-            // 遍历工作区中所有类,建立父类→子类的反向映射
-            for (var cls : index.classes()) {
-                if (System.currentTimeMillis() > deadline) {
-                    log.debug("构建子类索引超时,已扫描 {} 个类", scanned);
-                    break;
-                }
-                scanned++;
-                byte[] bytes = cls.bytes();
-                if (bytes == null) {
-                    continue;
-                }
-                Optional<ClassFileMetadata> metadata = ClassFileParser.tryParse(bytes);
-                if (metadata.isEmpty()) {
-                    continue;
-                }
-                ClassFileMetadata meta = metadata.get();
-                addChild(childrenByParent, meta.superName(), cls.internalName());
-                for (String itf : meta.interfaces()) {
-                    addChild(childrenByParent, itf, cls.internalName());
-                }
+            if (System.currentTimeMillis() > deadline) {
+                return new SubclassIndex(Map.of());
             }
-            return new SubclassIndex(childrenByParent);
-        }
-
-        /**
-         * 向反向索引中添加一条父子关系过滤空值和自引用
-         * 同一 parent→child 对只记录一次
-         */
-        private static void addChild(Map<String, List<String>> childrenByParent,
-                                     String parentName, String childName) {
-            if (parentName == null || parentName.isBlank()
-                    || childName == null || childName.isBlank()
-                    || parentName.equals(childName)) {
-                return;
-            }
-            List<String> children = childrenByParent.computeIfAbsent(parentName,
-                    key -> new ArrayList<>());
-            if (!children.contains(childName)) {
-                children.add(childName);
-            }
+            return new SubclassIndex(index.subclassesByParent());
         }
 
         /** 查询指定父类的所有直接子类/实现类 */

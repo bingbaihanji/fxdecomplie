@@ -86,11 +86,22 @@ public final class InheritancePane extends VBox {
      * @param index    工作区索引,用于读取父类/子类字节码
      */
     public void load(String fullPath, WorkspaceIndex index) {
+        load(fullPath, index, null);
+    }
+
+    /**
+     * 加载指定类的继承层次树,允许传入当前类字节码以便索引未完成时快速展示局部继承信息
+     *
+     * @param fullPath 目标类全限定路径
+     * @param index    工作区索引,用于读取父类/子类字节码
+     * @param rootBytes 当前类字节码,可为空
+     */
+    public void load(String fullPath, WorkspaceIndex index, byte[] rootBytes) {
         showIndexing();
         // 递增代数,标记本次请求
         long gen = loadGeneration.incrementAndGet();
         BackgroundTasks.run("InheritanceBuild", () -> {
-            TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index);
+            TreeItem<InheritanceNode> root = InheritanceService.buildTree(fullPath, index, rootBytes);
             Platform.runLater(() -> {
                 if (loadGeneration.get() != gen) {
                     return; // 已过期,丢弃

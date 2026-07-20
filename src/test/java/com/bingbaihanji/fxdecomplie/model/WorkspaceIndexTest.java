@@ -8,6 +8,7 @@ import javax.tools.ToolProvider;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,6 +60,33 @@ class WorkspaceIndexTest {
         assertTrue(index.classes().getFirst().methods().stream()
                 .anyMatch(method -> method.name().equals("getValue")));
         assertNotNull(index.getClassBytes("com/example/Test"));
+    }
+
+    @Test
+    void cachesSubclassRelationshipsFromClassMetadata() throws Exception {
+        FileTreeModel root = new FileTreeModel(
+                new FileTreeNode("root", "", FileTreeNode.NodeTypeEnum.PACKAGE));
+
+        FileTreeNode parent = new FileTreeNode("Parent.class", "com/example/Parent.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        parent.setCachedBytes(compileClass("com.example", "Parent", """
+                package com.example;
+                public class Parent {}
+                """));
+        FileTreeNode child = new FileTreeNode("Child.class", "com/example/Child.class",
+                FileTreeNode.NodeTypeEnum.CLASS_FILE);
+        child.setCachedBytes(compileClass("com.example", "Child", """
+                package com.example;
+                public class Child extends Parent {}
+                """));
+        root.getChildren().add(new FileTreeModel(parent));
+        root.getChildren().add(new FileTreeModel(child));
+
+        WorkspaceIndex index = WorkspaceIndex.build(root);
+
+        assertSame(index.subclassesByParent(), index.subclassesByParent());
+        assertEquals(List.of("com/example/Child"),
+                index.subclassesByParent().get("com/example/Parent"));
     }
 
     @Test
@@ -172,6 +200,7 @@ class WorkspaceIndexTest {
         assertNotNull(compiler, "tests require a JDK compiler");
         int exit = compiler.run(null, null, null,
                 "--release", "17",
+                "-classpath", outputDir.toString(),
                 "-d", outputDir.toString(),
                 sourceFile.toString());
         assertEquals(0, exit, "test class should compile");

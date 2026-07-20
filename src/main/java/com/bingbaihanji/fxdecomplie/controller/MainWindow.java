@@ -380,6 +380,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     public void exit() {
         Window.getWindows().stream()
                 .filter(w -> w instanceof Stage && w != stage)
+                .toList()
                 .forEach(w -> ((Stage) w).close());
         stage.close();
         Platform.exit();
@@ -902,6 +903,9 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 打开日志目录（查看日志按钮回调） */
     private void openLogDir() {
         try {
+            if (!java.awt.Desktop.isDesktopSupported()) {
+                return;
+            }
             java.awt.Desktop.getDesktop().open(
                     com.bingbaihanji.fxdecomplie.constants.AppPaths.logsDir().toFile());
         } catch (Exception ex) {
