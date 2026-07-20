@@ -102,6 +102,11 @@ public final class EditorActionsController {
         owner.tabManager().hideBottomToolWindow();
     }
 
+    /** 重新打开最近关闭的标签页 */
+    public void reopenClosedTab() {
+        owner.tabManager().reopenLastClosedTab();
+    }
+
     /** 根据当前工作区和代码标签页状态刷新工具栏按钮的启用/禁用状态 */
     public void refreshToolbarState() {
         if (owner.toolBar() != null) {

@@ -111,6 +111,25 @@ public final class BackgroundTasks {
         }
     }
 
+    /** @return 指定池的待执行任务队列长度 */
+    public static int getQueueLength(PoolType type) {
+        return poolFor(type).getQueue().size();
+    }
+
+    /** @return 指定池的正在执行任务数 */
+    public static int getActiveCount(PoolType type) {
+        return poolFor(type).getActiveCount();
+    }
+
+    /** @return 所有池的总待处理任务数(队列 + 执行中) */
+    public static int getTotalPendingTasks() {
+        int total = 0;
+        for (ThreadPoolExecutor pool : new ThreadPoolExecutor[]{INTERACTIVE_POOL, IO_POOL, EXPORT_POOL}) {
+            total += pool.getQueue().size() + pool.getActiveCount();
+        }
+        return total;
+    }
+
     /** 优雅关闭所有池,最多等待 3 秒 */
     public static void shutdown() {
         for (ThreadPoolExecutor pool : new ThreadPoolExecutor[]{INTERACTIVE_POOL, IO_POOL, EXPORT_POOL}) {

@@ -4,12 +4,16 @@ import com.bingbaihanji.fxdecomplie.config.AppConfig;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.StackPane;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -24,6 +28,11 @@ import java.util.function.Consumer;
  * @date 2026-06-23
  */
 public final class SplitEditorPane extends StackPane {
+
+    private static final Logger log = LoggerFactory.getLogger(SplitEditorPane.class);
+
+    /** 关闭的标签页记录，用于支持"重新打开关闭的标签"功能 */
+    private record ClosedTabRecord(String title, String fullPath, String engineName) {}
 
     /** 最大分屏数 */
     private static final int MAX_CELLS = 3;
@@ -43,6 +52,10 @@ public final class SplitEditorPane extends StackPane {
     private int activeCount = 1;
     /** 分屏状态变化回调(用于同步主 panel 的勾选框) */
     private Runnable onSplitStateChanged;
+    /** 关闭的标签页历史栈，用于支持"重新打开关闭的标签"功能 */
+    private final Deque<ClosedTabRecord> closedTabs = new ArrayDeque<>(10);
+    /** 重新打开关闭标签的回调(由 WorkspaceTabManager 注入) */
+    private Consumer<String> onReopenClosedTab;
 
     /** 创建不带拖放功能的默认分屏编辑器 */
     public SplitEditorPane() {
@@ -236,6 +249,11 @@ public final class SplitEditorPane extends StackPane {
     /** 设置分屏状态变化回调 */
     public void setOnSplitStateChanged(Runnable callback) {
         this.onSplitStateChanged = callback;
+    }
+
+    /** 设置重新打开关闭标签的回调(由 WorkspaceTabManager 注入) */
+    public void setOnReopenClosedTab(Consumer<String> callback) {
+        this.onReopenClosedTab = callback;
     }
 
     // ==================== 内部方法 ====================
@@ -494,6 +512,7 @@ public final class SplitEditorPane extends StackPane {
         closeOthers.setOnAction(e -> {
             Tab sel = pane.getSelectionModel().getSelectedItem();
             if (sel != null) {
+                recordClosedTabs(pane.getTabs().stream().filter(t -> t != sel).toList());
                 pane.getTabs().removeIf(t -> t != sel);
             }
         });
@@ -511,22 +530,75 @@ public final class SplitEditorPane extends StackPane {
                     .skip(index + 1L)
                     .filter(t -> !Boolean.TRUE.equals(t.getProperties().get("pinned")))
                     .toList();
+            recordClosedTabs(toClose);
             pane.getTabs().removeAll(toClose);
         });
 
         // 关闭未固定
         MenuItem closeUnpinned = new MenuItem(I18nUtil.getString("context.closeUnpinned"));
-        closeUnpinned.setOnAction(e -> pane.getTabs().removeIf(t ->
-                !Boolean.TRUE.equals(t.getProperties().get("pinned"))));
+        closeUnpinned.setOnAction(e -> {
+            var toClose = pane.getTabs().stream()
+                    .filter(t -> !Boolean.TRUE.equals(t.getProperties().get("pinned")))
+                    .toList();
+            recordClosedTabs(toClose);
+            pane.getTabs().removeAll(toClose);
+        });
 
         // 关闭全部
         MenuItem closeAll = new MenuItem(I18nUtil.getString("context.closeAll"));
-        closeAll.setOnAction(e -> pane.getTabs().clear());
+        closeAll.setOnAction(e -> {
+            recordClosedTabs(new ArrayList<>(pane.getTabs()));
+            pane.getTabs().clear();
+        });
+
+        // 重新打开关闭的标签
+        MenuItem reopenClosed = new MenuItem(I18nUtil.getString("context.reopenClosed"));
+        reopenClosed.setDisable(closedTabs.isEmpty());
+        reopenClosed.setOnAction(e -> reopenLastClosedTab());
 
         menu.getItems().addAll(pin, new SeparatorMenuItem(),
                 engineMenu, new SeparatorMenuItem(),
                 splitRight, closeSplitItem, new SeparatorMenuItem(),
                 openInNewWindow, new SeparatorMenuItem(),
-                closeOthers, closeRight, closeUnpinned, closeAll);
+                closeOthers, closeRight, closeUnpinned, closeAll,
+                new SeparatorMenuItem(), reopenClosed);
+    }
+
+    /** 记录被关闭的标签页到历史栈（最多保留 10 个） */
+    private void recordClosedTabs(List<Tab> tabs) {
+        for (Tab tab : tabs) {
+            if (tab instanceof CodeEditorTab ct) {
+                String title = ct.getText();
+                String fullPath = ct.getOpenFile() != null ? ct.getOpenFile().fullPath() : "";
+                String engine = ct.getOpenFile() != null ? ct.getOpenFile().engine().name() : "";
+                closedTabs.push(new ClosedTabRecord(title, fullPath, engine));
+                // 限制历史栈大小
+                while (closedTabs.size() > 10) {
+                    closedTabs.removeLast();
+                }
+            }
+        }
+    }
+
+    /** 重新打开最近关闭的标签页 */
+    public void reopenLastClosedTab() {
+        ClosedTabRecord record = closedTabs.pollLast();
+        if (record == null) {
+            return;
+        }
+        // 如果标签已存在于某个 cell 中，直接选中
+        for (TabPane cell : allTabPanes()) {
+            for (Tab tab : cell.getTabs()) {
+                if (tab instanceof CodeEditorTab ct && ct.getOpenFile() != null
+                        && record.fullPath().equals(ct.getOpenFile().fullPath())) {
+                    cell.getSelectionModel().select(tab);
+                    return;
+                }
+            }
+        }
+        // 通过回调让 WorkspaceTabManager 重新打开该类
+        if (onReopenClosedTab != null && !record.fullPath().isEmpty()) {
+            onReopenClosedTab.accept(record.fullPath());
+        }
     }
 }

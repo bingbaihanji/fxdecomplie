@@ -1,16 +1,22 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
+import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.util.Duration;
 
 /**
- * 状态栏组件,显示当前文件路径 编码和光标位置
+ * 状态栏组件,显示当前文件路径 编码 光标位置 进度条 内存占用 后台任务队列长度
  *
  * @author bingbaihanji
  * @date 2026-06-17
@@ -25,10 +31,18 @@ public class StatusBar extends HBox {
     private final Label engineLabel;
     /** 当前后台任务提示 */
     private final Label taskLabel;
+    /** 进度条 */
+    private final ProgressBar progressBar;
+    /** 后台任务队列长度 */
+    private final Label queueLabel;
+    /** JVM 内存占用 */
+    private final Label memLabel;
     /** 右侧：光标位置标签 */
     private final Label positionLabel;
+    /** 定时刷新监控信息的时间线 */
+    private final Timeline monitorTimeline;
 
-    /** 构建状态栏布局：路径 | 弹性空间 | 任务 | 引擎 | 编码 | 弹性空间 | 光标位置 */
+    /** 构建状态栏布局：路径 | 弹性空间 | 任务 | 进度条 | 队列 | 内存 | 引擎 | 编码 | 弹性空间 | 光标位置 */
     public StatusBar() {
         setPadding(new Insets(2, 8, 2, 8));
         getStyleClass().add("status-bar");
@@ -43,7 +57,24 @@ public class StatusBar extends HBox {
 
         taskLabel = new Label("");
         taskLabel.getStyleClass().add("status-label");
-        taskLabel.setPadding(new Insets(0, 16, 0, 0));
+        taskLabel.setPadding(new Insets(0, 8, 0, 0));
+
+        progressBar = new ProgressBar(0);
+        progressBar.getStyleClass().add("status-progress");
+        progressBar.setPrefWidth(120);
+        progressBar.setPrefHeight(14);
+        progressBar.setVisible(false);
+        progressBar.setManaged(false);
+
+        queueLabel = new Label("");
+        queueLabel.getStyleClass().add("status-label");
+        queueLabel.setPadding(new Insets(0, 8, 0, 0));
+        queueLabel.setVisible(false);
+        queueLabel.setManaged(false);
+
+        memLabel = new Label("");
+        memLabel.getStyleClass().add("status-label");
+        memLabel.setPadding(new Insets(0, 16, 0, 0));
 
         engineLabel = new Label("");
         engineLabel.getStyleClass().add("status-label");
@@ -59,7 +90,15 @@ public class StatusBar extends HBox {
         positionLabel = new Label("1:1");
         positionLabel.getStyleClass().add("status-label");
 
-        getChildren().addAll(pathLabel, spacer1, taskLabel, engineLabel, encodingLabel, spacer2, positionLabel);
+        getChildren().addAll(pathLabel, spacer1, taskLabel, progressBar, queueLabel, memLabel,
+                engineLabel, encodingLabel, spacer2, positionLabel);
+
+        // 每 5 秒刷新内存和队列信息
+        monitorTimeline = new Timeline(new KeyFrame(Duration.seconds(5), e -> refreshMonitors()));
+        monitorTimeline.setCycleCount(Animation.INDEFINITE);
+        monitorTimeline.play();
+        // 启动时立即刷新一次
+        refreshMonitors();
     }
 
     /** 更新类路径显示 */
@@ -105,6 +144,24 @@ public class StatusBar extends HBox {
         taskLabel.setText("");
     }
 
+    /**
+     * 设置进度条值
+     *
+     * @param progress 0.0~1.0 的进度值，-1 表示不确定进度
+     */
+    public void setProgress(double progress) {
+        progressBar.setVisible(true);
+        progressBar.setManaged(true);
+        progressBar.setProgress(progress);
+    }
+
+    /** 隐藏进度条并重置为 0 */
+    public void clearProgress() {
+        progressBar.setVisible(false);
+        progressBar.setManaged(false);
+        progressBar.setProgress(0);
+    }
+
     /** 清除状态栏显示 */
     public void clear() {
         pathLabel.setText("");
@@ -112,5 +169,35 @@ public class StatusBar extends HBox {
         engineLabel.setText("");
         positionLabel.setText("1:1");
         encodingLabel.setText("UTF-8");
+        clearProgress();
+    }
+
+    /** 停止监控定时器（应用关闭时调用） */
+    public void stopMonitor() {
+        monitorTimeline.stop();
+    }
+
+    /** 刷新内存和队列监控信息 */
+    private void refreshMonitors() {
+        // 内存信息
+        Runtime rt = Runtime.getRuntime();
+        long used = (rt.totalMemory() - rt.freeMemory()) / (1024 * 1024);
+        long max = rt.maxMemory() / (1024 * 1024);
+        String memText = I18nUtil.getString("status.memory", String.valueOf(used), String.valueOf(max));
+        if (!memText.equals(memLabel.getText())) {
+            memLabel.setText(memText);
+            memLabel.setTooltip(new Tooltip("Used: " + used + " MB / Max: " + max + " MB"));
+        }
+
+        // 队列信息
+        int pending = BackgroundTasks.getTotalPendingTasks();
+        if (pending > 0) {
+            queueLabel.setText(I18nUtil.getString("status.queue", String.valueOf(pending)));
+            queueLabel.setVisible(true);
+            queueLabel.setManaged(true);
+        } else {
+            queueLabel.setVisible(false);
+            queueLabel.setManaged(false);
+        }
     }
 }

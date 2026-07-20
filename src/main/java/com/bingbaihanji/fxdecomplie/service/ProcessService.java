@@ -7,6 +7,8 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 新实例启动服务通过 ProcessBuilder 启动第二个 JVM 进程,
@@ -18,6 +20,9 @@ import java.util.List;
 public final class ProcessService {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessService.class);
+
+    /** 已启动的子进程映射，防止同一文件重复启动实例 */
+    private static final Map<String, Process> runningProcesses = new ConcurrentHashMap<>();
 
     private ProcessService() {
         throw new AssertionError("utility class");
@@ -32,6 +37,13 @@ public final class ProcessService {
      * @param filePath 要在新窗口中打开的文件路径(可为 null)
      */
     public static void launchNewInstance(String filePath) {
+        if (filePath != null) {
+            Process existing = runningProcesses.get(filePath);
+            if (existing != null && existing.isAlive()) {
+                log.debug("已有实例运行中，忽略重复启动: {}", filePath);
+                return;
+            }
+        }
         try {
             // ---- 定位当前 JVM 的 java 可执行文件 ----
             String javaHome = System.getProperty("java.home");
@@ -49,9 +61,13 @@ public final class ProcessService {
                 cmd.addAll(List.of("--open", filePath));
             }
             // inheritIO() 防止子进程 stdout/stderr 管道缓冲区满导致挂起
-            new ProcessBuilder(cmd)
+            Process proc = new ProcessBuilder(cmd)
                     .inheritIO()
                     .start();
+            if (filePath != null) {
+                runningProcesses.put(filePath, proc);
+                proc.onExit().thenAccept(p -> runningProcesses.remove(filePath, p));
+            }
         } catch (Exception e) {
             log.error("启动新实例失败", e);
         }

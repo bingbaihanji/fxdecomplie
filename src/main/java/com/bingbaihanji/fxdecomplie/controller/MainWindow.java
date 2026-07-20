@@ -30,6 +30,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -284,6 +285,36 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         scene.setFill(Color.web("#1e1e1e"));
         scene.getStylesheets().add(AppTheme.darkStylesheet());
 
+        // 全局快捷键（场景级，补充菜单 accelerator）
+        scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+            // Alt+← 后退
+            if (e.getCode() == javafx.scene.input.KeyCode.LEFT && e.isAltDown()) {
+                navigationController.goBack();
+                e.consume();
+            }
+            // Alt+→ 前进
+            else if (e.getCode() == javafx.scene.input.KeyCode.RIGHT && e.isAltDown()) {
+                navigationController.goForward();
+                e.consume();
+            }
+            // Ctrl+Shift+T 重新打开关闭的标签
+            else if (e.getCode() == javafx.scene.input.KeyCode.T
+                    && e.isShortcutDown() && e.isShiftDown()) {
+                editorActions.reopenClosedTab();
+                e.consume();
+            }
+            // Alt+F1 定位当前文件在文件树中的位置
+            else if (e.getCode() == javafx.scene.input.KeyCode.F1 && e.isAltDown()) {
+                navigationController.locateCurrentFile();
+                e.consume();
+            }
+            // Ctrl+, 打开设置
+            else if (e.getCode() == javafx.scene.input.KeyCode.COMMA && e.isShortcutDown()) {
+                settingsController.openSettings();
+                e.consume();
+            }
+        });
+
         stage.setTitle("FxDecompiler");
         stage.setScene(scene);
         stage.show();
@@ -347,14 +378,17 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     /** 退出应用 */
     @Override
     public void exit() {
-        javafx.stage.Window.getWindows().stream()
-                .filter(w -> w instanceof javafx.stage.Stage && w != stage)
-                .forEach(w -> ((javafx.stage.Stage) w).close());
+        Window.getWindows().stream()
+                .filter(w -> w instanceof Stage && w != stage)
+                .forEach(w -> ((Stage) w).close());
         stage.close();
-        javafx.application.Platform.exit();
+        Platform.exit();
     }
 
     public void shutdownResources() {
+        if (statusBar != null) {
+            statusBar.stopMonitor();
+        }
         if (tabManager == null) {
             return;
         }
@@ -513,8 +547,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         CommentDialog.show(stage, context.classInternalName(), memberSig, line,
                 context.sourceHash(), context.optionsHash(), existingComment,
                 comment -> {
-                    com.bingbaihanji.fxdecomplie.service.CommentManager
-                            .save(context.workspaceHash(), comment);
+                    CommentManager.save(context.workspaceHash(), comment);
                     refreshVisibleComments(context);
                     statusBar.setFilePath(I18nUtil.getString("comment.saved") + " L" + comment.line());
                 });
@@ -825,6 +858,18 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showError(stage, title, message);
     }
 
+    /**
+     * 弹出带操作按钮的错误对话框：重试 / 取消 / 查看日志
+     *
+     * @param title   对话框标题
+     * @param message 错误信息
+     * @param onRetry 点击"重试"时的回调(null 安全)
+     */
+    void showErrorWithActions(String title, String message, Runnable onRetry) {
+        com.bingbaihanji.fxdecomplie.ui.DialogHelper.showErrorWithActions(
+                stage, title, message, onRetry, () -> openLogDir());
+    }
+
     /** 弹出警告对话框 */
     void showWarning(String title, String message) {
         com.bingbaihanji.fxdecomplie.ui.DialogHelper.showWarning(stage, title, message);
@@ -851,6 +896,16 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         WorkspaceView view = workspaceViewFor(workspace);
         if (view != null && view.treeView() != null) {
             view.treeView().refreshVisibleCells();
+        }
+    }
+
+    /** 打开日志目录（查看日志按钮回调） */
+    private void openLogDir() {
+        try {
+            java.awt.Desktop.getDesktop().open(
+                    com.bingbaihanji.fxdecomplie.constants.AppPaths.logsDir().toFile());
+        } catch (Exception ex) {
+            log.warn("无法打开日志目录", ex);
         }
     }
 

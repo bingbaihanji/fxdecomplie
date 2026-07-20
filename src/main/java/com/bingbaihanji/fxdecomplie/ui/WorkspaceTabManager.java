@@ -18,6 +18,8 @@ import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeModelConverter;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -29,6 +31,7 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,8 @@ import java.util.function.Consumer;
  * @date 2026-06-17
  */
 public final class WorkspaceTabManager {
+
+    private static final Logger log = LoggerFactory.getLogger(WorkspaceTabManager.class);
 
     /** 编辑区上下分割条的实际鼠标命中高度 */
     private static final double EDITOR_DIVIDER_HIT_HEIGHT = 12.0;
@@ -518,6 +523,12 @@ public final class WorkspaceTabManager {
 
         // 分屏编辑器(1-3 个并排 TabPane)
         SplitEditorPane splitEditorPane = new SplitEditorPane(dragDropConfig, dragDropTheme);
+        splitEditorPane.setOnReopenClosedTab(fullPath -> {
+            FileTreeNode node = workspace.findNodeByPath(fullPath);
+            if (node != null) {
+                onClassClick.accept(node, splitEditorPane.primaryTabPane());
+            }
+        });
         TabPane codeTabPane = splitEditorPane.primaryTabPane();
         codeTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.ALL_TABS);
         codeTabPane.getSelectionModel().selectedItemProperty().addListener(
@@ -635,12 +646,13 @@ public final class WorkspaceTabManager {
         });
 
         Tab tab = new Tab(workspace.getName(), splitPane);
+        setupWorkspaceTabContextMenu(tab, workspace);
         WorkspaceTools tools = new WorkspaceTools(
                 editorSplitPane, bottomToolContainer, sideTabPane, outlineTab, inheritTab, commentsTab);
         outlineTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
         inheritTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
         commentsTab.setOnClosed(e -> hideToolWindowIfEmpty(tab));
-        WorkspaceView view = new WorkspaceView(workspace, treeView, splitEditorPane, tab);
+        WorkspaceView view = new WorkspaceView(workspace, treeView, splitEditorPane, tab, navigationService);
         workspaceViews.put(tab, view);
         workspaceTools.put(tab, tools);
         tab.setOnCloseRequest(event -> {
@@ -808,6 +820,14 @@ public final class WorkspaceTabManager {
         }
     }
 
+    /** 重新打开最近关闭的标签页 */
+    public void reopenLastClosedTab() {
+        WorkspaceView view = currentWorkspaceView();
+        if (view != null) {
+            view.splitEditorPane().reopenLastClosedTab();
+        }
+    }
+
     /** 关闭工作区前弹出确认对话框 */
     private boolean confirmWorkspaceClose() {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -821,6 +841,61 @@ public final class WorkspaceTabManager {
         DialogHelper.applyNativeStyle(alert);
         var result = alert.showAndWait();
         return result.isPresent() && result.get() == ButtonType.OK;
+    }
+
+    /** 为工作区标签页设置右键上下文菜单 */
+    private void setupWorkspaceTabContextMenu(Tab tab, Workspace workspace) {
+        ContextMenu menu = new ContextMenu();
+
+        MenuItem close = new MenuItem(I18nUtil.getString("tab.close"));
+        close.setOnAction(e -> requestCloseWorkspaceTab(tab));
+
+        MenuItem closeOthers = new MenuItem(I18nUtil.getString("tab.closeOthers"));
+        closeOthers.setOnAction(e -> {
+            if (!confirmWorkspaceClose()) {
+                return;
+            }
+            for (Tab t : new java.util.ArrayList<>(outerTabPane.getTabs())) {
+                if (t != tab && !isWelcomeTab(t)) {
+                    closeWorkspaceTab(t);
+                }
+            }
+        });
+
+        MenuItem closeAll = new MenuItem(I18nUtil.getString("tab.closeAll"));
+        closeAll.setOnAction(e -> {
+            if (!confirmWorkspaceClose()) {
+                return;
+            }
+            for (Tab t : new java.util.ArrayList<>(outerTabPane.getTabs())) {
+                if (!isWelcomeTab(t)) {
+                    closeWorkspaceTab(t);
+                }
+            }
+        });
+
+        MenuItem copyPath = new MenuItem(I18nUtil.getString("tab.copyPath"));
+        copyPath.setOnAction(e -> {
+            ClipboardContent cc = new ClipboardContent();
+            cc.putString(workspace.getSourceFile().getAbsolutePath());
+            Clipboard.getSystemClipboard().setContent(cc);
+        });
+
+        MenuItem showInExplorer = new MenuItem(I18nUtil.getString("tab.showInExplorer"));
+        showInExplorer.setOnAction(e -> {
+            try {
+                java.io.File file = workspace.getSourceFile();
+                java.awt.Desktop.getDesktop().open(
+                        file.isFile() ? file.getParentFile() : file);
+            } catch (IOException ex) {
+                log.warn("无法打开资源管理器", ex);
+            }
+        });
+
+        menu.getItems().addAll(close, closeOthers, closeAll,
+                new SeparatorMenuItem(), copyPath, showInExplorer);
+
+        tab.setContextMenu(menu);
     }
 
     /** 清理已关闭的工作区 */

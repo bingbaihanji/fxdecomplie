@@ -10,6 +10,8 @@ import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import com.bingbaihanji.windows.platform.WindowAppearance;
 import com.bingbaihanji.windows.platform.WindowCornerPreference;
 import javafx.application.Application;
+import javafx.geometry.Rectangle2D;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
@@ -169,14 +171,12 @@ public final class FxDecompilerApp {
             // 验证保存的窗口位置是否在可见屏幕范围内
             double savedX = config.window().x();
             double savedY = config.window().y();
-            boolean onScreen = !javafx.stage.Screen.getScreensForRectangle(
-                    savedX, savedY, 1, 1).isEmpty();
+            boolean onScreen = !Screen.getScreensForRectangle(savedX, savedY, 1, 1).isEmpty();
             if (onScreen) {
                 stage.setX(savedX);
                 stage.setY(savedY);
             } else {
-                javafx.geometry.Rectangle2D bounds =
-                        javafx.stage.Screen.getPrimary().getVisualBounds();
+                Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
                 stage.setX(bounds.getMinX() + 100);
                 stage.setY(bounds.getMinY() + 100);
             }

@@ -330,6 +330,21 @@
     -fx-font-size: 12px;
 }
 
+.status-progress {
+    -fx-pref-height: 14;
+    -fx-pref-width: 120;
+}
+
+.status-progress .bar {
+    -fx-background-color: #007acc;
+    -fx-background-radius: 2;
+}
+
+.status-progress .track {
+    -fx-background-color: #333333;
+    -fx-background-radius: 2;
+}
+
 .code-editor {
     -fx-background-color: #191b1d;
     -fx-control-inner-background: #191b1d;

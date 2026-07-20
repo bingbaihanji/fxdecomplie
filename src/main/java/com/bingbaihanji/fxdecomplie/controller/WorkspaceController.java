@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 工作区/文件/项目生命周期控制器：打开文件/目录/项目 保存项目 
@@ -36,6 +38,9 @@ import java.util.List;
 public final class WorkspaceController {
 
     private static final Logger log = LoggerFactory.getLogger(WorkspaceController.class);
+
+    /** 正在加载中的文件路径集合，防止重复提交加载任务 */
+    private final Set<String> loadingPaths = ConcurrentHashMap.newKeySet();
 
     private final MainWindow owner;
 
@@ -275,13 +280,19 @@ public final class WorkspaceController {
 
     /** 异步加载并打开文件(JAR/ZIP/Class/目录),在工作区标签页中展示文件树和反编译内容 */
     void loadFile(File file) {
-        log.info("loadFile: {} (size={}, isDir={})", file.getAbsolutePath(),
+        String absPath = file.getAbsolutePath();
+        if (!loadingPaths.add(absPath)) {
+            log.debug("重复加载请求，忽略: {}", absPath);
+            return;
+        }
+        log.info("loadFile: {} (size={}, isDir={})", absPath,
                 file.length(), file.isDirectory());
-        owner.statusBar().setFilePath(I18nUtil.getString("status.loading", file.getAbsolutePath()));
+        owner.statusBar().setFilePath(I18nUtil.getString("status.loading", absPath));
         owner.statusBar().setTask(I18nUtil.getString("task.loading"));
 
         WorkspaceLoader.loadAsync(file, owner.config(), Platform::runLater,
                 workspace -> {
+                    loadingPaths.remove(absPath);
                     owner.statusBar().clearTask();
                     owner.tabManager().addWorkspaceTab(workspace,
                             (node, codeTabPane) -> owner.classTabOpener().openClassTab(
@@ -296,8 +307,12 @@ public final class WorkspaceController {
                     owner.refreshToolbarState();
                 },
                 errorMsg -> {
+                    loadingPaths.remove(absPath);
                     owner.statusBar().clearTask();
-                    owner.showError(I18nUtil.getString("dialog.load.error") + ": " + errorMsg);
+                    owner.showErrorWithActions(
+                            I18nUtil.getString("dialog.load.error"),
+                            errorMsg,
+                            () -> loadFile(file));
                 });
     }
 }

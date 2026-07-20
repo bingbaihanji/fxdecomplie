@@ -385,6 +385,46 @@ public final class NavigationController {
         return ClassNodeResolver.findNodeBySimpleNameInTree(workspace, token, currentClassName);
     }
 
+    /** 导航历史：后退 */
+    public void goBack() {
+        WorkspaceView view = owner.tabManager().currentWorkspaceView();
+        if (view == null || view.navigationService() == null) {
+            return;
+        }
+        view.navigationService().goBack(view.workspace(), view.codeTabPane(),
+                (node, pane) -> owner.classTabOpener().openClassTab(
+                        node, view.workspace(), pane, owner.currentEngine(), owner.lineNumbersEnabled()),
+                (node, pane) -> owner.classTabOpener().openTextFileTab(
+                        node, view.workspace(), pane));
+    }
+
+    /** 导航历史：前进 */
+    public void goForward() {
+        WorkspaceView view = owner.tabManager().currentWorkspaceView();
+        if (view == null || view.navigationService() == null) {
+            return;
+        }
+        view.navigationService().goForward(view.workspace(), view.codeTabPane(),
+                (node, pane) -> owner.classTabOpener().openClassTab(
+                        node, view.workspace(), pane, owner.currentEngine(), owner.lineNumbersEnabled()),
+                (node, pane) -> owner.classTabOpener().openTextFileTab(
+                        node, view.workspace(), pane));
+    }
+
+    /** 定位当前文件在文件树中的位置 */
+    public void locateCurrentFile() {
+        WorkspaceView view = owner.tabManager().currentWorkspaceView();
+        if (view == null) {
+            return;
+        }
+        CodeEditorTab codeTab = owner.tabManager().currentCodeTab();
+        if (codeTab == null || codeTab.getOpenFile() == null) {
+            return;
+        }
+        String fullPath = codeTab.getOpenFile().fullPath();
+        owner.tabManager().selectTreeNodeByPath(fullPath);
+    }
+
     /** 在工作区中按完整路径打开类并延迟跳转到指定行(搜索/FindUsages 双击回调) */
     public void openClassByPath(WorkspaceView view, String fullPath, int lineNumber) {
         FileTreeNode node = view.workspace().findNodeByPath(fullPath);

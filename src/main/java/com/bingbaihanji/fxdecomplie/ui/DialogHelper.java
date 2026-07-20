@@ -1,9 +1,11 @@
 package com.bingbaihanji.fxdecomplie.ui;
 
 import com.bingbaihanji.fxdecomplie.ui.theme.AppTheme;
+import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import com.bingbaihanji.windows.jfx.DefaultWindowTheme;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.DialogEvent;
@@ -57,6 +59,49 @@ public final class DialogHelper {
     /** 显示错误对话框(Window 重载,适用于非 Stage 窗口场景) */
     public static void showError(Window owner, String title, String message) {
         showAlert(owner, Alert.AlertType.ERROR, title, message);
+    }
+
+    /**
+     * 显示带操作按钮的错误对话框：重试 / 取消 / 查看日志
+     *
+     * @param owner     父窗口
+     * @param title     对话框标题
+     * @param message   错误信息
+     * @param onRetry   点击"重试"时的回调(null 安全)
+     * @param onViewLog 点击"查看日志"时的回调(null 安全)
+     */
+    public static void showErrorWithActions(Stage owner, String title, String message,
+                                            Runnable onRetry, Runnable onViewLog) {
+        log.error("{} - {}", title, message);
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        ButtonType retryBtn = new ButtonType(
+                I18nUtil.getString("dialog.retry"),
+                ButtonBar.ButtonData.YES);
+        ButtonType cancelBtn = new ButtonType(
+                I18nUtil.getString("dialog.cancel"),
+                ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType logBtn = new ButtonType(
+                I18nUtil.getString("dialog.viewLog"),
+                ButtonBar.ButtonData.HELP);
+
+        alert.getButtonTypes().setAll(retryBtn, cancelBtn, logBtn);
+
+        if (owner != null) {
+            alert.initOwner(owner);
+        }
+        applyNativeStyle(alert);
+
+        alert.showAndWait().ifPresent(bt -> {
+            if (bt == retryBtn && onRetry != null) {
+                onRetry.run();
+            } else if (bt == logBtn && onViewLog != null) {
+                onViewLog.run();
+            }
+        });
     }
 
     /** 显示通用 Alert 对话框(Stage 重载) */
