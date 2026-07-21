@@ -815,6 +815,15 @@ public final class ScanResult implements Closeable {
     }
 
     /**
+     * 设置跳过的文件数。
+     *
+     * @param skippedFileCount 跳过的文件数
+     */
+    public void setSkippedFileCount(final int skippedFileCount) {
+        this.skippedFileCount = skippedFileCount;
+    }
+
+    /**
      * 获取扫描期间找到的所有类、接口和注解。
      *
      * @return 扫描期间找到的所有被接受类的列表，如果没有则返回空列表。

@@ -26,20 +26,20 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.ClassContainment;
-import io.github.classgraph.Classfile.ClassTypeAnnotationDecorator;
-import io.github.classgraph.FieldInfoList.FieldInfoFilter;
-import nonapi.io.github.classgraph.json.Id;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
-import nonapi.io.github.classgraph.types.TypeUtils;
-import nonapi.io.github.classgraph.types.TypeUtils.ModifierType;
-import nonapi.io.github.classgraph.utils.Assert;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.core.ClassFile.ClassContainment;
+import com.bingbaihanji.classgraph.core.ClassFile.ClassTypeAnnotationDecorator;
+import com.bingbaihanji.classgraph.core.FieldInfoList.FieldInfoFilter;
+
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.types.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.utils.Assert;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -53,162 +53,147 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.Map.Entry;
 
-/** Holds metadata about a class encountered during a scan. */
+/** 保存在扫描过程中遇到的类的元数据。 */
 public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>, HasName {
-    /** The name of the class. */
-    @Id
+    /** 注解的修饰符位。 */
+    private static final int ANNOTATION_CLASS_MODIFIER = 0x2000;
+    /** 当没有任何类可达时返回的空常量值。 */
+    private static final ReachableAndDirectlyRelatedClasses NO_REACHABLE_CLASSES = //
+            new ReachableAndDirectlyRelatedClasses(Collections.<ClassInfo>emptySet(),
+                    Collections.<ClassInfo>emptySet());
+    /** 类的名称。 */
+
     protected String name;
-
-    /** Class modifier flags, e.g. Modifier.PUBLIC */
-    private int modifiers;
-
-    /** True if the class is a record. */
-    private boolean isRecord;
-
-    /**
-     * This annotation has the {@link Inherited} meta-annotation, which means that any class that this annotation is
-     * applied to also implicitly causes the annotation to annotate all subclasses too.
-     */
-    boolean isInherited;
-
-    /** The minor version of the classfile format for this class' classfile. */
-    private int classfileMinorVersion;
-
-    /** The major version of the classfile format for this class' classfile. */
-    private int classfileMajorVersion;
-
-    /** The class type signature string. */
+    /** 类类型签名字符串。 */
     protected String typeSignatureStr;
-
-    /** The class type signature, parsed. */
-    private transient ClassTypeSignature typeSignature;
-
-    /** The synthetic class type descriptor. */
-    private transient ClassTypeSignature typeDescriptor;
-
-    /** The name of the source file this class has been compiled from */
-    private String sourceFile;
-
-    /** The fully-qualified defining method name, for anonymous inner classes. */
-    private String fullyQualifiedDefiningMethodName;
-
     /**
-     * If true, this class is only being referenced by another class' classfile as a superclass / implemented
-     * interface / annotation, but this class is not itself an accepted (non-rejected) class, or in a accepted
-     * (non-rejected) package.
-     * 
-     * If false, this classfile was matched during scanning (i.e. its classfile contents read), i.e. this class is a
-     * accepted (and non-rejected) class in an accepted (and non-rejected) package.
+     * 如果为 true，则该类仅作为超类 / 已实现接口 / 注解被其他类的 class 文件引用，
+     * 但该类本身不是已接受（未被拒绝）的类，也不在已接受（未被拒绝）的包中。
+     *
+     * 如果为 false，则该 class 文件在扫描过程中已匹配（即已读取其 class 文件内容），
+     * 即该类是已接受（且未被拒绝）的包中的已接受（且未被拒绝）的类。
      */
     protected boolean isExternalClass = true;
-
     /**
-     * Set to true when the class is actually scanned (as opposed to just referenced as a superclass, interface or
-     * annotation of a scanned class).
+     * 当类实际被扫描到时设置为 true（与仅仅作为超类、接口或注解被引用的类相区别）。
      */
     protected boolean isScannedClass;
-
-    /** The classpath element that this class was found within. */
-    transient ClasspathElement classpathElement;
-
-    /** The {@link Resource} for the classfile of this class. */
+    /** 该类 class 文件对应的 {@link Resource}。 */
     protected transient Resource classfileResource;
-
-    /** The classloader this class was obtained from. */
+    /**
+     * 此注解具有 {@link Inherited} 元注解，这意味着任何被该注解标注的类，
+     * 也会隐式地将该注解应用于所有子类。
+     */
+    boolean isInherited;
+    /** 发现该类的类路径元素。 */
+    transient ClasspathElement classpathElement;
+    /** 获取该类的类加载器。 */
     transient ClassLoader classLoader;
-
-    /** Info on the class module. */
+    /** 类模块的信息。 */
     ModuleInfo moduleInfo;
-
-    /** Info on the package containing the class. */
+    /** 包含该类的包的信息。 */
     PackageInfo packageInfo;
-
-    /** Info on class annotations, including optional annotation param values. */
+    /** 类注解信息，包括可选的注解参数值。 */
     AnnotationInfoList annotationInfo;
-
-    /** Info on fields. */
+    /** 字段信息。 */
     FieldInfoList fieldInfo;
-
-    /** Info on fields. */
+    /** 字段信息。 */
     MethodInfoList methodInfo;
-
-    /** For annotations, the default values of parameters. */
+    /** 对于注解类，参数的默认值。 */
     AnnotationParameterValueList annotationDefaultParamValues;
-
-    /** The type annotation decorators for the {@link ClassTypeSignature} instance. */
+    /** {@link ClassTypeSignature} 实例的类型注解装饰器。 */
     transient List<ClassTypeAnnotationDecorator> typeAnnotationDecorators;
-
     /**
-     * Names of classes referenced by this class in class refs and type signatures in the constant pool of the
-     * classfile.
-     */
-    private Set<String> referencedClassNames;
-
-    /**
-     * A list of ClassInfo objects for classes referenced by this class. Derived from {@link #referencedClassNames}
-     * when the relevant {@link ClassInfo} objects are created.
-     */
-    private ClassInfoList referencedClasses;
-
-    /**
-     * Set to true once any Object[] arrays of boxed types in annotationDefaultParamValues have been lazily
-     * converted to primitive arrays.
+     * 当 annotationDefaultParamValues 中的任何 Object[] 装箱类型数组已被延迟转换为原始数组时设置为 true。
      */
     transient boolean annotationDefaultParamValuesHasBeenConvertedToPrimitive;
-
-    /** The set of classes related to this one. */
-    private Map<RelType, Set<ClassInfo>> relatedClasses;
-
+    /** 类修饰符标志，例如 Modifier.PUBLIC */
+    private int modifiers;
+    /** 如果该类是记录类则为 true。 */
+    private boolean isRecord;
+    /** 该类 class 文件的 class 文件格式次版本号。 */
+    private int classfileMinorVersion;
+    /** 该类 class 文件的 class 文件格式主版本号。 */
+    private int classfileMajorVersion;
+    /** 已解析的类类型签名。 */
+    private transient ClassTypeSignature typeSignature;
+    /** 合成的类类型描述符。 */
+    private transient ClassTypeSignature typeDescriptor;
+    /** 编译该类的源文件名 */
+    private String sourceFile;
+    /** 匿名内部类的完全限定定义方法名。 */
+    private String fullyQualifiedDefiningMethodName;
     /**
-     * The override order for a class' fields or methods (base class, followed by interfaces, followed by
-     * superclasses).
+     * 该类在 class 文件常量池中的类引用和类型签名中所引用的类名称。
+     */
+    private Set<String> referencedClassNames;
+    /**
+     * 该类所引用的类的 ClassInfo 对象列表。由 {@link #referencedClassNames} 在相关
+     * {@link ClassInfo} 对象创建时派生而来。
+     */
+    private ClassInfoList referencedClasses;
+    /** 与该类相关联的类集合。 */
+    private Map<RelType, Set<ClassInfo>> relatedClasses;
+    /**
+     * 类字段或方法的覆盖顺序（基类优先，然后是接口，然后是超类）。
      */
     private transient List<ClassInfo> overrideOrder;
-
     /**
-     * The override order for a class' methods (base class, followed by superclasses, followed by interfaces).
+     * 类方法的覆盖顺序（基类优先，然后是超类，然后是接口）。
      */
     private transient List<ClassInfo> methodOverrideOrder;
 
-    /** The annotations, once they are loaded */
+    // -------------------------------------------------------------------------------------------------------------
+    /** 注解列表，加载后的缓存 */
     private ClassInfoList annotationsRef;
-
-    /** The annotation infos, once they are loaded */
+    /** 注解信息列表，加载后的缓存 */
     private AnnotationInfoList annotationInfoRef;
 
     // -------------------------------------------------------------------------------------------------------------
+    /** 完整路径（用于 ClassGraphWorkspaceAdapter 简化扫描）。 */
+    private String fullPath;
 
-    /** The modifier bit for annotations. */
-    private static final int ANNOTATION_CLASS_MODIFIER = 0x2000;
-
-    /** The constant empty return value used when no classes are reachable. */
-    private static final ReachableAndDirectlyRelatedClasses NO_REACHABLE_CLASSES = //
-            new ReachableAndDirectlyRelatedClasses(Collections.<ClassInfo> emptySet(),
-                    Collections.<ClassInfo> emptySet());
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** Default constructor for deserialization. */
+    /** 反序列化用的默认构造函数。 */
     ClassInfo() {
         super();
     }
 
     /**
-     * Constructor.
+     * 为 ClassGraphWorkspaceAdapter 提供的简化构造函数。
      *
      * @param name
-     *            the name
+     *            类名（内部形式，例如 "java/lang/String"）
      * @param classModifiers
-     *            the class modifiers
+     *            类修饰符
+     */
+    public ClassInfo(final String name, final int classModifiers) {
+        super();
+        this.name = name;
+        if (name.endsWith(";")) {
+            throw new IllegalArgumentException("Bad class name");
+        }
+        setModifiers(classModifiers);
+        this.relatedClasses = new EnumMap<>(RelType.class);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 构造函数。
+     *
+     * @param name
+     *            名称
+     * @param classModifiers
+     *            类修饰符
      * @param classfileResource
-     *            the classfile resource
+     *            类文件资源
      */
     @SuppressWarnings("null")
     protected ClassInfo(final String name, final int classModifiers, final Resource classfileResource) {
         super();
         this.name = name;
         if (name.endsWith(";")) {
-            // Spot check to make sure class names were parsed from descriptors
+            // 抽查以确保类名是从描述符中正确解析的
             throw new IllegalArgumentException("Bad class name");
         }
         setModifiers(classModifiers);
@@ -216,144 +201,26 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         this.relatedClasses = new EnumMap<>(RelType.class);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** How classes are related. */
-    enum RelType {
-
-        // Classes:
-
-        /**
-         * Superclasses of this class, if this is a regular class.
-         *
-         * <p>
-         * (Should consist of only one entry, or null if superclass is java.lang.Object or unknown).
-         */
-        SUPERCLASSES,
-
-        /** Subclasses of this class, if this is a regular class. */
-        SUBCLASSES,
-
-        /** Indicates that an inner class is contained within this one. */
-        CONTAINS_INNER_CLASS,
-
-        /** Indicates that an outer class contains this one. (Should only have zero or one entries.) */
-        CONTAINED_WITHIN_OUTER_CLASS,
-
-        // Interfaces:
-
-        /**
-         * Interfaces that this class implements, if this is a regular class, or superinterfaces, if this is an
-         * interface.
-         *
-         * <p>
-         * (May also include annotations, since annotations are interfaces, so you can implement an annotation.)
-         */
-        IMPLEMENTED_INTERFACES,
-
-        /**
-         * Classes that implement this interface (including sub-interfaces), if this is an interface.
-         */
-        CLASSES_IMPLEMENTING,
-
-        // Class annotations:
-
-        /**
-         * Annotations on this class, if this is a regular class, or meta-annotations on this annotation, if this is
-         * an annotation.
-         */
-        CLASS_ANNOTATIONS,
-
-        /** Classes annotated with this annotation, if this is an annotation. */
-        CLASSES_WITH_ANNOTATION,
-
-        // Method annotations:
-
-        /** Annotations on one or more methods of this class. */
-        METHOD_ANNOTATIONS,
-
-        /**
-         * Classes that have one or more methods annotated with this annotation, if this is an annotation.
-         */
-        CLASSES_WITH_METHOD_ANNOTATION,
-
-        /**
-         * Classes that have one or more non-private (inherited) methods annotated with this annotation, if this is
-         * an annotation.
-         */
-        CLASSES_WITH_NONPRIVATE_METHOD_ANNOTATION,
-
-        /** Annotations on one or more parameters of methods of this class. */
-        METHOD_PARAMETER_ANNOTATIONS,
-
-        /**
-         * Classes that have one or more methods that have one or more parameters annotated with this annotation, if
-         * this is an annotation.
-         */
-        CLASSES_WITH_METHOD_PARAMETER_ANNOTATION,
-
-        /**
-         * Classes that have one or more non-private (inherited) methods that have one or more parameters annotated
-         * with this annotation, if this is an annotation.
-         */
-        CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION,
-
-        // Field annotations:
-
-        /** Annotations on one or more fields of this class. */
-        FIELD_ANNOTATIONS,
-
-        /**
-         * Classes that have one or more fields annotated with this annotation, if this is an annotation.
-         */
-        CLASSES_WITH_FIELD_ANNOTATION,
-
-        /**
-         * Classes that have one or more non-private (inherited) fields annotated with this annotation, if this is
-         * an annotation.
-         */
-        CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION,
-    }
-
     /**
-     * Add a class with a given relationship type. Return whether the collection changed as a result of the call.
-     *
-     * @param relType
-     *            the {@link RelType}
-     * @param classInfo
-     *            the {@link ClassInfo}
-     * @return true, if successful
-     */
-    boolean addRelatedClass(final RelType relType, final ClassInfo classInfo) {
-        Set<ClassInfo> classInfoSet = relatedClasses.get(relType);
-        if (classInfoSet == null) {
-            relatedClasses.put(relType, classInfoSet = new LinkedHashSet<>(4));
-        }
-        return classInfoSet.add(classInfo);
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Get a ClassInfo object, or create it if it doesn't exist. N.B. not threadsafe, so ClassInfo objects should
-     * only ever be constructed by a single thread.
+     * 获取 ClassInfo 对象，如果不存在则创建。注意：非线程安全，因此 ClassInfo 对象
+     * 应该仅由单个线程构造。
      *
      * @param className
-     *            the class name
+     *            类名
      * @param classNameToClassInfo
-     *            the map from class name to class info
-     * @return the {@link ClassInfo} object.
+     *            从类名到 ClassInfo 的映射
+     * @return {@link ClassInfo} 对象。
      */
     static ClassInfo getOrCreateClassInfo(final String className,
-            final Map<String, ClassInfo> classNameToClassInfo) {
-        // Look for array class names
+                                          final Map<String, ClassInfo> classNameToClassInfo) {
+        // 查找数组类名
         int numArrayDims = 0;
         String baseClassName = className;
         while (baseClassName.endsWith("[]")) {
             numArrayDims++;
             baseClassName = baseClassName.substring(0, baseClassName.length() - 2);
         }
-        // Be resilient to the use of class descriptors rather than class names (should not be needed)
+        // 容忍使用类描述符而非类名的情况（本不应需要）
         while (baseClassName.startsWith("[")) {
             numArrayDims++;
             baseClassName = baseClassName.substring(1);
@@ -375,16 +242,16 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 TypeSignature elementTypeSignature;
                 final char baseTypeChar = BaseTypeSignature.getTypeChar(baseClassName);
                 if (baseTypeChar != '\0') {
-                    // Element type is a base (primitive) type
+                    // 元素类型是基本（原始）类型
                     arrayTypeSigStrBuf.append(baseTypeChar);
                     elementTypeSignature = new BaseTypeSignature(baseTypeChar);
                 } else {
-                    // Element type is not a base (primitive) type -- create a type signature for element type
+                    // 元素类型不是基本（原始）类型——为元素类型创建类型签名
                     final String eltTypeSigStr = "L" + baseClassName.replace('.', '/') + ";";
                     arrayTypeSigStrBuf.append(eltTypeSigStr);
                     try {
                         elementTypeSignature = ClassRefTypeSignature.parse(new Parser(eltTypeSigStr),
-                                // No type variables to resolve for generic types
+                                // 泛型类型无需解析类型变量
                                 /* definingClassName = */ null);
                         if (elementTypeSignature == null) {
                             throw new IllegalArgumentException(
@@ -403,131 +270,18 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         return classInfo;
     }
 
-    /**
-     * Set classfile version.
-     * 
-     * @param minorVersion
-     *            the minor version of the classfile format for this class' classfile.
-     * @param majorVersion
-     *            the major version of the classfile format for this class' classfile.
-     */
-    void setClassfileVersion(final int minorVersion, final int majorVersion) {
-        this.classfileMinorVersion = minorVersion;
-        this.classfileMajorVersion = majorVersion;
-    }
-
-    /**
-     * Set class modifiers.
-     *
-     * @param modifiers
-     *            the class modifiers
-     */
-    void setModifiers(final int modifiers) {
-        this.modifiers |= modifiers;
-    }
-
-    /**
-     * Set isInterface status.
-     *
-     * @param isInterface
-     *            true if this is an interface
-     */
-    void setIsInterface(final boolean isInterface) {
-        if (isInterface) {
-            this.modifiers |= Modifier.INTERFACE;
-        }
-    }
-
-    /**
-     * Set isAnnotation status.
-     *
-     * @param isAnnotation
-     *            true if this is an annotation
-     */
-    void setIsAnnotation(final boolean isAnnotation) {
-        if (isAnnotation) {
-            this.modifiers |= ANNOTATION_CLASS_MODIFIER;
-        }
-    }
-
-    /**
-     * Set isRecord status.
-     *
-     * @param isRecord
-     *            true if this is a record
-     */
-    void setIsRecord(final boolean isRecord) {
-        if (isRecord) {
-            this.isRecord = isRecord;
-        }
-    }
-
-    /**
-     * Set source file.
-     *
-     * @param sourceFile
-     *            the source file
-     */
-    void setSourceFile(final String sourceFile) {
-        this.sourceFile = sourceFile;
-    }
-
-    /**
-     * Add {@link ClassTypeAnnotationDecorator} instances.
-     * 
-     * @param classTypeAnnotationDecorators
-     *            {@link ClassTypeAnnotationDecorator} instances.
-     */
-    void addTypeDecorators(final List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators) {
-        if (typeAnnotationDecorators == null) {
-            typeAnnotationDecorators = new ArrayList<>();
-        }
-        typeAnnotationDecorators.addAll(classTypeAnnotationDecorators);
-    }
-
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Add a superclass to this class.
-     *
-     * @param superclassName
-     *            the superclass name
-     * @param classNameToClassInfo
-     *            the map from class name to class info
-     */
-    void addSuperclass(final String superclassName, final Map<String, ClassInfo> classNameToClassInfo) {
-        if (superclassName != null && !superclassName.equals("java.lang.Object")) {
-            final ClassInfo superclassClassInfo = getOrCreateClassInfo(superclassName, classNameToClassInfo);
-            this.addRelatedClass(RelType.SUPERCLASSES, superclassClassInfo);
-            superclassClassInfo.addRelatedClass(RelType.SUBCLASSES, this);
-        }
-    }
-
-    /**
-     * Add an implemented interface to this class.
-     *
-     * @param interfaceName
-     *            the interface name
-     * @param classNameToClassInfo
-     *            the map from class name to class info
-     */
-    void addImplementedInterface(final String interfaceName, final Map<String, ClassInfo> classNameToClassInfo) {
-        final ClassInfo interfaceClassInfo = getOrCreateClassInfo(interfaceName, classNameToClassInfo);
-        interfaceClassInfo.setIsInterface(true);
-        this.addRelatedClass(RelType.IMPLEMENTED_INTERFACES, interfaceClassInfo);
-        interfaceClassInfo.addRelatedClass(RelType.CLASSES_IMPLEMENTING, this);
-    }
-
-    /**
-     * Add class containment info.
+     * 添加类包含关系信息。
      *
      * @param classContainmentEntries
-     *            the class containment entries
+     *            类包含条目列表
      * @param classNameToClassInfo
-     *            the map from class name to class info
+     *            从类名到 ClassInfo 的映射
      */
     static void addClassContainment(final List<ClassContainment> classContainmentEntries,
-            final Map<String, ClassInfo> classNameToClassInfo) {
+                                    final Map<String, ClassInfo> classNameToClassInfo) {
         for (final ClassContainment classContainment : classContainmentEntries) {
             final ClassInfo innerClassInfo = ClassInfo.getOrCreateClassInfo(classContainment.innerClassName,
                     classNameToClassInfo);
@@ -540,25 +294,393 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Add containing method name, for anonymous inner classes.
+     * 添加一个刚刚被扫描到的类（与仅仅被已扫描类引用的类相区别）。非线程安全，
+     * 应在单线程上下文中运行。
+     *
+     * @param className
+     *            类名
+     * @param classModifiers
+     *            类修饰符
+     * @param isExternalClass
+     *            如果是外部类则为 true
+     * @param classNameToClassInfo
+     *            从类名到 ClassInfo 的映射
+     * @param classpathElement
+     *            类路径元素
+     * @param classfileResource
+     *            类文件资源
+     * @return ClassInfo 对象
+     */
+    static ClassInfo addScannedClass(final String className, final int classModifiers,
+                                     final boolean isExternalClass, final Map<String, ClassInfo> classNameToClassInfo,
+                                     final ClasspathElement classpathElement, final Resource classfileResource) {
+        ClassInfo classInfo = classNameToClassInfo.get(className);
+        if (classInfo == null) {
+            // 这是第一次遇到该类，添加它
+            classNameToClassInfo.put(className,
+                    classInfo = new ClassInfo(className, classModifiers, classfileResource));
+        } else {
+            // 之前已存在一个占位 ClassInfo 对象，因为该类被作为超类、接口或注解引用。
+            // 在这种情况下 isScannedClass 字段应为 false，因为在此之前尚未遇到实际的类定义。
+            if (classInfo.isScannedClass) {
+                // 由于类路径屏蔽机制，该类不应被多次扫描
+                throw new IllegalArgumentException("Class " + className
+                        + " should not have been encountered more than once due to classpath masking --"
+                        + " please report this bug at: https://github.com/classgraph/classgraph/issues");
+            }
+
+            // 为占位类设置 classfileResource
+            classInfo.classfileResource = classfileResource;
+
+            // 添加任何额外的修饰符位
+            classInfo.modifiers |= classModifiers;
+        }
+
+        // 将类标记为已扫描
+        classInfo.isScannedClass = true;
+
+        // 如果该类是已接受的类，则将其标记为非外部类
+        classInfo.isExternalClass = isExternalClass;
+
+        // 记住该类是在哪个类路径元素（zip 文件 / 类路径根目录 / 模块）中发现的
+        classInfo.classpathElement = classpathElement;
+
+        // 记住用于加载该类的类加载器
+        classInfo.classLoader = classpathElement.getClassLoader();
+
+        return classInfo;
+    }
+
+    /**
+     * 根据扫描规范和类类型过滤类。
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @param strictAccept
+     *            如果为 true，则当外部类未启用时排除外部类
+     * @param classTypes
+     *            类类型数组
+     * @return 过滤后的类集合。
+     */
+    private static Set<ClassInfo> filterClassInfo(final Collection<ClassInfo> classes, final ScanSpec scanSpec,
+                                                  final boolean strictAccept, final ClassType... classTypes) {
+        if (classes == null) {
+            return Collections.emptySet();
+        }
+        boolean includeAllTypes = classTypes.length == 0;
+        boolean includeStandardClasses = false;
+        boolean includeImplementedInterfaces = false;
+        boolean includeAnnotations = false;
+        boolean includeEnums = false;
+        boolean includeRecords = false;
+        for (final ClassType classType : classTypes) {
+            switch (classType) {
+                case ALL:
+                    includeAllTypes = true;
+                    break;
+                case STANDARD_CLASS:
+                    includeStandardClasses = true;
+                    break;
+                case IMPLEMENTED_INTERFACE:
+                    includeImplementedInterfaces = true;
+                    break;
+                case ANNOTATION:
+                    includeAnnotations = true;
+                    break;
+                case INTERFACE_OR_ANNOTATION:
+                    includeImplementedInterfaces = includeAnnotations = true;
+                    break;
+                case ENUM:
+                    includeEnums = true;
+                    break;
+                case RECORD:
+                    includeRecords = true;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown ClassType: " + classType);
+            }
+        }
+        if (includeStandardClasses && includeImplementedInterfaces && includeAnnotations) {
+            includeAllTypes = true;
+        }
+        final Set<ClassInfo> classInfoSetFiltered = new LinkedHashSet<>(classes.size());
+        for (final ClassInfo classInfo : classes) {
+            // 根据请求的类型检查类类型
+            final boolean includeType = includeAllTypes //
+                    || includeStandardClasses && classInfo.isStandardClass() //
+                    || includeImplementedInterfaces && classInfo.isImplementedInterface() //
+                    || includeAnnotations && classInfo.isAnnotation() //
+                    || includeEnums && classInfo.isEnum() //
+                    || includeRecords && classInfo.isRecord();
+            // 如果查看类层次结构"向上"，则返回外部（非接受的）类
+            final boolean acceptClass = !classInfo.isExternalClass || scanSpec.enableExternalClasses
+                    || !strictAccept;
+            // 如果类是正确的类型，且类被接受，且类/包未被显式拒绝
+            if (includeType && acceptClass && !scanSpec.classOrPackageIsRejected(classInfo.name)) {
+                // 类通过了接受条件
+                classInfoSetFiltered.add(classInfo);
+            }
+        }
+        return classInfoSetFiltered;
+    }
+
+    /**
+     * 获取扫描过程中发现的所有类。
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @return 扫描过程中发现的所有类的列表，如果没有则返回空列表。
+     */
+    static ClassInfoList getAllClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+        return new ClassInfoList(
+                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ALL),
+                /* sortByName = */ true);
+    }
+
+    /**
+     * 获取扫描过程中发现的所有 {@link Enum} 枚举类。
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @return 扫描过程中发现的所有 {@link Enum} 枚举类的列表，如果没有则返回空列表。
+     */
+    static ClassInfoList getAllEnums(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+        return new ClassInfoList(
+                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ENUM),
+                /* sortByName = */ true);
+    }
+
+    /**
+     * 获取扫描过程中发现的所有 {@code record} 记录类。
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @return 扫描过程中发现的所有 {@code record} 记录类的列表，如果没有则返回空列表。
+     */
+    static ClassInfoList getAllRecords(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+        return new ClassInfoList(
+                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.RECORD),
+                /* sortByName = */ true);
+    }
+
+    /**
+     * 获取扫描过程中发现的所有标准类。
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @return 扫描过程中发现的所有标准类的列表，如果没有则返回空列表。
+     */
+    static ClassInfoList getAllStandardClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+        return new ClassInfoList(
+                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.STANDARD_CLASS),
+                /* sortByName = */ true);
+    }
+
+    /**
+     * 获取扫描过程中发现的所有已实现接口（非注解接口）类。
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @return 扫描过程中发现的所有注解类的列表，如果没有则返回空列表。
+     */
+    static ClassInfoList getAllImplementedInterfaceClasses(final Collection<ClassInfo> classes,
+                                                           final ScanSpec scanSpec) {
+        return new ClassInfoList(ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true,
+                ClassType.IMPLEMENTED_INTERFACE), /* sortByName = */ true);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 获取扫描过程中发现的所有注解类。另请参见
+     * {@link #getAllInterfacesOrAnnotationClasses(Collection, ScanSpec, ScanResult)}。
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @return 扫描过程中发现的所有注解类的列表，如果没有则返回空列表。
+     */
+    static ClassInfoList getAllAnnotationClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+        return new ClassInfoList(
+                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ANNOTATION),
+                /* sortByName = */ true);
+    }
+
+    /**
+     * 获取扫描过程中发现的所有接口或注解类。（注解在技术上是接口，并且可以被实现。）
+     *
+     * @param classes
+     *            类集合
+     * @param scanSpec
+     *            扫描规范
+     * @return 扫描过程中发现的所有已接受接口的列表，如果没有则返回空列表。
+     */
+    static ClassInfoList getAllInterfacesOrAnnotationClasses(final Collection<ClassInfo> classes,
+                                                             final ScanSpec scanSpec) {
+        return new ClassInfoList(ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true,
+                ClassType.INTERFACE_OR_ANNOTATION), /* sortByName = */ true);
+    }
+
+    /**
+     * 从完全限定类名获取简单名称。返回类名中最后一个 '.' 或最后一个 '$' 之后的部分，
+     * 如果类在根包中则返回整个字符串。（注意：这与 {@link Class#getSimpleName()} 的结果不同，
+     * 后者对于匿名类返回 ""。）
+     *
+     * @param className
+     *            类名
+     * @return 类的简单名称。
+     */
+    static String getSimpleName(final String className) {
+        return className.substring(Math.max(className.lastIndexOf('.'), className.lastIndexOf('$')) + 1);
+    }
+
+    /**
+     * 添加具有给定关系类型的类。返回调用是否导致集合发生变化。
+     *
+     * @param relType
+     *            {@link RelType} 关系类型
+     * @param classInfo
+     *            {@link ClassInfo} 对象
+     * @return 如果成功添加则返回 true。
+     */
+    boolean addRelatedClass(final RelType relType, final ClassInfo classInfo) {
+        Set<ClassInfo> classInfoSet = relatedClasses.get(relType);
+        if (classInfoSet == null) {
+            relatedClasses.put(relType, classInfoSet = new LinkedHashSet<>(4));
+        }
+        return classInfoSet.add(classInfo);
+    }
+
+    /**
+     * 设置 class 文件版本。
+     *
+     * @param minorVersion
+     *            该类 class 文件的 class 文件格式次版本号。
+     * @param majorVersion
+     *            该类 class 文件的 class 文件格式主版本号。
+     */
+    void setClassfileVersion(final int minorVersion, final int majorVersion) {
+        this.classfileMinorVersion = minorVersion;
+        this.classfileMajorVersion = majorVersion;
+    }
+
+    /**
+     * 设置 isInterface 接口状态。
+     *
+     * @param isInterface
+     *            如果为 true 则表示这是接口
+     */
+    void setIsInterface(final boolean isInterface) {
+        if (isInterface) {
+            this.modifiers |= Modifier.INTERFACE;
+        }
+    }
+
+    /**
+     * 设置 isAnnotation 注解状态。
+     *
+     * @param isAnnotation
+     *            如果为 true 则表示这是注解
+     */
+    void setIsAnnotation(final boolean isAnnotation) {
+        if (isAnnotation) {
+            this.modifiers |= ANNOTATION_CLASS_MODIFIER;
+        }
+    }
+
+    /**
+     * 设置 isRecord 记录状态。
+     *
+     * @param isRecord
+     *            如果为 true 则表示这是记录类
+     */
+    void setIsRecord(final boolean isRecord) {
+        if (isRecord) {
+            this.isRecord = isRecord;
+        }
+    }
+
+    /**
+     * 添加 {@link ClassTypeAnnotationDecorator} 实例。
+     *
+     * @param classTypeAnnotationDecorators
+     *            {@link ClassTypeAnnotationDecorator} 实例列表。
+     */
+    void addTypeDecorators(final List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators) {
+        if (typeAnnotationDecorators == null) {
+            typeAnnotationDecorators = new ArrayList<>();
+        }
+        typeAnnotationDecorators.addAll(classTypeAnnotationDecorators);
+    }
+
+    /**
+     * 向该类添加超类。
+     *
+     * @param superclassName
+     *            超类名
+     * @param classNameToClassInfo
+     *            从类名到 ClassInfo 的映射
+     */
+    void addSuperclass(final String superclassName, final Map<String, ClassInfo> classNameToClassInfo) {
+        if (superclassName != null && !"java.lang.Object".equals(superclassName)) {
+            final ClassInfo superclassClassInfo = getOrCreateClassInfo(superclassName, classNameToClassInfo);
+            this.addRelatedClass(RelType.SUPERCLASSES, superclassClassInfo);
+            superclassClassInfo.addRelatedClass(RelType.SUBCLASSES, this);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 向该类添加已实现的接口。
+     *
+     * @param interfaceName
+     *            接口名
+     * @param classNameToClassInfo
+     *            从类名到 ClassInfo 的映射
+     */
+    void addImplementedInterface(final String interfaceName, final Map<String, ClassInfo> classNameToClassInfo) {
+        final ClassInfo interfaceClassInfo = getOrCreateClassInfo(interfaceName, classNameToClassInfo);
+        interfaceClassInfo.setIsInterface(true);
+        this.addRelatedClass(RelType.IMPLEMENTED_INTERFACES, interfaceClassInfo);
+        interfaceClassInfo.addRelatedClass(RelType.CLASSES_IMPLEMENTING, this);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 添加包含方法名，用于匿名内部类。
      *
      * @param fullyQualifiedDefiningMethodName
-     *            the fully qualified defining method name
+     *            完全限定定义方法名
      */
     void addFullyQualifiedDefiningMethodName(final String fullyQualifiedDefiningMethodName) {
         this.fullyQualifiedDefiningMethodName = fullyQualifiedDefiningMethodName;
     }
 
     /**
-     * Add an annotation to this class.
+     * 向该类添加注解。
      *
      * @param classAnnotationInfo
-     *            the class annotation info
+     *            类注解信息
      * @param classNameToClassInfo
-     *            the map from class name to class info
+     *            从类名到 ClassInfo 的映射
      */
     void addClassAnnotation(final AnnotationInfo classAnnotationInfo,
-            final Map<String, ClassInfo> classNameToClassInfo) {
+                            final Map<String, ClassInfo> classNameToClassInfo) {
         final ClassInfo annotationClassInfo = getOrCreateClassInfo(classAnnotationInfo.getName(),
                 classNameToClassInfo);
         annotationClassInfo.setModifiers(ANNOTATION_CLASS_MODIFIER);
@@ -570,38 +692,38 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         this.addRelatedClass(RelType.CLASS_ANNOTATIONS, annotationClassInfo);
         annotationClassInfo.addRelatedClass(RelType.CLASSES_WITH_ANNOTATION, this);
 
-        // Record use of @Inherited meta-annotation
+        // 记录 @Inherited 元注解的使用
         if (classAnnotationInfo.getName().equals(Inherited.class.getName())) {
             isInherited = true;
         }
     }
 
     /**
-     * Add field or method annotation cross-links.
+     * 添加字段或方法注解的交叉链接。
      *
      * @param annotationInfoList
-     *            the annotation info list
+     *            注解信息列表
      * @param isField
-     *            the is field
+     *            是否为字段
      * @param modifiers
-     *            the field or method modifiers
+     *            字段或方法修饰符
      * @param classNameToClassInfo
-     *            the map from class name to class info
+     *            从类名到 ClassInfo 的映射
      */
     private void addFieldOrMethodAnnotationInfo(final AnnotationInfoList annotationInfoList, final boolean isField,
-            final int modifiers, final Map<String, ClassInfo> classNameToClassInfo) {
+                                                final int modifiers, final Map<String, ClassInfo> classNameToClassInfo) {
         if (annotationInfoList != null) {
             for (final AnnotationInfo fieldAnnotationInfo : annotationInfoList) {
                 final ClassInfo annotationClassInfo = getOrCreateClassInfo(fieldAnnotationInfo.getName(),
                         classNameToClassInfo);
                 annotationClassInfo.setModifiers(ANNOTATION_CLASS_MODIFIER);
-                // Mark this class as having a field or method with this annotation
+                // 将此类标记为具有带有此注解的字段或方法
                 this.addRelatedClass(isField ? RelType.FIELD_ANNOTATIONS : RelType.METHOD_ANNOTATIONS,
                         annotationClassInfo);
                 annotationClassInfo.addRelatedClass(
                         isField ? RelType.CLASSES_WITH_FIELD_ANNOTATION : RelType.CLASSES_WITH_METHOD_ANNOTATION,
                         this);
-                // For non-private methods/fields, also add to nonprivate (inherited) mapping
+                // 对于非私有方法/字段，也添加到非私有（可继承）映射中
                 if (!Modifier.isPrivate(modifiers)) {
                     annotationClassInfo.addRelatedClass(isField ? RelType.CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION
                             : RelType.CLASSES_WITH_NONPRIVATE_METHOD_ANNOTATION, this);
@@ -611,16 +733,16 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Add field info.
+     * 添加字段信息。
      *
      * @param fieldInfoList
-     *            the field info list
+     *            字段信息列表
      * @param classNameToClassInfo
-     *            the map from class name to class info
+     *            从类名到 ClassInfo 的映射
      */
     void addFieldInfo(final FieldInfoList fieldInfoList, final Map<String, ClassInfo> classNameToClassInfo) {
         for (final FieldInfo fi : fieldInfoList) {
-            // Index field annotations
+            // 索引字段注解
             addFieldOrMethodAnnotationInfo(fi.annotationInfo, /* isField = */ true, fi.getModifiers(),
                     classNameToClassInfo);
         }
@@ -631,21 +753,23 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Add method info.
+     * 添加方法信息。
      *
      * @param methodInfoList
-     *            the method info list
+     *            方法信息列表
      * @param classNameToClassInfo
-     *            the map from class name to class info
+     *            从类名到 ClassInfo 的映射
      */
     void addMethodInfo(final MethodInfoList methodInfoList, final Map<String, ClassInfo> classNameToClassInfo) {
         for (final MethodInfo mi : methodInfoList) {
-            // Index method annotations
+            // 索引方法注解
             addFieldOrMethodAnnotationInfo(mi.annotationInfo, /* isField = */ false, mi.getModifiers(),
                     classNameToClassInfo);
 
-            // Index method parameter annotations
+            // 索引方法参数注解
             if (mi.parameterAnnotationInfo != null) {
                 for (int i = 0; i < mi.parameterAnnotationInfo.length; i++) {
                     final AnnotationInfo[] paramAnnotationInfoArr = mi.parameterAnnotationInfo[i];
@@ -657,7 +781,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                             this.addRelatedClass(RelType.METHOD_PARAMETER_ANNOTATIONS, annotationClassInfo);
                             annotationClassInfo.addRelatedClass(RelType.CLASSES_WITH_METHOD_PARAMETER_ANNOTATION,
                                     this);
-                            // For non-private methods/fields, also add to nonprivate (inherited) mapping
+                            // 对于非私有方法/字段，也添加到非私有（可继承）映射中
                             if (!Modifier.isPrivate(mi.getModifiers())) {
                                 annotationClassInfo.addRelatedClass(
                                         RelType.CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION, this);
@@ -675,21 +799,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Set the class type signature, including any type params.
-     *
-     * @param typeSignatureStr
-     *            the type signature str
-     */
-    void setTypeSignature(final String typeSignatureStr) {
-        this.typeSignatureStr = typeSignatureStr;
-    }
-
-    /**
-     * Add annotation default values. (Only called in the case of annotation class definitions, when the annotation
-     * has default parameter values.)
+     * 添加注解默认值。（仅在注解类定义时调用，当注解具有默认参数值时。）
      *
      * @param paramNamesAndValues
-     *            the default param names and values, if this is an annotation
+     *            默认参数名和值，如果这是注解的话
      */
     void addAnnotationParamDefaultValues(final AnnotationParameterValueList paramNamesAndValues) {
         setIsAnnotation(true);
@@ -700,217 +813,30 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Add a class that has just been scanned (as opposed to just referenced by a scanned class). Not threadsafe,
-     * should be run in single threaded context.
-     *
-     * @param className
-     *            the class name
-     * @param classModifiers
-     *            the class modifiers
-     * @param isExternalClass
-     *            true if this is an external class
-     * @param classNameToClassInfo
-     *            the map from class name to class info
-     * @param classpathElement
-     *            the classpath element
-     * @param classfileResource
-     *            the classfile resource
-     * @return the class info
-     */
-    static ClassInfo addScannedClass(final String className, final int classModifiers,
-            final boolean isExternalClass, final Map<String, ClassInfo> classNameToClassInfo,
-            final ClasspathElement classpathElement, final Resource classfileResource) {
-        ClassInfo classInfo = classNameToClassInfo.get(className);
-        if (classInfo == null) {
-            // This is the first time this class has been seen, add it
-            classNameToClassInfo.put(className,
-                    classInfo = new ClassInfo(className, classModifiers, classfileResource));
-        } else {
-            // There was a previous placeholder ClassInfo class added, due to the class being referred
-            // to as a superclass, interface or annotation. The isScannedClass field should be false
-            // in this case, since the actual class definition wasn't reached before now.
-            if (classInfo.isScannedClass) {
-                // The class should not have been scanned more than once, because of classpath masking
-                throw new IllegalArgumentException("Class " + className
-                        + " should not have been encountered more than once due to classpath masking --"
-                        + " please report this bug at: https://github.com/classgraph/classgraph/issues");
-            }
-
-            // Set the classfileResource for the placeholder class
-            classInfo.classfileResource = classfileResource;
-
-            // Add any additional modifier bits
-            classInfo.modifiers |= classModifiers;
-        }
-
-        // Mark the class as scanned
-        classInfo.isScannedClass = true;
-
-        // Mark the class as non-external if it is an accepted class
-        classInfo.isExternalClass = isExternalClass;
-
-        // Remember which classpath element (zipfile / classpath root directory / module) the class was found in
-        classInfo.classpathElement = classpathElement;
-
-        // Remember which classloader is used to load the class
-        classInfo.classLoader = classpathElement.getClassLoader();
-
-        return classInfo;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** The class type to return. */
-    private enum ClassType {
-        /** Get all class types. */
-        ALL,
-        /** A standard class (not an interface or annotation). */
-        STANDARD_CLASS,
-        /**
-         * An interface (this is named "implemented interface" rather than just "interface" to distinguish it from
-         * an annotation.)
-         */
-        IMPLEMENTED_INTERFACE,
-        /** An annotation. */
-        ANNOTATION,
-        /** An interface or annotation (used since you can actually implement an annotation). */
-        INTERFACE_OR_ANNOTATION,
-        /** An enum. */
-        ENUM,
-        /** A record type. */
-        RECORD
-    }
-
-    /**
-     * Filter classes according to scan spec and class type.
-     *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @param strictAccept
-     *            If true, exclude class if it is external, if external classes are not enabled
-     * @param classTypes
-     *            the class types
-     * @return the filtered classes.
-     */
-    private static Set<ClassInfo> filterClassInfo(final Collection<ClassInfo> classes, final ScanSpec scanSpec,
-            final boolean strictAccept, final ClassType... classTypes) {
-        if (classes == null) {
-            return Collections.emptySet();
-        }
-        boolean includeAllTypes = classTypes.length == 0;
-        boolean includeStandardClasses = false;
-        boolean includeImplementedInterfaces = false;
-        boolean includeAnnotations = false;
-        boolean includeEnums = false;
-        boolean includeRecords = false;
-        for (final ClassType classType : classTypes) {
-            switch (classType) {
-            case ALL:
-                includeAllTypes = true;
-                break;
-            case STANDARD_CLASS:
-                includeStandardClasses = true;
-                break;
-            case IMPLEMENTED_INTERFACE:
-                includeImplementedInterfaces = true;
-                break;
-            case ANNOTATION:
-                includeAnnotations = true;
-                break;
-            case INTERFACE_OR_ANNOTATION:
-                includeImplementedInterfaces = includeAnnotations = true;
-                break;
-            case ENUM:
-                includeEnums = true;
-                break;
-            case RECORD:
-                includeRecords = true;
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown ClassType: " + classType);
-            }
-        }
-        if (includeStandardClasses && includeImplementedInterfaces && includeAnnotations) {
-            includeAllTypes = true;
-        }
-        final Set<ClassInfo> classInfoSetFiltered = new LinkedHashSet<>(classes.size());
-        for (final ClassInfo classInfo : classes) {
-            // Check class type against requested type(s)
-            final boolean includeType = includeAllTypes //
-                    || includeStandardClasses && classInfo.isStandardClass() //
-                    || includeImplementedInterfaces && classInfo.isImplementedInterface() //
-                    || includeAnnotations && classInfo.isAnnotation() //
-                    || includeEnums && classInfo.isEnum() //
-                    || includeRecords && classInfo.isRecord();
-            // Return external (non-accepted) classes if viewing class hierarchy "upwards" 
-            final boolean acceptClass = !classInfo.isExternalClass || scanSpec.enableExternalClasses
-                    || !strictAccept;
-            // If class is of correct type, and class is accepted, and class/package are not explicitly rejected 
-            if (includeType && acceptClass && !scanSpec.classOrPackageIsRejected(classInfo.name)) {
-                // Class passed accept criteria
-                classInfoSetFiltered.add(classInfo);
-            }
-        }
-        return classInfoSetFiltered;
-    }
-
-    /**
-     * A set of classes that indirectly reachable through a directed path, for a given relationship type, and a set
-     * of classes that is directly related (only one relationship step away).
-     */
-    static class ReachableAndDirectlyRelatedClasses {
-
-        /** The reachable classes. */
-        final Set<ClassInfo> reachableClasses;
-
-        /** The directly related classes. */
-        final Set<ClassInfo> directlyRelatedClasses;
-
-        /**
-         * Constructor.
-         *
-         * @param reachableClasses
-         *            the reachable classes
-         * @param directlyRelatedClasses
-         *            the directly related classes
-         */
-        private ReachableAndDirectlyRelatedClasses(final Set<ClassInfo> reachableClasses,
-                final Set<ClassInfo> directlyRelatedClasses) {
-            this.reachableClasses = reachableClasses;
-            this.directlyRelatedClasses = directlyRelatedClasses;
-        }
-    }
-
-    /**
-     * Get the classes related to this one (the transitive closure) for the given relationship type, and those
-     * directly related.
+     * 获取与给定关系类型相关联的类（传递闭包）以及直接关联的类。
      *
      * @param relType
-     *            the relationship type
+     *            关系类型
      * @param strictAccept
-     *            If true, exclude class if it is external, if external classes are not enabled
+     *            如果为 true，则当外部类未启用时排除外部类
      * @param classTypes
-     *            the class types to accept
-     * @return the reachable and directly related classes
+     *            要接受的类类型
+     * @return 可达的类和直接关联的类
      */
     private ReachableAndDirectlyRelatedClasses filterClassInfo(final RelType relType, final boolean strictAccept,
-            final ClassType... classTypes) {
+                                                               final ClassType... classTypes) {
         Set<ClassInfo> directlyRelatedClasses = this.relatedClasses.get(relType);
         if (directlyRelatedClasses == null) {
             return NO_REACHABLE_CLASSES;
         } else {
-            // Clone collection to prevent users modifying contents accidentally or intentionally
+            // 克隆集合以防止用户意外或故意修改内容
             directlyRelatedClasses = new LinkedHashSet<>(directlyRelatedClasses);
         }
         final Set<ClassInfo> reachableClasses = new LinkedHashSet<>(directlyRelatedClasses);
         if (relType == RelType.METHOD_ANNOTATIONS || relType == RelType.METHOD_PARAMETER_ANNOTATIONS
                 || relType == RelType.FIELD_ANNOTATIONS) {
-            // For method and field annotations, need to change the RelType when finding meta-annotations
+            // 对于方法和字段注解，在查找元注解时需要更改 RelType
             for (final ClassInfo annotation : directlyRelatedClasses) {
                 reachableClasses.addAll(
                         annotation.filterClassInfo(RelType.CLASS_ANNOTATIONS, strictAccept).reachableClasses);
@@ -921,8 +847,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 || relType == RelType.CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION
                 || relType == RelType.CLASSES_WITH_FIELD_ANNOTATION
                 || relType == RelType.CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION) {
-            // If looking for meta-annotated methods or fields, need to find all meta-annotated annotations, then
-            // look for the methods or fields that they annotate
+            // 如果查找元注解标注的方法或字段，需要找到所有元注解的注解，然后
+            // 查找它们标注的方法或字段
             for (final ClassInfo subAnnotation : this.filterClassInfo(RelType.CLASSES_WITH_ANNOTATION, strictAccept,
                     ClassType.ANNOTATION).reachableClasses) {
                 final Set<ClassInfo> annotatedClasses = subAnnotation.relatedClasses.get(relType);
@@ -931,15 +857,15 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 }
             }
         } else {
-            // For other relationship types, the reachable type stays the same over the transitive closure. Find the
-            // transitive closure, breaking cycles where necessary.
+            // 对于其他关系类型，可达类型在传递闭包中保持不变。查找
+            // 传递闭包，在必要时打破循环。
             final LinkedList<ClassInfo> queue = new LinkedList<>(directlyRelatedClasses);
             while (!queue.isEmpty()) {
                 final ClassInfo head = queue.removeFirst();
                 final Set<ClassInfo> headRelatedClasses = head.relatedClasses.get(relType);
                 if (headRelatedClasses != null) {
                     for (final ClassInfo directlyReachableFromHead : headRelatedClasses) {
-                        // Don't get in cycle
+                        // 避免循环
                         if (reachableClasses.add(directlyReachableFromHead)) {
                             queue.add(directlyReachableFromHead);
                         }
@@ -953,11 +879,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
 
         if (relType == RelType.CLASS_ANNOTATIONS || relType == RelType.METHOD_ANNOTATIONS
                 || relType == RelType.METHOD_PARAMETER_ANNOTATIONS || relType == RelType.FIELD_ANNOTATIONS) {
-            // Special case -- don't inherit java.lang.annotation.* meta-annotations as related meta-annotations
-            // (but still return them as direct meta-annotations on annotation classes).
+            // 特殊情况——不将 java.lang.annotation.* 元注解作为相关元注解继承
+            // （但仍将它们作为注解类上的直接元注解返回）。
             Set<ClassInfo> reachableClassesToRemove = null;
             for (final ClassInfo reachableClassInfo : reachableClasses) {
-                // Remove all java.lang.annotation annotations that are not directly related to this class
+                // 移除所有不直接与此类关联的 java.lang.annotation 注解
                 if (reachableClassInfo.getName().startsWith("java.lang.annotation.")
                         && !directlyRelatedClasses.contains(reachableClassInfo)) {
                     if (reachableClassesToRemove == null) {
@@ -977,122 +903,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
 
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Get all classes found during the scan.
+     * 获取类的名称。
      *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @return A list of all classes found during the scan, or the empty list if none.
-     */
-    static ClassInfoList getAllClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
-        return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ALL),
-                /* sortByName = */ true);
-    }
-
-    /**
-     * Get all {@link Enum} classes found during the scan.
-     *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @return A list of all {@link Enum} classes found during the scan, or the empty list if none.
-     */
-    static ClassInfoList getAllEnums(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
-        return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ENUM),
-                /* sortByName = */ true);
-    }
-
-    /**
-     * Get all {@code record} classes found during the scan.
-     *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @return A list of all {@code record} classes found during the scan, or the empty list if none.
-     */
-    static ClassInfoList getAllRecords(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
-        return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.RECORD),
-                /* sortByName = */ true);
-    }
-
-    /**
-     * Get all standard classes found during the scan.
-     *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @return A list of all standard classes found during the scan, or the empty list if none.
-     */
-    static ClassInfoList getAllStandardClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
-        return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.STANDARD_CLASS),
-                /* sortByName = */ true);
-    }
-
-    /**
-     * Get all implemented interface (non-annotation interface) classes found during the scan.
-     *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @return A list of all annotation classes found during the scan, or the empty list if none.
-     */
-    static ClassInfoList getAllImplementedInterfaceClasses(final Collection<ClassInfo> classes,
-            final ScanSpec scanSpec) {
-        return new ClassInfoList(ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true,
-                ClassType.IMPLEMENTED_INTERFACE), /* sortByName = */ true);
-    }
-
-    /**
-     * Get all annotation classes found during the scan. See also
-     * {@link #getAllInterfacesOrAnnotationClasses(Collection, ScanSpec, ScanResult)} ()}.
-     *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @return A list of all annotation classes found during the scan, or the empty list if none.
-     */
-    static ClassInfoList getAllAnnotationClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
-        return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ANNOTATION),
-                /* sortByName = */ true);
-    }
-
-    /**
-     * Get all interface or annotation classes found during the scan. (Annotations are technically interfaces, and
-     * they can be implemented.)
-     *
-     * @param classes
-     *            the classes
-     * @param scanSpec
-     *            the scan spec
-     * @return A list of all accepted interfaces found during the scan, or the empty list if none.
-     */
-    static ClassInfoList getAllInterfacesOrAnnotationClasses(final Collection<ClassInfo> classes,
-            final ScanSpec scanSpec) {
-        return new ClassInfoList(ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true,
-                ClassType.INTERFACE_OR_ANNOTATION), /* sortByName = */ true);
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-    // Predicates
-
-    /**
-     * Get the name of the class.
-     *
-     * @return The name of the class.
+     * @return 类的名称。
      */
     @Override
     public String getName() {
@@ -1100,100 +914,167 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get simple name from fully-qualified class name. Returns everything after the last '.' or the last '$' in the
-     * class name, or the whole string if the class is in the root package. (Note that this is not the same as the
-     * result of {@link Class#getSimpleName()}, which returns "" for anonymous classes.)
+     * 获取类的简单名称。返回类名中最后一个 '.' 之后的部分，如果类在根包中则返回整个字符串。
+     * （注意：这与 {@link Class#getSimpleName()} 的结果不同，后者对于匿名类返回 ""。）
      *
-     * @param className
-     *            the class name
-     * @return The simple name of the class.
-     */
-    static String getSimpleName(final String className) {
-        return className.substring(Math.max(className.lastIndexOf('.'), className.lastIndexOf('$')) + 1);
-    }
-
-    /**
-     * Get the simple name of the class. Returns everything after the last '.' in the class name, or the whole
-     * string if the class is in the root package. (Note that this is not the same as the result of
-     * {@link Class#getSimpleName()}, which returns "" for anonymous classes.)
-     *
-     * @return The simple name of the class.
+     * @return 类的简单名称。
      */
     public String getSimpleName() {
         return getSimpleName(name);
     }
 
     /**
-     * Get the {@link ModuleInfo} object for the class.
+     * 获取该类的 {@link ModuleInfo} 对象。
      *
-     * @return the {@link ModuleInfo} object for the class, or null if the class is not part of a named module.
+     * @return 该类的 {@link ModuleInfo} 对象，如果类不属于命名模块则返回 null。
      */
     public ModuleInfo getModuleInfo() {
         return moduleInfo;
     }
 
     /**
-     * Get the {@link PackageInfo} object for the class.
+     * 获取该类的 {@link PackageInfo} 对象。
      *
-     * @return the {@link PackageInfo} object for the package that contains the class.
+     * @return 包含该类的包的 {@link PackageInfo} 对象。
      */
     public PackageInfo getPackageInfo() {
         return packageInfo;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+    // 谓词方法
+
     /**
-     * Get the name of the class' package.
+     * 获取类所在包的名称。
      *
-     * @return The name of the class' package.
+     * @return 类所在包的名称。
      */
     public String getPackageName() {
         return PackageInfo.getParentPackageName(name);
     }
 
     /**
-     * Checks if this is an external class.
+     * 检查是否为外部类。
      *
-     * @return true if this class is an external class, i.e. was referenced by an accepted class as a superclass,
-     *         interface, or annotation, but is not itself an accepted class.
+     * @return 如果此类是外部类则返回 true，即被一个已接受的类引用为超类、接口或注解，
+     *         但本身不是已接受的类。
      */
     public boolean isExternalClass() {
         return isExternalClass;
     }
 
     /**
-     * Get the minor version of the classfile format for this class' classfile.
-     * 
-     * @return The minor version of the classfile format for this class' classfile, or 0 if this {@link ClassInfo}
-     *         object is a placeholder for a referenced class that was not found or not accepted during the scan.
+     * 设置是否为外部类。
+     *
+     * @param externalClass
+     *            如果为 true 则表示外部类
+     */
+    public void setExternalClass(final boolean externalClass) {
+        this.isExternalClass = externalClass;
+    }
+
+    /**
+     * 设置此类是否已被扫描。
+     *
+     * @param scannedClass
+     *            如果为 true 则表示已扫描
+     */
+    public void setScannedClass(final boolean scannedClass) {
+        this.isScannedClass = scannedClass;
+    }
+
+    /**
+     * 获取该类的完整路径。
+     *
+     * @return 完整路径，或 null
+     */
+    public String getFullPath() {
+        return fullPath;
+    }
+
+    /**
+     * 设置该类的完整路径。
+     *
+     * @param fullPath
+     *            完整路径
+     */
+    public void setFullPath(final String fullPath) {
+        this.fullPath = fullPath;
+    }
+
+    /**
+     * 添加该类的子类。
+     *
+     * @param subclass
+     *            子类 ClassInfo
+     */
+    public void addSubclass(final ClassInfo subclass) {
+        if (subclass != null) {
+            this.addRelatedClass(RelType.SUBCLASSES, subclass);
+            subclass.addRelatedClass(RelType.SUPERCLASSES, this);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+    // 为 ClassGraphWorkspaceAdapter 提供的向后兼容 setter
+
+    /**
+     * 添加实现此接口的类。
+     *
+     * @param implementingClass
+     *            实现类的 ClassInfo
+     */
+    public void addImplementingClass(final ClassInfo implementingClass) {
+        if (implementingClass != null) {
+            this.addRelatedClass(RelType.CLASSES_IMPLEMENTING, implementingClass);
+            implementingClass.addRelatedClass(RelType.IMPLEMENTED_INTERFACES, this);
+        }
+    }
+
+    /**
+     * 获取该类 class 文件的 class 文件格式次版本号。
+     *
+     * @return 该类 class 文件的 class 文件格式次版本号，如果此 {@link ClassInfo}
+     *         对象是在扫描中未找到或未被接受的被引用类的占位符，则返回 0。
      */
     public int getClassfileMinorVersion() {
         return classfileMinorVersion;
     }
 
     /**
-     * Get the major version of the classfile format for this class' classfile.
-     * 
-     * @return The major version of the classfile format for this class' classfile, or 0 if this {@link ClassInfo}
-     *         object is a placeholder for a referenced class that was not found or not accepted during the scan.
+     * 获取该类 class 文件的 class 文件格式主版本号。
+     *
+     * @return 该类 class 文件的 class 文件格式主版本号，如果此 {@link ClassInfo}
+     *         对象是在扫描中未找到或未被接受的被引用类的占位符，则返回 0。
      */
     public int getClassfileMajorVersion() {
         return classfileMajorVersion;
     }
 
     /**
-     * Get the class modifier bits.
+     * 获取类修饰符位。
      *
-     * @return The class modifier bits, e.g. {@link Modifier#PUBLIC}.
+     * @return 类修饰符位，例如 {@link Modifier#PUBLIC}。
      */
     public int getModifiers() {
         return modifiers;
     }
 
     /**
-     * Get the class modifiers as a String.
+     * 设置类修饰符。
      *
-     * @return The field modifiers as a string, e.g. "public static final". For the modifier bits, call
-     *         {@link #getModifiers()}.
+     * @param modifiers
+     *            类修饰符
+     */
+    void setModifiers(final int modifiers) {
+        this.modifiers |= modifiers;
+    }
+
+    /**
+     * 获取类修饰符的字符串表示。
+     *
+     * @return 类修饰符字符串，例如 "public static final"。要获取修饰符位，请调用
+     *         {@link #getModifiers()}。
      */
     public String getModifiersStr() {
         final StringBuilder buf = new StringBuilder();
@@ -1202,217 +1083,213 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks if the class is public.
+     * 检查类是否为 public。
      *
-     * @return true if this class is a public class.
+     * @return 如果此类是 public 类则返回 true。
      */
     public boolean isPublic() {
         return Modifier.isPublic(modifiers);
     }
 
     /**
-     * Checks if the class is private.
+     * 检查类是否为 private。
      *
-     * @return true if this class is a private class.
+     * @return 如果此类是 private 类则返回 true。
      */
     public boolean isPrivate() {
         return Modifier.isPrivate(modifiers);
     }
 
     /**
-     * Checks if the class is protected.
+     * 检查类是否为 protected。
      *
-     * @return true if this class is a protected class.
+     * @return 如果此类是 protected 类则返回 true。
      */
     public boolean isProtected() {
         return Modifier.isProtected(modifiers);
     }
 
     /**
-     * Checks if the class has default (package) visibility.
-     * 
-     * @return true if this class is only visible within its package.
+     * 检查类是否具有默认（包）可见性。
+     *
+     * @return 如果此类仅在其包内可见则返回 true。
      */
     public boolean isPackageVisible() {
         return !isPublic() && !isPrivate() && !isProtected();
     }
 
     /**
-     * Checks if the class is abstract.
+     * 检查类是否为抽象类。
      *
-     * @return true if this class is an abstract class.
+     * @return 如果此类是抽象类则返回 true。
      */
     public boolean isAbstract() {
         return Modifier.isAbstract(modifiers);
     }
 
     /**
-     * Checks if the class is synthetic.
+     * 检查类是否为合成类。
      *
-     * @return true if this class is a synthetic class.
+     * @return 如果此类是合成类则返回 true。
      */
     public boolean isSynthetic() {
         return (modifiers & 0x1000) != 0;
     }
 
     /**
-     * Checks if the class is final.
+     * 检查类是否为 final。
      *
-     * @return true if this class is a final class.
+     * @return 如果此类是 final 类则返回 true。
      */
     public boolean isFinal() {
         return Modifier.isFinal(modifiers);
     }
 
     /**
-     * Checks if the class is static.
+     * 检查类是否为 static。
      *
-     * @return true if this class is static.
+     * @return 如果此类是 static 则返回 true。
      */
     public boolean isStatic() {
         return Modifier.isStatic(modifiers);
     }
 
     /**
-     * Checks if the class is an annotation.
+     * 检查类是否为注解。
      *
-     * @return true if this class is an annotation class.
+     * @return 如果此类是注解类则返回 true。
      */
     public boolean isAnnotation() {
         return (modifiers & ANNOTATION_CLASS_MODIFIER) != 0;
     }
 
     /**
-     * Checks if is the class an interface and is not an annotation.
+     * 检查类是否为接口且不是注解。
      *
-     * @return true if this class is an interface and is not an annotation (annotations are interfaces, and can be
-     *         implemented).
+     * @return 如果此类是接口且不是注解则返回 true（注解是接口，可以被实现）。
      */
     public boolean isInterface() {
         return isInterfaceOrAnnotation() && !isAnnotation();
     }
 
     /**
-     * Checks if is an interface or an annotation.
+     * 检查是否为接口或注解。
      *
-     * @return true if this class is an interface or an annotation (annotations are interfaces, and can be
-     *         implemented).
+     * @return 如果此类是接口或注解则返回 true（注解是接口，可以被实现）。
      */
     public boolean isInterfaceOrAnnotation() {
         return (modifiers & Modifier.INTERFACE) != 0;
     }
 
     /**
-     * Checks if is the class is an {@link Enum}.
+     * 检查类是否为 {@link Enum} 枚举。
      *
-     * @return true if this class is an {@link Enum}.
+     * @return 如果此类是 {@link Enum} 枚举则返回 true。
      */
     public boolean isEnum() {
         return (modifiers & 0x4000) != 0;
     }
 
     /**
-     * Checks if is the class is a record (JDK 14+).
+     * 检查类是否为记录类（JDK 14+）。
      *
-     * @return true if this class is a record.
+     * @return 如果此类是记录类则返回 true。
      */
     public boolean isRecord() {
         return isRecord;
     }
 
     /**
-     * Checks if this class is a standard class.
+     * 检查此类是否为标准类。
      *
-     * @return true if this class is a standard class (i.e. is not an annotation or interface).
+     * @return 如果此类是标准类（即不是注解或接口）则返回 true。
      */
     public boolean isStandardClass() {
         return !(isAnnotation() || isInterface());
     }
 
     /**
-     * Checks if this class is an array class. Returns false unless this {@link ClassInfo} is an instance of
-     * {@link ArrayClassInfo}.
+     * 检查此类是否为数组类。除非此 {@link ClassInfo} 是 {@link ArrayClassInfo} 的实例，
+     * 否则返回 false。
      *
-     * @return true if this is an array class.
+     * @return 如果这是数组类则返回 true。
      */
     public boolean isArrayClass() {
         return this instanceof ArrayClassInfo;
     }
 
     /**
-     * Checks if this class extends the superclass.
+     * 检查此类是否继承自指定超类。
      *
      * @param superclass
-     *            A superclass.
-     * @return true if this class extends the superclass.
+     *            一个超类。
+     * @return 如果此类继承自该超类则返回 true。
      */
     public boolean extendsSuperclass(final Class<?> superclass) {
         return extendsSuperclass(superclass.getName());
     }
 
     /**
-     * Checks if this class extends the named superclass.
+     * 检查此类是否继承自指定的超类名称。
      *
      * @param superclassName
-     *            The name of a superclass.
-     * @return true if this class extends the named superclass.
+     *            超类的名称。
+     * @return 如果此类继承自指定名称的超类则返回 true。
      */
     public boolean extendsSuperclass(final String superclassName) {
-        return (superclassName.equals("java.lang.Object") && isStandardClass())
+        return ("java.lang.Object".equals(superclassName) && isStandardClass())
                 || getSuperclasses().containsName(superclassName);
     }
 
     /**
-     * Checks if this class is an inner class.
+     * 检查此类是否为内部类。
      *
-     * @return true if this is an inner class (call {@link #isAnonymousInnerClass()} to test if this is an anonymous
-     *         inner class). If true, the containing class can be determined by calling {@link #getOuterClasses()}.
+     * @return 如果这是内部类则返回 true（调用 {@link #isAnonymousInnerClass()} 可测试是否为匿名
+     *         内部类）。如果为 true，可以通过调用 {@link #getOuterClasses()} 来确定包含类。
      */
     public boolean isInnerClass() {
         return !getOuterClasses().isEmpty();
     }
 
     /**
-     * Checks if this class is an outer class.
+     * 检查此类是否为外部类。
      *
-     * @return true if this class contains inner classes. If true, the inner classes can be determined by calling
-     *         {@link #getInnerClasses()}.
+     * @return 如果此类包含内部类则返回 true。如果为 true，可以通过调用
+     *         {@link #getInnerClasses()} 来确定内部类。
      */
     public boolean isOuterClass() {
         return !getInnerClasses().isEmpty();
     }
 
     /**
-     * Checks if this class is an anonymous inner class.
+     * 检查此类是否为匿名内部类。
      *
-     * @return true if this is an anonymous inner class. If true, the name of the containing method can be obtained
-     *         by calling {@link #getFullyQualifiedDefiningMethodName()}.
+     * @return 如果这是匿名内部类则返回 true。如果为 true，可以通过调用
+     *         {@link #getFullyQualifiedDefiningMethodName()} 获取包含方法的名称。
      */
     public boolean isAnonymousInnerClass() {
         return fullyQualifiedDefiningMethodName != null;
     }
 
     /**
-     * Checks whether this class is an implemented interface (meaning a standard, non-annotation interface, or an
-     * annotation that has also been implemented as an interface by some class).
+     * 检查此类是否为已实现的接口（即标准的、非注解的接口，或者已被某个类作为接口实现的注解）。
      *
      * <p>
-     * Annotations are interfaces, but you can also implement an annotation, so to we return whether an interface
-     * (even an annotation) is implemented by a class or extended by a subinterface, or (failing that) if it is not
-     * an interface but not an annotation.
+     * 注解是接口，但也可以实现注解，因此我们返回接口（即使是注解）是否被类实现或被子接口扩展，
+     * 或者（如果没有被实现）它是否不是注解但仍然是接口。
      *
-     * @return true if this class is an implemented interface.
+     * @return 如果此类是已实现的接口则返回 true。
      */
     public boolean isImplementedInterface() {
         return relatedClasses.get(RelType.CLASSES_IMPLEMENTING) != null || isInterface();
     }
 
     /**
-     * Checks whether this class implements the interface.
+     * 检查此类是否实现了指定的接口。
      *
      * @param interfaceClazz
-     *            An interface.
-     * @return true if this class implements the interface.
+     *            一个接口。
+     * @return 如果此类实现了该接口则返回 true。
      */
     public boolean implementsInterface(final Class<?> interfaceClazz) {
         Assert.isInterface(interfaceClazz);
@@ -1420,22 +1297,22 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class implements the named interface.
+     * 检查此类是否实现了指定名称的接口。
      *
      * @param interfaceName
-     *            The name of an interface.
-     * @return true if this class implements the named interface.
+     *            接口的名称。
+     * @return 如果此类实现了指定名称的接口则返回 true。
      */
     public boolean implementsInterface(final String interfaceName) {
         return getInterfaces().containsName(interfaceName);
     }
 
     /**
-     * Checks whether this class has the annotation.
+     * 检查此类是否具有指定的注解。
      *
      * @param annotation
-     *            An annotation.
-     * @return true if this class has the annotation.
+     *            一个注解。
+     * @return 如果此类具有该注解则返回 true。
      */
     public boolean hasAnnotation(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -1443,33 +1320,33 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class has the named annotation.
+     * 检查此类是否具有指定名称的注解。
      *
      * @param annotationName
-     *            The name of an annotation.
-     * @return true if this class has the named annotation.
+     *            注解的名称。
+     * @return 如果此类具有指定名称的注解则返回 true。
      */
     public boolean hasAnnotation(final String annotationName) {
         return getAnnotations().containsName(annotationName);
     }
 
     /**
-     * Checks whether this class has the named declared field.
+     * 检查此类是否声明了指定名称的字段。
      *
      * @param fieldName
-     *            The name of a field.
-     * @return true if this class declares a field of the given name.
+     *            字段的名称。
+     * @return 如果此类声明了给定名称的字段则返回 true。
      */
     public boolean hasDeclaredField(final String fieldName) {
         return getDeclaredFieldInfo().containsName(fieldName);
     }
 
     /**
-     * Checks whether this class or one of its superclasses has the named field.
+     * 检查此类或其超类之一是否具有指定名称的字段。
      *
      * @param fieldName
-     *            The name of a field.
-     * @return true if this class or one of its superclasses declares a field of the given name.
+     *            字段的名称。
+     * @return 如果此类或其超类之一声明了给定名称的字段则返回 true。
      */
     public boolean hasField(final String fieldName) {
         for (final ClassInfo ci : getFieldOverrideOrder()) {
@@ -1481,11 +1358,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class declares a field with the annotation.
+     * 检查此类是否声明了带有指定注解的字段。
      *
      * @param annotation
-     *            A field annotation.
-     * @return true if this class declares a field with the annotation.
+     *            一个字段注解。
+     * @return 如果此类声明了带有该注解的字段则返回 true。
      */
     public boolean hasDeclaredFieldAnnotation(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -1493,11 +1370,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class declares a field with the named annotation.
+     * 检查此类是否声明了带有指定名称注解的字段。
      *
      * @param fieldAnnotationName
-     *            The name of a field annotation.
-     * @return true if this class declares a field with the named annotation.
+     *            字段注解的名称。
+     * @return 如果此类声明了带有指定名称注解的字段则返回 true。
      */
     public boolean hasDeclaredFieldAnnotation(final String fieldAnnotationName) {
         for (final FieldInfo fi : getDeclaredFieldInfo()) {
@@ -1509,11 +1386,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class or one of its superclasses declares a field with the annotation.
+     * 检查此类或其超类之一是否声明了带有指定注解的字段。
      *
      * @param fieldAnnotation
-     *            A field annotation.
-     * @return true if this class or one of its superclasses declares a field with the annotation.
+     *            一个字段注解。
+     * @return 如果此类或其超类之一声明了带有该注解的字段则返回 true。
      */
     public boolean hasFieldAnnotation(final Class<? extends Annotation> fieldAnnotation) {
         Assert.isAnnotation(fieldAnnotation);
@@ -1521,11 +1398,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class or one of its superclasses declares a field with the named annotation.
+     * 检查此类或其超类之一是否声明了带有指定名称注解的字段。
      *
      * @param fieldAnnotationName
-     *            The name of a field annotation.
-     * @return true if this class or one of its superclasses declares a field with the named annotation.
+     *            字段注解的名称。
+     * @return 如果此类或其超类之一声明了带有指定名称注解的字段则返回 true。
      */
     public boolean hasFieldAnnotation(final String fieldAnnotationName) {
         for (final ClassInfo ci : getFieldOverrideOrder()) {
@@ -1537,22 +1414,22 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class declares a method of the given name.
+     * 检查此类是否声明了给定名称的方法。
      *
      * @param methodName
-     *            The name of a method.
-     * @return true if this class declares a method of the given name.
+     *            方法的名称。
+     * @return 如果此类声明了给定名称的方法则返回 true。
      */
     public boolean hasDeclaredMethod(final String methodName) {
         return getDeclaredMethodInfo().containsName(methodName);
     }
 
     /**
-     * Checks whether this class or one of its superclasses or interfaces declares a method of the given name.
+     * 检查此类或其超类或接口之一是否声明了给定名称的方法。
      *
      * @param methodName
-     *            The name of a method.
-     * @return true if this class or one of its superclasses or interfaces declares a method of the given name.
+     *            方法的名称。
+     * @return 如果此类或其超类或接口之一声明了给定名称的方法则返回 true。
      */
     public boolean hasMethod(final String methodName) {
         for (final ClassInfo ci : getMethodOverrideOrder()) {
@@ -1564,11 +1441,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class declares a method with the annotation.
+     * 检查此类是否声明了带有指定注解的方法。
      *
      * @param methodAnnotation
-     *            A method annotation.
-     * @return true if this class declares a method with the annotation.
+     *            一个方法注解。
+     * @return 如果此类声明了带有该注解的方法则返回 true。
      */
     public boolean hasDeclaredMethodAnnotation(final Class<? extends Annotation> methodAnnotation) {
         Assert.isAnnotation(methodAnnotation);
@@ -1576,11 +1453,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class declares a method with the named annotation.
+     * 检查此类是否声明了带有指定名称注解的方法。
      *
      * @param methodAnnotationName
-     *            The name of a method annotation.
-     * @return true if this class declares a method with the named annotation.
+     *            方法注解的名称。
+     * @return 如果此类声明了带有指定名称注解的方法则返回 true。
      */
     public boolean hasDeclaredMethodAnnotation(final String methodAnnotationName) {
         for (final MethodInfo mi : getDeclaredMethodInfo()) {
@@ -1592,11 +1469,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class or one of its superclasses or interfaces declares a method with the annotation.
+     * 检查此类或其超类或接口之一是否声明了带有指定注解的方法。
      *
      * @param methodAnnotation
-     *            A method annotation.
-     * @return true if this class or one of its superclasses or interfaces declares a method with the annotation.
+     *            一个方法注解。
+     * @return 如果此类或其超类或接口之一声明了带有该注解的方法则返回 true。
      */
     public boolean hasMethodAnnotation(final Class<? extends Annotation> methodAnnotation) {
         Assert.isAnnotation(methodAnnotation);
@@ -1604,13 +1481,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class or one of its superclasses or interfaces declares a method with the named
-     * annotation.
+     * 检查此类或其超类或接口之一是否声明了带有指定名称注解的方法。
      *
      * @param methodAnnotationName
-     *            The name of a method annotation.
-     * @return true if this class or one of its superclasses or interfaces declares a method with the named
-     *         annotation.
+     *            方法注解的名称。
+     * @return 如果此类或其超类或接口之一声明了带有指定名称注解的方法则返回 true。
      */
     public boolean hasMethodAnnotation(final String methodAnnotationName) {
         for (final ClassInfo ci : getMethodOverrideOrder()) {
@@ -1622,11 +1497,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class declares a method with the annotation.
+     * 检查此类是否声明了带有指定注解的方法参数。
      *
      * @param methodParameterAnnotation
-     *            A method annotation.
-     * @return true if this class declares a method with the annotation.
+     *            一个方法参数注解。
+     * @return 如果此类声明了带有该注解的方法参数则返回 true。
      */
     public boolean hasDeclaredMethodParameterAnnotation(
             final Class<? extends Annotation> methodParameterAnnotation) {
@@ -1635,11 +1510,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class declares a method with the named annotation.
+     * 检查此类是否声明了带有指定名称注解的方法参数。
      *
      * @param methodParameterAnnotationName
-     *            The name of a method annotation.
-     * @return true if this class declares a method with the named annotation.
+     *            方法参数注解的名称。
+     * @return 如果此类声明了带有指定名称注解的方法参数则返回 true。
      */
     public boolean hasDeclaredMethodParameterAnnotation(final String methodParameterAnnotationName) {
         for (final MethodInfo mi : getDeclaredMethodInfo()) {
@@ -1651,11 +1526,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class or one of its superclasses or interfaces has a method with the annotation.
+     * 检查此类或其超类或接口之一是否具有带有指定注解的方法参数。
      *
      * @param methodParameterAnnotation
-     *            A method annotation.
-     * @return true if this class or one of its superclasses or interfaces has a method with the annotation.
+     *            一个方法参数注解。
+     * @return 如果此类或其超类或接口之一具有带有该注解的方法参数则返回 true。
      */
     public boolean hasMethodParameterAnnotation(final Class<? extends Annotation> methodParameterAnnotation) {
         Assert.isAnnotation(methodParameterAnnotation);
@@ -1663,11 +1538,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Checks whether this class or one of its superclasses or interfaces has a method with the named annotation.
+     * 检查此类或其超类或接口之一是否具有带有指定名称注解的方法参数。
      *
      * @param methodParameterAnnotationName
-     *            The name of a method annotation.
-     * @return true if this class or one of its superclasses or interfaces has a method with the named annotation.
+     *            方法参数注解的名称。
+     * @return 如果此类或其超类或接口之一具有带有指定名称注解的方法参数则返回 true。
      */
     public boolean hasMethodParameterAnnotation(final String methodParameterAnnotationName) {
         for (final ClassInfo ci : getMethodOverrideOrder()) {
@@ -1678,19 +1553,17 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         return false;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Recurse to interfaces and superclasses to get the order that fields are overridden in.
+     * 递归遍历接口和超类，获取字段被覆盖的顺序。
      *
      * @param visited
-     *            visited
+     *            已访问的类集合
      * @param overrideOrderOut
-     *            the override order
-     * @return the override order
+     *            输出的覆盖顺序列表
+     * @return 覆盖顺序列表
      */
     private List<ClassInfo> getFieldOverrideOrder(final Set<ClassInfo> visited,
-            final List<ClassInfo> overrideOrderOut) {
+                                                  final List<ClassInfo> overrideOrderOut) {
         if (visited.add(this)) {
             overrideOrderOut.add(this);
             for (final ClassInfo iface : getInterfaces()) {
@@ -1705,9 +1578,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the order that fields are overridden in (base class first).
+     * 获取字段覆盖的顺序（基类优先）。
      *
-     * @return the override order
+     * @return 覆盖顺序列表
      */
     private List<ClassInfo> getFieldOverrideOrder() {
         if (overrideOrder == null) {
@@ -1717,29 +1590,29 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Recurse to collect classes and interfaces in the order of overridden methods, in descending priority.
+     * 递归收集类和接口，按照方法覆盖的优先级降序排列。
      * <p>
-     * First collects all direct super classes, as their methods always have a higher priority than any method
-     * declared by an interface. Iterates over interfaces and inserts those extending already found interfaces
-     * before them in the output. The order of unrelated interfaces is unspecified.
+     * 首先收集所有直接超类，因为它们的方法始终比接口声明的方法具有更高的优先级。
+     * 然后遍历接口，将扩展已找到接口的接口插入到输出中该接口之前。
+     * 不相关接口之间的顺序未定义。
      * <p>
-     * See Java Language Specification 8.4.8 for details.
+     * 详见 Java 语言规范 8.4.8。
      *
      * @param visited
-     *            non-null set of already visited ClassInfos
+     *            已访问 ClassInfo 的非空集合
      * @param overrideOrderOut
-     *            non-null outgoing list of ClassInfos in descending override order.
-     * @return the overrideOrderOut instance
+     *            按覆盖优先级降序排列的 ClassInfo 输出列表。
+     * @return overrideOrderOut 实例
      */
     private List<ClassInfo> getMethodOverrideOrder(final Set<ClassInfo> visited,
-            final List<ClassInfo> overrideOrderOut) {
+                                                   final List<ClassInfo> overrideOrderOut) {
         if (!visited.add(this)) {
             return overrideOrderOut;
         }
-        //collect concrete super classes first, simply add to overrideOrder
+        // 首先收集具体超类，直接添加到 overrideOrder
         if (!isInterfaceOrAnnotation()) {
             overrideOrderOut.add(this);
-            //iterate over direct super classes first, they have the highest priority regarding method overrides
+            // 首先遍历直接超类，它们在方法覆盖方面具有最高优先级
             final ClassInfo superclass = getSuperclass();
             if (superclass != null) {
                 superclass.getMethodOverrideOrder(visited, overrideOrderOut);
@@ -1749,13 +1622,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
             }
             return overrideOrderOut;
         }
-        // overrideOrderOut already contains all concrete classes now.
-        // This is an interface. If one of the extended interfaces is already in the output, then this needs to be
-        // added before it.
-        // Otherwise, this is unrelated to all collected ClassInfo so far and can simply be added to the result.
-        // The compiler should've prevented inheriting unrelated interfaces with methods having the same signature.
-        // Can still happen thanks to dynamically linking a different interface during runtime, for which the
-        // returned order is undefined.
+        // overrideOrderOut 现在已包含所有具体类。
+        // 这是一个接口。如果某个被扩展的接口已在输出中，则需要将其插入到该接口之前。
+        // 否则，此接口与目前收集的所有 ClassInfo 无关，可以直接添加到结果中。
+        // 编译器应该防止继承具有相同签名方法的不相关接口。
+        // 但由于在运行时动态链接了不同的接口，这种情况仍可能发生，此时返回的顺序未定义。
         final ClassInfoList interfaces = getInterfaces();
         int minIndex = Integer.MAX_VALUE;
         for (final ClassInfo iface : interfaces) {
@@ -1770,7 +1641,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         } else {
             overrideOrderOut.add(minIndex, this);
         }
-        // Add interfaces to end of override order
+        // 将接口添加到覆盖顺序的末尾
         for (final ClassInfo iface : interfaces) {
             iface.getMethodOverrideOrder(visited, overrideOrderOut);
         }
@@ -1778,9 +1649,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the order that methods are overridden in.
+     * 获取方法覆盖的顺序。
      *
-     * @return the override order
+     * @return 覆盖顺序列表
      */
     private List<ClassInfo> getMethodOverrideOrder() {
         if (methodOverrideOrder == null) {
@@ -1789,21 +1660,16 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         return methodOverrideOrder;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-    // Standard classes
-
     /**
-     * Get the subclasses of this class, sorted in order of name. Call {@link ClassInfoList#directOnly()} to get
-     * direct subclasses.
-     * 
-     * If this class represents {@link Object}, then returns only standard classes, not interfaces, since interfaces
-     * don't extend {@link Object}.
+     * 获取此类的子类，按名称排序。调用 {@link ClassInfoList#directOnly()} 可获取直接子类。
      *
-     * @return the list of subclasses of this class, or the empty list if none.
+     * 如果此类表示 {@link Object}，则只返回标准类而非接口，因为接口不继承 {@link Object}。
+     *
+     * @return 此类子类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getSubclasses() {
-        if (getName().equals("java.lang.Object")) {
-            // Make an exception for querying all subclasses of java.lang.Object
+        if ("java.lang.Object".equals(getName())) {
+            // 对查询 java.lang.Object 的所有子类做特殊处理
             return scanResult.getAllStandardClasses();
         } else {
             return new ClassInfoList(
@@ -1813,13 +1679,12 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get all superclasses of this class, in ascending order in the class hierarchy, not including {@link Object}
-     * for simplicity, since that is the superclass of all classes.
-     * 
-     * Also does not include superinterfaces, if this is an interface (use {@link #getInterfaces()} to get
-     * superinterfaces of an interface.}
+     * 获取此类的所有超类，按类层次结构升序排列，为简单起见不包括 {@link Object}，
+     * 因为它是所有类的超类。
      *
-     * @return the list of all superclasses of this class, or the empty list if none.
+     * 也不包括超接口，如果这是接口的话（使用 {@link #getInterfaces()} 获取接口的超接口。）
+     *
+     * @return 此类所有超类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getSuperclasses() {
         return new ClassInfoList(this.filterClassInfo(RelType.SUPERCLASSES, /* strictAccept = */ false),
@@ -1827,10 +1692,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the single direct superclass of this class, or null if none. Does not return the superinterfaces, if this
-     * is an interface (use {@link #getInterfaces()} to get superinterfaces of an interface.}
+     * 获取此类的单个直接超类，如果没有则返回 null。不返回超接口，如果这是接口的话
+     * （使用 {@link #getInterfaces()} 获取接口的超接口。）
      *
-     * @return the superclass of this class, or null if none.
+     * @return 此类的超类，如果没有则返回 null。
      */
     public ClassInfo getSuperclass() {
         final Set<ClassInfo> superClasses = relatedClasses.get(RelType.SUPERCLASSES);
@@ -1840,7 +1705,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
             throw new IllegalArgumentException("More than one superclass: " + superClasses);
         } else {
             final ClassInfo superclass = superClasses.iterator().next();
-            if (superclass.getName().equals("java.lang.Object")) {
+            if ("java.lang.Object".equals(superclass.getName())) {
                 return null;
             } else {
                 return superclass;
@@ -1849,11 +1714,25 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the containing outer classes, if this is an inner class.
+     * 设置此类的超类。
      *
-     * @return A list of the containing outer classes, if this is an inner class, otherwise the empty list. Note
-     *         that all containing outer classes are returned, not just the innermost of the containing outer
-     *         classes.
+     * @param superclass
+     *            超类 ClassInfo
+     */
+    public void setSuperclass(final ClassInfo superclass) {
+        if (superclass != null) {
+            this.addRelatedClass(RelType.SUPERCLASSES, superclass);
+            superclass.addRelatedClass(RelType.SUBCLASSES, this);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 获取包含此外部类，如果这是内部类的话。
+     *
+     * @return 包含外部类的列表，如果这是内部类的话；否则返回空列表。注意，返回所有
+     *         包含外部类，而不仅仅是最内层的包含外部类。
      */
     public ClassInfoList getOuterClasses() {
         return new ClassInfoList(
@@ -1862,9 +1741,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the inner classes contained within this class, if this is an outer class.
+     * 获取包含在此类中的内部类，如果这是外部类的话。
      *
-     * @return A list of the inner classes contained within this class, or the empty list if none.
+     * @return 包含在此类中的内部类列表，如果没有则返回空列表。
      */
     public ClassInfoList getInnerClasses() {
         return new ClassInfoList(this.filterClassInfo(RelType.CONTAINS_INNER_CLASS, /* strictAccept = */ false),
@@ -1872,29 +1751,24 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Gets fully-qualified method name (i.e. fully qualified classname, followed by dot, followed by method name)
-     * for the defining method, if this is an anonymous inner class.
+     * 获取定义方法的完全限定方法名（即完全限定类名，后跟点号，再跟方法名），
+     * 如果这是匿名内部类的话。
      *
-     * @return The fully-qualified method name (i.e. fully qualified classname, followed by dot, followed by method
-     *         name) for the defining method, if this is an anonymous inner class, or null if not.
+     * @return 定义方法的完全限定方法名（即完全限定类名，后跟点号，再跟方法名），
+     *         如果这是匿名内部类的话；否则返回 null。
      */
     public String getFullyQualifiedDefiningMethodName() {
         return fullyQualifiedDefiningMethodName;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-    // Interfaces
-
     /**
-     * Get the interfaces implemented by this class or by one of its superclasses, if this is a standard class, or
-     * the superinterfaces extended by this interface, if this is an interface.
+     * 获取此类或其超类实现的接口，如果这是标准类的话；或者此接口扩展的超接口，如果这是接口的话。
      *
-     * @return The list of interfaces implemented by this class or by one of its superclasses, if this is a standard
-     *         class, or the superinterfaces extended by this interface, if this is an interface. Returns the empty
-     *         list if none.
+     * @return 此类或其超类实现的接口列表，如果这是标准类的话；或者此接口扩展的超接口，
+     *         如果这是接口的话。如果没有则返回空列表。
      */
     public ClassInfoList getInterfaces() {
-        // Classes also implement the interfaces of their superclasses
+        // 类也会继承其超类实现的接口
         final ReachableAndDirectlyRelatedClasses implementedInterfaces = this
                 .filterClassInfo(RelType.IMPLEMENTED_INTERFACES, /* strictAccept = */ false);
         final Set<ClassInfo> allInterfaces = new LinkedHashSet<>(implementedInterfaces.reachableClasses);
@@ -1904,19 +1778,37 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                     .filterClassInfo(RelType.IMPLEMENTED_INTERFACES, /* strictAccept = */ false).reachableClasses;
             allInterfaces.addAll(superclassImplementedInterfaces);
         }
-        // Can't sort interfaces by name, since their order is significant in the definition of inheritance
+        // 不能按名称排序接口，因为它们在继承定义中的顺序是重要的
         return new ClassInfoList(allInterfaces, implementedInterfaces.directlyRelatedClasses,
                 /* sortByName = */ false);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+    // 标准类
+
     /**
-     * Get the classes (and their subclasses) that implement this interface, if this is an interface.
+     * 设置此类的接口。
      *
-     * @return the list of the classes (and their subclasses) that implement this interface, if this is an
-     *         interface, otherwise returns the empty list.
+     * @param interfaces
+     *            接口 ClassInfoList
+     */
+    public void setInterfaces(final ClassInfoList interfaces) {
+        if (interfaces != null) {
+            for (final ClassInfo iface : interfaces) {
+                iface.setIsInterface(true);
+                this.addRelatedClass(RelType.IMPLEMENTED_INTERFACES, iface);
+                iface.addRelatedClass(RelType.CLASSES_IMPLEMENTING, this);
+            }
+        }
+    }
+
+    /**
+     * 获取实现此接口的类（及其子类），如果这是接口的话。
+     *
+     * @return 实现此接口的类（及其子类）的列表，如果这是接口的话；否则返回空列表。
      */
     public ClassInfoList getClassesImplementing() {
-        // Subclasses of implementing classes also implement the interface
+        // 实现类的子类也会实现该接口
         final ReachableAndDirectlyRelatedClasses implementingClasses = this
                 .filterClassInfo(RelType.CLASSES_IMPLEMENTING, /* strictAccept = */ !isExternalClass);
         final Set<ClassInfo> allImplementingClasses = new LinkedHashSet<>(implementingClasses.reachableClasses);
@@ -1929,21 +1821,17 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 /* sortByName = */ true);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-    // Annotations
-
     /**
-     * Get the annotations and meta-annotations on this class. (Call {@link #getAnnotationInfo()} instead, if you
-     * need the parameter values of annotations, rather than just the annotation classes.)
-     * 
-     * <p>
-     * Also handles the {@link Inherited} meta-annotation, which causes an annotation to annotate a class and all of
-     * its subclasses.
-     * 
-     * <p>
-     * Filters out meta-annotations in the {@code java.lang.annotation} package.
+     * 获取此类上的注解和元注解。（如果需要注解的参数值而不仅仅是注解类，
+     * 请调用 {@link #getAnnotationInfo()} 替代此方法。）
      *
-     * @return the list of annotations and meta-annotations on this class.
+     * <p>
+     * 还处理 {@link Inherited} 元注解，该元注解使得注解可以标注一个类及其所有子类。
+     *
+     * <p>
+     * 过滤掉 {@code java.lang.annotation} 包中的元注解。
+     *
+     * @return 此类上的注解和元注解列表。
      */
     public ClassInfoList getAnnotations() {
         synchronized (this) {
@@ -1955,18 +1843,18 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 throw new IllegalArgumentException("Please call ClassGraph#enableAnnotationInfo() before #scan()");
             }
 
-            // Get all annotations on this class
+            // 获取此类上的所有注解
             final ReachableAndDirectlyRelatedClasses annotationClasses = this
                     .filterClassInfo(RelType.CLASS_ANNOTATIONS, /* strictAccept = */ false);
-            // Check for any @Inherited annotations on superclasses
+            // 检查超类上是否有任何 @Inherited 注解
             Set<ClassInfo> inheritedSuperclassAnnotations = null;
             for (final ClassInfo superclass : getSuperclasses()) {
                 for (final ClassInfo superclassAnnotation : superclass.filterClassInfo(RelType.CLASS_ANNOTATIONS,
                         /* strictAccept = */ false).reachableClasses) {
-                    // Check if any of the meta-annotations on this annotation are @Inherited,
-                    // which causes an annotation to annotate a class and all of its subclasses.
+                    // 检查此注解上的任何元注解是否包含 @Inherited，
+                    // @Inherited 元注解使得注解可以标注一个类及其所有子类。
                     if (superclassAnnotation != null && superclassAnnotation.isInherited) {
-                        // superclassAnnotation has an @Inherited meta-annotation
+                        // superclassAnnotation 具有 @Inherited 元注解
                         if (inheritedSuperclassAnnotations == null) {
                             inheritedSuperclassAnnotations = new LinkedHashSet<>();
                         }
@@ -1976,10 +1864,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
             }
 
             if (inheritedSuperclassAnnotations == null) {
-                // No inherited superclass annotations
+                // 没有可继承的超类注解
                 annotationsRef = new ClassInfoList(annotationClasses, /* sortByName = */ true);
             } else {
-                // Merge inherited superclass annotations and annotations on this class
+                // 合并可继承的超类注解和此类上的注解
                 inheritedSuperclassAnnotations.addAll(annotationClasses.reachableClasses);
                 annotationsRef = new ClassInfoList(inheritedSuperclassAnnotations,
                         annotationClasses.directlyRelatedClasses, /* sortByName = */ true);
@@ -1989,15 +1877,14 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the annotations or meta-annotations on fields, methods or method parametres declared by the class, (not
-     * including fields, methods or method parameters declared by the interfaces or superclasses of this class).
+     * 获取此类声明的字段、方法或方法参数上的注解或元注解
+     * （不包括此类的接口或超类声明的字段、方法或方法参数）。
      *
      * @param relType
-     *            One of {@link RelType#FIELD_ANNOTATIONS}, {@link RelType#METHOD_ANNOTATIONS} or
-     *            {@link RelType#METHOD_PARAMETER_ANNOTATIONS}.
-     * @return A list of annotations or meta-annotations on fields or methods declared by the class, (not including
-     *         fields or methods declared by the interfaces or superclasses of this class), as a list of
-     *         {@link ClassInfo} objects, or the empty list if none.
+     *            {@link RelType#FIELD_ANNOTATIONS}、{@link RelType#METHOD_ANNOTATIONS} 或
+     *            {@link RelType#METHOD_PARAMETER_ANNOTATIONS} 之一。
+     * @return 此类声明的字段或方法上的注解或元注解列表（不包括此类的接口或超类声明的
+     *         字段或方法），作为 {@link ClassInfo} 对象列表，如果没有则返回空列表。
      */
     private ClassInfoList getFieldOrMethodAnnotations(final RelType relType) {
         final boolean isField = relType == RelType.FIELD_ANNOTATIONS;
@@ -2015,17 +1902,16 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the classes that have this class as a field, method or method parameter annotation.
+     * 获取以此类作为字段、方法或方法参数注解的类。
      *
      * @param relType
-     *            One of {@link RelType#CLASSES_WITH_FIELD_ANNOTATION},
-     *            {@link RelType#CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION},
-     *            {@link RelType#CLASSES_WITH_METHOD_ANNOTATION},
-     *            {@link RelType#CLASSES_WITH_NONPRIVATE_METHOD_ANNOTATION},
-     *            {@link RelType#CLASSES_WITH_METHOD_PARAMETER_ANNOTATION}, or
-     *            {@link RelType#CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION}.
-     * @return A list of classes that have a declared method with this annotation or meta-annotation, or the empty
-     *         list if none.
+     *            {@link RelType#CLASSES_WITH_FIELD_ANNOTATION}、
+     *            {@link RelType#CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION}、
+     *            {@link RelType#CLASSES_WITH_METHOD_ANNOTATION}、
+     *            {@link RelType#CLASSES_WITH_NONPRIVATE_METHOD_ANNOTATION}、
+     *            {@link RelType#CLASSES_WITH_METHOD_PARAMETER_ANNOTATION} 或
+     *            {@link RelType#CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION} 之一。
+     * @return 声明了带有此注解或元注解的方法或字段的类的列表，如果没有则返回空列表。
      */
     private ClassInfoList getClassesWithFieldOrMethodAnnotation(final RelType relType) {
         final boolean isField = relType == RelType.CLASSES_WITH_FIELD_ANNOTATION
@@ -2040,11 +1926,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         final ReachableAndDirectlyRelatedClasses annotationsWithThisMetaAnnotation = this.filterClassInfo(
                 RelType.CLASSES_WITH_ANNOTATION, /* strictAccept = */ !isExternalClass, ClassType.ANNOTATION);
         if (annotationsWithThisMetaAnnotation.reachableClasses.isEmpty()) {
-            // This annotation does not meta-annotate another annotation that annotates a method
+            // 此注解未元标注其他标注了方法的注解
             return new ClassInfoList(classesWithDirectlyAnnotatedFieldsOrMethods, /* sortByName = */ true);
         } else {
-            // Take the union of all classes with fields or methods directly annotated by this annotation,
-            // and classes with fields or methods meta-annotated by this annotation
+            // 取所有被此注解直接标注了字段或方法的类的并集，
+            // 以及被此注解元标注了字段或方法的类
             final Set<ClassInfo> allClassesWithAnnotatedOrMetaAnnotatedFieldsOrMethods = new LinkedHashSet<>(
                     classesWithDirectlyAnnotatedFieldsOrMethods.reachableClasses);
             for (final ClassInfo metaAnnotatedAnnotation : annotationsWithThisMetaAnnotation.reachableClasses) {
@@ -2058,14 +1944,12 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get a list of the annotations on this class, or the empty list if none.
-     * 
+     * 获取此类上的注解列表，如果没有则返回空列表。
+     *
      * <p>
-     * Also handles the {@link Inherited} meta-annotation, which causes an annotation to annotate a class and all of
-     * its subclasses.
-     * 
-     * @return A list of {@link AnnotationInfo} objects for the annotations on this class, or the empty list if
-     *         none.
+     * 还处理 {@link Inherited} 元注解，该元注解使得注解可以标注一个类及其所有子类。
+     *
+     * @return 此类上注解的 {@link AnnotationInfo} 对象列表，如果没有则返回空列表。
      */
     public AnnotationInfoList getAnnotationInfo() {
         synchronized (this) {
@@ -2082,68 +1966,82 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+    // 接口
+
     /**
-     * Get a the non-{@link Repeatable} annotation on this class, or null if the class does not have the annotation.
-     * (Use {@link #getAnnotationInfoRepeatable(String)} for {@link Repeatable} annotations.)
-     * 
+     * 设置此类的注解信息。
+     *
+     * @param annotationInfo
+     *            AnnotationInfoList 注解信息列表
+     */
+    public void setAnnotationInfo(final AnnotationInfoList annotationInfo) {
+        this.annotationInfo = annotationInfo;
+        // 同时链接注解 ClassInfo 对象
+        if (annotationInfo != null) {
+            for (final AnnotationInfo ai : annotationInfo) {
+                // 查找或创建注解 ClassInfo
+                final String annName = ai.getName();
+                // 这里无法方便地访问 classNameToClassInfo，所以只存储注解信息
+            }
+        }
+    }
+
+    /**
+     * 获取此类上的非 {@link Repeatable} 注解，如果类没有该注解则返回 null。
+     * （对于 {@link Repeatable} 注解，请使用 {@link #getAnnotationInfoRepeatable(String)}。）
+     *
      * <p>
-     * Also handles the {@link Inherited} meta-annotation, which causes an annotation to annotate a class and all of
-     * its subclasses.
-     * 
+     * 还处理 {@link Inherited} 元注解，该元注解使得注解可以标注一个类及其所有子类。
+     *
      * <p>
-     * Note that if you need to get multiple annotations, it is faster to call {@link #getAnnotationInfo()}, and
-     * then get the annotations from the returned {@link AnnotationInfoList}, so that the returned list doesn't have
-     * to be built multiple times.
-     * 
+     * 注意，如果需要获取多个注解，更快的做法是先调用 {@link #getAnnotationInfo()}，
+     * 然后从返回的 {@link AnnotationInfoList} 中获取注解，这样返回的列表就不需要被多次构建。
+     *
      * @param annotation
-     *            The annotation.
-     * @return An {@link AnnotationInfo} object representing the annotation on this class, or null if the class does
-     *         not have the annotation.
+     *            注解。
+     * @return 表示此类上该注解的 {@link AnnotationInfo} 对象，如果类没有该注解则返回 null。
      */
     public AnnotationInfo getAnnotationInfo(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
         return getAnnotationInfo(annotation.getName());
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+    // 注解
+
     /**
-     * Get a the named non-{@link Repeatable} annotation on this class, or null if the class does not have the named
-     * annotation. (Use {@link #getAnnotationInfoRepeatable(String)} for {@link Repeatable} annotations.)
+     * 获取此类上的指定名称的非 {@link Repeatable} 注解，如果类没有指定名称的注解则返回 null。
+     * （对于 {@link Repeatable} 注解，请使用 {@link #getAnnotationInfoRepeatable(String)}。）
      *
      * <p>
-     * Also handles the {@link Inherited} meta-annotation, which causes an annotation to annotate a class and all of
-     * its subclasses.
+     * 还处理 {@link Inherited} 元注解，该元注解使得注解可以标注一个类及其所有子类。
      *
      * <p>
-     * Note that if you need to get multiple named annotations, it is faster to call {@link #getAnnotationInfo()},
-     * and then get the named annotations from the returned {@link AnnotationInfoList}, so that the returned list
-     * doesn't have to be built multiple times.
+     * 注意，如果需要获取多个指定名称的注解，更快的做法是先调用 {@link #getAnnotationInfo()}，
+     * 然后从返回的 {@link AnnotationInfoList} 中获取指定名称的注解，这样返回的列表就不需要被多次构建。
      *
      * @param annotationName
-     *            The annotation name.
-     * @return An {@link AnnotationInfo} object representing the named annotation on this class, or null if the
-     *         class does not have the named annotation.
+     *            注解名称。
+     * @return 表示此类上指定名称注解的 {@link AnnotationInfo} 对象，如果类没有指定名称的注解则返回 null。
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
         return getAnnotationInfo().get(annotationName);
     }
 
     /**
-     * Get a the {@link Repeatable} annotation on this class, or the empty list if the class does not have the
-     * annotation.
-     * 
+     * 获取此类上的 {@link Repeatable} 注解，如果类没有该注解则返回空列表。
+     *
      * <p>
-     * Also handles the {@link Inherited} meta-annotation, which causes an annotation to annotate a class and all of
-     * its subclasses.
-     * 
+     * 还处理 {@link Inherited} 元注解，该元注解使得注解可以标注一个类及其所有子类。
+     *
      * <p>
-     * Note that if you need to get multiple annotations, it is faster to call {@link #getAnnotationInfo()}, and
-     * then get the annotations from the returned {@link AnnotationInfoList}, so that the returned list doesn't have
-     * to be built multiple times.
-     * 
+     * 注意，如果需要获取多个注解，更快的做法是先调用 {@link #getAnnotationInfo()}，
+     * 然后从返回的 {@link AnnotationInfoList} 中获取注解，这样返回的列表就不需要被多次构建。
+     *
      * @param annotation
-     *            The annotation.
-     * @return An {@link AnnotationInfoList} of all instances of the annotation on this class, or the empty list if
-     *         the class does not have the annotation.
+     *            注解。
+     * @return 此类上该注解所有实例的 {@link AnnotationInfoList}，如果类没有该注解则返回空列表。
      */
     public AnnotationInfoList getAnnotationInfoRepeatable(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -2151,32 +2049,28 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get a the named {@link Repeatable} annotation on this class, or the empty list if the class does not have the
-     * named annotation.
+     * 获取此类上的指定名称的 {@link Repeatable} 注解，如果类没有指定名称的注解则返回空列表。
      *
      * <p>
-     * Also handles the {@link Inherited} meta-annotation, which causes an annotation to annotate a class and all of
-     * its subclasses.
+     * 还处理 {@link Inherited} 元注解，该元注解使得注解可以标注一个类及其所有子类。
      *
      * <p>
-     * Note that if you need to get multiple named annotations, it is faster to call {@link #getAnnotationInfo()},
-     * and then get the named annotations from the returned {@link AnnotationInfoList}, so that the returned list
-     * doesn't have to be built multiple times.
+     * 注意，如果需要获取多个指定名称的注解，更快的做法是先调用 {@link #getAnnotationInfo()}，
+     * 然后从返回的 {@link AnnotationInfoList} 中获取指定名称的注解，这样返回的列表就不需要被多次构建。
      *
      * @param annotationName
-     *            The annotation name.
-     * @return An {@link AnnotationInfoList} of all instances of the named annotation on this class, or the empty
-     *         list if the class does not have the named annotation.
+     *            注解名称。
+     * @return 此类上指定名称注解所有实例的 {@link AnnotationInfoList}，如果类没有指定名称的注解则返回空列表。
      */
     public AnnotationInfoList getAnnotationInfoRepeatable(final String annotationName) {
         return getAnnotationInfo().getRepeatable(annotationName);
     }
 
     /**
-     * Get the default parameter values for this annotation, if this is an annotation class.
+     * 获取此注解的默认参数值，如果这是注解类的话。
      *
-     * @return A list of {@link AnnotationParameterValue} objects for each of the default parameter values for this
-     *         annotation, if this is an annotation class with default parameter values, otherwise the empty list.
+     * @return 此注解每个默认参数值的 {@link AnnotationParameterValue} 对象列表，
+     *         如果这是具有默认参数值的注解类的话；否则返回空列表。
      */
     public AnnotationParameterValueList getAnnotationDefaultParameterValues() {
         if (!scanResult.scanSpec.enableAnnotationInfo) {
@@ -2198,23 +2092,22 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the classes that have this class as an annotation.
+     * 获取以此类作为注解的类。
      *
-     * @return A list of standard classes and non-annotation interfaces that are annotated by this class, if this is
-     *         an annotation class, or the empty list if none. Also handles the {@link Inherited} meta-annotation,
-     *         which causes an annotation on a class to be inherited by all of its subclasses.
+     * @return 被此类标注的标准类和非注解接口的列表，如果这是注解类的话；如果没有则返回空列表。
+     *         还处理 {@link Inherited} 元注解，该元注解使得类上的注解可以被其所有子类继承。
      */
     public ClassInfoList getClassesWithAnnotation() {
         if (!scanResult.scanSpec.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableAnnotationInfo() before #scan()");
         }
 
-        // Get classes that have this annotation
+        // 获取拥有此注解的类
         final ReachableAndDirectlyRelatedClasses classesWithAnnotation = this
                 .filterClassInfo(RelType.CLASSES_WITH_ANNOTATION, /* strictAccept = */ !isExternalClass);
 
         if (isInherited) {
-            // If this is an inherited annotation, add into the result all subclasses of the annotated classes. 
+            // 如果这是可继承的注解，将所有被注解类的子类也加入结果中。
             final Set<ClassInfo> classesWithAnnotationAndTheirSubclasses = new LinkedHashSet<>(
                     classesWithAnnotation.reachableClasses);
             for (final ClassInfo classWithAnnotation : classesWithAnnotation.reachableClasses) {
@@ -2223,16 +2116,15 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
             return new ClassInfoList(classesWithAnnotationAndTheirSubclasses,
                     classesWithAnnotation.directlyRelatedClasses, /* sortByName = */ true);
         } else {
-            // If not inherited, only return the annotated classes
+            // 如果不可继承，只返回被注解的类
             return new ClassInfoList(classesWithAnnotation, /* sortByName = */ true);
         }
     }
 
     /**
-     * Get the classes that have this class as a direct annotation.
+     * 获取以此类作为直接注解的类。
      *
-     * @return The list of classes that are directly (i.e. are not meta-annotated) annotated with the requested
-     *         annotation, or the empty list if none.
+     * @return 被请求的注解直接标注（即非元注解标注）的类的列表，如果没有则返回空列表。
      */
     ClassInfoList getClassesWithAnnotationDirectOnly() {
         return new ClassInfoList(
@@ -2240,24 +2132,21 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 /* sortByName = */ true);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-    // Methods
-
     /**
-     * Get the declared methods, constructors, and/or static initializer methods of the class.
+     * 获取类中声明的方法、构造函数和/或静态初始化方法。
      *
      * @param methodName
-     *            the method name
+     *            方法名
      * @param getNormalMethods
-     *            whether to get normal methods
+     *            是否获取普通方法
      * @param getConstructorMethods
-     *            whether to get constructor methods
+     *            是否获取构造函数
      * @param getStaticInitializerMethods
-     *            whether to get static initializer methods
-     * @return the declared method info
+     *            是否获取静态初始化方法
+     * @return 声明的方法信息
      */
     private MethodInfoList getDeclaredMethodInfo(final String methodName, final boolean getNormalMethods,
-            final boolean getConstructorMethods, final boolean getStaticInitializerMethods) {
+                                                 final boolean getConstructorMethods, final boolean getStaticInitializerMethods) {
         if (!scanResult.scanSpec.enableMethodInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableMethodInfo() before #scan()");
         }
@@ -2265,13 +2154,12 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
             return MethodInfoList.EMPTY_LIST;
         }
         if (methodName == null) {
-            // If no method name is provided, filter for methods with the right type (normal method / constructor /
-            // static initializer)
+            // 如果没有提供方法名，则按方法类型筛选（普通方法/构造函数/静态初始化方法）
             final MethodInfoList methodInfoList = new MethodInfoList();
             for (final MethodInfo mi : methodInfo) {
                 final String miName = mi.getName();
                 final boolean isConstructor = "<init>".equals(miName);
-                // (Currently static initializer methods are never returned by public methods)
+                // （目前静态初始化方法永远不会被公共方法返回）
                 final boolean isStaticInitializer = "<clinit>".equals(miName);
                 if ((isConstructor && getConstructorMethods) || (isStaticInitializer && getStaticInitializerMethods)
                         || (!isConstructor && !isStaticInitializer && getNormalMethods)) {
@@ -2280,7 +2168,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
             }
             return methodInfoList;
         } else {
-            // If method name is provided, filter for methods whose name matches, and ignore method type
+            // 如果提供了方法名，则筛选名称匹配的方法，忽略方法类型
             boolean hasMethodWithName = false;
             for (final MethodInfo f : methodInfo) {
                 if (f.getName().equals(methodName)) {
@@ -2302,34 +2190,34 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the methods, constructors, and/or static initializer methods of the class.
+     * 获取类的方法、构造函数和/或静态初始化方法。
      *
      * @param methodName
-     *            the method name
+     *            方法名
      * @param getNormalMethods
-     *            whether to get normal methods
+     *            是否获取普通方法
      * @param getConstructorMethods
-     *            whether to get constructor methods
+     *            是否获取构造函数
      * @param getStaticInitializerMethods
-     *            whether to get static initializer methods
-     * @return the method info
+     *            是否获取静态初始化方法
+     * @return 方法信息
      */
     private MethodInfoList getMethodInfo(final String methodName, final boolean getNormalMethods,
-            final boolean getConstructorMethods, final boolean getStaticInitializerMethods) {
+                                         final boolean getConstructorMethods, final boolean getStaticInitializerMethods) {
         if (!scanResult.scanSpec.enableMethodInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableMethodInfo() before #scan()");
         }
-        // Implement method/constructor overriding
+        // 实现方法/构造函数覆盖
         final MethodInfoList methodInfoList = new MethodInfoList();
         final Set<Entry<String, String>> nameAndTypeDescriptorSet = new HashSet<>();
         for (final ClassInfo ci : getMethodOverrideOrder()) {
-            // Constructors are not inherited from superclasses
+            // 构造函数不从超类继承
             boolean shouldGetConstructorMethods = ci == this && getConstructorMethods;
             for (final MethodInfo mi : ci.getDeclaredMethodInfo(methodName, getNormalMethods, shouldGetConstructorMethods,
                     getStaticInitializerMethods)) {
-                // If method has not been overridden by method of same name and type descriptor
+                // 如果方法尚未被具有相同名称和类型描述符的方法覆盖
                 if (nameAndTypeDescriptorSet.add(new SimpleEntry<>(mi.getName(), mi.getTypeDescriptorStr()))) {
-                    // Add method to output order
+                    // 将方法添加到输出顺序中
                     methodInfoList.add(mi);
                 }
             }
@@ -2338,9 +2226,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on visible methods declared by this class, but not by its interfaces or superclasses,
-     * that are not constructors. See also:
-     * 
+     * 返回此类声明（但不包括其接口或超类声明）的可见方法（非构造函数）的信息。另请参见：
+     *
      * <ul>
      * <li>{@link #getMethodInfo(String)}
      * <li>{@link #getDeclaredMethodInfo(String)}
@@ -2350,22 +2237,20 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * <li>{@link #getMethodAndConstructorInfo()}
      * <li>{@link #getDeclaredMethodAndConstructorInfo()}
      * </ul>
-     * 
-     * <p>
-     * There may be more than one method of a given name with different type signatures, due to overloading.
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 由于重载，可能有多个同名但类型签名不同的方法。
      *
      * <p>
-     * By default only returns information for public methods, unless {@link ClassGraph#ignoreMethodVisibility()}
-     * was called before the scan.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
-     * @return the list of {@link MethodInfo} objects for visible methods declared by this class, or the empty list
-     *         if no methods were found.
+     * <p>
+     * 默认只返回公共方法的信息，除非在扫描前调用了 {@link ClassGraph#ignoreMethodVisibility()}。
+     *
+     * @return 此类声明的可见方法的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getDeclaredMethodInfo() {
         return getDeclaredMethodInfo(/* methodName = */ null, /* getNormalMethods = */ true,
@@ -2373,9 +2258,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on visible methods declared by this class, or by its interfaces or superclasses, that are
-     * not constructors. See also:
-     * 
+     * 返回此类或其接口或超类声明的可见方法（非构造函数）的信息。另请参见：
+     *
      * <ul>
      * <li>{@link #getMethodInfo(String)}
      * <li>{@link #getDeclaredMethodInfo(String)}
@@ -2385,22 +2269,20 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * <li>{@link #getMethodAndConstructorInfo()}
      * <li>{@link #getDeclaredMethodAndConstructorInfo()}
      * </ul>
-     * 
-     * <p>
-     * There may be more than one method of a given name with different type signatures, due to overloading.
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 由于重载，可能有多个同名但类型签名不同的方法。
      *
      * <p>
-     * By default only returns information for public methods, unless {@link ClassGraph#ignoreMethodVisibility()}
-     * was called before the scan.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
-     * @return the list of {@link MethodInfo} objects for visible methods of this class, its interfaces and
-     *         superclasses, or the empty list if no methods were found.
+     * <p>
+     * 默认只返回公共方法的信息，除非在扫描前调用了 {@link ClassGraph#ignoreMethodVisibility()}。
+     *
+     * @return 此类、其接口和超类的可见方法的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getMethodInfo() {
         return getMethodInfo(/* methodName = */ null, /* getNormalMethods = */ true,
@@ -2408,9 +2290,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on visible constructors declared by this class, but not by its interfaces or
-     * superclasses. Constructors have the method name of {@code "<init>"}. See also:
-     * 
+     * 返回此类声明（但不包括其接口或超类声明）的可见构造函数的信息。
+     * 构造函数的方法名为 {@code "<init>"}。另请参见：
+     *
      * <ul>
      * <li>{@link #getMethodInfo(String)}
      * <li>{@link #getDeclaredMethodInfo(String)}
@@ -2420,32 +2302,34 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * <li>{@link #getMethodAndConstructorInfo()}
      * <li>{@link #getDeclaredMethodAndConstructorInfo()}
      * </ul>
-     * 
-     * <p>
-     * There may be more than one constructor of a given name with different type signatures, due to overloading.
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 由于重载，可能有多个同名但类型签名不同的构造函数。
      *
      * <p>
-     * By default only returns information for public constructors, unless
-     * {@link ClassGraph#ignoreMethodVisibility()} was called before the scan.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
-     * @return the list of {@link MethodInfo} objects for visible constructors declared by this class, or the empty
-     *         list if no constructors were found or visible.
+     * <p>
+     * 默认只返回公共构造函数的信息，除非在扫描前调用了
+     * {@link ClassGraph#ignoreMethodVisibility()}。
+     *
+     * @return 此类声明的可见构造函数的 {@link MethodInfo} 对象列表，如果没有找到或可见的构造函数则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getDeclaredConstructorInfo() {
         return getDeclaredMethodInfo(/* methodName = */ null, /* getNormalMethods = */ false,
                 /* getConstructorMethods = */ true, /* getStaticInitializerMethods = */ false);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+    // 方法
+
     /**
-     * Returns information on visible constructors declared by this class, or by its interfaces or superclasses.
-     * Constructors have the method name of {@code "<init>"}. See also:
-     * 
+     * 返回此类或其接口或超类声明的可见构造函数的信息。
+     * 构造函数的方法名为 {@code "<init>"}。另请参见：
+     *
      * <ul>
      * <li>{@link #getMethodInfo(String)}
      * <li>{@link #getDeclaredMethodInfo(String)}
@@ -2455,22 +2339,20 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * <li>{@link #getMethodAndConstructorInfo()}
      * <li>{@link #getDeclaredMethodAndConstructorInfo()}
      * </ul>
-     * 
-     * <p>
-     * There may be more than one method of a given name with different type signatures, due to overloading.
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 由于重载，可能有多个同名但类型签名不同的方法。
      *
      * <p>
-     * By default only returns information for public methods, unless {@link ClassGraph#ignoreMethodVisibility()}
-     * was called before the scan.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
-     * @return the list of {@link MethodInfo} objects for visible constructors of this class and its superclasses,
-     *         or the empty list if no methods were found.
+     * <p>
+     * 默认只返回公共方法的信息，除非在扫描前调用了 {@link ClassGraph#ignoreMethodVisibility()}。
+     *
+     * @return 此类及其超类的可见构造函数的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getConstructorInfo() {
         return getMethodInfo(/* methodName = */ null, /* getNormalMethods = */ false,
@@ -2478,10 +2360,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on visible methods and constructors declared by this class, but not by its interfaces or
-     * superclasses. Constructors have the method name of {@code "<init>"} and static initializer blocks have the
-     * name of {@code "<clinit>"}. See also:
-     * 
+     * 返回此类声明（但不包括其接口或超类声明）的可见方法和构造函数的信息。
+     * 构造函数的方法名为 {@code "<init>"}，静态初始化块的方法名为 {@code "<clinit>"}。另请参见：
+     *
      * <ul>
      * <li>{@link #getMethodInfo(String)}
      * <li>{@link #getDeclaredMethodInfo(String)}
@@ -2491,25 +2372,22 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * <li>{@link #getDeclaredConstructorInfo()}
      * <li>{@link #getMethodAndConstructorInfo()}
      * </ul>
-     * 
-     * <p>
-     * There may be more than one method or constructor or method of a given name with different type signatures,
-     * due to overloading.
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 由于重载，可能有多个同名但类型签名不同的方法或构造函数。
      *
      * <p>
-     * By default only returns information for public methods and constructors, unless
-     * {@link ClassGraph#ignoreMethodVisibility()} was called before the scan. If method visibility is ignored, the
-     * result may include a reference to a private static class initializer block, with a method name of
-     * {@code "<clinit>"}.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
-     * @return the list of {@link MethodInfo} objects for visible methods and constructors of this class, or the
-     *         empty list if no methods or constructors were found or visible.
+     * <p>
+     * 默认只返回公共方法和构造函数的信息，除非在扫描前调用了
+     * {@link ClassGraph#ignoreMethodVisibility()}。如果忽略了方法可见性，则结果中
+     * 可能包含对私有静态类初始化块的引用，其方法名为 {@code "<clinit>"}。
+     *
+     * @return 此类可见方法和构造函数的 {@link MethodInfo} 对象列表，如果没有找到或可见的方法或构造函数则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getDeclaredMethodAndConstructorInfo() {
         return getDeclaredMethodInfo(/* methodName = */ null, /* getNormalMethods = */ true,
@@ -2517,10 +2395,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on visible constructors declared by this class, or by its interfaces or superclasses.
-     * Constructors have the method name of {@code "<init>"} and static initializer blocks have the name of
-     * {@code "<clinit>"}. See also:
-     * 
+     * 返回此类或其接口或超类声明的可见构造函数的信息。
+     * 构造函数的方法名为 {@code "<init>"}，静态初始化块的方法名为 {@code "<clinit>"}。另请参见：
+     *
      * <ul>
      * <li>{@link #getMethodInfo(String)}
      * <li>{@link #getDeclaredMethodInfo(String)}
@@ -2530,22 +2407,20 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * <li>{@link #getDeclaredConstructorInfo()}
      * <li>{@link #getDeclaredMethodAndConstructorInfo()}
      * </ul>
-     * 
-     * <p>
-     * There may be more than one method of a given name with different type signatures, due to overloading.
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 由于重载，可能有多个同名但类型签名不同的方法。
      *
      * <p>
-     * By default only returns information for public methods, unless {@link ClassGraph#ignoreMethodVisibility()}
-     * was called before the scan.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
-     * @return the list of {@link MethodInfo} objects for visible methods and constructors of this class, its
-     *         interfaces and superclasses, or the empty list if no methods were found.
+     * <p>
+     * 默认只返回公共方法的信息，除非在扫描前调用了 {@link ClassGraph#ignoreMethodVisibility()}。
+     *
+     * @return 此类、其接口和超类的可见方法和构造函数的 {@link MethodInfo} 对象列表，如果没有找到方法则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getMethodAndConstructorInfo() {
         return getMethodInfo(/* methodName = */ null, /* getNormalMethods = */ true,
@@ -2553,9 +2428,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on the method(s) or constructor(s) of the given name declared by this class, but not by
-     * its interfaces or superclasses. Constructors have the method name of {@code "<init>"}. See also:
-     * 
+     * 返回此类声明（但不包括其接口或超类声明）的指定名称的方法或构造函数的信息。
+     * 构造函数的方法名为 {@code "<init>"}。另请参见：
+     *
      * <ul>
      * <li>{@link #getMethodInfo(String)}
      * <li>{@link #getMethodInfo()}
@@ -2567,31 +2442,29 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * </ul>
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
      * <p>
-     * By default only returns information for public methods, unless {@link ClassGraph#ignoreMethodVisibility()}
-     * was called before the scan.
+     * 默认只返回公共方法的信息，除非在扫描前调用了 {@link ClassGraph#ignoreMethodVisibility()}。
      *
      * <p>
-     * May return info for multiple methods with the same name (with different type signatures).
+     * 可能返回多个同名方法的信息（具有不同的类型签名）。
      *
      * @param methodName
-     *            The method name to query.
-     * @return a list of {@link MethodInfo} objects for the method(s) with the given name, or the empty list if the
-     *         method was not found in this class (or is not visible).
+     *            要查询的方法名。
+     * @return 指定名称方法的 {@link MethodInfo} 对象列表，如果在此类中未找到该方法（或不可见）则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getDeclaredMethodInfo(final String methodName) {
         return getDeclaredMethodInfo(methodName, /* ignored */ false, /* ignored */ false, /* ignored */ false);
     }
 
     /**
-     * Returns information on the method(s) or constructor(s) of the given name declared by this class, but not by
-     * its interfaces or superclasses. Constructors have the method name of {@code "<init>"}. See also:
-     * 
+     * 返回此类或其接口或超类声明的指定名称的方法或构造函数的信息。
+     * 构造函数的方法名为 {@code "<init>"}。另请参见：
+     *
      * <ul>
      * <li>{@link #getDeclaredMethodInfo(String)}
      * <li>{@link #getMethodInfo()}
@@ -2603,68 +2476,62 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * </ul>
      *
      * <p>
-     * Requires that {@link ClassGraph#enableMethodInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 需要在扫描前调用 {@link ClassGraph#enableMethodInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
      * <p>
-     * By default only returns information for public methods, unless {@link ClassGraph#ignoreMethodVisibility()}
-     * was called before the scan.
+     * 默认只返回公共方法的信息，除非在扫描前调用了 {@link ClassGraph#ignoreMethodVisibility()}。
      *
      * <p>
-     * May return info for multiple methods with the same name (with different type signatures).
+     * 可能返回多个同名方法的信息（具有不同的类型签名）。
      *
      * @param methodName
-     *            The method name to query.
-     * @return a list of {@link MethodInfo} objects for the method(s) with the given name, or the empty list if the
-     *         method was not found in this class (or is not visible).
+     *            要查询的方法名。
+     * @return 指定名称方法的 {@link MethodInfo} 对象列表，如果在此类中未找到该方法（或不可见）则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableMethodInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableMethodInfo()}。
      */
     public MethodInfoList getMethodInfo(final String methodName) {
         return getMethodInfo(methodName, /* ignored */ false, /* ignored */ false, /* ignored */ false);
     }
 
     /**
-     * Get all method annotations.
+     * 获取所有方法注解。
      *
-     * @return A list of all annotations or meta-annotations on methods declared by the class, (not including
-     *         methods declared by the interfaces or superclasses of this class), as a list of {@link ClassInfo}
-     *         objects, or the empty list if none. N.B. these annotations do not contain specific annotation
-     *         parameters -- call {@link MethodInfo#getAnnotationInfo()} to get details on specific method
-     *         annotation instances.
+     * @return 此类声明的方法上的所有注解或元注解列表（不包括此类的接口或超类声明的方法），
+     *         作为 {@link ClassInfo} 对象列表，如果没有则返回空列表。
+     *         注意：这些注解不包含具体的注解参数——调用 {@link MethodInfo#getAnnotationInfo()}
+     *         获取具体方法注解实例的详细信息。
      */
     public ClassInfoList getMethodAnnotations() {
         return getFieldOrMethodAnnotations(RelType.METHOD_ANNOTATIONS);
     }
 
     /**
-     * Get all method parameter annotations.
+     * 获取所有方法参数注解。
      *
-     * @return A list of all annotations or meta-annotations on methods declared by the class, (not including
-     *         methods declared by the interfaces or superclasses of this class), as a list of {@link ClassInfo}
-     *         objects, or the empty list if none. N.B. these annotations do not contain specific annotation
-     *         parameters -- call {@link MethodInfo#getAnnotationInfo()} to get details on specific method
-     *         annotation instances.
+     * @return 此类声明的方法上的所有注解或元注解列表（不包括此类的接口或超类声明的方法），
+     *         作为 {@link ClassInfo} 对象列表，如果没有则返回空列表。
+     *         注意：这些注解不包含具体的注解参数——调用 {@link MethodInfo#getAnnotationInfo()}
+     *         获取具体方法注解实例的详细信息。
      */
     public ClassInfoList getMethodParameterAnnotations() {
         return getFieldOrMethodAnnotations(RelType.METHOD_PARAMETER_ANNOTATIONS);
     }
 
     /**
-     * Get all classes that have this class as a method annotation, and their subclasses, if the method is
-     * non-private.
+     * 获取以此类作为方法注解的所有类及其子类（如果方法是非私有的）。
      *
-     * @return A list of classes that have a declared method with this annotation or meta-annotation, or the empty
-     *         list if none.
+     * @return 声明了带有此注解或元注解的方法的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithMethodAnnotation() {
-        // Get all classes that have a method annotated or meta-annotated with this annotation
+        // 获取所有具有被此注解标注或元标注的方法的类
         final Set<ClassInfo> classesWithMethodAnnotation = new HashSet<>(
                 getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_METHOD_ANNOTATION));
-        // Add subclasses of all classes with a method that is non-privately annotated or meta-annotated with
-        // this annotation (non-private methods are inherited)
+        // 添加所有具有非私有的被此注解标注或元标注的方法的类的子类
+        // （非私有方法会被继承）
         for (final ClassInfo classWithNonprivateMethodAnnotationOrMetaAnnotation : //
-        getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_NONPRIVATE_METHOD_ANNOTATION)) {
+                getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_NONPRIVATE_METHOD_ANNOTATION)) {
             classesWithMethodAnnotation.addAll(classWithNonprivateMethodAnnotationOrMetaAnnotation.getSubclasses());
         }
         return new ClassInfoList(classesWithMethodAnnotation,
@@ -2672,20 +2539,18 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get all classes that have this class as a method parameter annotation, and their subclasses, if the method is
-     * non-private.
+     * 获取以此类作为方法参数注解的所有类及其子类（如果方法是非私有的）。
      *
-     * @return A list of classes that have a declared method with a parameter that is annotated with this annotation
-     *         or meta-annotation, or the empty list if none.
+     * @return 声明了带有被此注解或元注解标注的参数的方法的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithMethodParameterAnnotation() {
-        // Get all classes that have a method annotated or meta-annotated with this annotation
+        // 获取所有具有被此注解标注或元标注的方法的类
         final Set<ClassInfo> classesWithMethodParameterAnnotation = new HashSet<>(
                 getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_METHOD_PARAMETER_ANNOTATION));
-        // Add subclasses of all classes with a method that is non-privately annotated or meta-annotated with
-        // this annotation (non-private methods are inherited)
+        // 添加所有具有非私有的被此注解标注或元标注的方法的类的子类
+        // （非私有方法会被继承）
         for (final ClassInfo classWithNonprivateMethodParameterAnnotationOrMetaAnnotation : //
-        getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION)) {
+                getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION)) {
             classesWithMethodParameterAnnotation
                     .addAll(classWithNonprivateMethodParameterAnnotationOrMetaAnnotation.getSubclasses());
         }
@@ -2694,10 +2559,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the classes that have this class as a direct method annotation.
+     * 获取以此类作为直接方法注解的类。
      *
-     * @return A list of classes that declare methods that are directly annotated (i.e. are not meta-annotated) with
-     *         the requested method annotation, or the empty list if none.
+     * @return 声明了被请求的方法注解直接标注（即非元注解标注）的方法的类的列表，如果没有则返回空列表。
      */
     ClassInfoList getClassesWithMethodAnnotationDirectOnly() {
         return new ClassInfoList(
@@ -2706,22 +2570,18 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the classes that have this class as a direct method parameter annotation.
+     * 获取以此类作为直接方法参数注解的类。
      *
-     * @return A list of classes that declare methods with parameters that are directly annotated (i.e. are not
-     *         meta-annotated) with the requested method annotation, or the empty list if none.
+     * @return 声明了被请求的方法注解直接标注（即非元注解标注）的方法参数的类的列表，如果没有则返回空列表。
      */
     ClassInfoList getClassesWithMethodParameterAnnotationDirectOnly() {
         return new ClassInfoList(this.filterClassInfo(RelType.CLASSES_WITH_METHOD_PARAMETER_ANNOTATION,
                 /* strictAccept = */ !isExternalClass), /* sortByName = */ true);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-    // Fields
-
     /**
-     * Returns information on all visible fields declared by this class, but not by its superclasses. See also:
-     * 
+     * 返回此类声明（但不包括其超类声明）的所有可见字段的信息。另请参见：
+     *
      * <ul>
      * <li>{@link #getFieldInfo(String)}
      * <li>{@link #getDeclaredFieldInfo(String)}
@@ -2729,17 +2589,15 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * </ul>
      *
      * <p>
-     * Requires that {@link ClassGraph#enableFieldInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 需要在扫描前调用 {@link ClassGraph#enableFieldInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
      * <p>
-     * By default only returns information for public fields, unless {@link ClassGraph#ignoreFieldVisibility()} was
-     * called before the scan.
+     * 默认只返回公共字段的信息，除非在扫描前调用了 {@link ClassGraph#ignoreFieldVisibility()}。
      *
-     * @return the list of FieldInfo objects for visible fields declared by this class, or the empty list if no
-     *         fields were found or visible.
+     * @return 此类声明的可见字段的 FieldInfo 对象列表，如果没有找到或可见的字段则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableFieldInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}。
      */
     public FieldInfoList getDeclaredFieldInfo() {
         if (!scanResult.scanSpec.enableFieldInfo) {
@@ -2749,8 +2607,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on all visible fields declared by this class, or by its superclasses. See also:
-     * 
+     * 返回此类或其超类声明的所有可见字段的信息。另请参见：
+     *
      * <ul>
      * <li>{@link #getFieldInfo(String)}
      * <li>{@link #getDeclaredFieldInfo(String)}
@@ -2758,30 +2616,28 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * </ul>
      *
      * <p>
-     * Requires that {@link ClassGraph#enableFieldInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 需要在扫描前调用 {@link ClassGraph#enableFieldInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
      * <p>
-     * By default only returns information for public fields, unless {@link ClassGraph#ignoreFieldVisibility()} was
-     * called before the scan.
+     * 默认只返回公共字段的信息，除非在扫描前调用了 {@link ClassGraph#ignoreFieldVisibility()}。
      *
-     * @return the list of FieldInfo objects for visible fields of this class or its superclases, or the empty list
-     *         if no fields were found or visible.
+     * @return 此类或其超类的可见字段的 FieldInfo 对象列表，如果没有找到或可见的字段则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableFieldInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}。
      */
     public FieldInfoList getFieldInfo() {
         if (!scanResult.scanSpec.enableFieldInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableFieldInfo() before #scan()");
         }
-        // Implement field overriding
+        // 实现字段覆盖
         final FieldInfoList fieldInfoList = new FieldInfoList();
         final Set<String> fieldNameSet = new HashSet<>();
         for (final ClassInfo ci : getFieldOverrideOrder()) {
             for (final FieldInfo fi : ci.getDeclaredFieldInfo()) {
-                // If field has not been overridden by field of same name 
+                // 如果字段尚未被同名字段覆盖
                 if (fieldNameSet.add(fi.getName())) {
-                    // Add field to output order
+                    // 将字段添加到输出顺序中
                     fieldInfoList.add(fi);
                 }
             }
@@ -2790,10 +2646,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the enum constants of an enum class.
-     * 
-     * @return All enum constants of an enum class as a list of {@link FieldInfo} objects (enum constants are stored
-     *         as fields in Java classes).
+     * 获取枚举类的枚举常量。
+     *
+     * @return 枚举类的所有枚举常量，作为 {@link FieldInfo} 对象列表（枚举常量在 Java 类中存储为字段）。
      */
     public FieldInfoList getEnumConstants() {
         if (!isEnum()) {
@@ -2808,9 +2663,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the enum constants of an enum class.
-     * 
-     * @return All enum constants of an enum class as a list of objects of the same type as the enum.
+     * 获取枚举类的枚举常量对象。
+     *
+     * @return 枚举类的所有枚举常量，作为与枚举类型相同类型的对象列表。
      */
     public List<Object> getEnumConstantObjects() {
         if (!isEnum()) {
@@ -2832,8 +2687,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Returns information on the named field declared by the class, but not by its superclasses. See also:
-     * 
+     * 返回此类声明（但不包括其超类声明）的指定名称字段的信息。另请参见：
+     *
      * <ul>
      * <li>{@link #getFieldInfo(String)}
      * <li>{@link #getFieldInfo()}
@@ -2841,19 +2696,17 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * </ul>
      *
      * <p>
-     * Requires that {@link ClassGraph#enableFieldInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 需要在扫描前调用 {@link ClassGraph#enableFieldInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
      * <p>
-     * By default only returns information for public fields, unless {@link ClassGraph#ignoreFieldVisibility()} was
-     * called before the scan.
+     * 默认只返回公共字段的信息，除非在扫描前调用了 {@link ClassGraph#ignoreFieldVisibility()}。
      *
      * @param fieldName
-     *            The field name.
-     * @return the {@link FieldInfo} object for the named field declared by this class, or null if the field was not
-     *         found in this class (or is not visible).
+     *            字段名。
+     * @return 此类声明的指定名称字段的 {@link FieldInfo} 对象，如果在此类中未找到该字段（或不可见）则返回 null。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableFieldInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}。
      */
     public FieldInfo getDeclaredFieldInfo(final String fieldName) {
         if (!scanResult.scanSpec.enableFieldInfo) {
@@ -2870,9 +2723,12 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         return null;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+    // 字段
+
     /**
-     * Returns information on the named filed declared by this class, or by its superclasses. See also:
-     * 
+     * 返回此类或其超类声明的指定名称字段的信息。另请参见：
+     *
      * <ul>
      * <li>{@link #getDeclaredFieldInfo(String)}
      * <li>{@link #getFieldInfo()}
@@ -2880,25 +2736,23 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * </ul>
      *
      * <p>
-     * Requires that {@link ClassGraph#enableFieldInfo()} be called before scanning, otherwise throws
-     * {@link IllegalArgumentException}.
+     * 需要在扫描前调用 {@link ClassGraph#enableFieldInfo()}，否则抛出
+     * {@link IllegalArgumentException}。
      *
      * <p>
-     * By default only returns information for public fields, unless {@link ClassGraph#ignoreFieldVisibility()} was
-     * called before the scan.
+     * 默认只返回公共字段的信息，除非在扫描前调用了 {@link ClassGraph#ignoreFieldVisibility()}。
      *
      * @param fieldName
-     *            The field name.
-     * @return the {@link FieldInfo} object for the named field of this class or its superclases, or the empty list
-     *         if no fields were found or visible.
+     *            字段名。
+     * @return 此类或其超类指定名称字段的 {@link FieldInfo} 对象，如果没有找到或可见的字段则返回空列表。
      * @throws IllegalArgumentException
-     *             if {@link ClassGraph#enableFieldInfo()} was not called prior to initiating the scan.
+     *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}。
      */
     public FieldInfo getFieldInfo(final String fieldName) {
         if (!scanResult.scanSpec.enableFieldInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableFieldInfo() before #scan()");
         }
-        // Implement field overriding
+        // 实现字段覆盖
         for (final ClassInfo ci : getFieldOverrideOrder()) {
             final FieldInfo fi = ci.getDeclaredFieldInfo(fieldName);
             if (fi != null) {
@@ -2909,30 +2763,29 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get all field annotations.
+     * 获取所有字段注解。
      *
-     * @return A list of all annotations on fields of this class, or the empty list if none. N.B. these annotations
-     *         do not contain specific annotation parameters -- call {@link FieldInfo#getAnnotationInfo()} to get
-     *         details on specific field annotation instances.
+     * @return 此类字段上的所有注解列表，如果没有则返回空列表。
+     *         注意：这些注解不包含具体的注解参数——调用 {@link FieldInfo#getAnnotationInfo()}
+     *         获取具体字段注解实例的详细信息。
      */
     public ClassInfoList getFieldAnnotations() {
         return getFieldOrMethodAnnotations(RelType.FIELD_ANNOTATIONS);
     }
 
     /**
-     * Get the classes that have this class as a field annotation or meta-annotation.
+     * 获取以此类作为字段注解或元注解的类。
      *
-     * @return A list of classes that have a field with this annotation or meta-annotation, or the empty list if
-     *         none.
+     * @return 具有带有此注解或元注解的字段的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithFieldAnnotation() {
-        // Get all classes that have a field annotated or meta-annotated with this annotation
+        // 获取所有具有被此注解标注或元标注的字段的类
         final Set<ClassInfo> classesWithMethodAnnotation = new HashSet<>(
                 getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_FIELD_ANNOTATION));
-        // Add subclasses of all classes with a field that is non-privately annotated or meta-annotated with
-        // this annotation (non-private fields are inherited)
+        // 添加所有具有非私有的被此注解标注或元标注的字段的类的子类
+        // （非私有字段会被继承）
         for (final ClassInfo classWithNonprivateMethodAnnotationOrMetaAnnotation : //
-        getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION)) {
+                getClassesWithFieldOrMethodAnnotation(RelType.CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION)) {
             classesWithMethodAnnotation.addAll(classWithNonprivateMethodAnnotationOrMetaAnnotation.getSubclasses());
         }
         return new ClassInfoList(classesWithMethodAnnotation,
@@ -2940,10 +2793,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the classes that have this class as a direct field annotation.
+     * 获取以此类作为直接字段注解的类。
      *
-     * @return A list of classes that declare fields that are directly annotated (i.e. are not meta-annotated) with
-     *         the requested method annotation, or the empty list if none.
+     * @return 声明了被请求的方法注解直接标注（即非元注解标注）的字段的类的列表，如果没有则返回空列表。
      */
     ClassInfoList getClassesWithFieldAnnotationDirectOnly() {
         return new ClassInfoList(
@@ -2951,17 +2803,14 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 /* sortByName = */ true);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Get the parsed type signature for the class.
+     * 获取该类的已解析类型签名。
      *
-     * @return The parsed type signature for the class, including any generic type parameters, or null if not
-     *         available (probably indicating the class is not generic).
+     * @return 该类的已解析类型签名，包括任何泛型类型参数，如果不可用则返回 null
+     *         （可能表示该类不是泛型类）。
      * @throws IllegalArgumentException
-     *             if the class type signature cannot be parsed (this should only be thrown in the case of classfile
-     *             corruption, or a compiler bug that causes an invalid type signature to be written to the
-     *             classfile).
+     *             如果类类型签名无法解析（这通常只在 class 文件损坏或编译器 bug
+     *             导致无效的类型签名被写入 class 文件时才应抛出）。
      */
     public ClassTypeSignature getTypeSignature() {
         synchronized (this) {
@@ -2987,23 +2836,31 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the type signature string for the class.
+     * 设置类类型签名，包括任何类型参数。
      *
-     * @return The type signature string for the class, including any generic type parameters, or null if not
-     *         available (probably indicating the class is not generic).
+     * @param typeSignatureStr
+     *            类型签名字符串
+     */
+    void setTypeSignature(final String typeSignatureStr) {
+        this.typeSignatureStr = typeSignatureStr;
+    }
+
+    /**
+     * 获取该类的类型签名字符串。
+     *
+     * @return 该类的类型签名字符串，包括任何泛型类型参数，如果不可用则返回 null
+     *         （可能表示该类不是泛型类）。
      */
     public String getTypeSignatureStr() {
         return typeSignatureStr;
     }
 
     /**
-     * Returns the parsed type signature for this class, possibly including type parameters. If the type signature
-     * is not present for this class, indicating that this is not a generic class, then a type descriptor will be
-     * synthesized and returned, as if there were a type descriptor (classfiles may have a type signature but do not
-     * contain a type descriptor). May include type annotations on the superclass or interface(s).
-     * 
-     * @return The parsed generic type signature for the class, or if not available, the synthetic type descriptor
-     *         for the class.
+     * 返回该类的已解析类型签名，可能包含类型参数。如果该类不存在类型签名（表示这不是泛型类），
+     * 则将合成并返回一个类型描述符，就好像存在类型描述符一样（class 文件可能有类型签名但不包含类型描述符）。
+     * 可能包含超类或接口上的类型注解。
+     *
+     * @return 该类的已解析泛型类型签名，如果不可用则返回该类的合成类型描述符。
      */
     public ClassTypeSignature getTypeSignatureOrTypeDescriptor() {
         ClassTypeSignature typeSig = null;
@@ -3013,16 +2870,16 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 return typeSig;
             }
         } catch (final Exception e) {
-            // Ignore
+            // 忽略
         }
         return getTypeDescriptor();
     }
 
     /**
-     * Returns a synthetic type descriptor for the method, created from the class name, superclass name, and
-     * implemented interfaces. May include type annotations on the superclass or interface(s).
-     * 
-     * @return The synthetic type descriptor for the class.
+     * 返回该类的合成类型描述符，由类名、超类名和实现的接口创建。
+     * 可能包含超类或接口上的类型注解。
+     *
+     * @return 该类的合成类型描述符。
      */
     public ClassTypeSignature getTypeDescriptor() {
         synchronized (this) {
@@ -3039,44 +2896,53 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         return typeDescriptor;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Returns the name of the source file this class has been compiled from, such as {@code ClassInfo.java} or
-     * {@code KClass.kt}.
+     * 返回编译该类的源文件名，例如 {@code ClassInfo.java} 或 {@code KClass.kt}。
      *
      * <p>
-     * This field may be {@code null}.
+     * 此字段可能为 {@code null}。
      *
-     * @return The name of the source file of this class, or {@code null} if not available
+     * @return 该类的源文件名，如果不可用则返回 {@code null}
      */
     public String getSourceFile() {
         return sourceFile;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
+    /**
+     * 设置源文件。
+     *
+     * @param sourceFile
+     *            源文件
+     */
+    public void setSourceFile(final String sourceFile) {
+        this.sourceFile = sourceFile;
+    }
 
     /**
-     * Get the {@link URI} of the classpath element that this class was found within.
+     * 获取发现该类的类路径元素的 {@link URI}。
      *
-     * @return The {@link URI} of the classpath element that this class was found within.
+     * @return 发现该类的类路径元素的 {@link URI}。
      * @throws IllegalArgumentException
-     *             if the classpath element does not have a valid URI (e.g. for modules whose location URI is null).
+     *             如果类路径元素没有有效的 URI（例如对于位置 URI 为 null 的模块）。
      */
     public URI getClasspathElementURI() {
-        // Calling classfileResource.getClasspathElementURI() rather than classpathElement.getURI() will append
-        // any automatically-stripped package root prefix
+        // 调用 classfileResource.getClasspathElementURI() 而非 classpathElement.getURI()
+        // 将自动追加任何被自动剥离的包根前缀
         return classfileResource.getClasspathElementURI();
     }
 
     /**
-     * Get the {@link URL} of the classpath element or module that this class was found within. Use
-     * {@link #getClasspathElementURI()} instead if the resource may have come from a system module, or if this is a
-     * jlink'd runtime image, since "jrt:" URI schemes used by system modules and jlink'd runtime images are not
-     * suppored by {@link URL}, and this will cause {@link IllegalArgumentException} to be thrown.
+     * 获取发现该类的类路径元素或模块的 {@link URL}。如果资源可能来自系统模块或
+     * jlink 运行时镜像，请改用 {@link #getClasspathElementURI()}，因为系统模块和
+     * jlink 运行时镜像使用的 "jrt:" URI 方案不被 {@link URL} 支持，会导致抛出
+     * {@link IllegalArgumentException}。
      *
-     * @return The {@link URL} of the classpath element that this class was found within.
+     * @return 发现该类的类路径元素的 {@link URL}。
      * @throws IllegalArgumentException
-     *             if the classpath element URI cannot be converted to a {@link URL} (in particular, if the URI has
-     *             a {@code jrt:/} scheme).
+     *             如果类路径元素 URI 无法转换为 {@link URL}
+     *             （特别是当 URI 具有 {@code jrt:/} 方案时）。
      */
     public URL getClasspathElementURL() {
         try {
@@ -3087,13 +2953,13 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get the {@link File} for the classpath element package root dir or jar that this class was found within, or
-     * null if this class was found in a module. (See also {@link #getModuleRef}.)
+     * 获取发现该类的类路径元素包根目录或 jar 的 {@link File}，
+     * 如果该类在模块中发现则返回 null。（另请参见 {@link #getModuleRef}。）
      *
-     * @return The {@link File} for the classpath element package root dir or jar that this class was found within,
-     *         or null if this class was found in a module (see {@link #getModuleRef}). May also return null if the
-     *         classpath element was an http/https URL, and the jar was downloaded directly to RAM, rather than to a
-     *         temp file on disk (e.g. if the temp dir is not writeable).
+     * @return 发现该类的类路径元素包根目录或 jar 的 {@link File}，
+     *         如果该类在模块中发现则返回 null（参见 {@link #getModuleRef}）。
+     *         如果类路径元素是 http/https URL 且 jar 直接下载到 RAM 而非磁盘上的临时文件
+     *         （例如临时目录不可写），也可能返回 null。
      */
     public File getClasspathElementFile() {
         if (classpathElement == null) {
@@ -3102,12 +2968,14 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         return classpathElement.getFile();
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the module that this class was found within, as a {@link ModuleRef}, or null if this class was found in a
-     * directory or jar in the classpath. (See also {@link #getClasspathElementFile()}.)
+     * 获取发现该类的模块，作为 {@link ModuleRef}，如果该类在类路径中的目录或 jar 中发现则返回 null。
+     * （另请参见 {@link #getClasspathElementFile()}。）
      *
-     * @return The module that this class was found within, as a {@link ModuleRef}, or null if this class was found
-     *         in a directory or jar in the classpath. (See also {@link #getClasspathElementFile()}.)
+     * @return 发现该类的模块，作为 {@link ModuleRef}，如果该类在类路径中的目录或 jar 中发现则返回 null。
+     *         （另请参见 {@link #getClasspathElementFile()}。）
      */
     public ModuleRef getModuleRef() {
         if (classpathElement == null) {
@@ -3119,42 +2987,36 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * The {@link Resource} for the classfile of this class.
+     * 该类 class 文件的 {@link Resource}。
      *
-     * @return The {@link Resource} for the classfile of this class. Returns null if the classfile for this class
-     *         was not actually read during the scan, e.g. because this class was not itself accepted, but was
-     *         referenced by an accepted class.
+     * @return 该类 class 文件的 {@link Resource}。如果该类的 class 文件在扫描期间实际未被读取，
+     *         例如因为该类本身未被接受但被一个已接受的类引用，则返回 null。
      */
     public Resource getResource() {
         return classfileResource;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Obtain a {@code Class<?>} reference for the class named by this {@link ClassInfo} object, casting it to the
-     * requested interface or superclass type. Causes the ClassLoader to load the class, if it is not already
-     * loaded.
-     * 
+     * 获取此 {@link ClassInfo} 对象所命名类的 {@code Class<?>} 引用，并将其转换为
+     * 请求的接口或超类类型。如果类尚未加载，则使 ClassLoader 加载该类。
+     *
      * <p>
-     * <b>Important note:</b> since {@code superclassOrInterfaceType} is a class reference for an already-loaded
-     * class, it is critical that {@code superclassOrInterfaceType} is loaded by the same classloader as the class
-     * referred to by this {@code ClassInfo} object, otherwise the class cast will fail.
+     * <b>重要提示：</b>由于 {@code superclassOrInterfaceType} 是已加载类的类引用，
+     * 因此至关重要的是 {@code superclassOrInterfaceType} 必须由与此 {@code ClassInfo}
+     * 对象引用的类相同的类加载器加载，否则类转换将失败。
      *
      * @param <T>
-     *            the superclass or interface type
+     *            超类或接口类型
      * @param superclassOrInterfaceType
-     *            The {@link Class} reference for the type to cast the loaded class to.
+     *            要将加载的类转换到的类型的 {@link Class} 引用。
      * @param ignoreExceptions
-     *            If true, return null if any exceptions or errors thrown during classloading, or if attempting to
-     *            cast the resulting {@code Class<?>} reference to the requested superclass or interface type fails.
-     *            If false, {@link IllegalArgumentException} is thrown if the class could not be loaded or could not
-     *            be cast to the requested type.
-     * @return The class reference, or null, if ignoreExceptions is true and there was an exception or error loading
-     *         the class.
+     *            如果为 true，在类加载期间抛出任何异常或错误，或尝试将结果
+     *            {@code Class<?>} 引用转换为请求的超类或接口类型失败时返回 null。
+     *            如果为 false，当类无法加载或无法转换为请求的类型时抛出
+     *            {@link IllegalArgumentException}。
+     * @return 类引用，如果 ignoreExceptions 为 true 且加载类时发生异常或错误则返回 null。
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false and there were problems loading the class, or casting it to the
-     *             requested type.
+     *             如果 ignoreExceptions 为 false 且加载类或将其转换为请求的类型时出现问题。
      */
     @Override
     public <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType, final boolean ignoreExceptions) {
@@ -3162,22 +3024,21 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Obtain a {@code Class<?>} reference for the class named by this {@link ClassInfo} object, casting it to the
-     * requested interface or superclass type. Causes the ClassLoader to load the class, if it is not already
-     * loaded.
-     * 
+     * 获取此 {@link ClassInfo} 对象所命名类的 {@code Class<?>} 引用，并将其转换为
+     * 请求的接口或超类类型。如果类尚未加载，则使 ClassLoader 加载该类。
+     *
      * <p>
-     * <b>Important note:</b> since {@code superclassOrInterfaceType} is a class reference for an already-loaded
-     * class, it is critical that {@code superclassOrInterfaceType} is loaded by the same classloader as the class
-     * referred to by this {@code ClassInfo} object, otherwise the class cast will fail.
+     * <b>重要提示：</b>由于 {@code superclassOrInterfaceType} 是已加载类的类引用，
+     * 因此至关重要的是 {@code superclassOrInterfaceType} 必须由与此 {@code ClassInfo}
+     * 对象引用的类相同的类加载器加载，否则类转换将失败。
      *
      * @param <T>
-     *            The superclass or interface type
+     *            超类或接口类型
      * @param superclassOrInterfaceType
-     *            The type to cast the loaded class to.
-     * @return The class reference.
+     *            要将加载的类转换到的类型。
+     * @return 类引用。
      * @throws IllegalArgumentException
-     *             if there were problems loading the class or casting it to the requested type.
+     *             如果加载类或将其转换为请求的类型时出现问题。
      */
     @Override
     public <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
@@ -3185,38 +3046,37 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Obtain a {@code Class<?>} reference for the class named by this {@link ClassInfo} object. Causes the
-     * ClassLoader to load the class, if it is not already loaded.
+     * 获取此 {@link ClassInfo} 对象所命名类的 {@code Class<?>} 引用。
+     * 如果类尚未加载，则使 ClassLoader 加载该类。
      *
      * @param ignoreExceptions
-     *            Whether or not to ignore exceptions
-     * @return The class reference, or null, if ignoreExceptions is true and there was an exception or error loading
-     *         the class.
+     *            是否忽略异常
+     * @return 类引用，如果 ignoreExceptions 为 true 且加载类时发生异常或错误则返回 null。
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false and there were problems loading the class.
+     *             如果 ignoreExceptions 为 false 且加载类时出现问题。
      */
     @Override
     public Class<?> loadClass(final boolean ignoreExceptions) {
         return super.loadClass(ignoreExceptions);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Obtain a {@code Class<?>} reference for the class named by this {@link ClassInfo} object. Causes the
-     * ClassLoader to load the class, if it is not already loaded.
-     * 
-     * @return The class reference.
+     * 获取此 {@link ClassInfo} 对象所命名类的 {@code Class<?>} 引用。
+     * 如果类尚未加载，则使 ClassLoader 加载该类。
+     *
+     * @return 类引用。
      * @throws IllegalArgumentException
-     *             if there were problems loading the class.
+     *             如果加载类时出现问题。
      */
     @Override
     public Class<?> loadClass() {
         return super.loadClass(/* ignoreExceptions = */ false);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -3224,7 +3084,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -3232,7 +3092,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -3265,10 +3125,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Handle {@link Repeatable} annotations.
+     * 处理 {@link Repeatable} 注解。
      *
      * @param allRepeatableAnnotationNames
-     *            the names of all repeatable annotations
+     *            所有可重复注解的名称集合
      */
     void handleRepeatableAnnotations(final Set<String> allRepeatableAnnotationNames) {
         if (annotationInfo != null) {
@@ -3287,13 +3147,11 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Add names of classes referenced by this class.
+     * 添加此类引用的类名。
      *
      * @param refdClassNames
-     *            the referenced class names
+     *            引用的类名集合
      */
     void addReferencedClassNames(final Set<String> refdClassNames) {
         if (this.referencedClassNames == null) {
@@ -3304,20 +3162,19 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in this class' type descriptor, or the type
-     * descriptors of fields, methods or annotations.
+     * 获取此类类型描述符或字段、方法、注解类型描述符中引用的任何类的 {@link ClassInfo} 对象。
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射。
      * @param refdClassInfo
-     *            the referenced class info
+     *            引用的类信息集合
      * @param log
-     *            the log
+     *            日志
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
-        // Add this class to the set of references
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
+        // 将此类添加到引用集合中
         super.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         if (this.referencedClassNames != null) {
             for (final String refdClassName : this.referencedClassNames) {
@@ -3347,23 +3204,24 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Set the list of ClassInfo objects for classes referenced by this class.
+     * 设置此类引用的类的 ClassInfo 对象列表。
      *
      * @param refdClasses
-     *            the referenced classes
+     *            引用的类列表
      */
     void setReferencedClasses(final ClassInfoList refdClasses) {
         this.referencedClasses = refdClasses;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the class dependencies.
+     * 获取类依赖。
      *
-     * @return A {@link ClassInfoList} of {@link ClassInfo} objects for all classes referenced by this class. Note
-     *         that you need to call {@link ClassGraph#enableInterClassDependencies()} before
-     *         {@link ClassGraph#scan()} for this method to work. You should also call
-     *         {@link ClassGraph#enableExternalClasses()} before {@link ClassGraph#scan()} if you want non-accepted
-     *         classes to appear in the result.
+     * @return 此类引用的所有类的 {@link ClassInfoList} 列表。注意，需要在
+     *         {@link ClassGraph#scan()} 前调用 {@link ClassGraph#enableInterClassDependencies()}
+     *         此方法才能生效。如果希望未接受的类也出现在结果中，还应在此之前调用
+     *         {@link ClassGraph#enableExternalClasses()}。
      */
     public ClassInfoList getClassDependencies() {
         if (!scanResult.scanSpec.enableInterClassDependencies) {
@@ -3373,26 +3231,26 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         return referencedClasses == null ? ClassInfoList.EMPTY_LIST : referencedClasses;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Compare based on class name.
+     * 基于类名进行比较。
      *
      * @param o
-     *            the other object
-     * @return the comparison result
+     *            另一个对象
+     * @return 比较结果
      */
     @Override
     public int compareTo(final ClassInfo o) {
         return this.name.compareTo(o.name);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Use class name for equals().
+     * 对 equals() 使用类名。
      *
      * @param obj
-     *            the other object
-     * @return Whether the objects were equal.
+     *            另一个对象
+     * @return 对象是否相等。
      */
     @Override
     public boolean equals(final Object obj) {
@@ -3406,9 +3264,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /**
-     * Use hash code of class name.
+     * 使用类名的哈希码。
      *
-     * @return the hashcode
+     * @return 哈希码
      */
     @Override
     public int hashCode() {
@@ -3418,12 +3276,12 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * To string.
+     * 转换为字符串。
      *
      * @param useSimpleNames
-     *            use simple names
+     *            是否使用简单名称
      * @param buf
-     *            the buf
+     *            字符串缓冲区
      */
     @Override
     protected void toString(final boolean useSimpleNames, final StringBuilder buf) {
@@ -3441,30 +3299,30 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         try {
             typeSig = getTypeSignature();
         } catch (final Exception e) {
-            // Ignore
+            // 忽略
         }
         if (typeSig != null) {
-            // Generic classes
+            // 泛型类
             typeSig.toStringInternal(useSimpleNames ? ClassInfo.getSimpleName(name) : name,
                     /* useSimpleNames = */ false, modifiers, isAnnotation(), isInterface(),
                     /* annotationsToExclude = */ annotationInfo, buf);
         } else {
-            // Non-generic classes
+            // 非泛型类
             TypeUtils.modifiersToString(modifiers, ModifierType.CLASS, /* ignored */ false, buf);
             if (buf.length() > 0 && buf.charAt(buf.length() - 1) != ' ' && buf.charAt(buf.length() - 1) != '(') {
                 buf.append(' ');
             }
-            // Don't put class type in extends/implements clauses
+            // 不将类类型放在 extends/implements 子句中
             if (initialBufEmpty) {
                 buf.append(isRecord() ? "record " //
                         : isEnum() ? "enum " //
-                                : isAnnotation() ? "@interface " //
-                                        : isInterface() ? "interface " //
-                                                : "class ");
+                        : isAnnotation() ? "@interface " //
+                        : isInterface() ? "interface " //
+                        : "class ");
             }
             buf.append(useSimpleNames ? ClassInfo.getSimpleName(name) : name);
             if (isRecord) {
-                // Add params, if this is a record class
+                // 如果这是记录类，添加参数
                 buf.append('(');
                 boolean isFirstParam = true;
                 for (final FieldInfo fieldInfo : getFieldInfo()) {
@@ -3478,7 +3336,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 buf.append(')');
             }
             final ClassInfo superclass = getSuperclass();
-            if (superclass != null && !superclass.getName().equals("java.lang.Object")) {
+            if (superclass != null && !"java.lang.Object".equals(superclass.getName())) {
                 buf.append(" extends ");
                 superclass.toString(useSimpleNames, buf);
             }
@@ -3496,6 +3354,147 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                     iface.toString(useSimpleNames, buf);
                 }
             }
+        }
+    }
+
+    /** 类之间的关系类型。 */
+    enum RelType {
+
+        // 类关系：
+
+        /**
+         * 此类的超类，如果这是普通类的话。
+         *
+         * <p>
+         * （应该只包含一个条目，如果超类是 java.lang.Object 或未知则为 null）。
+         */
+        SUPERCLASSES,
+
+        /** 此类的子类，如果这是普通类的话。 */
+        SUBCLASSES,
+
+        /** 表示一个内部类包含在此类中。 */
+        CONTAINS_INNER_CLASS,
+
+        /** 表示一个外部类包含此类。（应该只有零个或一个条目。） */
+        CONTAINED_WITHIN_OUTER_CLASS,
+
+        // 接口关系：
+
+        /**
+         * 此类实现的接口（如果这是普通类的话），或超接口（如果这是接口的话）。
+         *
+         * <p>
+         * （也可能包含注解，因为注解是接口，所以可以实现一个注解。）
+         */
+        IMPLEMENTED_INTERFACES,
+
+        /**
+         * 实现此接口的类（包括子接口），如果这是接口的话。
+         */
+        CLASSES_IMPLEMENTING,
+
+        // 类注解关系：
+
+        /**
+         * 此类上的注解（如果这是普通类的话），或此注解上的元注解（如果这是注解的话）。
+         */
+        CLASS_ANNOTATIONS,
+
+        /** 被此注解标注的类，如果这是注解的话。 */
+        CLASSES_WITH_ANNOTATION,
+
+        // 方法注解关系：
+
+        /** 此类一个或多个方法上的注解。 */
+        METHOD_ANNOTATIONS,
+
+        /**
+         * 具有一个或多个被此注解标注的方法的类，如果这是注解的话。
+         */
+        CLASSES_WITH_METHOD_ANNOTATION,
+
+        /**
+         * 具有一个或多个被此注解标注的非私有（可继承）方法的类，如果这是注解的话。
+         */
+        CLASSES_WITH_NONPRIVATE_METHOD_ANNOTATION,
+
+        /** 此类一个或多个方法参数上的注解。 */
+        METHOD_PARAMETER_ANNOTATIONS,
+
+        /**
+         * 具有一个或多个方法，其一个或多个参数被此注解标注的类，如果这是注解的话。
+         */
+        CLASSES_WITH_METHOD_PARAMETER_ANNOTATION,
+
+        /**
+         * 具有一个或多个非私有（可继承）方法，其一个或多个参数被此注解标注的类，
+         * 如果这是注解的话。
+         */
+        CLASSES_WITH_NONPRIVATE_METHOD_PARAMETER_ANNOTATION,
+
+        // 字段注解关系：
+
+        /** 此类一个或多个字段上的注解。 */
+        FIELD_ANNOTATIONS,
+
+        /**
+         * 具有一个或多个被此注解标注的字段的类，如果这是注解的话。
+         */
+        CLASSES_WITH_FIELD_ANNOTATION,
+
+        /**
+         * 具有一个或多个被此注解标注的非私有（可继承）字段的类，如果这是注解的话。
+         */
+        CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION,
+    }
+
+    /** 要返回的类类型。 */
+    private enum ClassType {
+        /** 获取所有类类型。 */
+        ALL,
+        /** 标准类（非接口或注解）。 */
+        STANDARD_CLASS,
+        /**
+         * 接口（此处命名为"已实现接口"而非简单的"接口"，以区别于注解。）
+         */
+        IMPLEMENTED_INTERFACE,
+        /** 注解。 */
+        ANNOTATION,
+        /** 接口或注解（因为实际上可以实现一个注解）。 */
+        INTERFACE_OR_ANNOTATION,
+        /** 枚举。 */
+        ENUM,
+        /** 记录类型。 */
+        RECORD
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 对于给定关系类型，通过有向路径间接可达的类集合，以及直接关联
+     * （仅一步关系距离）的类集合。
+     */
+    static class ReachableAndDirectlyRelatedClasses {
+
+        /** 可达的类。 */
+        final Set<ClassInfo> reachableClasses;
+
+        /** 直接关联的类。 */
+        final Set<ClassInfo> directlyRelatedClasses;
+
+        /**
+         * 构造函数。
+         *
+         * @param reachableClasses
+         *            可达的类
+         * @param directlyRelatedClasses
+         *            直接关联的类
+         */
+        private ReachableAndDirectlyRelatedClasses(final Set<ClassInfo> reachableClasses,
+                                                   final Set<ClassInfo> directlyRelatedClasses) {
+            this.reachableClasses = reachableClasses;
+            this.directlyRelatedClasses = directlyRelatedClasses;
         }
     }
 }

@@ -1,10 +1,10 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.fxdecomplie.core.classgraph.AnnotationInfo;
-import com.bingbaihanji.fxdecomplie.core.classgraph.AnnotationInfoList;
-import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfo;
-import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfoList;
-import com.bingbaihanji.fxdecomplie.core.classgraph.ScanResult;
+import com.bingbaihanji.classgraph.core.AnnotationInfo;
+import com.bingbaihanji.classgraph.core.AnnotationInfoList;
+import com.bingbaihanji.classgraph.core.ClassInfo;
+import com.bingbaihanji.classgraph.core.ClassInfoList;
+import com.bingbaihanji.classgraph.core.ScanResult;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
@@ -12,6 +12,7 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.slf4j.Logger;
@@ -70,6 +71,7 @@ public final class ClassGraphWorkspaceAdapter {
 
         Map<String, ClassInfo> classInfoByName = new LinkedHashMap<>();
         List<ClassMetadata> metadatas = new ArrayList<>();
+        int skippedFileCount = 0;
 
         for (ClassIndexEntry entry : index.classes()) {
             String internalName = entry.internalName();
@@ -78,10 +80,12 @@ public final class ClassGraphWorkspaceAdapter {
             }
             byte[] bytes = readBytes(entry);
             if (bytes == null) {
+                skippedFileCount++;
                 continue;
             }
             ClassMetadata metadata = parse(bytes, entry.fullPath());
             if (metadata == null) {
+                skippedFileCount++;
                 continue;
             }
             metadatas.add(metadata);
@@ -92,11 +96,16 @@ public final class ClassGraphWorkspaceAdapter {
             ci.setScannedClass(true);
             ci.setExternalClass(false);
             ci.setFullPath(metadata.fullPath);
+            if (metadata.sourceFile != null) {
+                ci.setSourceFile(metadata.sourceFile);
+            }
         }
 
         linkRelations(classInfoByName, metadatas);
 
-        return new ScanResult(classInfoByName);
+        ScanResult result = new ScanResult(classInfoByName);
+        result.setSkippedFileCount(skippedFileCount);
+        return result;
     }
 
     private static byte[] readBytes(ClassIndexEntry entry) {
@@ -105,7 +114,7 @@ public final class ClassGraphWorkspaceAdapter {
             try {
                 return node.readBytes();
             } catch (IOException e) {
-                log.debug("读取节点字节失败: {}", node.getFullPath(), e);
+                log.warn("Failed to read class bytes: {}", node.getFullPath(), e);
             }
         }
         return entry.bytes();
@@ -117,9 +126,10 @@ public final class ClassGraphWorkspaceAdapter {
             MetadataVisitor visitor = new MetadataVisitor();
             reader.accept(visitor, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
             return new ClassMetadata(visitor.name, visitor.access, visitor.superName,
-                    List.copyOf(visitor.interfaces), List.copyOf(visitor.annotations), fullPath);
+                    List.copyOf(visitor.interfaces), List.copyOf(visitor.annotations),
+                    List.copyOf(visitor.methods), visitor.sourceFile, fullPath);
         } catch (Exception e) {
-            log.debug("ASM 解析类失败: {}", fullPath, e);
+            log.warn("ASM parse failed for: {}", fullPath, e);
             return null;
         }
     }
@@ -183,8 +193,10 @@ public final class ClassGraphWorkspaceAdapter {
         String name;
         int access;
         String superName;
+        String sourceFile;
         final List<String> interfaces = new ArrayList<>();
         final List<String> annotations = new ArrayList<>();
+        final List<MethodData> methods = new ArrayList<>();
 
         MetadataVisitor() {
             super(Opcodes.ASM9);
@@ -202,6 +214,11 @@ public final class ClassGraphWorkspaceAdapter {
         }
 
         @Override
+        public void visitSource(String source, String debug) {
+            this.sourceFile = source;
+        }
+
+        @Override
         public AnnotationVisitor visitAnnotation(String descriptor, boolean visible) {
             Type type = Type.getType(descriptor);
             String internalName = type.getInternalName();
@@ -210,9 +227,22 @@ public final class ClassGraphWorkspaceAdapter {
             }
             return null;
         }
+
+        @Override
+        public MethodVisitor visitMethod(int access, String name, String descriptor,
+                                        String signature, String[] exceptions) {
+            methods.add(new MethodData(name, descriptor, access));
+            return null;
+        }
     }
+
+    /**
+     * 轻量级方法数据（仅名称、描述符、访问标志）
+     */
+    private record MethodData(String name, String descriptor, int access) {}
 
     private record ClassMetadata(String name, int access, String superName,
                                  List<String> interfaces, List<String> annotations,
+                                 List<MethodData> methods, String sourceFile,
                                  String fullPath) {}
 }
