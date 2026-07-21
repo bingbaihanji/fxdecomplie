@@ -26,87 +26,85 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
+
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.lang.reflect.Array;
 import java.util.HashSet;
 import java.util.Set;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
-
 /**
- * Extract classpath entries from the Eclipse Equinox ClassLoader.
+ * 从 Eclipse Equinox ClassLoader 提取类路径条目。
  */
 class EquinoxClassLoaderHandler implements ClassLoaderHandler {
+    /** 字段名。 */
+    private static final String[] FIELD_NAMES = {"cp", "nestedDirName"};
     /**
-     * True if system bundles have been read. We assume there is only one system bundle on the classpath, so this is
-     * static.
+     * 如果已读取系统包则为 true。我们假设类路径上只有一个系统包，因此这是静态的。
      */
     private static boolean alreadyReadSystemBundles;
 
-    /** Field names. */
-    private static final String[] FIELD_NAMES = { "cp", "nestedDirName" };
-
-    /** Class cannot be constructed. */
-    private EquinoxClassLoaderHandler() {
+    /** 类不可构造。 */
+    public EquinoxClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "org.eclipse.osgi.internal.loader.EquinoxClassLoader");
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the order for.
+     *            要查找委托顺序的 {@link ClassLoader}。
      * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
+     *            要更新的 {@link ClassLoaderOrder} 对象。
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * Add the bundle file.
+     * 添加包文件。
      *
      * @param bundlefile
-     *            the bundle file
+     *            包文件
      * @param path
-     *            the path
+     *            路径
      * @param classLoader
-     *            the classloader
+     *            类加载器
      * @param classpathOrderOut
-     *            the classpath order
+     *            类路径顺序
      * @param scanSpec
-     *            the scan spec
+     *            扫描规范
      * @param log
-     *            the log
+     *            日志
      */
     private static void addBundleFile(final Object bundlefile, final Set<Object> path,
-            final ClassLoader classLoader, final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec,
-            final LogNode log) {
-        // Don't get stuck in infinite loop
+                                      final ClassLoader classLoader, final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec,
+                                      final LogNode log) {
+        // 避免陷入无限循环
         if (bundlefile != null && path.add(bundlefile)) {
-            // type File
+            // 类型 File
             final Object baseFile = classpathOrderOut.reflectionUtils.getFieldVal(false, bundlefile, "basefile");
             if (baseFile != null) {
                 boolean foundClassPathElement = false;
@@ -115,16 +113,16 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                             fieldName);
                     if (fieldVal != null) {
                         foundClassPathElement = true;
-                        // We found the base file and a classpath element, e.g. "bin/"
+                        // 找到了基文件和类路径元素，例如 "bin/"
                         Object base = baseFile;
                         String sep = "/";
-                        if (bundlefile.getClass().getName()
-                                .equals("org.eclipse.osgi.storage.bundlefile.NestedDirBundleFile")) {
-                            // Handle nested ZipBundleFile with "!/" separator
+                        if ("org.eclipse.osgi.storage.bundlefile.NestedDirBundleFile"
+                                .equals(bundlefile.getClass().getName())) {
+                            // 使用 "!/" 分隔符处理嵌套的 ZipBundleFile
                             final Object baseBundleFile = classpathOrderOut.reflectionUtils.getFieldVal(false,
                                     bundlefile, "baseBundleFile");
-                            if (baseBundleFile != null && baseBundleFile.getClass().getName()
-                                    .equals("org.eclipse.osgi.storage.bundlefile.ZipBundleFile")) {
+                            if (baseBundleFile != null && "org.eclipse.osgi.storage.bundlefile.ZipBundleFile"
+                                    .equals(baseBundleFile.getClass().getName())) {
                                 base = baseBundleFile;
                                 sep = "!/";
                             }
@@ -135,7 +133,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                     }
                 }
                 if (!foundClassPathElement) {
-                    // No classpath element found, just use basefile
+                    // 未找到类路径元素，直接使用基文件
                     classpathOrderOut.addClasspathEntry(baseFile.toString(), classLoader, scanSpec, log);
                 }
 
@@ -148,28 +146,28 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * Adds the classpath entries.
+     * 添加类路径条目。
      *
      * @param owner
-     *            the owner
+     *            所有者
      * @param classLoader
-     *            the class loader
+     *            类加载器
      * @param classpathOrderOut
-     *            the classpath order out
+     *            类路径顺序输出
      * @param scanSpec
-     *            the scan spec
+     *            扫描规范
      * @param log
-     *            the log
+     *            日志
      */
     private static void addClasspathEntries(final Object owner, final ClassLoader classLoader,
-            final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec, final LogNode log) {
-        // type ClasspathEntry[]
+                                            final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec, final LogNode log) {
+        // 类型 ClasspathEntry[]
         final Object entries = classpathOrderOut.reflectionUtils.getFieldVal(false, owner, "entries");
         if (entries != null) {
             for (int i = 0, n = Array.getLength(entries); i < n; i++) {
-                // type ClasspathEntry
+                // 类型 ClasspathEntry
                 final Object entry = Array.get(entries, i);
-                // type BundleFile
+                // 类型 BundleFile
                 final Object bundlefile = classpathOrderOut.reflectionUtils.getFieldVal(false, entry, "bundlefile");
                 addBundleFile(bundlefile, new HashSet<>(), classLoader, classpathOrderOut, scanSpec, log);
             }
@@ -177,67 +175,67 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
-        // type ClasspathManager
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
+        // 类型 ClasspathManager
         final Object manager = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "manager");
         addClasspathEntries(manager, classLoader, classpathOrder, scanSpec, log);
 
-        // type FragmentClasspath[]
+        // 类型 FragmentClasspath[]
         final Object fragments = classpathOrder.reflectionUtils.getFieldVal(false, manager, "fragments");
         if (fragments != null) {
             for (int f = 0, fragLength = Array.getLength(fragments); f < fragLength; f++) {
-                // type FragmentClasspath
+                // 类型 FragmentClasspath
                 final Object fragment = Array.get(fragments, f);
                 addClasspathEntries(fragment, classLoader, classpathOrder, scanSpec, log);
             }
         }
-        // Only read system bundles once (all bundles should give the same results for this).
+        // 仅读取系统包一次（所有包对此应给出相同结果）。
         if (!alreadyReadSystemBundles) {
-            // type BundleLoader
+            // 类型 BundleLoader
             final Object delegate = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "delegate");
-            // type EquinoxContainer
+            // 类型 EquinoxContainer
             final Object container = classpathOrder.reflectionUtils.getFieldVal(false, delegate, "container");
-            // type Storage
+            // 类型 Storage
             final Object storage = classpathOrder.reflectionUtils.getFieldVal(false, container, "storage");
-            // type ModuleContainer
+            // 类型 ModuleContainer
             final Object moduleContainer = classpathOrder.reflectionUtils.getFieldVal(false, storage,
                     "moduleContainer");
-            // type ModuleDatabase
+            // 类型 ModuleDatabase
             final Object moduleDatabase = classpathOrder.reflectionUtils.getFieldVal(false, moduleContainer,
                     "moduleDatabase");
-            // type HashMap<Integer, EquinoxModule>
+            // 类型 HashMap<Integer, EquinoxModule>
             final Object modulesById = classpathOrder.reflectionUtils.getFieldVal(false, moduleDatabase,
                     "modulesById");
-            // type EquinoxSystemModule (module 0 is always the system module)
+            // 类型 EquinoxSystemModule（模块 0 始终是系统模块）
             final Object module0 = classpathOrder.reflectionUtils.invokeMethod(false, modulesById, "get",
                     Object.class, 0L);
-            // type Bundle
+            // 类型 Bundle
             final Object bundle = classpathOrder.reflectionUtils.invokeMethod(false, module0, "getBundle");
-            // type BundleContext
+            // 类型 BundleContext
             final Object bundleContext = classpathOrder.reflectionUtils.invokeMethod(false, bundle,
                     "getBundleContext");
-            // type Bundle[]
+            // 类型 Bundle[]
             final Object bundles = classpathOrder.reflectionUtils.invokeMethod(false, bundleContext, "getBundles");
             if (bundles != null) {
                 for (int i = 0, n = Array.getLength(bundles); i < n; i++) {
-                    // type EquinoxBundle
+                    // 类型 EquinoxBundle
                     final Object equinoxBundle = Array.get(bundles, i);
-                    // type EquinoxModule
+                    // 类型 EquinoxModule
                     final Object module = classpathOrder.reflectionUtils.getFieldVal(false, equinoxBundle,
                             "module");
-                    // type String
+                    // 类型 String
                     String location = (String) classpathOrder.reflectionUtils.getFieldVal(false, module,
                             "location");
                     if (location != null) {

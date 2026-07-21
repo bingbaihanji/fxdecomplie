@@ -26,85 +26,76 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 /**
- * This handler uses
- * {@link nonapi.io.github.classgraph.classloaderhandler.ClassLoaderHandler.DelegationOrder#PARENT_LAST} to support
- * the <code>RestartClassLoader</code> of Spring Boot's devtools. <code>RestartClassLoader</code> provides parent
- * last loading for specified URLs (those are all that are supposed to be changed during development). Therefor the
- * handler for that class loader also has to delegate in <code>PARENT_LAST</code> order.
+ * 此处理器使用
+ * {@link com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandler.DelegationOrder#PARENT_LAST} 来支持
+ * Spring Boot devtools 的 <code>RestartClassLoader</code>。<code>RestartClassLoader</code> 为指定的
+ * URL（这些都是在开发过程中应更改的）提供父级最后加载。因此，该类加载器的处理器也必须以
+ * <code>PARENT_LAST</code> 顺序进行委托。
  */
 class SpringBootRestartClassLoaderHandler implements ClassLoaderHandler {
-    /** Class cannot be constructed. */
-    private SpringBootRestartClassLoaderHandler() {
+    /** 类不可构造。 */
+    public SpringBootRestartClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "org.springframework.boot.devtools.restart.classloader.RestartClassLoader");
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
-     * @param classLoader
-     *            the {@link ClassLoader} to find the order for.
-     * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
-     * @param log
-     *            the log
+     * @param classLoader  要查找委托顺序的 {@link ClassLoader}。
+     * @param classLoaderOrder  要更新的 {@link ClassLoaderOrder} 对象。
+     * @param log 日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
-        // The Restart classloader is a parent-last classloader, so add the Restart classloader itself to the
-        // classloader order first
-        classLoaderOrder.add(classLoader, log);
-
-        // Delegate to the parent of the RestartClassLoader
-        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
+        // Restart 类加载器是父级最后类加载器，因此首先将 Restart 类加载器本身添加到类加载器顺序中
+        new ParentLastDelegationOrderTestClassLoaderHandler().findClassLoaderOrder(classLoader, classLoaderOrder, log);
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
-     * 
-     * Spring Boot's RestartClassLoader sits in front of the parent class loader and watches a given set of
-     * directories for changes. While those classes are reachable from the parent class loader directly, they should
-     * always be loaded through direct access from the RestartClassLoader until it's completely turned of by means
-     * of Spring Boot Developer tools.
-     * 
-     * The RestartClassLoader shades only the project classes and additional directories that are configurable, so
-     * itself needs access to parent, but last.
-     * 
-     * See: <a href="https://github.com/classgraph/classgraph/issues/267">#267</a>,
+     * 查找关联 {@link ClassLoader} 的类路径条目。
+     *
+     * Spring Boot 的 RestartClassLoader 位于父级类加载器之前，并监视一组给定的目录是否有更改。
+     * 虽然这些类可以直接从父级类加载器访问，但在通过 Spring Boot Developer Tools 完全关闭之前，
+     * 它们应始终通过 RestartClassLoader 的直接访问来加载。
+     *
+     * RestartClassLoader 仅遮蔽项目类和可配置的附加目录，因此它本身需要以最后顺序访问父级。
+     *
+     * 参见：<a href="https://github.com/classgraph/classgraph/issues/267">#267</a>、
      * <a href="https://github.com/classgraph/classgraph/issues/268">#268</a>
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
-        // The Restart classloader doesn't itself store any URLs
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
+        // Restart 类加载器本身不存储任何 URL
     }
 }

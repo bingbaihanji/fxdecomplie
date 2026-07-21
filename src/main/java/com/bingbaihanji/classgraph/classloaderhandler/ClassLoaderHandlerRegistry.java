@@ -26,68 +26,64 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
 
-import java.lang.reflect.Method;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
-
-/** The registry for ClassLoaderHandler classes. */
+/** ClassLoaderHandler 类的注册表。 */
 public class ClassLoaderHandlerRegistry {
     /**
-     * Default ClassLoaderHandlers. If a ClassLoaderHandler is added to ClassGraph, it should be added to this list.
+     * 默认的 ClassLoaderHandler 列表。如果向 ClassGraph 添加了 ClassLoaderHandler，则应将其添加到此列表中。
      */
-    @SuppressWarnings("null")
     public static final List<ClassLoaderHandlerRegistryEntry> CLASS_LOADER_HANDLERS = //
             Collections.unmodifiableList(Arrays.asList(
-                    // ClassLoaderHandlers for other ClassLoaders that are handled by ClassGraph
-                    new ClassLoaderHandlerRegistryEntry(AntClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(EquinoxClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(EquinoxContextFinderClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(FelixClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(JBossClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(WeblogicClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(WebsphereLibertyClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(WebsphereTraditionalClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(OSGiDefaultClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(SpringBootRestartClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(TomcatWebappClassLoaderBaseHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(CxfContainerClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(PlexusClassWorldsClassRealmClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(QuarkusClassLoaderHandler.class),
-                    new ClassLoaderHandlerRegistryEntry(UnoOneJarClassLoaderHandler.class),
+                    // ClassGraph 处理的其他 ClassLoader 的 ClassLoaderHandler
+                    new ClassLoaderHandlerRegistryEntry(new AntClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new EquinoxClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new EquinoxContextFinderClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new FelixClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new JBossClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new WeblogicClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new WebsphereLibertyClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new WebsphereTraditionalClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new OSGiDefaultClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new SpringBootRestartClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new TomcatWebappClassLoaderBaseHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new CxfContainerClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new PlexusClassWorldsClassRealmClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new QuarkusClassLoaderHandler()),
+                    new ClassLoaderHandlerRegistryEntry(new UnoOneJarClassLoaderHandler()),
 
-                    // For unit testing of PARENT_LAST delegation order
-                    new ClassLoaderHandlerRegistryEntry(ParentLastDelegationOrderTestClassLoaderHandler.class),
+                    // 用于 PARENT_LAST 委托顺序的单元测试
+                    new ClassLoaderHandlerRegistryEntry(new ParentLastDelegationOrderTestClassLoaderHandler()),
 
-                    // JPMS support (this handler does nothing, since modules are handled separately)
-                    new ClassLoaderHandlerRegistryEntry(JPMSClassLoaderHandler.class),
+                    // JPMS 支持（此处理器不执行任何操作，因为模块是单独处理的）
+                    new ClassLoaderHandlerRegistryEntry(new JPMSClassLoaderHandler()),
 
-                    // Java 7/8 URLClassLoader support (should be second-to-last, so that subclasses of
-                    // URLClassLoader are handled by more specific handlers above)
-                    new ClassLoaderHandlerRegistryEntry(URLClassLoaderHandler.class),
+                    // Java 7/8 URLClassLoader 支持（应位于倒数第二位，以便 URLClassLoader 的子类由上面更具体的处理器处理）
+                    new ClassLoaderHandlerRegistryEntry(new URLClassLoaderHandler()),
 
-                    // Placeholder for delegation to a ClassGraphClassLoader instance from an outer nested scan
-                    new ClassLoaderHandlerRegistryEntry(ClassGraphClassLoaderHandler.class)
+                    // 用于从外部嵌套扫描委托给 ClassGraphClassLoader 实例的占位符
+                    new ClassLoaderHandlerRegistryEntry(new ClassGraphClassLoaderHandler())
 
-            // FallbackClassLoaderHandler.class is registered separately below
+                    // FallbackClassLoaderHandler.class 在下面单独注册
             ));
 
-    /** Fallback ClassLoaderHandler. */
+    /** 回退类加载器处理器。 */
     public static final ClassLoaderHandlerRegistryEntry FALLBACK_HANDLER = new ClassLoaderHandlerRegistryEntry(
-            FallbackClassLoaderHandler.class);
+            new FallbackClassLoaderHandler());
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Lib dirs whose jars should be added to the classpath automatically (to compensate for some classloaders not
-     * explicitly listing these jars as classpath elements).
+     * 应自动将其 JAR 文件添加到类路径的库目录（用于补偿某些类加载器未将这些 JAR 文件显式列为类路径元素的情况）。
      */
     public static final String[] AUTOMATIC_LIB_DIR_PREFIXES = {
             // Spring-Boot
@@ -97,147 +93,96 @@ public class ClassLoaderHandlerRegistry {
             "WEB-INF/lib/", "WEB-INF/lib-provided/",
             // OSGi
             "META-INF/lib/",
-            // Tomcat and others
+            // Tomcat 及其他
             "lib/",
-            // Extension dir
+            // 扩展目录
             "lib/ext/",
             // UnoJar and One-Jar
             "main/" //
     };
 
     /**
-     * Automatic classfile prefixes (to compensate for some classloaders not explicitly listing these prefixes as
-     * part of the classpath element URL or path).
+     * 自动类文件前缀（用于补偿某些类加载器未将这些前缀显式列为类路径元素 URL 或路径的情况）。
      */
     public static final String[] AUTOMATIC_PACKAGE_ROOT_PREFIXES = {
-            // Ant, Tomcat and others
+            // Ant、Tomcat 及其他
             "classes/",
             // Ant
             "test-classes/",
             // Spring-Boot
             "BOOT-INF/classes/",
             // Tomcat
-            "WEB-INF/classes/", };
+            "WEB-INF/classes/",};
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数。
      */
     private ClassLoaderHandlerRegistry() {
-        // Cannot be constructed
+        // 不可构造
     }
 
     /**
-     * A list of fully-qualified ClassLoader class names paired with the ClassLoaderHandler that can handle them.
+     * 完全限定类加载器类名与可处理它们的 ClassLoaderHandler 的配对列表。
      */
     public static class ClassLoaderHandlerRegistryEntry {
-        /** canHandle method. */
-        private final Method canHandleMethod;
-
-        /** findClassLoaderOrder method. */
-        private final Method findClassLoaderOrderMethod;
-
-        /** findClasspathOrder method. */
-        private final Method findClasspathOrderMethod;
-
-        /** The ClassLoaderHandler class. */
-        public final Class<? extends ClassLoaderHandler> classLoaderHandlerClass;
+        /** ClassLoaderHandler 实例。 */
+        public final ClassLoaderHandler classLoaderHandler;
 
         /**
-         * Constructor.
+         * 构造函数。
          *
-         * @param classLoaderHandlerClass
-         *            The ClassLoaderHandler class.
+         * @param classLoaderHandler
+         *            ClassLoaderHandler 实例。
          */
-        private ClassLoaderHandlerRegistryEntry(final Class<? extends ClassLoaderHandler> classLoaderHandlerClass) {
-            // TODO: replace these with MethodHandles for speed
-            // TODO: (although MethodHandles are disabled for now, due to Animal Sniffer bug):
-            // https://github.com/mojohaus/animal-sniffer/issues/67
-            this.classLoaderHandlerClass = classLoaderHandlerClass;
-            try {
-                canHandleMethod = classLoaderHandlerClass.getDeclaredMethod("canHandle", Class.class,
-                        LogNode.class);
-            } catch (final Exception e) {
-                throw new RuntimeException(
-                        "Could not find canHandle method for " + classLoaderHandlerClass.getName(), e);
-            }
-            try {
-                findClassLoaderOrderMethod = classLoaderHandlerClass.getDeclaredMethod("findClassLoaderOrder",
-                        ClassLoader.class, ClassLoaderOrder.class, LogNode.class);
-            } catch (final Exception e) {
-                throw new RuntimeException(
-                        "Could not find findClassLoaderOrder method for " + classLoaderHandlerClass.getName(), e);
-            }
-            try {
-                findClasspathOrderMethod = classLoaderHandlerClass.getDeclaredMethod("findClasspathOrder",
-                        ClassLoader.class, ClasspathOrder.class, ScanSpec.class, LogNode.class);
-            } catch (final Exception e) {
-                throw new RuntimeException(
-                        "Could not find findClasspathOrder method for " + classLoaderHandlerClass.getName(), e);
-            }
+        private ClassLoaderHandlerRegistryEntry(final ClassLoaderHandler classLoaderHandler) {
+            this.classLoaderHandler = classLoaderHandler;
         }
 
         /**
-         * Call the static method canHandle(ClassLoader) for the associated {@link ClassLoaderHandler}.
+         * 调用关联的 {@link ClassLoaderHandler} 的 canHandle 方法。
          *
          * @param classLoader
-         *            the {@link ClassLoader}.
+         *            {@link ClassLoader}。
          * @param log
-         *            the log.
-         * @return true, if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+         *            日志。
+         * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
          */
         public boolean canHandle(final Class<?> classLoader, final LogNode log) {
-            try {
-                return (boolean) canHandleMethod.invoke(null, classLoader, log);
-            } catch (final Throwable e) {
-                throw new RuntimeException(
-                        "Exception while calling canHandle for " + classLoaderHandlerClass.getName(), e);
-            }
+            return classLoaderHandler.canHandle(classLoader, log);
         }
 
         /**
-         * Call the static method findClassLoaderOrder(ClassLoader, ClassLoaderOrder) for the associated
-         * {@link ClassLoaderHandler}.
+         * 调用关联的 {@link ClassLoaderHandler} 的 findClassLoaderOrder 方法。
          *
          * @param classLoader
-         *            the {@link ClassLoader}.
+         *            {@link ClassLoader}。
          * @param classLoaderOrder
-         *            a {@link ClassLoaderOrder} object.
+         *            {@link ClassLoaderOrder} 对象。
          * @param log
-         *            the log
+         *            日志
          */
         public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-                final LogNode log) {
-            try {
-                findClassLoaderOrderMethod.invoke(null, classLoader, classLoaderOrder, log);
-            } catch (final Throwable e) {
-                throw new RuntimeException(
-                        "Exception while calling findClassLoaderOrder for " + classLoaderHandlerClass.getName(), e);
-            }
+                                         final LogNode log) {
+            classLoaderHandler.findClassLoaderOrder(classLoader, classLoaderOrder, log);
         }
 
         /**
-         * Call the static method findClasspathOrder(ClassLoader, ClasspathOrder) for the associated
-         * {@link ClassLoaderHandler}.
+         * 调用关联的 {@link ClassLoaderHandler} 的 findClasspathOrder 方法。
          *
          * @param classLoader
-         *            the {@link ClassLoader}.
+         *            {@link ClassLoader}。
          * @param classpathOrder
-         *            a {@link ClasspathOrder} object.
+         *            {@link ClasspathOrder} 对象。
          * @param scanSpec
-         *            the {@link ScanSpec}.
+         *            {@link ScanSpec}。
          * @param log
-         *            the log.
+         *            日志。
          */
         public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                final ScanSpec scanSpec, final LogNode log) {
-            try {
-                findClasspathOrderMethod.invoke(null, classLoader, classpathOrder, scanSpec, log);
-            } catch (final Throwable e) {
-                throw new RuntimeException(
-                        "Exception while calling findClassLoaderOrder for " + classLoaderHandlerClass.getName(), e);
-            }
+                                       final ScanSpec scanSpec, final LogNode log) {
+            classLoaderHandler.findClasspathOrder(classLoader, classpathOrder, scanSpec, log);
         }
     }
 }

@@ -26,38 +26,37 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
+
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.core.ClassGraphClassLoader;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.net.URL;
 
-import io.github.classgraph.ClassGraphClassLoader;
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
-
 /**
- * Allow for overrideClassLoaders to be called with a ClassGraphClassLoader as a parameter, so that nested scans can
- * share a single classloader (#485).
+ * 允许以 ClassGraphClassLoader 作为参数调用 overrideClassLoaders，以便嵌套扫描可以共享单个类加载器（#485）。
  */
 class ClassGraphClassLoaderHandler implements ClassLoaderHandler {
-    /** Class cannot be constructed. */
-    private ClassGraphClassLoaderHandler() {
+    /** 类不可构造。 */
+    public ClassGraphClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类之一。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         final boolean matches = ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "io.github.classgraph.ClassGraphClassLoader");
+                "com.bingbaihanji.classgraph.core.ClassGraphClassLoader");
         if (matches && log != null) {
             log.log("Sharing a `ClassGraphClassLoader` between multiple nested scans is not advisable, "
                     + "because scan criteria may differ between scans. "
@@ -67,40 +66,38 @@ class ClassGraphClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the order for.
+     *            要查找其顺序的 {@link ClassLoader}。
      * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
+     *            要更新的 {@link ClassLoaderOrder} 对象。
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联的 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找其类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
-        // ClassGraphClassLoader overrides URLClassLoader, so we can get the basic classpath URLs the same
-        // way as for URLClassLoader. However, classloading will try to preferentially reuse the older
-        // ClassGraphClassLoader before loading with the new ClassGraphClassLoader from the current scan,
-        // so the following URLs will be scanned by the current scan, but classes will only be loaded from
-        // these URLs if the older classloader fails.
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
+        // ClassGraphClassLoader 覆盖了 URLClassLoader，因此我们可以使用与 URLClassLoader 相同的方式获取基本类路径 URL。
+        // 然而，类加载将优先尝试重用旧的 ClassGraphClassLoader，然后再使用当前扫描中的新 ClassGraphClassLoader 进行加载，
+        // 因此以下 URL 将被当前扫描扫描，但只有旧的类加载器失败时，才会从这些 URL 加载类。
         for (final URL url : ((ClassGraphClassLoader) classLoader).getURLs()) {
             if (url != null) {
                 classpathOrder.addClasspathEntry(url, classLoader, scanSpec, log);

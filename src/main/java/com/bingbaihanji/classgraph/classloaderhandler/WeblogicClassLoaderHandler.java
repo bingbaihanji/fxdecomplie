@@ -26,74 +26,73 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
-/** Extract classpath entries from the Weblogic ClassLoaders. */
+/** 从 Weblogic ClassLoaders 提取类路径条目。 */
 class WeblogicClassLoaderHandler implements ClassLoaderHandler {
-    /** Class cannot be constructed. */
-    private WeblogicClassLoaderHandler() {
+    /** 类不可构造。 */
+    public WeblogicClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "weblogic.utils.classloaders.ChangeAwareClassLoader")
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                        "weblogic.utils.classloaders.GenericClassLoader")
+                "weblogic.utils.classloaders.GenericClassLoader")
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                        "weblogic.utils.classloaders.FilteringClassLoader")
-                // TODO: The following two known classloader names have not been tested, and the fields/methods
-                // may not match those of the above classloaders.
+                "weblogic.utils.classloaders.FilteringClassLoader")
+                // TODO：以下两个已知类加载器名称尚未测试，其字段/方法可能与上述类加载器不匹配。
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                        "weblogic.servlet.jsp.JspClassLoader")
+                "weblogic.servlet.jsp.JspClassLoader")
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                        "weblogic.servlet.jsp.TagFileClassLoader");
+                "weblogic.servlet.jsp.TagFileClassLoader");
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the order for.
+     *            要查找委托顺序的 {@link ClassLoader}。
      * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
+     *            要更新的 {@link ClassLoaderOrder} 对象。
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
         classpathOrder.addClasspathPathStr( //
                 (String) classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getFinderClassPath"),
                 classLoader, scanSpec, log);

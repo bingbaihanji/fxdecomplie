@@ -26,76 +26,73 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
+
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.net.URL;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
-
 /**
- * A placeloader ClassLoaderHandler that matches Java 9+ classloaders, but does not attempt to extract URLs from
- * them (module scanning uses a different mechanism from classpath scanning).
+ * 一个占位 ClassLoaderHandler，用于匹配 Java 9+ 类加载器，但不尝试从中提取 URL（模块扫描使用与类路径扫描不同的机制）。
  */
 class JPMSClassLoaderHandler implements ClassLoaderHandler {
-    /** Class cannot be constructed. */
-    private JPMSClassLoaderHandler() {
+    /** 类不可构造。 */
+    public JPMSClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "jdk.internal.loader.ClassLoaders$AppClassLoader")
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                        "jdk.internal.loader.BuiltinClassLoader");
+                "jdk.internal.loader.BuiltinClassLoader");
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the order for.
+     *            要查找委托顺序的 {@link ClassLoader}。
      * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
+     *            要更新的 {@link ClassLoaderOrder} 对象。
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
-        // The JDK9 classloaders have a field, `URLClassPath ucp`, containing URLs for unnamed modules,
-        // but it is not visible. Modules therefore have to be scanned using the JPMS API.
-        // However, it is possible for a Java agent to extend UCP by adding directly to the `ucp` field
-        // (#537), and there is no way to read this field. Therefore, we need to use Narcissus to break
-        // Java's encapsulation to read this, for this small corner case.
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
+        // JDK9 类加载器有一个字段 URLClassPath ucp，其中包含未命名模块的 URL，但它不可见。因此模块必须使用 JPMS API 进行扫描。
+        // 然而，Java 代理可以通过直接添加到 ucp 字段来扩展 UCP（#537），并且无法读取此字段。
+        // 因此，我们需要使用 Narcissus 打破 Java 的封装来读取它，以应对这种小型边界情况。
         final Object ucpVal = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "ucp");
         if (ucpVal != null) {
             final URL[] urls = (URL[]) classpathOrder.reflectionUtils.invokeMethod(false, ucpVal, "getURLs");

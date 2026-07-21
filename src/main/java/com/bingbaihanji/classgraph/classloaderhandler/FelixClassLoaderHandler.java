@@ -26,109 +26,109 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
+
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
-
 /**
- * Custom Class Loader Handler for OSGi Felix ClassLoader.
+ * OSGi Felix ClassLoader 的自定义类加载器处理器。
  *
  * <p>
- * The handler adds the bundle jar and all assocaited Bundle-Claspath jars into the classpath to be scanned.
+ * 该处理器将包 JAR 及所有关联的 Bundle-Classpath JAR 添加到类路径中进行扫描。
  *
  * @author elrufaie
  */
 class FelixClassLoaderHandler implements ClassLoaderHandler {
-    /** Class cannot be constructed. */
-    private FelixClassLoaderHandler() {
+    /** 类不可构造。 */
+    public FelixClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "org.apache.felix.framework.BundleWiringImpl$BundleClassLoaderJava5")
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                        "org.apache.felix.framework.BundleWiringImpl$BundleClassLoader");
+                "org.apache.felix.framework.BundleWiringImpl$BundleClassLoader");
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the order for.
+     *            要查找委托顺序的 {@link ClassLoader}。
      * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
+     *            要更新的 {@link ClassLoaderOrder} 对象。
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * Get the content location.
+     * 获取内容位置。
      *
      * @param content
-     *            the content object
-     * @return the content location
+     *            内容对象
+     * @return 内容位置
      */
     private static File getContentLocation(final Object content, final ReflectionUtils reflectionUtils) {
         return (File) reflectionUtils.invokeMethod(false, content, "getFile");
     }
 
     /**
-     * Adds the bundle.
+     * 添加包。
      *
      * @param bundleWiring
-     *            the bundle wiring
+     *            包连接
      * @param classLoader
-     *            the classloader
+     *            类加载器
      * @param classpathOrderOut
-     *            the classpath order out
+     *            类路径顺序输出
      * @param bundles
-     *            the bundles
+     *            包集合
      * @param scanSpec
-     *            the scan spec
+     *            扫描规范
      * @param log
-     *            the log
+     *            日志
      */
     private static void addBundle(final Object bundleWiring, final ClassLoader classLoader,
-            final ClasspathOrder classpathOrderOut, final Set<Object> bundles, final ScanSpec scanSpec,
-            final LogNode log) {
-        // Track the bundles we've processed to prevent loops
+                                  final ClasspathOrder classpathOrderOut, final Set<Object> bundles, final ScanSpec scanSpec,
+                                  final LogNode log) {
+        // 跟踪已处理的包以防止循环
         bundles.add(bundleWiring);
 
-        // Get the revision for this wiring
+        // 获取此连接的修订版
         final Object revision = classpathOrderOut.reflectionUtils.invokeMethod(false, bundleWiring, "getRevision");
-        // Get the contents
+        // 获取内容
         final Object content = classpathOrderOut.reflectionUtils.invokeMethod(false, revision, "getContent");
         final File location = content != null ? getContentLocation(content, classpathOrderOut.reflectionUtils)
                 : null;
         if (location != null) {
-            // Add the bundle object
+            // 添加包对象
             classpathOrderOut.addClasspathEntry(location, classLoader, scanSpec, log);
 
-            // And any embedded content
+            // 以及任何嵌入内容
             final List<?> embeddedContent = (List<?>) classpathOrderOut.reflectionUtils.invokeMethod(false,
                     revision, "getContentPath");
             if (embeddedContent != null) {
@@ -147,26 +147,25 @@ class FelixClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
-        // Get the wiring for the ClassLoader's bundle
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
+        // 获取 ClassLoader 包的连接
         final Set<Object> bundles = new HashSet<>();
         final Object bundleWiring = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "m_wiring");
         addBundle(bundleWiring, classLoader, classpathOrder, bundles, scanSpec, log);
 
-        // Deal with any other bundles we might be wired to. TODO: Use the ScanSpec to narrow down the list of wires
-        // that we follow.
+        // 处理我们可能连接到的任何其他包。TODO：使用 ScanSpec 缩小我们跟踪的连接列表。
 
         final List<?> requiredWires = (List<?>) classpathOrder.reflectionUtils.invokeMethod(false, bundleWiring,
                 "getRequiredWires", String.class, null);

@@ -26,38 +26,35 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
+
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.IOError;
 import java.net.URI;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
+import java.util.*;
 
 /**
- * Extract classpath entries from the Quarkus ClassLoader.
+ * 从 Quarkus ClassLoader 提取类路径条目。
  */
 class QuarkusClassLoaderHandler implements ClassLoaderHandler {
-    // Classloader until Quarkus 1.2
+    // Quarkus 1.2 之前的类加载器
     private static final String RUNTIME_CLASSLOADER = "io.quarkus.runner.RuntimeClassLoader";
 
-    // Classloader since Quarkus 1.3
+    // Quarkus 1.3 起的类加载器
     private static final String QUARKUS_CLASSLOADER = "io.quarkus.bootstrap.classloading.QuarkusClassLoader";
 
-    // Classloader since Quarkus 1.13
+    // Quarkus 1.13 起的类加载器
     private static final String RUNNER_CLASSLOADER = "io.quarkus.bootstrap.runner.RunnerClassLoader";
 
-    // Class path elements prior to Quarkus 3.11
+    // Quarkus 3.11 之前的类路径元素
     private static final Map<String, String> PRE_311_RESOURCE_BASED_ELEMENTS;
+
     static {
         final Map<String, String> hlp = new HashMap<>();
         hlp.put("io.quarkus.bootstrap.classloading.JarClassPathElement", "file");
@@ -66,56 +63,56 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * Class cannot be constructed.
+     * 类不可构造。
      */
-    private QuarkusClassLoaderHandler() {
+    public QuarkusClassLoaderHandler() {
     }
 
     /**
-     * Can handle.
+     * 能否处理。
      *
      * @param classLoaderClass
-     *            the classloader class
+     *            类加载器类
      * @param log
-     *            the log
-     * @return true, if classLoaderClass is the Quarkus RuntimeClassloader or QuarkusClassloader
+     *            日志
+     * @return 如果 classLoaderClass 是 Quarkus RuntimeClassloader 或 QuarkusClassloader，则返回 true
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, RUNTIME_CLASSLOADER)
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, QUARKUS_CLASSLOADER)
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, RUNNER_CLASSLOADER);
     }
 
     /**
-     * Find classloader order.
+     * 查找类加载器顺序。
      *
      * @param classLoader
-     *            the class loader
+     *            类加载器
      * @param classLoaderOrder
-     *            the classloader order
+     *            类加载器顺序
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
 
         final String classLoaderName = classLoader.getClass().getName();
         if (RUNTIME_CLASSLOADER.equals(classLoaderName)) {
@@ -128,7 +125,7 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
     }
 
     private static void findClasspathOrderForQuarkusClassloader(final ClassLoader classLoader,
-            final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
+                                                                final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
 
         final Collection<Object> elements = findQuarkusClassLoaderElements(classLoader, classpathOrder);
 
@@ -150,13 +147,13 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
 
     @SuppressWarnings("unchecked")
     private static Collection<Object> findQuarkusClassLoaderElements(final ClassLoader classLoader,
-            final ClasspathOrder classpathOrder) {
+                                                                     final ClasspathOrder classpathOrder) {
         Collection<Object> elements = (Collection<Object>) classpathOrder.reflectionUtils.getFieldVal(false,
                 classLoader, "elements");
         if (elements == null) {
             elements = new ArrayList<>();
             // Since 3.16.x
-            for (final String fieldName : new String[] { "normalPriorityElements", "lesserPriorityElements" }) {
+            for (final String fieldName : new String[]{"normalPriorityElements", "lesserPriorityElements"}) {
                 final Collection<Object> fieldVal = (Collection<Object>) classpathOrder.reflectionUtils
                         .getFieldVal(false, classLoader, fieldName);
                 if (fieldVal == null) {
@@ -170,7 +167,7 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
 
     @SuppressWarnings("unchecked")
     private static void findClasspathOrderForRuntimeClassloader(final ClassLoader classLoader,
-            final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
+                                                                final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
         final Collection<Path> applicationClassDirectories = (Collection<Path>) classpathOrder.reflectionUtils
                 .getFieldVal(false, classLoader, "applicationClassDirectories");
         if (applicationClassDirectories != null) {
@@ -189,7 +186,7 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
 
     @SuppressWarnings("unchecked")
     private static void findClasspathOrderForRunnerClassloader(final ClassLoader classLoader,
-            final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
+                                                               final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
         for (final Object[] elementArray : ((Map<String, Object[]>) classpathOrder.reflectionUtils
                 .getFieldVal(false, classLoader, "resourceDirectoryMap")).values()) {
             for (final Object element : elementArray) {

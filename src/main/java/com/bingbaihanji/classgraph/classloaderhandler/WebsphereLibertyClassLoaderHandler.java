@@ -28,7 +28,14 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
+
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.File;
 import java.net.URL;
@@ -37,18 +44,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
-
 /**
- * WebsphereLibertyClassLoaderHandler.
+ * WebsphereLibertyClassLoaderHandler。
  *
  * <p>
- * Used to support WAS Liberty Profile classloading in io.github.classgraph
+ * 用于在 com.bingbaihanji.classgraph.core 中支持 WAS Liberty Profile 类加载。
  *
  * @author R. Kempees
  */
@@ -62,81 +62,81 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
     /** {@code "com.ibm.ws.classloading.internal.ThreadContextClassLoader"} */
     private static final String IBM_THREAD_CONTEXT_CLASS_LOADER = PKG_PREFIX + "ThreadContextClassLoader";
 
-    /** Class cannot be constructed. */
-    private WebsphereLibertyClassLoaderHandler() {
+    /** 类不可构造。 */
+    public WebsphereLibertyClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, IBM_APP_CLASS_LOADER)
                 || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                        IBM_THREAD_CONTEXT_CLASS_LOADER);
+                IBM_THREAD_CONTEXT_CLASS_LOADER);
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the order for.
+     *            要查找委托顺序的 {@link ClassLoader}。
      * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
+     *            要更新的 {@link ClassLoaderOrder} 对象。
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
+    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * Get the paths from a containerClassLoader object.
+     * 从 containerClassLoader 对象获取路径。
      *
      * <p>
-     * The passed in object should be an instance of "com.ibm.ws.classloading.internal.ContainerClassLoader".
+     * 传入的对象应为 "com.ibm.ws.classloading.internal.ContainerClassLoader" 的实例。
      * <p>
-     * Will attempt to use "getContainerURLs" methods to recap the classpath.
-     * 
+     * 将尝试使用 "getContainerURLs" 方法重新获取类路径。
+     *
      * @param containerClassLoader
-     *            the containerClassLoader object
-     * @return Collection of path objects as a {@link URL} or {@link String}.
+     *            containerClassLoader 对象
+     * @return 路径对象的集合，类型为 {@link URL} 或 {@link String}。
      */
     private static Collection<Object> getPaths(final Object containerClassLoader,
-            final ReflectionUtils reflectionUtils) {
+                                               final ReflectionUtils reflectionUtils) {
         if (containerClassLoader == null) {
             return Collections.emptyList();
         }
 
-        // Expecting this to be an instance of
-        // "com.ibm.ws.classloading.internal.ContainerClassLoader$UniversalContainer".
-        // Call "getContainerURLs" to get its container's classpath.
+        // 期望这是
+        // "com.ibm.ws.classloading.internal.ContainerClassLoader$UniversalContainer" 的实例。
+        // 调用 "getContainerURLs" 以获取其容器的类路径。
         Collection<Object> urls = callGetUrls(containerClassLoader, "getContainerURLs", reflectionUtils);
         if (urls != null && !urls.isEmpty()) {
             return urls;
         }
 
-        // "getContainerURLs" didn't work, try getting the container object...
+        // "getContainerURLs" 不起作用，尝试获取容器对象……
         final Object container = reflectionUtils.getFieldVal(false, containerClassLoader, "container");
         if (container == null) {
             return Collections.emptyList();
         }
 
-        // Should be an instance of "com.ibm.wsspi.adaptable.module.Container".
-        // Call "getURLs" to get its classpath.
+        // 应为 "com.ibm.wsspi.adaptable.module.Container" 的实例。
+        // 调用 "getURLs" 以获取其类路径。
         urls = callGetUrls(container, "getURLs", reflectionUtils);
         if (urls != null && !urls.isEmpty()) {
             return urls;
         }
 
-        // "getURLs" did not work, reverting to previous logic of introspection of the "delegate".
+        // "getURLs" 不起作用，回退到之前的 "delegate" 内省逻辑。
         final Object delegate = reflectionUtils.getFieldVal(false, container, "delegate");
         if (delegate == null) {
             return Collections.emptyList();
@@ -149,7 +149,7 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
 
         final Object base = reflectionUtils.getFieldVal(false, delegate, "base");
         if (base == null) {
-            // giving up.
+            // 放弃。
             return Collections.emptyList();
         }
 
@@ -162,19 +162,19 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * Utility to call a "getURLs" method, flattening "collections of collections" and ignoring
-     * "UnsupportedOperationException".
-     * 
-     * All of the "getURLs" methods eventually call "com.ibm.wsspi.adaptable.module.Container#getURLs()".
-     * 
+     * 调用 "getURLs" 方法的工具，展平"集合的集合"并忽略
+     * "UnsupportedOperationException"。
+     *
+     * 所有 "getURLs" 方法最终都会调用 "com.ibm.wsspi.adaptable.module.Container#getURLs()"。
+     *
      * https://www.ibm.com/support/knowledgecenter/SSEQTP_liberty/com.ibm.websphere.javadoc.liberty.doc
      * /com.ibm.websphere.appserver.spi.artifact_1.2-javadoc
-     * /com/ibm/wsspi/adaptable/module/Container.html?view=embed#getURLs() "A collection of URLs that represent all
-     * of the locations on disk that contribute to this container"
+     * /com/ibm/wsspi/adaptable/module/Container.html?view=embed#getURLs() "表示所有为此容器贡献内容的
+     * 磁盘位置的 URL 集合"
      */
     @SuppressWarnings("unchecked")
     private static Collection<Object> callGetUrls(final Object container, final String methodName,
-            final ReflectionUtils reflectionUtils) {
+                                                  final ReflectionUtils reflectionUtils) {
         if (container != null) {
             try {
                 final Collection<Object> results = (Collection<Object>) reflectionUtils.invokeMethod(false,
@@ -183,7 +183,7 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
                     final Collection<Object> allUrls = new HashSet<>();
                     for (final Object result : results) {
                         if (result instanceof Collection) {
-                            // SmartClassPath returns collection of collection of URLs.
+                            // SmartClassPath 返回 URL 集合的集合。
                             for (final Object url : ((Collection<Object>) result)) {
                                 if (url != null) {
                                     allUrls.add(url);
@@ -196,26 +196,26 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
                     return allUrls;
                 }
             } catch (final UnsupportedOperationException e) {
-                /* ignore */
+                /* 忽略 */
             }
         }
         return Collections.emptyList();
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
         Object smartClassPath;
         final Object appLoader = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "appLoader");
         if (appLoader != null) {
@@ -224,8 +224,8 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
             smartClassPath = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "smartClassPath");
         }
         if (smartClassPath != null) {
-            // "com.ibm.ws.classloading.internal.ContainerClassLoader$SmartClassPath" 
-            // interface specifies a "getClassPath" to return all urls that makeup its path.
+            // "com.ibm.ws.classloading.internal.ContainerClassLoader$SmartClassPath"
+            // 接口指定了 "getClassPath" 来返回构成其路径的所有 URL。
             final Collection<Object> paths = callGetUrls(smartClassPath, "getClassPath",
                     classpathOrder.reflectionUtils);
             if (!paths.isEmpty()) {
@@ -233,9 +233,8 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
                     classpathOrder.addClasspathEntry(path, classLoader, scanSpec, log);
                 }
             } else {
-                // "getClassPath" didn't work... reverting to looping over "classPath" elements.
-                @SuppressWarnings("unchecked")
-                final List<Object> classPathElements = (List<Object>) classpathOrder.reflectionUtils
+                // "getClassPath" 不起作用……回退到遍历 "classPath" 元素。
+                @SuppressWarnings("unchecked") final List<Object> classPathElements = (List<Object>) classpathOrder.reflectionUtils
                         .getFieldVal(false, smartClassPath, "classPath");
                 if (classPathElements != null && !classPathElements.isEmpty()) {
                     for (final Object classPathElement : classPathElements) {

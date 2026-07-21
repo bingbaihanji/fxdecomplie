@@ -26,128 +26,126 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classloaderhandler;
+
+import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
+import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.SortedSet;
 
-import nonapi.io.github.classgraph.classpath.ClassLoaderFinder;
-import nonapi.io.github.classgraph.classpath.ClassLoaderOrder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.LogNode;
-
 /**
- * Handle the Plexus ClassWorlds ClassRealm ClassLoader.
- * 
+ * 处理 Plexus ClassWorlds ClassRealm ClassLoader。
+ *
  * @author lukehutch
  */
 class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandler {
-    /** Class cannot be constructed. */
-    private PlexusClassWorldsClassRealmClassLoaderHandler() {
+    /** 类不可构造。 */
+    public PlexusClassWorldsClassRealmClassLoaderHandler() {
     }
 
     /**
-     * Check whether this {@link ClassLoaderHandler} can handle a given {@link ClassLoader}.
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
      *
      * @param classLoaderClass
-     *            the {@link ClassLoader} class or one of its superclasses.
+     *            {@link ClassLoader} 类或其超类。
      * @param log
-     *            the log
-     * @return true if this {@link ClassLoaderHandler} can handle the {@link ClassLoader}.
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
      */
-    public static boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "org.codehaus.plexus.classworlds.realm.ClassRealm");
     }
 
     /**
-     * Checks if is this classloader uses a parent-first strategy.
+     * 检查此类加载器是否使用父级优先策略。
      *
      * @param classRealmInstance
-     *            the ClassRealm instance
-     * @return true if classloader uses a parent-first strategy
+     *            ClassRealm 实例
+     * @return 如果类加载器使用父级优先策略则返回 true
      */
     private static boolean isParentFirstStrategy(final ClassLoader classRealmInstance,
-            final ReflectionUtils reflectionUtils) {
+                                                 final ReflectionUtils reflectionUtils) {
         final Object strategy = reflectionUtils.getFieldVal(false, classRealmInstance, "strategy");
         if (strategy != null) {
             final String strategyClassName = strategy.getClass().getName();
-            if (strategyClassName.equals("org.codehaus.plexus.classworlds.strategy.SelfFirstStrategy")
-                    || strategyClassName.equals("org.codehaus.plexus.classworlds.strategy.OsgiBundleStrategy")) {
-                // Strategy is self-first
+            if ("org.codehaus.plexus.classworlds.strategy.SelfFirstStrategy".equals(strategyClassName)
+                    || "org.codehaus.plexus.classworlds.strategy.OsgiBundleStrategy".equals(strategyClassName)) {
+                // 策略为自身优先
                 return false;
             }
         }
-        // Strategy is org.codehaus.plexus.classworlds.strategy.ParentFirstStrategy (or failed to find strategy)
+        // 策略为 org.codehaus.plexus.classworlds.strategy.ParentFirstStrategy（或未能找到策略）
         return true;
     }
 
     /**
-     * Find the {@link ClassLoader} delegation order for a {@link ClassLoader}.
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
      *
      * @param classRealm
-     *            the {@link ClassLoader} to find the order for.
+     *            要查找委托顺序的 {@link ClassLoader}。
      * @param classLoaderOrder
-     *            a {@link ClassLoaderOrder} object to update.
+     *            要更新的 {@link ClassLoaderOrder} 对象。
      * @param log
-     *            the log
+     *            日志
      */
-    public static void findClassLoaderOrder(final ClassLoader classRealm, final ClassLoaderOrder classLoaderOrder,
-            final LogNode log) {
-        // From ClassRealm#loadClassFromImport(String) -> getImportClassLoader(String)
+    @Override public void findClassLoaderOrder(final ClassLoader classRealm, final ClassLoaderOrder classLoaderOrder,
+                                            final LogNode log) {
+        // 来自 ClassRealm#loadClassFromImport(String) -> getImportClassLoader(String)
         final Object foreignImports = classLoaderOrder.reflectionUtils.getFieldVal(false, classRealm,
                 "foreignImports");
         if (foreignImports != null) {
-            @SuppressWarnings("unchecked")
-            final SortedSet<Object> foreignImportEntries = (SortedSet<Object>) foreignImports;
+            @SuppressWarnings("unchecked") final SortedSet<Object> foreignImportEntries = (SortedSet<Object>) foreignImports;
             for (final Object entry : foreignImportEntries) {
                 final ClassLoader foreignImportClassLoader = (ClassLoader) classLoaderOrder.reflectionUtils
                         .invokeMethod(false, entry, "getClassLoader");
-                // Treat foreign import classloader as if it is a parent classloader
+                // 将外部导入类加载器视为父级类加载器
                 classLoaderOrder.delegateTo(foreignImportClassLoader, /* isParent = */ true, log);
             }
         }
 
-        // Get delegation order -- different strategies have different delegation orders
+        // 获取委托顺序 -- 不同的策略有不同的委托顺序
         final boolean isParentFirst = isParentFirstStrategy(classRealm, classLoaderOrder.reflectionUtils);
 
-        // From ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String) for self-first strategy
+        // 来自 ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String)（自身优先策略）
         if (!isParentFirst) {
-            // Add self before parent
+            // 在父级之前添加自身
             classLoaderOrder.add(classRealm, log);
         }
 
-        // From ClassRealm#loadClassFromParent -- N.B. we are ignoring parentImports, which is used to filter
-        // a class name before deciding whether or not to call the parent classloader (so ClassGraph will be
-        // able to load classes by name that are not imported from the parent classloader).
+        // 来自 ClassRealm#loadClassFromParent -- 注意：我们忽略了 parentImports，它用于在决定是否调用父级类加载器
+        // 之前过滤类名（因此 ClassGraph 将能够按名称加载未从父级类加载器导入的类）。
         final ClassLoader parentClassLoader = (ClassLoader) classLoaderOrder.reflectionUtils.invokeMethod(false,
                 classRealm, "getParentClassLoader");
         classLoaderOrder.delegateTo(parentClassLoader, /* isParent = */ true, log);
         classLoaderOrder.delegateTo(classRealm.getParent(), /* isParent = */ true, log);
 
-        // From ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String) for parent-first strategy
+        // 来自 ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String)（父级优先策略）
         if (isParentFirst) {
-            // Add self after parent
+            // 在父级之后添加自身
             classLoaderOrder.add(classRealm, log);
         }
     }
 
     /**
-     * Find the classpath entries for the associated {@link ClassLoader}.
+     * 查找关联 {@link ClassLoader} 的类路径条目。
      *
      * @param classLoader
-     *            the {@link ClassLoader} to find the classpath entries order for.
+     *            要查找类路径条目顺序的 {@link ClassLoader}。
      * @param classpathOrder
-     *            a {@link ClasspathOrder} object to update.
+     *            要更新的 {@link ClasspathOrder} 对象。
      * @param scanSpec
-     *            the {@link ScanSpec}.
+     *            {@link ScanSpec}。
      * @param log
-     *            the log.
+     *            日志。
      */
-    public static void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-            final ScanSpec scanSpec, final LogNode log) {
-        // ClassRealm extends URLClassLoader
-        URLClassLoaderHandler.findClasspathOrder(classLoader, classpathOrder, scanSpec, log);
+    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                          final ScanSpec scanSpec, final LogNode log) {
+        // ClassRealm 继承 URLClassLoader
+        new URLClassLoaderHandler().findClasspathOrder(classLoader, classpathOrder, scanSpec, log);
     }
 }
