@@ -26,17 +26,14 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.classpath.ClasspathFinder;
-import nonapi.io.github.classgraph.concurrency.AutoCloseableExecutorService;
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.json.JSONDeserializer;
-import nonapi.io.github.classgraph.json.JSONSerializer;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.AcceptReject;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.*;
+import com.bingbaihanji.classgraph.classpath.ClasspathFinder;
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.AcceptReject;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.*;
 
 import java.io.Closeable;
 import java.io.File;
@@ -51,211 +48,102 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The result of a scan. You should assign a ScanResult in a try-with-resources block, or manually close it when you
- * have finished with the result of a scan.
+ * 扫描的结果。你应该将 ScanResult 赋值在 try-with-resources 块中，
+ * 或者在使用完扫描结果后手动关闭它。
  */
 public final class ScanResult implements Closeable {
-    /** The order of raw classpath elements. */
-    private List<String> rawClasspathEltOrderStrs;
-
+    /** 如果为 true，则表示 ScanResult#staticInit() 已运行。 */
+    private static final AtomicBoolean initialized = new AtomicBoolean(false);
+    /** 当前的序列化格式。 */
+    private static final String CURRENT_SERIALIZATION_FORMAT = "10";
     /**
-     * The order of classpath elements, after inner jars have been extracted to temporary files, etc.
-     */
-    private List<ClasspathElement> classpathOrder;
-
-    /** A list of all files that were found in accepted packages. */
-    private ResourceList allAcceptedResourcesCached;
-
-    /**
-     * The number of times {@link #getResourcesWithPath(String)} has been called.
-     */
-    private final AtomicInteger getResourcesWithPathCallCount = new AtomicInteger();
-
-    /**
-     * The map from path (relative to package root) to a list of {@link Resource} elements with the matching path.
-     */
-    private Map<String, ResourceList> pathToAcceptedResourcesCached;
-
-    /** The map from class name to {@link ClassInfo}. */
-    Map<String, ClassInfo> classNameToClassInfo;
-
-    /** The map from package name to {@link PackageInfo}. */
-    private Map<String, PackageInfo> packageNameToPackageInfo;
-
-    /** The map from class name to {@link ClassInfo}. */
-    private Map<String, ModuleInfo> moduleNameToModuleInfo;
-
-    /**
-     * The file, directory and jarfile resources timestamped during a scan, along with their timestamp at the time
-     * of the scan. For jarfiles, the timestamp represents the timestamp of all files within the jar. May be null,
-     * if this ScanResult object is the result of a call to ClassGraph#getUniqueClasspathElementsAsync().
-     */
-    private Map<File, Long> fileToLastModified;
-
-    /**
-     * If true, this {@link ScanResult} was produced by {@link ScanResult#fromJSON(String)}.
-     */
-    private boolean isObtainedFromDeserialization;
-
-    /** A custom ClassLoader that can load classes found during the scan. */
-    private ClassGraphClassLoader classGraphClassLoader;
-
-    /** The {@link ClasspathFinder}. */
-    ClasspathFinder classpathFinder;
-
-    /** The nested jar handler instance. */
-    private NestedJarHandler nestedJarHandler;
-
-    /** The scan spec. */
-    ScanSpec scanSpec;
-
-    /** If true, this ScanResult has already been closed. */
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-
-    protected ReflectionUtils reflectionUtils;
-
-    /** The toplevel log. */
-    private final LogNode topLevelLog;
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** The {@link WeakReference} for this ScanResult. */
-    private final WeakReference<ScanResult> weakReference;
-
-    /**
-     * The set of WeakReferences to non-closed ScanResult objects. Uses WeakReferences so that garbage collection is
-     * not blocked. (Bug #233)
+     * 对未关闭的 ScanResult 对象的 WeakReference 集合。使用 WeakReference 以避免阻止垃圾回收。（Bug #233）
      */
     private static Set<WeakReference<ScanResult>> nonClosedWeakReferences = Collections
             .newSetFromMap(new ConcurrentHashMap<WeakReference<ScanResult>, Boolean>());
-
-    /** If true, ScanResult#staticInit() has been run. */
-    private static final AtomicBoolean initialized = new AtomicBoolean(false);
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** The current serialization format. */
-    private static final String CURRENT_SERIALIZATION_FORMAT = "10";
-
     /**
-     * A class to hold a serialized ScanResult along with the ScanSpec that was used to scan.
+     * {@link #getResourcesWithPath(String)} 被调用的次数。
      */
-    private static class SerializationFormat {
-        /** The serialization format. */
-        public String format;
-
-        /** The scan spec. */
-        public ScanSpec scanSpec;
-
-        /** The classpath, as a list of URL strings. */
-        public List<String> classpath;
-
-        /** The list of all {@link ClassInfo} objects. */
-        public List<ClassInfo> classInfo;
-
-        /** The list of all {@link PackageInfo} objects. */
-        public List<PackageInfo> packageInfo;
-
-        /** The list of all {@link ModuleInfo} objects. */
-        public List<ModuleInfo> moduleInfo;
-
-        /**
-         * Constructor.
-         */
-        @SuppressWarnings("unused")
-        public SerializationFormat() {
-            // Empty
-        }
-
-        /**
-         * Constructor.
-         *
-         * @param serializationFormatStr
-         *            the serialization format string
-         * @param scanSpec
-         *            the scan spec
-         * @param classInfo
-         *            the list of all {@link ClassInfo} objects
-         * @param packageInfo
-         *            the list of all {@link PackageInfo} objects
-         * @param moduleInfo
-         *            the list of all {@link ModuleInfo} objects
-         * @param classpath
-         *            the classpath as a list of URL strings
-         */
-        public SerializationFormat(final String serializationFormatStr, final ScanSpec scanSpec,
-                final List<ClassInfo> classInfo, final List<PackageInfo> packageInfo,
-                final List<ModuleInfo> moduleInfo, final List<String> classpath) {
-            this.format = serializationFormatStr;
-            this.scanSpec = scanSpec;
-            this.classpath = classpath;
-            this.classInfo = classInfo;
-            this.packageInfo = packageInfo;
-            this.moduleInfo = moduleInfo;
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-    // Shutdown hook init code
-
+    private final AtomicInteger getResourcesWithPathCallCount = new AtomicInteger();
+    /** 如果为 true，则表示此 ScanResult 已被关闭。 */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+    /** 顶层日志。 */
+    private final LogNode topLevelLog;
+    /** 此 ScanResult 的 {@link WeakReference}。 */
+    private final WeakReference<ScanResult> weakReference;
+    protected ReflectionUtils reflectionUtils;
+    /** 从类名到 {@link ClassInfo} 的映射。 */
+    Map<String, ClassInfo> classNameToClassInfo;
+    /** {@link ClasspathFinder}。 */
+    ClasspathFinder classpathFinder;
+    /** 扫描规格。 */
+    ScanSpec scanSpec;
+    /** 原始类路径元素的顺序。 */
+    private List<String> rawClasspathEltOrderStrs;
     /**
-     * Static initialization (warm up classloading), called when the ClassGraph class is initialized.
+     * 类路径元素的顺序，在内层 jar 被提取到临时文件等操作之后。
      */
-    static void init(final ReflectionUtils reflectionUtils) {
-        if (!initialized.getAndSet(true)) {
-            // Pre-load non-system classes necessary for calling scanResult.close(), so that
-            // classes that need
-            // to be loaded to close resources are already loaded and cached. This was
-            // originally for use in
-            // a shutdown hook (#331), which has now been removed, but it is probably still
-            // a good idea to
-            // ensure that classes needed to unmap DirectByteBuffer instances are available
-            // at init.
-            // We achieve this by mmap'ing a file and then closing it, since the only
-            // problematic classes are
-            // the PriviledgedAction anonymous inner classes used by
-            // FileUtils::closeDirectByteBuffer.
-            FileUtils.closeDirectByteBuffer(ByteBuffer.allocateDirect(32), reflectionUtils, /* log = */ null);
-        }
-    }
+    private List<ClasspathElement> classpathOrder;
+    /** 在被接受的包中找到的所有文件的列表。 */
+    private ResourceList allAcceptedResourcesCached;
+    /**
+     * 从路径（相对于包根）到具有匹配路径的 {@link Resource} 元素列表的映射。
+     */
+    private Map<String, ResourceList> pathToAcceptedResourcesCached;
+    /** 从包名到 {@link PackageInfo} 的映射。 */
+    private Map<String, PackageInfo> packageNameToPackageInfo;
 
     // -------------------------------------------------------------------------------------------------------------
-    // Constructor
+    /** 从类名到 {@link ClassInfo} 的映射。 */
+    private Map<String, ModuleInfo> moduleNameToModuleInfo;
+    /**
+     * 扫描期间记录时间戳的文件、目录和 jar 文件资源，以及它们在扫描时的时间戳。
+     * 对于 jar 文件，时间戳表示 jar 中所有文件的时间戳。如果此 ScanResult 对象是调用
+     * ClassGraph#getUniqueClasspathElementsAsync() 的结果，则可能为 null。
+     */
+    private Map<File, Long> fileToLastModified;
+    /** 一个自定义的 ClassLoader，可以加载扫描期间找到的类。 */
+    private ClassGraphClassLoader classGraphClassLoader;
+
+    // -------------------------------------------------------------------------------------------------------------
+    /** 嵌套 jar 处理器实例。 */
+    private NestedJarHandler nestedJarHandler;
+    /** 扫描期间跳过的文件数（读取或解析失败的 class 文件）。 */
+    int skippedFileCount;
 
     /**
-     * The result of a scan. Make sure you call complete() after calling the constructor.
+     * 扫描的结果。确保在调用构造函数后调用 complete()。
      *
      * @param scanSpec
-     *            the scan spec
+     *            扫描规格
      * @param classpathOrder
-     *            the classpath order
+     *            类路径顺序
      * @param rawClasspathEltOrderStrs
-     *            the raw classpath element order
+     *            原始类路径元素顺序
      * @param classpathFinder
-     *            the {@link ClasspathFinder}
+     *            {@link ClasspathFinder}
      * @param classNameToClassInfo
-     *            a map from class name to class info
+     *            从类名到类信息的映射
      * @param packageNameToPackageInfo
-     *            a map from package name to package info
+     *            从包名到包信息的映射
      * @param moduleNameToModuleInfo
-     *            a map from module name to module info
+     *            从模块名到模块信息的映射
      * @param fileToLastModified
-     *            a map from file to last modified time
+     *            从文件到最后修改时间的映射
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      * @param topLevelLog
-     *            the toplevel log
+     *            顶层日志
      */
-    ScanResult(final ScanSpec scanSpec, final List<ClasspathElement> classpathOrder,
-            final List<String> rawClasspathEltOrderStrs, final ClasspathFinder classpathFinder,
-            final Map<String, ClassInfo> classNameToClassInfo,
-            final Map<String, PackageInfo> packageNameToPackageInfo,
-            final Map<String, ModuleInfo> moduleNameToModuleInfo, final Map<File, Long> fileToLastModified,
-            final NestedJarHandler nestedJarHandler, final LogNode topLevelLog) {
+    public ScanResult(final ScanSpec scanSpec, final List<ClasspathElement> classpathOrder,
+                      final List<String> rawClasspathEltOrderStrs, final ClasspathFinder classpathFinder,
+                      final Map<String, ClassInfo> classNameToClassInfo,
+                      final Map<String, PackageInfo> packageNameToPackageInfo,
+                      final Map<String, ModuleInfo> moduleNameToModuleInfo, final Map<File, Long> fileToLastModified,
+                      final NestedJarHandler nestedJarHandler, final LogNode topLevelLog) {
         this.scanSpec = scanSpec;
         this.rawClasspathEltOrderStrs = rawClasspathEltOrderStrs;
         this.classpathOrder = classpathOrder;
@@ -267,13 +155,14 @@ public final class ScanResult implements Closeable {
         this.nestedJarHandler = nestedJarHandler;
         this.reflectionUtils = nestedJarHandler.reflectionUtils;
         this.topLevelLog = topLevelLog;
+        this.skippedFileCount = 0;
 
         if (classNameToClassInfo != null) {
             indexResourcesAndClassInfo(topLevelLog);
         }
 
         if (classNameToClassInfo != null) {
-            // Handle @Repeatable annotations
+            // 处理 @Repeatable 注解
             final Set<String> allRepeatableAnnotationNames = new HashSet<>();
             for (final ClassInfo classInfo : classNameToClassInfo.values()) {
                 if (classInfo.isAnnotation() && classInfo.annotationInfo != null) {
@@ -301,38 +190,105 @@ public final class ScanResult implements Closeable {
             }
         }
 
-        // Define a new ClassLoader that can load the classes found during the scan
+        // 定义一个新的 ClassLoader，可以加载扫描期间找到的类
         this.classGraphClassLoader = new ClassGraphClassLoader(this);
 
-        // Provide the shutdown hook with a weak reference to this ScanResult
+        // 为关机钩子提供此 ScanResult 的弱引用
         this.weakReference = new WeakReference<>(this);
         nonClosedWeakReferences.add(this.weakReference);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+    // 关机钩子初始化代码
+
     /**
-     * Index {@link Resource} and {@link ClassInfo} objects.
+     * 为 ClassGraphWorkspaceAdapter 提供的简化构造函数。
+     * 从预构建的 classInfo 映射创建 ScanResult，无需完整的扫描基础设施。
+     *
+     * @param classNameToClassInfo
+     *            从类名到 ClassInfo 的映射
+     */
+    public ScanResult(final Map<String, ClassInfo> classNameToClassInfo) {
+        this.scanSpec = new ScanSpec();
+        // 启用简化扫描所需的类信息功能
+        this.scanSpec.enableClassInfo = true;
+        this.scanSpec.enableFieldInfo = true;
+        this.scanSpec.enableMethodInfo = true;
+        this.scanSpec.enableAnnotationInfo = true;
+        this.rawClasspathEltOrderStrs = Collections.emptyList();
+        this.classpathOrder = Collections.emptyList();
+        this.classpathFinder = null;
+        this.classNameToClassInfo = classNameToClassInfo != null
+                ? classNameToClassInfo : Collections.emptyMap();
+        this.packageNameToPackageInfo = Collections.emptyMap();
+        this.moduleNameToModuleInfo = Collections.emptyMap();
+        this.fileToLastModified = Collections.emptyMap();
+        this.nestedJarHandler = null;
+        this.skippedFileCount = 0;
+        this.reflectionUtils = null;
+        this.topLevelLog = null;
+        this.weakReference = new WeakReference<>(this);
+        // 为每个 ClassInfo 设置 scanResult
+        for (final ClassInfo ci : this.classNameToClassInfo.values()) {
+            ci.setScanResult(this);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+    // 构造函数
+
+    /**
+     * 静态初始化（预热类加载），在 ClassGraph 类初始化时调用。
+     */
+    static void init(final ReflectionUtils reflectionUtils) {
+        if (!initialized.getAndSet(true)) {
+            // 预加载调用 scanResult.close() 所需的非系统类，以便需要加载来关闭资源的类
+            // 已经被加载并缓存。这最初是为了在关机钩子（#331）中使用，现已移除，
+            // 但在初始化时确保取消映射 DirectByteBuffer 实例所需的类可用可能仍然是个好主意。
+            // 我们通过内存映射一个文件然后关闭它来实现这一点，
+            // 因为唯一有问题的类是 FileUtils::closeDirectByteBuffer 使用的 PriviledgedAction 匿名内部类。
+            FileUtils.closeDirectByteBuffer(ByteBuffer.allocateDirect(32), reflectionUtils, /* log = */ null);
+        }
+    }
+
+    /**
+     * 关闭所有尚未关闭的 {@link ScanResult} 实例。注意，这将关闭所有使用缓存了 {@link ScanResult} 类的
+     * classloader 的类的所有打开的 {@link ScanResult} 实例 -- 因此如果你调用此方法，
+     * 你需要确保 classloader 的生命周期与你的应用程序的生命周期相匹配，
+     * 或者两个并发的应用程序不共享同一个 classloader，
+     * 否则一个应用程序可能会关闭另一个应用程序仍在使用的 {@link ScanResult} 实例。
+     */
+    public static void closeAll() {
+        for (final WeakReference<ScanResult> nonClosedWeakReference : new ArrayList<>(nonClosedWeakReferences)) {
+            final ScanResult scanResult = nonClosedWeakReference.get();
+            if (scanResult != null) {
+                scanResult.close();
+            }
+        }
+    }
+
+    /**
+     * 索引 {@link Resource} 和 {@link ClassInfo} 对象。
      *
      * @param log
-     *            the log
+     *            日志
      */
     private void indexResourcesAndClassInfo(final LogNode log) {
-        // Add backrefs from Info objects back to this ScanResult
+        // 从 Info 对象添加回引到此 ScanResult
         final Collection<ClassInfo> allClassInfo = classNameToClassInfo.values();
         for (final ClassInfo classInfo : allClassInfo) {
             classInfo.setScanResult(this);
         }
 
-        // If inter-class dependencies are enabled, create placeholder ClassInfo objects
-        // for any referenced
-        // classes that were not scanned
+        // 如果启用了类间依赖，则为任何未被扫描的引用类创建占位 ClassInfo 对象
         if (scanSpec.enableInterClassDependencies) {
             for (final ClassInfo ci : new ArrayList<>(classNameToClassInfo.values())) {
                 final Set<ClassInfo> refdClassesFiltered = new HashSet<>();
                 for (final ClassInfo refdClassInfo : ci.findReferencedClassInfo(log)) {
-                    // Don't add self-references, or references to Object
+                    // 不添加自引用或对 Object 的引用
                     if (refdClassInfo != null && !ci.equals(refdClassInfo)
-                            && !refdClassInfo.getName().equals("java.lang.Object")
-                            // Only add class to result if it is accepted, or external classes are enabled
+                            && !"java.lang.Object".equals(refdClassInfo.getName())
+                            // 仅当类被接受或启用了外部类时才将类添加到结果中
                             && (!refdClassInfo.isExternalClass() || scanSpec.enableExternalClasses)) {
                         refdClassInfo.setScanResult(this);
                         refdClassesFiltered.add(refdClassInfo);
@@ -343,24 +299,23 @@ public final class ScanResult implements Closeable {
         }
 
         if (scanSpec.enableClassInfo) {
-          for (final PackageInfo pkgInfo : packageNameToPackageInfo.values()) {
-              pkgInfo.setScanResult(this);
-          }
+            for (final PackageInfo pkgInfo : packageNameToPackageInfo.values()) {
+                pkgInfo.setScanResult(this);
+            }
 
-          for (final ModuleInfo moduleInfo : moduleNameToModuleInfo.values()) {
-              moduleInfo.setScanResult(this);
-          }
+            for (final ModuleInfo moduleInfo : moduleNameToModuleInfo.values()) {
+                moduleInfo.setScanResult(this);
+            }
         }
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Classpath / module path
+    // 类路径 / 模块路径
 
     /**
-     * Returns the list of File objects for unique classpath elements (directories or jarfiles), in classloader
-     * resolution order.
+     * 返回唯一类路径元素（目录或 jar 文件）的 File 对象列表，按类加载器解析顺序排列。
      *
-     * @return The unique classpath elements.
+     * @return 唯一类路径元素。
      */
     public List<File> getClasspathFiles() {
         if (closed.get()) {
@@ -377,11 +332,10 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Returns all unique directories or zip/jarfiles on the classpath, in classloader resolution order, as a
-     * classpath string, delineated with the standard path separator character.
+     * 返回类路径上所有唯一目录或 zip/jar 文件，按类加载器解析顺序排列，
+     * 作为用标准路径分隔符分隔的类路径字符串。
      *
-     * @return a the unique directories and jarfiles on the classpath, in classpath resolution order, as a path
-     *         string.
+     * @return 类路径上唯一目录和 jar 文件的路径字符串，按类路径解析顺序排列。
      */
     public String getClasspath() {
         if (closed.get()) {
@@ -391,9 +345,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Returns an ordered list of unique classpath element and module URIs.
+     * 返回唯一类路径元素和模块 URI 的有序列表。
      *
-     * @return The unique classpath element and module URIs.
+     * @return 唯一类路径元素和模块 URI。
      */
     public List<URI> getClasspathURIs() {
         if (closed.get()) {
@@ -408,18 +362,17 @@ public final class ScanResult implements Closeable {
                     }
                 }
             } catch (final IllegalArgumentException e) {
-                // Skip null location URIs
+                // 跳过 null 位置 URI
             }
         }
         return classpathElementOrderURIs;
     }
 
     /**
-     * Returns an ordered list of unique classpath element and module URLs. Will skip any system modules or modules
-     * that are part of a jlink'd runtime image, since {@link URL} does not support the {@code jrt:} {@link URI}
-     * scheme.
+     * 返回唯一类路径元素和模块 URL 的有序列表。将跳过任何系统模块或作为 jlink 运行时镜像一部分的模块，
+     * 因为 {@link URL} 不支持 {@code jrt:} {@link URI} 协议。
      *
-     * @return The unique classpath element and module URLs.
+     * @return 唯一类路径元素和模块 URL。
      */
     public List<URL> getClasspathURLs() {
         if (closed.get()) {
@@ -430,16 +383,16 @@ public final class ScanResult implements Closeable {
             try {
                 classpathElementOrderURLs.add(uri.toURL());
             } catch (final IllegalArgumentException | MalformedURLException e) {
-                // Skip "jrt:" URIs and malformed URLs
+                // 跳过 "jrt:" URI 和格式错误的 URL
             }
         }
         return classpathElementOrderURLs;
     }
 
     /**
-     * Get {@link ModuleRef} references for all visible modules.
+     * 获取所有可见模块的 {@link ModuleRef} 引用。
      *
-     * @return {@link ModuleRef} references for all visible modules.
+     * @return 所有可见模块的 {@link ModuleRef} 引用。
      */
     public List<ModuleRef> getModules() {
         if (closed.get()) {
@@ -455,16 +408,15 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the module path info provided on the commandline with {@code --module-path}, {@code --add-modules},
-     * {@code --patch-module}, {@code --add-exports}, {@code --add-opens}, and {@code --add-reads}, and also the
-     * {@code Add-Exports} and {@code Add-Opens} entries from jarfile manifest files encountered during scanning.
-     * 
+     * 获取通过命令行 {@code --module-path}、{@code --add-modules}、{@code --patch-module}、
+     * {@code --add-exports}、{@code --add-opens} 和 {@code --add-reads} 提供的模块路径信息，
+     * 以及扫描期间遇到的 jar 文件清单文件中的 {@code Add-Exports} 和 {@code Add-Opens} 条目。
+     *
      * <p>
-     * Note that the returned {@link ModulePathInfo} object does not include classpath entries from the traditional
-     * classpath or system modules. Use {@link #getModules()} to get all visible modules, including anonymous,
-     * automatic and system modules.
-     * 
-     * @return The {@link ModulePathInfo}.
+     * 注意，返回的 {@link ModulePathInfo} 对象不包括来自传统类路径或系统模块的类路径条目。
+     * 使用 {@link #getModules()} 来获取所有可见模块，包括匿名模块、自动模块和系统模块。
+     *
+     * @return {@link ModulePathInfo}。
      */
     public ModulePathInfo getModulePathInfo() {
         scanSpec.modulePathInfo.getRuntimeInfo(reflectionUtils);
@@ -472,22 +424,22 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Resources
+    // 资源
 
     /**
-     * Get the list of all resources.
+     * 获取所有资源的列表。
      *
-     * @return A list of all resources (including classfiles and non-classfiles) found in accepted packages.
+     * @return 在被接受的包中找到的所有资源（包括类文件和非类文件）的列表。
      */
     public ResourceList getAllResources() {
         synchronized (this) {
             if (allAcceptedResourcesCached == null) {
-                // Index Resource objects by path
+                // 按路径索引 Resource 对象
                 final ResourceList acceptedResourcesList = new ResourceList();
                 for (final ClasspathElement classpathElt : classpathOrder) {
                     acceptedResourcesList.addAll(classpathElt.acceptedResources);
                 }
-                // Set atomically for thread safety
+                // 原子性设置以确保线程安全
                 allAcceptedResourcesCached = acceptedResourcesList;
             }
             return allAcceptedResourcesCached;
@@ -495,11 +447,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get a map from resource path to {@link Resource} for all resources (including classfiles and non-classfiles)
-     * found in accepted packages.
+     * 获取从资源路径到 {@link Resource} 的映射，包含在被接受的包中找到的所有资源（包括类文件和非类文件）。
      *
-     * @return The map from resource path to {@link Resource} for all resources (including classfiles and
-     *         non-classfiles) found in accepted packages.
+     * @return 从资源路径到 {@link Resource} 的映射，包含在被接受的包中找到的所有资源（包括类文件和非类文件）。
      */
     public Map<String, ResourceList> getAllResourcesAsMap() {
         synchronized (this) {
@@ -512,7 +462,7 @@ public final class ScanResult implements Closeable {
                     }
                     resList.add(res);
                 }
-                // Set atomically for thread safety
+                // 原子性设置以确保线程安全
                 pathToAcceptedResourcesCached = pathToAcceptedResourceListMap;
             }
             return pathToAcceptedResourcesCached;
@@ -520,13 +470,13 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the list of all resources found in accepted packages that have the given path, relative to the package
-     * root of the classpath element. May match several resources, up to one per classpath element.
+     * 获取在被接受的包中找到的具有给定路径（相对于类路径元素的包根）的所有资源的列表。
+     * 可能匹配多个资源，每个类路径元素最多一个。
      *
      * @param resourcePath
-     *            A complete resource path, relative to the classpath entry package root.
-     * @return A list of all resources found in accepted packages that have the given path, relative to the package
-     *         root of the classpath element. May match several resources, up to one per classpath element.
+     *            完整的资源路径，相对于类路径条目的包根。
+     * @return 在被接受的包中找到的具有给定路径（相对于类路径元素的包根）的所有资源的列表。
+     *         可能匹配多个资源，每个类路径元素最多一个。
      */
     public ResourceList getResourcesWithPath(final String resourcePath) {
         if (closed.get()) {
@@ -536,12 +486,10 @@ public final class ScanResult implements Closeable {
                 /* removeFinalSlash = */ true);
         ResourceList matchingResources = null;
         if (getResourcesWithPathCallCount.incrementAndGet() > 3) {
-            // If numerous calls are made, produce and cache a single HashMap for O(1)
-            // access time
+            // 如果进行了多次调用，则生成并缓存一个 HashMap 以实现 O(1) 访问时间
             matchingResources = getAllResourcesAsMap().get(path);
         } else {
-            // If just a few calls are made, directly search for resource with the requested
-            // path
+            // 如果只进行了少量调用，则直接搜索具有请求路径的资源
             for (final ClasspathElement classpathElt : classpathOrder) {
                 for (final Resource res : classpathElt.acceptedResources) {
                     if (res.getPath().equals(path)) {
@@ -557,18 +505,17 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the list of all resources found in any classpath element, <i>whether in accepted packages or not (as long
-     * as the resource is not rejected)</i>, that have the given path, relative to the package root of the classpath
-     * element. May match several resources, up to one per classpath element. Note that this may not return a
-     * non-accepted resource, particularly when scanning directory classpath elements, because recursive scanning
-     * terminates once there are no possible accepted resources below a given directory. However, resources in
-     * ancestral directories of accepted directories can be found using this method.
+     * 获取在任何类路径元素中找到的具有给定路径（相对于类路径元素的包根）的所有资源的列表，
+     * <i>无论是否在被接受的包中（只要资源未被拒绝）</i>。
+     * 可能匹配多个资源，每个类路径元素最多一个。注意，这可能不会返回未被接受的资源，
+     * 特别是在扫描目录类路径元素时，因为一旦给定目录下不再可能有被接受的资源，递归扫描就会终止。
+     * 但是，可以使用此方法找到被接受目录的祖先目录中的资源。
      *
      * @param resourcePath
-     *            A complete resource path, relative to the classpath entry package root.
-     * @return A list of all resources found in any classpath element, <i>whether in accepted packages or not (as
-     *         long as the resource is not rejected)</i>, that have the given path, relative to the package root of
-     *         the classpath element. May match several resources, up to one per classpath element.
+     *            完整的资源路径，相对于类路径条目的包根。
+     * @return 在任何类路径元素中找到的具有给定路径的所有资源的列表，
+     *         <i>无论是否在被接受的包中（只要资源未被拒绝）</i>，
+     *         相对于类路径元素的包根。可能匹配多个资源，每个类路径元素最多一个。
      */
     public ResourceList getResourcesWithPathIgnoringAccept(final String resourcePath) {
         if (closed.get()) {
@@ -587,14 +534,14 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Use {@link #getResourcesWithPathIgnoringAccept(String)} instead.
+     * 请改用 {@link #getResourcesWithPathIgnoringAccept(String)}。
      *
      * @param resourcePath
-     *            A complete resource path, relative to the classpath entry package root.
-     * @return A list of all resources found in any classpath element, <i>whether in accepted packages or not (as
-     *         long as the resource is not rejected)</i>, that have the given path, relative to the package root of
-     *         the classpath element. May match several resources, up to one per classpath element.
-     * @deprecated Use {@link #getResourcesWithPathIgnoringAccept(String)} instead.
+     *            完整的资源路径，相对于类路径条目的包根。
+     * @return 在任何类路径元素中找到的具有给定路径的所有资源的列表，
+     *         <i>无论是否在被接受的包中（只要资源未被拒绝）</i>，
+     *         相对于类路径元素的包根。可能匹配多个资源，每个类路径元素最多一个。
+     * @deprecated 请改用 {@link #getResourcesWithPathIgnoringAccept(String)}。
      */
     @Deprecated
     public ResourceList getResourcesWithPathIgnoringWhitelist(final String resourcePath) {
@@ -602,11 +549,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the list of all resources found in accepted packages that have the requested leafname.
+     * 获取在被接受的包中找到的具有请求的叶子名称的所有资源的列表。
      *
      * @param leafName
-     *            A resource leaf filename.
-     * @return A list of all resources found in accepted packages that have the requested leafname.
+     *            资源叶子文件名。
+     * @return 在被接受的包中找到的具有请求的叶子名称的所有资源的列表。
      */
     public ResourceList getResourcesWithLeafName(final String leafName) {
         if (closed.get()) {
@@ -629,11 +576,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the list of all resources found in accepted packages that have the requested filename extension.
+     * 获取在被接受的包中找到的具有请求的文件扩展名的所有资源的列表。
      *
      * @param extension
-     *            A filename extension, e.g. "xml" to match all resources ending in ".xml".
-     * @return A list of all resources found in accepted packages that have the requested filename extension.
+     *            文件扩展名，例如 "xml" 可匹配所有以 ".xml" 结尾的资源。
+     * @return 在被接受的包中找到的具有请求的文件扩展名的所有资源的列表。
      */
     public ResourceList getResourcesWithExtension(final String extension) {
         if (closed.get()) {
@@ -662,12 +609,12 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the list of all resources found in accepted packages that have a path matching the requested regex
-     * pattern. See also {{@link #getResourcesMatchingWildcard(String)}.
+     * 获取在被接受的包中找到的路径与请求的正则表达式模式匹配的所有资源的列表。
+     * 另请参阅 {{@link #getResourcesMatchingWildcard(String)}。
      *
      * @param pattern
-     *            A pattern to match {@link Resource} paths with.
-     * @return A list of all resources found in accepted packages that have a path matching the requested pattern.
+     *            用于匹配 {@link Resource} 路径的模式。
+     * @return 在被接受的包中找到的路径与请求的模式匹配的所有资源的列表。
      */
     public ResourceList getResourcesMatchingPattern(final Pattern pattern) {
         if (closed.get()) {
@@ -689,27 +636,25 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the list of all resources found in accepted packages that have a path matching the requested wildcard
-     * string.
-     * 
+     * 获取在被接受的包中找到的路径与请求的通配符字符串匹配的所有资源的列表。
+     *
      * <p>
-     * The wildcard string may contain:
+     * 通配符字符串可以包含：
      * <ul>
-     * <li>Single asterisks, to match zero or more of any character other than '/'</li>
-     * <li>Double asterisks, to match zero or more of any character</li>
-     * <li>Question marks, to match one character</li>
-     * <li>Any other regexp-style syntax, such as character sets (denoted by square brackets) -- the remainder of
-     * the expression is passed through to the Java regex parser, after escaping dot characters.</li>
+     * <li>单个星号，匹配零个或多个非 '/' 字符</li>
+     * <li>双星号，匹配零个或多个任意字符</li>
+     * <li>问号，匹配一个字符</li>
+     * <li>任何其他正则表达式风格的语法，例如字符集（用方括号表示）——表达式的其余部分
+     * 在转义点字符后传递给 Java 正则表达式解析器。</li>
      * </ul>
-     * 
+     *
      * <p>
-     * The wildcard string is translated in a simplistic way into a regex. If you need more complex pattern
-     * matching, use a regex directly, via {@link #getResourcesMatchingPattern(Pattern)}.
+     * 通配符字符串以简化的方式转换为正则表达式。如果你需要更复杂的模式匹配，
+     * 请直接通过 {@link #getResourcesMatchingPattern(Pattern)} 使用正则表达式。
      *
      * @param wildcardString
-     *            A wildcard (glob) pattern to match {@link Resource} paths with.
-     * @return A list of all resources found in accepted packages that have a path matching the requested wildcard
-     *         string.
+     *            用于匹配 {@link Resource} 路径的通配符（glob）模式。
+     * @return 在被接受的包中找到的路径与请求的通配符字符串匹配的所有资源的列表。
      */
     public ResourceList getResourcesMatchingWildcard(final String wildcardString) {
         if (closed.get()) {
@@ -719,15 +664,14 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Modules
+    // 模块
 
     /**
-     * Get the {@link ModuleInfo} object for the named module, or null if no module of the requested name was found
-     * during the scan.
-     * 
+     * 获取命名模块的 {@link ModuleInfo} 对象，如果扫描期间未找到请求名称的模块则返回 null。
+     *
      * @param moduleName
-     *            The module name.
-     * @return The {@link ModuleInfo} object for the named module, or null if the module was not found.
+     *            模块名称。
+     * @return 命名模块的 {@link ModuleInfo} 对象，如果未找到该模块则返回 null。
      */
     public ModuleInfo getModuleInfo(final String moduleName) {
         if (closed.get()) {
@@ -740,9 +684,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all modules found during the scan.
+     * 获取扫描期间找到的所有模块。
      *
-     * @return A list of all modules found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有模块的列表，如果没有则返回空列表。
      */
     public ModuleInfoList getModuleInfo() {
         if (closed.get()) {
@@ -755,15 +699,14 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Packages
+    // 包
 
     /**
-     * Get the {@link PackageInfo} object for the named package, or null if no package of the requested name was
-     * found during the scan.
-     * 
+     * 获取命名包的 {@link PackageInfo} 对象，如果扫描期间未找到请求名称的包则返回 null。
+     *
      * @param packageName
-     *            The package name.
-     * @return The {@link PackageInfo} object for the named package, or null if the package was not found.
+     *            包名称。
+     * @return 命名包的 {@link PackageInfo} 对象，如果未找到该包则返回 null。
      */
     public PackageInfo getPackageInfo(final String packageName) {
         if (closed.get()) {
@@ -776,9 +719,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all packages found during the scan.
+     * 获取扫描期间找到的所有包。
      *
-     * @return A list of all packages found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有包的列表，如果没有则返回空列表。
      */
     public PackageInfoList getPackageInfo() {
         if (closed.get()) {
@@ -791,19 +734,19 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Class dependencies
+    // 类依赖
 
     /**
-     * Get a map from the {@link ClassInfo} object for each accepted class to a list of the classes referenced by
-     * that class (i.e. returns a map from dependents to dependencies). Note that you need to call
-     * {@link ClassGraph#enableInterClassDependencies()} before {@link ClassGraph#scan()} for this method to work.
-     * You should also call {@link ClassGraph#enableExternalClasses()} before {@link ClassGraph#scan()} if you want
-     * non-accepted classes to appear in the result. See also {@link #getReverseClassDependencyMap()}, which inverts
-     * the map.
+     * 获取从每个被接受类的 {@link ClassInfo} 对象到该类引用的类列表的映射
+     * （即返回从依赖者到依赖项的映射）。注意，你需要调用
+     * {@link ClassGraph#enableInterClassDependencies()} 然后再调用 {@link ClassGraph#scan()}，此方法才能工作。
+     * 如果你希望未被接受的类出现在结果中，你还应该在 {@link ClassGraph#scan()} 之前调用
+     * {@link ClassGraph#enableExternalClasses()}。
+     * 另请参阅 {@link #getReverseClassDependencyMap()}，它将映射反转。
      *
-     * @return A map from a {@link ClassInfo} object for each accepted class to a list of the classes referenced by
-     *         that class (i.e. returns a map from dependents to dependencies). Each map value is the result of
-     *         calling {@link ClassInfo#getClassDependencies()} on the corresponding key.
+     * @return 从每个被接受类的 {@link ClassInfo} 对象到该类引用的类列表的映射
+     *         （即返回从依赖者到依赖项的映射）。每个映射值是在对应键上调用
+     *         {@link ClassInfo#getClassDependencies()} 的结果。
      */
     public Map<ClassInfo, ClassInfoList> getClassDependencyMap() {
         final Map<ClassInfo, ClassInfoList> map = new HashMap<>();
@@ -814,16 +757,15 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get the reverse class dependency map, i.e. a map from the {@link ClassInfo} object for each dependency class
-     * (accepted or not) to a list of the accepted classes that referenced that class as a dependency (i.e. returns
-     * a map from dependencies to dependents). Note that you need to call
-     * {@link ClassGraph#enableInterClassDependencies()} before {@link ClassGraph#scan()} for this method to work.
-     * You should also call {@link ClassGraph#enableExternalClasses()} before {@link ClassGraph#scan()} if you want
-     * non-accepted classes to appear in the result. See also {@link #getClassDependencyMap}.
+     * 获取反向类依赖映射，即从每个依赖类（无论是否被接受）的 {@link ClassInfo} 对象到
+     * 将该类作为依赖引用的被接受类的列表的映射（即返回从依赖项到依赖者的映射）。
+     * 注意，你需要调用 {@link ClassGraph#enableInterClassDependencies()} 然后再调用
+     * {@link ClassGraph#scan()}，此方法才能工作。如果你希望未被接受的类出现在结果中，
+     * 你还应该在 {@link ClassGraph#scan()} 之前调用 {@link ClassGraph#enableExternalClasses()}。
+     * 另请参阅 {@link #getClassDependencyMap}。
      *
-     * @return A map from a {@link ClassInfo} object for each dependency class (accepted or not) to a list of the
-     *         accepted classes that referenced that class as a dependency (i.e. returns a map from dependencies to
-     *         dependents).
+     * @return 从每个依赖类（无论是否被接受）的 {@link ClassInfo} 对象到
+     *         将该类作为依赖引用的被接受类的列表的映射（即返回从依赖项到依赖者的映射）。
      */
     public Map<ClassInfo, ClassInfoList> getReverseClassDependencyMap() {
         final Map<ClassInfo, Set<ClassInfo>> revMapSet = new HashMap<>();
@@ -844,15 +786,14 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Classes
+    // 类
 
     /**
-     * Get the {@link ClassInfo} object for the named class, or null if no class of the requested name was found in
-     * an accepted/non-rejected package during the scan.
-     * 
+     * 获取命名类的 {@link ClassInfo} 对象，如果扫描期间在被接受/未被拒绝的包中未找到请求名称的类则返回 null。
+     *
      * @param className
-     *            The class name.
-     * @return The {@link ClassInfo} object for the named class, or null if the class was not found.
+     *            类名称。
+     * @return 命名类的 {@link ClassInfo} 对象，如果未找到该类则返回 null。
      */
     public ClassInfo getClassInfo(final String className) {
         if (closed.get()) {
@@ -865,9 +806,18 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all classes, interfaces and annotations found during the scan.
+     * 返回扫描期间跳过的文件数。
      *
-     * @return A list of all accepted classes found during the scan, or the empty list if none.
+     * @return 跳过的文件数
+     */
+    public int getSkippedFileCount() {
+        return skippedFileCount;
+    }
+
+    /**
+     * 获取扫描期间找到的所有类、接口和注解。
+     *
+     * @return 扫描期间找到的所有被接受类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAllClasses() {
         if (closed.get()) {
@@ -880,9 +830,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all {@link Enum} classes found during the scan.
+     * 获取扫描期间找到的所有 {@link Enum} 类。
      *
-     * @return A list of all {@link Enum} classes found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有 {@link Enum} 类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAllEnums() {
         if (closed.get()) {
@@ -895,9 +845,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all {@code record} classes found during the scan (JDK 14+).
+     * 获取扫描期间找到的所有 {@code record} 类（JDK 14+）。
      *
-     * @return A list of all {@code record} classes found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有 {@code record} 类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAllRecords() {
         if (closed.get()) {
@@ -910,11 +860,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get a map from class name to {@link ClassInfo} object for all classes, interfaces and annotations found
-     * during the scan.
+     * 获取从类名到 {@link ClassInfo} 对象的映射，包含扫描期间找到的所有类、接口和注解。
      *
-     * @return The map from class name to {@link ClassInfo} object for all classes, interfaces and annotations found
-     *         during the scan.
+     * @return 从类名到 {@link ClassInfo} 对象的映射，包含扫描期间找到的所有类、接口和注解。
      */
     public Map<String, ClassInfo> getAllClassesAsMap() {
         if (closed.get()) {
@@ -927,9 +875,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all standard (non-interface/non-annotation) classes found during the scan.
+     * 获取扫描期间找到的所有标准（非接口/非注解）类。
      *
-     * @return A list of all accepted standard classes found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有被接受标准类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAllStandardClasses() {
         if (closed.get()) {
@@ -942,22 +890,22 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all subclasses of the superclass.
+     * 获取超类的所有子类。
      *
      * @param superclass
-     *            The superclass.
-     * @return A list of subclasses of the superclass, or the empty list if none.
+     *            超类。
+     * @return 超类的子类列表，如果没有则返回空列表。
      */
     public ClassInfoList getSubclasses(final Class<?> superclass) {
         return getSubclasses(superclass.getName());
     }
 
     /**
-     * Get all subclasses of the named superclass.
+     * 获取命名超类的所有子类。
      *
      * @param superclassName
-     *            The name of the superclass.
-     * @return A list of subclasses of the named superclass, or the empty list if none.
+     *            超类的名称。
+     * @return 命名超类的子类列表，如果没有则返回空列表。
      */
     public ClassInfoList getSubclasses(final String superclassName) {
         if (closed.get()) {
@@ -966,8 +914,8 @@ public final class ScanResult implements Closeable {
         if (!scanSpec.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
-        if (superclassName.equals("java.lang.Object")) {
-            // Return all standard classes (interfaces don't extend Object)
+        if ("java.lang.Object".equals(superclassName)) {
+            // 返回所有标准类（接口不继承 Object）
             return getAllStandardClasses();
         } else {
             final ClassInfo superclass = classNameToClassInfo.get(superclassName);
@@ -976,11 +924,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get superclasses of the named subclass.
+     * 获取命名子类的超类。
      *
      * @param subclassName
-     *            The name of the subclass.
-     * @return A list of superclasses of the named subclass, or the empty list if none.
+     *            子类的名称。
+     * @return 命名子类的超类列表，如果没有则返回空列表。
      */
     public ClassInfoList getSuperclasses(final String subclassName) {
         if (closed.get()) {
@@ -994,22 +942,22 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get superclasses of the subclass.
+     * 获取子类的超类。
      *
      * @param subclass
-     *            The subclass.
-     * @return A list of superclasses of the named subclass, or the empty list if none.
+     *            子类。
+     * @return 命名子类的超类列表，如果没有则返回空列表。
      */
     public ClassInfoList getSuperclasses(final Class<?> subclass) {
         return getSuperclasses(subclass.getName());
     }
 
     /**
-     * Get classes that have a method with an annotation of the named type.
+     * 获取具有带有命名类型注解的方法的类。
      *
      * @param methodAnnotation
-     *            the method annotation.
-     * @return A list of classes with a method that has an annotation of the named type, or the empty list if none.
+     *            方法注解。
+     * @return 具有带有命名类型注解的方法的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithMethodAnnotation(final Class<? extends Annotation> methodAnnotation) {
         Assert.isAnnotation(methodAnnotation);
@@ -1017,11 +965,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes that have a method with an annotation of the named type.
+     * 获取具有带有命名类型注解的方法的类。
      *
      * @param methodAnnotationName
-     *            the name of the method annotation.
-     * @return A list of classes with a method that has an annotation of the named type, or the empty list if none.
+     *            方法注解的名称。
+     * @return 具有带有命名类型注解的方法的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithMethodAnnotation(final String methodAnnotationName) {
         if (closed.get()) {
@@ -1036,12 +984,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes that have a method with a parameter that is annotated with an annotation of the named type.
+     * 获取具有带有命名类型注解的方法参数的类。
      *
      * @param methodParameterAnnotation
-     *            the method parameter annotation.
-     * @return A list of classes that have a method with a parameter annotated with the named annotation type, or
-     *         the empty list if none.
+     *            方法参数注解。
+     * @return 具有带有命名类型注解的方法参数的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithMethodParameterAnnotation(
             final Class<? extends Annotation> methodParameterAnnotation) {
@@ -1050,12 +997,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes that have a method with a parameter that is annotated with an annotation of the named type.
+     * 获取具有带有命名类型注解的方法参数的类。
      *
      * @param methodParameterAnnotationName
-     *            the name of the method parameter annotation.
-     * @return A list of classes that have a method with a parameter annotated with the named annotation type, or
-     *         the empty list if none.
+     *            方法参数注解的名称。
+     * @return 具有带有命名类型注解的方法参数的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithMethodParameterAnnotation(final String methodParameterAnnotationName) {
         if (closed.get()) {
@@ -1070,11 +1016,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes that have a field with an annotation of the named type.
+     * 获取具有带有命名类型注解的字段的类。
      *
      * @param fieldAnnotation
-     *            the field annotation.
-     * @return A list of classes that have a field with an annotation of the named type, or the empty list if none.
+     *            字段注解。
+     * @return 具有带有命名类型注解的字段的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithFieldAnnotation(final Class<? extends Annotation> fieldAnnotation) {
         Assert.isAnnotation(fieldAnnotation);
@@ -1082,11 +1028,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes that have a field with an annotation of the named type.
+     * 获取具有带有命名类型注解的字段的类。
      *
      * @param fieldAnnotationName
-     *            the name of the field annotation.
-     * @return A list of classes that have a field with an annotation of the named type, or the empty list if none.
+     *            字段注解的名称。
+     * @return 具有带有命名类型注解的字段的类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithFieldAnnotation(final String fieldAnnotationName) {
         if (closed.get()) {
@@ -1101,13 +1047,13 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Interfaces
+    // 接口
 
     /**
-     * Get all interface classes found during the scan (not including annotations, which are also technically
-     * interfaces). See also {@link #getAllInterfacesAndAnnotations()}.
+     * 获取扫描期间找到的所有接口类（不包括注解，注解在技术上也是接口）。
+     * 另请参阅 {@link #getAllInterfacesAndAnnotations()}。
      *
-     * @return A list of all accepted interfaces found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有被接受接口的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAllInterfaces() {
         if (closed.get()) {
@@ -1120,13 +1066,12 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all interfaces implemented by the named class or by one of its superclasses, if the named class is a
-     * standard class, or the superinterfaces extended by this interface, if it is an interface.
+     * 获取由命名类或其超类之一实现的所有接口（如果命名类是标准类），
+     * 或由此接口扩展的超接口（如果它是接口）。
      *
      * @param className
-     *            The class name.
-     * @return A list of interfaces implemented by the named class (or superinterfaces extended by the named
-     *         interface), or the empty list if none.
+     *            类名称。
+     * @return 由命名类实现的接口（或由命名接口扩展的超接口）列表，如果没有则返回空列表。
      */
     public ClassInfoList getInterfaces(final String className) {
         if (closed.get()) {
@@ -1140,25 +1085,23 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all interfaces implemented by the class or by one of its superclasses, if the given class is a standard
-     * class, or the superinterfaces extended by this interface, if it is an interface.
+     * 获取由给定类或其超类之一实现的所有接口（如果给定类是标准类），
+     * 或由此接口扩展的超接口（如果它是接口）。
      *
      * @param classRef
-     *            The class.
-     * @return A list of interfaces implemented by the given class (or superinterfaces extended by the given
-     *         interface), or the empty list if none.
+     *            类。
+     * @return 由给定类实现的接口（或由给定接口扩展的超接口）列表，如果没有则返回空列表。
      */
     public ClassInfoList getInterfaces(final Class<?> classRef) {
         return getInterfaces(classRef.getName());
     }
 
     /**
-     * Get all classes that implement (or have superclasses that implement) the interface (or one of its
-     * subinterfaces).
+     * 获取实现（或有超类实现）该接口（或其子接口之一）的所有类。
      *
      * @param interfaceClass
-     *            The interface class.
-     * @return A list of all classes that implement the interface, or the empty list if none.
+     *            接口类。
+     * @return 实现该接口的所有类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesImplementing(final Class<?> interfaceClass) {
         Assert.isInterface(interfaceClass);
@@ -1166,12 +1109,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all classes that implement (or have superclasses that implement) the named interface (or one of its
-     * subinterfaces).
+     * 获取实现（或有超类实现）命名接口（或其子接口之一）的所有类。
      *
      * @param interfaceName
-     *            The interface name.
-     * @return A list of all classes that implement the named interface, or the empty list if none.
+     *            接口名称。
+     * @return 实现命名接口的所有类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesImplementing(final String interfaceName) {
         if (closed.get()) {
@@ -1185,12 +1127,12 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Annotations
+    // 注解
 
     /**
-     * Get all annotation classes found during the scan. See also {@link #getAllInterfacesAndAnnotations()}.
+     * 获取扫描期间找到的所有注解类。另请参阅 {@link #getAllInterfacesAndAnnotations()}。
      *
-     * @return A list of all annotation classes found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有注解类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAllAnnotations() {
         if (closed.get()) {
@@ -1204,10 +1146,9 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get all interface or annotation classes found during the scan. (Annotations are technically interfaces, and
-     * they can be implemented.)
+     * 获取扫描期间找到的所有接口或注解类。（注解在技术上是接口，并且它们可以被实现。）
      *
-     * @return A list of all accepted interfaces found during the scan, or the empty list if none.
+     * @return 扫描期间找到的所有被接受接口的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAllInterfacesAndAnnotations() {
         if (closed.get()) {
@@ -1221,12 +1162,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes with the class annotation or meta-annotation.
+     * 获取具有类注解或元注解的类。
      *
      * @param annotation
-     *            The class annotation or meta-annotation.
-     * @return A list of all non-annotation classes that were found with the class annotation during the scan, or
-     *         the empty list if none.
+     *            类注解或元注解。
+     * @return 在扫描期间找到的具有该类注解的所有非注解类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithAnnotation(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -1234,12 +1174,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes with all of the specified class annotations or meta-annotation.
+     * 获取具有所有指定类注解或元注解的类。
      *
      * @param annotations
-     *            The class annotations or meta-annotations.
-     * @return A list of all non-annotation classes that were found with any of the class annotations during the
-     *         scan, or the empty list if none.
+     *            类注解或元注解。
+     * @return 在扫描期间找到的具有任何该类注解的所有非注解类的列表，如果没有则返回空列表。
      */
     @SuppressWarnings("unchecked")
     public ClassInfoList getClassesWithAllAnnotations(final Class<? extends Annotation>... annotations) {
@@ -1252,12 +1191,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes with any of the specified class annotations or meta-annotation.
+     * 获取具有任意指定类注解或元注解的类。
      *
      * @param annotations
-     *            The class annotations or meta-annotations.
-     * @return A list of all non-annotation classes that were found with any of the class annotations during the
-     *         scan, or the empty list if none.
+     *            类注解或元注解。
+     * @return 在扫描期间找到的具有任何该类注解的所有非注解类的列表，如果没有则返回空列表。
      */
     @SuppressWarnings("unchecked")
     public ClassInfoList getClassesWithAnyAnnotation(final Class<? extends Annotation>... annotations) {
@@ -1270,12 +1208,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes with the named class annotation or meta-annotation.
+     * 获取具有命名类注解或元注解的类。
      *
      * @param annotationName
-     *            The name of the class annotation or meta-annotation.
-     * @return A list of all non-annotation classes that were found with the named class annotation during the scan,
-     *         or the empty list if none.
+     *            类注解或元注解的名称。
+     * @return 在扫描期间找到的具有命名类注解的所有非注解类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithAnnotation(final String annotationName) {
         if (closed.get()) {
@@ -1290,12 +1227,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes with all of the named class annotations or meta-annotation.
+     * 获取具有所有命名类注解或元注解的类。
      *
      * @param annotationNames
-     *            The name of the class annotations or meta-annotations.
-     * @return A list of all non-annotation classes that were found with all of the named class annotations during
-     *         the scan, or the empty list if none.
+     *            类注解或元注解的名称。
+     * @return 在扫描期间找到的具有所有命名类注解的所有非注解类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithAllAnnotations(final String... annotationNames) {
         ClassInfoList foundClassInfo = null;
@@ -1312,12 +1248,11 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get classes with any of the named class annotations or meta-annotation.
+     * 获取具有任意命名类注解或元注解的类。
      *
      * @param annotationNames
-     *            The name of the class annotations or meta-annotations.
-     * @return A list of all non-annotation classes that were found with any of the named class annotations during
-     *         the scan, or the empty list if none.
+     *            类注解或元注解的名称。
+     * @return 在扫描期间找到的具有任意命名类注解的所有非注解类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getClassesWithAnyAnnotation(final String... annotationNames) {
         ClassInfoList foundClassInfo = null;
@@ -1334,15 +1269,13 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Get annotations on the named class. This only returns the annotating classes; to read annotation parameters,
-     * call {@link #getClassInfo(String)} to get the {@link ClassInfo} object for the named class, then if the
-     * {@link ClassInfo} object is non-null, call {@link ClassInfo#getAnnotationInfo()} to get detailed annotation
-     * info.
+     * 获取命名类上的注解。这仅返回注解类；要读取注解参数，请调用
+     * {@link #getClassInfo(String)} 获取命名类的 {@link ClassInfo} 对象，
+     * 然后如果 {@link ClassInfo} 对象非 null，调用 {@link ClassInfo#getAnnotationInfo()} 获取详细的注解信息。
      *
      * @param className
-     *            The name of the class.
-     * @return A list of all annotation classes that were found with the named class annotation during the scan, or
-     *         the empty list if none.
+     *            类的名称。
+     * @return 在扫描期间找到的具有命名类注解的所有注解类的列表，如果没有则返回空列表。
      */
     public ClassInfoList getAnnotationsOnClass(final String className) {
         if (closed.get()) {
@@ -1357,15 +1290,14 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Classpath modification tests
+    // 类路径修改测试
 
     /**
-     * Determine whether the classpath contents have been modified since the last scan. Checks the timestamps of
-     * files and jarfiles encountered during the previous scan to see if they have changed. Does not perform a full
-     * scan, so cannot detect the addition of directories that newly match accept criteria -- you need to perform a
-     * full scan to detect those changes.
+     * 判断自上次扫描以来类路径内容是否已被修改。检查上次扫描期间遇到的
+     * 文件和 jar 文件的时间戳，以查看它们是否已更改。不执行完整扫描，
+     * 因此无法检测到新匹配接受条件的目录的添加——你需要执行完整扫描来检测这些更改。
      *
-     * @return true if the classpath contents have been modified since the last scan.
+     * @return 如果自上次扫描以来类路径内容已被修改，则返回 true。
      */
     public boolean classpathContentsModifiedSinceScan() {
         if (closed.get()) {
@@ -1384,16 +1316,15 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Find the maximum last-modified timestamp of any accepted file/directory/jarfile encountered during the scan.
-     * Checks the current timestamps, so this should increase between calls if something changes in accepted paths.
-     * Assumes both file and system timestamps were generated from clocks whose time was accurate. Ignores
-     * timestamps greater than the system time.
-     * 
-     * <p>
-     * This method cannot in general tell if classpath has changed (or modules have been added or removed) if it is
-     * run twice during the same runtime session.
+     * 查找扫描期间遇到的任何被接受文件/目录/jar 文件的最大最后修改时间戳。
+     * 检查当前的时间戳，因此如果在被接受的路径中有所更改，此值应在调用之间增加。
+     * 假设文件和系统时间戳都是根据准确的时钟生成的。忽略大于系统时间的时间戳。
      *
-     * @return the maximum last-modified time for accepted files/directories/jars encountered during the scan.
+     * <p>
+     * 如果此方法在同一运行时会话中运行两次，通常无法判断类路径是否已更改
+     * （或模块是否已添加或移除）。
+     *
+     * @return 扫描期间遇到的被接受文件/目录/jar 的最大最后修改时间。
      */
     public long classpathContentsLastModifiedTime() {
         if (closed.get()) {
@@ -1412,38 +1343,36 @@ public final class ScanResult implements Closeable {
     }
 
     // -------------------------------------------------------------------------------------------------------------
-    // Classloading
+    // 类加载
 
     /**
-     * Get the ClassLoader order, respecting parent-first/parent-last delegation order.
+     * 获取 ClassLoader 顺序，遵循父优先/父后置的委托顺序。
      *
-     * @return the class loader order.
+     * @return 类加载器顺序。
      */
     ClassLoader[] getClassLoaderOrderRespectingParentDelegation() {
         return classpathFinder.getClassLoaderOrderRespectingParentDelegation();
     }
 
     /**
-     * Load a class given a class name. If ignoreExceptions is false, and the class cannot be loaded (due to
-     * classloading error, or due to an exception being thrown in the class initialization block), an
-     * IllegalArgumentException is thrown; otherwise, the class will simply be skipped if an exception is thrown.
-     * 
+     * 根据类名加载类。如果 ignoreExceptions 为 false，且类无法加载（由于类加载错误，
+     * 或由于类初始化块中抛出异常），则抛出 IllegalArgumentException；
+     * 否则，如果抛出异常，该类将被静默跳过。
+     *
      * <p>
-     * Enable verbose scanning to see details of any exceptions thrown during classloading, even if ignoreExceptions
-     * is false.
+     * 启用详细扫描以查看类加载期间抛出的任何异常的详细信息，即使 ignoreExceptions 为 false。
      *
      * @param className
-     *            the class to load.
+     *            要加载的类。
      * @param returnNullIfClassNotFound
-     *            If true, null is returned if there was an exception during classloading, otherwise
-     *            IllegalArgumentException is thrown if a class could not be loaded.
-     * @return a reference to the loaded class, or null if the class could not be loaded and ignoreExceptions is
-     *         true.
+     *            如果为 true，则在类加载期间发生异常时返回 null，
+     *            否则如果类无法加载则抛出 IllegalArgumentException。
+     * @return 对已加载类的引用，如果类无法加载且 ignoreExceptions 为 true，则返回 null。
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false, IllegalArgumentException is thrown if there were problems loading
-     *             or initializing the class. (Note that class initialization on load is disabled by default, you
-     *             can enable it with {@code ClassGraph#initializeLoadedClasses(true)} .) Otherwise exceptions are
-     *             suppressed, and null is returned if any of these problems occurs.
+     *             如果 ignoreExceptions 为 false，则在加载或初始化类时出现问题时抛出
+     *             IllegalArgumentException。（注意，加载时的类初始化默认是禁用的，
+     *             你可以通过 {@code ClassGraph#initializeLoadedClasses(true)} 启用它。）
+     *             否则异常被抑制，如果发生任何这些问题则返回 null。
      */
     public Class<?> loadClass(final String className, final boolean returnNullIfClassNotFound)
             throws IllegalArgumentException {
@@ -1465,34 +1394,31 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Load a class given a class name. If ignoreExceptions is false, and the class cannot be loaded (due to
-     * classloading error, or due to an exception being thrown in the class initialization block), an
-     * IllegalArgumentException is thrown; otherwise, the class will simply be skipped if an exception is thrown.
-     * 
+     * 根据类名加载类。如果 ignoreExceptions 为 false，且类无法加载（由于类加载错误，
+     * 或由于类初始化块中抛出异常），则抛出 IllegalArgumentException；
+     * 否则，如果抛出异常，该类将被静默跳过。
+     *
      * <p>
-     * Enable verbose scanning to see details of any exceptions thrown during classloading, even if ignoreExceptions
-     * is false.
+     * 启用详细扫描以查看类加载期间抛出的任何异常的详细信息，即使 ignoreExceptions 为 false。
      *
      * @param <T>
-     *            the superclass or interface type.
+     *            超类或接口类型。
      * @param className
-     *            the class to load.
+     *            要加载的类。
      * @param superclassOrInterfaceType
-     *            The class type to cast the result to.
+     *            要将结果转换到的类类型。
      * @param returnNullIfClassNotFound
-     *            If true, null is returned if there was an exception during classloading, otherwise
-     *            IllegalArgumentException is thrown if a class could not be loaded.
-     * @return a reference to the loaded class, or null if the class could not be loaded and ignoreExceptions is
-     *         true.
+     *            如果为 true，则在类加载期间发生异常时返回 null，
+     *            否则如果类无法加载则抛出 IllegalArgumentException。
+     * @return 对已加载类的引用，如果类无法加载且 ignoreExceptions 为 true，则返回 null。
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false, IllegalArgumentException is thrown if there were problems loading
-     *             the class, initializing the class, or casting it to the requested type. (Note that class
-     *             initialization on load is disabled by default, you can enable it with
-     *             {@code ClassGraph#initializeLoadedClasses(true)} .) Otherwise exceptions are suppressed, and null
-     *             is returned if any of these problems occurs.
+     *             如果 ignoreExceptions 为 false，则在加载类、初始化类或将其转换为请求的类型时
+     *             出现问题时抛出 IllegalArgumentException。（注意，加载时的类初始化默认是禁用的，
+     *             你可以通过 {@code ClassGraph#initializeLoadedClasses(true)} 启用它。）
+     *             否则异常被抑制，如果发生任何这些问题则返回 null。
      */
     public <T> Class<T> loadClass(final String className, final Class<T> superclassOrInterfaceType,
-            final boolean returnNullIfClassNotFound) throws IllegalArgumentException {
+                                  final boolean returnNullIfClassNotFound) throws IllegalArgumentException {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
@@ -1520,137 +1446,16 @@ public final class ScanResult implements Closeable {
                         + superclassOrInterfaceType.getName());
             }
         }
-        @SuppressWarnings("unchecked")
-        final Class<T> castClass = (Class<T>) loadedClass;
+        @SuppressWarnings("unchecked") final Class<T> castClass = (Class<T>) loadedClass;
         return castClass;
 
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-    // Serialization / deserialization
 
     /**
-     * Deserialize a ScanResult from previously-serialized JSON.
-     * 
-     * @param json
-     *            The JSON string for the serialized {@link ScanResult}.
-     * @return The deserialized {@link ScanResult}.
-     */
-    @SuppressWarnings("null")
-    public static ScanResult fromJSON(final String json) {
-        final Matcher matcher = Pattern.compile("\\{[\\n\\r ]*\"format\"[ ]?:[ ]?\"([^\"]+)\"").matcher(json);
-        if (!matcher.find()) {
-            throw new IllegalArgumentException("JSON is not in correct format");
-        }
-        if (!CURRENT_SERIALIZATION_FORMAT.equals(matcher.group(1))) {
-            throw new IllegalArgumentException(
-                    "JSON was serialized in a different format from the format used by the current version of "
-                            + "ClassGraph -- please serialize and deserialize your ScanResult using "
-                            + "the same version of ClassGraph");
-        }
-
-        // Deserialize the JSON
-        final SerializationFormat deserialized = JSONDeserializer.deserializeObject(SerializationFormat.class,
-                json);
-        if (deserialized == null || !deserialized.format.equals(CURRENT_SERIALIZATION_FORMAT)) {
-            // Probably the deserialization failed before now anyway, if fields have
-            // changed, etc.
-            throw new IllegalArgumentException("JSON was serialized by newer version of ClassGraph");
-        }
-
-        // Perform a new "scan" with performScan set to false, which resolves all the
-        // ClasspathElement objects
-        // and scans classpath element paths (needed for classloading), but does not
-        // scan the actual classfiles
-        final ClassGraph classGraph = new ClassGraph();
-        classGraph.scanSpec = deserialized.scanSpec;
-        final ScanResult scanResult;
-        try (AutoCloseableExecutorService executorService = new AutoCloseableExecutorService(
-                ClassGraph.DEFAULT_NUM_WORKER_THREADS)) {
-            scanResult = classGraph.getClasspathScanResult(executorService);
-        }
-        scanResult.rawClasspathEltOrderStrs = deserialized.classpath;
-
-        // Set the fields related to ClassInfo in the new ScanResult, based on the
-        // deserialized JSON
-        scanResult.scanSpec = deserialized.scanSpec;
-        scanResult.classNameToClassInfo = new HashMap<>();
-        if (deserialized.classInfo != null) {
-            for (final ClassInfo ci : deserialized.classInfo) {
-                scanResult.classNameToClassInfo.put(ci.getName(), ci);
-                ci.setScanResult(scanResult);
-            }
-        }
-        scanResult.moduleNameToModuleInfo = new HashMap<>();
-        if (deserialized.moduleInfo != null) {
-            for (final ModuleInfo mi : deserialized.moduleInfo) {
-                scanResult.moduleNameToModuleInfo.put(mi.getName(), mi);
-            }
-        }
-        scanResult.packageNameToPackageInfo = new HashMap<>();
-        if (deserialized.packageInfo != null) {
-            for (final PackageInfo pi : deserialized.packageInfo) {
-                scanResult.packageNameToPackageInfo.put(pi.getName(), pi);
-            }
-        }
-
-        // Index Resource and ClassInfo objects
-        scanResult.indexResourcesAndClassInfo(/* log = */ null);
-
-        scanResult.isObtainedFromDeserialization = true;
-        return scanResult;
-    }
-
-    /**
-     * Serialize a ScanResult to JSON.
-     * 
-     * @param indentWidth
-     *            If greater than 0, JSON will be formatted (indented), otherwise it will be minified (un-indented).
-     * @return This {@link ScanResult}, serialized as a JSON string.
-     */
-    public String toJSON(final int indentWidth) {
-        if (closed.get()) {
-            throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
-        }
-        if (!scanSpec.enableClassInfo) {
-            throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
-        }
-        final List<ClassInfo> allClassInfo = new ArrayList<>(classNameToClassInfo.values());
-        CollectionUtils.sortIfNotEmpty(allClassInfo);
-        final List<PackageInfo> allPackageInfo = new ArrayList<>(packageNameToPackageInfo.values());
-        CollectionUtils.sortIfNotEmpty(allPackageInfo);
-        final List<ModuleInfo> allModuleInfo = new ArrayList<>(moduleNameToModuleInfo.values());
-        CollectionUtils.sortIfNotEmpty(allModuleInfo);
-        return JSONSerializer.serializeObject(new SerializationFormat(CURRENT_SERIALIZATION_FORMAT, scanSpec,
-                allClassInfo, allPackageInfo, allModuleInfo, rawClasspathEltOrderStrs), indentWidth, false);
-    }
-
-    /**
-     * Serialize a ScanResult to minified (un-indented) JSON.
-     * 
-     * @return This {@link ScanResult}, serialized as a JSON string.
-     */
-    public String toJSON() {
-        return toJSON(0);
-    }
-
-    /**
-     * Checks if this {@link ScanResult} was obtained from JSON by deserialization, by calling
-     * {@link #fromJSON(String)}.
-     *
-     * @return True if this {@link ScanResult} was obtained from JSON by deserialization.
-     */
-    public boolean isObtainedFromDeserialization() {
-        return isObtainedFromDeserialization;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Free any temporary files created by extracting jars or files from within jars. Without calling this method,
-     * the temporary files created by extracting the inner jars will be removed in a finalizer, called by the
-     * garbage collector (or at JVM shutdown). If you don't want to experience long GC pauses, make sure you call
-     * this close method when you have finished with the {@link ScanResult}.
+     * 释放通过从 jar 内部提取 jar 或文件而创建的任何临时文件。如果不调用此方法，
+     * 通过提取内层 jar 创建的临时文件将在终结器中移除，由垃圾回收器调用（或在 JVM 关闭时）。
+     * 如果你不想经历长时间的 GC 暂停，请确保在使用完 {@link ScanResult} 后调用此关闭方法。
      */
     @Override
     public void close() {
@@ -1673,10 +1478,8 @@ public final class ScanResult implements Closeable {
             }
             classGraphClassLoader = null;
             if (classNameToClassInfo != null) {
-                // Don't clear classNameToClassInfo, since it may be used by
-                // ClassGraphClassLoader (#399).
-                // Just rely on the garbage collector to collect these once the ScanResult goes
-                // out of scope.
+                // 不清除 classNameToClassInfo，因为它可能被 ClassGraphClassLoader 使用 (#399)。
+                // 仅依赖垃圾回收器在 ScanResult 超出作用域后收集这些对象。
                 // classNameToClassInfo.clear();
                 // classNameToClassInfo = null;
             }
@@ -1692,10 +1495,8 @@ public final class ScanResult implements Closeable {
                 fileToLastModified.clear();
                 fileToLastModified = null;
             }
-            // nestedJarHandler should be closed last, since it needs to have all
-            // MappedByteBuffer refs
-            // dropped before it tries to delete any temporary files that were written to
-            // disk
+            // nestedJarHandler 应该最后关闭，因为它需要在尝试删除写入磁盘的
+            // 任何临时文件之前释放所有 MappedByteBuffer 引用
             if (nestedJarHandler != null) {
                 nestedJarHandler.close(topLevelLog);
                 nestedJarHandler = null;
@@ -1703,8 +1504,7 @@ public final class ScanResult implements Closeable {
             classGraphClassLoader = null;
             classpathFinder = null;
             reflectionUtils = null;
-            // Flush log on exit, in case additional log entries were generated after scan()
-            // completed
+            // 在退出时刷新日志，以防在 scan() 完成后生成了额外的日志条目
             if (topLevelLog != null) {
                 topLevelLog.flush();
             }
@@ -1712,27 +1512,68 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * Returns whether this ScanResult has been closed yet or not.
-     * @return {@code true} if this ScanResult has been closed
+     * 返回此 ScanResult 是否已被关闭。
+     * @return 如果此 ScanResult 已被关闭，则返回 {@code true}
      */
     public boolean isClosed() {
         return closed.get();
     }
 
     /**
-     * Close all {@link ScanResult} instances that have not yet been closed. Note that this will close all open
-     * {@link ScanResult} instances for any class that uses the classloader that the {@link ScanResult} class is
-     * cached in -- so if you call this method, you need to ensure that the lifecycle of the classloader matches the
-     * lifecycle of your application, or that two concurrent applications don't share the same classloader,
-     * otherwise one application might close another application's {@link ScanResult} instances while they are still
-     * in use.
+     * 用于保存序列化后的 ScanResult 以及用于扫描的 ScanSpec 的类。
      */
-    public static void closeAll() {
-        for (final WeakReference<ScanResult> nonClosedWeakReference : new ArrayList<>(nonClosedWeakReferences)) {
-            final ScanResult scanResult = nonClosedWeakReference.get();
-            if (scanResult != null) {
-                scanResult.close();
-            }
+    private static class SerializationFormat {
+        /** 序列化格式。 */
+        public String format;
+
+        /** 扫描规格。 */
+        public ScanSpec scanSpec;
+
+        /** 类路径，作为 URL 字符串列表。 */
+        public List<String> classpath;
+
+        /** 所有 {@link ClassInfo} 对象的列表。 */
+        public List<ClassInfo> classInfo;
+
+        /** 所有 {@link PackageInfo} 对象的列表。 */
+        public List<PackageInfo> packageInfo;
+
+        /** 所有 {@link ModuleInfo} 对象的列表。 */
+        public List<ModuleInfo> moduleInfo;
+
+        /**
+         * 构造函数。
+         */
+        @SuppressWarnings("unused")
+        public SerializationFormat() {
+            // 空
+        }
+
+        /**
+         * 构造函数。
+         *
+         * @param serializationFormatStr
+         *            序列化格式字符串
+         * @param scanSpec
+         *            扫描规格
+         * @param classInfo
+         *            所有 {@link ClassInfo} 对象的列表
+         * @param packageInfo
+         *            所有 {@link PackageInfo} 对象的列表
+         * @param moduleInfo
+         *            所有 {@link ModuleInfo} 对象的列表
+         * @param classpath
+         *            作为 URL 字符串列表的类路径
+         */
+        public SerializationFormat(final String serializationFormatStr, final ScanSpec scanSpec,
+                                   final List<ClassInfo> classInfo, final List<PackageInfo> packageInfo,
+                                   final List<ModuleInfo> moduleInfo, final List<String> classpath) {
+            this.format = serializationFormatStr;
+            this.scanSpec = scanSpec;
+            this.classpath = classpath;
+            this.classInfo = classInfo;
+            this.packageInfo = packageInfo;
+            this.moduleInfo = moduleInfo;
         }
     }
 }
