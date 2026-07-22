@@ -1,8 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
 import com.bingbaihanji.classgraph.core.ClassInfo;
-import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
-import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
@@ -12,11 +10,7 @@ import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceNode;
 import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceTree;
 import com.bingbaihanji.fxdecomplie.model.reference.Kind;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,9 +63,11 @@ public final class InheritanceReferenceService {
             return emptyTree(I18nUtil.getString("inheritance.unavailable"));
         }
 
+        InheritanceReferenceIndex index = InheritanceReferenceIndexService.getIfReady(workspace);
+
         InheritanceReferenceNode root = new InheritanceReferenceNode(
                 meta.name, simpleName(meta.name), Kind.SELF,
-                resolveFullPath(workspace, meta.name), 0, true);
+                resolveFullPath(workspace, meta.name, index), 0, true);
 
         List<InheritanceReferenceGroup> groups = new ArrayList<>();
 
@@ -79,13 +75,13 @@ public final class InheritanceReferenceService {
         if (meta.superName != null && !"java/lang/Object".equals(meta.superName)) {
             groups.add(singleGroup(Kind.SUPER_CLASS,
                     I18nUtil.getString("inheritance.group.super"),
-                    List.of(nodeFor(workspace, meta.superName, Kind.SUPER_CLASS, 1)),
+                    List.of(nodeFor(workspace, meta.superName, Kind.SUPER_CLASS, 1, index)),
                     false));
         }
 
         List<InheritanceReferenceNode> interfaceNodes = new ArrayList<>();
         for (String itf : meta.interfaces) {
-            interfaceNodes.add(nodeFor(workspace, itf, Kind.INTERFACE, 1));
+            interfaceNodes.add(nodeFor(workspace, itf, Kind.INTERFACE, 1, index));
         }
         if (!interfaceNodes.isEmpty()) {
             groups.add(singleGroup(Kind.INTERFACE,
@@ -95,19 +91,18 @@ public final class InheritanceReferenceService {
 
         // 注解：优先从 ClassGraph 全局索引获取，回退到本地 ASM 解析
         List<InheritanceReferenceNode> annotationNodes = new ArrayList<>();
-        InheritanceReferenceIndex refIndex = InheritanceReferenceIndexService.getIfReady(workspace);
-        if (refIndex != null) {
-            ClassInfo ci = refIndex.classInfo(meta.name);
+        if (index != null) {
+            ClassInfo ci = index.classInfo(meta.name);
             if (ci != null) {
                 for (var ai : ci.getAnnotationInfo()) {
-                    annotationNodes.add(nodeFor(workspace, ai.getName(), Kind.ANNOTATION, 1));
+                    annotationNodes.add(nodeFor(workspace, ai.getName(), Kind.ANNOTATION, 1, index));
                 }
             }
         }
         // 回退：索引未就绪时使用本地解析
         if (annotationNodes.isEmpty() && !meta.annotations.isEmpty()) {
             for (String ann : meta.annotations) {
-                annotationNodes.add(nodeFor(workspace, ann, Kind.ANNOTATION, 1));
+                annotationNodes.add(nodeFor(workspace, ann, Kind.ANNOTATION, 1, index));
             }
         }
         if (!annotationNodes.isEmpty()) {
@@ -126,7 +121,6 @@ public final class InheritanceReferenceService {
         addInheritedMethodsGroup(workspace, meta, groups);
 
         // ── 全局关系(需要 ClassGraph 索引) ──
-        InheritanceReferenceIndex index = InheritanceReferenceIndexService.getIfReady(workspace);
         boolean partial = false;
         String statusMessage = I18nUtil.getString("inheritance.status.ready");
         if (index == null) {
@@ -428,7 +422,7 @@ public final class InheritanceReferenceService {
         }
         groups.add(buildOverflowGroup(workspace, Kind.IMPLEMENTATION,
                 I18nUtil.getString("inheritance.group.implementations"),
-                impls, 1, true));
+                impls, 1, true, index));
     }
 
     private static void addSubclassGroup(Workspace workspace, InheritanceReferenceIndex index,
@@ -443,7 +437,7 @@ public final class InheritanceReferenceService {
         }
         groups.add(buildOverflowGroup(workspace, Kind.SUBCLASS,
                 I18nUtil.getString("inheritance.group.subclasses"),
-                subs, 1, true));
+                subs, 1, true, index));
     }
 
     private static void addAnnotatedClassesGroup(Workspace workspace, InheritanceReferenceIndex index,
@@ -458,7 +452,7 @@ public final class InheritanceReferenceService {
         }
         groups.add(buildOverflowGroup(workspace, Kind.ANNOTATION,
                 I18nUtil.getString("inheritance.group.annotatedClasses"),
-                annotated, 1, true));
+                annotated, 1, true, index));
     }
 
     private static Set<String> collectDescendants(WorkspaceIndex index, String internalName) {
@@ -512,11 +506,12 @@ public final class InheritanceReferenceService {
 
     private static InheritanceReferenceGroup buildOverflowGroup(Workspace workspace, Kind kind,
                                                                 String title, List<String> names,
-                                                                int depth, boolean collapsible) {
+                                                                int depth, boolean collapsible,
+                                                                InheritanceReferenceIndex index) {
         List<InheritanceReferenceNode> children = new ArrayList<>();
         int limit = Math.min(names.size(), MAX_OVERFLOW);
         for (int i = 0; i < limit; i++) {
-            children.add(nodeFor(workspace, names.get(i), kind, depth));
+            children.add(nodeFor(workspace, names.get(i), kind, depth, index));
         }
         if (names.size() > MAX_OVERFLOW) {
             int overflow = names.size() - MAX_OVERFLOW;
@@ -535,16 +530,28 @@ public final class InheritanceReferenceService {
 
     private static InheritanceReferenceNode nodeFor(Workspace workspace, String internalName,
                                                     Kind kind, int depth) {
-        String fullPath = resolveFullPath(workspace, internalName);
+        return nodeFor(workspace, internalName, kind, depth,
+                InheritanceReferenceIndexService.getIfReady(workspace));
+    }
+
+    private static InheritanceReferenceNode nodeFor(Workspace workspace, String internalName,
+                                                    Kind kind, int depth,
+                                                    InheritanceReferenceIndex index) {
+        String fullPath = resolveFullPath(workspace, internalName, index);
         return new InheritanceReferenceNode(internalName, simpleName(internalName), kind,
                 fullPath, depth, fullPath != null && !fullPath.isBlank());
     }
 
     private static String resolveFullPath(Workspace workspace, String internalName) {
+        return resolveFullPath(workspace, internalName,
+                InheritanceReferenceIndexService.getIfReady(workspace));
+    }
+
+    private static String resolveFullPath(Workspace workspace, String internalName,
+                                          InheritanceReferenceIndex index) {
         if (workspace == null) {
             return null;
         }
-        InheritanceReferenceIndex index = InheritanceReferenceIndexService.getIfReady(workspace);
         if (index != null) {
             String fp = index.fullPathOf(internalName);
             if (fp != null && !fp.isBlank()) {
@@ -621,12 +628,12 @@ public final class InheritanceReferenceService {
     // ── 内部类型 ──
 
     private static final class LocalVisitor extends ClassVisitor {
-        String name;
-        int access;
-        String superName;
         final List<String> interfaces = new ArrayList<>();
         final List<String> annotations = new ArrayList<>();
         final List<MethodData> methods = new ArrayList<>();
+        String name;
+        int access;
+        String superName;
 
         LocalVisitor() {
             super(Opcodes.ASM9);
@@ -655,7 +662,7 @@ public final class InheritanceReferenceService {
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String descriptor,
-                                        String signature, String[] exceptions) {
+                                         String signature, String[] exceptions) {
             methods.add(new MethodData(name, descriptor, access));
             return null; // 不需要访问方法体
         }
@@ -677,10 +684,24 @@ public final class InheritanceReferenceService {
 
     // 本地引用 java.lang.reflect.Modifier,避免歧义
     private static final class Modifier {
-        static boolean isStatic(int access) { return (access & Opcodes.ACC_STATIC) != 0; }
-        static boolean isPrivate(int access) { return (access & Opcodes.ACC_PRIVATE) != 0; }
-        static boolean isFinal(int access) { return (access & Opcodes.ACC_FINAL) != 0; }
-        static boolean isInterface(int access) { return (access & Opcodes.ACC_INTERFACE) != 0; }
-        static boolean isAnnotation(int access) { return (access & Opcodes.ACC_ANNOTATION) != 0; }
+        static boolean isStatic(int access) {
+            return (access & Opcodes.ACC_STATIC) != 0;
+        }
+
+        static boolean isPrivate(int access) {
+            return (access & Opcodes.ACC_PRIVATE) != 0;
+        }
+
+        static boolean isFinal(int access) {
+            return (access & Opcodes.ACC_FINAL) != 0;
+        }
+
+        static boolean isInterface(int access) {
+            return (access & Opcodes.ACC_INTERFACE) != 0;
+        }
+
+        static boolean isAnnotation(int access) {
+            return (access & Opcodes.ACC_ANNOTATION) != 0;
+        }
     }
 }

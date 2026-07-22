@@ -26,70 +26,69 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.Assert;
+import com.bingbaihanji.classgraph.utils.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Modifier;
 
 /**
- * Holds metadata about class members of a class encountered during a scan. All values are taken directly out of the
- * classfile for the class.
+ * 保存扫描过程中遇到的类成员的元数据所有值均直接从类的 class 文件中提取
  */
 public abstract class ClassMemberInfo extends ScanResultObject implements HasName {
-    /** Defining class name. */
+    /** 定义该成员的类名 */
     protected String declaringClassName;
 
-    /** The name of the class member. */
+    /** 类成员的名称 */
     protected String name;
 
-    /** Class member modifiers. */
+    /** 类成员的修饰符 */
     protected int modifiers;
 
     /**
-     * The JVM-internal type descriptor (missing type parameters, but including types for synthetic and mandated
-     * class member parameters).
+     * JVM 内部的类型描述符(不含类型参数，但包含合成参数和强制参数的
+     * 类成员参数类型)
      */
     protected String typeDescriptorStr;
 
     /**
-     * The type signature (may have type parameter information included, if present and available). Class member
-     * parameter types are unaligned.
+     * 类型签名(如果存在且可用，可能包含类型参数信息)类成员
+     * 参数类型是未对齐的
      */
     protected String typeSignatureStr;
 
-    /** The annotation on the class member, if any. */
+    /** 类成员上的注解(如果有) */
     protected AnnotationInfoList annotationInfo;
 
-    /** The annotation infos, once they are loaded */
+    /** 注解信息，在加载后缓存 */
     private AnnotationInfoList annotationInfoRef;
 
-    /** Default constructor for deserialization. */
+    /** 用于反序列化的默认构造器 */
     ClassMemberInfo() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造器
      *
      * @param definingClassName
-     *            The class the member is defined within.
+     *            定义该成员的类
      * @param memberName
-     *            The name of the class member.
+     *            类成员的名称
      * @param modifiers
-     *            The class member modifiers.
+     *            类成员的修饰符
      * @param typeDescriptorStr
-     *            The class member type descriptor.
+     *            类成员的类型描述符
      * @param typeSignatureStr
-     *            The class member type signature.
+     *            类成员的类型签名
      * @param annotationInfo
-     *            {@link AnnotationInfo} for any annotations on the class member.
+     *            类成员上所有注解的 {@link AnnotationInfo}
      */
     public ClassMemberInfo(final String definingClassName, final String memberName, final int modifiers,
-            final String typeDescriptorStr, final String typeSignatureStr,
-            final AnnotationInfoList annotationInfo) {
+                           final String typeDescriptorStr, final String typeSignatureStr,
+                           final AnnotationInfoList annotationInfo) {
         super();
         this.declaringClassName = definingClassName;
         this.name = memberName;
@@ -102,9 +101,9 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the {@link ClassInfo} object for the class that declares this class member.
+     * 获取声明此类成员的类的 {@link ClassInfo} 对象
      *
-     * @return The {@link ClassInfo} object for the declaring class.
+     * @return 声明类的 {@link ClassInfo} 对象
      *
      * @see #getClassName()
      */
@@ -114,9 +113,9 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     }
 
     /**
-     * Get the name of the class that declares this member.
+     * 获取声明此成员的类的名称
      *
-     * @return The name of the declaring class.
+     * @return 声明类的名称
      *
      * @see #getClassInfo()
      */
@@ -126,9 +125,9 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     }
 
     /**
-     * Get the name of the class member.
+     * 获取类成员的名称
      *
-     * @return The name of the class member.
+     * @return 类成员的名称
      */
     @Override
     public String getName() {
@@ -138,70 +137,70 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Returns the modifier bits for the class member.
+     * 返回类成员的修饰符位掩码
      *
-     * @return The modifier bits for the class member.
+     * @return 类成员的修饰符位掩码
      */
     public int getModifiers() {
         return modifiers;
     }
 
     /**
-     * Get the modifiers as a string, e.g. "public static final". For the modifier bits, call getModifiers().
+     * 以字符串形式获取修饰符，例如 "public static final"如需获取修饰符位掩码，请调用 getModifiers()
      *
-     * @return The modifiers modifiers, as a string.
+     * @return 修饰符的字符串表示
      */
     public abstract String getModifiersStr();
 
     /**
-     * Returns true if this class member is public.
+     * 如果此类成员是 public 的，则返回 true
      *
-     * @return True if the class member is public.
+     * @return 如果类成员是 public 的，则返回 true
      */
     public boolean isPublic() {
         return Modifier.isPublic(modifiers);
     }
 
     /**
-     * Returns true if this class member is private.
+     * 如果此类成员是 private 的，则返回 true
      *
-     * @return True if the class member is private.
+     * @return 如果类成员是 private 的，则返回 true
      */
     public boolean isPrivate() {
         return Modifier.isPrivate(modifiers);
     }
 
     /**
-     * Returns true if this class member is protected.
+     * 如果此类成员是 protected 的，则返回 true
      *
-     * @return True if the class member is protected.
+     * @return 如果类成员是 protected 的，则返回 true
      */
     public boolean isProtected() {
         return Modifier.isProtected(modifiers);
     }
 
     /**
-     * Returns true if this class member is static.
+     * 如果此类成员是 static 的，则返回 true
      *
-     * @return True if the class member is static.
+     * @return 如果类成员是 static 的，则返回 true
      */
     public boolean isStatic() {
         return Modifier.isStatic(modifiers);
     }
 
     /**
-     * Returns true if this class member is final.
+     * 如果此类成员是 final 的，则返回 true
      *
-     * @return True if the class member is final.
+     * @return 如果类成员是 final 的，则返回 true
      */
     public boolean isFinal() {
         return Modifier.isFinal(modifiers);
     }
 
     /**
-     * Returns true if this class member is synthetic.
+     * 如果此类成员是合成的，则返回 true
      *
-     * @return True if the class member is synthetic.
+     * @return 如果类成员是合成的，则返回 true
      */
     public boolean isSynthetic() {
         return (modifiers & 0x1000) != 0;
@@ -210,64 +209,55 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Returns the parsed type descriptor for the class member, which will not include type parameters. If you need
-     * generic type parameters, call {@link #getTypeSignature()} instead.
+     * 返回类成员解析后的类型描述符，不包含类型参数如果需要泛型类型参数，请改用 {@link #getTypeSignature()}
      *
-     * @return The parsed type descriptor string for the class member.
+     * @return 类成员解析后的类型描述符字符串
      */
     public abstract HierarchicalTypeSignature getTypeDescriptor();
 
     /**
-     * Returns the type descriptor string for the class member, which will not include type parameters. If you need
-     * generic type parameters, call {@link #getTypeSignatureStr()} instead.
+     * 返回类成员的类型描述符字符串，不包含类型参数如果需要泛型类型参数，请改用 {@link #getTypeSignatureStr()}
      *
-     * @return The type descriptor string for the class member.
+     * @return 类成员的类型描述符字符串
      */
     public String getTypeDescriptorStr() {
         return typeDescriptorStr;
     }
 
     /**
-     * Returns the parsed type signature for the class member, possibly including type parameters. If this returns
-     * null, that no type signature information is available for this class member, call
-     * {@link #getTypeDescriptor()} instead.
+     * 返回类成员解析后的类型签名，可能包含类型参数如果返回 null，表示此类成员没有可用的类型签名信息，
+     * 请改用 {@link #getTypeDescriptor()}
      *
-     * @return The parsed type signature for the class member, or null if not available.
+     * @return 类成员解析后的类型签名，如果不可用则返回 null
      * @throws IllegalArgumentException
-     *             if the class member type signature cannot be parsed (this should only be thrown in the case of
-     *             classfile corruption, or a compiler bug that causes an invalid type signature to be written to
-     *             the classfile).
+     *             如果类成员的类型签名无法解析(仅当 class 文件损坏或编译器 bug 导致向 class 文件
+     *             写入了无效的类型签名时才会抛出此异常)
      */
     public abstract HierarchicalTypeSignature getTypeSignature();
 
     /**
-     * Returns the type signature string for the class member, possibly including type parameters. If this returns
-     * null, indicating that no type signature information is available for this class member, call
-     * {@link #getTypeDescriptorStr()} instead.
+     * 返回类成员的类型签名字符串，可能包含类型参数如果返回 null，表示此类成员没有可用的类型签名信息，
+     * 请改用 {@link #getTypeDescriptorStr()}
      *
-     * @return The type signature string for the class member, or null if not available.
+     * @return 类成员的类型签名字符串，如果不可用则返回 null
      */
     public String getTypeSignatureStr() {
         return typeSignatureStr;
     }
 
     /**
-     * Returns the type signature for the class member, possibly including type parameters. If the type signature is
-     * null, indicating that no type signature information is available for this class member, returns the type
-     * descriptor instead.
+     * 返回类成员的类型签名，可能包含类型参数如果类型签名为 null(表示此类成员没有可用的类型签名信息)，
+     * 则返回类型描述符
      *
-     * @return The parsed type signature for the class member, or if not available, the parsed type descriptor for
-     *         the class member.
+     * @return 类成员解析后的类型签名；如果不可用，则返回类成员解析后的类型描述符
      */
     public abstract HierarchicalTypeSignature getTypeSignatureOrTypeDescriptor();
 
     /**
-     * Returns the type signature string for the class member, possibly including type parameters. If the type
-     * signature string is null, indicating that no type signature information is available for this class member,
-     * returns the type descriptor string instead.
+     * 返回类成员的类型签名字符串，可能包含类型参数如果类型签名字符串为 null(表示此类成员没有可用的类型签名信息)，
+     * 则返回类型描述符字符串
      *
-     * @return The type signature string for the class member, or if not available, the type descriptor string for
-     *         the class member.
+     * @return 类成员的类型签名字符串；如果不可用，则返回类成员的类型描述符字符串
      */
     public String getTypeSignatureOrTypeDescriptorStr() {
         if (typeSignatureStr != null) {
@@ -279,11 +269,9 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get a list of annotations on this class member, along with any annotation parameter values, wrapped in
-     * {@link AnnotationInfo} objects.
+     * 获取此类成员上的注解列表及其注解参数值，封装在 {@link AnnotationInfo} 对象中
      *
-     * @return A list of annotations on this class member, along with any annotation parameter values, wrapped in
-     *         {@link AnnotationInfo} objects, or the empty list if none.
+     * @return 此类成员上的注解列表及其注解参数值，封装在 {@link AnnotationInfo} 对象中；如果没有则返回空列表
      */
     public AnnotationInfoList getAnnotationInfo() {
         synchronized (this) {
@@ -292,7 +280,7 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
             }
 
             if (!scanResult.scanSpec.enableAnnotationInfo) {
-                throw new IllegalArgumentException("Please call ClassGraph#enableAnnotationInfo() before #scan()");
+                throw new IllegalArgumentException("请在调用 scan() 之前先调用 ClassGraph#enableAnnotationInfo()");
             }
 
             annotationInfoRef = annotationInfo == null ? AnnotationInfoList.EMPTY_LIST
@@ -302,13 +290,12 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     }
 
     /**
-     * Get a the non-{@link Repeatable} annotation on this class member, or null if the class member does not have
-     * the annotation. (Use {@link #getAnnotationInfoRepeatable(Class)} for {@link Repeatable} annotations.)
+     * 获取此类成员上指定的非 {@link Repeatable} 注解，如果类成员没有该注解则返回 null
+     * (对于 {@link Repeatable} 注解，请使用 {@link #getAnnotationInfoRepeatable(Class)})
      *
      * @param annotation
-     *            The annotation.
-     * @return An {@link AnnotationInfo} object representing the annotation on this class member, or null if the
-     *         class member does not have the annotation.
+     *            注解类
+     * @return 表示此类成员上该注解的 {@link AnnotationInfo} 对象，如果类成员没有该注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -316,27 +303,23 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     }
 
     /**
-     * Get a the named non-{@link Repeatable} annotation on this class member, or null if the class member does not
-     * have the named annotation. (Use {@link #getAnnotationInfoRepeatable(String)} for {@link Repeatable}
-     * annotations.)
+     * 获取此类成员上指定名称的非 {@link Repeatable} 注解，如果类成员没有该名称的注解则返回 null
+     * (对于 {@link Repeatable} 注解，请使用 {@link #getAnnotationInfoRepeatable(String)})
      *
      * @param annotationName
-     *            The annotation name.
-     * @return An {@link AnnotationInfo} object representing the named annotation on this class member, or null if
-     *         the class member does not have the named annotation.
+     *            注解名称
+     * @return 表示此类成员上指定名称注解的 {@link AnnotationInfo} 对象，如果类成员没有该名称的注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
         return getAnnotationInfo().get(annotationName);
     }
 
     /**
-     * Get a the {@link Repeatable} annotation on this class member, or the empty list if the class member does not
-     * have the annotation.
+     * 获取此类成员上指定的 {@link Repeatable} 注解，如果类成员没有该注解则返回空列表
      *
      * @param annotation
-     *            The annotation.
-     * @return An {@link AnnotationInfoList} of all instances of the annotation on this class member, or the empty
-     *         list if the class member does not have the annotation.
+     *            注解类
+     * @return 此类成员上该注解所有实例的 {@link AnnotationInfoList}，如果类成员没有该注解则返回空列表
      */
     public AnnotationInfoList getAnnotationInfoRepeatable(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -344,24 +327,22 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     }
 
     /**
-     * Get a the named {@link Repeatable} annotation on this class member, or the empty list if the class member
-     * does not have the named annotation.
+     * 获取此类成员上指定名称的 {@link Repeatable} 注解，如果类成员没有该名称的注解则返回空列表
      *
      * @param annotationName
-     *            The annotation name.
-     * @return An {@link AnnotationInfoList} of all instances of the named annotation on this class member, or the
-     *         empty list if the class member does not have the named annotation.
+     *            注解名称
+     * @return 此类成员上指定名称注解所有实例的 {@link AnnotationInfoList}，如果类成员没有该名称的注解则返回空列表
      */
     public AnnotationInfoList getAnnotationInfoRepeatable(final String annotationName) {
         return getAnnotationInfo().getRepeatable(annotationName);
     }
 
     /**
-     * Check if the class member has a given annotation.
+     * 检查类成员是否具有给定的注解
      *
      * @param annotation
-     *            The annotation.
-     * @return true if this class member has the annotation.
+     *            注解类
+     * @return 如果此类成员具有该注解，则返回 true
      */
     public boolean hasAnnotation(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -369,11 +350,11 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
     }
 
     /**
-     * Check if the class member has a given named annotation.
+     * 检查类成员是否具有给定名称的注解
      *
      * @param annotationName
-     *            The name of an annotation.
-     * @return true if this class member has the named annotation.
+     *            注解名称
+     * @return 如果此类成员具有该名称的注解，则返回 true
      */
     public boolean hasAnnotation(final String annotationName) {
         return getAnnotationInfo().containsName(annotationName);

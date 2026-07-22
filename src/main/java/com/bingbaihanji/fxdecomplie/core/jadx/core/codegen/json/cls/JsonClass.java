@@ -1,16 +1,16 @@
 package com.bingbaihanji.fxdecomplie.core.jadx.core.codegen.json.cls;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
 public class JsonClass extends JsonNode {
-    @SerializedName("package")
+    @JsonProperty("package")
     private String pkg;
     private String type; // class, interface, enum
-    @SerializedName("extends")
+    @JsonProperty("extends")
     private String superClass;
-    @SerializedName("implements")
+    @JsonProperty("implements")
     private List<String> interfaces;
     private String dex;
 

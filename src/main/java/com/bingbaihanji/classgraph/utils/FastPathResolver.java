@@ -26,55 +26,55 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.utils;
+package com.bingbaihanji.classgraph.utils;
+
+import com.bingbaihanji.classgraph.utils.VersionFinder.OperatingSystem;
 
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import nonapi.io.github.classgraph.utils.VersionFinder.OperatingSystem;
-
 /**
- * Resolve relative paths and URLs/URIs against a base path in a way that is faster than Java's URL/URI parser (and
- * much faster than Path), while aiming for cross-platform compatibility, and hopefully in particular being robust
- * to the many forms of Windows path weirdness.
+ * 以比 Java URL/URI 解析器更快(且比 Path 快得多)的方式，
+ * 针对基础路径解析相对路径和 URL/URI，同时力求跨平台兼容，
+ * 并特别希望对 Windows 路径的各种奇怪形式具有良好的鲁棒性
  */
 public final class FastPathResolver {
-    /** Match %-encoded characters in URLs. */
+    /** 匹配 URL 中的百分号编码字符 */
     private static final Pattern percentMatcher = Pattern.compile("([%][0-9a-fA-F][0-9a-fA-F])+");
 
-    /** Match custom URLs that are followed by one or two slashes. */
+    /** 匹配后跟一个或两个斜杠的自定义 URL */
     private static final Pattern schemeOneOrTwoSlashMatcher = Pattern.compile("^[a-zA-Z+\\-.]+:/{1,2}");
 
     /**
-     * Constructor.
+     * 构造方法
      */
     private FastPathResolver() {
-        // Cannot be constructed
+        // 不可构造
     }
 
     /**
-     * Translate backslashes to forward slashes, optionally removing trailing separator.
+     * 将反斜杠转换为正斜杠，可选择性移除尾部路径分隔符
      *
      * @param path
-     *            the path
+     *            路径
      * @param startIdx
-     *            the start index
+     *            起始索引
      * @param endIdx
-     *            the end index
+     *            结束索引
      * @param stripFinalSeparator
-     *            if true, strip the final separator
+     *            如果为 true，则移除尾部分隔符
      * @param buf
-     *            the buf
+     *            缓冲区
      */
     private static void translateSeparator(final String path, final int startIdx, final int endIdx,
-            final boolean stripFinalSeparator, final StringBuilder buf) {
+                                           final boolean stripFinalSeparator, final StringBuilder buf) {
         for (int i = startIdx; i < endIdx; i++) {
             final char c = path.charAt(i);
             if (c == '\\' || c == '/') {
-                // Strip trailing separator, if necessary
+                // 必要时移除尾部分隔符
                 if (i < endIdx - 1 || !stripFinalSeparator) {
-                    // Remove duplicate separators
+                    // 移除重复的分隔符
                     final char prevChar = buf.length() == 0 ? '\0' : buf.charAt(buf.length() - 1);
                     if (prevChar != '/') {
                         buf.append('/');
@@ -87,34 +87,34 @@ public final class FastPathResolver {
     }
 
     /**
-     * Hex char to int.
+     * 十六进制字符转整数
      *
      * @param c
-     *            the character
-     * @return the integer value of the character
+     *            字符
+     * @return 字符对应的整数值
      */
     private static int hexCharToInt(final char c) {
         return (c >= '0' && c <= '9') ? (c - '0') //
                 : (c >= 'a' && c <= 'f') ? (c - 'a' + 10) //
-                        : (c - 'A' + 10);
+                : (c - 'A' + 10);
     }
 
     /**
-     * Unescape runs of percent encoding, e.g. "%20%43%20" -> " + "
+     * 反转义连续的百分号编码，例如 "%20%43%20" -> " + "
      *
      * @param path
-     *            the path
+     *            路径
      * @param startIdx
-     *            the start index
+     *            起始索引
      * @param endIdx
-     *            the end index
+     *            结束索引
      * @param buf
-     *            the buf
+     *            缓冲区
      */
     private static void unescapePercentEncoding(final String path, final int startIdx, final int endIdx,
-            final StringBuilder buf) {
+                                                final StringBuilder buf) {
         if (endIdx - startIdx == 3 && path.charAt(startIdx + 1) == '2' && path.charAt(startIdx + 2) == '0') {
-            // Fast path for "%20"
+            // "%20" 的快速路径
             buf.append(' ');
         } else {
             final byte[] bytes = new byte[(endIdx - startIdx) / 3];
@@ -125,23 +125,23 @@ public final class FastPathResolver {
                 final int digit2 = hexCharToInt(c2);
                 bytes[j] = (byte) ((digit1 << 4) | digit2);
             }
-            // Decode UTF-8 bytes
+            // 解码 UTF-8 字节
             String str = new String(bytes, StandardCharsets.UTF_8);
-            // Turn forward slash / backslash back into %-encoding
+            // 将正斜杠 / 反斜杠转回百分号编码
             str = str.replace("/", "%2F").replace("\\", "%5C");
             buf.append(str);
         }
     }
 
     /**
-     * Parse percent encoding, e.g. "%20" -&gt; " "; convert '/' or '\\' to SEP; remove trailing separator char if
-     * present.
-     * 
+     * 解析百分号编码，例如 "%20" -&gt; " "；将 '/' 或 '\\' 转换为 SEP；
+     * 如果存在则移除尾部分隔符字符
+     *
      * @param path
-     *            The path to normalize.
+     *            要规范化的路径
      * @param isFileOrJarURL
-     *            True if this is a "file:" or "jar:" URL.
-     * @return The normalized path.
+     *            如果这是一个 "file:" 或 "jar:" URL 则为 true
+     * @return 规范化后的路径
      */
     public static String normalizePath(final String path, final boolean isFileOrJarURL) {
         final boolean hasPercent = path.indexOf('%') >= 0;
@@ -150,9 +150,9 @@ public final class FastPathResolver {
         } else {
             final int len = path.length();
             final StringBuilder buf = new StringBuilder();
-            // Only "file:" and "jar:" URLs are %-decoded (issue 255)
+            // 仅对 "file:" 和 "jar:" URL 进行百分号解码(issue 255)
             if (hasPercent && isFileOrJarURL) {
-                // Perform '%'-decoding of path segment
+                // 对路径段执行百分号解码
                 int prevEndMatchIdx = 0;
                 final Matcher matcher = percentMatcher.matcher(path);
                 while (matcher.find()) {
@@ -165,7 +165,7 @@ public final class FastPathResolver {
                 }
                 translateSeparator(path, prevEndMatchIdx, len, /* stripFinalSeparator = */ true, buf);
             } else {
-                // Fast path -- no '%', or "http(s)://" or "jrt:" URL, or non-"file:" or non-"jar:" URL
+                // 快速路径 -- 无 '%'，或 "http(s)://" 或 "jrt:" URL，或非 "file:" / 非 "jar:" URL
                 translateSeparator(path, 0, len, /* stripFinalSeparator = */ true, buf);
                 return buf.toString();
             }
@@ -174,17 +174,17 @@ public final class FastPathResolver {
     }
 
     /**
-     * Strip away any "jar:" prefix from a filename URI, and convert it to a file path, handling possibly-broken
-     * mixes of filesystem and URI conventions; resolve relative paths relative to resolveBasePath.
-     * 
+     * 从文件名 URI 中剥离任何 "jar:" 前缀，并将其转换为文件路径，
+     * 处理可能混用文件系统和 URI 约定的情况；将相对路径相对于 resolveBasePath 进行解析
+     *
      * @param resolveBasePath
-     *            The base path.
+     *            基础路径
      * @param relativePath
-     *            The path to resolve relative to the base path.
-     * @return The resolved path.
+     *            相对于基础路径进行解析的路径
+     * @return 解析后的路径
      */
     public static String resolve(final String resolveBasePath, final String relativePath) {
-        // See: http://stackoverflow.com/a/17870390/3950982
+        // 参见: http://stackoverflow.com/a/17870390/3950982
         // https://weblogs.java.net/blog/kohsuke/archive/2007/04/how_to_convert.html
 
         if (relativePath == null || relativePath.isEmpty()) {
@@ -199,39 +199,38 @@ public final class FastPathResolver {
         do {
             matchedPrefix = false;
             if (relativePath.regionMatches(true, startIdx, "jar:", 0, 4)) {
-                // "jar:" prefix can be stripped
+                // "jar:" 前缀可以剥离
                 matchedPrefix = true;
                 startIdx = 4;
                 isFileOrJarURL = true;
             } else if (relativePath.regionMatches(true, startIdx, "http://", 0, 7)) {
-                // Detect http://
+                // 检测 http://
                 matchedPrefix = true;
                 startIdx += 7;
-                // Force protocol name to lowercase
+                // 将协议名强制转为小写
                 prefix += "http://";
-                // Treat the part after the protocol as an absolute path, so the domain is not treated as a directory
-                // relative to the current directory.
+                // 将协议后的部分视为绝对路径，这样域名不会被当作相对于当前目录的目录
                 isAbsolutePath = true;
-                // Don't un-escape percent encoding etc.
+                // 不反转义百分号编码等
             } else if (relativePath.regionMatches(true, startIdx, "https://", 0, 8)) {
-                // Detect https://
+                // 检测 https://
                 matchedPrefix = true;
                 startIdx += 8;
                 prefix += "https://";
                 isAbsolutePath = true;
             } else if (relativePath.regionMatches(true, startIdx, "jrt:", 0, 5)) {
-                // Detect jrt:
+                // 检测 jrt:
                 matchedPrefix = true;
                 startIdx += 4;
                 prefix += "jrt:";
                 isAbsolutePath = true;
             } else if (relativePath.regionMatches(true, startIdx, "file:", 0, 5)) {
-                // Strip off "file:" prefix from relative path
+                // 从相对路径中剥离 "file:" 前缀
                 matchedPrefix = true;
                 startIdx += 5;
                 isFileOrJarURL = true;
             } else {
-                // Preserve the number of slashes on custom URL schemes (#420)
+                // 保留自定义 URL 方案中的斜杠数量(#420)
                 final String relPath = startIdx == 0 ? relativePath : relativePath.substring(startIdx);
                 final Matcher matcher = schemeOneOrTwoSlashMatcher.matcher(relPath);
                 if (matcher.find()) {
@@ -239,44 +238,43 @@ public final class FastPathResolver {
                     final String match = matcher.group();
                     startIdx += match.length();
                     prefix += match;
-                    // Treat the part after the protocol as an absolute path, so the rest of the URL is not treated
-                    // as a directory relative to the current directory.
+                    // 将协议后的部分视为绝对路径，这样 URL 的其余部分不会被当作相对于当前目录的目录
                     isAbsolutePath = true;
                 }
             }
         } while (matchedPrefix);
 
-        // Handle Windows paths starting with a drive designation as an absolute path
+        // 将以驱动器标识开头的 Windows 路径视为绝对路径
         if (VersionFinder.OS == OperatingSystem.Windows) {
             if (relativePath.startsWith("//", startIdx) || relativePath.startsWith("\\\\", startIdx)) {
-                // Windows UNC path
+                // Windows UNC 路径
                 startIdx += 2;
                 prefix += "//";
                 isAbsolutePath = true;
             } else if (relativePath.length() - startIdx > 2 && Character.isLetter(relativePath.charAt(startIdx))
                     && relativePath.charAt(startIdx + 1) == ':') {
-                // Path like "C:/xyz"
+                // 类似 "C:/xyz" 的路径
                 isAbsolutePath = true;
             } else if (relativePath.length() - startIdx > 3
                     && (relativePath.charAt(startIdx) == '/' || relativePath.charAt(startIdx) == '\\')
                     && Character.isLetter(relativePath.charAt(startIdx + 1))
                     && relativePath.charAt(startIdx + 2) == ':') {
-                // Path like "/C:/xyz"
+                // 类似 "/C:/xyz" 的路径
                 isAbsolutePath = true;
                 startIdx++;
             }
         }
-        // Catch-all for paths starting with separator
+        // 以分隔符开头的路径的通用处理
         if (relativePath.length() - startIdx > 1
                 && (relativePath.charAt(startIdx) == '/' || relativePath.charAt(startIdx) == '\\')) {
             isAbsolutePath = true;
         }
 
-        // Normalize the path, then add any UNC or URL prefix
+        // 规范化路径，然后添加任何 UNC 或 URL 前缀
         String pathStr = normalizePath(startIdx == 0 ? relativePath : relativePath.substring(startIdx),
                 isFileOrJarURL);
-        if (!pathStr.equals("/")) {
-            // Remove any "!/" on end of URL
+        if (!"/".equals(pathStr)) {
+            // 移除 URL 末尾的任何 "!/"
             if (pathStr.endsWith("/")) {
                 pathStr = pathStr.substring(0, pathStr.length() - 1);
             }
@@ -291,31 +289,30 @@ public final class FastPathResolver {
             }
         }
 
-        // Sanitize path (resolve ".." sections, collapse "//" double separators, etc.)
+        // 清理路径(解析 ".." 段、合并 "//" 双重分隔符等)
         String pathResolved;
         if (isAbsolutePath || resolveBasePath == null || resolveBasePath.isEmpty()) {
-            // There is no base path to resolve against, or path is an absolute path or http(s):// URL
-            // (ignore the base path)
+            // 没有基础路径可供解析，或者路径是绝对路径或 http(s):// URL(忽略基础路径)
             pathResolved = FileUtils.sanitizeEntryPath(pathStr, /* removeInitialSlash = */ false,
                     /* removeFinalSlash = */ true);
         } else {
-            // Path is a relative path -- resolve it relative to the base path
+            // 路径是相对路径 -- 相对于基础路径进行解析
             pathResolved = FileUtils.sanitizeEntryPath(
                     resolveBasePath + (resolveBasePath.endsWith("/") ? "" : "/") + pathStr,
                     /* removeInitialSlash = */ false, /* removeFinalSlash = */ true);
         }
 
-        // Add any prefix back, e.g. "https://"
+        // 将任何前缀加回，例如 "https://"
         return prefix.isEmpty() ? pathResolved : prefix + pathResolved;
     }
 
     /**
-     * Strip away any "jar:" prefix from a filename URI, and convert it to a file path, handling possibly-broken
-     * mixes of filesystem and URI conventions. Returns null if relativePathStr is an "http(s):" path.
-     * 
+     * 从文件名 URI 中剥离任何 "jar:" 前缀，并将其转换为文件路径，
+     * 处理可能混用文件系统和 URI 约定的情况如果 relativePathStr 是 "http(s):" 路径则返回 null
+     *
      * @param pathStr
-     *            The path to resolve.
-     * @return The resolved path.
+     *            要解析的路径
+     * @return 解析后的路径
      */
     public static String resolve(final String pathStr) {
         return resolve(null, pathStr);

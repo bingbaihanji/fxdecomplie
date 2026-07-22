@@ -26,54 +26,48 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fastzipfilereader;
+package com.bingbaihanji.classgraph.fastzipfilereader;
+
+import com.bingbaihanji.classgraph.fileslice.ArraySlice;
+import com.bingbaihanji.classgraph.fileslice.FileSlice;
+import com.bingbaihanji.classgraph.fileslice.PathSlice;
+import com.bingbaihanji.classgraph.fileslice.Slice;
+import com.bingbaihanji.classgraph.utils.FastPathResolver;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.util.Objects;
 
-import nonapi.io.github.classgraph.fileslice.ArraySlice;
-import nonapi.io.github.classgraph.fileslice.FileSlice;
-import nonapi.io.github.classgraph.fileslice.PathSlice;
-import nonapi.io.github.classgraph.fileslice.Slice;
-import nonapi.io.github.classgraph.utils.FastPathResolver;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
-
-/** A physical zipfile, which is mmap'd using a {@link FileChannel}. */
+/** 物理 ZIP 文件，通过 {@link FileChannel} 进行内存映射(mmap) */
 class PhysicalZipFile {
-    /** The {@link Path} backing this {@link PhysicalZipFile}, if any. */
-    private Path path;
-
-    /** The {@link File} backing this {@link PhysicalZipFile}, if any. */
-    private File file;
-
-    /** The path to the zipfile. */
+    /** ZIP 文件的路径 */
     private final String pathStr;
-
-    /** The {@link Slice} for the zipfile. */
+    /** 该 ZIP 文件的 {@link Slice} */
     Slice slice;
-
-    /** The nested jar handler. */
+    /** 嵌套 JAR 处理器 */
     NestedJarHandler nestedJarHandler;
-
-    /** The cached hashCode. */
-    private int hashCode;
+    /** 支撑此 {@link PhysicalZipFile} 的 {@link Path}(如果有) */
+    private Path path;
+    /** 支撑此 {@link PhysicalZipFile} 的 {@link File}(如果有) */
+    private File file;
+    /** 缓存的 hashCode */
+    private volatile int hashCode;
 
     /**
-     * Construct a {@link PhysicalZipFile} from a file on disk.
+     * 从磁盘上的文件构造一个 {@link PhysicalZipFile}
      *
      * @param file
-     *            the file
+     *            文件
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 JAR 处理器
      * @param log
-     *            the log
+     *            日志
      * @throws IOException
-     *             if an I/O exception occurs.
+     *            如果发生 I/O 异常
      */
     PhysicalZipFile(final File file, final NestedJarHandler nestedJarHandler, final LogNode log)
             throws IOException {
@@ -84,16 +78,16 @@ class PhysicalZipFile {
     }
 
     /**
-     * Construct a {@link PhysicalZipFile} from a {@link Path}.
+     * 从 {@link Path} 构造一个 {@link PhysicalZipFile}
      *
      * @param path
-     *            the path
+     *            路径
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 JAR 处理器
      * @param log
-     *            the log
+     *            日志
      * @throws IOException
-     *             if an I/O exception occurs.
+     *            如果发生 I/O 异常
      */
     PhysicalZipFile(final Path path, final NestedJarHandler nestedJarHandler, final LogNode log)
             throws IOException {
@@ -104,21 +98,21 @@ class PhysicalZipFile {
     }
 
     /**
-     * Construct a {@link PhysicalZipFile} from a byte array.
+     * 从字节数组构造一个 {@link PhysicalZipFile}
      *
      * @param arr
-     *            the array containing the zipfile.
+     *            包含 ZIP 文件内容的数组
      * @param outermostFile
-     *            the outermost file
+     *            最外层的文件
      * @param pathStr
-     *            the path
+     *            路径
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 JAR 处理器
      * @throws IOException
-     *             if an I/O exception occurs.
+     *            如果发生 I/O 异常
      */
     PhysicalZipFile(final byte[] arr, final File outermostFile, final String pathStr,
-            final NestedJarHandler nestedJarHandler) throws IOException {
+                    final NestedJarHandler nestedJarHandler) throws IOException {
         this.nestedJarHandler = nestedJarHandler;
         this.file = outermostFile;
         this.pathStr = pathStr;
@@ -127,70 +121,66 @@ class PhysicalZipFile {
     }
 
     /**
-     * Construct a {@link PhysicalZipFile} by reading from the {@link InputStream} to an array in RAM, or spill to
-     * disk if the {@link InputStream} is too long.
+     * 通过将 {@link InputStream} 读入 RAM 中的数组来构造 {@link PhysicalZipFile}，如果
+     * {@link InputStream} 过长则溢出到磁盘
      *
      * @param inputStream
-     *            the input stream
+     *            输入流
      * @param inputStreamLengthHint
-     *            The number of bytes to read in inputStream, or -1 if unknown.
+     *            要从 inputStream 读取的字节数，如果未知则为 -1
      * @param pathStr
-     *            the source URL the InputStream was opened from, or the zip entry path of this entry in the parent
-     *            zipfile
+     *            InputStream 打开的源 URL，或此项在父 ZIP 文件中的 ZIP 条目路径
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 JAR 处理器
      * @param log
-     *            the log
+     *            日志
      * @throws IOException
-     *             if an I/O exception occurs.
+     *            如果发生 I/O 异常
      */
     PhysicalZipFile(final InputStream inputStream, final long inputStreamLengthHint, final String pathStr,
-            final NestedJarHandler nestedJarHandler, final LogNode log) throws IOException {
+                    final NestedJarHandler nestedJarHandler, final LogNode log) throws IOException {
         this.nestedJarHandler = nestedJarHandler;
         this.pathStr = pathStr;
-        // Try downloading the InputStream to a byte array. If this succeeds, this will result in an ArraySlice.
-        // If it fails, the InputStream will be spilled to disk, resulting in a FileSlice.
+        // 尝试将 InputStream 下载到字节数组如果成功，将产生一个 ArraySlice
+        // 如果失败，InputStream 将溢出到磁盘，产生一个 FileSlice
         this.slice = nestedJarHandler.readAllBytesWithSpilloverToDisk(inputStream, /* tempFileBaseName = */ pathStr,
                 inputStreamLengthHint, log);
         this.file = this.slice instanceof FileSlice ? ((FileSlice) this.slice).file : null;
     }
 
     /**
-     * Get the {@link Path} for the outermost jar file of this PhysicalZipFile.
+     * 获取此 PhysicalZipFile 最外层 JAR 文件的 {@link Path}
      *
-     * @return the {@link Path} for the outermost jar file of this PhysicalZipFile, or null if this file was
-     *         downloaded from a URL directly to RAM, or is backed by a {@link File}.
+     * @return 此 PhysicalZipFile 最外层 JAR 文件的 {@link Path}，如果此文件是从 URL 直接下载到 RAM，
+     *         或由 {@link File} 支撑，则返回 null
      */
     public Path getPath() {
         return path;
     }
 
     /**
-     * Get the {@link File} for the outermost jar file of this PhysicalZipFile.
+     * 获取此 PhysicalZipFile 最外层 JAR 文件的 {@link File}
      *
-     * @return the {@link File} for the outermost jar file of this PhysicalZipFile, or null if this file was
-     *         downloaded from a URL directly to RAM, or is backed by a {@link Path}.
+     * @return 此 PhysicalZipFile 最外层 JAR 文件的 {@link File}，如果此文件是从 URL 直接下载到 RAM，
+     *         或由 {@link Path} 支撑，则返回 null
      */
     public File getFile() {
         return file;
     }
 
     /**
-     * Get the path for this PhysicalZipFile, which is the file path, if it is file-backed, or a compound nested jar
-     * path, if it is memory-backed.
+     * 获取此 PhysicalZipFile 的路径：如果是文件支撑的，则为文件路径；如果是内存支撑的，则为复合嵌套 JAR 路径
      *
-     * @return the path for this PhysicalZipFile, which is the file path, if it is file-backed, or a compound nested
-     *         jar path, if it is memory-backed.
+     * @return 此 PhysicalZipFile 的路径：如果是文件支撑的，则为文件路径；如果是内存支撑的，则为复合嵌套 JAR 路径
      */
     public String getPathStr() {
         return pathStr;
     }
 
     /**
-     * Get the length of the mapped file, or the initial remaining bytes in the wrapped ByteBuffer if a buffer was
-     * wrapped.
+     * 获取映射文件的长度，如果包装了 ByteBuffer，则返回其初始剩余字节数
      *
-     * @return the length of the mapped file
+     * @return 映射文件的长度
      */
     public long length() {
         return slice.sliceLength;
@@ -202,7 +192,7 @@ class PhysicalZipFile {
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode = (file == null ? 0 : file.hashCode());
+            hashCode = pathStr.hashCode();
             if (hashCode == 0) {
                 hashCode = 1;
             }
@@ -221,7 +211,7 @@ class PhysicalZipFile {
             return false;
         }
         final PhysicalZipFile other = (PhysicalZipFile) o;
-        return Objects.equals(file, other.file);
+        return pathStr.equals(other.pathStr);
     }
 
     /* (non-Javadoc)

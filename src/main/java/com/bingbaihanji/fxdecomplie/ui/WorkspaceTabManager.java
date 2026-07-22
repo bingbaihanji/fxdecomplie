@@ -8,21 +8,20 @@ import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.rename.RenameService;
 import com.bingbaihanji.fxdecomplie.service.NavigationService;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
+import com.bingbaihanji.fxdecomplie.service.reference.InheritanceReferenceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.code.CodeEditorTab;
 import com.bingbaihanji.fxdecomplie.ui.code.SplitEditorPane;
 import com.bingbaihanji.fxdecomplie.ui.code.StatusBar;
 import com.bingbaihanji.fxdecomplie.ui.comment.CommentListPane;
-import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceNode;
-import com.bingbaihanji.fxdecomplie.service.reference.InheritanceReferenceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceReferencePane;
 import com.bingbaihanji.fxdecomplie.ui.outline.OutlinePane;
+import com.bingbaihanji.fxdecomplie.ui.outline.OutlineParser;
 import com.bingbaihanji.fxdecomplie.ui.theme.VsCodeThemeLoader;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeModelConverter;
 import com.bingbaihanji.fxdecomplie.ui.tree.FileTreeView;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
+import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
 import javafx.application.Platform;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -32,6 +31,9 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.layout.*;
+import org.objectweb.asm.ClassReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -411,6 +413,29 @@ public final class WorkspaceTabManager {
                 if (error != null) {
                     return;
                 }
+                // 如果全局索引扫描时工作区索引尚未就绪(scanResult 为空),
+                // 则无效化旧索引并重试(此时工作区索引大概率已构建完成)
+                if (index != null && index.scanResult().getAllClasses().isEmpty()
+                        && workspace.getIndex() != null
+                        && workspace.getIndex() != WorkspaceIndex.EMPTY) {
+                    InheritanceReferenceIndexService.invalidate(workspace);
+                    InheritanceReferenceIndexService.getOrStart(workspace);
+                    var retryFuture = InheritanceReferenceIndexService.getFuture(workspace);
+                    if (retryFuture != null) {
+                        retryFuture.whenComplete((retryIndex, retryError) -> Platform.runLater(() -> {
+                            if (retryError != null) {
+                                return;
+                            }
+                            Tab retrySelected = codeTabPane.getSelectionModel().getSelectedItem();
+                            if (retrySelected instanceof CodeEditorTab retryCodeTab
+                                    && selectedPath.equals(retryCodeTab.getOpenFile().fullPath())) {
+                                inheritancePane.load(workspace, selectedPath,
+                                        retryCodeTab.getClassBytes());
+                            }
+                        }));
+                    }
+                    return;
+                }
                 Tab selected = codeTabPane.getSelectionModel().getSelectedItem();
                 if (selected instanceof CodeEditorTab selectedCodeTab
                         && selectedPath.equals(selectedCodeTab.getOpenFile().fullPath())) {
@@ -432,11 +457,46 @@ public final class WorkspaceTabManager {
             commentListPane.clear();
             return;
         }
-        outlinePane.update(codeTab.getOpenFile().sourceCode());
+        String sourceCode = codeTab.getOpenFile().sourceCode();
+
+        // 必须在 update 之前设置上下文(update 内的 rebuildMaster 依赖 isInterface/isAbstract)
+        String fullPath = codeTab.getOpenFile().fullPath();
+        String internalName = resolveInternalName(fullPath, codeTab.getClassBytes());
+        boolean isInterface = OutlineParser.isInterface(sourceCode);
+        boolean isAbstract = OutlineParser.isAbstractClass(sourceCode);
+        if ((isInterface || isAbstract) && workspace != null && !workspace.isIndexReady()) {
+            WorkspaceIndexService.ensureIndexingStarted(workspace);
+            workspace.getIndexFuture().whenComplete((index, error) -> {
+                if (error != null) {
+                    return;
+                }
+                Platform.runLater(() -> {
+                    if (codeTabPane.getSelectionModel().getSelectedItem() == codeTab) {
+                        refreshToolWindowsForTab(workspace, codeTabPane, sideTabPane, inheritTab,
+                                outlinePane, inheritancePane, commentListPane, codeTab);
+                    }
+                });
+            });
+        }
+        outlinePane.setWorkspaceContext(workspace, internalName, isInterface, isAbstract);
+
+        outlinePane.update(sourceCode);
+
         boolean inheritanceSelected = sideTabPane.getSelectionModel().getSelectedItem() == inheritTab;
         refreshInheritancePane(workspace, codeTabPane, inheritancePane, codeTab, inheritanceSelected);
         String wsHash = CommentScope.of(workspace, "").workspaceHash();
         commentListPane.load(wsHash, codeTab.getOpenFile().fullPath());
+    }
+
+    private static String resolveInternalName(String fullPath, byte[] classBytes) {
+        if (classBytes != null && classBytes.length > 10) {
+            try {
+                return new ClassReader(classBytes).getClassName();
+            } catch (RuntimeException ignored) {
+                // Fall back to path normalization.
+            }
+        }
+        return ClassNameUtil.stripContainerClassPrefix(fullPath);
     }
 
     /** 深度优先递归查找具有指定完整路径的树节点 */
@@ -647,6 +707,30 @@ public final class WorkspaceTabManager {
                 area.select(jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0),
                         jfx.incubator.scene.control.richtext.TextPos.ofLeading(line - 1, 0));
                 area.requestFocus();
+            }
+        });
+
+        // 绑定大纲跨类导航(接口方法 → 实现类)
+        outlinePane.setNavigateHandler((classPath, methodName, className) -> {
+            FileTreeNode target = workspace.findNodeByPath(classPath);
+            if (target == null && workspace.getIndex() != null) {
+                // 通过类内部名称查找
+                String internalName = classPath;
+                if (internalName.endsWith(".class")) {
+                    internalName = internalName.substring(0, internalName.length() - 6);
+                }
+                var entry = workspace.getIndex().findClass(internalName.replace('\\', '/'));
+                if (entry != null) {
+                    target = workspace.findNodeByPath(entry.fullPath());
+                }
+            }
+            if (target == null) {
+                target = findClassNode(treeView.getRoot(), classPath);
+            }
+            if (target != null) {
+                onClassClick.accept(target, codeTabPane);
+            } else {
+                statusBar.setFilePath(I18nUtil.getString("status.locateFailed", className));
             }
         });
 

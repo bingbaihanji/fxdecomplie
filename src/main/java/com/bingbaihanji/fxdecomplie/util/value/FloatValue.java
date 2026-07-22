@@ -155,7 +155,7 @@ public non-sealed interface FloatValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）
+     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
      */
     default FloatValue mul(FloatValue other) {
         OptionalDouble value = value();
@@ -194,7 +194,7 @@ public non-sealed interface FloatValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果（对应 {@code fcmpg} 指令，NaN 视为大于）；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code fcmpg} 指令，NaN 视为大于)；若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpg(FloatValue other) {
         OptionalDouble value = value();
@@ -215,7 +215,7 @@ public non-sealed interface FloatValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果（对应 {@code fcmpl} 指令，NaN 视为小于）；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code fcmpl} 指令，NaN 视为小于)；若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpl(FloatValue other) {
         OptionalDouble value = value();

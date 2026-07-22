@@ -229,7 +229,7 @@ public class HighlightModel {
     /**
      * 清除所有高亮(回调、区域、提供者不自动清除) 
      * <p>
-     * 注意：此方法不会清除 {@link #patternProvider},如需清除需单独设置为 {@code null} 
+     * 注意：此方法不会清除 {@link #patternProvider},如需清除需单独设置为 {@code null}
      * </p>
      */
     public void clearAll() {
@@ -244,7 +244,7 @@ public class HighlightModel {
     /**
      * 高亮回调函数接口,用于动态计算颜色 
      * <p>
-     * 实现类可根据地址和字节值返回一个可选的 {@link Color} 
+     * 实现类可根据地址和字节值返回一个可选的 {@link Color}
      * </p>
      */
     @FunctionalInterface

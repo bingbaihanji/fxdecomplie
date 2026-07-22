@@ -37,10 +37,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/** ClassLoaderHandler 类的注册表。 */
+/** ClassLoaderHandler 类的注册表 */
 public class ClassLoaderHandlerRegistry {
     /**
-     * 默认的 ClassLoaderHandler 列表。如果向 ClassGraph 添加了 ClassLoaderHandler，则应将其添加到此列表中。
+     * 默认的 ClassLoaderHandler 列表如果向 ClassGraph 添加了 ClassLoaderHandler，则应将其添加到此列表中
      */
     public static final List<ClassLoaderHandlerRegistryEntry> CLASS_LOADER_HANDLERS = //
             Collections.unmodifiableList(Arrays.asList(
@@ -64,10 +64,10 @@ public class ClassLoaderHandlerRegistry {
                     // 用于 PARENT_LAST 委托顺序的单元测试
                     new ClassLoaderHandlerRegistryEntry(new ParentLastDelegationOrderTestClassLoaderHandler()),
 
-                    // JPMS 支持（此处理器不执行任何操作，因为模块是单独处理的）
+                    // JPMS 支持(此处理器不执行任何操作，因为模块是单独处理的)
                     new ClassLoaderHandlerRegistryEntry(new JPMSClassLoaderHandler()),
 
-                    // Java 7/8 URLClassLoader 支持（应位于倒数第二位，以便 URLClassLoader 的子类由上面更具体的处理器处理）
+                    // Java 7/8 URLClassLoader 支持(应位于倒数第二位，以便 URLClassLoader 的子类由上面更具体的处理器处理)
                     new ClassLoaderHandlerRegistryEntry(new URLClassLoaderHandler()),
 
                     // 用于从外部嵌套扫描委托给 ClassGraphClassLoader 实例的占位符
@@ -76,14 +76,14 @@ public class ClassLoaderHandlerRegistry {
                     // FallbackClassLoaderHandler.class 在下面单独注册
             ));
 
-    /** 回退类加载器处理器。 */
+    /** 回退类加载器处理器 */
     public static final ClassLoaderHandlerRegistryEntry FALLBACK_HANDLER = new ClassLoaderHandlerRegistryEntry(
             new FallbackClassLoaderHandler());
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 应自动将其 JAR 文件添加到类路径的库目录（用于补偿某些类加载器未将这些 JAR 文件显式列为类路径元素的情况）。
+     * 应自动将其 JAR 文件添加到类路径的库目录(用于补偿某些类加载器未将这些 JAR 文件显式列为类路径元素的情况)
      */
     public static final String[] AUTOMATIC_LIB_DIR_PREFIXES = {
             // Spring-Boot
@@ -102,7 +102,7 @@ public class ClassLoaderHandlerRegistry {
     };
 
     /**
-     * 自动类文件前缀（用于补偿某些类加载器未将这些前缀显式列为类路径元素 URL 或路径的情况）。
+     * 自动类文件前缀(用于补偿某些类加载器未将这些前缀显式列为类路径元素 URL 或路径的情况)
      */
     public static final String[] AUTOMATIC_PACKAGE_ROOT_PREFIXES = {
             // Ant、Tomcat 及其他
@@ -117,51 +117,46 @@ public class ClassLoaderHandlerRegistry {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 构造函数。
+     * 构造函数
      */
     private ClassLoaderHandlerRegistry() {
         // 不可构造
     }
 
     /**
-     * 完全限定类加载器类名与可处理它们的 ClassLoaderHandler 的配对列表。
+     * 完全限定类加载器类名与可处理它们的 ClassLoaderHandler 的配对列表
      */
     public static class ClassLoaderHandlerRegistryEntry {
-        /** ClassLoaderHandler 实例。 */
+        /** ClassLoaderHandler 实例 */
         public final ClassLoaderHandler classLoaderHandler;
 
         /**
-         * 构造函数。
+         * 构造函数
          *
          * @param classLoaderHandler
-         *            ClassLoaderHandler 实例。
+         *            ClassLoaderHandler 实例
          */
         private ClassLoaderHandlerRegistryEntry(final ClassLoaderHandler classLoaderHandler) {
             this.classLoaderHandler = classLoaderHandler;
         }
 
         /**
-         * 调用关联的 {@link ClassLoaderHandler} 的 canHandle 方法。
+         * 调用关联的 {@link ClassLoaderHandler} 的 canHandle 方法
          *
-         * @param classLoader
-         *            {@link ClassLoader}。
-         * @param log
-         *            日志。
-         * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
+         * @param classLoader {@link ClassLoader}
+         * @param log  日志
+         * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
          */
         public boolean canHandle(final Class<?> classLoader, final LogNode log) {
             return classLoaderHandler.canHandle(classLoader, log);
         }
 
         /**
-         * 调用关联的 {@link ClassLoaderHandler} 的 findClassLoaderOrder 方法。
+         * 调用关联的 {@link ClassLoaderHandler} 的 findClassLoaderOrder 方法
          *
-         * @param classLoader
-         *            {@link ClassLoader}。
-         * @param classLoaderOrder
-         *            {@link ClassLoaderOrder} 对象。
-         * @param log
-         *            日志
+         * @param classLoader {@link ClassLoader}
+         * @param classLoaderOrder  {@link ClassLoaderOrder} 对象
+         * @param log 日志
          */
         public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
                                          final LogNode log) {
@@ -169,16 +164,12 @@ public class ClassLoaderHandlerRegistry {
         }
 
         /**
-         * 调用关联的 {@link ClassLoaderHandler} 的 findClasspathOrder 方法。
+         * 调用关联的 {@link ClassLoaderHandler} 的 findClasspathOrder 方法
          *
-         * @param classLoader
-         *            {@link ClassLoader}。
-         * @param classpathOrder
-         *            {@link ClasspathOrder} 对象。
-         * @param scanSpec
-         *            {@link ScanSpec}。
-         * @param log
-         *            日志。
+         * @param classLoader  {@link ClassLoader}
+         * @param classpathOrder  {@link ClasspathOrder} 对象
+         * @param scanSpec {@link ScanSpec}
+         * @param log 日志
          */
         public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
                                        final ScanSpec scanSpec, final LogNode log) {

@@ -91,7 +91,7 @@ public sealed interface ReValue extends Value permits IntValue, FloatValue, Doub
      * @param type
      * 		要为其创建新泛型值的类型
      *
-     * @return 给定类型的值，取默认值 <i>（基本类型为 {@code 0}，对象/数组为 {@code null}）</i>
+     * @return 给定类型的值，取默认值 <i>(基本类型为 {@code 0}，对象/数组为 {@code null})</i>
      *
      * @throws IllegalValueException
      * 		当该类型无法映射为 {@link ReValue} 时

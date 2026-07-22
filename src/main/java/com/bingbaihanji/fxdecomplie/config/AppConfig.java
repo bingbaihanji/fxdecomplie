@@ -2,8 +2,7 @@ package com.bingbaihanji.fxdecomplie.config;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.bingbaihanji.utils.json.JSONUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +23,6 @@ import java.util.*;
  */
 public class AppConfig {
 
-    /** JSON 序列化/反序列化器 */
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
     /** 应用根目录(JAR 所在目录,开发期回退到 user.dir) */
     private static final Path APP_DIR = resolveAppDir();
@@ -157,13 +154,13 @@ public class AppConfig {
         try {
             if (Files.exists(CONFIG_FILE)) {
                 String json = Files.readString(CONFIG_FILE);
-                AppConfig loaded = GSON.fromJson(json, AppConfig.class);
+                AppConfig loaded = JSONUtils.fromJson(json, AppConfig.class);
                 if (loaded != null) {
                     loaded.normalize();
                     return loaded;
                 }
             }
-        } catch (IOException | com.google.gson.JsonSyntaxException | com.google.gson.JsonIOException e) {
+        } catch (IOException | RuntimeException e) {
             log.warn("加载配置失败,将备份损坏文件并使用默认配置", e);
             backupCorruptedConfig();
         }
@@ -415,7 +412,7 @@ public class AppConfig {
                 AtomicFile af = new AtomicFile(CONFIG_FILE.toFile());
                 af.write(os -> {
                     try {
-                        os.write(GSON.toJson(this).getBytes(StandardCharsets.UTF_8));
+                        os.write(JSONUtils.toPrettyJson(this).getBytes(StandardCharsets.UTF_8));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

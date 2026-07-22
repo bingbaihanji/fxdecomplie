@@ -26,7 +26,11 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classpath;
+package com.bingbaihanji.classgraph.classpath;
+
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.VersionFinder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
@@ -36,29 +40,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
-import nonapi.io.github.classgraph.utils.VersionFinder;
-
-/** A class to find the unique ordered classpath elements. */
+/** 用于查找唯一有序类路径元素的类 */
 class CallStackReader {
     ReflectionUtils reflectionUtils;
 
     /**
-     * Constructor.
+     * 构造函数
      */
     public CallStackReader(final ReflectionUtils reflectionUtils) {
         this.reflectionUtils = reflectionUtils;
     }
 
     /**
-     * Get the call stack via the StackWalker API (JRE 9+).
+     * 通过 StackWalker API 获取调用栈(JRE 9+)
      *
-     * @return the call stack, or null if it could not be obtained.
+     * @return 调用栈，如果无法获取则返回 null
      */
     private static Class<?>[] getCallStackViaStackWalker() {
         try {
-            //    // Implement the following via reflection, for JDK7 compatibility:
+            //    // 通过反射实现以下内容，以保证 JDK7 兼容性：
             //    List<Class<?>> stackFrameClasses = new ArrayList<>();
             //    StackWalker.getInstance(Option.RETAIN_CLASS_REFERENCE)
             //            .forEach(sf -> stackFrameClasses.add(sf.getDeclaringClass()));
@@ -75,13 +75,13 @@ class CallStackReader {
             final Method stackFrameGetDeclaringClassMethod = Class.forName("java.lang.StackWalker$StackFrame")
                     .getMethod("getDeclaringClass");
             stackWalkerClass.getMethod("forEach", consumerClass).invoke(stackWalkerInstance, //
-                    // InvocationHandler proxy for Consumer<StackFrame>
-                    Proxy.newProxyInstance(consumerClass.getClassLoader(), new Class<?>[] { consumerClass },
+                    // Consumer<StackFrame> 的 InvocationHandler 代理
+                    Proxy.newProxyInstance(consumerClass.getClassLoader(), new Class<?>[]{consumerClass},
                             new InvocationHandler() {
                                 @Override
                                 public Object invoke(final Object proxy, final Method method, final Object[] args)
                                         throws Throwable {
-                                    // Consumer<StackFrame> has only one method: void accept(StackFrame)
+                                    // Consumer<StackFrame> 只有一个方法：void accept(StackFrame)
                                     final Class<?> declaringClass = (Class<?>) stackFrameGetDeclaringClassMethod
                                             .invoke(args[0]);
                                     stackFrameClasses.add(declaringClass);
@@ -97,15 +97,15 @@ class CallStackReader {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the call stack via the SecurityManager.getClassContext() native method.
+     * 通过 SecurityManager.getClassContext() 原生方法获取调用栈
      *
      * @param log
-     *            the log
-     * @return the call stack.
+     *            日志
+     * @return 调用栈
      */
     private static Class<?>[] getCallStackViaSecurityManager(final LogNode log) {
         try {
-            // Call method via reflection, since SecurityManager is deprecated in JDK 17.
+            // 通过反射调用方法，因为 SecurityManager 在 JDK 17 中已被弃用
             final Class<?> securityManagerClass = Class.forName("java.lang.SecurityManager");
             Object securityManager = null;
             for (final Constructor<?> constructor : securityManagerClass.getDeclaredConstructors()) {
@@ -122,8 +122,8 @@ class CallStackReader {
                 return null;
             }
         } catch (final Throwable t) {
-            // Creating a SecurityManager can fail if the current SecurityManager does not allow
-            // RuntimePermission("createSecurityManager")
+            // 如果当前 SecurityManager 不允许 RuntimePermission("createSecurityManager")，
+            // 则创建 SecurityManager 可能会失败
             if (log != null) {
                 log.log("Exception while trying to obtain call stack via SecurityManager", t);
             }
@@ -134,34 +134,33 @@ class CallStackReader {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the class context.
+     * 获取类上下文
      *
      * @param log
-     *            the log
-     * @return The classes in the call stack.
+     *            日志
+     * @return 调用栈中的类
      */
     Class<?>[] getClassContext(final LogNode log) {
         Class<?>[] callStack = null;
 
-        // For JRE 9+, use StackWalker to get call stack.
+        // 对于 JRE 9+，使用 StackWalker 获取调用栈
         if (VersionFinder.JAVA_MAJOR_VERSION == 9 //
                 || VersionFinder.JAVA_MAJOR_VERSION == 10 //
                 || (VersionFinder.JAVA_MAJOR_VERSION == 11 //
-                        && VersionFinder.JAVA_MINOR_VERSION == 0
-                        && (VersionFinder.JAVA_SUB_VERSION < 4
-                                || (VersionFinder.JAVA_SUB_VERSION == 4 && VersionFinder.JAVA_IS_EA_VERSION)))
+                && VersionFinder.JAVA_MINOR_VERSION == 0
+                && (VersionFinder.JAVA_SUB_VERSION < 4
+                || (VersionFinder.JAVA_SUB_VERSION == 4 && VersionFinder.JAVA_IS_EA_VERSION)))
                 || (VersionFinder.JAVA_MAJOR_VERSION == 12 && VersionFinder.JAVA_MINOR_VERSION == 0
-                        && (VersionFinder.JAVA_SUB_VERSION < 2
-                                || (VersionFinder.JAVA_SUB_VERSION == 2 && VersionFinder.JAVA_IS_EA_VERSION)))) {
-            // Don't trigger the StackWalker bug that crashed the JVM, which was fixed in JDK 13,
-            // and backported to 12.0.2 and 11.0.4 (probably introduced in JDK 9, when StackWalker
-            // was introduced):
+                && (VersionFinder.JAVA_SUB_VERSION < 2
+                || (VersionFinder.JAVA_SUB_VERSION == 2 && VersionFinder.JAVA_IS_EA_VERSION)))) {
+            // 不要触发导致 JVM 崩溃的 StackWalker 错误，该错误在 JDK 13 中修复，
+            // 并向后移植到 12.0.2 和 11.0.4(可能在 JDK 9 引入 StackWalker 时引入)：
             // https://github.com/classgraph/classgraph/issues/341
             // https://bugs.openjdk.java.net/browse/JDK-8210457
-            // -- fall through
+            // -- 穿透处理
         } else {
-            // Get the stack via StackWalker.
-            // Invoke with doPrivileged -- see:
+            // 通过 StackWalker 获取调用栈
+            // 使用 doPrivileged 调用 -- 参见：
             // http://mail.openjdk.java.net/pipermail/jigsaw-dev/2018-October/013974.html
             try {
                 callStack = reflectionUtils.doPrivileged(new Callable<Class<?>[]>() {
@@ -171,12 +170,12 @@ class CallStackReader {
                     }
                 });
             } catch (final Throwable e) {
-                // Fall through
+                // 穿透处理
             }
         }
 
-        // For JRE 7 and 8, use SecurityManager to get call stack (don't use this method on JDK 9+,
-        // because it will result in a reflective illegal access warning, see #663)
+        // 对于 JRE 7 和 8，使用 SecurityManager 获取调用栈(不要在 JDK 9+ 上使用此方法，
+        // 因为它会导致反射非法访问警告，参见 #663)
         if (VersionFinder.JAVA_MAJOR_VERSION < 9 && (callStack == null || callStack.length == 0)) {
             try {
                 callStack = reflectionUtils.doPrivileged(new Callable<Class<?>[]>() {
@@ -186,21 +185,21 @@ class CallStackReader {
                     }
                 });
             } catch (final Throwable e) {
-                // Fall through
+                // 穿透处理
             }
         }
 
-        // As a fallback, use getStackTrace() to try to get the call stack
+        // 作为回退方案，使用 getStackTrace() 尝试获取调用栈
         if (callStack == null || callStack.length == 0) {
             StackTraceElement[] stackTrace = null;
             try {
                 stackTrace = Thread.currentThread().getStackTrace();
             } catch (final SecurityException e) {
-                // Fall through
+                // 穿透处理
             }
             if (stackTrace == null || stackTrace.length == 0) {
                 try {
-                    // Try getting stacktrace by throwing an exception 
+                    // 尝试通过抛出异常来获取堆栈跟踪
                     throw new Exception();
                 } catch (final Exception e) {
                     stackTrace = e.getStackTrace();
@@ -211,7 +210,7 @@ class CallStackReader {
                 try {
                     stackClassesList.add(Class.forName(elt.getClassName()));
                 } catch (final ClassNotFoundException | LinkageError ignored) {
-                    // Ignored
+                    // 忽略
                 }
             }
             if (!stackClassesList.isEmpty()) {
@@ -219,9 +218,9 @@ class CallStackReader {
             }
         }
 
-        // Last-ditch effort -- include just this class in the call stack
+        // 最后的努力 -- 仅将此类包含在调用栈中
         if (callStack == null || callStack.length == 0) {
-            callStack = new Class<?>[] { CallStackReader.class };
+            callStack = new Class<?>[]{CallStackReader.class};
         }
 
         return callStack;

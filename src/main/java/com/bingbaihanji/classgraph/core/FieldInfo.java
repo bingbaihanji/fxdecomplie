@@ -26,14 +26,14 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.ClassInfo.RelType;
-import io.github.classgraph.Classfile.TypeAnnotationDecorator;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.TypeUtils;
-import nonapi.io.github.classgraph.types.TypeUtils.ModifierType;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.core.ClassFile.TypeAnnotationDecorator;
+import com.bingbaihanji.classgraph.core.ClassInfo.RelType;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.types.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Field;
@@ -43,51 +43,50 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Holds metadata about fields of a class encountered during a scan. All values are taken directly out of the
- * classfile for the class.
+ * 保存扫描过程中遇到的类的字段元数据所有值均直接从类的 classfile 中获取
  */
 public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> {
-    /** The parsed type signature. */
+    /** 已解析的类型签名 */
     private transient TypeSignature typeSignature;
 
-    /** The parsed type descriptor. */
+    /** 已解析的类型描述符 */
     private transient TypeSignature typeDescriptor;
 
-    /** The constant initializer value for the field, if any. */
-    // This is transient because the constant initializer value is final, so the value doesn't need to be serialized
+    /** 字段的常量初始值(如果有的话) */
+    // 这是 transient 的，因为常量初始值是 final 的，因此该值不需要序列化
     private ObjectTypedValueWrapper constantInitializerValue;
 
-    /** The type annotation decorators for the {@link TypeSignature} instance of this field. */
+    /** 此字段的 {@link TypeSignature} 实例的类型注解装饰器 */
     private transient List<TypeAnnotationDecorator> typeAnnotationDecorators;
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Default constructor for deserialization. */
+    /** 用于反序列化的默认构造函数 */
     FieldInfo() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param definingClassName
-     *            The class the field is defined within.
+     *            定义该字段的类名
      * @param fieldName
-     *            The name of the field.
+     *            字段名称
      * @param modifiers
-     *            The field modifiers.
+     *            字段修饰符
      * @param typeDescriptorStr
-     *            The field type descriptor.
+     *            字段类型描述符
      * @param typeSignatureStr
-     *            The field type signature.
+     *            字段类型签名
      * @param constantInitializerValue
-     *            The static constant value the field is initialized to, if any.
+     *            字段初始化时的静态常量值(如果有的话)
      * @param annotationInfo
-     *            {@link AnnotationInfo} for any annotations on the field.
+     *            字段上任何注解的 {@link AnnotationInfo}
      */
     FieldInfo(final String definingClassName, final String fieldName, final int modifiers,
-            final String typeDescriptorStr, final String typeSignatureStr, final Object constantInitializerValue,
-            final AnnotationInfoList annotationInfo, final List<TypeAnnotationDecorator> typeAnnotationDecorators) {
+              final String typeDescriptorStr, final String typeSignatureStr, final Object constantInitializerValue,
+              final AnnotationInfoList annotationInfo, final List<TypeAnnotationDecorator> typeAnnotationDecorators) {
         super(definingClassName, fieldName, modifiers, typeDescriptorStr, typeSignatureStr, annotationInfo);
         if (fieldName == null) {
             throw new IllegalArgumentException("fieldName must not be null");
@@ -100,10 +99,10 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Deprecated -- use {@link #getModifiersStr()} instead.
-     * 
-     * @deprecated Use {@link #getModifiersStr()} instead.
-     * @return The field modifiers, as a string.
+     * 已弃用 -- 请改用 {@link #getModifiersStr()}
+     *
+     * @deprecated 请改用 {@link #getModifiersStr()}
+     * @return 字段修饰符字符串
      */
     @Deprecated
     public String getModifierStr() {
@@ -111,9 +110,9 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * Get the field modifiers as a string, e.g. "public static final". For the modifier bits, call getModifiers().
-     * 
-     * @return The field modifiers, as a string.
+     * 获取字段修饰符字符串，例如 "public static final"如需获取修饰符位值，请调用 getModifiers()
+     *
+     * @return 字段修饰符字符串
      */
     @Override
     public String getModifiersStr() {
@@ -123,28 +122,27 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * Returns true if this field is a transient field.
-     * 
-     * @return True if the field is transient.
+     * 返回此字段是否为 transient 字段
+     *
+     * @return 如果字段是 transient 的，则返回 true
      */
     public boolean isTransient() {
         return Modifier.isTransient(modifiers);
     }
 
     /**
-     * Returns true if this field is an enum constant.
-     * 
-     * @return True if the field is an enum constant.
+     * 返回此字段是否为枚举常量
+     *
+     * @return 如果字段是枚举常量，则返回 true
      */
     public boolean isEnum() {
         return (modifiers & 0x4000) != 0;
     }
 
     /**
-     * Returns the parsed type descriptor for the field, which will not include type parameters. If you need generic
-     * type parameters, call {@link #getTypeSignature()} instead.
-     * 
-     * @return The parsed type descriptor string for the field.
+     * 返回字段的已解析类型描述符，该描述符不包含类型参数如果需要泛型类型参数，请改用 {@link #getTypeSignature()}
+     *
+     * @return 字段的已解析类型描述符字符串
      */
     @Override
     public TypeSignature getTypeDescriptor() {
@@ -166,12 +164,12 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * Run the type annotation decorators on the given parsed field type. Any individual type annotation that
-     * cannot be matched to the type (e.g. an unresolvable nested type, or a compiler bug) is skipped rather than
-     * being allowed to abort parsing of the whole field type. (#897)
+     * 对给定的已解析字段类型运行类型注解装饰器任何无法匹配到该类型的单独类型注解
+     * (例如不可解析的嵌套类型，或编译器错误)会被跳过，而非导致整个字段类型
+     * 解析失败(尽力而为)(#897)
      *
      * @param fieldType
-     *            the parsed field type signature or descriptor to decorate.
+     *            要装饰的已解析字段类型签名或描述符
      */
     private void decorateType(final TypeSignature fieldType) {
         if (typeAnnotationDecorators != null) {
@@ -179,23 +177,21 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
                 try {
                     decorator.decorate(fieldType);
                 } catch (final IllegalArgumentException e) {
-                    // Skip a type annotation that cannot be matched to the field type, rather than failing to
-                    // produce the whole field type (best effort). (#897)
+                    // 跳过无法匹配到字段类型的类型注解，而非导致整个字段类型
+                    // 解析失败(尽力而为)(#897)
                 }
             }
         }
     }
 
     /**
-     * Returns the parsed type signature for the field, possibly including type parameters. If this returns null,
-     * indicating that no type signature information is available for this field, call {@link #getTypeDescriptor()}
-     * instead.
-     * 
-     * @return The parsed type signature for the field, or null if not available.
+     * 返回字段的已解析类型签名，可能包含类型参数如果返回 null，
+     * 表示此字段没有可用的类型签名信息，请改用 {@link #getTypeDescriptor()}
+     *
+     * @return 字段的已解析类型签名，如果不可用则返回 null
      * @throws IllegalArgumentException
-     *             if the field type signature cannot be parsed (this should only be thrown in the case of classfile
-     *             corruption, or a compiler bug that causes an invalid type signature to be written to the
-     *             classfile).
+     *             如果字段类型签名无法解析(这应该只在 classfile 损坏或编译器错误导致向 classfile
+     *             写入了无效的类型签名时抛出)
      */
     @Override
     public TypeSignature getTypeSignature() {
@@ -212,8 +208,8 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
                     throw new IllegalArgumentException(
                             "Invalid type signature for field " + getClassName() + "." + getName()
                                     + (getClassInfo() != null
-                                            ? " in classpath element " + getClassInfo().getClasspathElementURI()
-                                            : "")
+                                    ? " in classpath element " + getClassInfo().getClasspathElementURI()
+                                    : "")
                                     + " : " + typeSignatureStr,
                             e);
                 }
@@ -223,12 +219,10 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * Returns the type signature for the field, possibly including type parameters. If the type signature is null,
-     * indicating that no type signature information is available for this field, returns the type descriptor
-     * instead.
-     * 
-     * @return The parsed type signature for the field, or if not available, the parsed type descriptor for the
-     *         field.
+     * 返回字段的类型签名，可能包含类型参数如果类型签名为 null，表示此字段没有可用的类型签名信息，
+     * 则返回类型描述符
+     *
+     * @return 字段的已解析类型签名，如果不可用则返回字段的已解析类型描述符
      */
     @Override
     public TypeSignature getTypeSignatureOrTypeDescriptor() {
@@ -239,21 +233,18 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
                 return typeSig;
             }
         } catch (final Exception e) {
-            // Ignore
+            // 忽略
         }
         return getTypeDescriptor();
     }
 
     /**
-     * Returns the constant initializer value of a field. Requires
-     * {@link ClassGraph#enableStaticFinalFieldConstantInitializerValues()} to have been called. Will only return
-     * non-null for fields that have constant initializers, which is usually only fields of primitive type, or
-     * String constants. Also note that it is up to the compiler as to whether or not a constant-valued field is
-     * assigned as a constant in the field definition itself, or whether it is assigned manually in static or
-     * non-static class initializer blocks or the constructor -- so your mileage may vary in being able to extract
-     * constant initializer values.
-     * 
-     * @return The initializer value, if this field has a constant initializer value, or null if none.
+     * 返回字段的常量初始值需要先调用 {@link ClassGraph#enableStaticFinalFieldConstantInitializerValues()}
+     * 仅对于具有常量初始化器的字段才返回非 null 值，通常这仅限于基本类型字段或 String 常量
+     * 另请注意，常量值字段是否在字段定义本身中作为常量赋值，还是在静态或非静态类初始化块或构造函数中
+     * 手动赋值，这取决于编译器 -- 因此在提取常量初始值方面效果可能因人而异
+     *
+     * @return 如果此字段具有常量初始值，则返回初始值，否则返回 null
      */
     public Object getConstantInitializerValue() {
         if (!scanResult.scanSpec.enableStaticFinalFieldConstantInitializerValues) {
@@ -266,11 +257,11 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Load the class this field is associated with, and get the {@link Field} reference for this field.
-     * 
-     * @return The {@link Field} reference for this field.
+     * 加载此字段关联的类，并获取此字段的 {@link Field} 引用
+     *
+     * @return 此字段的 {@link Field} 引用
      * @throws IllegalArgumentException
-     *             if the class can't be loaded or the field does not exist.
+     *             如果类无法加载或字段不存在
      */
     public Field loadClassAndGetField() throws IllegalArgumentException {
         try {
@@ -287,10 +278,10 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Handle {@link Repeatable} annotations.
+     * 处理 {@link Repeatable} 注解
      *
      * @param allRepeatableAnnotationNames
-     *            the names of all repeatable annotations
+     *            所有可重复注解的名称集合
      */
     void handleRepeatableAnnotations(final Set<String> allRepeatableAnnotationNames) {
         if (annotationInfo != null) {
@@ -303,7 +294,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -322,16 +313,16 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in the type descriptor or type signature.
+     * 获取类型描述符或类型签名中引用的任何类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            引用的类信息集合
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         try {
             final TypeSignature fieldSig = getTypeSignature();
             if (fieldSig != null) {
@@ -364,11 +355,11 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Use class name and field name for equals().
+     * 使用类名和字段名进行 equals() 比较
      *
      * @param obj
-     *            the object to compare to
-     * @return true if equal
+     *            要比较的对象
+     * @return 如果相等则返回 true
      */
     @Override
     public boolean equals(final Object obj) {
@@ -382,9 +373,9 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * Use hash code of class name and field name.
+     * 使用类名和字段名的哈希码
      *
-     * @return the hashcode
+     * @return 哈希码
      */
     @Override
     public int hashCode() {
@@ -392,11 +383,11 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * Sort in order of class name then field name.
+     * 按类名然后按字段名排序
      *
      * @param other
-     *            the other FieldInfo object to compare to.
-     * @return the result of comparison.
+     *            要比较的另一个 FieldInfo 对象
+     * @return 比较结果
      */
     @Override
     public int compareTo(final FieldInfo other) {
@@ -412,7 +403,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     void toString(final boolean includeModifiers, final boolean useSimpleNames, final StringBuilder buf) {
         if (annotationInfo != null) {
             for (final AnnotationInfo annotation : annotationInfo) {
-                // There can be a paren in the previous position if this field is a record parameter
+                // 如果此字段是 record 参数，前一个位置可能有括号
                 if (buf.length() > 0 && buf.charAt(buf.length() - 1) != ' '
                         && buf.charAt(buf.length() - 1) != '(') {
                     buf.append(' ');

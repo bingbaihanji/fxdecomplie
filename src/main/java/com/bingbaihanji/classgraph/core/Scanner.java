@@ -26,25 +26,25 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.ClassGraph.FailureHandler;
-import io.github.classgraph.ClassGraph.ScanResultProcessor;
-import io.github.classgraph.Classfile.ClassfileFormatException;
-import io.github.classgraph.Classfile.SkipClassException;
-import nonapi.io.github.classgraph.classpath.ClasspathFinder;
-import nonapi.io.github.classgraph.classpath.ClasspathOrder.ClasspathEntry;
-import nonapi.io.github.classgraph.classpath.ModuleFinder;
-import nonapi.io.github.classgraph.concurrency.AutoCloseableExecutorService;
-import nonapi.io.github.classgraph.concurrency.InterruptionChecker;
-import nonapi.io.github.classgraph.concurrency.SingletonMap;
-import nonapi.io.github.classgraph.concurrency.SingletonMap.NewInstanceFactory;
-import nonapi.io.github.classgraph.concurrency.WorkQueue;
-import nonapi.io.github.classgraph.concurrency.WorkQueue.WorkUnitProcessor;
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.*;
+import com.bingbaihanji.classgraph.classpath.ClasspathFinder;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder.ClasspathEntry;
+import com.bingbaihanji.classgraph.classpath.ModuleFinder;
+import com.bingbaihanji.classgraph.concurrency.AutoCloseableExecutorService;
+import com.bingbaihanji.classgraph.concurrency.InterruptionChecker;
+import com.bingbaihanji.classgraph.concurrency.SingletonMap;
+import com.bingbaihanji.classgraph.concurrency.SingletonMap.NewInstanceFactory;
+import com.bingbaihanji.classgraph.concurrency.WorkQueue;
+import com.bingbaihanji.classgraph.concurrency.WorkQueue.WorkUnitProcessor;
+import com.bingbaihanji.classgraph.core.ClassFile.ClassfileFormatException;
+import com.bingbaihanji.classgraph.core.ClassFile.SkipClassException;
+import com.bingbaihanji.classgraph.core.ClassGraph.FailureHandler;
+import com.bingbaihanji.classgraph.core.ClassGraph.ScanResultProcessor;
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,64 +58,70 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.concurrent.*;
 
-/** The classpath scanner. */
+/** 类路径扫描器 */
 class Scanner implements Callable<ScanResult> {
 
-    /** The scan spec. */
+    /** 扫描规格 */
     private final ScanSpec scanSpec;
-
-    /** If true, performing a scan. If false, only fetching the classpath. */
-    public boolean performScan;
-
-    /** The nested jar handler. */
+    /** 嵌套 jar 处理器 */
     private final NestedJarHandler nestedJarHandler;
-
-    /** The executor service. */
+    /** 执行器服务 */
     private final ExecutorService executorService;
-
-    /** The interruption checker. */
+    /** 中断检查器 */
     private final InterruptionChecker interruptionChecker;
-
-    /** The number of parallel tasks. */
+    /** 并行任务数 */
     private final int numParallelTasks;
-
-    /** The scan result processor. */
+    /** 扫描结果处理器 */
     private final ScanResultProcessor scanResultProcessor;
-
-    /** The failure handler. */
+    /** 失败处理器 */
     private final FailureHandler failureHandler;
-
-    /** The toplevel log. */
+    /** 顶层日志 */
     private final LogNode topLevelLog;
-
-    /** The classpath finder. */
+    /** 类路径查找器 */
     private final ClasspathFinder classpathFinder;
-
-    /** The module order. */
+    /** 模块顺序 */
     private final List<ClasspathElementModule> moduleOrder;
+    /**
+     * 一个单例映射，用于消除重复 {@link ClasspathElement} 对象的创建，通过将规范化的
+     * Path 对象、URL 等映射到 ClasspathElement，以降低资源被扫描两次的机会
+     */
+    private final SingletonMap<Object, ClasspathElement, IOException> //
+            classpathEntryObjToClasspathEntrySingletonMap = //
+            new SingletonMap<Object, ClasspathElement, IOException>() {
+                @Override
+                public ClasspathElement newInstance(final Object classpathEntryObj, final LogNode log)
+                        throws IOException, InterruptedException {
+                    // 由 NewInstanceFactory 重写
+                    throw new IOException("Should not reach here");
+                }
+            };
+
+    // -------------------------------------------------------------------------------------------------------------
+    /** 如果为 true，表示正在执行扫描如果为 false，则仅获取类路径 */
+    public boolean performScan;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * The classpath scanner. Scanning is started by calling {@link #call()} on this object.
-     * 
+     * 类路径扫描器通过在此对象上调用 {@link #call()} 来启动扫描
+     *
      * @param performScan
-     *            If true, performing a scan. If false, only fetching the classpath.
+     *            如果为 true，表示正在执行扫描如果为 false，则仅获取类路径
      * @param scanSpec
-     *            the scan spec
+     *            扫描规格
      * @param executorService
-     *            the executor service
+     *            执行器服务
      * @param numParallelTasks
-     *            the num parallel tasks
+     *            并行任务数
      * @param scanResultProcessor
-     *            the scan result processor
+     *            扫描结果处理器
      * @param failureHandler
-     *            the failure handler
+     *            失败处理器
      * @param topLevelLog
-     *            the log
+     *            日志
      *
      * @throws InterruptedException
-     *             if interrupted
+     *             如果被中断
      */
     Scanner(final boolean performScan, final ScanSpec scanSpec, final ExecutorService executorService,
             final int numParallelTasks, final ScanResultProcessor scanResultProcessor,
@@ -150,35 +156,34 @@ class Scanner implements Callable<ScanResult> {
         try {
             this.moduleOrder = new ArrayList<>();
 
-            // Check if modules should be scanned
+            // 检查是否应扫描模块
             final ModuleFinder moduleFinder = classpathFinder.getModuleFinder();
             if (moduleFinder != null) {
-                // Add modules to start of classpath order, before traditional classpath
+                // 将模块添加到类路径顺序的开头，位于传统类路径之前
                 final List<ModuleRef> systemModuleRefs = moduleFinder.getSystemModuleRefs();
                 final ClassLoader[] classLoaderOrderRespectingParentDelegation = classpathFinder
                         .getClassLoaderOrderRespectingParentDelegation();
                 final ClassLoader defaultClassLoader = classLoaderOrderRespectingParentDelegation != null
                         && classLoaderOrderRespectingParentDelegation.length != 0
-                                ? classLoaderOrderRespectingParentDelegation[0]
-                                : null;
+                        ? classLoaderOrderRespectingParentDelegation[0]
+                        : null;
                 if (systemModuleRefs != null) {
                     for (final ModuleRef systemModuleRef : systemModuleRefs) {
                         final String moduleName = systemModuleRef.getName();
                         if (
-                        // If scanning system packages and modules is enabled and accept/reject criteria are empty,
-                        // then scan all system modules
-                        (scanSpec.enableSystemJarsAndModules
-                                && scanSpec.moduleAcceptReject.acceptAndRejectAreEmpty())
-                                // Otherwise only scan specifically accepted system modules
-                                || scanSpec.moduleAcceptReject.isSpecificallyAcceptedAndNotRejected(moduleName)) {
-                            // Create a new ClasspathElementModule
+                            // 如果启用了系统包和模块的扫描，且接受/拒绝条件为空，则扫描所有系统模块
+                                (scanSpec.enableSystemJarsAndModules
+                                        && scanSpec.moduleAcceptReject.acceptAndRejectAreEmpty())
+                                        // 否则仅扫描被明确接受的系统模块
+                                        || scanSpec.moduleAcceptReject.isSpecificallyAcceptedAndNotRejected(moduleName)) {
+                            // 创建一个新的 ClasspathElementModule
                             final ClasspathElementModule classpathElementModule = new ClasspathElementModule(
                                     systemModuleRef, nestedJarHandler.moduleRefToModuleReaderProxyRecyclerMap,
                                     new ClasspathEntryWorkUnit(null, defaultClassLoader, null, moduleOrder.size(),
                                             ""),
                                     scanSpec);
                             moduleOrder.add(classpathElementModule);
-                            // Open the ClasspathElementModule
+                            // 打开 ClasspathElementModule
                             classpathElementModule.open(/* ignored */ null, classpathFinderLog);
                         } else {
                             if (classpathFinderLog != null) {
@@ -196,14 +201,14 @@ class Scanner implements Callable<ScanResult> {
                             moduleName = "";
                         }
                         if (scanSpec.moduleAcceptReject.isAcceptedAndNotRejected(moduleName)) {
-                            // Create a new ClasspathElementModule
+                            // 创建一个新的 ClasspathElementModule
                             final ClasspathElementModule classpathElementModule = new ClasspathElementModule(
                                     nonSystemModuleRef, nestedJarHandler.moduleRefToModuleReaderProxyRecyclerMap,
                                     new ClasspathEntryWorkUnit(null, defaultClassLoader, null, moduleOrder.size(),
                                             ""),
                                     scanSpec);
                             moduleOrder.add(classpathElementModule);
-                            // Open the ClasspathElementModule
+                            // 打开 ClasspathElementModule
                             classpathElementModule.open(/* ignored */ null, classpathFinderLog);
                         } else {
                             if (classpathFinderLog != null) {
@@ -219,30 +224,27 @@ class Scanner implements Callable<ScanResult> {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Recursively perform a depth-first search of jar interdependencies, breaking cycles if necessary, to determine
-     * the final classpath element order.
+     * 递归执行 jar 相互依赖的深度优先搜索，必要时打破循环，以确定最终的类路径元素顺序
      *
      * @param currClasspathElement
-     *            the current classpath element
+     *            当前类路径元素
      * @param visitedClasspathElts
-     *            visited classpath elts
+     *            已访问的类路径元素
      * @param order
-     *            the classpath element order
+     *            类路径元素顺序
      */
     private static void findClasspathOrderRec(final ClasspathElement currClasspathElement,
-            final Set<ClasspathElement> visitedClasspathElts, final List<ClasspathElement> order) {
+                                              final Set<ClasspathElement> visitedClasspathElts, final List<ClasspathElement> order) {
         if (visitedClasspathElts.add(currClasspathElement)) {
-            // The classpath order requires a preorder traversal of the DAG of classpath dependencies
+            // 类路径顺序需要对类路径依赖的 DAG 进行前序遍历
             if (!currClasspathElement.skipClasspathElement) {
-                // Don't add a classpath element if it is marked to be skipped.
+                // 如果类路径元素被标记为跳过，则不添加
                 order.add(currClasspathElement);
-                // Whether or not a classpath element should be skipped, add any child classpath elements that are
-                // not marked to be skipped (i.e. keep recursing below)
+                // 无论类路径元素是否应被跳过，都添加任何未被标记为跳过的子类路径元素
+                // (即继续向下递归)
             }
-            // Sort child elements into correct order, then traverse to them in order
+            // 将子元素排序为正确的顺序，然后按顺序遍历它们
             final List<ClasspathElement> childClasspathElementsSorted = CollectionUtils
                     .sortCopy(currClasspathElement.childClasspathElements);
             for (final ClasspathElement childClasspathElt : childClasspathElementsSorted) {
@@ -251,197 +253,98 @@ class Scanner implements Callable<ScanResult> {
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Recursively perform a depth-first traversal of child classpath elements, breaking cycles if necessary, to
-     * determine the final classpath element order. This causes child classpath elements to be inserted in-place in
-     * the classpath order, after the parent classpath element that contained them.
+     * 规范化类路径条目对象，以便尽可能将其映射到规范的 {@link Path} 对象，
+     * 如果不行则回退到 {@link URL} 或 {@link URI}
+     * 这是为了避免将 "file:///path/to/x.jar" 和 "/path/to/x.jar" 视为不同的类路径元素
+     * 将 URL("jar:file:x.jar!/") 映射到 Path("x.jar") 等
      *
-     * @param toplevelClasspathElts
-     *            the toplevel classpath elts, indexed by order within the toplevel classpath
-     * @return the final classpath order, after depth-first traversal of child classpath elements
-     */
-    private List<ClasspathElement> findClasspathOrder(final Set<ClasspathElement> toplevelClasspathElts) {
-        // Sort toplevel classpath elements into their correct order
-        final List<ClasspathElement> toplevelClasspathEltsSorted = CollectionUtils.sortCopy(toplevelClasspathElts);
-
-        // Perform a depth-first preorder traversal of the DAG of classpath elements
-        final Set<ClasspathElement> visitedClasspathElts = new HashSet<>();
-        final List<ClasspathElement> order = new ArrayList<>();
-        for (final ClasspathElement elt : toplevelClasspathEltsSorted) {
-            findClasspathOrderRec(elt, visitedClasspathElts, order);
-        }
-        return order;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Process work units.
-     *
-     * @param <W>
-     *            the work unit type
-     * @param workUnits
-     *            the work units
-     * @param log
-     *            the log entry text to group work units under
-     * @param workUnitProcessor
-     *            the work unit processor
-     * @throws InterruptedException
-     *             if a worker was interrupted.
-     * @throws ExecutionException
-     *             If a worker threw an uncaught exception.
-     */
-    private <W> void processWorkUnits(final Collection<W> workUnits, final LogNode log,
-            final WorkUnitProcessor<W> workUnitProcessor) throws InterruptedException, ExecutionException {
-        WorkQueue.runWorkQueue(workUnits, executorService, interruptionChecker, numParallelTasks, log,
-                workUnitProcessor);
-        if (log != null) {
-            log.addElapsedTime();
-        }
-        // Throw InterruptedException if any of the workers failed
-        interruptionChecker.check();
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** Used to enqueue classpath elements for opening. */
-    static class ClasspathEntryWorkUnit {
-        /** The classpath entry object (a {@link String} path, {@link Path}, {@link URL} or {@link URI}). */
-        Object classpathEntryObj;
-
-        /** The classloader the classpath entry object was obtained from. */
-        final ClassLoader classLoader;
-
-        /** The parent classpath element. */
-        final ClasspathElement parentClasspathElement;
-
-        /** The order within the parent classpath element. */
-        final int classpathElementIdxWithinParent;
-
-        /** The package root prefix (e.g. "BOOT-INF/classes/"). */
-        final String packageRootPrefix;
-
-        /**
-         * Constructor.
-         *
-         * @param classpathEntryObj
-         *            the raw classpath entry object
-         * @param classLoader
-         *            the classloader the classpath entry object was obtained from
-         * @param parentClasspathElement
-         *            the parent classpath element
-         * @param classpathElementIdxWithinParent
-         *            the order within parent classpath element
-         * @param packageRootPrefix
-         *            the package root prefix
-         */
-        public ClasspathEntryWorkUnit(final Object classpathEntryObj, final ClassLoader classLoader,
-                final ClasspathElement parentClasspathElement, final int classpathElementIdxWithinParent,
-                final String packageRootPrefix) {
-            this.classpathEntryObj = classpathEntryObj;
-            this.classLoader = classLoader;
-            this.parentClasspathElement = parentClasspathElement;
-            this.classpathElementIdxWithinParent = classpathElementIdxWithinParent;
-            this.packageRootPrefix = packageRootPrefix;
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Normalize a classpath entry object so that it is mapped to a canonical {@link Path} object if possible,
-     * falling back to a {@link URL} or {@link URI} if not possible. This is needed to avoid treating
-     * "file:///path/to/x.jar" and "/path/to/x.jar" as different classpath elements. Maps URL("jar:file:x.jar!/") to
-     * Path("x.jar"), etc.
-     * 
      * @param classpathEntryObj
-     *            The classpath entry object.
-     * @return The normalized classpath entry object.
+     *            类路径条目对象
+     * @return 规范化后的类路径条目对象
      * @throws IOException
      */
     private static Object normalizeClasspathEntry(final Object classpathEntryObj) throws IOException {
         if (classpathEntryObj == null) {
-            // Should not happen
+            // 不应该发生
             throw new IOException("Got null classpath entry object");
         }
         Object classpathEntryObjNormalized = classpathEntryObj;
 
-        // Convert URL/URI (or anything other than URL/URI, or Path) into a String.
-        // Paths.get fails with "IllegalArgumentException: URI is not hierarchical"
-        // for paths like "jar:file:myjar.jar!/" (#625) -- need to strip the "!/" off the end.
-        // Also strip any "jar:file:" or "file:" off the beginning.
-        // This normalizes "file:x.jar" and "x.jar" to the same string, for example.
+        // 将 URL/URI(或除 URL/URI 或 Path 之外的其他任何类型)转换为 String
+        // Paths.get 对于像 "jar:file:myjar.jar!/" 这样的路径会失败，
+        // 抛出 "IllegalArgumentException: URI is not hierarchical" (#625)
+        // -- 需要去掉末尾的 "!/"同时去掉开头的 "jar:file:" 或 "file:"
+        // 这会将 "file:x.jar" 和 "x.jar" 规范化为相同的字符串，例如
         if (!(classpathEntryObjNormalized instanceof Path)) {
             classpathEntryObjNormalized = FastPathResolver.resolve(FileUtils.currDirPath(),
                     classpathEntryObjNormalized.toString());
         }
 
-        // If classpath entry object is a URL-formatted string, convert to (or back to) a URL instance.
+        // 如果类路径条目对象是 URL 格式的字符串，则转换回(或转换到)URL 实例
         if (classpathEntryObjNormalized instanceof String) {
             String classpathEntStr = (String) classpathEntryObjNormalized;
             final boolean isURL = JarUtils.URL_SCHEME_PATTERN.matcher(classpathEntStr).matches();
             final boolean isMultiSection = classpathEntStr.contains("!");
             if (isURL || isMultiSection) {
-                // Encode spaces and hash symbols in classpath entry as they potentially can be invalid when
-                // converted to a URL/URI
+                // 对类路径条目中的空格和井号进行编码，因为它们在转换为 URL/URI 时可能无效
                 classpathEntStr = classpathEntStr.replace(" ", "%20").replace("#", "%23");
-                // Convert back to URL (or URI) if this has a URL scheme or if this is a multi-section
-                // path (which needs the "jar:file:" scheme)
+                // 如果具有 URL 协议或者是多段路径(需要 "jar:file:" 协议)，则转换回 URL(或 URI)
                 if (!isURL) {
-                    // Add "file:" scheme if there is no scheme
+                    // 如果没有协议，则添加 "file:" 协议
                     classpathEntStr = "file:" + classpathEntStr;
                 }
                 if (isMultiSection) {
-                    // Multi-section URL strings that do not already have a URL scheme need to
-                    // have the "jar:file:" scheme
+                    // 没有 URL 协议的多段 URL 字符串需要具有 "jar:file:" 协议
                     classpathEntStr = "jar:" + classpathEntStr;
-                    // Also "jar:" URLs need at least one instance of "!/" -- if only "!" is used
-                    // without a subsequent "/", replace it
+                    // "jar:" URL 也需要至少一个 "!/" 实例 -- 如果只使用了 "!" 而没有跟随 "/"，则替换
                     classpathEntStr = classpathEntStr.replaceAll("!([^/])", "!/$1");
                 }
                 try {
-                    // Convert classpath entry to (or back to) a URL.
+                    // 将类路径条目转换回(或转换到)URL
                     final URL classpathEntryURL = new URL(classpathEntStr);
                     classpathEntryObjNormalized = classpathEntryURL;
 
-                    // If this is not a multi-section URL, try converting URL to a Path
+                    // 如果这不是多段 URL，则尝试将 URL 转换为 Path
                     if (!isMultiSection) {
                         try {
                             final String scheme = classpathEntryURL.getProtocol();
                             if (!"http".equals(scheme) && !"https".equals(scheme)) {
                                 final URI classpathEntryURI = classpathEntryURL.toURI();
-                                // See if the URL resolves to a file or directory via the Path API
+                                // 查看 URL 是否通过 Path API 解析到文件或目录
                                 classpathEntryObjNormalized = Paths.get(classpathEntryURI);
                             }
                         } catch (final URISyntaxException | IllegalArgumentException | SecurityException e1) {
-                            // URL cannot be represented as a URI or as a Path
+                            // URL 无法表示为 URI 或 Path
                         } catch (final FileSystemNotFoundException e) {
-                            // This is a custom URL scheme without a backing FileSystem
+                            // 这是一个没有后端 FileSystem 的自定义 URL 协议
                         }
-                    } // else this is a remote jar URL
+                    } // 否则这是一个远程 jar URL
 
                 } catch (final MalformedURLException e) {
-                    // Try creating URI if URL creation fails, in case there is a URI-only scheme
+                    // 如果 URL 创建失败，尝试创建 URI，以防存在仅 URI 协议的方案
                     try {
                         final URI classpathEntryURI = new URI(classpathEntStr);
                         classpathEntryObjNormalized = classpathEntryURI;
 
                         final String scheme = classpathEntryURI.getScheme();
                         if (!"http".equals(scheme) && !"https".equals(scheme)) {
-                            // See if the URI resolves to a file or directory via the Path API
+                            // 查看 URI 是否通过 Path API 解析到文件或目录
                             classpathEntryObjNormalized = Paths.get(classpathEntryURI);
-                        } // else this is a remote jar URI
+                        } // 否则这是一个远程 jar URI
 
                     } catch (final URISyntaxException e1) {
                         throw new IOException("Malformed URI: " + classpathEntryObjNormalized + " : " + e1);
                     } catch (final IllegalArgumentException | SecurityException e1) {
-                        // URI cannot be represented as a Path
+                        // URI 无法表示为 Path
                     } catch (final FileSystemNotFoundException e1) {
-                        // This is a custom URI scheme without a backing FileSystem
+                        // 这是一个没有后端 FileSystem 的自定义 URI 协议
                     }
                 }
             }
-            // Last-ditch effort -- try to convert String to Path
+            // 最后的尝试 -- 尝试将 String 转换为 Path
             if (classpathEntryObjNormalized instanceof String) {
                 try {
                     classpathEntryObjNormalized = new File((String) classpathEntryObjNormalized).toPath();
@@ -454,19 +357,18 @@ class Scanner implements Callable<ScanResult> {
                 }
             }
         }
-        // At this point, classpathEntryObjNormalized is either a Path wherever possible (where the
-        // classpath entry pointed to a jarfile or directory) or a URL/URI (for multi-section "jar:"
-        // URLs with "!" separators, custom URL schemes without backing filesystems, or URLs that
-        // can't be turned into a Path for any other reason).
+        // 此时，classpathEntryObjNormalized 要么是 Path(在类路径条目指向 jar 文件或目录时)，
+        // 要么是 URL/URI(对于带有 "!" 分隔符的多段 "jar:" URL、没有后端文件系统的自定义 URL 协议、
+        // 或因任何其他原因无法转换为 Path 的 URL)
 
-        // Canonicalize Path objects so the same file is opened only once
+        // 规范化 Path 对象，以便同一个文件只打开一次
         if (classpathEntryObjNormalized instanceof Path) {
             try {
-                // Canonicalize path, to avoid duplication
-                // Throws  IOException if the file does not exist or an I/O error occurs
+                // 规范化路径以避免重复
+                // 如果文件不存在或发生 I/O 错误，则抛出 IOException
                 classpathEntryObjNormalized = ((Path) classpathEntryObjNormalized).toRealPath();
             } catch (final IOException | SecurityException e) {
-                // Ignore
+                // 忽略
             }
         }
 
@@ -476,54 +378,87 @@ class Scanner implements Callable<ScanResult> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * A singleton map used to eliminate creation of duplicate {@link ClasspathElement} objects, to reduce the
-     * chance that resources are scanned twice, by mapping canonicalized Path objects, URLs, etc. to
-     * ClasspathElements.
+     * 递归执行子类路径元素的深度优先遍历，必要时打破循环，以确定最终的类路径元素顺序
+     * 这会导致子类路径元素被就地插入到类路径顺序中，位于包含它们的父类路径元素之后
+     *
+     * @param toplevelClasspathElts
+     *            顶层类路径元素，按顶层类路径中的顺序索引
+     * @return 最终的类路径顺序，在深度优先遍历子类路径元素之后
      */
-    private final SingletonMap<Object, ClasspathElement, IOException> //
-    classpathEntryObjToClasspathEntrySingletonMap = //
-            new SingletonMap<Object, ClasspathElement, IOException>() {
-                @Override
-                public ClasspathElement newInstance(final Object classpathEntryObj, final LogNode log)
-                        throws IOException, InterruptedException {
-                    // Overridden by a NewInstanceFactory
-                    throw new IOException("Should not reach here");
-                }
-            };
+    private List<ClasspathElement> findClasspathOrder(final Set<ClasspathElement> toplevelClasspathElts) {
+        // 将顶层类路径元素排序为正确的顺序
+        final List<ClasspathElement> toplevelClasspathEltsSorted = CollectionUtils.sortCopy(toplevelClasspathElts);
+
+        // 对类路径元素的 DAG 执行深度优先前序遍历
+        final Set<ClasspathElement> visitedClasspathElts = new HashSet<>();
+        final List<ClasspathElement> order = new ArrayList<>();
+        for (final ClasspathElement elt : toplevelClasspathEltsSorted) {
+            findClasspathOrderRec(elt, visitedClasspathElts, order);
+        }
+        return order;
+    }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Create a WorkUnitProcessor for opening traditional classpath entries (which are mapped to
-     * {@link ClasspathElementDir} or {@link ClasspathElementZip} -- {@link ClasspathElementModule is handled
-     * separately}).
+     * 处理工作单元
+     *
+     * @param <W>
+     *            工作单元类型
+     * @param workUnits
+     *            工作单元
+     * @param log
+     *            用于分组工作单元的日志条目文本
+     * @param workUnitProcessor
+     *            工作单元处理器
+     * @throws InterruptedException
+     *             如果工作线程被中断
+     * @throws ExecutionException
+     *             如果工作线程抛出了未捕获的异常
+     */
+    private <W> void processWorkUnits(final Collection<W> workUnits, final LogNode log,
+                                      final WorkUnitProcessor<W> workUnitProcessor) throws InterruptedException, ExecutionException {
+        WorkQueue.runWorkQueue(workUnits, executorService, interruptionChecker, numParallelTasks, log,
+                workUnitProcessor);
+        if (log != null) {
+            log.addElapsedTime();
+        }
+        // 如果任何工作线程失败，则抛出 InterruptedException
+        interruptionChecker.check();
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 创建一个 WorkUnitProcessor，用于打开传统类路径条目(映射到
+     * {@link ClasspathElementDir} 或 {@link ClasspathElementZip} -- {@link ClasspathElementModule 是单独处理的})
      *
      * @param allClasspathEltsOut
-     *            on exit, the set of all classpath elements
+     *            输出时，所有类路径元素的集合
      * @param toplevelClasspathEltsOut
-     *            on exit, the toplevel classpath elements
-     * @return the work unit processor
+     *            输出时，顶层类路径元素
+     * @return 工作单元处理器
      */
     private WorkUnitProcessor<ClasspathEntryWorkUnit> newClasspathEntryWorkUnitProcessor(
             final Set<ClasspathElement> allClasspathEltsOut, final Set<ClasspathElement> toplevelClasspathEltsOut) {
         return new WorkUnitProcessor<ClasspathEntryWorkUnit>() {
             @Override
             public void processWorkUnit(final ClasspathEntryWorkUnit workUnit,
-                    final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log)
+                                        final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log)
                     throws InterruptedException {
                 try {
-                    // Normalize the classpath entry object, and update it in the work unit
+                    // 规范化类路径条目对象，并在工作单元中更新它
                     workUnit.classpathEntryObj = normalizeClasspathEntry(workUnit.classpathEntryObj);
 
-                    // Determine if classpath entry is a jar or dir
+                    // 判断类路径条目是 jar 还是目录
                     final boolean isJar;
                     if (workUnit.classpathEntryObj instanceof URL || workUnit.classpathEntryObj instanceof URI) {
-                        // URLs and URIs always point to jars
+                        // URL 和 URI 总是指向 jar
                         isJar = true;
                     } else if (workUnit.classpathEntryObj instanceof Path) {
                         final Path path = (Path) workUnit.classpathEntryObj;
                         if ("JrtFileSystem".equals(path.getFileSystem().getClass().getSimpleName())) {
-                            // Ignore JrtFileSystem (#553) -- paths are of form:
+                            // 忽略 JrtFileSystem (#553) -- 路径格式为：
                             // /modules/java.base/module-info.class
                             throw new IOException("Ignoring JrtFS filesystem path "
                                     + "(modules are scanned using the JPMS API): " + path);
@@ -534,28 +469,27 @@ class Scanner implements Callable<ScanResult> {
                             final BasicFileAttributes attributes = Files.readAttributes(path,
                                     BasicFileAttributes.class);
                             if (attributes.isRegularFile()) {
-                                // classpathEntObj is a Path which points to a file, so it must be a jar
+                                // classpathEntObj 是指向文件的 Path，因此它必须是 jar
                                 isJar = true;
                             } else if (attributes.isDirectory()) {
-                                // classpathEntObj is a Path which points to a dir
+                                // classpathEntObj 是指向目录的 Path
                                 isJar = false;
                             } else {
                                 throw new IOException("Not a file or directory: " + path);
                             }
                         }
                     } else {
-                        // Should not happen
+                        // 不应该发生
                         throw new IOException("Got unexpected classpath entry object type "
                                 + workUnit.classpathEntryObj.getClass().getName() + " : "
                                 + workUnit.classpathEntryObj);
                     }
 
-                    // Create a ClasspathElementZip or ClasspathElementDir from the classpath entry
-                    // Use a singleton map to ensure that classpath elements are only opened once
-                    // per unique Path, URL, or URI
+                    // 从类路径条目创建 ClasspathElementZip 或 ClasspathElementDir
+                    // 使用单例映射确保类路径元素仅对每个唯一的 Path、URL 或 URI 打开一次
                     classpathEntryObjToClasspathEntrySingletonMap.get(workUnit.classpathEntryObj, log,
-                            // A NewInstanceFactory is used here because workUnit has to be passed in,
-                            // and the standard newInstance API doesn't support an extra parameter like this
+                            // 此处使用 NewInstanceFactory，因为需要传入 workUnit，
+                            // 而标准的 newInstance API 不支持像这样的额外参数
                             new NewInstanceFactory<ClasspathElement, IOException>() {
                                 @Override
                                 public ClasspathElement newInstance() throws IOException, InterruptedException {
@@ -565,20 +499,19 @@ class Scanner implements Callable<ScanResult> {
 
                                     allClasspathEltsOut.add(classpathElement);
 
-                                    // Run open() on the ClasspathElement
+                                    // 在 ClasspathElement 上运行 open()
                                     final LogNode subLog = log == null ? null
                                             : log.log(classpathElement.getURI().toString(),
-                                                    "Opening classpath element " + classpathElement);
+                                            "Opening classpath element " + classpathElement);
 
-                                    // Check if the classpath element is valid (classpathElt.skipClasspathElement
-                                    // will be set if not). In case of ClasspathElementZip, open or extract nested
-                                    // jars as LogicalZipFile instances. Read manifest files for jarfiles to look
-                                    // for Class-Path manifest entries. Adds extra classpath elements to the work
-                                    // queue if they are found.
+                                    // 检查类路径元素是否有效(如果无效，classpathElt.skipClasspathElement 将被设置)
+                                    // 对于 ClasspathElementZip，将嵌套 jar 作为 LogicalZipFile 实例打开或提取
+                                    // 读取 jar 文件的清单文件以查找 Class-Path 清单条目
+                                    // 如果找到，将额外的类路径元素添加到工作队列中
                                     classpathElement.open(workQueue, subLog);
 
                                     if (workUnit.parentClasspathElement != null) {
-                                        // Link classpath element to its parent, if it is not a toplevel element
+                                        // 将类路径元素链接到其父元素(如果它不是顶层元素)
                                         workUnit.parentClasspathElement.childClasspathElements
                                                 .add(classpathElement);
                                     } else {
@@ -601,78 +534,588 @@ class Scanner implements Callable<ScanResult> {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Used to enqueue classfiles for scanning. */
+    /**
+     * 查找路径是另一个类路径元素前缀的类路径元素，并记录嵌套关系
+     *
+     * @param classpathElts
+     *            类路径元素
+     * @param log
+     *            日志
+     */
+    private void findNestedClasspathElements(final List<SimpleEntry<String, ClasspathElement>> classpathElts,
+                                             final LogNode log) {
+        // 将类路径元素按字典序排序
+        CollectionUtils.sortIfNotEmpty(classpathElts, new Comparator<SimpleEntry<String, ClasspathElement>>() {
+            @Override
+            public int compare(final SimpleEntry<String, ClasspathElement> o1,
+                               final SimpleEntry<String, ClasspathElement> o2) {
+                return o1.getKey().compareTo(o2.getKey());
+            }
+        });
+        // 查找元素中是否有嵌套在其他元素中的情况
+        for (int i = 0; i < classpathElts.size(); i++) {
+            // 查看每个类路径元素是否是其他元素的前缀(如果是，它们将在字典序中紧随其后)
+            final SimpleEntry<String, ClasspathElement> ei = classpathElts.get(i);
+            final String basePath = ei.getKey();
+            final int basePathLen = basePath.length();
+            for (int j = i + 1; j < classpathElts.size(); j++) {
+                final SimpleEntry<String, ClasspathElement> ej = classpathElts.get(j);
+                final String comparePath = ej.getKey();
+                final int comparePathLen = comparePath.length();
+                boolean foundNestedClasspathRoot = false;
+                if (comparePath.startsWith(basePath) && comparePathLen > basePathLen) {
+                    // 要求前缀后有一个分隔符
+                    final char nextChar = comparePath.charAt(basePathLen);
+                    if (nextChar == '/' || nextChar == '!') {
+                        // basePath 是 comparePath 的路径前缀确保嵌套的类路径不包含
+                        // 另一个 '!' zip 分隔符(因为类路径扫描不会递归到 jar 内部的 jar，
+                        // 除非它们在类路径上被显式列出)
+                        final String nestedClasspathRelativePath = comparePath.substring(basePathLen + 1);
+                        if (nestedClasspathRelativePath.indexOf('!') < 0) {
+                            // 找到了嵌套的类路径根
+                            foundNestedClasspathRoot = true;
+                            // 存储从前缀元素到嵌套元素的链接
+                            final ClasspathElement baseElement = ei.getValue();
+                            if (baseElement.nestedClasspathRootPrefixes == null) {
+                                baseElement.nestedClasspathRootPrefixes = new ArrayList<>();
+                            }
+                            baseElement.nestedClasspathRootPrefixes.add(nestedClasspathRelativePath + "/");
+                            if (log != null) {
+                                log.log(basePath + " is a prefix of the nested element " + comparePath);
+                            }
+                        }
+                    }
+                }
+                if (!foundNestedClasspathRoot) {
+                    // 在第一个不匹配之后，排序顺序中不可能再有任何前缀匹配
+                    break;
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 查找路径是另一个类路径元素前缀的类路径元素，并记录嵌套关系
+     *
+     * @param finalTraditionalClasspathEltOrder
+     *            最终的传统类路径元素顺序
+     * @param classpathFinderLog
+     *            类路径查找器日志
+     */
+    private void preprocessClasspathElementsByType(final List<ClasspathElement> finalTraditionalClasspathEltOrder,
+                                                   final LogNode classpathFinderLog) {
+        final List<SimpleEntry<String, ClasspathElement>> classpathEltDirs = new ArrayList<>();
+        final List<SimpleEntry<String, ClasspathElement>> classpathEltZips = new ArrayList<>();
+        for (final ClasspathElement classpathElt : finalTraditionalClasspathEltOrder) {
+            if (classpathElt instanceof ClasspathElementDir) {
+                // 将 ClasspathElementFileDir 和 ClasspathElementPathDir 元素与其他类型分开
+                final File file = classpathElt.getFile();
+                final String path = file == null ? classpathElt.toString() : file.getPath();
+                classpathEltDirs.add(new SimpleEntry<>(path, classpathElt));
+
+            } else if (classpathElt instanceof ClasspathElementZip) {
+                // 将 ClasspathElementZip 元素与其他类型分开
+                final ClasspathElementZip classpathEltZip = (ClasspathElementZip) classpathElt;
+                classpathEltZips.add(new SimpleEntry<>(classpathEltZip.getZipFilePath(), classpathElt));
+
+                // 处理与模块相关的清单条目
+                if (classpathEltZip.logicalZipFile != null) {
+                    // 来自 JEP 261：
+                    // "Add-Exports 属性值中的 <module>/<package> 对与命令行选项
+                    // --add-exports <module>/<package>=ALL-UNNAMED 具有相同的含义
+                    // Add-Opens 属性值中的 <module>/<package> 对与命令行选项
+                    // --add-opens <module>/<package>=ALL-UNNAMED 具有相同的含义"
+                    if (classpathEltZip.logicalZipFile.addExportsManifestEntryValue != null) {
+                        for (final String addExports : JarUtils.smartPathSplit(
+                                classpathEltZip.logicalZipFile.addExportsManifestEntryValue, ' ', scanSpec)) {
+                            scanSpec.modulePathInfo.addExports.add(addExports + "=ALL-UNNAMED");
+                        }
+                    }
+                    if (classpathEltZip.logicalZipFile.addOpensManifestEntryValue != null) {
+                        for (final String addOpens : JarUtils.smartPathSplit(
+                                classpathEltZip.logicalZipFile.addOpensManifestEntryValue, ' ', scanSpec)) {
+                            scanSpec.modulePathInfo.addOpens.add(addOpens + "=ALL-UNNAMED");
+                        }
+                    }
+                    // 检索 Automatic-Module-Name 清单条目(如果存在)
+                    if (classpathEltZip.logicalZipFile.automaticModuleNameManifestEntryValue != null) {
+                        classpathEltZip.moduleNameFromManifestFile = //
+                                classpathEltZip.logicalZipFile.automaticModuleNameManifestEntryValue;
+                    }
+                }
+            }
+            // (忽略 ClasspathElementModule，无需进行预处理)
+        }
+        // 查找嵌套的类路径元素(写入 ClasspathElement#nestedClasspathRootPrefixes)
+        findNestedClasspathElements(classpathEltDirs, classpathFinderLog);
+        findNestedClasspathElements(classpathEltZips, classpathFinderLog);
+    }
+
+    /**
+     * 对类文件执行类路径掩码如果相同的相对类文件路径在类路径中出现多次，
+     * 会导致第二次及后续的出现被忽略(移除)
+     *
+     * @param classpathElementOrder
+     *            类路径元素顺序
+     * @param maskLog
+     *            掩码日志
+     */
+    private void maskClassfiles(final List<ClasspathElement> classpathElementOrder, final LogNode maskLog) {
+        final Set<String> acceptedClasspathRelativePathsFound = new HashSet<>();
+        for (int classpathIdx = 0; classpathIdx < classpathElementOrder.size(); classpathIdx++) {
+            final ClasspathElement classpathElement = classpathElementOrder.get(classpathIdx);
+            classpathElement.maskClassfiles(classpathIdx, acceptedClasspathRelativePathsFound, maskLog);
+        }
+        if (maskLog != null) {
+            maskLog.addElapsedTime();
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 扫描类路径和/或可见模块
+     *
+     * @param finalClasspathEltOrder
+     *            最终的类路径元素顺序
+     * @param finalClasspathEltOrderStrs
+     *            最终的类路径元素顺序字符串
+     * @param classpathFinder
+     *            {@link ClasspathFinder}
+     * @return 扫描结果
+     * @throws InterruptedException
+     *             如果扫描被中断
+     * @throws ExecutionException
+     *             如果扫描抛出了未捕获的异常
+     */
+    private ScanResult performScan(final List<ClasspathElement> finalClasspathEltOrder,
+                                   final List<String> finalClasspathEltOrderStrs, final ClasspathFinder classpathFinder)
+            throws InterruptedException, ExecutionException {
+        // 掩码类文件(移除任何被同一类的较早定义掩盖的类文件资源)
+        if (scanSpec.enableClassInfo) {
+            maskClassfiles(finalClasspathEltOrder,
+                    topLevelLog == null ? null : topLevelLog.log("Masking classfiles"));
+        }
+
+        // 合并所有类路径元素的文件到时间戳的映射
+        final Map<File, Long> fileToLastModified = new HashMap<>();
+        for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
+            fileToLastModified.putAll(classpathElement.fileToLastModified);
+        }
+
+        // 如果 scanSpec.enableClassInfo 为 true，则扫描类文件
+        // (classNameToClassInfo 是一个 ConcurrentHashMap，因为在扫描完成后
+        // ArrayTypeSignature.getArrayClassInfo() 可能会修改它)
+        final Map<String, ClassInfo> classNameToClassInfo = new ConcurrentHashMap<>();
+        final Map<String, PackageInfo> packageNameToPackageInfo = new HashMap<>();
+        final Map<String, ModuleInfo> moduleNameToModuleInfo = new HashMap<>();
+        if (scanSpec.enableClassInfo) {
+            // 获取被接受的类文件顺序
+            final List<ClassfileScanWorkUnit> classfileScanWorkItems = new ArrayList<>();
+            final Set<String> acceptedClassNamesFound = new HashSet<>();
+            for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
+                // 获取所有类路径元素的类文件扫描顺序
+                for (final Resource resource : classpathElement.acceptedClassfileResources) {
+                    // 创建在类路径元素路径中找到的所有被接受类的名称集合，
+                    // 并双重检查一个类不会被扫描两次
+                    final String className = JarUtils.classfilePathToClassName(resource.getPath());
+                    if (!acceptedClassNamesFound.add(className) && !"module-info".equals(className)
+                            && !"package-info".equals(className) && !className.endsWith(".package-info")) {
+                        // 由于已经应用了类路径掩码，该类不应被多次调度扫描
+                        throw new IllegalArgumentException("Class " + className
+                                + " should not have been scheduled more than once for scanning due to classpath"
+                                + " masking -- please report this bug at:"
+                                + " https://github.com/classgraph/classgraph/issues");
+                    }
+                    // 调度类进行扫描
+                    classfileScanWorkItems
+                            .add(new ClassfileScanWorkUnit(classpathElement, resource, /* isExternal = */ false));
+                }
+            }
+
+            // 并行扫描类文件
+            final Queue<ClassFile> scannedClassfiles = new ConcurrentLinkedQueue<>();
+            final ClassfileScannerWorkUnitProcessor classfileWorkUnitProcessor = //
+                    new ClassfileScannerWorkUnitProcessor(scanSpec, finalClasspathEltOrder,
+                            Collections.unmodifiableSet(acceptedClassNamesFound), scannedClassfiles);
+            processWorkUnits(classfileScanWorkItems,
+                    topLevelLog == null ? null : topLevelLog.log("Scanning classfiles"),
+                    classfileWorkUnitProcessor);
+
+            // 链接 Classfile 对象以生成 ClassInfo 对象这需要从单个线程完成
+            final LogNode linkLog = topLevelLog == null ? null : topLevelLog.log("Linking related classfiles");
+            while (!scannedClassfiles.isEmpty()) {
+                final ClassFile c = scannedClassfiles.remove();
+                c.link(classNameToClassInfo, packageNameToPackageInfo, moduleNameToModuleInfo);
+            }
+
+            // 取消注释以下代码，为类型描述符或类型签名中引用的任何类创建占位外部类，
+            // 以便可以为这些类引用获取 ClassInfo 对象这将导致所有类型描述符和类型
+            // 签名被解析，并从中提取类名这将增加扫描时间的一些开销，唯一的好处是
+            // ClassRefTypeSignature.getClassInfo() 和 AnnotationClassRef.getClassInfo()
+            // 永远不会返回 null，因为注解类引用中找到的所有外部类都将为其创建一个占位
+            // ClassInfo 对象这个功能足够晦涩，可能不值得为了强制解析所有类型描述符
+            // 和类型签名(在返回 ScanResult 之前)而减慢所有其他用例的扫描速度
+            // 在此代码被注释掉的情况下，类型签名和类型描述符仅在需要时才会被延迟解析
+
+            //    final Set<String> referencedClassNames = new HashSet<>();
+            //    for (final ClassInfo classInfo : classNameToClassInfo.values()) {
+            //        classInfo.findReferencedClassNames(referencedClassNames);
+            //    }
+            //    for (final String referencedClass : referencedClassNames) {
+            //        ClassInfo.getOrCreateClassInfo(referencedClass, /* modifiers = */ 0, scanSpec,
+            //                classNameToClassInfo);
+            //    }
+
+            if (linkLog != null) {
+                linkLog.addElapsedTime();
+            }
+        } else {
+            if (topLevelLog != null) {
+                topLevelLog.log("Classfile scanning is disabled");
+            }
+        }
+
+        // 返回一个新的 ScanResult
+        final ScanResult scanResult = new ScanResult(scanSpec, finalClasspathEltOrder, finalClasspathEltOrderStrs,
+                classpathFinder, classNameToClassInfo, packageNameToPackageInfo, moduleNameToModuleInfo,
+                fileToLastModified, nestedJarHandler, topLevelLog);
+
+        // 在每个类路径元素中设置 ScanResult，以便类路径元素可以确定 ScanResult 何时被关闭
+        for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
+            classpathElement.setScanResult(scanResult);
+        }
+
+        return scanResult;
+    }
+
+    /**
+     * 打开每个类路径元素，查找需要扫描的额外子类路径元素(例如 jar 清单文件中的
+     * {@code Class-Path} 条目)，然后在 {@link ScanSpec#performScan} 为 true 时执行扫描，
+     * 或者在 {@link ScanSpec#performScan} 为 false 时仅获取类路径
+     *
+     * @return 扫描结果
+     * @throws InterruptedException
+     *             如果扫描被中断
+     * @throws ExecutionException
+     *             如果工作线程抛出了未捕获的异常
+     */
+    private ScanResult openClasspathElementsThenScan() throws InterruptedException, ExecutionException {
+        // 获取传统类路径中元素的顺序
+        final List<ClasspathEntryWorkUnit> rawClasspathEntryWorkUnits = new ArrayList<>();
+        final List<ClasspathEntry> rawClasspathOrder = classpathFinder.getClasspathOrder().getOrder();
+        for (final ClasspathEntry rawClasspathEntry : rawClasspathOrder) {
+            rawClasspathEntryWorkUnits.add(new ClasspathEntryWorkUnit(rawClasspathEntry.classpathEntryObj,
+                    rawClasspathEntry.classLoader, /* parentClasspathElement = */ null,
+                    // classpathElementIdxWithinParent 是原始类路径索引，
+                    // 用于顶层类路径元素
+                    /* classpathElementIdxWithinParent = */ rawClasspathEntryWorkUnits.size(),
+                    /* packageRootPrefix = */ ""));
+        }
+
+        // 并行地为每个类路径元素创建一个 ClasspathElement 单例，然后对每个
+        // ClasspathElement 对象调用 open()，对于 jar 文件，这将导致为每个(可能嵌套的)
+        // jar 文件创建 LogicalZipFile 实例，然后读取清单文件和 zip 条目
+        final Set<ClasspathElement> allClasspathElts = Collections
+                .newSetFromMap(new ConcurrentHashMap<ClasspathElement, Boolean>());
+        final Set<ClasspathElement> toplevelClasspathElts = Collections
+                .newSetFromMap(new ConcurrentHashMap<ClasspathElement, Boolean>());
+        processWorkUnits(rawClasspathEntryWorkUnits,
+                topLevelLog == null ? null : topLevelLog.log("Opening classpath elements"),
+                newClasspathEntryWorkUnitProcessor(allClasspathElts, toplevelClasspathElts));
+
+        // 确定类路径元素的总体排序，将清单 Class-Path 条目中引用的 jar
+        // 就地插入到排序中(如果它们尚未在类路径中更早地列出)
+        final List<ClasspathElement> classpathEltOrder = findClasspathOrder(toplevelClasspathElts);
+
+        // 查找作为其他类路径元素的路径前缀的类路径元素，
+        // 并为 ClasspathElementZip 获取与模块相关的清单条目值
+        preprocessClasspathElementsByType(classpathEltOrder,
+                topLevelLog == null ? null : topLevelLog.log("Finding nested classpath elements"));
+
+        // 将模块排序在传统类路径的类路径元素之前
+        final LogNode classpathOrderLog = topLevelLog == null ? null
+                : topLevelLog.log("Final classpath element order:");
+        final int numElts = moduleOrder.size() + classpathEltOrder.size();
+        final List<ClasspathElement> finalClasspathEltOrder = new ArrayList<>(numElts);
+        final List<String> finalClasspathEltOrderStrs = new ArrayList<>(numElts);
+        int classpathOrderIdx = 0;
+        for (final ClasspathElementModule classpathElt : moduleOrder) {
+            classpathElt.classpathElementIdx = classpathOrderIdx++;
+            finalClasspathEltOrder.add(classpathElt);
+            finalClasspathEltOrderStrs.add(classpathElt.toString());
+            if (classpathOrderLog != null) {
+                final ModuleRef moduleRef = classpathElt.getModuleRef();
+                classpathOrderLog.log(moduleRef.toString());
+            }
+        }
+        for (final ClasspathElement classpathElt : classpathEltOrder) {
+            classpathElt.classpathElementIdx = classpathOrderIdx++;
+            finalClasspathEltOrder.add(classpathElt);
+            finalClasspathEltOrderStrs.add(classpathElt.toString());
+            if (classpathOrderLog != null) {
+                classpathOrderLog.log(classpathElt.toString());
+            }
+        }
+
+        // 并行地扫描每个类路径元素中的路径，将其与接受/拒绝条件进行比较
+        processWorkUnits(finalClasspathEltOrder,
+                topLevelLog == null ? null : topLevelLog.log("Scanning classpath elements"),
+                new WorkUnitProcessor<ClasspathElement>() {
+                    @Override
+                    public void processWorkUnit(final ClasspathElement classpathElement,
+                                                final WorkQueue<ClasspathElement> workQueueIgnored, final LogNode pathScanLog)
+                            throws InterruptedException {
+                        // 扫描类路径元素中的路径
+                        classpathElement.scanPaths(pathScanLog);
+                    }
+                });
+
+        // 过滤掉不包含所需被接受路径的类路径元素
+        List<ClasspathElement> finalClasspathEltOrderFiltered = finalClasspathEltOrder;
+        if (!scanSpec.classpathElementResourcePathAcceptReject.acceptIsEmpty()) {
+            finalClasspathEltOrderFiltered = new ArrayList<>(finalClasspathEltOrder.size());
+            for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
+                if (classpathElement.containsSpecificallyAcceptedClasspathElementResourcePath) {
+                    finalClasspathEltOrderFiltered.add(classpathElement);
+                }
+            }
+        }
+
+        if (performScan) {
+            // 扫描类路径/模块，生成 ScanResult
+            return performScan(finalClasspathEltOrderFiltered, finalClasspathEltOrderStrs, classpathFinder);
+        } else {
+            // 仅获取类路径 -- 返回一个占位 ScanResult 来持有类路径元素
+            if (topLevelLog != null) {
+                topLevelLog.log("Only returning classpath elements (not performing a scan)");
+            }
+            return new ScanResult(scanSpec, finalClasspathEltOrderFiltered, finalClasspathEltOrderStrs,
+                    classpathFinder, /* classNameToClassInfo = */ null, /* packageNameToPackageInfo = */ null,
+                    /* moduleNameToModuleInfo = */ null, /* fileToLastModified = */ null, nestedJarHandler,
+                    topLevelLog);
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 确定唯一的有序类路径元素，并在必要时运行扫描以查找文件或类文件匹配项
+     *
+     * @return 扫描结果
+     * @throws InterruptedException
+     *             如果扫描被中断
+     * @throws CancellationException
+     *             如果扫描被取消
+     * @throws ExecutionException
+     *             如果工作线程抛出了未捕获的异常
+     */
+    @Override
+    public ScanResult call() throws InterruptedException, CancellationException, ExecutionException {
+        ScanResult scanResult = null;
+        final long scanStart = System.currentTimeMillis();
+        boolean removeTemporaryFilesAfterScan = scanSpec.removeTemporaryFilesAfterScan;
+        try {
+            // 执行扫描
+            scanResult = openClasspathElementsThenScan();
+
+            // 在扫描完成后记录总时间，并刷新日志
+            if (topLevelLog != null) {
+                topLevelLog.log("~",
+                        String.format("Total time: %.3f sec", (System.currentTimeMillis() - scanStart) * .001));
+                topLevelLog.flush();
+            }
+
+            // 如果提供了 ScanResultProcessor，则调用它
+            if (scanResultProcessor != null) {
+                try {
+                    scanResultProcessor.processScanResult(scanResult);
+                } catch (final Exception e) {
+                    scanResult.close();
+                    throw new ExecutionException(e);
+                }
+                scanResult.close();
+            }
+
+        } catch (final Throwable e) {
+            if (topLevelLog != null) {
+                topLevelLog.log("~",
+                        e instanceof InterruptedException || e instanceof CancellationException
+                                ? "Scan interrupted or canceled"
+                                : e instanceof ExecutionException || e instanceof RuntimeException
+                                ? "Uncaught exception during scan"
+                                : e.getMessage(),
+                        InterruptionChecker.getCause(e));
+                // 刷新日志
+                topLevelLog.flush();
+            }
+
+            // 由于抛出了异常，移除临时文件
+            removeTemporaryFilesAfterScan = true;
+
+            // 停止所有正在运行的线程(应该不需要，线程应该已经处于静止状态)
+            interruptionChecker.interrupt();
+
+            if (failureHandler == null) {
+                if (removeTemporaryFilesAfterScan) {
+                    // 如果设置了 removeTemporaryFilesAfterScan，则移除临时文件并关闭资源、
+                    // zip 文件和模块
+                    nestedJarHandler.close(topLevelLog);
+                }
+                // 如果没有设置失败处理器，则重新抛出异常
+                throw e;
+            } else {
+                // 否则，调用失败处理器
+                try {
+                    failureHandler.onFailure(e);
+                } catch (final Exception f) {
+                    // 失败处理器失败了
+                    if (topLevelLog != null) {
+                        topLevelLog.log("~", "The failure handler threw an exception:", f);
+                        topLevelLog.flush();
+                    }
+                    // 使用抑制异常机制将两个异常组合在一起，
+                    // 在失败处理器异常下方显示扫描异常
+                    final ExecutionException failureHandlerException = new ExecutionException(
+                            "Exception while calling failure handler", f);
+                    failureHandlerException.addSuppressed(e);
+                    if (removeTemporaryFilesAfterScan) {
+                        // 如果设置了 removeTemporaryFilesAfterScan，则移除临时文件并关闭资源、
+                        // zip 文件和模块
+                        nestedJarHandler.close(topLevelLog);
+                    }
+                    // 抛出一个新的 ExecutionException(尽管这可能会被忽略，
+                    // 因为任何带有 FailureHandler 的作业是通过 ExecutorService::execute 启动的，
+                    // 而不是通过 ExecutorService::submit)
+                    throw failureHandlerException;
+                }
+            }
+        }
+
+        if (removeTemporaryFilesAfterScan) {
+            // 如果设置了 removeTemporaryFilesAfterScan，则移除临时文件并关闭资源、
+            // zip 文件和模块
+            nestedJarHandler.close(topLevelLog);
+        }
+        return scanResult;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /** 用于将类路径元素加入队列以进行打开 */
+    static class ClasspathEntryWorkUnit {
+        /** 类路径条目对象所来自的类加载器 */
+        final ClassLoader classLoader;
+        /** 父类路径元素 */
+        final ClasspathElement parentClasspathElement;
+        /** 在父类路径元素中的顺序 */
+        final int classpathElementIdxWithinParent;
+        /** 包根前缀(例如 "BOOT-INF/classes/") */
+        final String packageRootPrefix;
+        /** 类路径条目对象({@link String} 路径、{@link Path}、{@link URL} 或 {@link URI}) */
+        Object classpathEntryObj;
+
+        /**
+         * 构造函数
+         *
+         * @param classpathEntryObj
+         *            原始类路径条目对象
+         * @param classLoader
+         *            类路径条目对象所来自的类加载器
+         * @param parentClasspathElement
+         *            父类路径元素
+         * @param classpathElementIdxWithinParent
+         *            在父类路径元素中的顺序
+         * @param packageRootPrefix
+         *            包根前缀
+         */
+        public ClasspathEntryWorkUnit(final Object classpathEntryObj, final ClassLoader classLoader,
+                                      final ClasspathElement parentClasspathElement, final int classpathElementIdxWithinParent,
+                                      final String packageRootPrefix) {
+            this.classpathEntryObj = classpathEntryObj;
+            this.classLoader = classLoader;
+            this.parentClasspathElement = parentClasspathElement;
+            this.classpathElementIdxWithinParent = classpathElementIdxWithinParent;
+            this.packageRootPrefix = packageRootPrefix;
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /** 用于将类文件加入队列以进行扫描 */
     static class ClassfileScanWorkUnit {
 
-        /** The classpath element. */
+        /** 类路径元素 */
         private final ClasspathElement classpathElement;
 
-        /** The classfile resource. */
+        /** 类文件资源 */
         private final Resource classfileResource;
 
-        /** True if this is an external class. */
+        /** 如果这是外部类，则为 true */
         private final boolean isExternalClass;
 
         /**
-         * Constructor.
+         * 构造函数
          *
          * @param classpathElement
-         *            the classpath element
+         *            类路径元素
          * @param classfileResource
-         *            the classfile resource
+         *            类文件资源
          * @param isExternalClass
-         *            the is external class
+         *            是否为外部类
          */
         ClassfileScanWorkUnit(final ClasspathElement classpathElement, final Resource classfileResource,
-                final boolean isExternalClass) {
+                              final boolean isExternalClass) {
             this.classpathElement = classpathElement;
             this.classfileResource = classfileResource;
             this.isExternalClass = isExternalClass;
         }
     }
 
-    /** WorkUnitProcessor for scanning classfiles. */
+    // -------------------------------------------------------------------------------------------------------------
+
+    /** 用于扫描类文件的 WorkUnitProcessor */
     private static class ClassfileScannerWorkUnitProcessor implements WorkUnitProcessor<ClassfileScanWorkUnit> {
-        /** The scan spec. */
+        /** 扫描规格 */
         private final ScanSpec scanSpec;
 
-        /** The classpath order. */
+        /** 类路径顺序 */
         private final List<ClasspathElement> classpathOrder;
 
         /**
-         * The names of accepted classes found in the classpath while scanning paths within classpath elements.
+         * 在扫描类路径元素中的路径时在类路径中找到的被接受类的名称
          */
         private final Set<String> acceptedClassNamesFound;
 
         /**
-         * The names of external (non-accepted) classes scheduled for extended scanning (where scanning is extended
-         * upwards to superclasses, interfaces and annotations).
+         * 被调度进行扩展扫描(扫描向上扩展到超类、接口和注解)的外部(未被接受的)类的名称
          */
         private final Set<String> classNamesScheduledForExtendedScanning = Collections
                 .newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-        /** The valid {@link Classfile} objects created by scanning classfiles. */
-        private final Queue<Classfile> scannedClassfiles;
+        /** 通过扫描类文件创建的有效 {@link ClassFile} 对象 */
+        private final Queue<ClassFile> scannedClassfiles;
 
-        /** The string intern map. */
+        /** 字符串驻留映射 */
         private final ConcurrentHashMap<String, String> stringInternMap = new ConcurrentHashMap<>();
 
         /**
-         * Constructor.
+         * 构造函数
          *
          * @param scanSpec
-         *            the scan spec
+         *            扫描规格
          * @param classpathOrder
-         *            the classpath order
+         *            类路径顺序
          * @param acceptedClassNamesFound
-         *            the names of accepted classes found in the classpath while scanning paths within classpath
-         *            elements.
+         *            在扫描类路径元素中的路径时在类路径中找到的被接受类的名称
          * @param scannedClassfiles
-         *            the {@link Classfile} objects created by scanning classfiles
+         *            通过扫描类文件创建的 {@link ClassFile} 对象
          */
         public ClassfileScannerWorkUnitProcessor(final ScanSpec scanSpec,
-                final List<ClasspathElement> classpathOrder, final Set<String> acceptedClassNamesFound,
-                final Queue<Classfile> scannedClassfiles) {
+                                                 final List<ClasspathElement> classpathOrder, final Set<String> acceptedClassNamesFound,
+                                                 final Queue<ClassFile> scannedClassfiles) {
             this.scanSpec = scanSpec;
             this.classpathOrder = classpathOrder;
             this.acceptedClassNamesFound = acceptedClassNamesFound;
@@ -680,40 +1123,40 @@ class Scanner implements Callable<ScanResult> {
         }
 
         /**
-         * Process work unit.
+         * 处理工作单元
          *
          * @param workUnit
-         *            the work unit
+         *            工作单元
          * @param workQueue
-         *            the work queue
+         *            工作队列
          * @param log
-         *            the log
+         *            日志
          * @throws InterruptedException
-         *             the interrupted exception
+         *             中断异常
          */
         /* (non-Javadoc)
-         * @see nonapi.io.github.classgraph.concurrency.WorkQueue.WorkUnitProcessor#processWorkUnit(
-         * java.lang.Object, nonapi.io.github.classgraph.concurrency.WorkQueue)
+         * @see com.bingbaihanji.classgraph.concurrency.WorkQueue.WorkUnitProcessor#processWorkUnit(
+         * java.lang.Object, com.bingbaihanji.classgraph.concurrency.WorkQueue)
          */
         @Override
         public void processWorkUnit(final ClassfileScanWorkUnit workUnit,
-                final WorkQueue<ClassfileScanWorkUnit> workQueue, final LogNode log) throws InterruptedException {
-            // Classfile scan log entries are listed inline below the entry that was added to the log
-            // when the path of the corresponding resource was found, by using the LogNode stored in
-            // Resource#scanLog. This allows the path scanning and classfile scanning logs to be
-            // merged into a single tree, rather than having them appear as two separate trees.
+                                    final WorkQueue<ClassfileScanWorkUnit> workQueue, final LogNode log) throws InterruptedException {
+            // 类文件扫描日志条目使用 Resource#scanLog 中存储的 LogNode，
+            // 以内联方式列在对应资源路径被发现时添加的条目下方
+            // 这允许路径扫描和类文件扫描日志合并为单个树，
+            // 而不是让它们显示为两个独立的树
             final LogNode subLog = workUnit.classfileResource.scanLog == null ? null
                     : workUnit.classfileResource.scanLog.log(workUnit.classfileResource.getPath(),
-                            "Parsing classfile");
+                    "Parsing classfile");
 
             try {
-                // Parse classfile binary format, creating a Classfile object
-                final Classfile classfile = new Classfile(workUnit.classpathElement, classpathOrder,
+                // 解析类文件二进制格式，创建 Classfile 对象
+                final ClassFile classfile = new ClassFile(workUnit.classpathElement, classpathOrder,
                         acceptedClassNamesFound, classNamesScheduledForExtendedScanning,
                         workUnit.classfileResource.getPath(), workUnit.classfileResource, workUnit.isExternalClass,
                         stringInternMap, workQueue, scanSpec, subLog);
 
-                // Enqueue the classfile for linking
+                // 将类文件加入队列以进行链接
                 scannedClassfiles.add(classfile);
 
                 if (subLog != null) {
@@ -741,486 +1184,5 @@ class Scanner implements Callable<ScanResult> {
                 }
             }
         }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Find classpath elements whose path is a prefix of another classpath element, and record the nesting.
-     *
-     * @param classpathElts
-     *            the classpath elements
-     * @param log
-     *            the log
-     */
-    private void findNestedClasspathElements(final List<SimpleEntry<String, ClasspathElement>> classpathElts,
-            final LogNode log) {
-        // Sort classpath elements into lexicographic order
-        CollectionUtils.sortIfNotEmpty(classpathElts, new Comparator<SimpleEntry<String, ClasspathElement>>() {
-            @Override
-            public int compare(final SimpleEntry<String, ClasspathElement> o1,
-                    final SimpleEntry<String, ClasspathElement> o2) {
-                return o1.getKey().compareTo(o2.getKey());
-            }
-        });
-        // Find any nesting of elements within other elements
-        for (int i = 0; i < classpathElts.size(); i++) {
-            // See if each classpath element is a prefix of any others (if so, they will immediately follow
-            // in lexicographic order)
-            final SimpleEntry<String, ClasspathElement> ei = classpathElts.get(i);
-            final String basePath = ei.getKey();
-            final int basePathLen = basePath.length();
-            for (int j = i + 1; j < classpathElts.size(); j++) {
-                final SimpleEntry<String, ClasspathElement> ej = classpathElts.get(j);
-                final String comparePath = ej.getKey();
-                final int comparePathLen = comparePath.length();
-                boolean foundNestedClasspathRoot = false;
-                if (comparePath.startsWith(basePath) && comparePathLen > basePathLen) {
-                    // Require a separator after the prefix
-                    final char nextChar = comparePath.charAt(basePathLen);
-                    if (nextChar == '/' || nextChar == '!') {
-                        // basePath is a path prefix of comparePath. Ensure that the nested classpath does
-                        // not contain another '!' zip-separator (since classpath scanning does not recurse
-                        // to jars-within-jars unless they are explicitly listed on the classpath)
-                        final String nestedClasspathRelativePath = comparePath.substring(basePathLen + 1);
-                        if (nestedClasspathRelativePath.indexOf('!') < 0) {
-                            // Found a nested classpath root
-                            foundNestedClasspathRoot = true;
-                            // Store link from prefix element to nested elements
-                            final ClasspathElement baseElement = ei.getValue();
-                            if (baseElement.nestedClasspathRootPrefixes == null) {
-                                baseElement.nestedClasspathRootPrefixes = new ArrayList<>();
-                            }
-                            baseElement.nestedClasspathRootPrefixes.add(nestedClasspathRelativePath + "/");
-                            if (log != null) {
-                                log.log(basePath + " is a prefix of the nested element " + comparePath);
-                            }
-                        }
-                    }
-                }
-                if (!foundNestedClasspathRoot) {
-                    // After the first non-match, there can be no more prefix matches in the sorted order
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Find classpath elements whose path is a prefix of another classpath element, and record the nesting.
-     *
-     * @param finalTraditionalClasspathEltOrder
-     *            the final traditional classpath elt order
-     * @param classpathFinderLog
-     *            the classpath finder log
-     */
-    private void preprocessClasspathElementsByType(final List<ClasspathElement> finalTraditionalClasspathEltOrder,
-            final LogNode classpathFinderLog) {
-        final List<SimpleEntry<String, ClasspathElement>> classpathEltDirs = new ArrayList<>();
-        final List<SimpleEntry<String, ClasspathElement>> classpathEltZips = new ArrayList<>();
-        for (final ClasspathElement classpathElt : finalTraditionalClasspathEltOrder) {
-            if (classpathElt instanceof ClasspathElementDir) {
-                // Separate out ClasspathElementFileDir and ClasspathElementPathDir elements from other types
-                final File file = classpathElt.getFile();
-                final String path = file == null ? classpathElt.toString() : file.getPath();
-                classpathEltDirs.add(new SimpleEntry<>(path, classpathElt));
-
-            } else if (classpathElt instanceof ClasspathElementZip) {
-                // Separate out ClasspathElementZip elements from other types
-                final ClasspathElementZip classpathEltZip = (ClasspathElementZip) classpathElt;
-                classpathEltZips.add(new SimpleEntry<>(classpathEltZip.getZipFilePath(), classpathElt));
-
-                // Handle module-related manifest entries
-                if (classpathEltZip.logicalZipFile != null) {
-                    // From JEP 261:
-                    // "A <module>/<package> pair in the value of an Add-Exports attribute has the same
-                    // meaning as the command-line option --add-exports <module>/<package>=ALL-UNNAMED. 
-                    // A <module>/<package> pair in the value of an Add-Opens attribute has the same 
-                    // meaning as the command-line option --add-opens <module>/<package>=ALL-UNNAMED."
-                    if (classpathEltZip.logicalZipFile.addExportsManifestEntryValue != null) {
-                        for (final String addExports : JarUtils.smartPathSplit(
-                                classpathEltZip.logicalZipFile.addExportsManifestEntryValue, ' ', scanSpec)) {
-                            scanSpec.modulePathInfo.addExports.add(addExports + "=ALL-UNNAMED");
-                        }
-                    }
-                    if (classpathEltZip.logicalZipFile.addOpensManifestEntryValue != null) {
-                        for (final String addOpens : JarUtils.smartPathSplit(
-                                classpathEltZip.logicalZipFile.addOpensManifestEntryValue, ' ', scanSpec)) {
-                            scanSpec.modulePathInfo.addOpens.add(addOpens + "=ALL-UNNAMED");
-                        }
-                    }
-                    // Retrieve Automatic-Module-Name manifest entry, if present
-                    if (classpathEltZip.logicalZipFile.automaticModuleNameManifestEntryValue != null) {
-                        classpathEltZip.moduleNameFromManifestFile = //
-                                classpathEltZip.logicalZipFile.automaticModuleNameManifestEntryValue;
-                    }
-                }
-            }
-            // (Ignore ClasspathElementModule, no preprocessing to perform)
-        }
-        // Find nested classpath elements (writes to ClasspathElement#nestedClasspathRootPrefixes)
-        findNestedClasspathElements(classpathEltDirs, classpathFinderLog);
-        findNestedClasspathElements(classpathEltZips, classpathFinderLog);
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Perform classpath masking of classfiles. If the same relative classfile path occurs multiple times in the
-     * classpath, causes the second and subsequent occurrences to be ignored (removed).
-     * 
-     * @param classpathElementOrder
-     *            the classpath element order
-     * @param maskLog
-     *            the mask log
-     */
-    private void maskClassfiles(final List<ClasspathElement> classpathElementOrder, final LogNode maskLog) {
-        final Set<String> acceptedClasspathRelativePathsFound = new HashSet<>();
-        for (int classpathIdx = 0; classpathIdx < classpathElementOrder.size(); classpathIdx++) {
-            final ClasspathElement classpathElement = classpathElementOrder.get(classpathIdx);
-            classpathElement.maskClassfiles(classpathIdx, acceptedClasspathRelativePathsFound, maskLog);
-        }
-        if (maskLog != null) {
-            maskLog.addElapsedTime();
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Scan the classpath and/or visible modules.
-     *
-     * @param finalClasspathEltOrder
-     *            the final classpath elt order
-     * @param finalClasspathEltOrderStrs
-     *            the final classpath elt order strs
-     * @param classpathFinder
-     *            the {@link ClasspathFinder}
-     * @return the scan result
-     * @throws InterruptedException
-     *             if the scan was interrupted
-     * @throws ExecutionException
-     *             if the scan threw an uncaught exception
-     */
-    private ScanResult performScan(final List<ClasspathElement> finalClasspathEltOrder,
-            final List<String> finalClasspathEltOrderStrs, final ClasspathFinder classpathFinder)
-            throws InterruptedException, ExecutionException {
-        // Mask classfiles (remove any classfile resources that are shadowed by an earlier definition
-        // of the same class)
-        if (scanSpec.enableClassInfo) {
-            maskClassfiles(finalClasspathEltOrder,
-                    topLevelLog == null ? null : topLevelLog.log("Masking classfiles"));
-        }
-
-        // Merge the file-to-timestamp maps across all classpath elements
-        final Map<File, Long> fileToLastModified = new HashMap<>();
-        for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
-            fileToLastModified.putAll(classpathElement.fileToLastModified);
-        }
-
-        // Scan classfiles, if scanSpec.enableClassInfo is true.
-        // (classNameToClassInfo is a ConcurrentHashMap because it can be modified by
-        // ArrayTypeSignature.getArrayClassInfo() after scanning is complete)
-        final Map<String, ClassInfo> classNameToClassInfo = new ConcurrentHashMap<>();
-        final Map<String, PackageInfo> packageNameToPackageInfo = new HashMap<>();
-        final Map<String, ModuleInfo> moduleNameToModuleInfo = new HashMap<>();
-        if (scanSpec.enableClassInfo) {
-            // Get accepted classfile order
-            final List<ClassfileScanWorkUnit> classfileScanWorkItems = new ArrayList<>();
-            final Set<String> acceptedClassNamesFound = new HashSet<>();
-            for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
-                // Get classfile scan order across all classpath elements
-                for (final Resource resource : classpathElement.acceptedClassfileResources) {
-                    // Create a set of names of all accepted classes found in classpath element paths,
-                    // and double-check that a class is not going to be scanned twice
-                    final String className = JarUtils.classfilePathToClassName(resource.getPath());
-                    if (!acceptedClassNamesFound.add(className) && !className.equals("module-info")
-                            && !className.equals("package-info") && !className.endsWith(".package-info")) {
-                        // The class should not be scheduled more than once for scanning, since classpath
-                        // masking was already applied
-                        throw new IllegalArgumentException("Class " + className
-                                + " should not have been scheduled more than once for scanning due to classpath"
-                                + " masking -- please report this bug at:"
-                                + " https://github.com/classgraph/classgraph/issues");
-                    }
-                    // Schedule class for scanning
-                    classfileScanWorkItems
-                            .add(new ClassfileScanWorkUnit(classpathElement, resource, /* isExternal = */ false));
-                }
-            }
-
-            // Scan classfiles in parallel
-            final Queue<Classfile> scannedClassfiles = new ConcurrentLinkedQueue<>();
-            final ClassfileScannerWorkUnitProcessor classfileWorkUnitProcessor = //
-                    new ClassfileScannerWorkUnitProcessor(scanSpec, finalClasspathEltOrder,
-                            Collections.unmodifiableSet(acceptedClassNamesFound), scannedClassfiles);
-            processWorkUnits(classfileScanWorkItems,
-                    topLevelLog == null ? null : topLevelLog.log("Scanning classfiles"),
-                    classfileWorkUnitProcessor);
-
-            // Link the Classfile objects to produce ClassInfo objects. This needs to be done from a single thread.
-            final LogNode linkLog = topLevelLog == null ? null : topLevelLog.log("Linking related classfiles");
-            while (!scannedClassfiles.isEmpty()) {
-                final Classfile c = scannedClassfiles.remove();
-                c.link(classNameToClassInfo, packageNameToPackageInfo, moduleNameToModuleInfo);
-            }
-
-            // Uncomment the following code to create placeholder external classes for any classes
-            // referenced in type descriptors or type signatures, so that a ClassInfo object can be
-            // obtained for those class references. This will cause all type descriptors and type
-            // signatures to be parsed, and class names extracted from them. This will add some
-            // overhead to the scanning time, and the only benefit is that
-            // ClassRefTypeSignature.getClassInfo() and AnnotationClassRef.getClassInfo() will never
-            // return null, since all external classes found in annotation class refs will have a
-            // placeholder ClassInfo object created for them. This is obscure enough that it is
-            // probably not worth slowing down scanning for all other usecases, by forcibly parsing
-            // all type descriptors and type signatures before returning the ScanResult.
-            // With this code commented out, type signatures and type descriptors are only parsed
-            // lazily, on demand.
-
-            //    final Set<String> referencedClassNames = new HashSet<>();
-            //    for (final ClassInfo classInfo : classNameToClassInfo.values()) {
-            //        classInfo.findReferencedClassNames(referencedClassNames);
-            //    }
-            //    for (final String referencedClass : referencedClassNames) {
-            //        ClassInfo.getOrCreateClassInfo(referencedClass, /* modifiers = */ 0, scanSpec,
-            //                classNameToClassInfo);
-            //    }
-
-            if (linkLog != null) {
-                linkLog.addElapsedTime();
-            }
-        } else {
-            if (topLevelLog != null) {
-                topLevelLog.log("Classfile scanning is disabled");
-            }
-        }
-
-        // Return a new ScanResult
-        final ScanResult scanResult = new ScanResult(scanSpec, finalClasspathEltOrder, finalClasspathEltOrderStrs,
-                classpathFinder, classNameToClassInfo, packageNameToPackageInfo, moduleNameToModuleInfo,
-                fileToLastModified, nestedJarHandler, topLevelLog);
-
-        // Set the ScanResult in each classpath element, so that the classpath elements can determine when the
-        // ScanResult is closed
-        for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
-            classpathElement.setScanResult(scanResult);
-        }
-
-        return scanResult;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Open each of the classpath elements, looking for additional child classpath elements that need scanning (e.g.
-     * {@code Class-Path} entries in jar manifest files), then perform the scan if {@link ScanSpec#performScan} is
-     * true, or just get the classpath if {@link ScanSpec#performScan} is false.
-     *
-     * @return the scan result
-     * @throws InterruptedException
-     *             if the scan was interrupted
-     * @throws ExecutionException
-     *             if a worker threw an uncaught exception
-     */
-    private ScanResult openClasspathElementsThenScan() throws InterruptedException, ExecutionException {
-        // Get order of elements in traditional classpath
-        final List<ClasspathEntryWorkUnit> rawClasspathEntryWorkUnits = new ArrayList<>();
-        final List<ClasspathEntry> rawClasspathOrder = classpathFinder.getClasspathOrder().getOrder();
-        for (final ClasspathEntry rawClasspathEntry : rawClasspathOrder) {
-            rawClasspathEntryWorkUnits.add(new ClasspathEntryWorkUnit(rawClasspathEntry.classpathEntryObj,
-                    rawClasspathEntry.classLoader, /* parentClasspathElement = */ null,
-                    // classpathElementIdxWithinParent is the original classpath index,
-                    // for toplevel classpath elements
-                    /* classpathElementIdxWithinParent = */ rawClasspathEntryWorkUnits.size(),
-                    /* packageRootPrefix = */ ""));
-        }
-
-        // In parallel, create a ClasspathElement singleton for each classpath element, then call open()
-        // on each ClasspathElement object, which in the case of jarfiles will cause LogicalZipFile instances
-        // to be created for each (possibly nested) jarfile, then will read the manifest file and zip entries.
-        final Set<ClasspathElement> allClasspathElts = Collections
-                .newSetFromMap(new ConcurrentHashMap<ClasspathElement, Boolean>());
-        final Set<ClasspathElement> toplevelClasspathElts = Collections
-                .newSetFromMap(new ConcurrentHashMap<ClasspathElement, Boolean>());
-        processWorkUnits(rawClasspathEntryWorkUnits,
-                topLevelLog == null ? null : topLevelLog.log("Opening classpath elements"),
-                newClasspathEntryWorkUnitProcessor(allClasspathElts, toplevelClasspathElts));
-
-        // Determine total ordering of classpath elements, inserting jars referenced in manifest Class-Path
-        // entries in-place into the ordering, if they haven't been listed earlier in the classpath already.
-        final List<ClasspathElement> classpathEltOrder = findClasspathOrder(toplevelClasspathElts);
-
-        // Find classpath elements that are path prefixes of other classpath elements, and for
-        // ClasspathElementZip, get module-related manifest entry values
-        preprocessClasspathElementsByType(classpathEltOrder,
-                topLevelLog == null ? null : topLevelLog.log("Finding nested classpath elements"));
-
-        // Order modules before classpath elements from traditional classpath 
-        final LogNode classpathOrderLog = topLevelLog == null ? null
-                : topLevelLog.log("Final classpath element order:");
-        final int numElts = moduleOrder.size() + classpathEltOrder.size();
-        final List<ClasspathElement> finalClasspathEltOrder = new ArrayList<>(numElts);
-        final List<String> finalClasspathEltOrderStrs = new ArrayList<>(numElts);
-        int classpathOrderIdx = 0;
-        for (final ClasspathElementModule classpathElt : moduleOrder) {
-            classpathElt.classpathElementIdx = classpathOrderIdx++;
-            finalClasspathEltOrder.add(classpathElt);
-            finalClasspathEltOrderStrs.add(classpathElt.toString());
-            if (classpathOrderLog != null) {
-                final ModuleRef moduleRef = classpathElt.getModuleRef();
-                classpathOrderLog.log(moduleRef.toString());
-            }
-        }
-        for (final ClasspathElement classpathElt : classpathEltOrder) {
-            classpathElt.classpathElementIdx = classpathOrderIdx++;
-            finalClasspathEltOrder.add(classpathElt);
-            finalClasspathEltOrderStrs.add(classpathElt.toString());
-            if (classpathOrderLog != null) {
-                classpathOrderLog.log(classpathElt.toString());
-            }
-        }
-
-        // In parallel, scan paths within each classpath element, comparing them against accept/reject
-        processWorkUnits(finalClasspathEltOrder,
-                topLevelLog == null ? null : topLevelLog.log("Scanning classpath elements"),
-                new WorkUnitProcessor<ClasspathElement>() {
-                    @Override
-                    public void processWorkUnit(final ClasspathElement classpathElement,
-                            final WorkQueue<ClasspathElement> workQueueIgnored, final LogNode pathScanLog)
-                            throws InterruptedException {
-                        // Scan the paths within the classpath element
-                        classpathElement.scanPaths(pathScanLog);
-                    }
-                });
-
-        // Filter out classpath elements that do not contain required accepted paths.
-        List<ClasspathElement> finalClasspathEltOrderFiltered = finalClasspathEltOrder;
-        if (!scanSpec.classpathElementResourcePathAcceptReject.acceptIsEmpty()) {
-            finalClasspathEltOrderFiltered = new ArrayList<>(finalClasspathEltOrder.size());
-            for (final ClasspathElement classpathElement : finalClasspathEltOrder) {
-                if (classpathElement.containsSpecificallyAcceptedClasspathElementResourcePath) {
-                    finalClasspathEltOrderFiltered.add(classpathElement);
-                }
-            }
-        }
-
-        if (performScan) {
-            // Scan classpath / modules, producing a ScanResult.
-            return performScan(finalClasspathEltOrderFiltered, finalClasspathEltOrderStrs, classpathFinder);
-        } else {
-            // Only getting classpath -- return a placeholder ScanResult to hold classpath elements
-            if (topLevelLog != null) {
-                topLevelLog.log("Only returning classpath elements (not performing a scan)");
-            }
-            return new ScanResult(scanSpec, finalClasspathEltOrderFiltered, finalClasspathEltOrderStrs,
-                    classpathFinder, /* classNameToClassInfo = */ null, /* packageNameToPackageInfo = */ null,
-                    /* moduleNameToModuleInfo = */ null, /* fileToLastModified = */ null, nestedJarHandler,
-                    topLevelLog);
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Determine the unique ordered classpath elements, and run a scan looking for file or classfile matches if
-     * necessary.
-     *
-     * @return the scan result
-     * @throws InterruptedException
-     *             if scanning was interrupted
-     * @throws CancellationException
-     *             if scanning was cancelled
-     * @throws ExecutionException
-     *             if a worker threw an uncaught exception
-     */
-    @Override
-    public ScanResult call() throws InterruptedException, CancellationException, ExecutionException {
-        ScanResult scanResult = null;
-        final long scanStart = System.currentTimeMillis();
-        boolean removeTemporaryFilesAfterScan = scanSpec.removeTemporaryFilesAfterScan;
-        try {
-            // Perform the scan
-            scanResult = openClasspathElementsThenScan();
-
-            // Log total time after scan completes, and flush log
-            if (topLevelLog != null) {
-                topLevelLog.log("~",
-                        String.format("Total time: %.3f sec", (System.currentTimeMillis() - scanStart) * .001));
-                topLevelLog.flush();
-            }
-
-            // Call the ScanResultProcessor, if one was provided
-            if (scanResultProcessor != null) {
-                try {
-                    scanResultProcessor.processScanResult(scanResult);
-                } catch (final Exception e) {
-                    scanResult.close();
-                    throw new ExecutionException(e);
-                }
-                scanResult.close();
-            }
-
-        } catch (final Throwable e) {
-            if (topLevelLog != null) {
-                topLevelLog.log("~",
-                        e instanceof InterruptedException || e instanceof CancellationException
-                                ? "Scan interrupted or canceled"
-                                : e instanceof ExecutionException || e instanceof RuntimeException
-                                        ? "Uncaught exception during scan"
-                                        : e.getMessage(),
-                        InterruptionChecker.getCause(e));
-                // Flush the log
-                topLevelLog.flush();
-            }
-
-            // Since an exception was thrown, remove temporary files
-            removeTemporaryFilesAfterScan = true;
-
-            // Stop any running threads (should not be needed, threads should already be quiescent)
-            interruptionChecker.interrupt();
-
-            if (failureHandler == null) {
-                if (removeTemporaryFilesAfterScan) {
-                    // If removeTemporaryFilesAfterScan was set, remove temp files and close resources,
-                    // zipfiles and modules
-                    nestedJarHandler.close(topLevelLog);
-                }
-                // If there is no failure handler set, re-throw the exception
-                throw e;
-            } else {
-                // Otherwise, call the failure handler
-                try {
-                    failureHandler.onFailure(e);
-                } catch (final Exception f) {
-                    // The failure handler failed
-                    if (topLevelLog != null) {
-                        topLevelLog.log("~", "The failure handler threw an exception:", f);
-                        topLevelLog.flush();
-                    }
-                    // Group the two exceptions into one, using the suppressed exception mechanism
-                    // to show the scan exception below the failure handler exception
-                    final ExecutionException failureHandlerException = new ExecutionException(
-                            "Exception while calling failure handler", f);
-                    failureHandlerException.addSuppressed(e);
-                    if (removeTemporaryFilesAfterScan) {
-                        // If removeTemporaryFilesAfterScan was set, remove temp files and close resources,
-                        // zipfiles and modules
-                        nestedJarHandler.close(topLevelLog);
-                    }
-                    // Throw a new ExecutionException (although this will probably be ignored,
-                    // since any job with a FailureHandler was started with ExecutorService::execute
-                    // rather than ExecutorService::submit)  
-                    throw failureHandlerException;
-                }
-            }
-        }
-
-        if (removeTemporaryFilesAfterScan) {
-            // If removeTemporaryFilesAfterScan was set, remove temp files and close resources,
-            // zipfiles and modules
-            nestedJarHandler.close(topLevelLog);
-        }
-        return scanResult;
     }
 }

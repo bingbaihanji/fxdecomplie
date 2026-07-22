@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfo;
-import com.bingbaihanji.fxdecomplie.core.classgraph.ScanResult;
+import com.bingbaihanji.classgraph.core.ClassInfo;
+import com.bingbaihanji.classgraph.core.ScanResult;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,8 +36,8 @@ class ClassGraphWorkspaceAdapterTest {
         assertNotNull(impl);
         assertFalse(impl.isInterface());
         assertEquals(fileService, impl.getInterfaces().get(0));
-        assertEquals(1, fileService.getImplementingClasses().size());
-        assertEquals(impl, fileService.getImplementingClasses().get(0));
+        assertEquals(1, fileService.getClassesImplementing().size());
+        assertEquals(impl, fileService.getClassesImplementing().get(0));
     }
 
     @Test
@@ -58,7 +58,17 @@ class ClassGraphWorkspaceAdapterTest {
 
         ClassInfo userService = result.getClassInfo("com/example/UserService");
         assertNotNull(userService);
-        assertEquals(1, userService.getAnnotationInfo().size());
-        assertEquals("com/example/Service", userService.getAnnotationInfo().get(0).getName());
+        // getAnnotationInfo() returns direct annotations plus meta-annotations
+        assertTrue(userService.getAnnotationInfo().size() >= 1,
+                "Expected at least 1 annotation, got " + userService.getAnnotationInfo().size());
+        // Verify the @Service annotation is present (may not be first due to meta-annotations)
+        boolean found = false;
+        for (var ai : userService.getAnnotationInfo()) {
+            if ("com/example/Service".equals(ai.getName())) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found, "@Service annotation should be present");
     }
 }

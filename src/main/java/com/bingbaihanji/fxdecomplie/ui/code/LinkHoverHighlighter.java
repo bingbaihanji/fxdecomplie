@@ -38,15 +38,11 @@ final class LinkHoverHighlighter {
 
     private final CodeArea codeArea;
     private final RegexHighlighter baseHighlighter;
-    private boolean ctrlDown;
     private final javafx.event.EventHandler<KeyEvent> keyPressedHandler = event -> {
         if (event.isControlDown()) {
             ctrlDown = true;
         }
     };
-    private int hoverStart = -1;
-    private int hoverEnd = -1;
-    private boolean disposed;
     private final javafx.event.EventHandler<MouseEvent> mouseMovedHandler = this::handleMouseMoved;
     private final javafx.event.EventHandler<MouseEvent> mouseExitedHandler = event -> clearHover();
     private final javafx.event.EventHandler<KeyEvent> keyReleasedHandler = event -> {
@@ -55,6 +51,10 @@ final class LinkHoverHighlighter {
             clearHover();
         }
     };
+    private boolean ctrlDown;
+    private int hoverStart = -1;
+    private int hoverEnd = -1;
+    private boolean disposed;
 
     private LinkHoverHighlighter(CodeArea codeArea, RegexHighlighter baseHighlighter) {
         this.codeArea = codeArea;

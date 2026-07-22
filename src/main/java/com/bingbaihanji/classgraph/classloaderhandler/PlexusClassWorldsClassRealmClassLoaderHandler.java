@@ -38,31 +38,17 @@ import com.bingbaihanji.classgraph.utils.LogNode;
 import java.util.SortedSet;
 
 /**
- * 处理 Plexus ClassWorlds ClassRealm ClassLoader。
+ * 处理 Plexus ClassWorlds ClassRealm ClassLoader
  *
  * @author lukehutch
  */
 class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandler {
-    /** 类不可构造。 */
+    /** 类不可构造 */
     public PlexusClassWorldsClassRealmClassLoaderHandler() {
     }
 
     /**
-     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
-     *
-     * @param classLoaderClass
-     *            {@link ClassLoader} 类或其超类。
-     * @param log
-     *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
-     */
-    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
-        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "org.codehaus.plexus.classworlds.realm.ClassRealm");
-    }
-
-    /**
-     * 检查此类加载器是否使用父级优先策略。
+     * 检查此类加载器是否使用父级优先策略
      *
      * @param classRealmInstance
      *            ClassRealm 实例
@@ -79,22 +65,38 @@ class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandle
                 return false;
             }
         }
-        // 策略为 org.codehaus.plexus.classworlds.strategy.ParentFirstStrategy（或未能找到策略）
+        // 策略为 org.codehaus.plexus.classworlds.strategy.ParentFirstStrategy(或未能找到策略)
         return true;
     }
 
     /**
-     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}
+     *
+     * @param classLoaderClass
+     *            {@link ClassLoader} 类或其超类
+     * @param log
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     */
+    @Override
+    public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
+                "org.codehaus.plexus.classworlds.realm.ClassRealm");
+    }
+
+    /**
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序
      *
      * @param classRealm
-     *            要查找委托顺序的 {@link ClassLoader}。
+     *            要查找委托顺序的 {@link ClassLoader}
      * @param classLoaderOrder
-     *            要更新的 {@link ClassLoaderOrder} 对象。
+     *            要更新的 {@link ClassLoaderOrder} 对象
      * @param log
      *            日志
      */
-    @Override public void findClassLoaderOrder(final ClassLoader classRealm, final ClassLoaderOrder classLoaderOrder,
-                                            final LogNode log) {
+    @Override
+    public void findClassLoaderOrder(final ClassLoader classRealm, final ClassLoaderOrder classLoaderOrder,
+                                     final LogNode log) {
         // 来自 ClassRealm#loadClassFromImport(String) -> getImportClassLoader(String)
         final Object foreignImports = classLoaderOrder.reflectionUtils.getFieldVal(false, classRealm,
                 "foreignImports");
@@ -111,20 +113,20 @@ class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandle
         // 获取委托顺序 -- 不同的策略有不同的委托顺序
         final boolean isParentFirst = isParentFirstStrategy(classRealm, classLoaderOrder.reflectionUtils);
 
-        // 来自 ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String)（自身优先策略）
+        // 来自 ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String)(自身优先策略)
         if (!isParentFirst) {
             // 在父级之前添加自身
             classLoaderOrder.add(classRealm, log);
         }
 
         // 来自 ClassRealm#loadClassFromParent -- 注意：我们忽略了 parentImports，它用于在决定是否调用父级类加载器
-        // 之前过滤类名（因此 ClassGraph 将能够按名称加载未从父级类加载器导入的类）。
+        // 之前过滤类名(因此 ClassGraph 将能够按名称加载未从父级类加载器导入的类)
         final ClassLoader parentClassLoader = (ClassLoader) classLoaderOrder.reflectionUtils.invokeMethod(false,
                 classRealm, "getParentClassLoader");
         classLoaderOrder.delegateTo(parentClassLoader, /* isParent = */ true, log);
         classLoaderOrder.delegateTo(classRealm.getParent(), /* isParent = */ true, log);
 
-        // 来自 ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String)（父级优先策略）
+        // 来自 ClassRealm#loadClassFromSelf(String) -> findLoadedClass(String)(父级优先策略)
         if (isParentFirst) {
             // 在父级之后添加自身
             classLoaderOrder.add(classRealm, log);
@@ -132,19 +134,20 @@ class PlexusClassWorldsClassRealmClassLoaderHandler implements ClassLoaderHandle
     }
 
     /**
-     * 查找关联 {@link ClassLoader} 的类路径条目。
+     * 查找关联 {@link ClassLoader} 的类路径条目
      *
      * @param classLoader
-     *            要查找类路径条目顺序的 {@link ClassLoader}。
+     *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
-     *            要更新的 {@link ClasspathOrder} 对象。
+     *            要更新的 {@link ClasspathOrder} 对象
      * @param scanSpec
-     *            {@link ScanSpec}。
+     *            {@link ScanSpec}
      * @param log
-     *            日志。
+     *            日志
      */
-    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                          final ScanSpec scanSpec, final LogNode log) {
+    @Override
+    public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                   final ScanSpec scanSpec, final LogNode log) {
         // ClassRealm 继承 URLClassLoader
         new URLClassLoaderHandler().findClasspathOrder(classLoader, classpathOrder, scanSpec, log);
     }

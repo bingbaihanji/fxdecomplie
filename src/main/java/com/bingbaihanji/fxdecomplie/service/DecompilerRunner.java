@@ -85,7 +85,7 @@ public final class DecompilerRunner {
         return ex;
     }
 
-    /** 反编译成功时重置超时计数器（与 maybeRebuildExecutor 互斥） */
+    /** 反编译成功时重置超时计数器(与 maybeRebuildExecutor 互斥) */
     static synchronized void resetTimeoutCounter() {
         consecutiveTimeouts.set(0);
     }
@@ -231,6 +231,9 @@ public final class DecompilerRunner {
             throw new RuntimeException("反编译被中断: " + classFilePath, e);
         } catch (java.util.concurrent.ExecutionException e) {
             Throwable cause = e.getCause() == null ? e : e.getCause();
+            if (cause instanceof CancellationException || isInterruptRelated(cause)) {
+                throw new CancellationException("反编译被取消: " + classFilePath);
+            }
             return failureOutput(classFilePath, cause.getMessage() != null
                     ? cause.getMessage() : cause.getClass().getSimpleName());
         }
@@ -302,6 +305,9 @@ public final class DecompilerRunner {
             source = decompileWithEngine(classFilePath, classBytes,
                     selectedEngine, effectiveContext);
         } catch (RuntimeException e) {
+            if (isInterruptRelated(e)) {
+                throw new CancellationException("反编译被取消: " + selectedEngine);
+            }
             String message = e.getMessage() == null || e.getMessage().isBlank()
                     ? e.getClass().getSimpleName() : e.getMessage();
             log.warn("{} 反编译 {} 抛出异常,尝试回退引擎", selectedEngine, classFilePath, e);
@@ -319,6 +325,10 @@ public final class DecompilerRunner {
             if (fallback == selectedEngine) {
                 continue;
             }
+            // 回退前检查是否已被取消,避免在线程已中断的情况下继续初始化新引擎
+            if (Thread.currentThread().isInterrupted()) {
+                throw new CancellationException("反编译回退被取消");
+            }
             try {
                 String fallbackSource = decompileWithEngine(classFilePath, classBytes,
                         fallback, effectiveContext);
@@ -329,6 +339,9 @@ public final class DecompilerRunner {
                     return withFallbackNotice(fallbackSource, fallback, reason);
                 }
             } catch (RuntimeException e) {
+                if (isInterruptRelated(e)) {
+                    throw new CancellationException("反编译回退被取消: " + fallback);
+                }
                 log.warn("回退反编译器 {} 对 {} 反编译失败", fallback, classFilePath, e);
             }
         }
@@ -459,6 +472,21 @@ public final class DecompilerRunner {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
+    }
+
+    /** 判断异常是否由线程中断/取消引起 */
+    private static boolean isInterruptRelated(Throwable ex) {
+        Throwable cause = ex;
+        while (cause != null) {
+            if (cause instanceof InterruptedException
+                    || cause instanceof CancellationException
+                    || (cause instanceof RuntimeException
+                    && "Thread interrupted".equalsIgnoreCase(cause.getMessage()))) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return Thread.currentThread().isInterrupted();
     }
 
     /**

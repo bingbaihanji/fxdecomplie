@@ -26,42 +26,117 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classpath;
+package com.bingbaihanji.classgraph.classpath;
+
+import com.bingbaihanji.classgraph.utils.FastPathResolver;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.JarUtils;
+import com.bingbaihanji.classgraph.utils.VersionFinder;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import nonapi.io.github.classgraph.utils.FastPathResolver;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.JarUtils;
-import nonapi.io.github.classgraph.utils.VersionFinder;
-
-/** A class to find rt.jar and any JRE "lib/" or "ext/" jars. */
+/** 用于查找 rt.jar 以及 JRE "lib/" 或 "ext/" 目录下 JAR 文件的类 */
 public final class SystemJarFinder {
-    /** The paths of any "rt.jar" files found in the JRE. */
+    /** 在 JRE 中找到的所有 "rt.jar" 文件的路径 */
     private static final Set<String> RT_JARS = new LinkedHashSet<>();
 
-    /** The path of the first "rt.jar" found. */
+    /** 第一个找到的 "rt.jar" 的路径 */
     private static final String RT_JAR;
 
-    /** The paths of any "lib/" or "ext/" jars found in the JRE. */
+    /** 在 JRE 中找到的所有 "lib/" 或 "ext/" JAR 文件的路径 */
     private static final Set<String> JRE_LIB_OR_EXT_JARS = new LinkedHashSet<>();
 
-    /**
-     * Constructor.
-     */
-    private SystemJarFinder() {
-        // Cannot be constructed
+    // 在 JRE 目录中查找 JAR 文件({java.home}、{java.home}/lib、{java.home}/lib/ext 等)
+    static {
+        String javaHome = VersionFinder.getProperty("java.home");
+        if (javaHome == null || javaHome.isEmpty()) {
+            javaHome = System.getenv("JAVA_HOME");
+        }
+        if (javaHome != null && !javaHome.isEmpty()) {
+            final File javaHomeFile = new File(javaHome);
+            addJREPath(javaHomeFile);
+            if ("jre".equals(javaHomeFile.getName())) {
+                // 当 java.home 是 JRE 路径时，尝试将 "{java.home}/.." 添加为 JDK 根路径
+                final File jreParent = javaHomeFile.getParentFile();
+                addJREPath(jreParent);
+                addJREPath(new File(jreParent, "lib"));
+                addJREPath(new File(jreParent, "lib/ext"));
+            } else {
+                // 当 java.home 不是 JRE 路径时，尝试将 "{java.home}/jre" 添加为 JRE 根路径
+                addJREPath(new File(javaHomeFile, "jre"));
+            }
+            addJREPath(new File(javaHomeFile, "lib"));
+            addJREPath(new File(javaHomeFile, "lib/ext"));
+            addJREPath(new File(javaHomeFile, "jre/lib"));
+            addJREPath(new File(javaHomeFile, "jre/lib/ext"));
+            addJREPath(new File(javaHomeFile, "packages"));
+            addJREPath(new File(javaHomeFile, "packages/lib"));
+            addJREPath(new File(javaHomeFile, "packages/lib/ext"));
+        }
+        final String javaExtDirs = VersionFinder.getProperty("java.ext.dirs");
+        if (javaExtDirs != null && !javaExtDirs.isEmpty()) {
+            for (final String javaExtDir : JarUtils.smartPathSplit(javaExtDirs, /* scanSpec = */ null)) {
+                if (!javaExtDir.isEmpty()) {
+                    addJREPath(new File(javaExtDir));
+                }
+            }
+        }
+
+        // 系统扩展路径 -- 参见：https://docs.oracle.com/javase/tutorial/ext/basics/install.html
+        switch (VersionFinder.OS) {
+            case Linux:
+            case Unix:
+            case BSD:
+            case Unknown:
+                addJREPath(new File("/usr/java/packages"));
+                addJREPath(new File("/usr/java/packages/lib"));
+                addJREPath(new File("/usr/java/packages/lib/ext"));
+                break;
+            case MacOSX:
+                addJREPath(new File("/System/Library/Java"));
+                addJREPath(new File("/System/Library/Java/Libraries"));
+                addJREPath(new File("/System/Library/Java/Extensions"));
+                break;
+            case Windows:
+                final String systemRoot = File.separatorChar == '\\' ? System.getenv("SystemRoot") : null;
+                if (systemRoot != null) {
+                    addJREPath(new File(systemRoot, "Sun\\Java"));
+                    addJREPath(new File(systemRoot, "Sun\\Java\\lib"));
+                    addJREPath(new File(systemRoot, "Sun\\Java\\lib\\ext"));
+                    addJREPath(new File(systemRoot, "Oracle\\Java"));
+                    addJREPath(new File(systemRoot, "Oracle\\Java\\lib"));
+                    addJREPath(new File(systemRoot, "Oracle\\Java\\lib\\ext"));
+                }
+                break;
+            case Solaris:
+                // Solaris 路径：
+                addJREPath(new File("/usr/jdk/packages"));
+                addJREPath(new File("/usr/jdk/packages/lib"));
+                addJREPath(new File("/usr/jdk/packages/lib/ext"));
+                break;
+            default:
+                break;
+        }
+
+        RT_JAR = RT_JARS.isEmpty() ? null : FastPathResolver.resolve(RT_JARS.iterator().next());
     }
 
     /**
-     * Add and search a JRE path.
+     * 构造函数
+     */
+    private SystemJarFinder() {
+        // 不可构造
+    }
+
+    /**
+     * 添加并搜索 JRE 路径
      *
      * @param dir
-     *            the JRE directory
-     * @return true if the directory was readable.
+     *            JRE 目录
+     * @return 如果目录可读则返回 true
      */
     private static boolean addJREPath(final File dir) {
         if (dir != null && !dir.getPath().isEmpty() && FileUtils.canReadAndIsDir(dir)) {
@@ -85,7 +160,7 @@ public final class SystemJarFinder {
                                 JRE_LIB_OR_EXT_JARS.add(canonicalJarPathResolved);
                             }
                         } catch (IOException | SecurityException e) {
-                            // Ignored
+                            // 忽略
                         }
                     }
                 }
@@ -95,95 +170,20 @@ public final class SystemJarFinder {
         return false;
     }
 
-    // Find jars in JRE dirs ({java.home}, {java.home}/lib, {java.home}/lib/ext, etc.)
-    static {
-        String javaHome = VersionFinder.getProperty("java.home");
-        if (javaHome == null || javaHome.isEmpty()) {
-            javaHome = System.getenv("JAVA_HOME");
-        }
-        if (javaHome != null && !javaHome.isEmpty()) {
-            final File javaHomeFile = new File(javaHome);
-            addJREPath(javaHomeFile);
-            if (javaHomeFile.getName().equals("jre")) {
-                // Try adding "{java.home}/.." as a JDK root when java.home is a JRE path
-                final File jreParent = javaHomeFile.getParentFile();
-                addJREPath(jreParent);
-                addJREPath(new File(jreParent, "lib"));
-                addJREPath(new File(jreParent, "lib/ext"));
-            } else {
-                // Try adding "{java.home}/jre" as a JRE root when java.home is not a JRE path
-                addJREPath(new File(javaHomeFile, "jre"));
-            }
-            addJREPath(new File(javaHomeFile, "lib"));
-            addJREPath(new File(javaHomeFile, "lib/ext"));
-            addJREPath(new File(javaHomeFile, "jre/lib"));
-            addJREPath(new File(javaHomeFile, "jre/lib/ext"));
-            addJREPath(new File(javaHomeFile, "packages"));
-            addJREPath(new File(javaHomeFile, "packages/lib"));
-            addJREPath(new File(javaHomeFile, "packages/lib/ext"));
-        }
-        final String javaExtDirs = VersionFinder.getProperty("java.ext.dirs");
-        if (javaExtDirs != null && !javaExtDirs.isEmpty()) {
-            for (final String javaExtDir : JarUtils.smartPathSplit(javaExtDirs, /* scanSpec = */ null)) {
-                if (!javaExtDir.isEmpty()) {
-                    addJREPath(new File(javaExtDir));
-                }
-            }
-        }
-
-        // System extension paths -- see: https://docs.oracle.com/javase/tutorial/ext/basics/install.html
-        switch (VersionFinder.OS) {
-        case Linux:
-        case Unix:
-        case BSD:
-        case Unknown:
-            addJREPath(new File("/usr/java/packages"));
-            addJREPath(new File("/usr/java/packages/lib"));
-            addJREPath(new File("/usr/java/packages/lib/ext"));
-            break;
-        case MacOSX:
-            addJREPath(new File("/System/Library/Java"));
-            addJREPath(new File("/System/Library/Java/Libraries"));
-            addJREPath(new File("/System/Library/Java/Extensions"));
-            break;
-        case Windows:
-            final String systemRoot = File.separatorChar == '\\' ? System.getenv("SystemRoot") : null;
-            if (systemRoot != null) {
-                addJREPath(new File(systemRoot, "Sun\\Java"));
-                addJREPath(new File(systemRoot, "Sun\\Java\\lib"));
-                addJREPath(new File(systemRoot, "Sun\\Java\\lib\\ext"));
-                addJREPath(new File(systemRoot, "Oracle\\Java"));
-                addJREPath(new File(systemRoot, "Oracle\\Java\\lib"));
-                addJREPath(new File(systemRoot, "Oracle\\Java\\lib\\ext"));
-            }
-            break;
-        case Solaris:
-            // Solaris paths:
-            addJREPath(new File("/usr/jdk/packages"));
-            addJREPath(new File("/usr/jdk/packages/lib"));
-            addJREPath(new File("/usr/jdk/packages/lib/ext"));
-            break;
-        default:
-            break;
-        }
-
-        RT_JAR = RT_JARS.isEmpty() ? null : FastPathResolver.resolve(RT_JARS.iterator().next());
-    }
-
     /**
-     * Get the JRE "rt.jar" path.
+     * 获取 JRE "rt.jar" 路径
      *
-     * @return The path of rt.jar (in JDK 7 or 8), or null if it wasn't found (e.g. in JDK 9+).
+     * @return rt.jar 的路径(在 JDK 7 或 8 中)，如果未找到则返回 null(例如在 JDK 9+ 中)
      */
     public static String getJreRtJarPath() {
-        // Only include the first rt.jar -- if there is a copy in both the JDK and JRE, no need to scan both
+        // 仅包含第一个 rt.jar -- 如果 JDK 和 JRE 中各有一份副本，则无需扫描两者
         return RT_JAR;
     }
 
     /**
-     * Get the JRE "lib/" and "ext/" jar paths.
+     * 获取 JRE "lib/" 和 "ext/" JAR 路径
      *
-     * @return The paths for any jarfiles found in JRE/JDK "lib/" or "ext/" directories.
+     * @return 在 JRE/JDK "lib/" 或 "ext/" 目录中找到的所有 JAR 文件的路径
      */
     public static Set<String> getJreLibOrExtJars() {
         return JRE_LIB_OR_EXT_JARS;

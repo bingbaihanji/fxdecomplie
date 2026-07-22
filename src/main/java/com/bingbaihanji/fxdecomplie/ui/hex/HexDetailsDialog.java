@@ -132,7 +132,7 @@ public final class HexDetailsDialog {
 
         String selectionLine = selectionStart >= 0 && selectionEnd >= selectionStart
                 ? "0x" + hex(selectionStart, 8) + " - 0x" + hex(selectionEnd, 8)
-                  + " (" + (selectionEnd - selectionStart + 1) + " bytes)"
+                + " (" + (selectionEnd - selectionStart + 1) + " bytes)"
                 : tr("hex.details.none", "None");
         String regionLine = path == null || path.isBlank()
                 ? tr("hex.details.none", "None")

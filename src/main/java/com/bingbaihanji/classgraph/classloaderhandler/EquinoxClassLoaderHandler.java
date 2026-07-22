@@ -39,52 +39,22 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 从 Eclipse Equinox ClassLoader 提取类路径条目。
+ * 从 Eclipse Equinox ClassLoader 提取类路径条目
  */
 class EquinoxClassLoaderHandler implements ClassLoaderHandler {
-    /** 字段名。 */
+    /** 字段名 */
     private static final String[] FIELD_NAMES = {"cp", "nestedDirName"};
     /**
-     * 如果已读取系统包则为 true。我们假设类路径上只有一个系统包，因此这是静态的。
+     * 如果已读取系统包则为 true我们假设类路径上只有一个系统包，因此这是静态的
      */
     private static boolean alreadyReadSystemBundles;
 
-    /** 类不可构造。 */
+    /** 类不可构造 */
     public EquinoxClassLoaderHandler() {
     }
 
     /**
-     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
-     *
-     * @param classLoaderClass
-     *            {@link ClassLoader} 类或其超类。
-     * @param log
-     *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
-     */
-    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
-        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "org.eclipse.osgi.internal.loader.EquinoxClassLoader");
-    }
-
-    /**
-     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
-     *
-     * @param classLoader
-     *            要查找委托顺序的 {@link ClassLoader}。
-     * @param classLoaderOrder
-     *            要更新的 {@link ClassLoaderOrder} 对象。
-     * @param log
-     *            日志
-     */
-    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-                                            final LogNode log) {
-        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
-        classLoaderOrder.add(classLoader, log);
-    }
-
-    /**
-     * 添加包文件。
+     * 添加包文件
      *
      * @param bundlefile
      *            包文件
@@ -146,7 +116,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 添加类路径条目。
+     * 添加类路径条目
      *
      * @param owner
      *            所有者
@@ -175,19 +145,52 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 查找关联 {@link ClassLoader} 的类路径条目。
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}
+     *
+     * @param classLoaderClass
+     *            {@link ClassLoader} 类或其超类
+     * @param log
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     */
+    @Override
+    public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
+                "org.eclipse.osgi.internal.loader.EquinoxClassLoader");
+    }
+
+    /**
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序
      *
      * @param classLoader
-     *            要查找类路径条目顺序的 {@link ClassLoader}。
-     * @param classpathOrder
-     *            要更新的 {@link ClasspathOrder} 对象。
-     * @param scanSpec
-     *            {@link ScanSpec}。
+     *            要查找委托顺序的 {@link ClassLoader}
+     * @param classLoaderOrder
+     *            要更新的 {@link ClassLoaderOrder} 对象
      * @param log
-     *            日志。
+     *            日志
      */
-    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                          final ScanSpec scanSpec, final LogNode log) {
+    @Override
+    public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                     final LogNode log) {
+        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
+        classLoaderOrder.add(classLoader, log);
+    }
+
+    /**
+     * 查找关联 {@link ClassLoader} 的类路径条目
+     *
+     * @param classLoader
+     *            要查找类路径条目顺序的 {@link ClassLoader}
+     * @param classpathOrder
+     *            要更新的 {@link ClasspathOrder} 对象
+     * @param scanSpec
+     *            {@link ScanSpec}
+     * @param log
+     *            日志
+     */
+    @Override
+    public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                   final ScanSpec scanSpec, final LogNode log) {
         // 类型 ClasspathManager
         final Object manager = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "manager");
         addClasspathEntries(manager, classLoader, classpathOrder, scanSpec, log);
@@ -201,7 +204,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                 addClasspathEntries(fragment, classLoader, classpathOrder, scanSpec, log);
             }
         }
-        // 仅读取系统包一次（所有包对此应给出相同结果）。
+        // 仅读取系统包一次(所有包对此应给出相同结果)
         if (!alreadyReadSystemBundles) {
             // 类型 BundleLoader
             final Object delegate = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "delegate");
@@ -218,7 +221,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
             // 类型 HashMap<Integer, EquinoxModule>
             final Object modulesById = classpathOrder.reflectionUtils.getFieldVal(false, moduleDatabase,
                     "modulesById");
-            // 类型 EquinoxSystemModule（模块 0 始终是系统模块）
+            // 类型 EquinoxSystemModule(模块 0 始终是系统模块)
             final Object module0 = classpathOrder.reflectionUtils.invokeMethod(false, modulesById, "get",
                     Object.class, 0L);
             // 类型 Bundle

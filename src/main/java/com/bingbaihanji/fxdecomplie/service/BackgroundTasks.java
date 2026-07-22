@@ -53,7 +53,7 @@ public final class BackgroundTasks {
         };
     }
 
-    /** 提交到 INTERACTIVE 池（向后兼容） */
+    /** 提交到 INTERACTIVE 池(向后兼容) */
     public static Future<?> run(String name, Runnable task) {
         return run(PoolType.INTERACTIVE, name, task, null);
     }

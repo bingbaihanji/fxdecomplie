@@ -26,14 +26,14 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-/** A named object. */
+/** 具有名称的对象 */
 public interface HasName {
     /**
-     * Get the name.
+     * 获取名称
      *
-     * @return The name.
+     * @return 名称
      */
     String getName();
 }

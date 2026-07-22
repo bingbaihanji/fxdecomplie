@@ -26,33 +26,32 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 import java.lang.reflect.Field;
 
 /**
- * Class for wrapping an enum constant value (split into class name and constant name), as used as an annotation
- * parameter value.
+ * 用于包装枚举常量值(拆分为类名和常量名)的类，作为注解参数值使用
  */
 public class AnnotationEnumValue extends ScanResultObject implements Comparable<AnnotationEnumValue> {
-    /** The class name. */
+    /** 类名 */
     private String className;
 
-    /** The value name. */
+    /** 值名称 */
     private String valueName;
 
-    /** Default constructor for deserialization. */
+    /** 用于反序列化的默认构造函数 */
     AnnotationEnumValue() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param className
-     *            The enum class name.
+     *            枚举类名
      * @param constValueName
-     *            The enum const value name.
+     *            枚举常量值名称
      */
     AnnotationEnumValue(final String className, final String constValueName) {
         super();
@@ -63,9 +62,9 @@ public class AnnotationEnumValue extends ScanResultObject implements Comparable<
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the class name.
+     * 获取类名
      *
-     * @return The name of the enum class.
+     * @return 枚举类的名称
      */
     @Override
     public String getClassName() {
@@ -73,34 +72,31 @@ public class AnnotationEnumValue extends ScanResultObject implements Comparable<
     }
 
     /**
-     * Get the value name.
+     * 获取值名称
      *
-     * @return The name of the enum const value.
+     * @return 枚举常量值的名称
      */
     public String getValueName() {
         return valueName;
     }
 
     /**
-     * Get the name.
+     * 获取名称
      *
-     * @return The fully-qualified name of the enum constant value, i.e. ({@link #getClassName()} +
-     *         {#getValueName()}).
+     * @return 枚举常量值的完全限定名，即 ({@link #getClassName()} + {#getValueName()})
      */
     public String getName() {
         return className + "." + valueName;
     }
 
     /**
-     * Loads the enum class, instantiates the enum constants for the class, and returns the enum constant value
-     * represented by this {@link AnnotationEnumValue}.
-     * 
+     * 加载枚举类，实例化该类的枚举常量，并返回此 {@link AnnotationEnumValue} 所代表的枚举常量值
+     *
      * @param ignoreExceptions
-     *            If true, ignore classloading exceptions and return null on failure.
-     * @return The enum constant value represented by this {@link AnnotationEnumValue}
+     *            如果为 true，则忽略类加载异常，在失败时返回 null
+     * @return 此 {@link AnnotationEnumValue} 所代表的枚举常量值
      * @throws IllegalArgumentException
-     *             if the class could not be loaded and ignoreExceptions was false, or if the enum constant is
-     *             invalid.
+     *             如果类无法加载且 ignoreExceptions 为 false，或者枚举常量无效
      */
     public Object loadClassAndReturnEnumValue(final boolean ignoreExceptions) throws IllegalArgumentException {
         final Class<?> classRef = super.loadClass(ignoreExceptions);
@@ -131,12 +127,11 @@ public class AnnotationEnumValue extends ScanResultObject implements Comparable<
     }
 
     /**
-     * Loads the enum class, instantiates the enum constants for the class, and returns the enum constant value
-     * represented by this {@link AnnotationEnumValue}.
-     * 
-     * @return The enum constant value represented by this {@link AnnotationEnumValue}
+     * 加载枚举类，实例化该类的枚举常量，并返回此 {@link AnnotationEnumValue} 所代表的枚举常量值
+     *
+     * @return 此 {@link AnnotationEnumValue} 所代表的枚举常量值
      * @throws IllegalArgumentException
-     *             if the class could not be loaded, or the enum constant is invalid.
+     *             如果类无法加载，或枚举常量无效
      */
     public Object loadClassAndReturnEnumValue() throws IllegalArgumentException {
         return loadClassAndReturnEnumValue(/* ignoreExceptions = */ false);

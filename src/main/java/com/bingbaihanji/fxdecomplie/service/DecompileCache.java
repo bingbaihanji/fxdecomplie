@@ -4,7 +4,7 @@ import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
 import com.bingbaihanji.fxdecomplie.util.cache.LruCache;
 
 /**
- * L2 反编译源码内存缓存，按字节大小限制（50MB 上限），加权 LRU 淘汰
+ * L2 反编译源码内存缓存，按字节大小限制(50MB 上限)，加权 LRU 淘汰
  * 缓存键 = workspaceKey + internalName + engine + optionsHash
  * 引擎切换或反编译选项变更时自动失效
  *
@@ -49,11 +49,9 @@ public class DecompileCache {
      */
     public void invalidate(String workspaceKey, String internalName) {
         String prefix = workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP;
-        synchronized (cache) {
-            cache.snapshot().keySet().stream()
-                    .filter(k -> k.startsWith(prefix))
-                    .forEach(cache::remove);
-        }
+        cache.snapshot().keySet().stream()
+                .filter(k -> k.startsWith(prefix))
+                .forEach(cache::remove);
     }
 
     /** 清空所有内存缓存条目 */

@@ -41,52 +41,20 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * OSGi Felix ClassLoader 的自定义类加载器处理器。
+ * OSGi Felix ClassLoader 的自定义类加载器处理器
  *
  * <p>
- * 该处理器将包 JAR 及所有关联的 Bundle-Classpath JAR 添加到类路径中进行扫描。
+ * 该处理器将包 JAR 及所有关联的 Bundle-Classpath JAR 添加到类路径中进行扫描
  *
  * @author elrufaie
  */
 class FelixClassLoaderHandler implements ClassLoaderHandler {
-    /** 类不可构造。 */
+    /** 类不可构造 */
     public FelixClassLoaderHandler() {
     }
 
     /**
-     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
-     *
-     * @param classLoaderClass
-     *            {@link ClassLoader} 类或其超类。
-     * @param log
-     *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
-     */
-    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
-        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "org.apache.felix.framework.BundleWiringImpl$BundleClassLoaderJava5")
-                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "org.apache.felix.framework.BundleWiringImpl$BundleClassLoader");
-    }
-
-    /**
-     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
-     *
-     * @param classLoader
-     *            要查找委托顺序的 {@link ClassLoader}。
-     * @param classLoaderOrder
-     *            要更新的 {@link ClassLoaderOrder} 对象。
-     * @param log
-     *            日志
-     */
-    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-                                            final LogNode log) {
-        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
-        classLoaderOrder.add(classLoader, log);
-    }
-
-    /**
-     * 获取内容位置。
+     * 获取内容位置
      *
      * @param content
      *            内容对象
@@ -97,7 +65,7 @@ class FelixClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 添加包。
+     * 添加包
      *
      * @param bundleWiring
      *            包连接
@@ -147,25 +115,60 @@ class FelixClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 查找关联 {@link ClassLoader} 的类路径条目。
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}
+     *
+     * @param classLoaderClass
+     *            {@link ClassLoader} 类或其超类
+     * @param log
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     */
+    @Override
+    public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
+                "org.apache.felix.framework.BundleWiringImpl$BundleClassLoaderJava5")
+                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
+                "org.apache.felix.framework.BundleWiringImpl$BundleClassLoader");
+    }
+
+    /**
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序
      *
      * @param classLoader
-     *            要查找类路径条目顺序的 {@link ClassLoader}。
-     * @param classpathOrder
-     *            要更新的 {@link ClasspathOrder} 对象。
-     * @param scanSpec
-     *            {@link ScanSpec}。
+     *            要查找委托顺序的 {@link ClassLoader}
+     * @param classLoaderOrder
+     *            要更新的 {@link ClassLoaderOrder} 对象
      * @param log
-     *            日志。
+     *            日志
      */
-    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                          final ScanSpec scanSpec, final LogNode log) {
+    @Override
+    public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                     final LogNode log) {
+        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
+        classLoaderOrder.add(classLoader, log);
+    }
+
+    /**
+     * 查找关联 {@link ClassLoader} 的类路径条目
+     *
+     * @param classLoader
+     *            要查找类路径条目顺序的 {@link ClassLoader}
+     * @param classpathOrder
+     *            要更新的 {@link ClasspathOrder} 对象
+     * @param scanSpec
+     *            {@link ScanSpec}
+     * @param log
+     *            日志
+     */
+    @Override
+    public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                   final ScanSpec scanSpec, final LogNode log) {
         // 获取 ClassLoader 包的连接
         final Set<Object> bundles = new HashSet<>();
         final Object bundleWiring = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "m_wiring");
         addBundle(bundleWiring, classLoader, classpathOrder, bundles, scanSpec, log);
 
-        // 处理我们可能连接到的任何其他包。TODO：使用 ScanSpec 缩小我们跟踪的连接列表。
+        // 处理我们可能连接到的任何其他包TODO：使用 ScanSpec 缩小我们跟踪的连接列表
 
         final List<?> requiredWires = (List<?>) classpathOrder.reflectionUtils.invokeMethod(false, bundleWiring,
                 "getRequiredWires", String.class, null);

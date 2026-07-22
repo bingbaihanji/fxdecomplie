@@ -8,6 +8,7 @@ import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.CommentExportDecorator;
 import com.bingbaihanji.fxdecomplie.service.CommentManager;
 import com.bingbaihanji.fxdecomplie.service.DecompilerOptions;
+import com.bingbaihanji.fxdecomplie.service.reference.InheritanceReferenceIndexService;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceTabManager;
 import com.bingbaihanji.fxdecomplie.ui.WorkspaceView;
@@ -285,7 +286,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         scene.setFill(Color.web("#1e1e1e"));
         scene.getStylesheets().add(AppTheme.darkStylesheet());
 
-        // 全局快捷键（场景级，补充菜单 accelerator）
+        // 全局快捷键(场景级，补充菜单 accelerator)
         scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
             // Alt+← 后退
             if (e.getCode() == javafx.scene.input.KeyCode.LEFT && e.isAltDown()) {
@@ -395,6 +396,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
         tabManager.getWorkspaceViews().values().forEach(view -> {
             if (view != null && view.workspace() != null) {
+                InheritanceReferenceIndexService.invalidate(view.workspace());
                 view.workspace().close();
             }
         });
@@ -900,7 +902,7 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
         }
     }
 
-    /** 打开日志目录（查看日志按钮回调） */
+    /** 打开日志目录(查看日志按钮回调) */
     private void openLogDir() {
         try {
             if (!java.awt.Desktop.isDesktopSupported()) {

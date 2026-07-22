@@ -26,9 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,26 +37,23 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-/** A ModuleReader proxy, written using reflection to preserve backwards compatibility with JDK 7 and 8. */
+/** ModuleReader 代理，使用反射编写以保持与 JDK 7 和 8 的向后兼容性 */
 public class ModuleReaderProxy implements Closeable {
-    /** The module reader. */
-    private final AutoCloseable moduleReader;
-
     /** Class<Collector> collectorClass = Class.forName("java.util.stream.Collector"); */
     private static Class<?> collectorClass;
-
     /** Collector<Object, ?, List<Object>> collectorsToList = Collectors.toList(); */
     private static Object collectorsToList;
-
+    /** 模块读取器 */
+    private final AutoCloseable moduleReader;
     private ReflectionUtils reflectionUtils;
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param moduleRef
-     *            the module ref
+     *            模块引用
      * @throws IOException
-     *             If an I/O exception occurs.
+     *             如果发生 I/O 异常
      */
     ModuleReaderProxy(final ModuleRef moduleRef) throws IOException {
         try {
@@ -72,113 +69,111 @@ public class ModuleReaderProxy implements Closeable {
             moduleReader = (AutoCloseable) reflectionUtils.invokeMethod(/* throwException = */ true,
                     moduleRef.getReference(), "open");
             if (moduleReader == null) {
-                throw new IllegalArgumentException("moduleReference.open() should not return null");
+                throw new IllegalArgumentException("moduleReference.open() 不应返回 null");
             }
         } catch (final SecurityException e) {
-            throw new IOException("Could not open module " + moduleRef.getName(), e);
+            throw new IOException("无法打开模块 " + moduleRef.getName(), e);
         }
     }
 
-    /** Calls ModuleReader#close(). */
+    /** 调用 ModuleReader#close() */
     @Override
     public void close() {
         try {
             moduleReader.close();
         } catch (final Exception e) {
-            // Ignore
+            // 忽略
         }
     }
 
     /**
-     * Get the list of resources accessible to a ModuleReader.
-     * 
-     * From the documentation for ModuleReader#list(): "Whether the stream of elements includes names corresponding
-     * to directories in the module is module reader specific. In lazy implementations then an IOException may be
-     * thrown when using the stream to list the module contents. If this occurs then the IOException will be wrapped
-     * in an java.io.UncheckedIOException and thrown from the method that caused the access to be attempted.
-     * SecurityException may also be thrown when using the stream to list the module contents and access is denied
-     * by the security manager."
-     * 
-     * @return A list of the paths of resources in the module.
+     * 获取 ModuleReader 可访问的资源列表
+     *
+     * 来自 ModuleReader#list() 的文档说明："元素的流是否包含与模块中目录相对应的名称取决于
+     * 具体的模块读取器实现在惰性实现中，当使用流列出模块内容时可能会抛出 IOException
+     * 如果发生这种情况，IOException 将被包装在 java.io.UncheckedIOException 中，
+     * 并从导致访问尝试的方法中抛出当使用流列出模块内容且安全管理器拒绝访问时，
+     * 也可能抛出 SecurityException"
+     *
+     * @return 模块中资源路径的列表
      * @throws SecurityException
-     *             If the module cannot be accessed.
+     *             如果无法访问模块
      */
     public List<String> list() throws SecurityException {
         if (collectorsToList == null) {
-            throw new IllegalArgumentException("Could not call Collectors.toList()");
+            throw new IllegalArgumentException("无法调用 Collectors.toList()");
         }
         final Object /* Stream<String> */ resourcesStream = reflectionUtils
                 .invokeMethod(/* throwException = */ true, moduleReader, "list");
         if (resourcesStream == null) {
-            throw new IllegalArgumentException("Could not call moduleReader.list()");
+            throw new IllegalArgumentException("无法调用 moduleReader.list()");
         }
         final Object resourcesList = reflectionUtils.invokeMethod(/* throwException = */ true, resourcesStream,
                 "collect", collectorClass, collectorsToList);
         if (resourcesList == null) {
-            throw new IllegalArgumentException("Could not call moduleReader.list().collect(Collectors.toList())");
+            throw new IllegalArgumentException("无法调用 moduleReader.list().collect(Collectors.toList())");
         }
-        @SuppressWarnings("unchecked")
-        final List<String> resourcesListTyped = (List<String>) resourcesList;
+        @SuppressWarnings("unchecked") final List<String> resourcesListTyped = (List<String>) resourcesList;
         return resourcesListTyped;
     }
 
     /**
-     * Use the proxied ModuleReader to open the named resource as an InputStream.
-     * 
+     * 使用代理的 ModuleReader 以 InputStream 形式打开指定名称的资源
+     *
      * @param path
-     *            The path to the resource to open.
-     * 
-     * @return An {@link InputStream} for the content of the resource.
+     *            要打开的资源的路径
+     *
+     * @return 资源内容的 {@link InputStream}
      * @throws SecurityException
-     *             If the module cannot be accessed.
+     *             如果无法访问模块
      * @throws IllegalArgumentException
-     *             If the module cannot be accessed.
+     *             如果无法访问模块
      */
     public InputStream open(final String path) throws SecurityException {
         final Object /* Optional<InputStream> */ optionalInputStream = reflectionUtils
                 .invokeMethod(/* throwException = */ true, moduleReader, "open", String.class, path);
         if (optionalInputStream == null) {
-            throw new IllegalArgumentException("Got null result from ModuleReader#open for path " + path);
+            throw new IllegalArgumentException("ModuleReader#open 对路径 " + path + " 返回了 null 结果");
         }
         final InputStream inputStream = (InputStream) reflectionUtils.invokeMethod(/* throwException = */ true,
                 optionalInputStream, "get");
         if (inputStream == null) {
-            throw new IllegalArgumentException("Got null result from ModuleReader#open(String)#get()");
+            throw new IllegalArgumentException("ModuleReader#open(String)#get() 返回了 null 结果");
         }
         return inputStream;
     }
 
     /**
-     * Use the proxied ModuleReader to open the named resource as a ByteBuffer. Call {@link #release(ByteBuffer)}
-     * when you have finished with the ByteBuffer.
-     * 
+     * 使用代理的 ModuleReader 以 ByteBuffer 形式打开指定名称的资源
+     * 使用完 ByteBuffer 后请调用 {@link #release(ByteBuffer)}
+     *
      * @param path
-     *            The path to the resource to open.
-     * @return A {@link ByteBuffer} for the content of the resource.
+     *            要打开的资源的路径
+     * @return 资源内容的 {@link ByteBuffer}
      * @throws SecurityException
-     *             If the module cannot be accessed.
+     *             如果无法访问模块
      * @throws OutOfMemoryError
-     *             if the resource is larger than 2GB, the maximum capacity of a byte buffer.
+     *             如果资源大于 2GB(字节缓冲区的最大容量)
      */
     public ByteBuffer read(final String path) throws SecurityException, OutOfMemoryError {
         final Object /* Optional<ByteBuffer> */ optionalByteBuffer = reflectionUtils
                 .invokeMethod(/* throwException = */ true, moduleReader, "read", String.class, path);
         if (optionalByteBuffer == null) {
-            throw new IllegalArgumentException("Got null result from ModuleReader#read(String)");
+            throw new IllegalArgumentException("ModuleReader#read(String) 返回了 null 结果");
         }
         final ByteBuffer byteBuffer = (ByteBuffer) reflectionUtils.invokeMethod(/* throwException = */ true,
                 optionalByteBuffer, "get");
         if (byteBuffer == null) {
-            throw new IllegalArgumentException("Got null result from ModuleReader#read(String).get()");
+            throw new IllegalArgumentException("ModuleReader#read(String).get() 返回了 null 结果");
         }
         return byteBuffer;
     }
 
     /**
-     * Release a {@link ByteBuffer} allocated by calling {@link #read(String)}.
-     * 
+     * 释放通过调用 {@link #read(String)} 分配的 {@link ByteBuffer}
+     *
      * @param byteBuffer
-     *            The {@link ByteBuffer} to release.
+     *            要释放的 {@link ByteBuffer}
      */
     public void release(final ByteBuffer byteBuffer) {
         reflectionUtils.invokeMethod(/* throwException = */ true, moduleReader, "release", ByteBuffer.class,
@@ -186,23 +181,23 @@ public class ModuleReaderProxy implements Closeable {
     }
 
     /**
-     * Use the proxied ModuleReader to find the named resource as a URI.
+     * 使用代理的 ModuleReader 以 URI 形式查找指定名称的资源
      *
      * @param path
-     *            The path to the resource to open.
-     * @return A {@link URI} for the resource.
+     *            要打开的资源的路径
+     * @return 资源的 {@link URI}
      * @throws SecurityException
-     *             If the module cannot be accessed.
+     *             如果无法访问模块
      */
     public URI find(final String path) {
         final Object /* Optional<URI> */ optionalURI = reflectionUtils.invokeMethod(/* throwException = */ true,
                 moduleReader, "find", String.class, path);
         if (optionalURI == null) {
-            throw new IllegalArgumentException("Got null result from ModuleReader#find(String)");
+            throw new IllegalArgumentException("ModuleReader#find(String) 返回了 null 结果");
         }
         final URI uri = (URI) reflectionUtils.invokeMethod(/* throwException = */ true, optionalURI, "get");
         if (uri == null) {
-            throw new IllegalArgumentException("Got null result from ModuleReader#find(String).get()");
+            throw new IllegalArgumentException("ModuleReader#find(String).get() 返回了 null 结果");
         }
         return uri;
     }

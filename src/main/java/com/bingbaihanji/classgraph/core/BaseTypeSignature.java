@@ -26,167 +26,210 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.Parser;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** A type signature for a base type (byte, char, double, float, int, long, short, boolean, or void). */
+/** 基本类型(byte、char、double、float、int、long、short、boolean 或 void)的类型签名 */
 public class BaseTypeSignature extends TypeSignature {
-    /** The type signature character used to represent the base type. */
+    /** 用于表示基本类型的类型签名字符 */
     private final char typeSignatureChar;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      */
     BaseTypeSignature(final char typeSignatureChar) {
         super();
         switch (typeSignatureChar) {
-        case 'B':
-        case 'C':
-        case 'D':
-        case 'F':
-        case 'I':
-        case 'J':
-        case 'S':
-        case 'Z':
-        case 'V':
-            this.typeSignatureChar = typeSignatureChar;
-            break;
-        default:
-            throw new IllegalArgumentException(
-                    "Illegal " + BaseTypeSignature.class.getSimpleName() + " type: '" + typeSignatureChar + "'");
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'F':
+            case 'I':
+            case 'J':
+            case 'S':
+            case 'Z':
+            case 'V':
+                this.typeSignatureChar = typeSignatureChar;
+                break;
+            default:
+                throw new IllegalArgumentException(
+                        "Illegal " + BaseTypeSignature.class.getSimpleName() + " type: '" + typeSignatureChar + "'");
         }
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the name of the type as a string.
+     * 以字符串形式获取类型名称
      *
      * @param typeChar
-     *            the type character, e.g. 'I'.
-     * @return The name of the type, e.g. "int", or null if there was no match.
+     *            类型字符，例如 'I'
+     * @return 类型名称，例如 "int"，如果没有匹配则返回 null
      */
     static String getTypeStr(final char typeChar) {
         switch (typeChar) {
-        case 'B':
-            return "byte";
-        case 'C':
-            return "char";
-        case 'D':
-            return "double";
-        case 'F':
-            return "float";
-        case 'I':
-            return "int";
-        case 'J':
-            return "long";
-        case 'S':
-            return "short";
-        case 'Z':
-            return "boolean";
-        case 'V':
-            return "void";
-        default:
-            return null;
+            case 'B':
+                return "byte";
+            case 'C':
+                return "char";
+            case 'D':
+                return "double";
+            case 'F':
+                return "float";
+            case 'I':
+                return "int";
+            case 'J':
+                return "long";
+            case 'S':
+                return "short";
+            case 'Z':
+                return "boolean";
+            case 'V':
+                return "void";
+            default:
+                return null;
         }
     }
 
     /**
-     * Get the name of the type as a string.
+     * 以字符串形式获取类型名称
      *
      * @param typeStr
-     *            the type character, e.g. "int".
-     * @return The type, character, e.g. 'I', or '\0' if there was no match.
+     *            类型字符，例如 "int"
+     * @return 类型字符，例如 'I'，如果没有匹配则返回 '\0'
      */
     static char getTypeChar(final String typeStr) {
         switch (typeStr) {
-        case "byte":
-            return 'B';
-        case "char":
-            return 'C';
-        case "double":
-            return 'D';
-        case "float":
-            return 'F';
-        case "int":
-            return 'I';
-        case "long":
-            return 'J';
-        case "short":
-            return 'S';
-        case "boolean":
-            return 'Z';
-        case "void":
-            return 'V';
-        default:
-            return '\0';
+            case "byte":
+                return 'B';
+            case "char":
+                return 'C';
+            case "double":
+                return 'D';
+            case "float":
+                return 'F';
+            case "int":
+                return 'I';
+            case "long":
+                return 'J';
+            case "short":
+                return 'S';
+            case "boolean":
+                return 'Z';
+            case "void":
+                return 'V';
+            default:
+                return '\0';
         }
     }
 
     /**
-     * Get the type for a type character.
+     * 根据类型字符获取对应的类型
      *
      * @param typeChar
-     *            the type character, e.g. 'I'.
-     * @return The type class, e.g. int.class, or null if there was no match.
+     *            类型字符，例如 'I'
+     * @return 类型类，例如 int.class，如果没有匹配则返回 null
      */
     static Class<?> getType(final char typeChar) {
         switch (typeChar) {
-        case 'B':
-            return byte.class;
-        case 'C':
-            return char.class;
-        case 'D':
-            return double.class;
-        case 'F':
-            return float.class;
-        case 'I':
-            return int.class;
-        case 'J':
-            return long.class;
-        case 'S':
-            return short.class;
-        case 'Z':
-            return boolean.class;
-        case 'V':
-            return void.class;
-        default:
-            return null;
+            case 'B':
+                return byte.class;
+            case 'C':
+                return char.class;
+            case 'D':
+                return double.class;
+            case 'F':
+                return float.class;
+            case 'I':
+                return int.class;
+            case 'J':
+                return long.class;
+            case 'S':
+                return short.class;
+            case 'Z':
+                return boolean.class;
+            case 'V':
+                return void.class;
+            default:
+                return null;
         }
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the type signature char used to represent the type, e.g. 'I' for int.
-     * 
-     * @return the type signature char, as a one-char String.
+     * 解析基本类型
+     *
+     * @param parser
+     *            解析器
+     * @return 基本类型签名
+     */
+    static BaseTypeSignature parse(final Parser parser) {
+        switch (parser.peek()) {
+            case 'B':
+                parser.next();
+                return new BaseTypeSignature('B');
+            case 'C':
+                parser.next();
+                return new BaseTypeSignature('C');
+            case 'D':
+                parser.next();
+                return new BaseTypeSignature('D');
+            case 'F':
+                parser.next();
+                return new BaseTypeSignature('F');
+            case 'I':
+                parser.next();
+                return new BaseTypeSignature('I');
+            case 'J':
+                parser.next();
+                return new BaseTypeSignature('J');
+            case 'S':
+                parser.next();
+                return new BaseTypeSignature('S');
+            case 'Z':
+                parser.next();
+                return new BaseTypeSignature('Z');
+            case 'V':
+                parser.next();
+                return new BaseTypeSignature('V');
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * 获取用于表示类型的类型签名字符，例如 'I' 表示 int
+     *
+     * @return 类型签名字符，作为一个单字符 String
      */
     public char getTypeSignatureChar() {
         return typeSignatureChar;
     }
 
     /**
-     * Get the name of the type as a string.
+     * 以字符串形式获取类型名称
      *
-     * @return The name of the type, such as "int", "float", or "void".
+     * @return 类型名称，例如 "int"、"float" 或 "void"
      */
     public String getTypeStr() {
         return getTypeStr(typeSignatureChar);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the type.
+     * 获取类型
      *
-     * @return The class of the base type, such as int.class, float.class, or void.class.
+     * @return 基本类型的类，例如 int.class、float.class 或 void.class
      */
     public Class<?> getType() {
         return getType(typeSignatureChar);
@@ -199,18 +242,18 @@ public class BaseTypeSignature extends TypeSignature {
         addTypeAnnotation(annotationInfo);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#loadClass()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#loadClass()
      */
     @Override
     Class<?> loadClass() {
         return getType();
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#loadClass(java.lang.Class)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#loadClass(java.lang.Class)
      */
     @Override
     <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
@@ -219,58 +262,14 @@ public class BaseTypeSignature extends TypeSignature {
             throw new IllegalArgumentException("Primitive class " + getTypeStr() + " cannot be cast to "
                     + superclassOrInterfaceType.getName());
         }
-        @SuppressWarnings("unchecked")
-        final Class<T> classT = (Class<T>) type;
+        @SuppressWarnings("unchecked") final Class<T> classT = (Class<T>) type;
         return classT;
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /**
-     * Parse a base type.
-     *
-     * @param parser
-     *            the parser
-     * @return the base type signature
-     */
-    static BaseTypeSignature parse(final Parser parser) {
-        switch (parser.peek()) {
-        case 'B':
-            parser.next();
-            return new BaseTypeSignature('B');
-        case 'C':
-            parser.next();
-            return new BaseTypeSignature('C');
-        case 'D':
-            parser.next();
-            return new BaseTypeSignature('D');
-        case 'F':
-            parser.next();
-            return new BaseTypeSignature('F');
-        case 'I':
-            parser.next();
-            return new BaseTypeSignature('I');
-        case 'J':
-            parser.next();
-            return new BaseTypeSignature('J');
-        case 'S':
-            parser.next();
-            return new BaseTypeSignature('S');
-        case 'Z':
-            parser.next();
-            return new BaseTypeSignature('Z');
-        case 'V':
-            parser.next();
-            return new BaseTypeSignature('V');
-        default:
-            return null;
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -278,7 +277,7 @@ public class BaseTypeSignature extends TypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -286,28 +285,27 @@ public class BaseTypeSignature extends TypeSignature {
     }
 
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 获取类型签名中引用的所有类名称
      *
      * @param refdClassNames
-     *            the referenced class names.
+     *            被引用的类名称集合
      */
     @Override
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
-        // Don't add byte.class, int.class, etc. 
+        // 不添加 byte.class、int.class 等
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
-        // Don't set ScanResult for BaseTypeSignature objects (#419).
-        // The ScanResult is not needed, since this class does not classload through the ScanResult.
-        // Also, specific instances of BaseTypeSignature for each primitive type are assigned to static fields
-        // in this class, which are shared across all usages of this class, so they should not contain any
-        // values that are specific to a given ScanResult. Setting the ScanResult from different scan processes
-        // would cause the scanResult field to only reflect the result of the most recent scan, and the reference
-        // to that scan would prevent garbage collection.
+        // 不为 BaseTypeSignature 对象设置 ScanResult(#419)
+        // 不需要 ScanResult，因为此类不通过 ScanResult 进行类加载
+        // 此外，每个基本类型的 BaseTypeSignature 特定实例被赋值给此类中的静态字段，
+        // 这些字段在此类的所有使用中共享，因此不应包含任何特定于某个 ScanResult 的值
+        // 从不同的扫描过程设置 ScanResult 将导致 scanResult 字段仅反映最近一次扫描的结果，
+        // 并且对该扫描的引用将阻止垃圾回收
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -336,7 +334,7 @@ public class BaseTypeSignature extends TypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.TypeSignature#equalsIgnoringTypeParams(io.github.classgraph.TypeSignature)
+     * @see com.bingbaihanji.classgraph.core.TypeSignature#equalsIgnoringTypeParams(com.bingbaihanji.classgraph.core.TypeSignature)
      */
     @Override
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
@@ -350,7 +348,7 @@ public class BaseTypeSignature extends TypeSignature {
 
     @Override
     protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
+                                    final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
                 if (annotationsToExclude == null || !annotationsToExclude.contains(annotationInfo)) {

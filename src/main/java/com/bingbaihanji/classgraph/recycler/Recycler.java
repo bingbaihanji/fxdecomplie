@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.recycler;
+package com.bingbaihanji.classgraph.recycler;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,53 +36,50 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Recycler for instances of type T, where instantiating this type may throw checked exception E.
- * 
+ * 用于类型 T 的实例回收器，其中实例化该类型可能抛出受检异常 E
+ *
  * @param <T>
- *            The type to recycle.
+ *            要回收的类型
  * @param <E>
- *            An exception that can be thrown while acquiring an instance of the type to recycle, or
- *            {@link RuntimeException} if none.
+ *            获取要回收类型的实例时可能抛出的异常，如果没有则为 {@link RuntimeException}
  */
 public abstract class Recycler<T, E extends Exception> implements AutoCloseable {
-    /** Instances that have been allocated. */
+    /** 已分配的实例 */
     private final Set<T> usedInstances = Collections.newSetFromMap(new ConcurrentHashMap<T, Boolean>());
 
-    /** Instances that have been allocated but are unused. */
+    /** 已分配但尚未使用的实例 */
     private final Queue<T> unusedInstances = new ConcurrentLinkedQueue<>();
 
     /**
-     * Create a new instance. This should either return a non-null instance of type T, or throw an exception of type
-     * E.
-     * 
-     * @return The new instance.
+     * 创建一个新实例此方法应返回一个非 null 的类型 T 实例，或者抛出一个类型为 E 的异常
+     *
+     * @return 新实例
      * @throws E
-     *             If an exception of type E was thrown during instantiation.
+     *             如果在实例化期间抛出了类型为 E 的异常
      */
     public abstract T newInstance() throws E;
 
     /**
-     * Acquire on object instance of type T, either by reusing a previously recycled instance if possible, or if
-     * there are no currently-unused instances, by allocating a new instance.
-     * 
-     * @return Either a new or a recycled object instance.
+     * 获取一个类型 T 的对象实例，如果可能则重用之前回收的实例，如果没有当前未使用的实例，则分配一个新实例
+     *
+     * @return 一个新的或回收的对象实例
      * @throws E
-     *             if {@link #newInstance()} threw an exception of type E.
+     *             如果 {@link #newInstance()} 抛出了类型为 E 的异常
      * @throws NullPointerException
-     *             if {@link #newInstance()} returned null.
+     *             如果 {@link #newInstance()} 返回了 null
      */
     public T acquire() throws E {
         final T instance;
         final T recycledInstance = unusedInstances.poll();
         if (recycledInstance == null) {
-            // Allocate a new instance -- may throw an exception of type E
+            // 分配一个新实例——可能抛出类型为 E 的异常
             final T newInstance = newInstance();
             if (newInstance == null) {
                 throw new NullPointerException("Failed to allocate a new recyclable instance");
             }
             instance = newInstance;
         } else {
-            // Reuse an unused instance
+            // 重用未使用的实例
             instance = recycledInstance;
         }
         usedInstances.add(instance);
@@ -90,25 +87,24 @@ public abstract class Recycler<T, E extends Exception> implements AutoCloseable 
     }
 
     /**
-     * Acquire a Recyclable wrapper around an object instance, which can be used to recycle object instances at the
-     * end of a try-with-resources block.
-     * 
-     * @return Either a new or a recycled object instance.
+     * 获取一个围绕对象实例的可回收包装器，可用于在 try-with-resources 块结束时回收对象实例
+     *
+     * @return 一个新的或回收的对象实例
      * @throws E
-     *             If anything goes wrong when trying to allocate a new object instance.
+     *             如果在尝试分配新对象实例时出现问题
      */
     public RecycleOnClose<T, E> acquireRecycleOnClose() throws E {
         return new RecycleOnClose<>(this, acquire());
     }
 
     /**
-     * Recycle an object for reuse by a subsequent call to {@link #acquire()}. If the object is an instance of
-     * {@link Resettable}, then {@link Resettable#reset()} will be called on the instance before recycling it.
+     * 回收一个对象，供后续调用 {@link #acquire()} 重用如果该对象是 {@link Resettable} 的实例，则在回收之前会对其调用
+     * {@link Resettable#reset()}
      *
      * @param instance
-     *            the instance to recycle.
+     *            要回收的实例
      * @throws IllegalArgumentException
-     *             if the object instance was not originally obtained from this {@link Recycler}.
+     *             如果该对象实例最初并非从此 {@link Recycler} 获取
      */
     public final void recycle(final T instance) {
         if (instance != null) {
@@ -125,34 +121,32 @@ public abstract class Recycler<T, E extends Exception> implements AutoCloseable 
     }
 
     /**
-     * Free all unused instances. Calls {@link AutoCloseable#close()} on any unused instances that implement
-     * {@link AutoCloseable}.
-     * 
+     * 释放所有未使用的实例对任何实现了 {@link AutoCloseable} 的未使用实例调用
+     * {@link AutoCloseable#close()}
+     *
      * <p>
-     * The {@link Recycler} may continue to be used to acquire new instances after calling this close method, and
-     * then this close method may be called again in future, i.e. the effect of calling this method is to simply
-     * clear out the recycler of unused instances, closing any {@link AutoCloseable} instances.
+     * 在调用此 close 方法后，{@link Recycler} 仍可继续用于获取新实例，并且此 close 方法将来可再次调用，
+     * 即调用此方法的效果就是简单地清空回收器中未使用的实例，并关闭任何 {@link AutoCloseable} 实例
      */
     @Override
     public void close() {
-        for (T unusedInstance; (unusedInstance = unusedInstances.poll()) != null;) {
+        for (T unusedInstance; (unusedInstance = unusedInstances.poll()) != null; ) {
             if (unusedInstance instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) unusedInstance).close();
                 } catch (final Exception e) {
-                    // Ignore
+                    // 忽略
                 }
             }
         }
     }
 
     /**
-     * Force-close this {@link Recycler}, by forcibly moving any instances that have been acquired but not yet
-     * recycled into the unused instances list, then calling {@link #close()} to close any {@link AutoCloseable}
-     * instances and discard all instances.
+     * 强制关闭此 {@link Recycler}，将所有已获取但尚未回收的实例强制移动到未使用实例列表中，然后调用
+     * {@link #close()} 关闭任何 {@link AutoCloseable} 实例并丢弃所有实例
      */
     public void forceClose() {
-        // Move all elements from usedInstances to unusedInstances in a threadsafe way
+        // 以线程安全的方式将所有元素从 usedInstances 移动到 unusedInstances
         for (final T usedInstance : new ArrayList<>(usedInstances)) {
             if (usedInstances.remove(usedInstance)) {
                 unusedInstances.add(usedInstance);

@@ -84,7 +84,7 @@ public final class FindUsageDialog {
                     setText(result.sourcePath().isBlank()
                             ? result.displayText()
                             : result.sourcePath() + ":" + result.lineNumber()
-                              + "  " + result.displayText());
+                            + "  " + result.displayText());
                 }
             }
         });

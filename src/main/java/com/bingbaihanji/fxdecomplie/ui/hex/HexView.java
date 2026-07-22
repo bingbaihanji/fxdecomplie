@@ -53,35 +53,6 @@ public class HexView extends Region {
     private final HighlightModel highlights;
     private final SearchModel search;
     private final PatternModel patternModel;
-
-    // ---------- 数据与度量 ----------
-    private HexDataProvider provider = new ByteArrayProvider(new byte[0]);
-    private HexViewMetrics metrics;
-
-    // ---------- UI 组件 ----------
-    private Canvas canvas;
-    private ScrollBar scrollBar;
-    private HexGridRenderer gridRenderer;
-    private MiniMapRenderer miniMapRenderer;
-
-    // ---------- 滚动状态 ----------
-    private long scrollRow = 0;
-    private long totalRows = 0;
-
-    // ---------- 搜索 / 跳转 UI ----------
-    private TextField searchField;
-    private TextField gotoField;
-
-    // ---------- 选择拖拽状态 ----------
-    private boolean dragging = false;
-
-    // ---------- 悬停跟踪(用于工具提示) ----------
-    private long hoveredAddress = -1;
-    private double hoverMouseX, hoverMouseY;
-    private BiConsumer<Long, Integer> onHoverCallback;
-
-    // ---------- 渲染控制 ----------
-    private volatile boolean dirty = true;
     private final Pane canvasPane = new Pane() {
         @Override
         public boolean isResizable() {
@@ -94,6 +65,28 @@ public class HexView extends Region {
             markDirty();
         }
     };
+    // ---------- 数据与度量 ----------
+    private HexDataProvider provider = new ByteArrayProvider(new byte[0]);
+    private HexViewMetrics metrics;
+    // ---------- UI 组件 ----------
+    private Canvas canvas;
+    private ScrollBar scrollBar;
+    private HexGridRenderer gridRenderer;
+    private MiniMapRenderer miniMapRenderer;
+    // ---------- 滚动状态 ----------
+    private long scrollRow = 0;
+    private long totalRows = 0;
+    // ---------- 搜索 / 跳转 UI ----------
+    private TextField searchField;
+    private TextField gotoField;
+    // ---------- 选择拖拽状态 ----------
+    private boolean dragging = false;
+    // ---------- 悬停跟踪(用于工具提示) ----------
+    private long hoveredAddress = -1;
+    private double hoverMouseX, hoverMouseY;
+    private BiConsumer<Long, Integer> onHoverCallback;
+    // ---------- 渲染控制 ----------
+    private volatile boolean dirty = true;
     private AnimationTimer renderTimer;
 
     // ---------- 构造方法 ----------

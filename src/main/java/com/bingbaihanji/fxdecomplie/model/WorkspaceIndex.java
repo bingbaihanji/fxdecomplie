@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 
 /**
  * 基于文件树构建的工作区全局索引
@@ -44,6 +45,11 @@ public final class WorkspaceIndex {
      * @return 构建完成的工作区索引
      */
     public static WorkspaceIndex build(FileTreeModel root) {
+        return build(root, null);
+    }
+
+    public static WorkspaceIndex build(FileTreeModel root,
+                                       Consumer<BuildProgress> progressListener) {
         List<FileTreeNode> nodes = new ArrayList<>();
         ArrayDeque<FileTreeModel> queue = new ArrayDeque<>();
         queue.add(root);
@@ -55,7 +61,7 @@ public final class WorkspaceIndex {
             }
             queue.addAll(item.getChildren());
         }
-        return build(nodes);
+        return build(nodes, progressListener);
     }
 
     /**
@@ -65,9 +71,39 @@ public final class WorkspaceIndex {
      * @return 工作区索引
      */
     public static WorkspaceIndex build(List<FileTreeNode> nodes) {
+        return build(nodes, null);
+    }
+
+    /**
+     * 从已提取的 FileTreeNode 列表构建索引(线程安全,可在后台线程调用)
+     *
+     * @param nodes class 和资源 FileTreeNode 列表
+     * @param progressListener 构建进度回调,可为空
+     * @return 工作区索引
+     */
+    public static WorkspaceIndex build(List<FileTreeNode> nodes,
+                                       Consumer<BuildProgress> progressListener) {
         List<ClassIndexEntry> classes = new ArrayList<>();
         List<ResourceIndexEntry> resources = new ArrayList<>();
         Map<String, ClassIndexEntry> classEntries = new LinkedHashMap<>();
+
+        int total = 0;
+        for (FileTreeNode node : nodes) {
+            if (node == null) {
+                continue;
+            }
+            if (node.isClassFile() && node.hasByteSource()) {
+                total++;
+            } else if (node.isTextFile() && node.hasByteSource()
+                    && isIndexableResourceSize(node)) {
+                total++;
+            }
+        }
+
+        int processed = 0;
+        if (total == 0) {
+            notifyProgress(progressListener, 1, 1, "done");
+        }
 
         for (FileTreeNode node : nodes) {
             if (node.isClassFile() && node.hasByteSource()) {
@@ -76,12 +112,16 @@ public final class WorkspaceIndex {
                     classes.add(entry);
                     putClassEntry(classEntries, entry);
                 }
+                processed++;
+                notifyProgress(progressListener, processed, total, "class");
             } else if (node.isTextFile() && node.hasByteSource()
                     && shouldIndexResource(node)) {
                 byte[] bytes = readNodeBytes(node);
                 if (bytes != null) {
                     resources.add(new ResourceIndexEntry(node.getFullPath(), bytes, true));
                 }
+                processed++;
+                notifyProgress(progressListener, processed, total, "resource");
             }
         }
         return new WorkspaceIndex(classes, resources, classEntries);
@@ -138,6 +178,11 @@ public final class WorkspaceIndex {
         return true;
     }
 
+    private static boolean isIndexableResourceSize(FileTreeNode node) {
+        long size = node.getSize();
+        return size > 0 && size <= MAX_INDEXED_RESOURCE_BYTES;
+    }
+
     private static byte[] readNodeBytes(FileTreeNode node) {
         try {
             return node.readBytes();
@@ -164,6 +209,26 @@ public final class WorkspaceIndex {
             if (!stripped.isBlank()) {
                 classEntries.putIfAbsent(stripped, entry);
             }
+        }
+    }
+
+    private static void addSubclass(Map<String, List<String>> map,
+                                    String parentName, String childName) {
+        if (parentName == null || parentName.isBlank()
+                || childName == null || childName.isBlank()
+                || parentName.equals(childName)) {
+            return;
+        }
+        List<String> children = map.computeIfAbsent(parentName, key -> new ArrayList<>());
+        if (!children.contains(childName)) {
+            children.add(childName);
+        }
+    }
+
+    private static void notifyProgress(Consumer<BuildProgress> listener, int processed,
+                                       int total, String phase) {
+        if (listener != null && total > 0) {
+            listener.accept(new BuildProgress(processed, total, phase));
         }
     }
 
@@ -260,19 +325,6 @@ public final class WorkspaceIndex {
         }
     }
 
-    private static void addSubclass(Map<String, List<String>> map,
-                                    String parentName, String childName) {
-        if (parentName == null || parentName.isBlank()
-                || childName == null || childName.isBlank()
-                || parentName.equals(childName)) {
-            return;
-        }
-        List<String> children = map.computeIfAbsent(parentName, key -> new ArrayList<>());
-        if (!children.contains(childName)) {
-            children.add(childName);
-        }
-    }
-
     /**
      * 构建并返回按路径索引的字节码文本
      * 每次调用都会重新生成(不缓存),因为在反编译视图与字节码视图间切换时需要最新数据
@@ -285,5 +337,14 @@ public final class WorkspaceIndex {
             map.put(cls.fullPath(), cls.bytecodeText());
         }
         return map;
+    }
+
+    public record BuildProgress(int processed, int total, String phase) {
+        public double progress() {
+            if (total <= 0) {
+                return 1.0;
+            }
+            return Math.min(1.0, Math.max(0.0, processed / (double) total));
+        }
     }
 }

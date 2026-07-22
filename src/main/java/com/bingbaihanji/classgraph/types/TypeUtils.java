@@ -26,37 +26,37 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.types;
+package com.bingbaihanji.classgraph.types;
 
 import java.lang.reflect.Modifier;
 
 /**
- * Utilities for parsing Java type descriptors and type signatures.
- * 
+ * 解析 Java 类型描述符和类型签名的工具类
+ *
  * @author lukehutch
  */
 public final class TypeUtils {
 
     /**
-     * Constructor.
+     * 构造函数
      */
     private TypeUtils() {
-        // Cannot be constructed
+        // 不可构造
     }
 
     /**
-     * Parse a Java identifier, replacing '/' with '.'. Appends the identifier to the token buffer in the parser.
-     * 
+     * 解析 Java 标识符，将 '/' 替换为 '.'将标识符追加到解析器的 token 缓冲区中
+     *
      * @param parser
-     *            The parser.
+     *            解析器
      * @param stopAtDollarSign
-     *            If true, stop parsing when the first '$' is hit.
+     *            如果为 true，遇到第一个 '$' 时停止解析
      * @param stopAtDot
-     *            If true, stop parsing when the first '.' is hit.
-     * @return true if at least one identifier character was parsed.
+     *            如果为 true，遇到第一个 '.' 时停止解析
+     * @return 如果至少解析了一个标识符字符则返回 true
      */
     public static boolean getIdentifierToken(final Parser parser, final boolean stopAtDollarSign,
-            final boolean stopAtDot) {
+                                             final boolean stopAtDot) {
         boolean consumedChar = false;
         while (parser.hasMore()) {
             final char c = parser.peek();
@@ -76,24 +76,13 @@ public final class TypeUtils {
         return consumedChar;
     }
 
-    /** The origin of the modifier bits. */
-    public enum ModifierType {
-        /** The modifier bits apply to a class. */
-        CLASS,
-        /** The modifier bits apply to a method. */
-        METHOD,
-        /** The modifier bits apply to a field. */
-        FIELD
-    }
-
     /**
-     * Append a space if necessary (if not at the beginning of the buffer, and the last character is not already a
-     * space), then append a modifier keyword.
+     * 必要时追加空格(如果不在缓冲区开头，且最后一个字符还不是空格)，然后追加修饰符关键字
      *
      * @param buf
-     *            the buf
+     *            缓冲区
      * @param modifierKeyword
-     *            the modifier keyword
+     *            修饰符关键字
      */
     private static void appendModifierKeyword(final StringBuilder buf, final String modifierKeyword) {
         if (buf.length() > 0 && buf.charAt(buf.length() - 1) != ' ') {
@@ -103,19 +92,19 @@ public final class TypeUtils {
     }
 
     /**
-     * Convert modifiers into a string representation, e.g. "public static final".
-     * 
+     * 将修饰符转换为字符串表示形式，例如 "public static final"
+     *
      * @param modifiers
-     *            The field or method modifiers.
+     *            字段或方法的修饰符
      * @param modifierType
-     *            The {@link ModifierType} these modifiers apply to.
+     *            这些修饰符适用的{@link ModifierType}类型
      * @param isDefault
-     *            for methods, true if this is a default method (else ignored).
+     *            对于方法，如果这是默认方法则为 true(否则忽略)
      * @param buf
-     *            The buffer to write the result into.
+     *            用于写入结果的缓冲区
      */
     public static void modifiersToString(final int modifiers, final ModifierType modifierType,
-            final boolean isDefault, final StringBuilder buf) {
+                                         final boolean isDefault, final StringBuilder buf) {
         if ((modifiers & Modifier.PUBLIC) != 0) {
             appendModifierKeyword(buf, "public");
         } else if ((modifiers & Modifier.PRIVATE) != 0) {
@@ -131,7 +120,7 @@ public final class TypeUtils {
         }
         if (modifierType == ModifierType.FIELD) {
             if ((modifiers & Modifier.VOLATILE) != 0) {
-                // "bridge" and "volatile" overlap in bit 0x40
+                // "bridge" 和 "volatile" 在位 0x40 上重叠
                 appendModifierKeyword(buf, "volatile");
             }
             if ((modifiers & Modifier.TRANSIENT) != 0) {
@@ -153,7 +142,7 @@ public final class TypeUtils {
             appendModifierKeyword(buf, "synthetic");
         }
         if (modifierType != ModifierType.FIELD && (modifiers & 0x40) != 0) {
-            // "bridge" and "volatile" overlap in bit 0x40
+            // "bridge" 和 "volatile" 在位 0x40 上重叠
             appendModifierKeyword(buf, "bridge");
         }
         if (modifierType == ModifierType.METHOD && (modifiers & Modifier.NATIVE) != 0) {
@@ -162,7 +151,17 @@ public final class TypeUtils {
         if (modifierType != ModifierType.FIELD && (modifiers & Modifier.STRICT) != 0) {
             appendModifierKeyword(buf, "strictfp");
         }
-        // Ignored:
-        // ACC_SUPER (0x0020): Treat superclass methods specially when invoked by the invokespecial instruction
+        // 已忽略：
+        // ACC_SUPER (0x0020)：当通过 invokespecial 指令调用时，对超类方法进行特殊处理
+    }
+
+    /** 修饰符位的来源 */
+    public enum ModifierType {
+        /** 修饰符位适用于类 */
+        CLASS,
+        /** 修饰符位适用于方法 */
+        METHOD,
+        /** 修饰符位适用于字段 */
+        FIELD
     }
 }

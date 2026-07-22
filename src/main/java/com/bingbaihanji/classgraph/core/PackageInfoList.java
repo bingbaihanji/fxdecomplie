@@ -26,45 +26,15 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 import java.util.Collection;
 
-/** A list of {@link PackageInfo} objects. */
+/** 一个 {@link PackageInfo} 对象的列表 */
 public class PackageInfoList extends MappableInfoList<PackageInfo> {
-    /** serialVersionUID */
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * Constructor.
-     */
-    PackageInfoList() {
-        super();
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param sizeHint
-     *            the size hint
-     */
-    PackageInfoList(final int sizeHint) {
-        super(sizeHint);
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param packageInfoCollection
-     *            the package info collection
-     */
-    PackageInfoList(final Collection<PackageInfo> packageInfoCollection) {
-        super(packageInfoCollection);
-    }
-
-    /** An unmodifiable {@link PackageInfoList}. */
+    /** 一个不可修改的 {@link PackageInfoList} */
     static final PackageInfoList EMPTY_LIST = new PackageInfoList() {
-        /** serialVersionUID */
+        /** 序列化版本UID */
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -117,33 +87,44 @@ public class PackageInfoList extends MappableInfoList<PackageInfo> {
             throw new IllegalArgumentException("List is immutable");
         }
     };
+    /** 序列化版本UID */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 构造函数
+     */
+    PackageInfoList() {
+        super();
+    }
+
+    /**
+     * 构造函数
+     *
+     * @param sizeHint
+     *            大小提示
+     */
+    PackageInfoList(final int sizeHint) {
+        super(sizeHint);
+    }
+
+    /**
+     * 构造函数
+     *
+     * @param packageInfoCollection
+     *            包信息集合
+     */
+    PackageInfoList(final Collection<PackageInfo> packageInfoCollection) {
+        super(packageInfoCollection);
+    }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Filter an {@link PackageInfoList} using a predicate mapping an {@link PackageInfo} object to a boolean,
-     * producing another {@link PackageInfoList} for all items in the list for which the predicate is true.
-     */
-    @FunctionalInterface
-    public interface PackageInfoFilter {
-        /**
-         * Whether or not to allow an {@link PackageInfo} list item through the filter.
-         *
-         * @param packageInfo
-         *            The {@link PackageInfo} item to filter.
-         * @return Whether or not to allow the item through the filter. If true, the item is copied to the output
-         *         list; if false, it is excluded.
-         */
-        boolean accept(PackageInfo packageInfo);
-    }
-
-    /**
-     * Find the subset of the {@link PackageInfo} objects in this list for which the given filter predicate is true.
+     * 查找此列表中给定过滤谓词为真的 {@link PackageInfo} 对象的子集
      *
      * @param filter
-     *            The {@link PackageInfoFilter} to apply.
-     * @return The subset of the {@link PackageInfo} objects in this list for which the given filter predicate is
-     *         true.
+     *            要应用的 {@link PackageInfoFilter}
+     * @return 此列表中给定过滤谓词为真的 {@link PackageInfo} 对象的子集
      */
     public PackageInfoList filter(final PackageInfoFilter filter) {
         final PackageInfoList packageInfoFiltered = new PackageInfoList();
@@ -153,5 +134,21 @@ public class PackageInfoList extends MappableInfoList<PackageInfo> {
             }
         }
         return packageInfoFiltered;
+    }
+
+    /**
+     * 使用一个将 {@link PackageInfo} 对象映射到布尔值的谓词来过滤 {@link PackageInfoList}，
+     * 生成一个新的 {@link PackageInfoList}，包含列表中所有谓词为真的项
+     */
+    @FunctionalInterface
+    public interface PackageInfoFilter {
+        /**
+         * 是否允许一个 {@link PackageInfo} 列表项通过过滤器
+         *
+         * @param packageInfo
+         *            要过滤的 {@link PackageInfo} 项
+         * @return 是否允许该项通过过滤器如果为 true，则该项被复制到输出列表；如果为 false，则被排除
+         */
+        boolean accept(PackageInfo packageInfo);
     }
 }

@@ -26,7 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.utils;
+package com.bingbaihanji.classgraph.utils;
+
+import com.bingbaihanji.classgraph.classpath.SystemJarFinder;
+import com.bingbaihanji.classgraph.core.ClassGraph;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -41,89 +44,62 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import io.github.classgraph.ClassGraph;
-import nonapi.io.github.classgraph.classpath.SystemJarFinder;
-
 /**
- * A tree-structured threadsafe log that allows you to add log entries in arbitrary order, and have the output
- * retain a sane order. The order may also be made deterministic by specifying a sort key for log entries.
+ * 树形结构的线程安全日志，允许您以任意顺序添加日志条目，
+ * 并让输出保持合理的顺序还可以通过为日志条目指定排序键来使顺序变为确定性的
  */
 public final class LogNode {
-    // Mitigate log4j2 vulnerability (CVE-2021-44228), in case log4j is added to the classpath as the logger
+    /** 日志记录器 */
+    private static final Logger log = Logger.getLogger(ClassGraph.class.getName());
+    /** 日期/时间格式化器(非线程安全) */
+    private static final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ",
+            Locale.US);
+    /** 已用时间格式化器 */
+    private static final DecimalFormat nanoFormatter = new DecimalFormat("0.000000");
+    /** 此日志条目的排序键后缀，用于使排序键唯一 */
+    private static AtomicInteger sortKeyUniqueSuffix = new AtomicInteger(0);
+    /** 如果为 true，日志条目在添加到 LogNode 树的同时也会实时输出 */
+    private static boolean logInRealtime;
+
+    // 缓解 log4j2 漏洞(CVE-2021-44228)，防止 log4j 被添加到类路径中作为日志记录器
     // https://blog.cloudflare.com/inside-the-log4j2-vulnerability-cve-2021-44228/
     static {
         System.getProperties().setProperty("log4j2.formatMsgNoLookups", "true");
     }
 
-    /** The logger. */
-    private static final Logger log = Logger.getLogger(ClassGraph.class.getName());
-
     /**
-     * The timestamp at which the log node was created (relative to some arbitrary system timepoint).
+     * 日志节点创建时的时间戳(相对于某个任意的系统时间点)
      */
     private final long timeStampNano = System.nanoTime();
-
-    /** The timestamp at which the log node was created, in epoch millis. */
+    /** 日志节点创建时的时间戳，以纪元毫秒计 */
     private final long timeStampMillis = System.currentTimeMillis();
-
-    /** The log message. */
+    /** 日志消息 */
     private final String msg;
-
-    /** The stacktrace, if this log entry was due to an exception. */
+    /** 此日志节点的子节点 */
+    private final Map<String, LogNode> children = new ConcurrentSkipListMap<>();
+    /** 用于日志条目确定性排序的排序键前缀 */
+    private final String sortKeyPrefix;
+    /** 堆栈跟踪，如果此日志条目是由异常引起的 */
     private String stackTrace;
-
-    /** The time between when this log entry was created and addElapsedTime() was called. */
+    /** 从此日志条目创建到调用 addElapsedTime() 之间的时间间隔 */
     private long elapsedTimeNanos;
-
-    /** The parent LogNode. */
+    /** 父 LogNode */
     private LogNode parent;
 
-    /** The child nodes of this log node. */
-    private final Map<String, LogNode> children = new ConcurrentSkipListMap<>();
-
-    /** The sort key prefix for deterministic ordering of log entries. */
-    private final String sortKeyPrefix;
-
-    /** The sort key suffix for this log entry, used to make sort keys unique. */
-    private static AtomicInteger sortKeyUniqueSuffix = new AtomicInteger(0);
-
-    /** The date/time formatter (not threadsafe). */
-    private static final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ",
-            Locale.US);
-
-    /** The elapsed time formatter. */
-    private static final DecimalFormat nanoFormatter = new DecimalFormat("0.000000");
-
-    /** If true, log entries are output in realtime, as well as added to the LogNode tree. */
-    private static boolean logInRealtime;
-
     /**
-     * If logInRealtime is true, log entries are output in realtime, as well as added to the LogNode tree. This can
-     * help debug situations where log info is never shown, e.g. deadlocks, or where you need to show the log info
-     * right up to the point where you hit a breakpoint.
-     *
-     * @param logInRealtime
-     *            whether to log in realtime
-     */
-    public static void logInRealtime(final boolean logInRealtime) {
-        LogNode.logInRealtime = logInRealtime;
-    }
-
-    /**
-     * Create a non-toplevel log node. The order may also be made deterministic by specifying a sort key for log
-     * entries.
+     * 创建一个非顶级日志节点还可以通过为日志条目指定排序键来使顺序变为确定性的
      *
      * @param sortKey
-     *            the sort key
+     *            排序键
      * @param msg
-     *            the log message
+     *            日志消息
      * @param elapsedTimeNanos
-     *            the elapsed time in nanos
+     *            以纳秒计的已用时间
      * @param exception
-     *            the exception that was thrown
+     *            抛出的异常
      */
     private LogNode(final String sortKey, final String msg, final long elapsedTimeNanos,
-            final Throwable exception) {
+                    final Throwable exception) {
         this.sortKeyPrefix = sortKey;
         this.msg = msg;
         this.elapsedTimeNanos = elapsedTimeNanos;
@@ -139,7 +115,7 @@ public final class LogNode {
         }
     }
 
-    /** Create a toplevel log node. */
+    /** 创建一个顶级日志节点 */
     public LogNode() {
         this("", "", /* elapsedTimeNanos = */ -1L, /* exception = */ null);
         this.log("ClassGraph version " + VersionFinder.getVersion());
@@ -147,7 +123,19 @@ public final class LogNode {
     }
 
     /**
-     * Log the Java version and the JRE paths that were found.
+     * 如果 logInRealtime 为 true，日志条目在添加到 LogNode 树的同时也会实时输出
+     * 这有助于调试日志信息永远不显示的情况，例如死锁，
+     * 或者需要显示直到断点处的日志信息的情况
+     *
+     * @param logInRealtime
+     *            是否实时记录日志
+     */
+    public static void logInRealtime(final boolean logInRealtime) {
+        LogNode.logInRealtime = logInRealtime;
+    }
+
+    /**
+     * 记录 Java 版本和找到的 JRE 路径
      */
     private void logJavaInfo() {
         log("Operating system: " + VersionFinder.getProperty("os.name") + " "
@@ -163,19 +151,19 @@ public final class LogNode {
     }
 
     /**
-     * Append a line to the log output, indenting this log entry according to tree structure.
+     * 向日志输出追加一行，根据树结构缩进此日志条目
      *
      * @param timeStampStr
-     *            the timestamp string
+     *            时间戳字符串
      * @param indentLevel
-     *            the indent level
+     *            缩进级别
      * @param line
-     *            the line to log
+     *            要记录的行
      * @param buf
-     *            the buf
+     *            缓冲区
      */
     private void appendLine(final String timeStampStr, final int indentLevel, final String line,
-            final StringBuilder buf) {
+                            final StringBuilder buf) {
         buf.append(timeStampStr);
         buf.append('\t');
         buf.append(ClassGraph.class.getSimpleName());
@@ -192,12 +180,12 @@ public final class LogNode {
     }
 
     /**
-     * Recursively build the log output.
+     * 递归构建日志输出
      *
      * @param indentLevel
-     *            the indent level
+     *            缩进级别
      * @param buf
-     *            the buf
+     *            缓冲区
      */
     private void toString(final int indentLevel, final StringBuilder buf) {
         final Calendar cal = Calendar.getInstance();
@@ -228,13 +216,13 @@ public final class LogNode {
     }
 
     /**
-     * Build the log output. Call this on the toplevel log node.
+     * 构建日志输出请在顶级日志节点上调用此方法
      *
-     * @return the string
+     * @return 字符串
      */
     @Override
     public String toString() {
-        // DateTimeFormatter is not threadsafe
+        // DateTimeFormatter 不是线程安全的
         synchronized (dateTimeFormatter) {
             final StringBuilder buf = new StringBuilder();
             toString(0, buf);
@@ -243,182 +231,182 @@ public final class LogNode {
     }
 
     /**
-     * Call this once the work corresponding with a given log entry has completed if you want to show the time taken
-     * after the log entry.
+     * 当与给定日志条目对应的工作完成后调用此方法，
+     * 如果要在日志条目后显示耗时
      */
     public void addElapsedTime() {
         elapsedTimeNanos = System.nanoTime() - timeStampNano;
     }
 
     /**
-     * Add a child log node.
+     * 添加子日志节点
      *
      * @param sortKey
-     *            the sort key
+     *            排序键
      * @param msg
-     *            the log message
+     *            日志消息
      * @param elapsedTimeNanos
-     *            the elapsed time in nanos
+     *            以纳秒计的已用时间
      * @param exception
-     *            the exception that was thrown
-     * @return the log node
+     *            抛出的异常
+     * @return 日志节点
      */
     private LogNode addChild(final String sortKey, final String msg, final long elapsedTimeNanos,
-            final Throwable exception) {
+                             final Throwable exception) {
         final String newSortKey = sortKeyPrefix + "\t" + (sortKey == null ? "" : sortKey) + "\t"
                 + String.format("%09d", sortKeyUniqueSuffix.getAndIncrement());
         final LogNode newChild = new LogNode(newSortKey, msg, elapsedTimeNanos, exception);
         newChild.parent = this;
-        // Make the sort key unique, so that log entries are not clobbered if keys are reused; increment unique
-        // suffix with each new log entry, so that ties are broken in chronological order.
+        // 使排序键唯一，以便键被重用时不覆盖日志条目；每个新日志条目的唯一后缀递增，
+        // 以便按时间顺序打破平局
         children.put(newSortKey, newChild);
         return newChild;
     }
 
     /**
-     * Add a child log node for a message.
+     * 为消息添加子日志节点
      *
      * @param sortKey
-     *            the sort key
+     *            排序键
      * @param msg
-     *            the log message
+     *            日志消息
      * @param elapsedTimeNanos
-     *            the elapsed time in nanos
-     * @return the log node
+     *            以纳秒计的已用时间
+     * @return 日志节点
      */
     private LogNode addChild(final String sortKey, final String msg, final long elapsedTimeNanos) {
         return addChild(sortKey, msg, elapsedTimeNanos, null);
     }
 
     /**
-     * Add a child log node for an exception.
+     * 为异常添加子日志节点
      *
      * @param exception
-     *            the exception that was thrown
-     * @return the log node
+     *            抛出的异常
+     * @return 日志节点
      */
     private LogNode addChild(final Throwable exception) {
         return addChild("", "", -1L, exception);
     }
 
     /**
-     * Add a log entry with sort key for deterministic ordering.
-     * 
+     * 添加带有排序键的日志条目以实现确定性排序
+     *
      * @param sortKey
-     *            The sort key for the log entry.
+     *            日志条目的排序键
      * @param msg
-     *            The message.
+     *            消息
      * @param elapsedTimeNanos
-     *            The elapsed time.
+     *            已用时间
      * @param e
-     *            The {@link Throwable} that was thrown.
-     * @return a child log node, which can be used to add sub-entries.
+     *            抛出的 {@link Throwable}
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String sortKey, final String msg, final long elapsedTimeNanos, final Throwable e) {
         return addChild(sortKey, msg, elapsedTimeNanos).addChild(e);
     }
 
     /**
-     * Add a log entry with sort key for deterministic ordering.
-     * 
+     * 添加带有排序键的日志条目以实现确定性排序
+     *
      * @param sortKey
-     *            The sort key for the log entry.
+     *            日志条目的排序键
      * @param msg
-     *            The message.
+     *            消息
      * @param elapsedTimeNanos
-     *            The elapsed time.
-     * @return a child log node, which can be used to add sub-entries.
+     *            已用时间
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String sortKey, final String msg, final long elapsedTimeNanos) {
         return addChild(sortKey, msg, elapsedTimeNanos);
     }
 
     /**
-     * Add a log entry with sort key for deterministic ordering.
-     * 
+     * 添加带有排序键的日志条目以实现确定性排序
+     *
      * @param sortKey
-     *            The sort key for the log entry.
+     *            日志条目的排序键
      * @param msg
-     *            The message.
+     *            消息
      * @param e
-     *            The {@link Throwable} that was thrown.
-     * @return a child log node, which can be used to add sub-entries.
+     *            抛出的 {@link Throwable}
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String sortKey, final String msg, final Throwable e) {
         return addChild(sortKey, msg, -1L).addChild(e);
     }
 
     /**
-     * Add a log entry with sort key for deterministic ordering.
-     * 
+     * 添加带有排序键的日志条目以实现确定性排序
+     *
      * @param sortKey
-     *            The sort key for the log entry.
+     *            日志条目的排序键
      * @param msg
-     *            The message.
-     * @return a child log node, which can be used to add sub-entries.
+     *            消息
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String sortKey, final String msg) {
         return addChild(sortKey, msg, -1L);
     }
 
     /**
-     * Add a log entry.
-     * 
+     * 添加日志条目
+     *
      * @param msg
-     *            The message.
+     *            消息
      * @param elapsedTimeNanos
-     *            The elapsed time.
+     *            已用时间
      * @param e
-     *            The {@link Throwable} that was thrown.
-     * @return a child log node, which can be used to add sub-entries.
+     *            抛出的 {@link Throwable}
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String msg, final long elapsedTimeNanos, final Throwable e) {
         return addChild("", msg, elapsedTimeNanos).addChild(e);
     }
 
     /**
-     * Add a log entry.
+     * 添加日志条目
      *
      * @param msg
-     *            The message.
+     *            消息
      * @param elapsedTimeNanos
-     *            The elapsed time.
-     * @return a child log node, which can be used to add sub-entries.
+     *            已用时间
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String msg, final long elapsedTimeNanos) {
         return addChild("", msg, elapsedTimeNanos);
     }
 
     /**
-     * Add a log entry.
-     * 
+     * 添加日志条目
+     *
      * @param msg
-     *            The message.
+     *            消息
      * @param e
-     *            The {@link Throwable} that was thrown.
-     * @return a child log node, which can be used to add sub-entries.
+     *            抛出的 {@link Throwable}
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String msg, final Throwable e) {
         return addChild("", msg, -1L).addChild(e);
     }
 
     /**
-     * Add a log entry.
-     * 
+     * 添加日志条目
+     *
      * @param msg
-     *            The message.
-     * @return a child log node, which can be used to add sub-entries.
+     *            消息
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final String msg) {
         return addChild("", msg, -1L);
     }
 
     /**
-     * Add a series of log entries. Returns the last LogNode created.
-     * 
+     * 添加一系列日志条目返回最后一个创建的 LogNode
+     *
      * @param msgs
-     *            The messages.
-     * @return the last log node created, which can be used to add sub-entries.
+     *            消息
+     * @return 最后创建的日志节点，可用于添加子条目
      */
     public LogNode log(final Collection<String> msgs) {
         LogNode last = null;
@@ -429,20 +417,20 @@ public final class LogNode {
     }
 
     /**
-     * Add a log entry.
-     * 
+     * 添加日志条目
+     *
      * @param e
-     *            The {@link Throwable} that was thrown.
-     * @return a child log node, which can be used to add sub-entries.
+     *            抛出的 {@link Throwable}
+     * @return 子日志节点，可用于添加子条目
      */
     public LogNode log(final Throwable e) {
         return log("Exception thrown").addChild(e);
     }
 
     /**
-     * Flush out the log to stderr, and clear the log contents. Only call this on the toplevel log node, when
-     * threads do not have access to references of internal log nodes so that they cannot add more log entries
-     * inside the tree, otherwise log entries may be lost.
+     * 将日志刷新到 stderr，并清除日志内容仅在顶级日志节点上调用此方法，
+     * 且当线程没有对内部日志节点的引用访问权限时调用，
+     * 这样它们就不能在树内部添加更多日志条目，否则日志条目可能会丢失
      */
     public void flush() {
         if (parent != null) {

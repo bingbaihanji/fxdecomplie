@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class Workspace implements AutoCloseable {
 
-    /** 全源码搜索缓存单工作区内存上限（200MB） */
+    /** 全源码搜索缓存单工作区内存上限(200MB) */
     private static final long MAX_SOURCE_SEARCH_CACHE_BYTES = 200_000_000L;
     /** 工作区显示名称(如 demo.jar) */
     private final String name;
@@ -247,7 +247,7 @@ public class Workspace implements AutoCloseable {
         }
         LinkedHashMap<String, String> snapshot = new LinkedHashMap<>(cache);
         synchronized (this) {
-            // 估算新缓存的大小（key + value 字符数 × 2 bytes/char）
+            // 估算新缓存的大小(key + value 字符数 × 2 bytes/char)
             long newBytes = 0;
             for (Map.Entry<String, String> e : snapshot.entrySet()) {
                 newBytes += (e.getKey().length() + e.getValue().length()) * 2L;

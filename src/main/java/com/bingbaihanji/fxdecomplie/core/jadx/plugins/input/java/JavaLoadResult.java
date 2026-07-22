@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 
 /**
@@ -46,6 +47,20 @@ public class JavaLoadResult implements ICodeLoader {
         this.closeable = closeable;
     }
 
+    /** 判断异常是否由线程中断/取消引起 */
+    private static boolean isInterruptRelated(Throwable ex) {
+        Throwable cause = ex;
+        while (cause != null) {
+            if (cause instanceof InterruptedException
+                    || cause instanceof CancellationException
+                    || "Thread interrupted".equalsIgnoreCase(cause.getMessage())) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return Thread.currentThread().isInterrupted();
+    }
+
     /**
      * 遍历所有类，将解析出的类数据依次交给消费者处理
      * <p>
@@ -59,6 +74,11 @@ public class JavaLoadResult implements ICodeLoader {
             try {
                 consumer.accept(reader.loadClassData());
             } catch (Exception e) {
+                if (isInterruptRelated(e)) {
+                    LOG.debug("Failed to load class data for file: {} (cancelled)",
+                            reader.getFileName());
+                    break;
+                }
                 LOG.error("Failed to load class data for file: {}", reader.getFileName(), e);
             }
         }

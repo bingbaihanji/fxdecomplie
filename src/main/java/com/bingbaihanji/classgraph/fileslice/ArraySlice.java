@@ -26,81 +26,78 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice;
+package com.bingbaihanji.classgraph.fileslice;
+
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.fileslice.reader.RandomAccessArrayReader;
+import com.bingbaihanji.classgraph.fileslice.reader.RandomAccessReader;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.fileslice.reader.RandomAccessArrayReader;
-import nonapi.io.github.classgraph.fileslice.reader.RandomAccessReader;
-
-/** A byte array slice. */
+/** 字节数组切片 */
 public class ArraySlice extends Slice {
-    /** The wrapped byte array. */
+    /** 包装的字节数组 */
     public byte[] arr;
 
     /**
-     * Constructor for treating a range of an array as a slice.
+     * 用于将数组的一个范围视为切片的构造函数
      *
      * @param parentSlice
-     *            the parent slice
+     *            父切片
      * @param offset
-     *            the offset of the sub-slice within the parent slice
+     *            子切片在父切片中的偏移量
      * @param length
-     *            the length of the sub-slice
+     *            子切片的长度
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      */
     private ArraySlice(final ArraySlice parentSlice, final long offset, final long length,
-            final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-            final NestedJarHandler nestedJarHandler) {
+                       final boolean isDeflatedZipEntry, final long inflatedLengthHint,
+                       final NestedJarHandler nestedJarHandler) {
         super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
         this.arr = parentSlice.arr;
     }
 
     /**
-     * Constructor for treating a whole array as a slice.
+     * 用于将整个数组视为切片的构造函数
      *
      * @param arr
-     *            the array containing the slice.
+     *            包含切片的数组
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      */
     public ArraySlice(final byte[] arr, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-            final NestedJarHandler nestedJarHandler) {
+                      final NestedJarHandler nestedJarHandler) {
         super(arr.length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
         this.arr = arr;
     }
 
     /**
-     * Slice this slice to form a sub-slice.
+     * 从此切片切出子切片
      *
      * @param offset
-     *            the offset relative to the start of this slice to use as the start of the sub-slice.
+     *            相对于此切片起始位置的偏移量，用作子切片的起始位置
      * @param length
-     *            the length of the sub-slice.
+     *            子切片的长度
      * @param isDeflatedZipEntry
-     *            the is deflated zip entry
+     *            是否是压缩的 zip 条目
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
-     * @return the slice
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     * @return 切片
      */
     @Override
     public Slice slice(final long offset, final long length, final boolean isDeflatedZipEntry,
-            final long inflatedLengthHint) {
+                       final long inflatedLengthHint) {
         if (this.isDeflatedZipEntry) {
             throw new IllegalArgumentException("Cannot slice a deflated zip entry");
         }
@@ -108,32 +105,32 @@ public class ArraySlice extends Slice {
     }
 
     /**
-     * Load the slice as a byte array.
+     * 将切片作为字节数组加载
      *
-     * @return the byte[]
+     * @return 字节数组
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             如果发生 I/O 异常
      */
     @Override
     public byte[] load() throws IOException {
         if (isDeflatedZipEntry) {
-            // Deflate into RAM if necessary
+            // 如有必要，解压到内存中
             try (InputStream inputStream = open()) {
                 return NestedJarHandler.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else if (sliceStartPos == 0L && sliceLength == arr.length) {
-            // Fast path -- return whole array, if the array is the whole slice and is not deflated
+            // 快速路径 —— 如果数组是整个切片且未压缩，则直接返回整个数组
             return arr;
         } else {
-            // Copy range of array, if it is a slice and it is not deflated
+            // 如果是切片且未压缩，则复制数组的范围
             return Arrays.copyOfRange(arr, (int) sliceStartPos, (int) (sliceStartPos + sliceLength));
         }
     }
 
     /**
-     * Return a new random access reader.
+     * 返回新的随机访问读取器
      *
-     * @return the random access reader
+     * @return 随机访问读取器
      */
     @Override
     public RandomAccessReader randomAccessReader() {

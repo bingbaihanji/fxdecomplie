@@ -26,32 +26,32 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fastzipfilereader;
+package com.bingbaihanji.classgraph.fastzipfilereader;
+
+import com.bingbaihanji.classgraph.fileslice.Slice;
+import com.bingbaihanji.classgraph.scanspec.AcceptReject.AcceptRejectLeafname;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import nonapi.io.github.classgraph.fileslice.Slice;
-import nonapi.io.github.classgraph.scanspec.AcceptReject.AcceptRejectLeafname;
-
-/** A zipfile slice (a sub-range of bytes within a PhysicalZipFile. */
+/** ZIP 文件切片(PhysicalZipFile 中的一个字节子范围) */
 public class ZipFileSlice {
-    /** The parent slice, or null if this is the toplevel slice (the whole zipfile). */
-    private final ZipFileSlice parentZipFileSlice;
-    /** The underlying physical zipfile. */
+    /** 底层的物理 ZIP 文件 */
     protected final PhysicalZipFile physicalZipFile;
-    /** For the toplevel zipfile slice, the zipfile path; For nested slices, the name/path of the zipfile entry. */
+    /** 父切片，如果这是顶层切片(整个 ZIP 文件)则为 null */
+    private final ZipFileSlice parentZipFileSlice;
+    /** 对于顶层 ZIP 文件切片，表示 ZIP 文件路径；对于嵌套切片，表示 ZIP 文件条目的名称/路径 */
     private final String pathWithinParentZipFileSlice;
-    /** The {@link Slice} containing the zipfile. */
+    /** 包含 ZIP 文件的 {@link Slice} */
     public Slice slice;
 
     /**
-     * Create a ZipFileSlice that wraps a toplevel {@link PhysicalZipFile}.
+     * 创建一个包装顶层 {@link PhysicalZipFile} 的 ZipFileSlice
      *
      * @param physicalZipFile
-     *            the physical zipfile
+     *            物理 ZIP 文件
      */
     ZipFileSlice(final PhysicalZipFile physicalZipFile) {
         this.parentZipFileSlice = null;
@@ -61,13 +61,12 @@ public class ZipFileSlice {
     }
 
     /**
-     * Create a ZipFileSlice that wraps a {@link PhysicalZipFile} that was extracted or inflated from a nested jar
-     * to memory or disk.
+     * 创建一个 ZipFileSlice，包装从嵌套 JAR 解压或膨胀到内存或磁盘的 {@link PhysicalZipFile}
      *
      * @param physicalZipFile
-     *            a physical zipfile that has been extracted to RAM
+     *            已解压到 RAM 的物理 ZIP 文件
      * @param zipEntry
-     *            the zip entry
+     *            ZIP 条目
      */
     ZipFileSlice(final PhysicalZipFile physicalZipFile, final FastZipEntry zipEntry) {
         this.parentZipFileSlice = zipEntry.parentLogicalZipFile;
@@ -77,14 +76,14 @@ public class ZipFileSlice {
     }
 
     /**
-     * Create a ZipFileSlice that wraps a single stored (not deflated) {@link FastZipEntry}.
+     * 创建一个 ZipFileSlice，包装单个已存储(未压缩)的 {@link FastZipEntry}
      *
      * @param zipEntry
-     *            the zip entry
+     *            ZIP 条目
      * @throws IOException
-     *             If an I/O exception occurs.
+     *             如果发生 I/O 异常
      * @throws InterruptedException
-     *             If the thread was interrupted.
+     *             如果线程被中断
      */
     ZipFileSlice(final FastZipEntry zipEntry) throws IOException, InterruptedException {
         this.parentZipFileSlice = zipEntry.parentLogicalZipFile;
@@ -94,10 +93,10 @@ public class ZipFileSlice {
     }
 
     /**
-     * Clone constructor.
+     * 克隆构造函数
      *
      * @param other
-     *            the {@link ZipFileSlice} to clone.
+     *            要克隆的 {@link ZipFileSlice}
      */
     ZipFileSlice(final ZipFileSlice other) {
         this.parentZipFileSlice = other.parentZipFileSlice;
@@ -107,13 +106,11 @@ public class ZipFileSlice {
     }
 
     /**
-     * Check whether this zipfile slice and all of its parent slices are accepted and not rejected in the jarfile
-     * accept/reject criteria.
+     * 检查此 ZIP 文件切片及其所有父切片是否在 JAR 文件接受/拒绝条件中被接受且未被拒绝
      *
      * @param jarAcceptReject
-     *            the jar accept/reject criteria
-     * @return true if this zipfile slice and all of its parent slices are accepted and not rejected in the jarfile
-     *         accept/reject criteria.
+     *            JAR 文件接受/拒绝条件
+     * @return 如果此 ZIP 文件切片及其所有父切片在 JAR 文件接受/拒绝条件中被接受且未被拒绝，则返回 true
      */
     public boolean isAcceptedAndNotRejected(final AcceptRejectLeafname jarAcceptReject) {
         return jarAcceptReject.isAcceptedAndNotRejected(pathWithinParentZipFileSlice) //
@@ -121,30 +118,29 @@ public class ZipFileSlice {
     }
 
     /**
-     * Get the parent ZipFileslice, or return null if this is a toplevel slice (i.e. if this slice wraps an entire
-     * physical zipfile).
-     * 
-     * @return the parent ZipFileslice, or null if this is a toplevel slice.
+     * 获取父 ZipFileSlice，如果这是顶层切片(即此切片包装整个物理 ZIP 文件)，则返回 null
+     *
+     * @return 父 ZipFileSlice，如果这是顶层切片则返回 null
      */
     public ZipFileSlice getParentZipFileSlice() {
         return parentZipFileSlice;
     }
 
     /**
-     * Get the name of the slice (either the entry name/path within the parent zipfile slice, or the path of the
-     * physical zipfile if this slice is a toplevel slice (i.e. if this slice wraps an entire physical zipfile).
-     * 
-     * @return the name of the slice.
+     * 获取切片的名称(父 ZIP 文件切片中的条目名称/路径，或者如果此切片是顶层切片(即此切片包装整个物理 ZIP 文件)，
+     * 则为物理 ZIP 文件的路径)
+     *
+     * @return 切片的名称
      */
     public String getPathWithinParentZipFileSlice() {
         return pathWithinParentZipFileSlice;
     }
 
     /**
-     * Recursively append the path in top down ancestral order.
+     * 按照自上而下的祖先顺序递归追加路径
      *
      * @param buf
-     *            the buf to append the path to
+     *            要追加路径的 StringBuilder
      */
     private void appendPath(final StringBuilder buf) {
         if (parentZipFileSlice != null) {
@@ -157,9 +153,9 @@ public class ZipFileSlice {
     }
 
     /**
-     * Get the path of this zipfile slice, e.g. "/path/to/jarfile.jar!/nestedjar1.jar".
+     * 获取此 ZIP 文件切片的路径，例如 "/path/to/jarfile.jar!/nestedjar1.jar"
      *
-     * @return the path of this zipfile slice.
+     * @return 此 ZIP 文件切片的路径
      */
     public String getPath() {
         final StringBuilder buf = new StringBuilder();
@@ -168,10 +164,9 @@ public class ZipFileSlice {
     }
 
     /**
-     * Get the physical {@link File} that this ZipFileSlice is a slice of.
+     * 获取此 ZipFileSlice 所属的物理 {@link File}
      *
-     * @return the physical {@link File} that this ZipFileSlice is a slice of, or null if this file was downloaded
-     *         from a URL directly to RAM.
+     * @return 此 ZipFileSlice 所属的物理 {@link File}，如果此文件是从 URL 直接下载到 RAM 则返回 null
      */
     public File getPhysicalFile() {
         final Path path = physicalZipFile.getPath();
@@ -179,7 +174,7 @@ public class ZipFileSlice {
             try {
                 return path.toFile();
             } catch (final UnsupportedOperationException e) {
-                // Filesystem supports the Path API but not the File API
+                // 文件系统支持 Path API 但不支持 File API
                 return null;
             }
         } else {
@@ -188,7 +183,7 @@ public class ZipFileSlice {
     }
 
     /* (non-Javadoc)
-     * @see nonapi.io.github.classgraph.fastzipfilereader.ZipFileSlice#equals(java.lang.Object)
+     * @see com.bingbaihanji.classgraph.fastzipfilereader.ZipFileSlice#equals(java.lang.Object)
      */
     @Override
     public boolean equals(final Object o) {
@@ -204,7 +199,7 @@ public class ZipFileSlice {
     }
 
     /* (non-Javadoc)
-     * @see nonapi.io.github.classgraph.fastzipfilereader.ZipFileSlice#hashCode()
+     * @see com.bingbaihanji.classgraph.fastzipfilereader.ZipFileSlice#hashCode()
      */
     @Override
     public int hashCode() {

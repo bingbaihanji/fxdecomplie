@@ -27,7 +27,7 @@ public final class JadxArgsFactory {
         return args;
     }
 
-    /** 从 Map 创建 JadxArgs（兼容旧调用方） */
+    /** 从 Map 创建 JadxArgs(兼容旧调用方) */
     public static JadxArgs create(Map<String, String> engineOptions) {
         return create(JadxOptionSchema.fromOptionsMap(engineOptions));
     }

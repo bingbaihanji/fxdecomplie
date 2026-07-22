@@ -26,21 +26,21 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Scanner.ClasspathEntryWorkUnit;
-import nonapi.io.github.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
-import nonapi.io.github.classgraph.concurrency.WorkQueue;
-import nonapi.io.github.classgraph.fastzipfilereader.LogicalZipFile;
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.fileslice.PathSlice;
-import nonapi.io.github.classgraph.fileslice.reader.ClassfileReader;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
-import nonapi.io.github.classgraph.utils.FastPathResolver;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
-import nonapi.io.github.classgraph.utils.VersionFinder;
+import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
+import com.bingbaihanji.classgraph.concurrency.WorkQueue;
+import com.bingbaihanji.classgraph.core.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.fastzipfilereader.LogicalZipFile;
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.fileslice.PathSlice;
+import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.utils.FastPathResolver;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.VersionFinder;
 
 import java.io.File;
 import java.io.IOError;
@@ -57,37 +57,37 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** A directory classpath element, using the {@link Path} API. */
+/** 目录类路径元素，使用 {@link Path} API */
 class ClasspathElementDir extends ClasspathElement {
-    /** The directory at the root of the classpath element. */
+    /** 类路径元素根目录 */
     private final Path classpathEltPath;
 
-    /** Used to ensure that recursive scanning doesn't get into an infinite loop due to a link cycle. */
+    /** 用于确保递归扫描不会因链接循环而陷入无限循环 */
     private final Set<Path> scannedCanonicalPaths = new HashSet<>();
 
-    /** The nested jar handler. */
+    /** 嵌套 jar 处理器 */
     private final NestedJarHandler nestedJarHandler;
 
     /**
-     * A directory classpath element.
+     * 一个目录类路径元素
      *
      * @param workUnit
-     *            the work unit -- workUnit.classpathEntryObj must be a {@link Path} object
+     *            工作单元 -- workUnit.classpathEntryObj 必须是一个 {@link Path} 对象
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      * @param scanSpec
-     *            the scan spec
+     *            扫描规格
      */
     ClasspathElementDir(final ClasspathEntryWorkUnit workUnit, final NestedJarHandler nestedJarHandler,
-            final ScanSpec scanSpec) {
+                        final ScanSpec scanSpec) {
         super(workUnit, scanSpec);
         this.classpathEltPath = (Path) workUnit.classpathEntryObj;
         this.nestedJarHandler = nestedJarHandler;
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ClasspathElement#open(
-     * nonapi.io.github.classgraph.concurrency.WorkQueue, nonapi.io.github.classgraph.utils.LogNode)
+     * @see com.bingbaihanji.classgraph.core.ClasspathElement#open(
+     * com.bingbaihanji.classgraph.concurrency.WorkQueue, com.bingbaihanji.classgraph.utils.LogNode)
      */
     @Override
     void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log) {
@@ -100,12 +100,12 @@ class ClasspathElementDir extends ClasspathElement {
             return;
         }
         try {
-            // Auto-add nested lib dirs
+            // 自动添加嵌套的 lib 目录
             int childClasspathEntryIdx = 0;
             for (final String libDirPrefix : ClassLoaderHandlerRegistry.AUTOMATIC_LIB_DIR_PREFIXES) {
                 final Path libDirPath = classpathEltPath.resolve(libDirPrefix);
                 if (FileUtils.canReadAndIsDir(libDirPath)) {
-                    // Add all jarfiles within the lib dir as child classpath entries
+                    // 将 lib 目录中的所有 jar 文件添加为子类路径条目
                     try (DirectoryStream<Path> stream = Files.newDirectoryStream(libDirPath,
                             new DirectoryStream.Filter<Path>() {
                                 @Override
@@ -124,11 +124,11 @@ class ClasspathElementDir extends ClasspathElement {
                                     /* packageRootPrefix = */ ""));
                         }
                     } catch (final IOException e) {
-                        // Ignore -- thrown by Files.newDirectoryStream
+                        // 忽略 -- 由 Files.newDirectoryStream 抛出
                     }
                 }
             }
-            // Only look for package roots if the package root is empty
+            // 仅当包根路径为空时才查找包根
             if (packageRootPrefix.isEmpty()) {
                 for (final String packageRootPrefix : ClassLoaderHandlerRegistry.AUTOMATIC_PACKAGE_ROOT_PREFIXES) {
                     final Path packageRoot = classpathEltPath.resolve(packageRootPrefix);
@@ -153,20 +153,19 @@ class ClasspathElementDir extends ClasspathElement {
     }
 
     /**
-     * Create a new {@link Resource} object for a resource or classfile discovered while scanning paths.
+     * 为扫描路径时发现的资源或 class 文件创建新的 {@link Resource} 对象
      *
      * @param resourcePath
-     *            the {@link Path} for the resource
-     * @return the resource
+     *            资源的 {@link Path}
+     * @return 资源对象
      */
     private Resource newResource(final Path resourcePath, final BasicFileAttributes attributes) {
         final int notYetLoadedLength = -2;
         return new Resource(this, attributes == null ? notYetLoadedLength : attributes.size()) {
-            /** The {@link PathSlice} opened on the file. */
-            private PathSlice pathSlice;
-
-            /** True if the resource is open. */
+            /** 如果资源已打开，则为 true */
             private final AtomicBoolean isOpen = new AtomicBoolean();
+            /** 在文件上打开的 {@link PathSlice} */
+            private PathSlice pathSlice;
 
             @Override
             public long getLength() {
@@ -216,14 +215,14 @@ class ClasspathElementDir extends ClasspathElement {
                                 .permissions();
                     }
                 } catch (UnsupportedOperationException | IOException | SecurityException e) {
-                    // POSIX attributes not supported
+                    // 不支持 POSIX 属性
                 }
                 return posixFilePermissions;
             }
 
             protected void checkCanOpen() {
                 if (skipClasspathElement) {
-                    // Shouldn't happen
+                    // 不应该发生
                     throw new IllegalStateException("Classpath element could not be opened");
                 }
                 if (isOpen.getAndSet(true)) {
@@ -244,7 +243,7 @@ class ClasspathElementDir extends ClasspathElement {
 
             @Override
             ClassfileReader openClassfile() throws IOException {
-                // Classfile won't be compressed, so wrap it in a new PathSlice and then open it
+                // class 文件不会被压缩，因此将其包装在新的 PathSlice 中然后打开
                 openAndCreateSlice();
                 return new ClassfileReader(pathSlice, this);
             }
@@ -270,7 +269,7 @@ class ClasspathElementDir extends ClasspathElement {
             public void close() {
                 if (isOpen.getAndSet(false)) {
                     if (byteBuffer != null) {
-                        // Any ByteBuffer ref should be a duplicate, so it doesn't need to be cleaned
+                        // 任何 ByteBuffer 引用都应该是副本，因此不需要清理
                         byteBuffer = null;
                     }
                     if (pathSlice != null) {
@@ -279,7 +278,7 @@ class ClasspathElementDir extends ClasspathElement {
                         pathSlice = null;
                     }
 
-                    // Close inputStream
+                    // 关闭 inputStream
                     super.close();
                 }
             }
@@ -293,12 +292,11 @@ class ClasspathElementDir extends ClasspathElement {
     }
 
     /**
-     * Get the {@link Resource} for a given relative path.
+     * 获取给定相对路径的 {@link Resource}
      *
      * @param relativePath
-     *            The relative path of the {@link Resource} to return.
-     * @return The {@link Resource} for the given relative path, or null if relativePath does not exist in this
-     *         classpath element.
+     *            要返回的 {@link Resource} 的相对路径
+     * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
     Resource getResource(final String relativePath) {
@@ -307,16 +305,16 @@ class ClasspathElementDir extends ClasspathElement {
     }
 
     /**
-     * Recursively scan a {@link Path} for sub-path patterns matching the scan spec.
+     * 递归扫描 {@link Path} 以查找与扫描规格匹配的子路径模式
      *
      * @param path
-     *            the {@link Path}
+     *            要扫描的 {@link Path}
      * @param log
-     *            the log
+     *            日志
      */
     private void scanPathRecursively(final Path path, final LogNode log) {
-        // See if this canonical path has been scanned before, so that recursive scanning doesn't get stuck in an
-        // infinite loop due to symlinks
+        // 检查此规范路径是否之前已被扫描过，以避免因符号链接导致递归扫描
+        // 陷入无限循环
         Path canonicalPath;
         try {
             canonicalPath = path.toRealPath();
@@ -340,7 +338,7 @@ class ClasspathElementDir extends ClasspathElement {
         if (!dirRelativePathStr.endsWith("/")) {
             dirRelativePathStr += "/";
         }
-        final boolean isDefaultPackage = dirRelativePathStr.equals("/");
+        final boolean isDefaultPackage = "/".equals(dirRelativePathStr);
 
         if (nestedClasspathRootPrefixes != null && nestedClasspathRootPrefixes.contains(dirRelativePathStr)) {
             if (log != null) {
@@ -350,9 +348,9 @@ class ClasspathElementDir extends ClasspathElement {
             return;
         }
 
-        // Ignore versioned sections in exploded jars -- they are only supposed to be used in jars.
-        // TODO: is it necessary to support multi-versioned exploded jars anyway? If so, all the paths in a
-        // directory classpath entry will have to be pre-scanned and masked, as happens in ClasspathElementZip.
+        // 忽略解压 jar 中的版本化部分 -- 它们仅应在 jar 中使用
+        // TODO: 是否有必要同样支持多版本解压 jar？如果是，则目录类路径条目中的所有路径都必须像
+        // ClasspathElementZip 中那样预先扫描和屏蔽
         if (!scanSpec.enableMultiReleaseVersions
                 && dirRelativePathStr.startsWith(LogicalZipFile.MULTI_RELEASE_PATH_PREFIX)) {
             if (log != null) {
@@ -362,30 +360,30 @@ class ClasspathElementDir extends ClasspathElement {
             return;
         }
 
-        // Accept/reject classpath elements based on dir resource paths
+        // 根据目录资源路径接受/拒绝类路径元素
         if (!checkResourcePathAcceptReject(dirRelativePathStr, log)) {
             return;
         }
 
         final ScanSpecPathMatch parentMatchStatus = scanSpec.dirAcceptMatchStatus(dirRelativePathStr);
         if (parentMatchStatus == ScanSpecPathMatch.HAS_REJECTED_PATH_PREFIX) {
-            // Reached a non-accepted or rejected path -- stop the recursive scan
+            // 到达未被接受或已被拒绝的路径 -- 停止递归扫描
             if (log != null) {
                 log.log("Reached rejected directory, stopping recursive scan: " + dirRelativePathStr);
             }
             return;
         }
         if (parentMatchStatus == ScanSpecPathMatch.NOT_WITHIN_ACCEPTED_PATH) {
-            // Reached a non-accepted and non-rejected path -- stop the recursive scan
+            // 到达既未被接受也未被拒绝的路径 -- 停止递归扫描
             return;
         }
 
         final LogNode subLog = log == null ? null
-                // Log dirs after files (addAcceptedResources() precedes log entry with "0:")
+                // 在文件之后记录目录(addAcceptedResources() 在日志条目前加上 "0:")
                 : log.log("1:" + canonicalPath,
-                        "Scanning Path: " + FastPathResolver.resolve(path.toString()) + (path.equals(canonicalPath)
-                                ? ""
-                                : " ; canonical path: " + FastPathResolver.resolve(canonicalPath.toString())));
+                "Scanning Path: " + FastPathResolver.resolve(path.toString()) + (path.equals(canonicalPath)
+                        ? ""
+                        : " ; canonical path: " + FastPathResolver.resolve(canonicalPath.toString())));
 
         final List<Path> pathsInDir = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(path)) {
@@ -401,47 +399,47 @@ class ClasspathElementDir extends ClasspathElement {
         Collections.sort(pathsInDir);
         final FileUtils.FileAttributesGetter getFileAttributes = FileUtils.createCachedAttributesGetter();
 
-        // Determine whether this is a modular jar running under JRE 9+
+        // 确定是否是在 JRE 9+ 下运行的模块化 jar
         final boolean isModularJar = VersionFinder.JAVA_MAJOR_VERSION >= 9 && getModuleName() != null;
 
-        // Only scan files in directory if directory is not only an ancestor of an accepted path
+        // 仅当目录不仅仅是已接受路径的祖先时才扫描目录中的文件
         if (parentMatchStatus != ScanSpecPathMatch.ANCESTOR_OF_ACCEPTED_PATH) {
-            // Do preorder traversal (files in dir, then subdirs), to reduce filesystem cache misses
+            // 执行先序遍历(先处理目录中的文件，再处理子目录)，以减少文件系统缓存未命中
             final Iterator<Path> pathsIterator = pathsInDir.iterator();
             while (pathsIterator.hasNext()) {
                 final Path subPath = pathsIterator.next();
-                // Process files in dir before recursing
+                // 在递归之前处理目录中的文件
                 final BasicFileAttributes fileAttributes = getFileAttributes.get(subPath);
                 if (fileAttributes.isRegularFile()) {
                     pathsIterator.remove();
                     final Path subPathRelative = classpathEltPath.relativize(subPath);
                     final String subPathRelativeStr = FastPathResolver.resolve(subPathRelative.toString());
-                    // If this is a modular jar, ignore all classfiles other than "module-info.class" in the
-                    // default package, since these are disallowed.
+                    // 如果这是一个模块化 jar，则忽略默认包中除 "module-info.class" 之外的所有 class 文件，
+                    // 因为这些都是不允许的
                     if (isModularJar && isDefaultPackage && subPathRelativeStr.endsWith(".class")
-                            && !subPathRelativeStr.equals("module-info.class")) {
+                            && !"module-info.class".equals(subPathRelativeStr)) {
                         continue;
                     }
 
-                    // Accept/reject classpath elements based on file resource paths
+                    // 根据文件资源路径接受/拒绝类路径元素
                     if (!checkResourcePathAcceptReject(subPathRelativeStr, subLog)) {
                         return;
                     }
 
-                    // If relative path is accepted
+                    // 如果相对路径被接受
                     if (parentMatchStatus == ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX
                             || parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_PATH
                             || (parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_CLASS_PACKAGE
-                                    && scanSpec.classfileIsSpecificallyAccepted(subPathRelativeStr))) {
-                        // Resource is accepted
+                            && scanSpec.classfileIsSpecificallyAccepted(subPathRelativeStr))) {
+                        // 资源被接受
                         final Resource resource = newResource(subPath, fileAttributes);
                         addAcceptedResource(resource, parentMatchStatus, /* isClassfileOnly = */ false, subLog);
 
-                        // Save last modified time
+                        // 保存最后修改时间
                         try {
                             fileToLastModified.put(subPath.toFile(), fileAttributes.lastModifiedTime().toMillis());
                         } catch (final UnsupportedOperationException e) {
-                            // Ignore
+                            // 忽略
                         }
                     } else {
                         if (subLog != null) {
@@ -450,12 +448,12 @@ class ClasspathElementDir extends ClasspathElement {
                     }
                 }
             }
-        } else if (scanSpec.enableClassInfo && dirRelativePathStr.equals("/")) {
-            // Always check for module descriptor in package root, even if package root isn't in accept
+        } else if (scanSpec.enableClassInfo && "/".equals(dirRelativePathStr)) {
+            // 始终检查包根中的模块描述符，即使包根不在接受列表中
             final Iterator<Path> pathsIterator = pathsInDir.iterator();
             while (pathsIterator.hasNext()) {
                 final Path subPath = pathsIterator.next();
-                if (subPath.getFileName().toString().equals("module-info.class")) {
+                if ("module-info.class".equals(subPath.getFileName().toString())) {
                     final BasicFileAttributes fileAttributes = getFileAttributes.get(subPath);
                     if (fileAttributes.isRegularFile()) {
                         pathsIterator.remove();
@@ -464,14 +462,14 @@ class ClasspathElementDir extends ClasspathElement {
                         try {
                             fileToLastModified.put(subPath.toFile(), fileAttributes.lastModifiedTime().toMillis());
                         } catch (final UnsupportedOperationException e) {
-                            // Ignore
+                            // 忽略
                         }
                         break;
                     }
                 }
             }
         }
-        // Recurse into subdirectories
+        // 递归进入子目录
         for (final Path subPath : pathsInDir) {
             try {
                 if (getFileAttributes.get(subPath).isDirectory()) {
@@ -488,20 +486,20 @@ class ClasspathElementDir extends ClasspathElement {
             subLog.addElapsedTime();
         }
 
-        // Save the last modified time of the directory
+        // 保存目录的最后修改时间
         try {
             final File file = path.toFile();
             fileToLastModified.put(file, file.lastModified());
         } catch (final UnsupportedOperationException e) {
-            // Ignore
+            // 忽略
         }
     }
 
     /**
-     * Hierarchically scan directory structure for classfiles and matching files.
+     * 层次化扫描目录结构，查找 class 文件和匹配的文件
      *
      * @param log
-     *            the log
+     *            日志
      */
     @Override
     void scanPaths(final LogNode log) {
@@ -512,7 +510,7 @@ class ClasspathElementDir extends ClasspathElement {
             return;
         }
         if (scanned.getAndSet(true)) {
-            // Should not happen
+            // 不应该发生
             throw new IllegalArgumentException("Already scanned classpath element " + this);
         }
 
@@ -525,9 +523,9 @@ class ClasspathElementDir extends ClasspathElement {
     }
 
     /**
-     * Get the module name from module descriptor.
+     * 从模块描述符获取模块名称
      *
-     * @return the module name
+     * @return 模块名称
      */
     @Override
     public String getModuleName() {
@@ -536,10 +534,9 @@ class ClasspathElementDir extends ClasspathElement {
     }
 
     /**
-     * Get the directory {@link File}.
+     * 获取目录 {@link File}
      *
-     * @return The classpath element directory as a {@link File}, or null if this classpath element is not backed by
-     *         a directory (should not happen).
+     * @return 作为 {@link File} 的类路径元素目录，如果此类路径元素不由目录支持则返回 null(不应该发生)
      */
     @Override
     public File getFile() {
@@ -551,7 +548,7 @@ class ClasspathElementDir extends ClasspathElement {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ClasspathElement#getURI()
+     * @see com.bingbaihanji.classgraph.core.ClasspathElement#getURI()
      */
     @Override
     URI getURI() {
@@ -568,14 +565,14 @@ class ClasspathElementDir extends ClasspathElement {
     }
 
     /**
-     * Return the classpath element directory as a String.
+     * 以 String 形式返回类路径元素目录
      *
-     * @return the string
+     * @return 字符串表示
      */
     @Override
     public String toString() {
         try {
-            // Path.toString() does not include the URI scheme for some reason
+            // 由于某些原因，Path.toString() 不包含 URI 协议
             return classpathEltPath.toUri().toString();
         } catch (IOError | SecurityException e) {
             return classpathEltPath.toString();

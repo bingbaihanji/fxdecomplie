@@ -27,7 +27,7 @@ public class FloatValueImpl implements FloatValue {
 
     /**
      * @param value
-     * 		要持有的值（以 double 形式提供）
+     * 		要持有的值(以 double 形式提供)
      */
     public FloatValueImpl(double value) {
         this.value = OptionalDouble.of(value);

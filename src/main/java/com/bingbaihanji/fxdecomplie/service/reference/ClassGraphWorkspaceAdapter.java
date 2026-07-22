@@ -1,20 +1,11 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.classgraph.core.AnnotationInfo;
-import com.bingbaihanji.classgraph.core.AnnotationInfoList;
-import com.bingbaihanji.classgraph.core.ClassInfo;
-import com.bingbaihanji.classgraph.core.ClassInfoList;
-import com.bingbaihanji.classgraph.core.ScanResult;
+import com.bingbaihanji.classgraph.core.*;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
-import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -190,13 +181,13 @@ public final class ClassGraphWorkspaceAdapter {
     }
 
     private static final class MetadataVisitor extends ClassVisitor {
+        final List<String> interfaces = new ArrayList<>();
+        final List<String> annotations = new ArrayList<>();
+        final List<MethodData> methods = new ArrayList<>();
         String name;
         int access;
         String superName;
         String sourceFile;
-        final List<String> interfaces = new ArrayList<>();
-        final List<String> annotations = new ArrayList<>();
-        final List<MethodData> methods = new ArrayList<>();
 
         MetadataVisitor() {
             super(Opcodes.ASM9);
@@ -230,19 +221,21 @@ public final class ClassGraphWorkspaceAdapter {
 
         @Override
         public MethodVisitor visitMethod(int access, String name, String descriptor,
-                                        String signature, String[] exceptions) {
+                                         String signature, String[] exceptions) {
             methods.add(new MethodData(name, descriptor, access));
             return null;
         }
     }
 
     /**
-     * 轻量级方法数据（仅名称、描述符、访问标志）
+     * 轻量级方法数据(仅名称、描述符、访问标志)
      */
-    private record MethodData(String name, String descriptor, int access) {}
+    private record MethodData(String name, String descriptor, int access) {
+    }
 
     private record ClassMetadata(String name, int access, String superName,
                                  List<String> interfaces, List<String> annotations,
                                  List<MethodData> methods, String sourceFile,
-                                 String fullPath) {}
+                                 String fullPath) {
+    }
 }

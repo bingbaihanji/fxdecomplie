@@ -37,59 +37,62 @@ import com.bingbaihanji.classgraph.utils.LogNode;
 import java.io.File;
 
 /**
- * 处理 OSGi DefaultClassLoader。
+ * 处理 OSGi DefaultClassLoader
  *
  * @author lukehutch
  */
 class OSGiDefaultClassLoaderHandler implements ClassLoaderHandler {
-    /** 类不可构造。 */
+    /** 类不可构造 */
     public OSGiDefaultClassLoaderHandler() {
     }
 
     /**
-     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}
      *
      * @param classLoaderClass
-     *            {@link ClassLoader} 类或其超类。
+     *            {@link ClassLoader} 类或其超类
      * @param log
      *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
      */
-    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+    @Override
+    public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
                 "org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader");
     }
 
     /**
-     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序
      *
      * @param classLoader
-     *            要查找委托顺序的 {@link ClassLoader}。
+     *            要查找委托顺序的 {@link ClassLoader}
      * @param classLoaderOrder
-     *            要更新的 {@link ClassLoaderOrder} 对象。
+     *            要更新的 {@link ClassLoaderOrder} 对象
      * @param log
      *            日志
      */
-    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-                                            final LogNode log) {
+    @Override
+    public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                     final LogNode log) {
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
 
     /**
-     * 查找关联 {@link ClassLoader} 的类路径条目。
+     * 查找关联 {@link ClassLoader} 的类路径条目
      *
      * @param classLoader
-     *            要查找类路径条目顺序的 {@link ClassLoader}。
+     *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
-     *            要更新的 {@link ClasspathOrder} 对象。
+     *            要更新的 {@link ClasspathOrder} 对象
      * @param scanSpec
-     *            {@link ScanSpec}。
+     *            {@link ScanSpec}
      * @param log
-     *            日志。
+     *            日志
      */
-    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                          final ScanSpec scanSpec, final LogNode log) {
+    @Override
+    public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                   final ScanSpec scanSpec, final LogNode log) {
         final Object classpathManager = classpathOrder.reflectionUtils.invokeMethod(false, classLoader,
                 "getClasspathManager");
         final Object[] entries = (Object[]) classpathOrder.reflectionUtils.getFieldVal(false, classpathManager,

@@ -26,46 +26,28 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
 
 import java.util.*;
 
-/** A type argument. */
+/** 一个类型参数 */
 public final class TypeArgument extends HierarchicalTypeSignature {
-    /** A type wildcard. */
-    public enum Wildcard {
-        /** No wildcard. */
-        NONE,
-
-        /** The '?' wildcard. */
-        ANY,
-
-        /** extends. */
-        EXTENDS,
-
-        /** super. */
-        SUPER
-    }
-
-    /** A wildcard type. */
+    /** 通配符类型 */
     private final Wildcard wildcard;
-
-    /** Type signature (will be null if wildcard == ANY). */
+    /** 类型签名(如果 wildcard == ANY，则为 null) */
     private final ReferenceTypeSignature typeSignature;
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param wildcard
-     *            The wildcard type
+     *            通配符类型
      * @param typeSignature
-     *            The type signature
+     *            类型签名
      */
     private TypeArgument(final Wildcard wildcard, final ReferenceTypeSignature typeSignature) {
         super();
@@ -76,55 +58,15 @@ public final class TypeArgument extends HierarchicalTypeSignature {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the type wildcard, which is one of {NONE, ANY, EXTENDS, SUPER}.
-     * 
-     * @return The type wildcard.
-     */
-    public Wildcard getWildcard() {
-        return wildcard;
-    }
-
-    /**
-     * Get the type signature associated with the wildcard (or null, if the wildcard is ANY).
-     * 
-     * @return The type signature.
-     */
-    public ReferenceTypeSignature getTypeSignature() {
-        return typeSignature;
-    }
-
-    @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
-        if (typePath.size() == 0 && wildcard != Wildcard.NONE) {
-            // Annotation before wildcard
-            addTypeAnnotation(annotationInfo);
-        } else if (typePath.size() > 0 && typePath.get(0).typePathKind == 2) {
-            // Annotation is on the bound of a wildcard type argument of a parameterized type.
-            // TypeSignature can be null in a corrupt classfile (#758).
-            if (typeSignature != null) {
-                typeSignature.addTypeAnnotation(typePath.subList(1, typePath.size()), annotationInfo);
-            }
-        } else {
-            // Annotation is on a type argument of a parameterized type.
-            // TypeSignature can be null in a corrupt classfile (#758).
-            if (typeSignature != null) {
-                typeSignature.addTypeAnnotation(typePath, annotationInfo);
-            }
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Parse a type argument.
-     * 
+     * 解析一个类型参数
+     *
      * @param parser
-     *            The parser.
+     *            解析器
      * @param definingClassName
-     *            The name of the defining class (for resolving type variables).
-     * @return The parsed method type signature.
+     *            定义类的名称(用于解析类型变量)
+     * @return 解析后的方法类型签名
      * @throws ParseException
-     *             If method type signature could not be parsed.
+     *             如果方法类型签名无法解析
      */
     private static TypeArgument parse(final Parser parser, final String definingClassName) throws ParseException {
         final char peek = parser.peek();
@@ -157,16 +99,18 @@ public final class TypeArgument extends HierarchicalTypeSignature {
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Parse a list of type arguments.
-     * 
+     * 解析一个类型参数列表
+     *
      * @param parser
-     *            The parser.
+     *            解析器
      * @param definingClassName
-     *            The name of the defining class (for resolving type variables).
-     * @return The list of type arguments.
+     *            定义类的名称(用于解析类型变量)
+     * @return 类型参数列表
      * @throws ParseException
-     *             If type signature could not be parsed.
+     *             如果类型签名无法解析
      */
     static List<TypeArgument> parseList(final Parser parser, final String definingClassName) throws ParseException {
         if (parser.peek() == '<') {
@@ -185,19 +129,59 @@ public final class TypeArgument extends HierarchicalTypeSignature {
         }
     }
 
+    /**
+     * 获取类型通配符，其值为 {NONE, ANY, EXTENDS, SUPER} 之一
+     *
+     * @return 类型通配符
+     */
+    public Wildcard getWildcard() {
+        return wildcard;
+    }
+
+    /**
+     * 获取与通配符关联的类型签名(如果通配符为 ANY，则为 null)
+     *
+     * @return 类型签名
+     */
+    public ReferenceTypeSignature getTypeSignature() {
+        return typeSignature;
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
-    /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
-     */
     @Override
-    protected String getClassName() {
-        // getClassInfo() is not valid for this type, so getClassName() does not need to be implemented
-        throw new IllegalArgumentException("getClassName() cannot be called here");
+    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+        if (typePath.size() == 0 && wildcard != Wildcard.NONE) {
+            // 通配符之前的注解
+            addTypeAnnotation(annotationInfo);
+        } else if (typePath.size() > 0 && typePath.get(0).typePathKind == 2) {
+            // 注解位于参数化类型的通配符类型参数的边界上
+            // TypeSignature 在损坏的类文件中可能为 null (#758)
+            if (typeSignature != null) {
+                typeSignature.addTypeAnnotation(typePath.subList(1, typePath.size()), annotationInfo);
+            }
+        } else {
+            // 注解位于参数化类型的类型参数上
+            // TypeSignature 在损坏的类文件中可能为 null (#758)
+            if (typeSignature != null) {
+                typeSignature.addTypeAnnotation(typePath, annotationInfo);
+            }
+        }
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     */
+    @Override
+    protected String getClassName() {
+        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
+        throw new IllegalArgumentException("getClassName() cannot be called here");
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /* (non-Javadoc)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -205,7 +189,7 @@ public final class TypeArgument extends HierarchicalTypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -216,18 +200,16 @@ public final class TypeArgument extends HierarchicalTypeSignature {
     }
 
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 获取类型签名中引用的任何类的名称
      *
      * @param refdClassNames
-     *            the referenced class names.
+     *            引用的类名
      */
     public void findReferencedClassNames(final Set<String> refdClassNames) {
         if (typeSignature != null) {
             typeSignature.findReferencedClassNames(refdClassNames);
         }
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -236,6 +218,8 @@ public final class TypeArgument extends HierarchicalTypeSignature {
     public int hashCode() {
         return (typeSignature != null ? typeSignature.hashCode() : 0) + 7 * wildcard.hashCode();
     }
+
+    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
@@ -250,14 +234,12 @@ public final class TypeArgument extends HierarchicalTypeSignature {
         final TypeArgument other = (TypeArgument) obj;
         return Objects.equals(this.typeAnnotationInfo, other.typeAnnotationInfo)
                 && (Objects.equals(this.typeSignature, other.typeSignature)
-                        && other.wildcard.equals(this.wildcard));
+                && other.wildcard.equals(this.wildcard));
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     @Override
     protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
+                                    final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
                 if (annotationsToExclude == null || !annotationsToExclude.contains(annotationInfo)) {
@@ -267,21 +249,38 @@ public final class TypeArgument extends HierarchicalTypeSignature {
             }
         }
         switch (wildcard) {
-        case ANY:
-            buf.append('?');
-            break;
-        case EXTENDS:
-            final String typeSigStr = typeSignature.toString(useSimpleNames);
-            buf.append(typeSigStr.equals("java.lang.Object") ? "?" : "? extends " + typeSigStr);
-            break;
-        case SUPER:
-            buf.append("? super ");
-            typeSignature.toString(useSimpleNames, buf);
-            break;
-        case NONE:
-        default:
-            typeSignature.toString(useSimpleNames, buf);
-            break;
+            case ANY:
+                buf.append('?');
+                break;
+            case EXTENDS:
+                final String typeSigStr = typeSignature.toString(useSimpleNames);
+                buf.append("java.lang.Object".equals(typeSigStr) ? "?" : "? extends " + typeSigStr);
+                break;
+            case SUPER:
+                buf.append("? super ");
+                typeSignature.toString(useSimpleNames, buf);
+                break;
+            case NONE:
+            default:
+                typeSignature.toString(useSimpleNames, buf);
+                break;
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /** 类型通配符 */
+    public enum Wildcard {
+        /** 无通配符 */
+        NONE,
+
+        /** '?' 通配符 */
+        ANY,
+
+        /** extends 通配符 */
+        EXTENDS,
+
+        /** super 通配符 */
+        SUPER
     }
 }

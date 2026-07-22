@@ -10,9 +10,8 @@ import com.bingbaihanji.fxdecomplie.service.DiskCodeCache;
 import com.bingbaihanji.fxdecomplie.ui.DialogHelper;
 import com.bingbaihanji.fxdecomplie.ui.theme.ThemeManager;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import com.bingbaihanji.utils.json.JSONUtils;
+import com.fasterxml.jackson.core.type.TypeReference;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -173,9 +172,9 @@ public final class SettingsDialog {
                     return;
                 }
                 try {
-                    Map<String, Map<String, String>> allOpts = new Gson().fromJson(jsonText,
-                            new TypeToken<Map<String, Map<String, String>>>() {
-                            }.getType());
+                    Map<String, Map<String, String>> allOpts = JSONUtils.fromJson(jsonText,
+                            new TypeReference<Map<String, Map<String, String>>>() {
+                            });
                     applyJsonToControls(allOpts, engineControlMaps);
                     jsonDirty[0] = false;
                     engineOptionsArea.setStyle(JSON_AREA_STYLE);
@@ -730,8 +729,8 @@ public final class SettingsDialog {
             return;
         }
         try {
-            Object tree = new Gson().fromJson(text, Object.class);
-            jsonArea.setText(new GsonBuilder().setPrettyPrinting().create().toJson(tree));
+            Object tree = JSONUtils.fromJson(text, Object.class);
+            jsonArea.setText(JSONUtils.toPrettyJson(tree));
             jsonArea.setStyle(JSON_AREA_STYLE);
         } catch (Exception ex) {
             jsonArea.setStyle(JSON_AREA_ERROR_STYLE);
@@ -811,8 +810,7 @@ public final class SettingsDialog {
             return;
         }
         try {
-            String json = new GsonBuilder().setPrettyPrinting().create()
-                    .toJson(config.decompiler().engineOptions());
+            String json = JSONUtils.toPrettyJson(config.decompiler().engineOptions());
             jsonArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ignored) {
             log.debug("syncJsonFromConfig 序列化失败", ignored);
@@ -825,9 +823,9 @@ public final class SettingsDialog {
             return null;
         }
         try {
-            return new Gson().fromJson(json,
-                    new TypeToken<Map<String, Map<String, String>>>() {
-                    }.getType());
+            return JSONUtils.fromJson(json,
+                    new TypeReference<Map<String, Map<String, String>>>() {
+                    });
         } catch (Exception ex) {
             log.warn("解析引擎选项 JSON 失败", ex);
             return null;
@@ -857,8 +855,7 @@ public final class SettingsDialog {
     /** 从配置中读取引擎选项并格式化为 JSON 显示在文本区域 */
     private static void refreshEngineOptionsJson(AppConfig config, TextArea jsonArea) {
         try {
-            String json = new GsonBuilder().setPrettyPrinting().create()
-                    .toJson(config.decompiler().engineOptions());
+            String json = JSONUtils.toPrettyJson(config.decompiler().engineOptions());
             jsonArea.setText(("{}".equals(json) || "null".equals(json)) ? "" : json);
         } catch (Exception ex) {
             log.warn("序列化引擎选项 JSON 失败", ex);

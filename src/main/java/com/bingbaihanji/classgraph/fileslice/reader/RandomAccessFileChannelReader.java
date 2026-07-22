@@ -26,7 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice.reader;
+package com.bingbaihanji.classgraph.fileslice.reader;
+
+import com.bingbaihanji.classgraph.utils.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,47 +37,40 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import nonapi.io.github.classgraph.utils.StringUtils;
-
 /**
- * {@link RandomAccessReader} for a {@link File}. Reads in <b>little endian</b> order, as required by the zipfile
- * format.
+ * 用于 {@link File} 的 {@link RandomAccessReader}按 zipfile 格式所需的<b>小端序</b>读取
  */
 public class RandomAccessFileChannelReader implements RandomAccessReader {
 
-    /** The file channel. */
+    /** 文件通道 */
     private final FileChannel fileChannel;
 
-    /** The slice start pos. */
+    /** 切片起始位置 */
     private final long sliceStartPos;
 
-    /** The slice length. */
+    /** 切片长度 */
     private final long sliceLength;
-
-    /** The reusable byte buffer. */
-    private ByteBuffer reusableByteBuffer;
-
-    /** The scratch arr. */
+    /** 临时数组 */
     private final byte[] scratchArr = new byte[8];
-
-    /** The scratch byte buf. */
+    /** 临时字节缓冲区 */
     private final ByteBuffer scratchByteBuf = ByteBuffer.wrap(scratchArr);
-
-    /** The utf 8 bytes. */
+    /** 可复用的字节缓冲区 */
+    private ByteBuffer reusableByteBuffer;
+    /** UTF-8 字节数组 */
     private byte[] utf8Bytes;
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param fileChannel
-     *            the file channel
+     *            文件通道
      * @param sliceStartPos
-     *            the slice start pos
+     *            切片起始位置
      * @param sliceLength
-     *            the slice length
+     *            切片长度
      */
     public RandomAccessFileChannelReader(final FileChannel fileChannel, final long sliceStartPos,
-            final long sliceLength) {
+                                         final long sliceLength) {
         this.fileChannel = fileChannel;
         this.sliceStartPos = sliceStartPos;
         this.sliceLength = sliceLength;
@@ -113,11 +108,11 @@ public class RandomAccessFileChannelReader implements RandomAccessReader {
                 throw new IOException("Read index out of bounds");
             }
             if (reusableByteBuffer == null || reusableByteBuffer.array() != dstArr) {
-                // If reusableByteBuffer is not set, or wraps a different array from a previous operation,
-                // wrap dstArr with a new ByteBuffer
+                // 如果 reusableByteBuffer 未设置，或包装的是前一次操作的其他数组，
+                // 则用新的 ByteBuffer 包装 dstArr
                 reusableByteBuffer = ByteBuffer.wrap(dstArr);
             }
-            // Read into reusableByteBuffer, which is backed with dstArr
+            // 读入 reusableByteBuffer，其后备数组为 dstArr
             return read(srcOffset, reusableByteBuffer, dstArrStart, numBytes);
 
         } catch (BufferUnderflowException | IndexOutOfBoundsException e) {
@@ -188,8 +183,8 @@ public class RandomAccessFileChannelReader implements RandomAccessReader {
 
     @Override
     public String readString(final long offset, final int numBytes, final boolean replaceSlashWithDot,
-            final boolean stripLSemicolon) throws IOException {
-        // Reuse UTF8 buffer array if it's non-null from a previous call, and if it's big enough
+                             final boolean stripLSemicolon) throws IOException {
+        // 如果前一次调用时 UTF8 缓冲区数组非空且足够大，则复用它
         if (utf8Bytes == null || utf8Bytes.length < numBytes) {
             utf8Bytes = new byte[numBytes];
         }

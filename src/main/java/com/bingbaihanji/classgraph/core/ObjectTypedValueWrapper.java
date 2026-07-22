@@ -26,9 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -36,81 +36,81 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/** A union type, used for typesafe serialization/deserialization to/from JSON. Only one field is ever set. */
+/** 联合类型，用于类型安全的 JSON 序列化/反序列化任何时候仅设置一个字段 */
 class ObjectTypedValueWrapper extends ScanResultObject {
-    // Parameter value is split into different fields by type, so that serialization and deserialization
-    // works properly (can't properly serialize a field of Object type, since the concrete type is not
-    // TODO: remove this class once JSON serialization is removed
-    /** Enum value. */
-    // stored in JSON).
+    // 参数值按类型拆分到不同的字段中，以便序列化和反序列化正常工作
+    // (无法正确序列化 Object 类型的字段，因为具体类型未
+    // TODO: 移除 JSON 序列化后删除此类
+    // 存储在 JSON 中)
+    /** 枚举值 */
     private AnnotationEnumValue annotationEnumValue;
 
-    /** Class ref. */
+    /** 类引用 */
     private AnnotationClassRef annotationClassRef;
 
-    /** AnnotationInfo. */
+    /** 注解信息 */
     private AnnotationInfo annotationInfo;
 
-    /** String value. */
+    /** 字符串值 */
     private String stringValue;
 
-    /** Integer value. */
+    /** 整数(Integer)值 */
     private Integer integerValue;
 
-    /** Long value. */
+    /** 长整数(Long)值 */
     private Long longValue;
 
-    /** Short value. */
+    /** 短整数(Short)值 */
     private Short shortValue;
 
-    /** Boolean value. */
+    /** 布尔值 */
     private Boolean booleanValue;
 
-    /** Character value. */
+    /** 字符值 */
     private Character characterValue;
 
-    /** Float value. */
+    /** 单精度浮点值 */
     private Float floatValue;
 
-    /** Double value. */
+    /** 双精度浮点值 */
     private Double doubleValue;
 
-    /** Byte value. */
+    /** 字节值 */
     private Byte byteValue;
 
-    /** String array value. */
+    /** 字符串数组值 */
     private String[] stringArrayValue;
 
-    /** Int array value. */
+    /** int 数组值 */
     private int[] intArrayValue;
 
-    /** Long array value. */
+    /** long 数组值 */
     private long[] longArrayValue;
 
-    /** Short array value. */
+    /** short 数组值 */
     private short[] shortArrayValue;
 
-    /** Boolean array value. */
+    /** boolean 数组值 */
     private boolean[] booleanArrayValue;
 
-    /** Char array value. */
+    /** char 数组值 */
     private char[] charArrayValue;
 
-    /** Float array value. */
+    /** float 数组值 */
     private float[] floatArrayValue;
 
-    /** Double array value. */
+    /** double 数组值 */
     private double[] doubleArrayValue;
 
-    /** Byte array value. */
+    /** byte 数组值 */
     private byte[] byteArrayValue;
 
-    /** Object array value. */
+    /** Object 数组值 */
     private ObjectTypedValueWrapper[] objectArrayValue;
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Default constructor for deserialization. */
+    /** 反序列化的默认构造函数 */
     public ObjectTypedValueWrapper() {
         super();
     }
@@ -118,17 +118,17 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param annotationParamValue
-     *            annotation parameter value
+     *            注解参数值
      */
     public ObjectTypedValueWrapper(final Object annotationParamValue) {
         super();
         if (annotationParamValue != null) {
             final Class<?> annotationParameterValueClass = annotationParamValue.getClass();
             if (annotationParameterValueClass.isArray()) {
-                // Support for 1D primitive and string arrays is needed for annotation parameter values
+                // 注解参数值需要支持一维基本类型数组和字符串数组
                 if (annotationParameterValueClass == String[].class) {
                     stringArrayValue = (String[]) annotationParamValue;
                 } else if (annotationParameterValueClass == int[].class) {
@@ -148,7 +148,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 } else if (annotationParameterValueClass == byte[].class) {
                     byteArrayValue = (byte[]) annotationParamValue;
                 } else {
-                    // Object array type -- wrap each individual element
+                    // 对象数组类型 —— 包装每个单独的元素
                     final int n = Array.getLength(annotationParamValue);
                     objectArrayValue = new ObjectTypedValueWrapper[n];
                     for (int i = 0; i < n; i++) {
@@ -181,7 +181,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 byteValue = (Byte) annotationParamValue;
             } else {
                 throw new IllegalArgumentException(
-                        "Unsupported annotation parameter value type: " + annotationParameterValueClass.getName());
+                        "不支持的注解参数值类型: " + annotationParameterValueClass.getName());
             }
         }
     }
@@ -189,13 +189,13 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Instantiate or get the wrapped value.
+     * 实例化或获取包装的值
      *
      * @param annotationClassInfo
-     *            if non-null, instantiate this object as a parameter value of this annotation class.
+     *            如果非 null，则将此对象实例化为该注解类的参数值
      * @param paramName
-     *            if non-null, instantiate this object as a value of this named parameter.
-     * @return The value wrapped by this wrapper class.
+     *            如果非 null，则将此对象实例化为该命名参数的值
+     * @return 此包装类包装的值
      */
     Object instantiateOrGet(final ClassInfo annotationClassInfo, final String paramName) {
         final boolean instantiate = annotationClassInfo != null;
@@ -242,20 +242,20 @@ class ObjectTypedValueWrapper extends ScanResultObject {
         } else if (byteArrayValue != null) {
             return byteArrayValue;
         } else if (objectArrayValue != null) {
-            // Get the element type of the array
+            // 获取数组的元素类型
             final Class<?> eltClass = instantiate
                     ? (Class<?>) getArrayValueClassOrName(annotationClassInfo, paramName, /* getClass = */ true)
                     : null;
-            // Allocate array as either a generic Object[] array, if the element type could not be determined,
-            // or as an array of specific element type, if the element type was determined. 
+            // 分配数组，如果无法确定元素类型则作为通用的 Object[] 数组，
+            // 如果可以确定元素类型则作为特定元素类型的数组
             final Object annotationValueObjectArray = eltClass == null ? new Object[objectArrayValue.length]
                     : Array.newInstance(eltClass, objectArrayValue.length);
-            // Fill the array instance.
+            // 填充数组实例
             for (int i = 0; i < objectArrayValue.length; i++) {
                 if (objectArrayValue[i] != null) {
-                    // Get the element value (may also cause the element to be instantiated)
+                    // 获取元素值(也可能导致元素被实例化)
                     final Object eltValue = objectArrayValue[i].instantiateOrGet(annotationClassInfo, paramName);
-                    // Store the possibly-instantiated value in the array
+                    // 将可能已实例化的值存储到数组中
                     Array.set(annotationValueObjectArray, i, eltValue);
                 }
             }
@@ -266,9 +266,9 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     }
 
     /**
-     * Get the value wrapped by this wrapper class.
+     * 获取此包装类包装的值
      *
-     * @return The value wrapped by this wrapper class.
+     * @return 此包装类包装的值
      */
     public Object get() {
         return instantiateOrGet(null, null);
@@ -277,233 +277,241 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the element type of an array element.
+     * 获取数组元素的元素类型
      *
      * @param annotationClassInfo
-     *            annotation class
+     *            注解类
      * @param paramName
-     *            the parameter name
+     *            参数名称
      * @param getClass
-     *            If true, return a {@code Class<?>} reference, otherwise return the class name.
-     * @return the array value type as a {@code Class<?>} reference if getClass is true, otherwise the class name as
-     *         a String.
+     *            如果为 true，则返回 {@code Class<?>} 引用，否则返回类名
+     * @return 如果 getClass 为 true，则作为 {@code Class<?>} 引用返回数组值类型，否则作为
+     *         字符串返回类名
      */
     private Object getArrayValueClassOrName(final ClassInfo annotationClassInfo, final String paramName,
-            final boolean getClass) {
-        // Find the method in the annotation class with the same name as the annotation parameter.
+                                            final boolean getClass) {
+        // 在注解类中查找与注解参数同名的方法
         final MethodInfoList annotationMethodList = annotationClassInfo == null
                 || annotationClassInfo.methodInfo == null ? null : annotationClassInfo.methodInfo.get(paramName);
         if (annotationClassInfo != null && annotationMethodList != null && !annotationMethodList.isEmpty()) {
             if (annotationMethodList.size() > 1) {
-                // There should only be one method with a given name in an annotation
-                throw new IllegalArgumentException("Duplicated annotation parameter method " + paramName + "()"
-                        + " in annotation class " + annotationClassInfo.getName());
+                // 在注解中，一个给定名称应该只有一个方法
+                throw new IllegalArgumentException("注解类 " + annotationClassInfo.getName()
+                        + " 中存在重复的注解参数方法 " + paramName + "()");
             }
-            // Get the result type of the method with the same name as the annotation parameter 
+            // 获取与注解参数同名的方法的结果类型
             final TypeSignature annotationMethodResultTypeSig = annotationMethodList.get(0)
                     .getTypeSignatureOrTypeDescriptor().getResultType();
-            // The result type has to be an array type 
+            // 结果类型必须是数组类型
             if (!(annotationMethodResultTypeSig instanceof ArrayTypeSignature)) {
-                throw new IllegalArgumentException("Annotation parameter " + paramName + " in annotation class "
-                        + annotationClassInfo.getName()
-                        + " holds an array, but does not have an array type signature");
+                throw new IllegalArgumentException("注解类 " + annotationClassInfo.getName()
+                        + " 中的注解参数 " + paramName
+                        + " 包含数组，但没有数组类型签名");
             }
             final ArrayTypeSignature arrayTypeSig = (ArrayTypeSignature) annotationMethodResultTypeSig;
             if (arrayTypeSig.getNumDimensions() != 1) {
-                throw new IllegalArgumentException("Annotations only support 1-dimensional arrays");
+                throw new IllegalArgumentException("注解仅支持一维数组");
             }
             final TypeSignature elementTypeSig = arrayTypeSig.getElementTypeSignature();
             if (elementTypeSig instanceof ClassRefTypeSignature) {
-                // Look up the name of the element type, for non-primitive arrays 
+                // 为非基本类型数组查找元素类型名称
                 final ClassRefTypeSignature classRefTypeSignature = (ClassRefTypeSignature) elementTypeSig;
                 return getClass ? classRefTypeSignature.loadClass() : classRefTypeSignature.getClassName();
             } else if (elementTypeSig instanceof BaseTypeSignature) {
-                // Look up the name of the primitive class, for primitive arrays
+                // 为基本类型数组查找基本类型类名称
                 final BaseTypeSignature baseTypeSignature = (BaseTypeSignature) elementTypeSig;
                 return getClass ? baseTypeSignature.getType() : baseTypeSignature.getTypeStr();
             }
         } else {
-            // Could not find a method with this name -- this is an external class.
-            // Find first non-null object in array, and use its type as the element type of the array.
+            // 无法找到此名称的方法 —— 这是一个外部类
+            // 在数组中查找第一个非 null 对象，并将其类型用作数组的元素类型
             for (final ObjectTypedValueWrapper elt : objectArrayValue) {
                 if (elt != null) {
-                    // Primitive typed arrays will be turned into arrays of boxed types
+                    // 基本类型数组将被转换为包装类型的数组
                     return elt.integerValue != null ? (getClass ? Integer.class : "int")
                             : elt.longValue != null ? (getClass ? Long.class : "long")
-                                    : elt.shortValue != null ? (getClass ? Short.class : "short")
-                                            : elt.characterValue != null ? (getClass ? Character.class : "char")
-                                                    : elt.byteValue != null ? (getClass ? Byte.class : "byte")
-                                                            : elt.booleanValue != null
-                                                                    ? (getClass ? Boolean.class : "boolean")
-                                                                    : elt.doubleValue != null
-                                                                            ? (getClass ? Double.class : "double")
-                                                                            : elt.floatValue != null
-                                                                                    ? (getClass ? Float.class
-                                                                                            : "float")
-                                                                                    : (getClass ? elt.getClass()
-                                                                                            : elt.getClass()
-                                                                                                    .getName());
+                            : elt.shortValue != null ? (getClass ? Short.class : "short")
+                            : elt.characterValue != null ? (getClass ? Character.class : "char")
+                            : elt.byteValue != null ? (getClass ? Byte.class : "byte")
+                            : elt.booleanValue != null
+                            ? (getClass ? Boolean.class : "boolean")
+                            : elt.doubleValue != null
+                            ? (getClass ? Double.class : "double")
+                            : elt.floatValue != null
+                            ? (getClass ? Float.class
+                            : "float")
+                            : (getClass ? elt.getClass()
+                            : elt.getClass()
+                            .getName());
                 }
             }
         }
-        // Could not determine the element type -- just use Object
+        // 无法确定元素类型 —— 直接使用 Object
         return getClass ? Object.class : "java.lang.Object";
     }
 
     /**
-     * Replace Object[] arrays containing boxed types with primitive arrays.
+     * 将包含包装类型的 Object[] 数组替换为基本类型数组
      *
      * @param annotationClassInfo
-     *            annotation class info
+     *            注解类信息
      * @param paramName
-     *            the param name
+     *            参数名称
      */
     void convertWrapperArraysToPrimitiveArrays(final ClassInfo annotationClassInfo, final String paramName) {
         if (annotationInfo != null) {
-            // Recursively convert primitive arrays in nested annotations
+            // 递归转换嵌套注解中的基本类型数组
             annotationInfo.convertWrapperArraysToPrimitiveArrays();
         } else if (objectArrayValue != null) {
             for (final ObjectTypedValueWrapper elt : objectArrayValue) {
                 if (elt.annotationInfo != null) {
-                    // Recurse
+                    // 递归
                     elt.annotationInfo.convertWrapperArraysToPrimitiveArrays();
                 }
             }
 
             if (objectArrayValue.getClass().getComponentType().isArray()) {
-                // More than one array dimension -- not possible for annotation parameter values => skip
+                // 超过一个数组维度 —— 注解参数值不可能出现这种情况 => 跳过
                 return;
             }
 
-            // Find the method in the annotation class with the same name as the annotation parameter.
+            // 在注解类中查找与注解参数同名的方法
             final String targetElementTypeName = (String) getArrayValueClassOrName(annotationClassInfo, paramName,
                     /* getClass = */ false);
 
-            // Get array element type for 1D non-primitive arrays, and convert to a primitive array
+            // 获取一维非基本类型数组的数组元素类型，并将其转换为基本类型数组
             switch (targetElementTypeName) {
-            case "java.lang.String":
-                // Convert Object[] array containing String objects to String[] array
-                stringArrayValue = new String[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    stringArrayValue[j] = objectArrayValue[j].stringValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "int":
-                intArrayValue = new int[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                case "java.lang.String":
+                    // 将包含 String 对象的 Object[] 数组转换为 String[] 数组
+                    stringArrayValue = new String[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        stringArrayValue[j] = objectArrayValue[j].stringValue;
                     }
-                    intArrayValue[j] = objectArrayValue[j].integerValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "long":
-                longArrayValue = new long[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                    objectArrayValue = null;
+                    break;
+                case "int":
+                    intArrayValue = new int[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        intArrayValue[j] = objectArrayValue[j].integerValue;
                     }
-                    longArrayValue[j] = objectArrayValue[j].longValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "short":
-                shortArrayValue = new short[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                    objectArrayValue = null;
+                    break;
+                case "long":
+                    longArrayValue = new long[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        longArrayValue[j] = objectArrayValue[j].longValue;
                     }
-                    shortArrayValue[j] = objectArrayValue[j].shortValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "char":
-                charArrayValue = new char[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                    objectArrayValue = null;
+                    break;
+                case "short":
+                    shortArrayValue = new short[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        shortArrayValue[j] = objectArrayValue[j].shortValue;
                     }
-                    charArrayValue[j] = objectArrayValue[j].characterValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "float":
-                floatArrayValue = new float[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                    objectArrayValue = null;
+                    break;
+                case "char":
+                    charArrayValue = new char[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        charArrayValue[j] = objectArrayValue[j].characterValue;
                     }
-                    floatArrayValue[j] = objectArrayValue[j].floatValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "double":
-                doubleArrayValue = new double[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                    objectArrayValue = null;
+                    break;
+                case "float":
+                    floatArrayValue = new float[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        floatArrayValue[j] = objectArrayValue[j].floatValue;
                     }
-                    doubleArrayValue[j] = objectArrayValue[j].doubleValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "boolean":
-                booleanArrayValue = new boolean[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                    objectArrayValue = null;
+                    break;
+                case "double":
+                    doubleArrayValue = new double[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        doubleArrayValue[j] = objectArrayValue[j].doubleValue;
                     }
-                    booleanArrayValue[j] = objectArrayValue[j].booleanValue;
-                }
-                objectArrayValue = null;
-                break;
-            case "byte":
-                byteArrayValue = new byte[objectArrayValue.length];
-                for (int j = 0; j < objectArrayValue.length; j++) {
-                    final ObjectTypedValueWrapper elt = objectArrayValue[j];
-                    if (elt == null) {
-                        throw new IllegalArgumentException("Illegal null value for array of element type "
-                                + targetElementTypeName + " in parameter " + paramName + " of annotation class "
-                                + (annotationClassInfo == null ? "<class outside accept>"
-                                        : annotationClassInfo.getName()));
+                    objectArrayValue = null;
+                    break;
+                case "boolean":
+                    booleanArrayValue = new boolean[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        booleanArrayValue[j] = objectArrayValue[j].booleanValue;
                     }
-                    byteArrayValue[j] = objectArrayValue[j].byteValue;
-                }
-                objectArrayValue = null;
-                break;
-            default:
-                // Leave objectArrayValue as-is
-                break;
+                    objectArrayValue = null;
+                    break;
+                case "byte":
+                    byteArrayValue = new byte[objectArrayValue.length];
+                    for (int j = 0; j < objectArrayValue.length; j++) {
+                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        if (elt == null) {
+                            throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
+                                    + " 的数组中存在非法 null 值，位于注解类 "
+                                    + (annotationClassInfo == null ? "<class outside accept>"
+                                    : annotationClassInfo.getName())
+                                    + " 的参数 " + paramName + " 中");
+                        }
+                        byteArrayValue[j] = objectArrayValue[j].byteValue;
+                    }
+                    objectArrayValue = null;
+                    break;
+                default:
+                    // 保持 objectArrayValue 不变
+                    break;
             }
         }
     }
@@ -511,24 +519,24 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
-        // getClassInfo() is not valid for this type, so getClassName() does not need to be implemented
-        throw new IllegalArgumentException("getClassName() cannot be called here");
+        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
+        throw new IllegalArgumentException("getClassName() 不能在此处调用");
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
-        throw new IllegalArgumentException("getClassInfo() cannot be called here");
+        throw new IllegalArgumentException("getClassInfo() 不能在此处调用");
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -549,16 +557,16 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     }
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in annotation parameters.
+     * 获取注解参数中引用的所有类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            引用的类信息集合
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         if (annotationEnumValue != null) {
             annotationEnumValue.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         } else if (annotationClassRef != null) {
@@ -664,7 +672,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
         } else if (byteArrayValue != null) {
             buf.append(Arrays.toString(byteArrayValue));
         } else if (objectArrayValue != null) {
-            // TODO this doesn't handle nested arrays, but this toString() method is only used for debugging
+            // TODO 这不处理嵌套数组，但此 toString() 方法仅用于调试
             buf.append(Arrays.toString(objectArrayValue));
         }
     }

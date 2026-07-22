@@ -26,6 +26,7 @@ class InheritanceReferenceServiceTest {
         assertEquals("FileServiceImpl", tree.root().displayName());
         assertTrue(tree.partial() || tree.statusMessage().contains("正在") || tree.statusMessage().contains("Building"));
         assertTrue(hasKind(tree, Kind.INTERFACE));
+        assertTrue(hasKind(tree, Kind.OVERRIDES));
     }
 
     @Test
@@ -41,14 +42,16 @@ class InheritanceReferenceServiceTest {
         InheritanceReferenceTree tree = InheritanceReferenceService.buildTree(
                 workspace, "com/example/FileService.class", bytes);
         assertTrue(hasKind(tree, Kind.IMPLEMENTATION));
+        assertTrue(hasKind(tree, Kind.OVERRIDDEN_BY));
     }
 
     private Workspace sampleWorkspace() throws Exception {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("com/example/FileService.java",
-                "package com.example; public interface FileService {}");
+                "package com.example; public interface FileService { void save(String name); }");
         sources.put("com/example/FileServiceImpl.java",
-                "package com.example; public class FileServiceImpl implements FileService {}");
+                "package com.example; public class FileServiceImpl implements FileService {"
+                        + " public void save(String name) {} }");
         return ClassGraphWorkspaceAdapterTestHelper.buildWorkspace(tempDir.toFile(), sources);
     }
 

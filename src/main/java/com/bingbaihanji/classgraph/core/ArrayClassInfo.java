@@ -26,50 +26,50 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Holds metadata about an array class. This class extends {@link ClassInfo} with additional methods relevant to
- * array classes, in particular {@link #getArrayTypeSignature()}, {@link #getTypeSignatureStr()},
- * {@link #getElementTypeSignature()}, {@link #getElementClassInfo()}, {@link #loadElementClass()}, and
- * {@link #getNumDimensions()}.
- * 
+ * 保存数组类的元数据此类扩展了 {@link ClassInfo}，添加了与数组类相关的额外方法，特别是
+ * {@link #getArrayTypeSignature()}、{@link #getTypeSignatureStr()}、
+ * {@link #getElementTypeSignature()}、{@link #getElementClassInfo()}、{@link #loadElementClass()} 和
+ * {@link #getNumDimensions()}
+ *
  * <p>
- * An {@link ArrayClassInfo} object will not have any methods, fields or annotations.
- * {@link ClassInfo#isArrayClass()} will return true for this subclass of {@link ClassInfo}.
+ * {@link ArrayClassInfo} 对象不会有任何方法、字段或注解
+ * 对于 {@link ClassInfo} 的这个子类，{@link ClassInfo#isArrayClass()} 将返回 true
  */
 public class ArrayClassInfo extends ClassInfo {
-    /** The array type signature. */
+    /** 数组类型签名 */
     private ArrayTypeSignature arrayTypeSignature;
 
-    /** The element class info. */
+    /** 元素类信息 */
     private ClassInfo elementClassInfo;
 
-    /** Default constructor for deserialization. */
+    /** 用于反序列化的默认构造函数 */
     ArrayClassInfo() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param arrayTypeSignature
-     *            the array type signature
+     *            数组类型签名
      */
     ArrayClassInfo(final ArrayTypeSignature arrayTypeSignature) {
         super(arrayTypeSignature.getClassName(), /* modifiers = */ 0, /* resource = */ null);
         this.arrayTypeSignature = arrayTypeSignature;
-        // Pre-load fields from element type
+        // 预加载元素类型的字段
         getElementClassInfo();
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ClassInfo#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ClassInfo#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -79,9 +79,9 @@ public class ArrayClassInfo extends ClassInfo {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the raw type signature string of the array class, e.g. "[[I" for "int[][]".
+     * 获取数组类的原始类型签名字符串，例如 "[[I" 表示 "int[][]"
      *
-     * @return The raw type signature string of the array class.
+     * @return 数组类的原始类型签名字符串
      */
     @Override
     public String getTypeSignatureStr() {
@@ -89,10 +89,9 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /**
-     * Returns null, because array classes do not have a ClassTypeSignature. Call {@link #getArrayTypeSignature()}
-     * instead.
+     * 返回 null，因为数组类没有 ClassTypeSignature请改用 {@link #getArrayTypeSignature()}
      *
-     * @return null (always).
+     * @return null(始终)
      */
     @Override
     public ClassTypeSignature getTypeSignature() {
@@ -100,27 +99,27 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /**
-     * Get the type signature of the class.
+     * 获取类的类型签名
      *
-     * @return The class type signature, if available, otherwise returns null.
+     * @return 类的类型签名(如果可用)，否则返回 null
      */
     public ArrayTypeSignature getArrayTypeSignature() {
         return arrayTypeSignature;
     }
 
     /**
-     * Get the type signature of the array elements.
+     * 获取数组元素的类型签名
      *
-     * @return The type signature of the array elements.
+     * @return 数组元素的类型签名
      */
     public TypeSignature getElementTypeSignature() {
         return arrayTypeSignature.getElementTypeSignature();
     }
 
     /**
-     * Get the number of dimensions of the array.
+     * 获取数组的维度数
      *
-     * @return The number of dimensions of the array.
+     * @return 数组的维度数
      */
     public int getNumDimensions() {
         return arrayTypeSignature.getNumDimensions();
@@ -129,10 +128,10 @@ public class ArrayClassInfo extends ClassInfo {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the {@link ClassInfo} instance for the array element type.
+     * 获取数组元素类型的 {@link ClassInfo} 实例
      *
-     * @return the {@link ClassInfo} instance for the array element type. Returns null if the element type was not
-     *         found during the scan. In particular, will return null for arrays that have a primitive element type.
+     * @return 数组元素类型的 {@link ClassInfo} 实例如果在扫描期间未找到元素类型，则返回 null
+     *         特别是，对于具有基本类型元素的数组将返回 null
      */
     public ClassInfo getElementClassInfo() {
         if (elementClassInfo == null) {
@@ -140,7 +139,7 @@ public class ArrayClassInfo extends ClassInfo {
             if (!(elementTypeSignature instanceof BaseTypeSignature)) {
                 elementClassInfo = arrayTypeSignature.getElementTypeSignature().getClassInfo();
                 if (elementClassInfo != null) {
-                    // Copy over relevant fields from array element ClassInfo
+                    // 从数组元素 ClassInfo 复制相关字段
                     this.classpathElement = elementClassInfo.classpathElement;
                     this.classfileResource = elementClassInfo.classfileResource;
                     this.classLoader = elementClassInfo.classLoader;
@@ -157,39 +156,34 @@ public class ArrayClassInfo extends ClassInfo {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get a {@code Class<?>} reference for the array element type. Causes the ClassLoader to load the element
-     * class, if it is not already loaded.
+     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载，会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
-     *            Whether or not to ignore exceptions.
-     * @return a {@code Class<?>} reference for the array element type. Also works for arrays of primitive element
-     *         type.
+     *            是否忽略异常
+     * @return 数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
     public Class<?> loadElementClass(final boolean ignoreExceptions) {
         return arrayTypeSignature.loadElementClass(ignoreExceptions);
     }
 
     /**
-     * Get a {@code Class<?>} reference for the array element type. Causes the ClassLoader to load the element
-     * class, if it is not already loaded.
+     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载，会导致 ClassLoader 加载它
      *
-     * @return a {@code Class<?>} reference for the array element type. Also works for arrays of primitive element
-     *         type.
+     * @return 数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
     public Class<?> loadElementClass() {
         return arrayTypeSignature.loadElementClass();
     }
 
     /**
-     * Obtain a {@code Class<?>} reference for the array class named by this {@link ArrayClassInfo} object. Causes
-     * the ClassLoader to load the element class, if it is not already loaded.
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
-     *            Whether or not to ignore exceptions
-     * @return The class reference, or null, if ignoreExceptions is true and there was an exception or error loading
-     *         the class.
+     *            是否忽略异常
+     * @return 类引用，如果 ignoreExceptions 为 true 且在加载类时发生了异常或错误，则返回 null
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false and there were problems loading the class.
+     *             如果 ignoreExceptions 为 false 且加载类时出现问题
      */
     @Override
     public Class<?> loadClass(final boolean ignoreExceptions) {
@@ -200,12 +194,12 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /**
-     * Obtain a {@code Class<?>} reference for the array class named by this {@link ArrayClassInfo} object. Causes
-     * the ClassLoader to load the element class, if it is not already loaded.
-     * 
-     * @return The class reference.
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 会导致 ClassLoader 加载它
+     *
+     * @return 类引用
      * @throws IllegalArgumentException
-     *             if there were problems loading the class.
+     *             如果加载类时出现问题
      */
     @Override
     public Class<?> loadClass() {
@@ -218,23 +212,23 @@ public class ArrayClassInfo extends ClassInfo {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in the type descriptor or type signature.
+     * 获取类型描述符或类型签名中引用的任何类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            被引用的类信息
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         super.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ClassInfo#equals(java.lang.Object)
+     * @see com.bingbaihanji.classgraph.core.ClassInfo#equals(java.lang.Object)
      */
     @Override
     public boolean equals(final Object obj) {
@@ -242,7 +236,7 @@ public class ArrayClassInfo extends ClassInfo {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ClassInfo#hashCode()
+     * @see com.bingbaihanji.classgraph.core.ClassInfo#hashCode()
      */
     @Override
     public int hashCode() {

@@ -26,9 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,93 +39,97 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.*;
 import java.util.Map.Entry;
 
-/** An AutoCloseable list of AutoCloseable {@link Resource} objects. */
+/** 一个可自动关闭的 {@link Resource} 对象的可自动关闭列表 */
 public class ResourceList extends PotentiallyUnmodifiableList<Resource> implements AutoCloseable {
-    /** serialVersionUID. */
+    /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 
-    /** An unmodifiable empty {@link ResourceList}. */
+    /** 一个不可修改的空的 {@link ResourceList} */
     static final ResourceList EMPTY_LIST = new ResourceList();
+    /** 如果 Resource 的路径以 ".class" 结尾，则返回 true */
+    private static final ResourceFilter CLASSFILE_FILTER = new ResourceFilter() {
+        @Override
+        public boolean accept(final Resource resource) {
+            final String path = resource.getPath();
+            if (!path.endsWith(".class") || path.length() < 7) {
+                return false;
+            }
+            // 检查文件名不是简单的 ".class"
+            final char c = path.charAt(path.length() - 7);
+            return c != '/' && c != '.';
+        }
+    };
+
     static {
         EMPTY_LIST.makeUnmodifiable();
     }
 
     /**
-     * Return an unmodifiable empty {@link ResourceList}.
-     *
-     * @return the unmodifiable empty {@link ResourceList}.
-     */
-    public static ResourceList emptyList() {
-        return EMPTY_LIST;
-    }
-
-    /**
-     * Create a new modifiable empty list of {@link Resource} objects.
+     * 创建一个新的可修改的空的 {@link Resource} 对象列表
      */
     public ResourceList() {
         super();
     }
 
     /**
-     * Create a new modifiable empty list of {@link Resource} objects, given a size hint.
+     * 创建一个新的可修改的空的 {@link Resource} 对象列表，带有大小提示
      *
      * @param sizeHint
-     *            the size hint
+     *            大小提示
      */
     public ResourceList(final int sizeHint) {
         super(sizeHint);
     }
 
     /**
-     * Create a new modifiable empty {@link ResourceList}, given an initial collection of {@link Resource} objects.
+     * 创建一个新的可修改的空的 {@link ResourceList}，带有初始的 {@link Resource} 对象集合
      *
      * @param resourceCollection
-     *            the collection of {@link Resource} objects.
+     *            {@link Resource} 对象的集合
      */
     public ResourceList(final Collection<Resource> resourceCollection) {
         super(resourceCollection);
     }
 
     /**
-     * Returns a list of all resources with the requested path. (There may be more than one resource with a given
-     * path, from different classpath elements or modules, so this returns a {@link ResourceList} rather than a
-     * single {@link Resource}.)
-     * 
-     * @param resourcePath
-     *            The path of a resource
-     * @return A {@link ResourceList} of {@link Resource} objects in this list that have the given path (there may
-     *         be more than one resource with a given path, from different classpath elements or modules, so this
-     *         returns a {@link ResourceList} rather than a single {@link Resource}.) Returns the empty list if no
-     *         resource with is found with a matching path.
+     * 返回一个不可修改的空的 {@link ResourceList}
+     *
+     * @return 不可修改的空的 {@link ResourceList}
      */
-    public ResourceList get(final String resourcePath) {
-        boolean hasResourceWithPath = false;
-        for (final Resource res : this) {
-            if (res.getPath().equals(resourcePath)) {
-                hasResourceWithPath = true;
-                break;
-            }
-        }
-        if (!hasResourceWithPath) {
-            return EMPTY_LIST;
-        } else {
-            final ResourceList matchingResources = new ResourceList(2);
-            for (final Resource res : this) {
-                if (res.getPath().equals(resourcePath)) {
-                    matchingResources.add(res);
-                }
-            }
-            return matchingResources;
-        }
+    public static ResourceList emptyList() {
+        return EMPTY_LIST;
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the paths of all resources in this list relative to the package root.
+     * 返回具有请求路径的所有资源的列表(可能有多个具有相同路径的资源，来自不同的类路径元素或模块，
+     * 因此返回的是 {@link ResourceList} 而不是单个 {@link Resource})
      *
-     * @return The paths of all resources in this list relative to the package root, by calling
-     *         {@link Resource#getPath()} for each item in the list.
+     * @param resourcePath
+     *            资源的路径
+     * @return 此列表中具有给定路径的 {@link Resource} 对象的 {@link ResourceList}
+     *         (可能有多个具有相同路径的资源，来自不同的类路径元素或模块，
+     *         因此返回的是 {@link ResourceList} 而不是单个 {@link Resource})
+     *         如果未找到匹配路径的资源，则返回空列表
+     */
+    public ResourceList get(final String resourcePath) {
+        ResourceList matchingResources = null;
+        for (final Resource res : this) {
+            if (res.getPath().equals(resourcePath)) {
+                if (matchingResources == null) {
+                    matchingResources = new ResourceList(2);
+                }
+                matchingResources.add(res);
+            }
+        }
+        return matchingResources == null ? EMPTY_LIST : matchingResources;
+    }
+
+    /**
+     * 获取此列表中所有资源相对于包根的路径
+     *
+     * @return 此列表中所有资源相对于包根的路径，通过对列表中的每个项调用 {@link Resource#getPath()} 获得
      */
     public List<String> getPaths() {
         final List<String> resourcePaths = new ArrayList<>(this.size());
@@ -136,26 +140,26 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     }
 
     /**
-     * Get the paths of all resources in this list relative to the root of the classpath element.
+     * 获取此列表中所有资源相对于类路径元素根目录的路径
      *
-     * @return The paths of all resources in this list relative to the root of the classpath element, by calling
-     *         {@link Resource#getPathRelativeToClasspathElement()} for each item in the list.
+     * @return 此列表中所有资源相对于类路径元素根目录的路径，
+     *         通过对列表中的每个项调用 {@link Resource#getPathRelativeToClasspathElement()} 获得
      */
     public List<String> getPathsRelativeToClasspathElement() {
         final List<String> resourcePaths = new ArrayList<>(this.size());
         for (final Resource resource : this) {
-            resourcePaths.add(resource.getPath());
+            resourcePaths.add(resource.getPathRelativeToClasspathElement());
         }
         return resourcePaths;
     }
 
     /**
-     * Get the URLs of all resources in this list, by calling {@link Resource#getURL()} for each item in the list.
-     * Note that any resource with a {@code jrt:} URI (e.g. a system resource, or a resource from a jlink'd image)
-     * will cause {@link IllegalArgumentException} to be thrown, since {@link URL} does not support this scheme, so
-     * {@link #getURIs()} is strongly preferred over {@link #getURLs()}.
+     * 获取此列表中所有资源的 URL，通过对列表中的每个项调用 {@link Resource#getURL()} 获得
+     * 注意，任何具有 {@code jrt:} URI 的资源(例如系统资源或来自 jlink 镜像的资源)
+     * 将导致抛出 {@link IllegalArgumentException}，因为 {@link URL} 不支持此协议，
+     * 因此强烈建议使用 {@link #getURIs()} 而非 {@link #getURLs()}
      *
-     * @return The URLs of all resources in this list.
+     * @return 此列表中所有资源的 URL
      */
     public List<URL> getURLs() {
         final List<URL> resourceURLs = new ArrayList<>(this.size());
@@ -165,10 +169,12 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         return resourceURLs;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the URIs of all resources in this list, by calling {@link Resource#getURI()} for each item in the list.
+     * 获取此列表中所有资源的 URI，通过对列表中的每个项调用 {@link Resource#getURI()} 获得
      *
-     * @return The URIs of all resources in this list.
+     * @return 此列表中所有资源的 URI
      */
     public List<URI> getURIs() {
         final List<URI> resourceURLs = new ArrayList<>(this.size());
@@ -178,36 +184,19 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         return resourceURLs;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** Returns true if a Resource has a path ending in ".class". */
-    private static final ResourceFilter CLASSFILE_FILTER = new ResourceFilter() {
-        @Override
-        public boolean accept(final Resource resource) {
-            final String path = resource.getPath();
-            if (!path.endsWith(".class") || path.length() < 7) {
-                return false;
-            }
-            // Check filename is not simply ".class"
-            final char c = path.charAt(path.length() - 7);
-            return c != '/' && c != '.';
-        }
-    };
-
     /**
-     * Return a new {@link ResourceList} consisting of only the resources with the filename extension ".class".
+     * 返回一个新的 {@link ResourceList}，仅包含文件扩展名为 ".class" 的资源
      *
-     * @return A new {@link ResourceList} consisting of only the resources with the filename extension ".class".
+     * @return 一个新的 {@link ResourceList}，仅包含文件扩展名为 ".class" 的资源
      */
     public ResourceList classFilesOnly() {
         return filter(CLASSFILE_FILTER);
     }
 
     /**
-     * Return a new {@link ResourceList} consisting of non-classfile resources only.
+     * 返回一个新的 {@link ResourceList}，仅包含非类文件资源
      *
-     * @return A new {@link ResourceList} consisting of only the resources that do not have the filename extension
-     *         ".class".
+     * @return 一个新的 {@link ResourceList}，仅包含不具有 ".class" 文件扩展名的资源
      */
     public ResourceList nonClassFilesOnly() {
         return filter(new ResourceFilter() {
@@ -221,11 +210,11 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Return this {@link ResourceList} as a map from resource path (obtained from {@link Resource#getPath()}) to a
-     * {@link ResourceList} of {@link Resource} objects that have that path.
+     * 将此 {@link ResourceList} 作为从资源路径(由 {@link Resource#getPath()} 获得)到
+     * 具有该路径的 {@link Resource} 对象的 {@link ResourceList} 的映射返回
      *
-     * @return This {@link ResourceList} as a map from resource path (obtained from {@link Resource#getPath()}) to a
-     *         {@link ResourceList} of {@link Resource} objects that have that path.
+     * @return 将此 {@link ResourceList} 作为从资源路径(由 {@link Resource#getPath()} 获得)到
+     *         具有该路径的 {@link Resource} 对象的 {@link ResourceList} 的映射返回
      */
     public Map<String, ResourceList> asMap() {
         final Map<String, ResourceList> pathToResourceList = new HashMap<>();
@@ -242,17 +231,17 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     }
 
     /**
-     * Find duplicate resource paths within this {@link ResourceList}.
+     * 在此 {@link ResourceList} 中查找重复的资源路径
      *
-     * @return A {@link List} of {@link Entry} objects for all resources in the classpath and/or module path that
-     *         have a non-unique path (i.e. where there are at least two resources with the same path). The key of
-     *         each returned {@link Entry} is the path (obtained from {@link Resource#getPath()}), and the value is
-     *         a {@link ResourceList} of at least two unique {@link Resource} objects that have that path.
+     * @return 一个 {@link List}，包含类路径和/或模块路径中所有具有非唯一路径的资源
+     *         (即至少有两个资源具有相同路径)的 {@link Entry} 对象
+     *         每个返回的 {@link Entry} 的键是路径(由 {@link Resource#getPath()} 获得)，
+     *         值是一个包含至少两个具有该路径的唯一 {@link Resource} 对象的 {@link ResourceList}
      */
     public List<Entry<String, ResourceList>> findDuplicatePaths() {
         final List<Entry<String, ResourceList>> duplicatePaths = new ArrayList<>();
         for (final Entry<String, ResourceList> pathAndResourceList : asMap().entrySet()) {
-            // Find ResourceLists with two or more entries
+            // 查找包含两个或更多条目的 ResourceList
             if (pathAndResourceList.getValue().size() > 1) {
                 duplicatePaths.add(new SimpleEntry<>(pathAndResourceList.getKey(), pathAndResourceList.getValue()));
             }
@@ -260,7 +249,7 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         CollectionUtils.sortIfNotEmpty(duplicatePaths, new Comparator<Entry<String, ResourceList>>() {
             @Override
             public int compare(final Entry<String, ResourceList> o1, final Entry<String, ResourceList> o2) {
-                // Sort in lexicographic order of path
+                // 按路径的字典序排序
                 return o1.getKey().compareTo(o2.getKey());
             }
         });
@@ -270,28 +259,11 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Filter a {@link ResourceList} using a predicate mapping a {@link Resource} object to a boolean, producing
-     * another {@link ResourceList} for all items in the list for which the predicate is true.
-     */
-    @FunctionalInterface
-    public interface ResourceFilter {
-        /**
-         * Whether or not to allow a {@link Resource} list item through the filter.
-         *
-         * @param resource
-         *            The {@link Resource} item to filter.
-         * @return Whether or not to allow the item through the filter. If true, the item is copied to the output
-         *         list; if false, it is excluded.
-         */
-        boolean accept(Resource resource);
-    }
-
-    /**
-     * Find the subset of the {@link Resource} objects in this list for which the given filter predicate is true.
+     * 查找此列表中给定过滤谓词为真的 {@link Resource} 对象的子集
      *
      * @param filter
-     *            The {@link ResourceFilter} to apply.
-     * @return The subset of the {@link Resource} objects in this list for which the given filter predicate is true.
+     *            要应用的 {@link ResourceFilter}
+     * @return 此列表中给定过滤谓词为真的 {@link Resource} 对象的子集
      */
     public ResourceList filter(final ResourceFilter filter) {
         final ResourceList resourcesFiltered = new ResourceList();
@@ -303,57 +275,19 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         return resourcesFiltered;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** A {@link FunctionalInterface} for consuming the contents of a {@link Resource} as a byte array. */
-    @FunctionalInterface
-    public interface ByteArrayConsumer {
-        /**
-         * Consume the complete content of a {@link Resource} as a byte array.
-         * 
-         * @param resource
-         *            The {@link Resource} used to load the byte array.
-         * @param byteArray
-         *            The complete content of the resource.
-         */
-        void accept(final Resource resource, final byte[] byteArray);
-    }
-
     /**
-     * A {@link FunctionalInterface} for consuming the contents of a {@link Resource} as a byte array, throwing
-     * {@link IOException} to the caller if an IO exception occurs.
-     */
-    @FunctionalInterface
-    public interface ByteArrayConsumerThrowsIOException {
-        /**
-         * Consume the complete content of a {@link Resource} as a byte array, possibly throwing
-         * {@link IOException}.
-         * 
-         * @param resource
-         *            The {@link Resource} used to load the byte array.
-         * @param byteArray
-         *            The complete content of the resource.
-         * @throws IOException
-         *             if an IO exception occurs.
-         */
-        void accept(final Resource resource, final byte[] byteArray) throws IOException;
-    }
-
-    /**
-     * Fetch the content of each {@link Resource} in this {@link ResourceList} as a byte array, pass the byte array
-     * to the given {@link ByteArrayConsumer}, then close the underlying InputStream or release the underlying
-     * ByteBuffer by calling {@link Resource#close()}.
-     * 
+     * 获取此 {@link ResourceList} 中每个 {@link Resource} 的内容并以字节数组形式返回，
+     * 将字节数组传递给给定的 {@link ByteArrayConsumer}，
+     * 然后通过调用 {@link Resource#close()} 关闭底层的 InputStream 或释放底层的 ByteBuffer
+     *
      * @param byteArrayConsumer
-     *            The {@link ByteArrayConsumer}.
+     *            {@link ByteArrayConsumer}
      * @param ignoreIOExceptions
-     *            if true, any {@link IOException} thrown while trying to load any of the resources will be silently
-     *            ignored.
+     *            如果为 true，则在尝试加载任何资源时抛出的任何 {@link IOException} 将被静默忽略
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false, and an {@link IOException} is thrown while trying to load any of
-     *             the resources.
-     * @deprecated Use {@link #forEachByteArrayIgnoringIOException(ByteArrayConsumer)} or
-     *             {@link #forEachByteArrayThrowingIOException(ByteArrayConsumerThrowsIOException)} instead.
+     *             如果 ignoreExceptions 为 false，并且在尝试加载任何资源时抛出 {@link IOException}
+     * @deprecated 请改用 {@link #forEachByteArrayIgnoringIOException(ByteArrayConsumer)} 或
+     *             {@link #forEachByteArrayThrowingIOException(ByteArrayConsumerThrowsIOException)}
      */
     @Deprecated
     public void forEachByteArray(final ByteArrayConsumer byteArrayConsumer, final boolean ignoreIOExceptions) {
@@ -368,16 +302,18 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Fetch the content of each {@link Resource} in this {@link ResourceList} as a byte array, pass the byte array
-     * to the given {@link ByteArrayConsumer}, then close the underlying InputStream or release the underlying
-     * ByteBuffer by calling {@link Resource#close()}.
-     * 
+     * 获取此 {@link ResourceList} 中每个 {@link Resource} 的内容并以字节数组形式返回，
+     * 将字节数组传递给给定的 {@link ByteArrayConsumer}，
+     * 然后通过调用 {@link Resource#close()} 关闭底层的 InputStream 或释放底层的 ByteBuffer
+     *
      * @param byteArrayConsumer
-     *            The {@link ByteArrayConsumer}.
+     *            {@link ByteArrayConsumer}
      * @throws IllegalArgumentException
-     *             if an {@link IOException} is thrown while trying to load any of the resources.
-     * @deprecated Use {@link #forEachByteArrayThrowingIOException(ByteArrayConsumerThrowsIOException)} instead.
+     *             如果在尝试加载任何资源时抛出 {@link IOException}
+     * @deprecated 请改用 {@link #forEachByteArrayThrowingIOException(ByteArrayConsumerThrowsIOException)}
      */
     @Deprecated
     public void forEachByteArray(final ByteArrayConsumer byteArrayConsumer) {
@@ -385,33 +321,33 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     }
 
     /**
-     * Fetch the content of each {@link Resource} in this {@link ResourceList} as a byte array, pass the byte array
-     * to the given {@link ByteArrayConsumer}, then close the underlying InputStream or release the underlying
-     * ByteBuffer by calling {@link Resource#close()} for each {@link Resource}. If an {@link IOException} occurs
-     * while opening or reading from any resource, the resource is silently skipped.
-     * 
+     * 获取此 {@link ResourceList} 中每个 {@link Resource} 的内容并以字节数组形式返回，
+     * 将字节数组传递给给定的 {@link ByteArrayConsumer}，
+     * 然后通过调用每个 {@link Resource} 的 {@link Resource#close()} 关闭底层的 InputStream 或释放底层的 ByteBuffer
+     * 如果在打开或读取任何资源时发生 {@link IOException}，则静默跳过该资源
+     *
      * @param byteArrayConsumer
-     *            The {@link ByteArrayConsumer}.
+     *            {@link ByteArrayConsumer}
      */
     public void forEachByteArrayIgnoringIOException(final ByteArrayConsumer byteArrayConsumer) {
         for (final Resource resource : this) {
             try (Resource resourceToClose = resource) {
                 byteArrayConsumer.accept(resourceToClose, resourceToClose.load());
             } catch (final IOException e) {
-                // Ignore
+                // 忽略
             }
         }
     }
 
     /**
-     * Fetch the content of each {@link Resource} in this {@link ResourceList} as a byte array, pass the byte array
-     * to the given {@link ByteArrayConsumer}, then close the underlying InputStream or release the underlying
-     * ByteBuffer by calling {@link Resource#close()}.
-     * 
+     * 获取此 {@link ResourceList} 中每个 {@link Resource} 的内容并以字节数组形式返回，
+     * 将字节数组传递给给定的 {@link ByteArrayConsumer}，
+     * 然后通过调用 {@link Resource#close()} 关闭底层的 InputStream 或释放底层的 ByteBuffer
+     *
      * @param byteArrayConsumerThrowsIOException
-     *            The {@link ByteArrayConsumerThrowsIOException}.
+     *            {@link ByteArrayConsumerThrowsIOException}
      * @throws IOException
-     *             if trying to load any of the resources results in an {@link IOException} being thrown.
+     *             如果尝试加载任何资源导致抛出 {@link IOException}
      */
     public void forEachByteArrayThrowingIOException(
             final ByteArrayConsumerThrowsIOException byteArrayConsumerThrowsIOException) throws IOException {
@@ -422,61 +358,24 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** A {@link FunctionalInterface} for consuming the contents of a {@link Resource} as an {@link InputStream}. */
-    @FunctionalInterface
-    public interface InputStreamConsumer {
-        /**
-         * Consume a {@link Resource} as an {@link InputStream}.
-         * 
-         * @param resource
-         *            The {@link Resource} used to open the {@link InputStream}.
-         * @param inputStream
-         *            The {@link InputStream} opened on the resource.
-         */
-        void accept(final Resource resource, final InputStream inputStream);
-    }
-
     /**
-     * A {@link FunctionalInterface} for consuming the contents of a {@link Resource} as an {@link InputStream},
-     * throwing {@link IOException} to the caller if an IO exception occurs.
-     */
-    @FunctionalInterface
-    public interface InputStreamConsumerThrowsIOException {
-        /**
-         * Consume the complete content of a {@link Resource} as a byte array, possibly throwing
-         * {@link IOException}.
-         * 
-         * @param resource
-         *            The {@link Resource} used to load the byte array.
-         * @param inputStream
-         *            The {@link InputStream} opened on the resource.
-         * @throws IOException
-         *             if an IO exception occurs.
-         */
-        void accept(final Resource resource, final InputStream inputStream) throws IOException;
-    }
-
-    /**
-     * Fetch an {@link InputStream} for each {@link Resource} in this {@link ResourceList}, pass the
-     * {@link InputStream} to the given {@link InputStreamConsumer}, then close the {@link InputStream} after the
-     * {@link InputStreamConsumer} returns, by calling {@link Resource#close()} for each {@link Resource}.
-     * 
+     * 为此 {@link ResourceList} 中的每个 {@link Resource} 获取一个 {@link InputStream}，
+     * 将 {@link InputStream} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link InputStreamConsumer} 返回后，通过调用每个 {@link Resource} 的 {@link Resource#close()}
+     * 关闭 {@link InputStream}
+     *
      * @param inputStreamConsumer
-     *            The {@link InputStreamConsumer}.
+     *            {@link InputStreamConsumer}
      * @param ignoreIOExceptions
-     *            if true, any {@link IOException} thrown while trying to load any of the resources will be silently
-     *            ignored.
+     *            如果为 true，则在尝试加载任何资源时抛出的任何 {@link IOException} 将被静默忽略
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false, and an {@link IOException} is thrown while trying to open any of
-     *             the resources.
-     * @deprecated Use {@link #forEachInputStreamIgnoringIOException(InputStreamConsumer)} or
-     *             {@link #forEachInputStreamThrowingIOException(InputStreamConsumerThrowsIOException)} instead.
+     *             如果 ignoreExceptions 为 false，并且在尝试打开任何资源时抛出 {@link IOException}
+     * @deprecated 请改用 {@link #forEachInputStreamIgnoringIOException(InputStreamConsumer)} 或
+     *             {@link #forEachInputStreamThrowingIOException(InputStreamConsumerThrowsIOException)}
      */
     @Deprecated
     public void forEachInputStream(final InputStreamConsumer inputStreamConsumer,
-            final boolean ignoreIOExceptions) {
+                                   final boolean ignoreIOExceptions) {
         for (final Resource resource : this) {
             try (final Resource resourceToClose = resource) {
                 inputStreamConsumer.accept(resourceToClose, resourceToClose.open());
@@ -489,15 +388,16 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     }
 
     /**
-     * Fetch an {@link InputStream} for each {@link Resource} in this {@link ResourceList}, pass the
-     * {@link InputStream} to the given {@link InputStreamConsumer}, then close the {@link InputStream} after the
-     * {@link InputStreamConsumer} returns, by calling {@link Resource#close()} for each {@link Resource}.
-     * 
+     * 为此 {@link ResourceList} 中的每个 {@link Resource} 获取一个 {@link InputStream}，
+     * 将 {@link InputStream} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link InputStreamConsumer} 返回后，通过调用每个 {@link Resource} 的 {@link Resource#close()}
+     * 关闭 {@link InputStream}
+     *
      * @param inputStreamConsumer
-     *            The {@link InputStreamConsumer}.
+     *            {@link InputStreamConsumer}
      * @throws IllegalArgumentException
-     *             an {@link IOException} is thrown while trying to open any of the resources.
-     * @deprecated Use {@link #forEachInputStreamThrowingIOException(InputStreamConsumerThrowsIOException)} instead.
+     *             在尝试打开任何资源时抛出 {@link IOException}
+     * @deprecated 请改用 {@link #forEachInputStreamThrowingIOException(InputStreamConsumerThrowsIOException)}
      */
     @Deprecated
     public void forEachInputStream(final InputStreamConsumer inputStreamConsumer) {
@@ -505,34 +405,35 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     }
 
     /**
-     * Fetch an {@link InputStream} for each {@link Resource} in this {@link ResourceList}, pass the
-     * {@link InputStream} to the given {@link InputStreamConsumer}, then close the {@link InputStream} after the
-     * {@link InputStreamConsumer} returns, by calling {@link Resource#close()} for each {@link Resource}. If an
-     * {@link IOException} occurs while opening or reading from any resource, the resource is silently skipped.
-     * 
+     * 为此 {@link ResourceList} 中的每个 {@link Resource} 获取一个 {@link InputStream}，
+     * 将 {@link InputStream} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link InputStreamConsumer} 返回后，通过调用每个 {@link Resource} 的 {@link Resource#close()}
+     * 关闭 {@link InputStream}如果在打开或读取任何资源时发生 {@link IOException}，则静默跳过该资源
+     *
      * @param inputStreamConsumer
-     *            The {@link InputStreamConsumer}.
+     *            {@link InputStreamConsumer}
      */
     public void forEachInputStreamIgnoringIOException(final InputStreamConsumer inputStreamConsumer) {
         for (final Resource resource : this) {
             try (final Resource resourceToClose = resource) {
                 inputStreamConsumer.accept(resourceToClose, resourceToClose.open());
             } catch (final IOException e) {
-                // Ignore
+                // 忽略
             }
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Fetch an {@link InputStream} for each {@link Resource} in this {@link ResourceList}, pass the
-     * {@link InputStream} to the given {@link InputStreamConsumer}, then close the {@link InputStream} after the
-     * {@link InputStreamConsumer} returns, by calling {@link Resource#close()}.
-     * 
+     * 为此 {@link ResourceList} 中的每个 {@link Resource} 获取一个 {@link InputStream}，
+     * 将 {@link InputStream} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link InputStreamConsumer} 返回后，通过调用 {@link Resource#close()} 关闭 {@link InputStream}
+     *
      * @param inputStreamConsumerThrowsIOException
-     *            The {@link InputStreamConsumerThrowsIOException}.
+     *            {@link InputStreamConsumerThrowsIOException}
      * @throws IOException
-     *             if trying to open or read from any of the resources results in an {@link IOException} being
-     *             thrown.
+     *             如果尝试打开或读取任何资源导致抛出 {@link IOException}
      */
     public void forEachInputStreamThrowingIOException(
             final InputStreamConsumerThrowsIOException inputStreamConsumerThrowsIOException) throws IOException {
@@ -543,56 +444,20 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** A {@link FunctionalInterface} for consuming the contents of a {@link Resource} as a {@link ByteBuffer}. */
-    @FunctionalInterface
-    public interface ByteBufferConsumer {
-        /**
-         * Consume a {@link Resource} as a {@link ByteBuffer}, possibly throwing {@link IOException}.
-         * 
-         * @param resource
-         *            The {@link Resource} whose content is reflected in the {@link ByteBuffer}.
-         * @param byteBuffer
-         *            The {@link ByteBuffer} mapped to the resource.
-         */
-        void accept(final Resource resource, final ByteBuffer byteBuffer);
-    }
-
     /**
-     * A {@link FunctionalInterface} for consuming the contents of a {@link Resource} as a {@link ByteBuffer},
-     * throwing {@link IOException} to the caller if an IO exception occurs.
-     */
-    @FunctionalInterface
-    public interface ByteBufferConsumerThrowsIOException {
-        /**
-         * Consume the complete content of a {@link Resource} as a byte array.
-         * 
-         * @param resource
-         *            The {@link Resource} used to load the byte array, possibly throwing {@link IOException}.
-         * @param byteBuffer
-         *            The {@link ByteBuffer} mapped to the resource.
-         * @throws IOException
-         *             if an IO exception occurs.
-         */
-        void accept(final Resource resource, final ByteBuffer byteBuffer) throws IOException;
-    }
-
-    /**
-     * Read each {@link Resource} in this {@link ResourceList} as a {@link ByteBuffer}, pass the {@link ByteBuffer}
-     * to the given {@link InputStreamConsumer}, then release the {@link ByteBuffer} after the
-     * {@link ByteBufferConsumer} returns, by calling {@link Resource#close()} for each {@link Resource}.
-     * 
+     * 将此 {@link ResourceList} 中的每个 {@link Resource} 读取为 {@link ByteBuffer}，
+     * 将 {@link ByteBuffer} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link ByteBufferConsumer} 返回后，通过调用每个 {@link Resource} 的 {@link Resource#close()}
+     * 释放 {@link ByteBuffer}
+     *
      * @param byteBufferConsumer
-     *            The {@link ByteBufferConsumer}.
+     *            {@link ByteBufferConsumer}
      * @param ignoreIOExceptions
-     *            if true, any {@link IOException} thrown while trying to load any of the resources will be silently
-     *            ignored.
+     *            如果为 true，则在尝试加载任何资源时抛出的任何 {@link IOException} 将被静默忽略
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false, and an {@link IOException} is thrown while trying to load any of
-     *             the resources.
-     * @deprecated Use {@link #forEachByteBufferIgnoringIOException(ByteBufferConsumer)} or
-     *             {@link #forEachByteBufferThrowingIOException(ByteBufferConsumerThrowsIOException)} instead.
+     *             如果 ignoreExceptions 为 false，并且在尝试加载任何资源时抛出 {@link IOException}
+     * @deprecated 请改用 {@link #forEachByteBufferIgnoringIOException(ByteBufferConsumer)} 或
+     *             {@link #forEachByteBufferThrowingIOException(ByteBufferConsumerThrowsIOException)}
      */
     @Deprecated
     public void forEachByteBuffer(final ByteBufferConsumer byteBufferConsumer, final boolean ignoreIOExceptions) {
@@ -608,15 +473,16 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     }
 
     /**
-     * Read each {@link Resource} in this {@link ResourceList} as a {@link ByteBuffer}, pass the {@link ByteBuffer}
-     * to the given {@link InputStreamConsumer}, then release the {@link ByteBuffer} after the
-     * {@link ByteBufferConsumer} returns, by calling {@link Resource#close()} for each {@link Resource}.
-     * 
+     * 将此 {@link ResourceList} 中的每个 {@link Resource} 读取为 {@link ByteBuffer}，
+     * 将 {@link ByteBuffer} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link ByteBufferConsumer} 返回后，通过调用每个 {@link Resource} 的 {@link Resource#close()}
+     * 释放 {@link ByteBuffer}
+     *
      * @param byteBufferConsumer
-     *            The {@link ByteBufferConsumer}.
+     *            {@link ByteBufferConsumer}
      * @throws IllegalArgumentException
-     *             if an {@link IOException} is thrown while trying to load any of the resources.
-     * @deprecated Use {@link #forEachByteBufferThrowingIOException(ByteBufferConsumerThrowsIOException)} instead.
+     *             如果在尝试加载任何资源时抛出 {@link IOException}
+     * @deprecated 请改用 {@link #forEachByteBufferThrowingIOException(ByteBufferConsumerThrowsIOException)}
      */
     @Deprecated
     public void forEachByteBuffer(final ByteBufferConsumer byteBufferConsumer) {
@@ -624,33 +490,33 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
     }
 
     /**
-     * Read each {@link Resource} in this {@link ResourceList} as a {@link ByteBuffer}, pass the {@link ByteBuffer}
-     * to the given {@link InputStreamConsumer}, then release the {@link ByteBuffer} after the
-     * {@link ByteBufferConsumer} returns, by calling {@link Resource#close()} for each {@link Resource}. If an
-     * {@link IOException} occurs while opening or reading from any resource, the resource is silently skipped.
-     * 
+     * 将此 {@link ResourceList} 中的每个 {@link Resource} 读取为 {@link ByteBuffer}，
+     * 将 {@link ByteBuffer} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link ByteBufferConsumer} 返回后，通过调用每个 {@link Resource} 的 {@link Resource#close()}
+     * 释放 {@link ByteBuffer}如果在打开或读取任何资源时发生 {@link IOException}，则静默跳过该资源
+     *
      * @param byteBufferConsumer
-     *            The {@link ByteBufferConsumer}.
+     *            {@link ByteBufferConsumer}
      */
     public void forEachByteBufferIgnoringIOException(final ByteBufferConsumer byteBufferConsumer) {
         for (final Resource resource : this) {
             try (final Resource resourceToClose = resource) {
                 byteBufferConsumer.accept(resourceToClose, resourceToClose.read());
             } catch (final IOException e) {
-                // Ignore
+                // 忽略
             }
         }
     }
 
     /**
-     * Read each {@link Resource} in this {@link ResourceList} as a {@link ByteBuffer}, pass the {@link ByteBuffer}
-     * to the given {@link InputStreamConsumer}, then release the {@link ByteBuffer} after the
-     * {@link ByteBufferConsumer} returns, by calling {@link Resource#close()}.
-     * 
+     * 将此 {@link ResourceList} 中的每个 {@link Resource} 读取为 {@link ByteBuffer}，
+     * 将 {@link ByteBuffer} 传递给给定的 {@link InputStreamConsumer}，
+     * 然后在 {@link ByteBufferConsumer} 返回后，通过调用 {@link Resource#close()} 释放 {@link ByteBuffer}
+     *
      * @param byteBufferConsumerThrowsIOException
-     *            The {@link ByteBufferConsumerThrowsIOException}.
+     *            {@link ByteBufferConsumerThrowsIOException}
      * @throws IOException
-     *             if trying to load any of the resources results in an {@link IOException} being thrown.
+     *             如果尝试加载任何资源导致抛出 {@link IOException}
      */
     public void forEachByteBufferThrowingIOException(
             final ByteBufferConsumerThrowsIOException byteBufferConsumerThrowsIOException) throws IOException {
@@ -661,13 +527,147 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
-    /** Close all the {@link Resource} objects in this {@link ResourceList}. */
+    /** 关闭此 {@link ResourceList} 中的所有 {@link Resource} 对象 */
     @Override
     public void close() {
+        Throwable firstThrowable = null;
         for (final Resource resource : this) {
-            resource.close();
+            try {
+                resource.close();
+            } catch (final Throwable t) {
+                // 继续关闭其余资源，最后抛出第一个异常
+                if (firstThrowable == null) {
+                    firstThrowable = t;
+                }
+            }
         }
+        if (firstThrowable != null) {
+            if (firstThrowable instanceof RuntimeException) {
+                throw (RuntimeException) firstThrowable;
+            } else if (firstThrowable instanceof Error) {
+                throw (Error) firstThrowable;
+            } else {
+                throw new RuntimeException(firstThrowable);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 使用一个将 {@link Resource} 对象映射到布尔值的谓词来过滤 {@link ResourceList}，
+     * 生成一个新的 {@link ResourceList}，包含列表中所有谓词为真的项
+     */
+    @FunctionalInterface
+    public interface ResourceFilter {
+        /**
+         * 是否允许一个 {@link Resource} 列表项通过过滤器
+         *
+         * @param resource
+         *            要过滤的 {@link Resource} 项
+         * @return 是否允许该项通过过滤器如果为 true，则该项被复制到输出列表；如果为 false，则被排除
+         */
+        boolean accept(Resource resource);
+    }
+
+    /** 一个用于消费 {@link Resource} 内容(字节数组形式)的 {@link FunctionalInterface} */
+    @FunctionalInterface
+    public interface ByteArrayConsumer {
+        /**
+         * 消费 {@link Resource} 的完整内容(字节数组形式)
+         *
+         * @param resource
+         *            用于加载字节数组的 {@link Resource}
+         * @param byteArray
+         *            资源的完整内容
+         */
+        void accept(final Resource resource, final byte[] byteArray);
+    }
+
+    /**
+     * 一个用于消费 {@link Resource} 内容(字节数组形式)的 {@link FunctionalInterface}，
+     * 如果发生 IO 异常，则向调用者抛出 {@link IOException}
+     */
+    @FunctionalInterface
+    public interface ByteArrayConsumerThrowsIOException {
+        /**
+         * 消费 {@link Resource} 的完整内容(字节数组形式)，可能抛出 {@link IOException}
+         *
+         * @param resource
+         *            用于加载字节数组的 {@link Resource}
+         * @param byteArray
+         *            资源的完整内容
+         * @throws IOException
+         *             如果发生 IO 异常
+         */
+        void accept(final Resource resource, final byte[] byteArray) throws IOException;
+    }
+
+    /** 一个用于消费 {@link Resource} 内容({@link InputStream} 形式)的 {@link FunctionalInterface} */
+    @FunctionalInterface
+    public interface InputStreamConsumer {
+        /**
+         * 以 {@link InputStream} 形式消费 {@link Resource}
+         *
+         * @param resource
+         *            用于打开 {@link InputStream} 的 {@link Resource}
+         * @param inputStream
+         *            在资源上打开的 {@link InputStream}
+         */
+        void accept(final Resource resource, final InputStream inputStream);
+    }
+
+    /**
+     * 一个用于消费 {@link Resource} 内容({@link InputStream} 形式)的 {@link FunctionalInterface}，
+     * 如果发生 IO 异常，则向调用者抛出 {@link IOException}
+     */
+    @FunctionalInterface
+    public interface InputStreamConsumerThrowsIOException {
+        /**
+         * 消费 {@link Resource} 的完整内容(字节数组形式)，可能抛出 {@link IOException}
+         *
+         * @param resource
+         *            用于加载字节数组的 {@link Resource}
+         * @param inputStream
+         *            在资源上打开的 {@link InputStream}
+         * @throws IOException
+         *             如果发生 IO 异常
+         */
+        void accept(final Resource resource, final InputStream inputStream) throws IOException;
+    }
+
+    /** 一个用于消费 {@link Resource} 内容({@link ByteBuffer} 形式)的 {@link FunctionalInterface} */
+    @FunctionalInterface
+    public interface ByteBufferConsumer {
+        /**
+         * 以 {@link ByteBuffer} 形式消费 {@link Resource}，可能抛出 {@link IOException}
+         *
+         * @param resource
+         *            其内容反映在 {@link ByteBuffer} 中的 {@link Resource}
+         * @param byteBuffer
+         *            映射到资源的 {@link ByteBuffer}
+         */
+        void accept(final Resource resource, final ByteBuffer byteBuffer);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 一个用于消费 {@link Resource} 内容({@link ByteBuffer} 形式)的 {@link FunctionalInterface}，
+     * 如果发生 IO 异常，则向调用者抛出 {@link IOException}
+     */
+    @FunctionalInterface
+    public interface ByteBufferConsumerThrowsIOException {
+        /**
+         * 消费 {@link Resource} 的完整内容(字节数组形式)
+         *
+         * @param resource
+         *            用于加载字节数组的 {@link Resource}，可能抛出 {@link IOException}
+         * @param byteBuffer
+         *            映射到资源的 {@link ByteBuffer}
+         * @throws IOException
+         *             如果发生 IO 异常
+         */
+        void accept(final Resource resource, final ByteBuffer byteBuffer) throws IOException;
     }
 }

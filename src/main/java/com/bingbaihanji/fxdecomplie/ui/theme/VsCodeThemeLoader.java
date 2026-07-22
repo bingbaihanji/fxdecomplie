@@ -1,9 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.theme;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.bingbaihanji.utils.json.JSONUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import javafx.scene.paint.Color;
 import jfx.incubator.scene.control.richtext.model.StyleAttributeMap;
 
@@ -97,31 +95,30 @@ public final class VsCodeThemeLoader {
 
     /** 解析主题 JSON */
     private static ThemeData parse(String json) {
-        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+        JsonNode root = JSONUtils.readTree(json);
         // 读取主题名称和类型(dark/light)
         String name = getString(root, "name", "Unknown");
         String type = getString(root, "type", "dark");
 
         // 解析编辑器颜色配置
-        JsonObject colors = root.getAsJsonObject("colors");
+        JsonNode colors = root.get("colors");
         Color bg = parseColor(colors, "editor.background", "#1e1e1e");
         Color fg = parseColor(colors, "editor.foreground", "#d4d4d4");
         Color ln = parseColor(colors, "editorLineNumber.foreground", "#858585");
 
         // 解析 tokenColors 数组,建立 scope → 样式映射
         Map<String, StyleAttributeMap> tokenStyles = new LinkedHashMap<>();
-        JsonArray tokenColors = root.getAsJsonArray("tokenColors");
-        if (tokenColors != null) {
-            for (JsonElement e : tokenColors) {
-                JsonObject tc = e.getAsJsonObject();
+        JsonNode tokenColors = root.get("tokenColors");
+        if (tokenColors != null && tokenColors.isArray()) {
+            for (JsonNode e : tokenColors) {
                 // 提取 scope(可能是字符串或数组,取第一个 scope 名)
-                String scope = extractScope(tc.get("scope"));
+                String scope = extractScope(e.get("scope"));
                 if (scope == null) {
                     continue;
                 }
 
-                JsonObject settings = tc.getAsJsonObject("settings");
-                if (settings == null) {
+                JsonNode settings = e.get("settings");
+                if (settings == null || settings.isNull()) {
                     continue;
                 }
                 String fgHex = getString(settings, "foreground", "#d4d4d4");
@@ -148,40 +145,39 @@ public final class VsCodeThemeLoader {
     }
 
     /** 从 scope 字段提取第一个 scope 名称 */
-    private static String extractScope(JsonElement scopeElem) {
-        if (scopeElem == null) {
+    private static String extractScope(JsonNode scopeElem) {
+        if (scopeElem == null || scopeElem.isNull()) {
             return null;
         }
-        if (scopeElem.isJsonPrimitive()) {
-            return scopeElem.getAsString();
+        if (scopeElem.isTextual()) {
+            return scopeElem.asText();
         }
-        if (scopeElem.isJsonArray()) {
-            JsonArray arr = scopeElem.getAsJsonArray();
-            return arr.isEmpty() ? null : arr.get(0).getAsString();
+        if (scopeElem.isArray()) {
+            return scopeElem.isEmpty() ? null : scopeElem.get(0).asText();
         }
         return null;
     }
 
     /** 从 colors 节点解析颜色 */
-    private static Color parseColor(JsonObject colors, String key, String defaultHex) {
-        if (colors == null) {
+    private static Color parseColor(JsonNode colors, String key, String defaultHex) {
+        if (colors == null || colors.isNull()) {
             return Color.web(defaultHex);
         }
-        JsonElement e = colors.get(key);
-        if (e == null || e.isJsonNull()) {
+        JsonNode e = colors.get(key);
+        if (e == null || e.isNull()) {
             return Color.web(defaultHex);
         }
         try {
-            return Color.web(e.getAsString());
+            return Color.web(e.asText());
         } catch (RuntimeException ex) {
             return Color.web(defaultHex);
         }
     }
 
     /** 安全获取 JSON 字符串属性 */
-    private static String getString(JsonObject obj, String key, String def) {
-        JsonElement e = obj.get(key);
-        return (e != null && !e.isJsonNull()) ? e.getAsString() : def;
+    private static String getString(JsonNode obj, String key, String def) {
+        JsonNode e = obj.get(key);
+        return (e != null && !e.isNull()) ? e.asText() : def;
     }
 
     /**

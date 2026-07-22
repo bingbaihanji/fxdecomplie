@@ -26,58 +26,56 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
-import nonapi.io.github.classgraph.types.TypeUtils;
-import nonapi.io.github.classgraph.types.TypeUtils.ModifierType;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.types.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.*;
 
-/** A class type signature (called "ClassSignature" in the classfile documentation). */
+/** 类类型签名(在 classfile 文档中称为"ClassSignature") */
 public final class ClassTypeSignature extends HierarchicalTypeSignature {
 
-    /** The class info. */
-    private final ClassInfo classInfo;
-
-    /** The class type parameters. */
+    /** 类类型参数 */
     final List<TypeParameter> typeParameters;
-
-    /** The superclass type. */
+    /** 类信息 */
+    private final ClassInfo classInfo;
+    /** 超类类型 */
     private final ClassRefTypeSignature superclassSignature;
 
-    /** The superinterface signatures. */
+    /** 超接口签名 */
     private final List<ClassRefTypeSignature> superinterfaceSignatures;
 
     /**
-     * The throws signatures (usually null). These are only present in Scala classes, if the class is marked up with
-     * {@code @throws}, and they violate the classfile spec (#495), but we parse them anyway.
+     * throws 签名(通常为 null)这些仅出现在 Scala 类中，当类标记了 {@code @throws} 时出现，
+     * 它们违反了 classfile 规范(#495)，但我们仍然解析它们
      */
     private final List<ClassRefOrTypeVariableSignature> throwsSignatures;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param classInfo
-     *            the {@link ClassInfo} object of the class.
+     *            类的 {@link ClassInfo} 对象
      * @param typeParameters
-     *            The class type parameters.
+     *            类类型参数
      * @param superclassSignature
-     *            The superclass signature.
+     *            超类签名
      * @param superinterfaceSignatures
-     *            The superinterface signature(s).
+     *            超接口签名
      * @param throwsSignatures
-     *            the throws signatures (these are actually invalid, but can be added by Scala: #495). Usually null.
+     *            throws 签名(这些实际上是无效的，但可能由 Scala 添加：#495)通常为 null
      */
     private ClassTypeSignature(final ClassInfo classInfo, final List<TypeParameter> typeParameters,
-            final ClassRefTypeSignature superclassSignature,
-            final List<ClassRefTypeSignature> superinterfaceSignatures,
-            final List<ClassRefOrTypeVariableSignature> throwsSignatures) {
+                               final ClassRefTypeSignature superclassSignature,
+                               final List<ClassRefTypeSignature> superinterfaceSignatures,
+                               final List<ClassRefOrTypeVariableSignature> throwsSignatures) {
         super();
         this.classInfo = classInfo;
         this.typeParameters = typeParameters;
@@ -87,14 +85,14 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     }
 
     /**
-     * Constructor used to create synthetic class type descriptor (#662).
-     * 
+     * 用于创建合成类类型描述符的构造函数(#662)
+     *
      * @param classInfo
-     *            The class.
+     *            类
      * @param superclass
-     *            The superclass.
+     *            超类
      * @param interfaces
-     *            The implemented interfaces.
+     *            实现的接口
      */
     ClassTypeSignature(final ClassInfo classInfo, final ClassInfo superclass, final ClassInfoList interfaces) {
         super();
@@ -104,13 +102,13 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
         try {
             superclassSignature = superclass == null ? null
                     : (ClassRefTypeSignature) TypeSignature
-                            .parse("L" + superclass.getName().replace('.', '/') + ";", classInfo.getName());
+                    .parse("L" + superclass.getName().replace('.', '/') + ";", classInfo.getName());
         } catch (final ParseException e) {
-            // Silently fail (should not happen)
+            // 静默失败(不应发生)
         }
         this.superclassSignature = superclassSignature;
         this.superinterfaceSignatures = interfaces == null || interfaces.isEmpty()
-                ? Collections.<ClassRefTypeSignature> emptyList()
+                ? Collections.<ClassRefTypeSignature>emptyList()
                 : new ArrayList<ClassRefTypeSignature>(interfaces.size());
         if (interfaces != null) {
             for (final ClassInfo iface : interfaces) {
@@ -119,7 +117,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
                             .parse("L" + iface.getName().replace('.', '/') + ";", classInfo.getName());
                     this.superinterfaceSignatures.add(ifaceSignature);
                 } catch (final ParseException e) {
-                    // Silently fail (should not happen)
+                    // 静默失败(不应发生)
                 }
             }
         }
@@ -129,54 +127,127 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the type parameters for the class.
+     * 解析类类型签名或类类型描述符
      *
-     * @return The type parameters for the class.
+     * @param typeDescriptor
+     *            要解析的类类型签名或类类型描述符
+     * @param classInfo
+     *            类信息
+     * @return 解析后的类类型签名或类类型描述符
+     * @throws ParseException
+     *             如果类类型签名无法解析
+     */
+    static ClassTypeSignature parse(final String typeDescriptor, final ClassInfo classInfo) throws ParseException {
+        final Parser parser = new Parser(typeDescriptor);
+        // 定义类名用于使用定义类的类型描述符解析类型变量
+        // 但这里我们正在解析定义类的类型描述符，所以它不可能包含指向自身的变量 => 直接使用 null 作为定义类名
+        final String definingClassNameNull = null;
+        final List<TypeParameter> typeParameters = TypeParameter.parseList(parser, definingClassNameNull);
+        final ClassRefTypeSignature superclassSignature = ClassRefTypeSignature.parse(parser,
+                definingClassNameNull);
+        List<ClassRefTypeSignature> superinterfaceSignatures;
+        if (parser.hasMore()) {
+            superinterfaceSignatures = new ArrayList<>();
+            while (parser.hasMore()) {
+                if (parser.peek() == '^') {
+                    // 类类型签名中存在非法的 "throws" 后缀 -- 穿透处理
+                    break;
+                }
+                final ClassRefTypeSignature superinterfaceSignature = ClassRefTypeSignature.parse(parser,
+                        definingClassNameNull);
+                if (superinterfaceSignature == null) {
+                    throw new ParseException(parser, "Could not parse superinterface signature");
+                }
+                superinterfaceSignatures.add(superinterfaceSignature);
+            }
+        } else {
+            superinterfaceSignatures = Collections.emptyList();
+        }
+        List<ClassRefOrTypeVariableSignature> throwsSignatures;
+        if (parser.peek() == '^') {
+            // 此类型签名的末尾存在非法的 "throws" 后缀
+            // Scala 在将某个类标记为 "@throws" 时会添加这些后缀(#495)
+            // 具有此类类型签名的类会被 javac 和 javap 拒绝，如果在子类上调用
+            // getClass().getGenericSuperclass() 会抛出 GenericSignatureFormatError
+            // 但由于类型擦除，JVM 会忽略类型签名，而 Scala 似乎依赖这一点 --
+            // 或者至少 Scala 团队从未注意到这个问题，因为这些类在纯 Scala 环境中可以正常运行
+            // 由于此问题在 Scala 领域可能广泛存在，因此接受这些无效的类型签名并实际解析出
+            // 所有 "throws" 后缀，比抛出异常并拒绝解析类型签名更好
+            throwsSignatures = new ArrayList<>();
+            while (parser.peek() == '^') {
+                parser.expect('^');
+                final ClassRefTypeSignature classTypeSignature = ClassRefTypeSignature.parse(parser,
+                        classInfo.getName());
+                if (classTypeSignature != null) {
+                    throwsSignatures.add(classTypeSignature);
+                } else {
+                    final TypeVariableSignature typeVariableSignature = TypeVariableSignature.parse(parser,
+                            classInfo.getName());
+                    if (typeVariableSignature != null) {
+                        throwsSignatures.add(typeVariableSignature);
+                    } else {
+                        throw new ParseException(parser, "Missing type variable signature");
+                    }
+                }
+            }
+        } else {
+            throwsSignatures = null;
+        }
+        if (parser.hasMore()) {
+            throw new ParseException(parser, "Extra characters at end of type descriptor");
+        }
+        return new ClassTypeSignature(classInfo, typeParameters, superclassSignature, superinterfaceSignatures,
+                throwsSignatures);
+    }
+
+    /**
+     * 获取类的类型参数
+     *
+     * @return 类的类型参数
      */
     public List<TypeParameter> getTypeParameters() {
         return typeParameters;
     }
 
     /**
-     * Get the type signature for the superclass (possibly null in the case of {@link Object}, since it
-     * doesn't have a superclass).
-     * 
-     * @return The type signature for the superclass, or null if no superclass (i.e. for {@link Object}).
+     * 获取超类的类型签名(对于 {@link Object} 可能为 null，因为它没有超类)
+     *
+     * @return 超类的类型签名，如果无超类则返回 null(即对于 {@link Object})
      */
     public ClassRefTypeSignature getSuperclassSignature() {
         return superclassSignature;
     }
 
     /**
-     * Get the type signatures of any superinterfaces.
-     * 
-     * @return The type signatures of any superinterfaces.
+     * 获取所有超接口的类型签名
+     *
+     * @return 所有超接口的类型签名
      */
     public List<ClassRefTypeSignature> getSuperinterfaceSignatures() {
         return superinterfaceSignatures;
     }
 
     /**
-     * Gets the throws signatures. These are invalid according to the classfile spec (so this method is currently
-     * non-public), but may be added by the Scala compiler. (See bug #495.)
+     * 获取 throws 签名根据 classfile 规范，这些是无效的(因此此方法目前是非公开的)，
+     * 但可能由 Scala 编译器添加(参见 bug #495)
      *
-     * @return the throws signatures
+     * @return throws 签名
      */
     List<ClassRefOrTypeVariableSignature> getThrowsSignatures() {
         return throwsSignatures;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     @Override
     protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
-        // Individual parts of a class' type each have their own addTypeAnnotation methods
+        // 类类型的各个部分各自具有其自己的 addTypeAnnotation 方法
         throw new IllegalArgumentException(
                 "Cannot call this method on " + ClassTypeSignature.class.getSimpleName());
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -184,7 +255,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -192,7 +263,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -213,10 +284,10 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     }
 
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 获取类型签名中引用的所有类名
      *
      * @param refdClassNames
-     *            the referenced class names.
+     *            被引用的类名集合
      */
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
         for (final TypeParameter typeParameter : typeParameters) {
@@ -237,17 +308,19 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in the type descriptor or type signature.
+     * 获取类型描述符或类型签名中引用的所有类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            被引用的类信息集合
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final Set<String> refdClassNames = new HashSet<>();
         findReferencedClassNames(refdClassNames);
         for (final String refdClassName : refdClassNames) {
@@ -257,8 +330,6 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -267,6 +338,8 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
         return typeParameters.hashCode() + (superclassSignature == null ? 1 : superclassSignature.hashCode()) * 7
                 + (superinterfaceSignatures == null ? 1 : superinterfaceSignatures.hashCode()) * 15;
     }
+
+    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
@@ -284,29 +357,27 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
                 && Objects.equals(o.superinterfaceSignatures, this.superinterfaceSignatures);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Render into String form.
+     * 渲染为字符串形式
      *
      * @param className
-     *            The class name
+     *            类名
      * @param useSimpleNames
-     *            the use simple names
+     *            是否使用简单名称
      * @param modifiers
-     *            The class modifiers.
+     *            类修饰符
      * @param isAnnotation
-     *            True if the class is an annotation.
+     *            如果类是注解则为 true
      * @param isInterface
-     *            True if the class is an interface.
+     *            如果类是接口则为 true
      * @param annotationsToExclude
-     *            the annotations to exclude
+     *            要排除的注解
      * @param buf
-     *            the buf
+     *            字符串构建器
      */
     void toStringInternal(final String className, final boolean useSimpleNames, final int modifiers,
-            final boolean isAnnotation, final boolean isInterface, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
+                          final boolean isAnnotation, final boolean isInterface, final AnnotationInfoList annotationsToExclude,
+                          final StringBuilder buf) {
         if (throwsSignatures != null) {
             for (final ClassRefOrTypeVariableSignature throwsSignature : throwsSignatures) {
                 if (buf.length() > 0) {
@@ -342,9 +413,9 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
         }
         if (superclassSignature != null) {
             final String superSig = superclassSignature.toString(useSimpleNames);
-            // superSig could have a class type annotation even if the superclass is Object
-            if (!superSig.equals("java.lang.Object")
-                    && !(superSig.equals("Object") && superclassSignature.className.equals("java.lang.Object"))) {
+            // 即使超类是 Object，superSig 也可能带有类类型注解
+            if (!"java.lang.Object".equals(superSig)
+                    && !("Object".equals(superSig) && "java.lang.Object".equals(superclassSignature.className))) {
                 buf.append(" extends ");
                 buf.append(superSig);
             }
@@ -360,99 +431,22 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
         }
     }
 
-    /**
-     * To string internal.
-     *
-     * @param useSimpleNames
-     *            the use simple names
-     * @param annotationsToExclude
-     *            the annotations to exclude
-     * @param buf
-     *            the buf
-     */
-    @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
-        toStringInternal(classInfo.getName(), useSimpleNames, classInfo.getModifiers(), classInfo.isAnnotation(),
-                classInfo.isInterface(), annotationsToExclude, buf);
-    }
-
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Parse a class type signature or class type descriptor.
+     * 内部转换为字符串
      *
-     * @param typeDescriptor
-     *            The class type signature or class type descriptor to parse.
-     * @param classInfo
-     *            the class info
-     * @return The parsed class type signature or class type descriptor.
-     * @throws ParseException
-     *             If the class type signature could not be parsed.
+     * @param useSimpleNames
+     *            是否使用简单名称
+     * @param annotationsToExclude
+     *            要排除的注解
+     * @param buf
+     *            字符串构建器
      */
-    static ClassTypeSignature parse(final String typeDescriptor, final ClassInfo classInfo) throws ParseException {
-        final Parser parser = new Parser(typeDescriptor);
-        // The defining class name is used to resolve type variables using the defining class' type descriptor.
-        // But here we are parsing the defining class' type descriptor, so it can't contain variables that
-        // point to itself => just use null as the defining class name.
-        final String definingClassNameNull = null;
-        final List<TypeParameter> typeParameters = TypeParameter.parseList(parser, definingClassNameNull);
-        final ClassRefTypeSignature superclassSignature = ClassRefTypeSignature.parse(parser,
-                definingClassNameNull);
-        List<ClassRefTypeSignature> superinterfaceSignatures;
-        if (parser.hasMore()) {
-            superinterfaceSignatures = new ArrayList<>();
-            while (parser.hasMore()) {
-                if (parser.peek() == '^') {
-                    // Illegal "throws" suffix in class type signature -- fall through
-                    break;
-                }
-                final ClassRefTypeSignature superinterfaceSignature = ClassRefTypeSignature.parse(parser,
-                        definingClassNameNull);
-                if (superinterfaceSignature == null) {
-                    throw new ParseException(parser, "Could not parse superinterface signature");
-                }
-                superinterfaceSignatures.add(superinterfaceSignature);
-            }
-        } else {
-            superinterfaceSignatures = Collections.emptyList();
-        }
-        List<ClassRefOrTypeVariableSignature> throwsSignatures;
-        if (parser.peek() == '^') {
-            // There is an illegal "throws" suffix at the end of this class type signature.
-            // Scala adds these if you tag a class with "@throws" (#495).
-            // Classes with this sort of type signature are rejected by javac and javap, and they will throw
-            // GenericSignatureFormatError if you call getClass().getGenericSuperclass() on a subclass.
-            // But the JVM ignores type signatures due to type erasure, and Scala seems to rely on this
-            // -- or at the very least, the Scala team never noticed the issue, because the classes work
-            // fine at runtime if you live in a Scala-only world.
-            // Since this issue is probably widespread in the Scala world, it's probably better to accept
-            // these invalid type signatures, and actually parse out any "throws" suffixes, rather than
-            // throwing an exception and refusing to parse the type signature. 
-            throwsSignatures = new ArrayList<>();
-            while (parser.peek() == '^') {
-                parser.expect('^');
-                final ClassRefTypeSignature classTypeSignature = ClassRefTypeSignature.parse(parser,
-                        classInfo.getName());
-                if (classTypeSignature != null) {
-                    throwsSignatures.add(classTypeSignature);
-                } else {
-                    final TypeVariableSignature typeVariableSignature = TypeVariableSignature.parse(parser,
-                            classInfo.getName());
-                    if (typeVariableSignature != null) {
-                        throwsSignatures.add(typeVariableSignature);
-                    } else {
-                        throw new ParseException(parser, "Missing type variable signature");
-                    }
-                }
-            }
-        } else {
-            throwsSignatures = null;
-        }
-        if (parser.hasMore()) {
-            throw new ParseException(parser, "Extra characters at end of type descriptor");
-        }
-        return new ClassTypeSignature(classInfo, typeParameters, superclassSignature, superinterfaceSignatures,
-                throwsSignatures);
+    @Override
+    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+                                    final StringBuilder buf) {
+        toStringInternal(classInfo.getName(), useSimpleNames, classInfo.getModifiers(), classInfo.isAnnotation(),
+                classInfo.isInterface(), annotationsToExclude, buf);
     }
 }

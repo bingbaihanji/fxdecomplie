@@ -26,10 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,57 +38,52 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/** A ModuleReference proxy, written using reflection to preserve backwards compatibility with JDK 7 and 8. */
+/** ModuleReference 代理，使用反射编写以保持与 JDK 7 和 8 的向后兼容性 */
 public class ModuleRef implements Comparable<ModuleRef> {
-    /** The name of the module. */
+    /** 模块名称 */
     private final String name;
 
-    /** The ModuleReference for the module. */
+    /** 模块的 ModuleReference */
     private final Object reference;
 
-    /** The ModuleLayer for the module. */
+    /** 模块的 ModuleLayer */
     private final Object layer;
 
-    /** The ModuleDescriptor for the module. */
+    /** 模块的 ModuleDescriptor */
     private final Object descriptor;
 
-    /** The packages in the module. */
+    /** 模块中的包列表 */
     private final List<String> packages;
 
-    /** The location URI for the module (may be null). */
+    /** 模块的位置 URI(可能为 null) */
     private final URI location;
-
-    /** The location URI for the module, as a cached string (may be null). */
+    /** 加载模块中类的 ClassLoader可能为 null，表示引导类加载器 */
+    private final ClassLoader classLoader;
+    ReflectionUtils reflectionUtils;
+    /** 模块的位置 URI，作为缓存的字符串(可能为 null) */
     private String locationStr;
-
-    /** A file formed from the location URI. The file will not exist if the location URI is a "jrt:" URI. */
+    /** 由位置 URI 形成的文件如果位置 URI 是 "jrt:" URI，则该文件不存在 */
     private File locationFile;
-
-    /** The raw module version, or null if none. */
+    /** 原始模块版本，如果没有则为 null */
     private String rawVersion;
 
-    /** The ClassLoader that loads classes in the module. May be null, to represent the bootstrap classloader. */
-    private final ClassLoader classLoader;
-
-    ReflectionUtils reflectionUtils;
-
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param moduleReference
-     *            The module reference, of JPMS type ModuleReference.
+     *            模块引用，JPMS 类型 ModuleReference
      * @param moduleLayer
-     *            The module layer, of JPMS type ModuleLayer
+     *            模块层，JPMS 类型 ModuleLayer
      * @param reflectionUtils
-     *            The ReflectionUtils instance.
+     *            ReflectionUtils 实例
      */
     public ModuleRef(final Object moduleReference, final Object moduleLayer,
-            final ReflectionUtils reflectionUtils) {
+                     final ReflectionUtils reflectionUtils) {
         if (moduleReference == null) {
-            throw new IllegalArgumentException("moduleReference cannot be null");
+            throw new IllegalArgumentException("moduleReference 不能为 null");
         }
         if (moduleLayer == null) {
-            throw new IllegalArgumentException("moduleLayer cannot be null");
+            throw new IllegalArgumentException("moduleLayer 不能为 null");
         }
         this.reference = moduleReference;
         this.layer = moduleLayer;
@@ -96,16 +91,15 @@ public class ModuleRef implements Comparable<ModuleRef> {
 
         this.descriptor = reflectionUtils.invokeMethod(/* throwException = */ true, moduleReference, "descriptor");
         if (this.descriptor == null) {
-            // Should not happen
-            throw new IllegalArgumentException("moduleReference.descriptor() should not return null");
+            // 不应该发生
+            throw new IllegalArgumentException("moduleReference.descriptor() 不应返回 null");
         }
         this.name = (String) reflectionUtils.invokeMethod(/* throwException = */ true, this.descriptor, "name");
-        @SuppressWarnings("unchecked")
-        final Set<String> modulePackages = (Set<String>) reflectionUtils.invokeMethod(/* throwException = */ true,
+        @SuppressWarnings("unchecked") final Set<String> modulePackages = (Set<String>) reflectionUtils.invokeMethod(/* throwException = */ true,
                 this.descriptor, "packages");
         if (modulePackages == null) {
-            // Should not happen
-            throw new IllegalArgumentException("moduleReference.descriptor().packages() should not return null");
+            // 不应该发生
+            throw new IllegalArgumentException("moduleReference.descriptor().packages() 不应返回 null");
         }
         this.packages = new ArrayList<>(modulePackages);
         CollectionUtils.sortIfNotEmpty(this.packages);
@@ -122,93 +116,89 @@ public class ModuleRef implements Comparable<ModuleRef> {
         final Object moduleLocationOptional = reflectionUtils.invokeMethod(/* throwException = */ true,
                 moduleReference, "location");
         if (moduleLocationOptional == null) {
-            // Should not happen
-            throw new IllegalArgumentException("moduleReference.location() should not return null");
+            // 不应该发生
+            throw new IllegalArgumentException("moduleReference.location() 不应返回 null");
         }
         final Object moduleLocationIsPresent = reflectionUtils.invokeMethod(/* throwException = */ true,
                 moduleLocationOptional, "isPresent");
         if (moduleLocationIsPresent == null) {
-            // Should not happen
-            throw new IllegalArgumentException("moduleReference.location().isPresent() should not return null");
+            // 不应该发生
+            throw new IllegalArgumentException("moduleReference.location().isPresent() 不应返回 null");
         }
         if ((Boolean) moduleLocationIsPresent) {
             this.location = (URI) reflectionUtils.invokeMethod(/* throwException = */ true, moduleLocationOptional,
                     "get");
             if (this.location == null) {
-                // Should not happen
-                throw new IllegalArgumentException("moduleReference.location().get() should not return null");
+                // 不应该发生
+                throw new IllegalArgumentException("moduleReference.location().get() 不应返回 null");
             }
         } else {
             this.location = null;
         }
 
-        // Find the classloader for the module
+        // 查找模块的类加载器
         this.classLoader = (ClassLoader) reflectionUtils.invokeMethod(/* throwException = */ true, moduleLayer,
                 "findLoader", String.class, this.name);
     }
 
     /**
-     * Get the module name, i.e. {@code getReference().descriptor().name()}.
+     * 获取模块名称，即 {@code getReference().descriptor().name()}
      *
-     * @return The module name, i.e. {@code getReference().descriptor().name()}. Potentially null or empty.
+     * @return 模块名称，即 {@code getReference().descriptor().name()}可能为 null 或空字符串
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Get the module reference (of JPMS type ModuleReference).
+     * 获取模块引用(JPMS 类型 ModuleReference)
      *
-     * @return The module reference (of JPMS type ModuleReference).
+     * @return 模块引用(JPMS 类型 ModuleReference)
      */
     public Object getReference() {
         return reference;
     }
 
     /**
-     * Get the module layer (of JPMS type ModuleLayer).
+     * 获取模块层(JPMS 类型 ModuleLayer)
      *
-     * @return The module layer (of JPMS type ModuleLayer).
+     * @return 模块层(JPMS 类型 ModuleLayer)
      */
     public Object getLayer() {
         return layer;
     }
 
     /**
-     * Get the module descriptor, i.e. {@code getReference().descriptor()} (of JPMS type ModuleDescriptor).
+     * 获取模块描述符，即 {@code getReference().descriptor()}(JPMS 类型 ModuleDescriptor)
      *
-     * @return The module descriptor, i.e. {@code getReference().descriptor()} (of JPMS type ModuleDescriptor).
+     * @return 模块描述符，即 {@code getReference().descriptor()}(JPMS 类型 ModuleDescriptor)
      */
     public Object getDescriptor() {
         return descriptor;
     }
 
     /**
-     * Get a list of packages in the module. (Does not include non-package directories.)
+     * 获取模块中的包列表(不包括非包目录)
      *
-     * @return The list of packages in the module. (Does not include non-package directories.)
+     * @return 模块中的包列表(不包括非包目录)
      */
     public List<String> getPackages() {
         return packages;
     }
 
     /**
-     * Get the module location, i.e. {@code getReference().location()}. Returns null for modules that do not have a
-     * location.
+     * 获取模块位置，即 {@code getReference().location()}对于没有位置的模块返回 null
      *
-     * @return The module location, i.e. {@code getReference().location()}. Returns null for modules that do not
-     *         have a location.
+     * @return 模块位置，即 {@code getReference().location()}对于没有位置的模块返回 null
      */
     public URI getLocation() {
         return location;
     }
 
     /**
-     * Get the module location as a string, i.e. {@code getReference().location().toString()}. Returns null for
-     * modules that do not have a location.
+     * 以字符串形式获取模块位置，即 {@code getReference().location().toString()}对于没有位置的模块返回 null
      *
-     * @return The module location as a string, i.e. {@code getReference().location().toString()}. Returns null for
-     *         modules that do not have a location.
+     * @return 以字符串形式表示的模块位置，即 {@code getReference().location().toString()}对于没有位置的模块返回 null
      */
     public String getLocationStr() {
         if (locationStr == null && location != null) {
@@ -218,12 +208,11 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * Get the module location as a File, i.e. {@code new File(getReference().location())}. Returns null for modules
-     * that do not have a location, or for system (or jlinked) modules, which have "jrt:" location URIs that include
-     * only the module name and not the module jar location.
+     * 以 File 形式获取模块位置，即 {@code new File(getReference().location())}对于没有位置的模块，
+     * 或者对于系统(或 jlinked)模块(其 "jrt:" 位置 URI 仅包含模块名称而不包含模块 jar 位置)，返回 null
      *
-     * @return The module location as a File, i.e. {@code new File(getReference().location())}. Returns null for
-     *         modules that do not have a location, or for modules whole location is a "jrt:" URI.
+     * @return 以 File 形式表示的模块位置，即 {@code new File(getReference().location())}对于没有位置的模块，
+     *         或者位置为 "jrt:" URI 的模块返回 null
      */
     public File getLocationFile() {
         if (locationFile == null && location != null && "file".equals(location.getScheme())) {
@@ -233,18 +222,18 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * Get the raw version string of the module, or null if the module did not provide one.
-     * 
-     * @return The raw version of the module, obtained by {@code ModuleReference#rawVersion().orElse(null)}.
+     * 获取模块的原始版本字符串，如果模块未提供则返回 null
+     *
+     * @return 模块的原始版本，通过 {@code ModuleReference#rawVersion().orElse(null)} 获取
      */
     public String getRawVersion() {
         return rawVersion;
     }
 
     /**
-     * Checks if this module is a system module.
+     * 检查此模块是否为系统模块
      *
-     * @return true if this module is a system module.
+     * @return 如果此模块是系统模块则返回 true
      */
     public boolean isSystemModule() {
         if (name == null || name.isEmpty()) {
@@ -255,10 +244,10 @@ public class ModuleRef implements Comparable<ModuleRef> {
     }
 
     /**
-     * Get the class loader for the module.
+     * 获取模块的类加载器
      *
-     * @return The classloader for the module, i.e.
-     *         {@code moduleLayer.findLoader(getReference().descriptor().name())}.
+     * @return 模块的类加载器，即
+     *         {@code moduleLayer.findLoader(getReference().descriptor().name())}
      */
     public ClassLoader getClassLoader() {
         return classLoader;
@@ -306,11 +295,11 @@ public class ModuleRef implements Comparable<ModuleRef> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Open the module, returning a {@link ModuleReaderProxy}.
-     * 
-     * @return A {@link ModuleReaderProxy} for the module.
+     * 打开模块，返回一个 {@link ModuleReaderProxy}
+     *
+     * @return 模块的 {@link ModuleReaderProxy}
      * @throws IOException
-     *             If the module cannot be opened.
+     *             如果模块无法打开
      */
     public ModuleReaderProxy open() throws IOException {
         return new ModuleReaderProxy(this);

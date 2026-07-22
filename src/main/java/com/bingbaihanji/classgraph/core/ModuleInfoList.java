@@ -26,37 +26,37 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 import java.util.Collection;
 
-/** A list of {@link ModuleInfo} objects. */
+/** {@link ModuleInfo} 对象列表 */
 public class ModuleInfoList extends MappableInfoList<ModuleInfo> {
-    /** serialVersionUID */
+    /** 序列化版本 UID */
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructor.
+     * 构造函数
      */
     ModuleInfoList() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param sizeHint
-     *            the size hint
+     *            大小提示
      */
     ModuleInfoList(final int sizeHint) {
         super(sizeHint);
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param moduleInfoCollection
-     *            the module info collection
+     *            模块信息集合
      */
     ModuleInfoList(final Collection<ModuleInfo> moduleInfoCollection) {
         super(moduleInfoCollection);
@@ -65,29 +65,11 @@ public class ModuleInfoList extends MappableInfoList<ModuleInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Filter an {@link ModuleInfoList} using a predicate mapping an {@link ModuleInfo} object to a boolean,
-     * producing another {@link ModuleInfoList} for all items in the list for which the predicate is true.
-     */
-    @FunctionalInterface
-    public interface ModuleInfoFilter {
-        /**
-         * Whether or not to allow an {@link ModuleInfo} list item through the filter.
-         *
-         * @param moduleInfo
-         *            The {@link ModuleInfo} item to filter.
-         * @return Whether or not to allow the item through the filter. If true, the item is copied to the output
-         *         list; if false, it is excluded.
-         */
-        boolean accept(ModuleInfo moduleInfo);
-    }
-
-    /**
-     * Find the subset of the {@link ModuleInfo} objects in this list for which the given filter predicate is true.
+     * 查找此列表中满足给定过滤谓词的 {@link ModuleInfo} 对象子集
      *
      * @param filter
-     *            The {@link ModuleInfoFilter} to apply.
-     * @return The subset of the {@link ModuleInfo} objects in this list for which the given filter predicate is
-     *         true.
+     *            要应用的 {@link ModuleInfoFilter} 过滤器
+     * @return 此列表中满足给定过滤谓词的 {@link ModuleInfo} 对象子集
      */
     public ModuleInfoList filter(final ModuleInfoFilter filter) {
         final ModuleInfoList moduleInfoFiltered = new ModuleInfoList();
@@ -97,5 +79,21 @@ public class ModuleInfoList extends MappableInfoList<ModuleInfo> {
             }
         }
         return moduleInfoFiltered;
+    }
+
+    /**
+     * 使用将 {@link ModuleInfo} 对象映射为布尔值的谓词过滤 {@link ModuleInfoList}，
+     * 为列表中谓词为 true 的所有项生成另一个 {@link ModuleInfoList}
+     */
+    @FunctionalInterface
+    public interface ModuleInfoFilter {
+        /**
+         * 是否允许 {@link ModuleInfo} 列表项通过过滤器
+         *
+         * @param moduleInfo
+         *            要过滤的 {@link ModuleInfo} 项
+         * @return 是否允许该项通过过滤器如果为 true，则将其复制到输出列表；如果为 false，则将其排除
+         */
+        boolean accept(ModuleInfo moduleInfo);
     }
 }

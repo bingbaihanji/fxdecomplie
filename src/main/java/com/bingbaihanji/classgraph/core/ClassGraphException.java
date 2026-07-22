@@ -26,37 +26,36 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 /**
- * An unchecked exception that is thrown when an error state occurs or an unhandled exception is caught during
- * scanning.
- * 
+ * 在扫描过程中发生错误状态或捕获到未处理异常时抛出的非受检异常
+ *
  * <p>
- * (Extends {@link IllegalArgumentException}, which extends {@link RuntimeException}, so either of the more generic
- * exceptions may be caught.)
+ * (继承自 {@link IllegalArgumentException}，而后者又继承自 {@link RuntimeException}，
+ * 因此可以捕获这两个更通用的异常中的任意一个)
  */
 public class ClassGraphException extends IllegalArgumentException {
-    /** serialVersionUID. */
+    /** serialVersionUID */
     static final long serialVersionUID = 1L;
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param message
-     *            the message
+     *            消息
      */
     ClassGraphException(final String message) {
         super(message);
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param message
-     *            the message
+     *            消息
      * @param cause
-     *            the cause
+     *            原因
      */
     ClassGraphException(final String message, final Throwable cause) {
         super(message, cause);

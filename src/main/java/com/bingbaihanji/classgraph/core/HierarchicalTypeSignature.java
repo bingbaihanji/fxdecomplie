@@ -26,28 +26,28 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
 
 import java.util.List;
 
 /**
- * A Java type signature. Subclasses are ClassTypeSignature, MethodTypeSignature, and TypeSignature.
+ * Java 类型签名子类包括 ClassTypeSignature、MethodTypeSignature 和 TypeSignature
  */
 public abstract class HierarchicalTypeSignature extends ScanResultObject {
     protected AnnotationInfoList typeAnnotationInfo;
-    
-    /** A hierarchical type signature. */
+
+    /** 一个层次化的类型签名 */
     public HierarchicalTypeSignature() {
         super();
     }
 
     /**
-     * Add a type annotation.
+     * 添加一个类型注解
      *
      * @param annotationInfo
-     *            the annotation
+     *            注解
      */
     protected void addTypeAnnotation(final AnnotationInfo annotationInfo) {
         if (typeAnnotationInfo == null) {
@@ -67,45 +67,44 @@ public abstract class HierarchicalTypeSignature extends ScanResultObject {
     }
 
     /**
-     * Get a list of {@link AnnotationInfo} objects for any type annotations on this type, or null if none.
-     * 
-     * @return a list of {@link AnnotationInfo} objects for any type annotations on this type, or null if none.
+     * 获取此类型上的所有类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     *
+     * @return 此类型上的所有类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
      */
     public AnnotationInfoList getTypeAnnotationInfo() {
         return typeAnnotationInfo;
     }
 
     /**
-     * Add a type annotation.
+     * 添加一个类型注解
      *
      * @param typePath
-     *            the type path
+     *            类型路径
      * @param annotationInfo
-     *            the annotation
+     *            注解
      */
     protected abstract void addTypeAnnotation(List<TypePathNode> typePath, AnnotationInfo annotationInfo);
 
     /**
-     * Render type signature to string.
+     * 将类型签名渲染为字符串
      *
      * @param useSimpleNames
-     *            whether to use simple names for classes.
+     *            是否使用类的简单名称
      * @param annotationsToExclude
-     *            toplevel annotations to exclude, to eliminate duplication (toplevel annotations are both
-     *            class/field/method annotations and type annotations).
+     *            要排除的顶层注解，用于消除重复(顶层注解同时是类/字段/方法注解和类型注解)
      * @param buf
-     *            the {@link StringBuilder} to write to.
+     *            要写入的 {@link StringBuilder}
      */
     protected abstract void toStringInternal(final boolean useSimpleNames, AnnotationInfoList annotationsToExclude,
-            StringBuilder buf);
+                                             StringBuilder buf);
 
     /**
-     * Render type signature to string.
+     * 将类型签名渲染为字符串
      *
      * @param useSimpleNames
-     *            whether to use simple names for classes.
+     *            是否使用类的简单名称
      * @param buf
-     *            the {@link StringBuilder} to write to.
+     *            要写入的 {@link StringBuilder}
      */
     @Override
     protected void toString(final boolean useSimpleNames, final StringBuilder buf) {

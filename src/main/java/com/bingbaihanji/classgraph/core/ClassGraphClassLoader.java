@@ -26,12 +26,12 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.JarUtils;
-import nonapi.io.github.classgraph.utils.VersionFinder;
-import nonapi.io.github.classgraph.utils.VersionFinder.OperatingSystem;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.JarUtils;
+import com.bingbaihanji.classgraph.utils.VersionFinder;
+import com.bingbaihanji.classgraph.utils.VersionFinder.OperatingSystem;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,32 +40,28 @@ import java.net.URLClassLoader;
 import java.security.ProtectionDomain;
 import java.util.*;
 
-/** {@link ClassLoader} for classes found by ClassGraph during scanning. */
+/** 扫描过程中 ClassGraph 所发现类的 {@link ClassLoader} */
 public class ClassGraphClassLoader extends ClassLoader {
 
-    /** The scan result. */
+    /** 扫描结果 */
     private final ScanResult scanResult;
 
-    /** Whether or not to initialize loaded classes. */
+    /** 是否初始化已加载的类 */
     private final boolean initializeLoadedClasses;
-
-    /** The ordered set of environment classloaders to try delegating to. */
-    private Set<ClassLoader> environmentClassLoaderDelegationOrder;
-
-    /** Any override classloader(s). */
-    private List<ClassLoader> overrideClassLoaders;
-
-    /** A {@link URLClassLoader} consisting of URLs on the classpath. */
+    /** 由类路径上的 URL 组成的 {@link URLClassLoader} */
     private final ClassLoader classpathClassLoader;
-
-    /** The ordered set of overridden or added classloaders to try delegating to. */
+    /** 尝试委托到的环境类加载器的有序集合 */
+    private Set<ClassLoader> environmentClassLoaderDelegationOrder;
+    /** 任何覆盖类加载器 */
+    private List<ClassLoader> overrideClassLoaders;
+    /** 尝试委托到的覆盖或添加的类加载器的有序集合 */
     private Set<ClassLoader> addedClassLoaderDelegationOrder;
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param scanResult
-     *            The ScanResult.
+     *            扫描结果
      */
     ClassGraphClassLoader(final ScanResult scanResult) {
         super(null);
@@ -82,43 +78,42 @@ public class ClassGraphClassLoader extends ClassLoader {
         final boolean clasloadersAdded = scanSpec.addedClassLoaders != null
                 && !scanSpec.addedClassLoaders.isEmpty();
 
-        // Only try environment classloaders if classpath and/or classloaders are not overridden
+        // 仅当类路径和/或类加载器未被覆盖时才尝试环境类加载器
         if (!classpathOverridden && !classloadersOverridden) {
-            // Try the null classloader first (this will default to the bootstrap class loader)
+            // 首先尝试 null 类加载器(这将默认使用引导类加载器)
             environmentClassLoaderDelegationOrder = new LinkedHashSet<>();
             environmentClassLoaderDelegationOrder.add(null);
 
-            // Try environment classloaders
+            // 尝试环境类加载器
             final ClassLoader[] envClassLoaderOrder = scanResult.getClassLoaderOrderRespectingParentDelegation();
             if (envClassLoaderOrder != null) {
-                // Try environment classloaders
+                // 尝试环境类加载器
                 environmentClassLoaderDelegationOrder.addAll(Arrays.asList(envClassLoaderOrder));
             }
         }
 
-        // Create classloader from URLs on classpath
+        // 从类路径上的 URL 创建类加载器
         final List<URL> classpathURLs = scanResult.getClasspathURLs();
         classpathClassLoader = classpathURLs.isEmpty() ? null
                 : new URLClassLoader(classpathURLs.toArray(new URL[0]));
 
-        // If the classloaders were overridden, just use the override classloaders, and then fail if the
-        // class couldn't be found.
+        // 如果类加载器被覆盖，仅使用覆盖类加载器，如果找不到类则失败
         overrideClassLoaders = classloadersOverridden ? scanSpec.overrideClassLoaders : null;
 
-        // If the classpath is overridden, and classloaders are not overridden, try loading class from
-        // classpath URLs, as the override classloader, then fail if the class couldn't be found.
+        // 如果类路径被覆盖但类加载器未被覆盖，则尝试从类路径 URL 加载类作为覆盖类加载器，
+        // 如果找不到类则失败
         //
-        // N.B. Some classpath URLs might be invalid if the ScanResult has been closed (e.g. in the rare
-        // case that an inner jar had to be extracted to a temporary file on disk).
+        // 注意：如果 ScanResult 已关闭，某些类路径 URL 可能无效(例如，在极少数情况下，
+        // 内部 jar 必须提取到磁盘上的临时文件中)
         if (overrideClassLoaders == null && classpathOverridden && classpathClassLoader != null) {
             overrideClassLoaders = Collections.singletonList(classpathClassLoader);
         }
 
-        // If classloaders were added, try loading through those classloaders
+        // 如果添加了类加载器，尝试通过这些类加载器加载
         if (clasloadersAdded) {
             addedClassLoaderDelegationOrder = new LinkedHashSet<>();
             addedClassLoaderDelegationOrder.addAll(scanSpec.addedClassLoaders);
-            // Remove duplicates
+            // 移除重复项
             if (environmentClassLoaderDelegationOrder != null) {
                 addedClassLoaderDelegationOrder.removeAll(environmentClassLoaderDelegationOrder);
             }
@@ -131,7 +126,7 @@ public class ClassGraphClassLoader extends ClassLoader {
     @Override
     protected Class<?> findClass(final String className)
             throws ClassNotFoundException, LinkageError, SecurityException {
-        // First delegate to outer nested ClassGraphClassLoader, if any (#485)
+        // 首先委托给外部嵌套的 ClassGraphClassLoader(如果存在)(#485)
         final ClassGraphClassLoader delegateClassGraphClassLoader = scanResult.classpathFinder
                 .getDelegateClassGraphClassLoader();
         LinkageError linkageError = null;
@@ -139,19 +134,19 @@ public class ClassGraphClassLoader extends ClassLoader {
             try {
                 return Class.forName(className, initializeLoadedClasses, delegateClassGraphClassLoader);
             } catch (final ClassNotFoundException e) {
-                // Ignore
+                // 忽略
             } catch (final LinkageError e) {
                 linkageError = e;
             }
         }
 
-        // If overrideClassLoaders is set, only use the override loaders
+        // 如果设置了 overrideClassLoaders，仅使用覆盖加载器
         if (overrideClassLoaders != null) {
             for (final ClassLoader overrideClassLoader : overrideClassLoaders) {
                 try {
                     return Class.forName(className, initializeLoadedClasses, overrideClassLoader);
                 } catch (final ClassNotFoundException e) {
-                    // Ignore
+                    // 忽略
                 } catch (final LinkageError e) {
                     if (linkageError == null) {
                         linkageError = e;
@@ -160,14 +155,14 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // Try environment classloader(s) first, since this is the usual default
+        // 首先尝试环境类加载器，因为这是通常的默认行为
         if (overrideClassLoaders == null && environmentClassLoaderDelegationOrder != null
                 && !environmentClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader envClassLoader : environmentClassLoaderDelegationOrder) {
                 try {
                     return Class.forName(className, initializeLoadedClasses, envClassLoader);
                 } catch (final ClassNotFoundException e) {
-                    // Ignore
+                    // 忽略
                 } catch (final LinkageError e) {
                     if (linkageError == null) {
                         linkageError = e;
@@ -176,23 +171,23 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // Try getting the ClassInfo for the named class, then the ClassLoader from the ClassInfo.
-        // This should still be valid if the ScanResult was closed, since ScanResult#close() leaves
-        // the classNameToClassInfo map intact, but still, this is only attempted if all the above
-        // efforts failed, to avoid accessing ClassInfo objects after the ScanResult is closed (#399).
+        // 尝试获取指定类的 ClassInfo，然后从 ClassInfo 获取 ClassLoader
+        // 即使 ScanResult 已关闭，这应该仍然有效，因为 ScanResult#close() 会保留
+        // classNameToClassInfo 映射不变但即便如此，仅在所有上述尝试均失败后才尝试此方法，
+        // 以避免在 ScanResult 关闭后访问 ClassInfo 对象(#399)
         ClassLoader classInfoClassLoader = null;
         final ClassInfo classInfo = scanResult.classNameToClassInfo == null ? null
                 : scanResult.classNameToClassInfo.get(className);
         if (classInfo != null) {
             classInfoClassLoader = classInfo.classLoader;
-            // Try specific classloader for the classpath element that the classfile was obtained from,
-            // as long as it wasn't already tried
+            // 尝试使用获取类文件的类路径元素对应的特定类加载器，
+            // 只要它尚未被尝试过
             if (classInfoClassLoader != null && (environmentClassLoaderDelegationOrder == null
                     || !environmentClassLoaderDelegationOrder.contains(classInfoClassLoader))) {
                 try {
                     return Class.forName(className, initializeLoadedClasses, classInfoClassLoader);
                 } catch (final ClassNotFoundException e) {
-                    // Ignore
+                    // 忽略
                 } catch (final LinkageError e) {
                     if (linkageError == null) {
                         linkageError = e;
@@ -200,11 +195,10 @@ public class ClassGraphClassLoader extends ClassLoader {
                 }
             }
 
-            // If class came from a module, and it was not able to be loaded by the environment classloader,
-            // then it is probable it was a non-public class, and ClassGraph found it by ignoring class visibility
-            // when reading the resources in exported packages directly. Force ClassGraph to respect JPMS
-            // encapsulation rules by refusing to load modular classes that the context/system classloaders
-            // could not load. (A SecurityException should be thrown above, but this is here for completeness.)
+            // 如果类来自模块，且环境类加载器无法加载它，那么它很可能是一个非公共类，
+            // ClassGraph 是通过在直接读取导出包中的资源时忽略类可见性来发现它的
+            // 强制 ClassGraph 遵守 JPMS 封装规则，拒绝加载上下文/系统类加载器
+            // 无法加载的模块类(正常情况下上面应该抛出 SecurityException，但这里是为了完整性)
             if (classInfo.classpathElement instanceof ClasspathElementModule && !classInfo.isPublic()) {
                 throw new ClassNotFoundException("Classfile for class " + className + " was found in a module, "
                         + "but the context and system classloaders could not load the class, probably because "
@@ -212,12 +206,12 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // Try loading from classpath URLs
+        // 尝试从类路径 URL 加载
         if (overrideClassLoaders == null && classpathClassLoader != null) {
             try {
                 return Class.forName(className, initializeLoadedClasses, classpathClassLoader);
             } catch (final ClassNotFoundException e) {
-                // Ignore
+                // 忽略
             } catch (final LinkageError e) {
                 if (linkageError == null) {
                     linkageError = e;
@@ -225,14 +219,14 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // Try any added classloader(s)
+        // 尝试任何已添加的类加载器
         if (addedClassLoaderDelegationOrder != null && !addedClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader additionalClassLoader : addedClassLoaderDelegationOrder) {
                 if (additionalClassLoader != classInfoClassLoader) {
                     try {
                         return Class.forName(className, initializeLoadedClasses, additionalClassLoader);
                     } catch (final ClassNotFoundException e) {
-                        // Ignore
+                        // 忽略
                     } catch (final LinkageError e) {
                         if (linkageError == null) {
                             linkageError = e;
@@ -242,25 +236,23 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // As a last-ditch attempt, if the above efforts all failed, try obtaining the classfile as a
-        // resource, and define the class from the resource content. This should be performed after
-        // environment classloading is attempted, so that classes are not loaded by a mix of environment
-        // classloaders and direct manual classloading, otherwise class compatibility issues can arise.
-        // The ScanResult should only be accessed (to fetch resources) as a last resort, so that wherever
-        // possible, linked classes can be loaded after the ScanResult is closed. Otherwise if you load
-        // classes before a ScanResult is closed, then you close the ScanResult, then you try to access
-        // fields of the ScanResult that have a type that has not yet been loaded, this can trigger an
-        // exception that the ScanResult was accessed after it was closed (#399).
+        // 作为最后的尝试，如果上述所有努力都失败了，尝试将类文件作为资源获取，
+        // 并从资源内容定义类这应在尝试环境类加载之后执行，
+        // 以避免类由环境类加载器和直接手动类加载混合加载而导致类兼容性问题
+        // 仅在万不得已时才访问 ScanResult(获取资源)，以便尽可能在
+        // ScanResult 关闭后再加载链接的类否则，如果在 ScanResult 关闭前加载类，
+        // 然后关闭 ScanResult，再尝试访问 ScanResult 中类型尚未加载的字段，
+        // 可能会触发 ScanResult 在关闭后被访问的异常(#399)
         final ResourceList classfileResources = scanResult
                 .getResourcesWithPath(JarUtils.classNameToClassfilePath(className));
         if (classfileResources != null) {
             for (final Resource resource : classfileResources) {
-                // Iterate through resources (only loading of first resource in the list will be attempted)
-                // Load the content of the resource, and define a class from it
+                // 遍历资源(仅尝试加载列表中的第一个资源)
+                // 加载资源内容，并从中定义类
                 try (Resource resourceToClose = resource) {
-                    // TODO: is there any need to try java.lang.invoke.MethodHandles.Lookup.defineClass
-                    // via reflection (it's implemented in JDK 9), if the following fails?
-                    // See: https://bugs.openjdk.java.net/browse/JDK-8202999
+                    // TODO: 是否需要通过反射尝试 java.lang.invoke.MethodHandles.Lookup.defineClass
+                    // (它在 JDK 9 中已实现)，如果以下方法失败？
+                    // 参见：https://bugs.openjdk.java.net/browse/JDK-8202999
                     return defineClass(className, resourceToClose.read(), (ProtectionDomain) null);
                 } catch (final IOException e) {
                     throw new ClassNotFoundException("Could not load classfile for class " + className + " : " + e);
@@ -274,9 +266,9 @@ public class ClassGraphClassLoader extends ClassLoader {
 
         if (linkageError != null) {
             if (VersionFinder.OS == OperatingSystem.Windows) {
-                // LinkageError indicates that a classfile was found, but the class couldn't be loaded.
-                // Hackily detect the situation where there are two classfiles with the same case insensitive name
-                // on Windows filesystems (#494).
+                // LinkageError 表示找到了类文件，但无法加载该类
+                // 通过巧妙的方式检测 Windows 文件系统上存在两个大小写不敏感的同名类文件
+                // 的情况(#494)
                 final String msg = linkageError.getMessage();
                 if (msg != null) {
                     final String wrongName = "(wrong name: ";
@@ -300,9 +292,9 @@ public class ClassGraphClassLoader extends ClassLoader {
     }
 
     /**
-     * Get classpath URLs.
-     * 
-     * @return The classpath URLs in the {@link ScanResult} handled by this {@link ClassLoader}.
+     * 获取类路径 URL
+     *
+     * @return 由此 {@link ClassLoader} 处理的 {@link ScanResult} 中的类路径 URL
      */
     public URL[] getURLs() {
         return scanResult.getClasspathURLs().toArray(new URL[0]);
@@ -313,9 +305,9 @@ public class ClassGraphClassLoader extends ClassLoader {
      */
     @Override
     public URL getResource(final String path) {
-        // This order should match the order in findClass(String)
+        // 此顺序应与 findClass(String) 中的顺序一致
 
-        // Try loading resource from environment classloader(s)
+        // 尝试从环境类加载器加载资源
         if (!environmentClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader envClassLoader : environmentClassLoaderDelegationOrder) {
                 final URL resource = envClassLoader.getResource(path);
@@ -325,7 +317,7 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // Try loading resource from overridden or added classloader(s)
+        // 尝试从覆盖或添加的类加载器加载资源
         if (!addedClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader additionalClassLoader : addedClassLoaderDelegationOrder) {
                 final URL resource = additionalClassLoader.getResource(path);
@@ -335,8 +327,8 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // If the above attempts fail, try retrieving resource from ScanResult.
-        // This will throw an exception if ScanResult has already been closed (#399).
+        // 如果上述尝试均失败，则尝试从 ScanResult 获取资源
+        // 如果 ScanResult 已关闭，这将抛出异常(#399)
         final ResourceList resourceList = scanResult.getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return super.getResource(path);
@@ -350,9 +342,9 @@ public class ClassGraphClassLoader extends ClassLoader {
      */
     @Override
     public Enumeration<URL> getResources(final String path) throws IOException {
-        // This order should match the order in findClass(String)
+        // 此顺序应与 findClass(String) 中的顺序一致
 
-        // Try loading resources from environment classloader(s)
+        // 尝试从环境类加载器加载资源
         if (!environmentClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader envClassLoader : environmentClassLoaderDelegationOrder) {
                 final Enumeration<URL> resources = envClassLoader.getResources(path);
@@ -362,7 +354,7 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // Try loading resources from overridden or added classloader(s)
+        // 尝试从覆盖或添加的类加载器加载资源
         if (!addedClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader additionalClassLoader : addedClassLoaderDelegationOrder) {
                 final Enumeration<URL> resources = additionalClassLoader.getResources(path);
@@ -372,14 +364,14 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // If the above attempts fail, try retrieving resource from ScanResult.
-        // This will throw an exception if ScanResult has already been closed (#399).
+        // 如果上述尝试均失败，则尝试从 ScanResult 获取资源
+        // 如果 ScanResult 已关闭，这将抛出异常(#399)
         final ResourceList resourceList = scanResult.getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return Collections.emptyEnumeration();
         } else {
             return new Enumeration<URL>() {
-                /** The idx. */
+                /** 索引 */
                 int idx;
 
                 @Override
@@ -400,9 +392,9 @@ public class ClassGraphClassLoader extends ClassLoader {
      */
     @Override
     public InputStream getResourceAsStream(final String path) {
-        // This order should match the order in findClass(String)
+        // 此顺序应与 findClass(String) 中的顺序一致
 
-        // Try opening resource from environment classloader(s)
+        // 尝试从环境类加载器打开资源
         if (!environmentClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader envClassLoader : environmentClassLoaderDelegationOrder) {
                 final InputStream inputStream = envClassLoader.getResourceAsStream(path);
@@ -412,7 +404,7 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // Try opening resource from overridden or added classloader(s)
+        // 尝试从覆盖或添加的类加载器打开资源
         if (!addedClassLoaderDelegationOrder.isEmpty()) {
             for (final ClassLoader additionalClassLoader : addedClassLoaderDelegationOrder) {
                 final InputStream inputStream = additionalClassLoader.getResourceAsStream(path);
@@ -422,8 +414,8 @@ public class ClassGraphClassLoader extends ClassLoader {
             }
         }
 
-        // If the above attempts fail, try opening resource from ScanResult.
-        // This will throw an exception if ScanResult has already been closed (#399).
+        // 如果上述尝试均失败，则尝试从 ScanResult 打开资源
+        // 如果 ScanResult 已关闭，这将抛出异常(#399)
         final ResourceList resourceList = scanResult.getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return super.getResourceAsStream(path);

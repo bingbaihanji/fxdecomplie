@@ -12,10 +12,10 @@ import java.util.Map;
 /**
  * 测试辅助：从编译后的字节码构建 Workspace
  */
-final class ClassGraphWorkspaceAdapterTestHelper {
+public final class ClassGraphWorkspaceAdapterTestHelper {
     private ClassGraphWorkspaceAdapterTestHelper() {}
 
-    static Workspace buildWorkspace(File dir, Map<String, String> sources) throws Exception {
+    public static Workspace buildWorkspace(File dir, Map<String, String> sources) throws Exception {
         Map<String, byte[]> compiled = TestClassCompiler.compile(sources);
         for (Map.Entry<String, byte[]> e : compiled.entrySet()) {
             File f = new File(dir, e.getKey());

@@ -33,7 +33,7 @@ public final class BuiltinFormatters {
     /**
      * 紧凑的十六进制字符串(无分隔符) 
      * <p>
-     * 例如：{@code "0001020AFF"} 
+     * 例如：{@code "0001020AFF"}
      * </p>
      */
     public static final CopyFormatter HEX_PLAIN = (data, offset) -> {
@@ -47,7 +47,7 @@ public final class BuiltinFormatters {
     /**
      * C 语言风格的数组初始化列表 
      * <p>
-     * 例如：{@code {0x00, 0x01, 0x02, 0x0A, 0xFF}} 
+     * 例如：{@code {0x00, 0x01, 0x02, 0x0A, 0xFF}}
      * </p>
      */
     public static final CopyFormatter C_ARRAY = (data, offset) -> {
@@ -66,7 +66,7 @@ public final class BuiltinFormatters {
     /**
      * Java 语言风格的字节数组初始化 
      * <p>
-     * 例如：{@code new byte[] {0x00, 0x01, (byte)0xFF}} 
+     * 例如：{@code new byte[] {0x00, 0x01, (byte)0xFF}}
      * 对于大于 0x7F 的值会添加 {@code (byte)} 强制转换,以避免编译错误 
      * </p>
      */
@@ -90,7 +90,7 @@ public final class BuiltinFormatters {
     /**
      * Rust 语言风格的数组字面量 
      * <p>
-     * 例如：{@code [0x00, 0x01, 0x02, 0x0A, 0xFF]} 
+     * 例如：{@code [0x00, 0x01, 0x02, 0x0A, 0xFF]}
      * </p>
      */
     public static final CopyFormatter RUST_ARRAY = (data, offset) -> {
@@ -125,7 +125,7 @@ public final class BuiltinFormatters {
     /**
      * JavaScript 语言风格的数组字面量 
      * <p>
-     * 例如：{@code [0x00, 0x01, 0x02, 0x0A, 0xFF]} 
+     * 例如：{@code [0x00, 0x01, 0x02, 0x0A, 0xFF]}
      * </p>
      */
     public static final CopyFormatter JS_ARRAY = (data, offset) -> {

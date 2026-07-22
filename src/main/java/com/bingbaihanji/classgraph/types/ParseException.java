@@ -26,22 +26,22 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.types;
+package com.bingbaihanji.classgraph.types;
 
 /**
- * A parsing exception.
+ * 解析异常
  */
 public class ParseException extends Exception {
-    /** serialVersionUID. */
+    /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 
     /**
-     * A parsing exception.
-     * 
+     * 解析异常
+     *
      * @param parser
-     *            The parser.
+     *            解析器
      * @param msg
-     *            The exception message.
+     *            异常消息
      */
     public ParseException(final Parser parser, final String msg) {
         super(parser == null ? msg : msg + " (" + parser.getPositionInfo() + ")");

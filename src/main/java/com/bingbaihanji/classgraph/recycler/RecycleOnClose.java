@@ -26,34 +26,33 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.recycler;
+package com.bingbaihanji.classgraph.recycler;
 
 /**
- * An AutoCloseable wrapper for a recyclable object instance. Obtained by calling
- * {@link Recycler#acquireRecycleOnClose()} in a try-with-resources statement, so that when the try block exits, the
- * acquired instance is recycled.
+ * 一个可回收对象实例的 AutoCloseable 包装器通过在 try-with-resources 语句中调用
+ * {@link Recycler#acquireRecycleOnClose()} 获取，使得当 try 块退出时，获取的实例被回收
  *
  * @param <T>
- *            the type to recycle
+ *            要回收的类型
  * @param <E>
- *            the exception type that may be thrown when a recyclable item is acquired.
+ *            获取可回收项时可能抛出的异常类型
  */
 public class RecycleOnClose<T, E extends Exception> implements AutoCloseable {
-    /** The recycler. */
+    /** 回收器 */
     private final Recycler<T, E> recycler;
 
-    /** The instance. */
+    /** 实例 */
     private final T instance;
 
     /**
-     * Acquire or allocate an instance.
+     * 获取或分配一个实例
      *
      * @param recycler
-     *            The {@link Recycler}.
+     *            {@link Recycler}
      * @param instance
-     *            An object instance that was obtained by calling {@link Recycler#acquire()} on the recycler.
+     *            通过调用回收器的 {@link Recycler#acquire()} 获取的对象实例
      * @throws IllegalArgumentException
-     *             If {@link Recycler#newInstance()} returned null.
+     *             如果 {@link Recycler#newInstance()} 返回了 null
      */
     RecycleOnClose(final Recycler<T, E> recycler, final T instance) {
         this.recycler = recycler;
@@ -61,15 +60,15 @@ public class RecycleOnClose<T, E extends Exception> implements AutoCloseable {
     }
 
     /**
-     * Get the object instance.
+     * 获取对象实例
      *
-     * @return The object instance.
+     * @return 对象实例
      */
     public T get() {
         return instance;
     }
 
-    /** Recycle an instance. Calls {@link Resettable#reset()} if the instance implements {@link Resettable}. */
+    /** 回收一个实例如果该实例实现了 {@link Resettable}，则调用 {@link Resettable#reset()} */
     @Override
     public void close() {
         recycler.recycle(instance);

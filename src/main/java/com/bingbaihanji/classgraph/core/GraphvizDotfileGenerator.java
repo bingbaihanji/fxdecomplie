@@ -26,218 +26,218 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
 
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Builds a class graph visualization in Graphviz .dot file format. */
+/** 以 Graphviz .dot 文件格式构建类图可视化 */
 final class GraphvizDotfileGenerator {
-    /** The color for standard classes. */
+    /** 标准类的颜色 */
     private static final String STANDARD_CLASS_COLOR = "fff2b6";
 
-    /** The color for interfaces. */
+    /** 接口的颜色 */
     private static final String INTERFACE_COLOR = "b6e7ff";
 
-    /** The color for annotations. */
+    /** 注解的颜色 */
     private static final String ANNOTATION_COLOR = "f3c9ff";
 
-    /** The wrap width for method parameters. */
+    /** 方法参数的换行宽度 */
     private static final int PARAM_WRAP_WIDTH = 40;
 
-    /** Which characters are Unicode whitespace. */
+    /** 哪些字符是 Unicode 空白字符 */
     private static final BitSet IS_UNICODE_WHITESPACE = new BitSet(1 << 16);
 
-    /**
-     * Constructor.
-     */
-    private GraphvizDotfileGenerator() {
-        // Cannot be constructed
-    }
-
     static {
-        // Valid unicode whitespace chars, see:
+        // 有效的 Unicode 空白字符，参见：
         // http://stackoverflow.com/questions/4731055/whitespace-matching-regex-java
-        // Also see (for \n and \r -- a real example of Java stupidity):
+        // 另见(关于 \n 和 \r -- 一个 Java 愚蠢行为的真实例子)：
         // https://stackoverflow.com/a/3866219/3950982
-        final String wsChars = "\u0020" // SPACE
-                + "\u0009" // CHARACTER TABULATION
-                + "\n" // LINE FEED (LF)
-                + "\u000B" // LINE TABULATION
-                + "\u000C" // FORM FEED (FF)
-                + "\r" // CARRIAGE RETURN (CR)
-                + "\u0085" // NEXT LINE (NEL) 
-                + "\u00A0" // NO-BREAK SPACE
-                + "\u1680" // OGHAM SPACE MARK
-                + "\u180E" // MONGOLIAN VOWEL SEPARATOR
-                + "\u2000" // EN QUAD 
-                + "\u2001" // EM QUAD 
-                + "\u2002" // EN SPACE
-                + "\u2003" // EM SPACE
-                + "\u2004" // THREE-PER-EM SPACE
-                + "\u2005" // FOUR-PER-EM SPACE
-                + "\u2006" // SIX-PER-EM SPACE
-                + "\u2007" // FIGURE SPACE
-                + "\u2008" // PUNCTUATION SPACE
-                + "\u2009" // THIN SPACE
-                + "\u200A" // HAIR SPACE
-                + "\u2028" // LINE SEPARATOR
-                + "\u2029" // PARAGRAPH SEPARATOR
-                + "\u202F" // NARROW NO-BREAK SPACE
-                + "\u205F" // MEDIUM MATHEMATICAL SPACE
-                + "\u3000"; // IDEOGRAPHIC SPACE
+        final String wsChars = " " // 空格 (SPACE)
+                + "	" // 字符制表符 (CHARACTER TABULATION)
+                + "\n" // 换行符 (LINE FEED, LF)
+                + "" // 行制表符 (LINE TABULATION)
+                + "" // 换页符 (FORM FEED, FF)
+                + "\r" // 回车符 (CARRIAGE RETURN, CR)
+                + "" // 下一行 (NEXT LINE, NEL)
+                + " " // 不换行空格 (NO-BREAK SPACE)
+                + " " // 欧甘文空格标记 (OGHAM SPACE MARK)
+                + "᠎" // 蒙古文元音分隔符 (MONGOLIAN VOWEL SEPARATOR)
+                + " " // 半身空铅 (EN QUAD)
+                + " " // 全身空铅 (EM QUAD)
+                + " " // 半身空格 (EN SPACE)
+                + " " // 全身空格 (EM SPACE)
+                + " " // 三分之一全身空格 (THREE-PER-EM SPACE)
+                + " " // 四分之一全身空格 (FOUR-PER-EM SPACE)
+                + " " // 六分之一全身空格 (SIX-PER-EM SPACE)
+                + " " // 数字空格 (FIGURE SPACE)
+                + " " // 标点空格 (PUNCTUATION SPACE)
+                + " " // 细空格 (THIN SPACE)
+                + " " // 极细空格 (HAIR SPACE)
+                + " " // 行分隔符 (LINE SEPARATOR)
+                + " " // 段落分隔符 (PARAGRAPH SEPARATOR)
+                + " " // 窄不换行空格 (NARROW NO-BREAK SPACE)
+                + " " // 中等数学空格 (MEDIUM MATHEMATICAL SPACE)
+                + "　"; // 表意空格 (IDEOGRAPHIC SPACE)
         for (int i = 0; i < wsChars.length(); i++) {
             IS_UNICODE_WHITESPACE.set(wsChars.charAt(i));
         }
     }
 
     /**
-     * Checks if a character is Unicode whitespace.
+     * 构造函数
+     */
+    private GraphvizDotfileGenerator() {
+        // 不可构造
+    }
+
+    /**
+     * 检查字符是否为 Unicode 空白字符
      *
      * @param c
-     *            the character
-     * @return true if the character is Unicode whitespace
+     *            字符
+     * @return 如果字符是 Unicode 空白字符则返回 true
      */
     private static boolean isUnicodeWhitespace(final char c) {
         return IS_UNICODE_WHITESPACE.get(c);
     }
 
     /**
-     * Encode HTML-unsafe characters as HTML entities.
+     * 将 HTML 不安全的字符编码为 HTML 实体
      *
      * @param unsafeStr
-     *            The string to escape to make HTML-safe.
+     *            要进行转义以使其 HTML 安全的字符串
      * @param turnNewlineIntoBreak
-     *            If true, turn '\n' into a break element in the output.
+     *            如果为 true，将 '\n' 转换为输出中的换行元素
      * @param buf
-     *            the buf
+     *            字符串构建器
      */
     private static void htmlEncode(final CharSequence unsafeStr, final boolean turnNewlineIntoBreak,
-            final StringBuilder buf) {
+                                   final StringBuilder buf) {
         for (int i = 0, n = unsafeStr.length(); i < n; i++) {
             final char c = unsafeStr.charAt(i);
             switch (c) {
-            case '&':
-                buf.append("&amp;");
-                break;
-            case '<':
-                buf.append("&lt;");
-                break;
-            case '>':
-                buf.append("&gt;");
-                break;
-            case '"':
-                buf.append("&quot;");
-                break;
-            case '\'':
-                buf.append("&#x27;"); // See http://goo.gl/FzoP6m
-                break;
-            case '\\':
-                buf.append("&lsol;");
-                break;
-            case '/':
-                buf.append("&#x2F;"); // '/' can be a dangerous char if attr values are not quoted
-                break;
-            // Encode a few common characters that like to get screwed up in some charset/browser variants
-            case '—':
-                buf.append("&mdash;");
-                break;
-            case '–':
-                buf.append("&ndash;");
-                break;
-            case '“':
-                buf.append("&ldquo;");
-                break;
-            case '”':
-                buf.append("&rdquo;");
-                break;
-            case '‘':
-                buf.append("&lsquo;");
-                break;
-            case '’':
-                buf.append("&rsquo;");
-                break;
-            case '«':
-                buf.append("&laquo;");
-                break;
-            case '»':
-                buf.append("&raquo;");
-                break;
-            case '£':
-                buf.append("&pound;");
-                break;
-            case '©':
-                buf.append("&copy;");
-                break;
-            case '®':
-                buf.append("&reg;");
-                break;
-            case (char) 0x00A0:
-                buf.append("&nbsp;");
-                break;
-            case '\n':
-                if (turnNewlineIntoBreak) {
-                    buf.append("<br>");
-                } else {
-                    buf.append(' '); // Newlines function as whitespace in HTML text
-                }
-                break;
-            default:
-                if (c <= 32 || isUnicodeWhitespace(c)) {
-                    buf.append(' ');
-                } else {
-                    buf.append(c);
-                }
-                break;
+                case '&':
+                    buf.append("&amp;");
+                    break;
+                case '<':
+                    buf.append("&lt;");
+                    break;
+                case '>':
+                    buf.append("&gt;");
+                    break;
+                case '"':
+                    buf.append("&quot;");
+                    break;
+                case '\'':
+                    buf.append("&#x27;"); // 参见 http://goo.gl/FzoP6m
+                    break;
+                case '\\':
+                    buf.append("&lsol;");
+                    break;
+                case '/':
+                    buf.append("&#x2F;"); // 如果属性值未加引号，'/' 可能是危险字符
+                    break;
+                // 编码一些常见的在某些字符集/浏览器变体中容易出问题的字符
+                case '—':
+                    buf.append("&mdash;");
+                    break;
+                case '–':
+                    buf.append("&ndash;");
+                    break;
+                case '“':
+                    buf.append("&ldquo;");
+                    break;
+                case '”':
+                    buf.append("&rdquo;");
+                    break;
+                case '‘':
+                    buf.append("&lsquo;");
+                    break;
+                case '’':
+                    buf.append("&rsquo;");
+                    break;
+                case '«':
+                    buf.append("&laquo;");
+                    break;
+                case '»':
+                    buf.append("&raquo;");
+                    break;
+                case '£':
+                    buf.append("&pound;");
+                    break;
+                case '©':
+                    buf.append("&copy;");
+                    break;
+                case '®':
+                    buf.append("&reg;");
+                    break;
+                case (char) 0x00A0:
+                    buf.append("&nbsp;");
+                    break;
+                case '\n':
+                    if (turnNewlineIntoBreak) {
+                        buf.append("<br>");
+                    } else {
+                        buf.append(' '); // 在 HTML 文本中，换行符作为空白字符起作用
+                    }
+                    break;
+                default:
+                    if (c <= 32 || isUnicodeWhitespace(c)) {
+                        buf.append(' ');
+                    } else {
+                        buf.append(c);
+                    }
+                    break;
             }
         }
     }
 
     /**
-     * Encode HTML-unsafe characters as HTML entities.
+     * 将 HTML 不安全的字符编码为 HTML 实体
      *
      * @param unsafeStr
-     *            The string to escape to make HTML-safe.
+     *            要进行转义以使其 HTML 安全的字符串
      * @param buf
-     *            the buf
+     *            字符串构建器
      */
     private static void htmlEncode(final CharSequence unsafeStr, final StringBuilder buf) {
         htmlEncode(unsafeStr, /* turnNewlineIntoBreak = */ false, buf);
     }
 
     /**
-     * Produce HTML label for class node.
+     * 为类节点生成 HTML 标签
      *
      * @param ci
-     *            the class info
+     *            类信息
      * @param shape
-     *            the shape to use
+     *            要使用的形状
      * @param boxBgColor
-     *            the box background color
+     *            框背景颜色
      * @param showFields
-     *            whether to show fields
+     *            是否显示字段
      * @param showMethods
-     *            whether to show methods
+     *            是否显示方法
      * @param useSimpleNames
-     *            whether to use simple names for classes in type signatures
+     *            是否对类型签名中的类使用简单名称
      * @param scanSpec
-     *            the scan spec
+     *            扫描规格
      * @param buf
-     *            the buf
+     *            字符串构建器
      */
     private static void labelClassNodeHTML(final ClassInfo ci, final String shape, final String boxBgColor,
-            final boolean showFields, final boolean showMethods, final boolean useSimpleNames,
-            final ScanSpec scanSpec, final StringBuilder buf) {
+                                           final boolean showFields, final boolean showMethods, final boolean useSimpleNames,
+                                           final ScanSpec scanSpec, final StringBuilder buf) {
         buf.append("[shape=").append(shape).append(",style=filled,fillcolor=\"#").append(boxBgColor)
                 .append("\",label=");
         buf.append('<');
         buf.append("<table border='0' cellborder='0' cellspacing='1'>");
 
-        // Class modifiers
+        // 类修饰符
         buf.append("<tr><td><font point-size='12'>").append(ci.getModifiersStr()).append(' ')
                 .append(ci.isEnum() ? "enum"
                         : ci.isAnnotation() ? "@interface" : ci.isInterface() ? "interface" : "class")
@@ -249,12 +249,12 @@ final class GraphvizDotfileGenerator {
             buf.append("</b></font></td></tr>");
         }
 
-        // Class name
+        // 类名
         buf.append("<tr><td><font point-size='20'><b>");
         htmlEncode(ci.getSimpleName(), buf);
         buf.append("</b></font></td></tr>");
 
-        // Create a color that matches the box background color, but is darker
+        // 创建一个与框背景颜色匹配但更暗的颜色
         final float darkness = 0.8f;
         final int r = (int) (Integer.parseInt(boxBgColor.substring(0, 2), 16) * darkness);
         final int g = (int) (Integer.parseInt(boxBgColor.substring(2, 4), 16) * darkness);
@@ -263,7 +263,7 @@ final class GraphvizDotfileGenerator {
                 Integer.toString(r & 0xf, 16), Integer.toString(g >> 4, 16), Integer.toString(g & 0xf, 16),
                 Integer.toString(b >> 4, 16), Integer.toString(b & 0xf, 16));
 
-        // Class annotations
+        // 类注解
         final AnnotationInfoList annotationInfo = ci.annotationInfo;
         if (annotationInfo != null && !annotationInfo.isEmpty()) {
             buf.append("<tr><td colspan='3' bgcolor='").append(darkerColor)
@@ -281,14 +281,14 @@ final class GraphvizDotfileGenerator {
             }
         }
 
-        // Fields
+        // 字段
         final FieldInfoList fieldInfo = ci.fieldInfo;
         if (showFields && fieldInfo != null && !fieldInfo.isEmpty()) {
             final FieldInfoList fieldInfoSorted = new FieldInfoList(fieldInfo);
             CollectionUtils.sortIfNotEmpty(fieldInfoSorted);
             for (int i = fieldInfoSorted.size() - 1; i >= 0; --i) {
-                // Remove serialVersionUID field
-                if (fieldInfoSorted.get(i).getName().equals("serialVersionUID")) {
+                // 移除 serialVersionUID 字段
+                if ("serialVersionUID".equals(fieldInfoSorted.get(i).getName())) {
                     fieldInfoSorted.remove(i);
                 }
             }
@@ -303,7 +303,7 @@ final class GraphvizDotfileGenerator {
                     buf.append("<tr>");
                     buf.append("<td align='right' valign='top'>");
 
-                    // Field Annotations
+                    // 字段注解
                     final AnnotationInfoList fieldAnnotationInfo = fi.annotationInfo;
                     if (fieldAnnotationInfo != null) {
                         for (final AnnotationInfo ai : fieldAnnotationInfo) {
@@ -314,7 +314,7 @@ final class GraphvizDotfileGenerator {
                         }
                     }
 
-                    // Field modifiers
+                    // 字段修饰符
                     if (scanSpec.ignoreFieldVisibility) {
                         if (buf.charAt(buf.length() - 1) != ' ') {
                             buf.append(' ');
@@ -322,7 +322,7 @@ final class GraphvizDotfileGenerator {
                         buf.append(fi.getModifiersStr());
                     }
 
-                    // Field type
+                    // 字段类型
                     if (buf.charAt(buf.length() - 1) != ' ') {
                         buf.append(' ');
                     }
@@ -330,7 +330,7 @@ final class GraphvizDotfileGenerator {
                     htmlEncode(useSimpleNames ? typeSig.toStringWithSimpleNames() : typeSig.toString(), buf);
                     buf.append("</td>");
 
-                    // Field name
+                    // 字段名
                     buf.append("<td align='left' valign='top'><b>");
                     final String fieldName = fi.getName();
                     htmlEncode(fieldName, buf);
@@ -341,19 +341,19 @@ final class GraphvizDotfileGenerator {
             }
         }
 
-        // Methods
+        // 方法
         final MethodInfoList methodInfo = ci.methodInfo;
         if (showMethods && methodInfo != null) {
             final MethodInfoList methodInfoSorted = new MethodInfoList(methodInfo);
             CollectionUtils.sortIfNotEmpty(methodInfoSorted);
             for (int i = methodInfoSorted.size() - 1; i >= 0; --i) {
-                // Don't list static initializer blocks or methods of Object
+                // 不列出静态初始化块或 Object 的方法
                 final MethodInfo mi = methodInfoSorted.get(i);
                 final String name = mi.getName();
                 final int numParam = mi.getParameterInfo().length;
-                if (name.equals("<clinit>") || name.equals("hashCode") && numParam == 0
-                        || name.equals("toString") && numParam == 0 || name.equals("equals") && numParam == 1
-                                && mi.getTypeDescriptor().toString().equals("boolean (java.lang.Object)")) {
+                if ("<clinit>".equals(name) || "hashCode".equals(name) && numParam == 0
+                        || "toString".equals(name) && numParam == 0 || "equals".equals(name) && numParam == 1
+                        && "boolean (java.lang.Object)".equals(mi.getTypeDescriptor().toString())) {
                     methodInfoSorted.remove(i);
                 }
             }
@@ -367,8 +367,8 @@ final class GraphvizDotfileGenerator {
                 for (final MethodInfo mi : methodInfoSorted) {
                     buf.append("<tr>");
 
-                    // Method annotations
-                    // TODO: wrap this cell if the contents get too long
+                    // 方法注解
+                    // TODO: 如果内容过长，对此单元格进行换行
                     buf.append("<td align='right' valign='top'>");
                     final AnnotationInfoList methodAnnotationInfo = mi.annotationInfo;
                     if (methodAnnotationInfo != null) {
@@ -380,7 +380,7 @@ final class GraphvizDotfileGenerator {
                         }
                     }
 
-                    // Method modifiers
+                    // 方法修饰符
                     if (scanSpec.ignoreMethodVisibility) {
                         if (buf.charAt(buf.length() - 1) != ' ') {
                             buf.append(' ');
@@ -388,12 +388,12 @@ final class GraphvizDotfileGenerator {
                         buf.append(mi.getModifiersStr());
                     }
 
-                    // Method return type
+                    // 方法返回类型
                     if (buf.charAt(buf.length() - 1) != ' ') {
                         buf.append(' ');
                     }
-                    if (!mi.getName().equals("<init>")) {
-                        // Don't list return type for constructors
+                    if (!"<init>".equals(mi.getName())) {
+                        // 不为构造函数列出返回类型
                         final TypeSignature resultTypeSig = mi.getTypeSignatureOrTypeDescriptor().getResultType();
                         htmlEncode(
                                 useSimpleNames ? resultTypeSig.toStringWithSimpleNames() : resultTypeSig.toString(),
@@ -403,11 +403,11 @@ final class GraphvizDotfileGenerator {
                     }
                     buf.append("</td>");
 
-                    // Method name
+                    // 方法名
                     buf.append("<td align='left' valign='top'>");
                     buf.append("<b>");
-                    if (mi.getName().equals("<init>")) {
-                        // Show class name for constructors
+                    if ("<init>".equals(mi.getName())) {
+                        // 为构造函数显示类名
                         htmlEncode(ci.getSimpleName(), buf);
                     } else {
                         htmlEncode(mi.getName(), buf);
@@ -415,7 +415,7 @@ final class GraphvizDotfileGenerator {
                     buf.append("</b>&nbsp;");
                     buf.append("</td>");
 
-                    // Method parameters
+                    // 方法参数
                     buf.append("<td align='left' valign='top'>");
                     buf.append('(');
                     final MethodParameterInfo[] paramInfo = mi.getParameterInfo();
@@ -430,7 +430,7 @@ final class GraphvizDotfileGenerator {
                                 wrapPos = 0;
                             }
 
-                            // Param annotation
+                            // 参数注解
                             final AnnotationInfo[] paramAnnotationInfo = paramInfo[i].annotationInfo;
                             if (paramAnnotationInfo != null) {
                                 for (final AnnotationInfo ai : paramAnnotationInfo) {
@@ -450,14 +450,14 @@ final class GraphvizDotfileGenerator {
                                 }
                             }
 
-                            // Param type
+                            // 参数类型
                             final TypeSignature paramTypeSig = paramInfo[i].getTypeSignatureOrTypeDescriptor();
                             final String paramTypeStr = useSimpleNames ? paramTypeSig.toStringWithSimpleNames()
                                     : paramTypeSig.toString();
                             htmlEncode(paramTypeStr, buf);
                             wrapPos += paramTypeStr.length();
 
-                            // Param name
+                            // 参数名
                             final String paramName = paramInfo[i].getName();
                             if (paramName != null) {
                                 buf.append(" <B>");
@@ -479,36 +479,35 @@ final class GraphvizDotfileGenerator {
     }
 
     /**
-     * Generates a .dot file which can be fed into GraphViz for layout and visualization of the class graph. The
-     * sizeX and sizeY parameters are the image output size to use (in inches) when GraphViz is asked to render the
-     * .dot file.
+     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
+     * sizeX 和 sizeY 参数是让 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
      *
      * @param classInfoList
-     *            the class info list
+     *            类信息列表
      * @param sizeX
-     *            the size X
+     *            尺寸 X
      * @param sizeY
-     *            the size Y
+     *            尺寸 Y
      * @param showFields
-     *            whether to show fields
+     *            是否显示字段
      * @param showFieldTypeDependencyEdges
-     *            whether to show field type dependency edges
+     *            是否显示字段类型依赖边
      * @param showMethods
-     *            whether to show methods
+     *            是否显示方法
      * @param showMethodTypeDependencyEdges
-     *            whether to show method type dependency edges
+     *            是否显示方法类型依赖边
      * @param showAnnotations
-     *            whether to show annotations
+     *            是否显示注解
      * @param useSimpleNames
-     *            whether to use simple names for classes
+     *            是否对类使用简单名称
      * @param scanSpec
-     *            the scan spec
-     * @return the string
+     *            扫描规格
+     * @return GraphViz dot 文件内容字符串
      */
     static String generateGraphVizDotFile(final ClassInfoList classInfoList, final float sizeX, final float sizeY,
-            final boolean showFields, final boolean showFieldTypeDependencyEdges, final boolean showMethods,
-            final boolean showMethodTypeDependencyEdges, final boolean showAnnotations,
-            final boolean useSimpleNames, final ScanSpec scanSpec) {
+                                          final boolean showFields, final boolean showFieldTypeDependencyEdges, final boolean showMethods,
+                                          final boolean showMethodTypeDependencyEdges, final boolean showAnnotations,
+                                          final boolean useSimpleNames, final ScanSpec scanSpec) {
         final StringBuilder buf = new StringBuilder(1024 * 1024);
         buf.append("digraph {\n");
         buf.append("size=\"").append(sizeX).append(',').append(sizeY).append("\";\n");
@@ -555,8 +554,8 @@ final class GraphvizDotfileGenerator {
         for (final ClassInfo classNode : standardClassNodes) {
             for (final ClassInfo directSuperclassNode : classNode.getSuperclasses().directOnly()) {
                 if (directSuperclassNode != null && allVisibleNodes.contains(directSuperclassNode.getName())
-                        && !directSuperclassNode.getName().equals("java.lang.Object")) {
-                    // class --> superclass
+                        && !"java.lang.Object".equals(directSuperclassNode.getName())) {
+                    // 类 --> 超类
                     buf.append("  \"").append(classNode.getName()).append("\" -> \"")
                             .append(directSuperclassNode.getName()).append("\" [arrowsize=2.5]\n");
                 }
@@ -564,7 +563,7 @@ final class GraphvizDotfileGenerator {
 
             for (final ClassInfo implementedInterfaceNode : classNode.getInterfaces().directOnly()) {
                 if (allVisibleNodes.contains(implementedInterfaceNode.getName())) {
-                    // class --<> implemented interface
+                    // 类 --<> 实现的接口
                     buf.append("  \"").append(classNode.getName()).append("\" -> \"")
                             .append(implementedInterfaceNode.getName())
                             .append("\" [arrowhead=diamond, arrowsize=2.5]\n");
@@ -575,7 +574,7 @@ final class GraphvizDotfileGenerator {
                 for (final FieldInfo fi : classNode.fieldInfo) {
                     for (final ClassInfo referencedFieldType : fi.findReferencedClassInfo(/* log = */ null)) {
                         if (allVisibleNodes.contains(referencedFieldType.getName())) {
-                            // class --[ ] field type (open box)
+                            // 类 --[ ] 字段类型(空心框)
                             buf.append("  \"").append(referencedFieldType.getName()).append("\" -> \"")
                                     .append(classNode.getName())
                                     .append("\" [arrowtail=obox, arrowsize=2.5, dir=back]\n");
@@ -588,7 +587,7 @@ final class GraphvizDotfileGenerator {
                 for (final MethodInfo mi : classNode.methodInfo) {
                     for (final ClassInfo referencedMethodType : mi.findReferencedClassInfo(/* log = */ null)) {
                         if (allVisibleNodes.contains(referencedMethodType.getName())) {
-                            // class --[#] field type (open box)
+                            // 类 --[#] 字段类型(实心框)
                             buf.append("  \"").append(referencedMethodType.getName()).append("\" -> \"")
                                     .append(classNode.getName())
                                     .append("\" [arrowtail=box, arrowsize=2.5, dir=back]\n");
@@ -600,7 +599,7 @@ final class GraphvizDotfileGenerator {
         for (final ClassInfo interfaceNode : interfaceNodes) {
             for (final ClassInfo superinterfaceNode : interfaceNode.getInterfaces().directOnly()) {
                 if (allVisibleNodes.contains(superinterfaceNode.getName())) {
-                    // interface --<> superinterface
+                    // 接口 --<> 超接口
                     buf.append("  \"").append(interfaceNode.getName()).append("\" -> \"")
                             .append(superinterfaceNode.getName()).append("\" [arrowhead=diamond, arrowsize=2.5]\n");
                 }
@@ -610,7 +609,7 @@ final class GraphvizDotfileGenerator {
             for (final ClassInfo annotationNode : annotationNodes) {
                 for (final ClassInfo annotatedClassNode : annotationNode.getClassesWithAnnotationDirectOnly()) {
                     if (allVisibleNodes.contains(annotatedClassNode.getName())) {
-                        // annotated class --o annotation
+                        // 被注解的类 --o 注解
                         buf.append("  \"").append(annotatedClassNode.getName()).append("\" -> \"")
                                 .append(annotationNode.getName()).append("\" [arrowhead=dot, arrowsize=2.5]\n");
                     }
@@ -618,7 +617,7 @@ final class GraphvizDotfileGenerator {
                 for (final ClassInfo classWithMethodAnnotationNode : annotationNode
                         .getClassesWithMethodAnnotationDirectOnly()) {
                     if (allVisibleNodes.contains(classWithMethodAnnotationNode.getName())) {
-                        // class with method annotation --o method annotation
+                        // 具有方法注解的类 --o 方法注解
                         buf.append("  \"").append(classWithMethodAnnotationNode.getName()).append("\" -> \"")
                                 .append(annotationNode.getName()).append("\" [arrowhead=odot, arrowsize=2.5]\n");
                     }
@@ -626,7 +625,7 @@ final class GraphvizDotfileGenerator {
                 for (final ClassInfo classWithMethodAnnotationNode : annotationNode
                         .getClassesWithFieldAnnotationDirectOnly()) {
                     if (allVisibleNodes.contains(classWithMethodAnnotationNode.getName())) {
-                        // class with field annotation --o method annotation
+                        // 具有字段注解的类 --o 方法注解
                         buf.append("  \"").append(classWithMethodAnnotationNode.getName()).append("\" -> \"")
                                 .append(annotationNode.getName()).append("\" [arrowhead=odot, arrowsize=2.5]\n");
                     }
@@ -638,26 +637,26 @@ final class GraphvizDotfileGenerator {
     }
 
     /**
-     * Generate a .dot file which can be fed into GraphViz for layout and visualization of the class graph. The
-     * returned graph shows inter-class dependencies only. The sizeX and sizeY parameters are the image output size
-     * to use (in inches) when GraphViz is asked to render the .dot file. You must have called
-     * {@link ClassGraph#enableInterClassDependencies()} before scanning to use this method.
+     * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
+     * 返回的图仅显示类间依赖关系sizeX 和 sizeY 参数是让 GraphViz 渲染 .dot 文件时使用的
+     * 图像输出尺寸(以英寸为单位)使用此方法前必须调用
+     * {@link ClassGraph#enableInterClassDependencies()}
      *
      * @param classInfoList
-     *            The list of nodes whose dependencies should be plotted in the graph.
+     *            其依赖关系需要绘制在图中的节点列表
      * @param sizeX
-     *            The GraphViz layout width in inches.
+     *            GraphViz 布局宽度(以英寸为单位)
      * @param sizeY
-     *            The GraphViz layout width in inches.
+     *            GraphViz 布局宽度(以英寸为单位)
      * @param includeExternalClasses
-     *            If true, include any dependency nodes in the graph that are not themselves in classInfoList.
-     * @return the GraphViz file contents.
+     *            如果为 true，在图中包含不在 classInfoList 中的任何依赖节点
+     * @return GraphViz 文件内容
      * @throws IllegalArgumentException
-     *             if this {@link ClassInfoList} is empty or {@link ClassGraph#enableInterClassDependencies()} was
-     *             not called before scanning (since there would be nothing to graph).
+     *             如果此 {@link ClassInfoList} 为空，或者在扫描前未调用
+     *             {@link ClassGraph#enableInterClassDependencies()}(因为将没有可绘制的内容)
      */
     static String generateGraphVizDotFileFromInterClassDependencies(final ClassInfoList classInfoList,
-            final float sizeX, final float sizeY, final boolean includeExternalClasses) {
+                                                                    final float sizeX, final float sizeY, final boolean includeExternalClasses) {
 
         final StringBuilder buf = new StringBuilder(1024 * 1024);
         buf.append("digraph {\n");
@@ -687,7 +686,7 @@ final class GraphvizDotfileGenerator {
             buf.append('<');
             buf.append("<table border='0' cellborder='0' cellspacing='1'>");
 
-            // Class modifiers
+            // 类修饰符
             buf.append("<tr><td><font point-size='12'>").append(ci.getModifiersStr()).append(' ')
                     .append(ci.isEnum() ? "enum"
                             : ci.isAnnotation() ? "@interface" : ci.isInterface() ? "interface" : "class")
@@ -699,7 +698,7 @@ final class GraphvizDotfileGenerator {
                 buf.append("</b></font></td></tr>");
             }
 
-            // Class name
+            // 类名
             buf.append("<tr><td><font point-size='20'><b>");
             htmlEncode(ci.getSimpleName(), buf);
             buf.append("</b></font></td></tr>");
@@ -711,7 +710,7 @@ final class GraphvizDotfileGenerator {
         for (final ClassInfo ci : classInfoList) {
             for (final ClassInfo dep : ci.getClassDependencies()) {
                 if (includeExternalClasses || allVisibleNodes.contains(dep)) {
-                    // class --> dep
+                    // 类 --> 依赖
                     buf.append("  \"").append(ci.getName()).append("\" -> \"").append(dep.getName())
                             .append("\" [arrowsize=2.5]\n");
                 }

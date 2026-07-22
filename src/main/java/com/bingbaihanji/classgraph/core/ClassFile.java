@@ -26,17 +26,17 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Scanner.ClassfileScanWorkUnit;
-import nonapi.io.github.classgraph.concurrency.WorkQueue;
-import nonapi.io.github.classgraph.fileslice.reader.ClassfileReader;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.utils.CollectionUtils;
-import nonapi.io.github.classgraph.utils.JarUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
-import nonapi.io.github.classgraph.utils.StringUtils;
+import com.bingbaihanji.classgraph.concurrency.WorkQueue;
+import com.bingbaihanji.classgraph.core.Scanner.ClassfileScanWorkUnit;
+import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.utils.JarUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.StringUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -45,244 +45,240 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A classfile binary format parser. Implements its own buffering to avoid the overhead of using DataInputStream.
- * This class should only be used by a single thread at a time, but can be re-used to scan multiple classfiles in
- * sequence, to avoid re-allocating buffer memory.
- * 
+ * classfile 二进制格式解析器实现了自己的缓冲机制以避免使用 DataInputStream 的开销
+ * 此类在同一时间仅应由单线程使用，但可以重复用于按顺序扫描多个 classfile，以避免重新分配缓冲区内存
+ *
  * <p>
- * See <a href="https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html">the class file format spec</a>.
+ * 参见 <a href="https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html">class 文件格式规范</a>
  */
-class Classfile {
-    /** The {@link ClassfileReader} for the current classfile. */
-    private ClassfileReader reader;
-
-    /** The classpath element that contains this classfile. */
+class ClassFile {
+    /** 当没有注解时使用的空数组 */
+    private static final AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
+    /** 包含此 classfile 的类路径元素 */
     private final ClasspathElement classpathElement;
 
-    /** The classpath order. */
+    /** 类路径顺序 */
     private final List<ClasspathElement> classpathOrder;
 
-    /** The relative path to the classfile (should correspond to className). */
+    /** classfile 的相对路径(应对应于 className) */
     private final String relativePath;
 
-    /** The classfile resource. */
+    /** classfile 资源 */
     private final Resource classfileResource;
 
-    /** The string intern map. */
+    /** 字符串内部化映射 */
     private final ConcurrentHashMap<String, String> stringInternMap;
-
-    /** The name of the class. */
-    private String className;
-
-    /** The minor version of the classfile format. */
-    private int minorVersion;
-
-    /** The major version of the classfile format. */
-    private int majorVersion;
-
-    /** Whether this is an external class. */
+    /** 此是否为外部类 */
     private final boolean isExternalClass;
-
-    /** The class modifiers. */
-    private int classModifiers;
-
-    /** Whether this class is an interface. */
-    private boolean isInterface;
-
-    /** Whether this class is a record. */
-    private boolean isRecord;
-
-    /** Whether this class is an annotation. */
-    private boolean isAnnotation;
-
-    /** The superclass name. (can be null if no superclass, or if superclass is rejected.) */
-    private String superclassName;
-
-    /** The implemented interfaces. */
-    private List<String> implementedInterfaces;
-
-    /** The class annotations. */
-    private AnnotationInfoList classAnnotations;
-
-    /** The fully qualified name of the defining method. */
-    private String fullyQualifiedDefiningMethodName;
-
-    /** Class containment entries. */
-    private List<ClassContainment> classContainmentEntries;
-
-    /** Annotation default parameter values. */
-    private AnnotationParameterValueList annotationParamDefaultValues;
-
-    /** Referenced class names. */
-    private Set<String> refdClassNames;
-
-    /** The field info list. */
-    private FieldInfoList fieldInfoList;
-
-    /** The method info list. */
-    private MethodInfoList methodInfoList;
-
-    /** The type signature. */
-    private String typeSignatureStr;
-
-    /** The source file, such as Classfile.java */
-    private String sourceFile;
-
-    /** The type annotation decorators for the {@link ClassTypeSignature} instance. */
-    private List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators;
-
-    /** The names of accepted classes found in the classpath while scanning paths within classpath elements. */
+    /** 在类路径元素内扫描路径时发现的已接受类名集合 */
     private final Set<String> acceptedClassNamesFound;
-
     /**
-     * The names of external (non-accepted) classes scheduled for extended scanning (where scanning is extended
-     * upwards to superclasses, interfaces and annotations).
+     * 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类、接口和注解)
      */
     private final Set<String> classNamesScheduledForExtendedScanning;
-
-    /** Any additional work units scheduled for scanning. */
-    private List<ClassfileScanWorkUnit> additionalWorkUnits;
-
-    /** The scan spec. */
+    /** 扫描规格 */
     private final ScanSpec scanSpec;
+    /** 当前 classfile 的 {@link ClassfileReader} */
+    private ClassfileReader reader;
+    /** 类名 */
+    private String className;
+    /** classfile 格式的次版本号 */
+    private int minorVersion;
+    /** classfile 格式的主版本号 */
+    private int majorVersion;
+    /** 类修饰符 */
+    private int classModifiers;
+    /** 此类是否为接口 */
+    private boolean isInterface;
+    /** 此类是否为记录类(record) */
+    private boolean isRecord;
+    /** 此类是否为注解 */
+    private boolean isAnnotation;
+    /** 超类名(如果无超类或超类被拒绝，则可为 null) */
+    private String superclassName;
+    /** 实现的接口 */
+    private List<String> implementedInterfaces;
+    /** 类注解 */
+    private AnnotationInfoList classAnnotations;
+    /** 定义方法的完全限定名称 */
+    private String fullyQualifiedDefiningMethodName;
+    /** 类包含关系条目 */
+    private List<ClassContainment> classContainmentEntries;
+    /** 注解默认参数值 */
+    private AnnotationParameterValueList annotationParamDefaultValues;
+    /** 引用的类名 */
+    private Set<String> refdClassNames;
+    /** 字段信息列表 */
+    private FieldInfoList fieldInfoList;
+    /** 方法信息列表 */
+    private MethodInfoList methodInfoList;
+    /** 类型签名 */
+    private String typeSignatureStr;
+    /** 源文件，如 Classfile.java */
+    private String sourceFile;
+    /** {@link ClassTypeSignature} 实例的类型注解装饰器 */
+    private List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators;
 
     // -------------------------------------------------------------------------------------------------------------
-
-    /** The number of constant pool entries plus one. */
+    /** 任何已安排扫描的额外工作单元 */
+    private List<ClassfileScanWorkUnit> additionalWorkUnits;
+    /** 常量池条目数加一 */
     private int cpCount;
-
-    /** The byte offset for the beginning of each entry in the constant pool. */
+    /** 常量池中每个条目起始位置的字节偏移量 */
     private int[] entryOffset;
-
-    /** The tag (type) for each entry in the constant pool. */
+    /** 常量池中每个条目的标签(类型) */
     private int[] entryTag;
 
-    /** The indirection index for String/Class entries in the constant pool. */
+    // -------------------------------------------------------------------------------------------------------------
+    /** 常量池中 String/Class 条目的间接引用索引 */
     private int[] indirectStringRefs;
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** An empty array for the case where there are no annotations. */
-    private static final AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
-
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Class containment.
+     * 直接检查 classfile 二进制头内容以确定注解、实现的接口、超类等
+     * 创建一个新的 ClassInfo 对象，并将其添加到 classNameToClassInfoOut 中
+     * 假设类路径掩码已执行，因此只会添加一个给定名称的类
+     *
+     * @param classpathElement 类路径元素
+     * @param classpathOrder  类路径顺序
+     * @param acceptedClassNamesFound 在类路径元素内扫描路径时发现的已接受类名集合
+     * @param classNamesScheduledForExtendedScanning 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类、接口和注解)
+     * @param relativePath 相对路径
+     * @param classfileResource  classfile 资源
+     * @param isExternalClass  此是否为外部类
+     * @param stringInternMap 字符串内部化映射
+     * @param workQueue 工作队列
+     * @param scanSpec 扫描规格
+     * @param log 日志
+     * @throws IOException  如果发生 I/O 异常
+     * @throws ClassfileFormatException 如果解析 classfile 时发生问题
+     * @throws SkipClassException 如果 classfile 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
      */
-    static class ClassContainment {
-        /** The inner class name. */
-        public final String innerClassName;
+    ClassFile(final ClasspathElement classpathElement, final List<ClasspathElement> classpathOrder,
+              final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
+              final String relativePath, final Resource classfileResource, final boolean isExternalClass,
+              final ConcurrentHashMap<String, String> stringInternMap,
+              final WorkQueue<ClassfileScanWorkUnit> workQueue, final ScanSpec scanSpec, final LogNode log)
+            throws IOException, ClassfileFormatException, SkipClassException {
+        this.classpathElement = classpathElement;
+        this.classpathOrder = classpathOrder;
+        this.relativePath = relativePath;
+        this.acceptedClassNamesFound = acceptedClassNamesFound;
+        this.classNamesScheduledForExtendedScanning = classNamesScheduledForExtendedScanning;
+        this.classfileResource = classfileResource;
+        this.isExternalClass = isExternalClass;
+        this.stringInternMap = stringInternMap;
+        this.scanSpec = scanSpec;
 
-        /** The inner class modifier bits. */
-        public final int innerClassModifierBits;
+        // 为 classfile 打开一个 BufferedSequentialReader
+        try (ClassfileReader classfileReader = classfileResource.openClassfile()) {
+            reader = classfileReader;
 
-        /** The outer class name. */
-        public final String outerClassName;
+            // 检查魔数
+            if (reader.readInt() != 0xCAFEBABE) {
+                throw new ClassfileFormatException("Classfile does not have correct magic number");
+            }
 
-        /**
-         * Constructor.
-         *
-         * @param innerClassName
-         *            the inner class name.
-         * @param innerClassModifierBits
-         *            the inner class modifier bits.
-         * @param outerClassName
-         *            the outer class name.
-         */
-        public ClassContainment(final String innerClassName, final int innerClassModifierBits,
-                final String outerClassName) {
-            this.innerClassName = innerClassName;
-            this.innerClassModifierBits = innerClassModifierBits;
-            this.outerClassName = outerClassName;
-        }
-    }
+            // 读取 classfile 次版本号和主版本号
+            minorVersion = reader.readUnsignedShort();
+            majorVersion = reader.readUnsignedShort();
 
-    // -------------------------------------------------------------------------------------------------------------
+            // 读取常量池
+            readConstantPoolEntries(log);
 
-    /** Thrown when a classfile's contents are not in the correct format. */
-    static class ClassfileFormatException extends IOException {
-        /** serialVersionUID. */
-        static final long serialVersionUID = 1L;
+            // 读取基本类信息
+            readBasicClassInfo();
 
-        /**
-         * Constructor.
-         *
-         * @param message
-         *            the message
-         */
-        public ClassfileFormatException(final String message) {
-            super(message);
-        }
+            // 读取接口
+            readInterfaces();
 
-        /**
-         * Constructor.
-         *
-         * @param message
-         *            the message
-         * @param cause
-         *            the cause
-         */
-        public ClassfileFormatException(final String message, final Throwable cause) {
-            super(message, cause);
+            // 读取字段
+            readFields();
+
+            // 读取方法
+            readMethods();
+
+            // 读取类属性
+            readClassAttributes();
+
+            reader = null;
         }
 
-        /**
-         * Speed up exception (stack trace is not needed for this exception).
-         *
-         * @return this
-         */
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
+        // 将类信息写入日志
+        final LogNode subLog = log == null ? null
+                : log.log("Found " //
+                + (isAnnotation ? "annotation class" : isInterface ? "interface class" : "class") //
+                + " " + className);
+        if (subLog != null) {
+            if (superclassName != null) {
+                subLog.log(
+                        "Super" + (isInterface && !isAnnotation ? "interface" : "class") + ": " + superclassName);
+            }
+            if (implementedInterfaces != null) {
+                subLog.log("Interfaces: " + StringUtils.join(", ", implementedInterfaces));
+            }
+            if (classAnnotations != null) {
+                subLog.log("Class annotations: " + StringUtils.join(", ", classAnnotations));
+            }
+            if (annotationParamDefaultValues != null) {
+                for (final AnnotationParameterValue apv : annotationParamDefaultValues) {
+                    subLog.log("Annotation default param value: " + apv);
+                }
+            }
+            if (fieldInfoList != null) {
+                for (final FieldInfo fieldInfo : fieldInfoList) {
+                    final String modifierStr = fieldInfo.getModifiersStr();
+                    subLog.log("Field: " + modifierStr + (modifierStr.isEmpty() ? "" : " ") + fieldInfo.getName());
+                }
+            }
+            if (methodInfoList != null) {
+                for (final MethodInfo methodInfo : methodInfoList) {
+                    final String modifierStr = methodInfo.getModifiersStr();
+                    subLog.log(
+                            "Method: " + modifierStr + (modifierStr.isEmpty() ? "" : " ") + methodInfo.getName());
+                }
+            }
+            if (typeSignatureStr != null) {
+                subLog.log("Class type signature: " + typeSignatureStr);
+            }
+            if (refdClassNames != null) {
+                final List<String> refdClassNamesSorted = new ArrayList<>(refdClassNames);
+                CollectionUtils.sortIfNotEmpty(refdClassNamesSorted);
+                subLog.log("Additional referenced class names: " + StringUtils.join(", ", refdClassNamesSorted));
+            }
         }
-    }
 
-    /** Thrown when a classfile needs to be skipped. */
-    static class SkipClassException extends IOException {
-        /** serialVersionUID. */
-        static final long serialVersionUID = 1L;
-
-        /**
-         * Constructor.
-         *
-         * @param message
-         *            the message
-         */
-        public SkipClassException(final String message) {
-            super(message);
-        }
-
-        /**
-         * Speed up exception (stack trace is not needed for this exception).
-         *
-         * @return this
-         */
-        @Override
-        public synchronized Throwable fillInStackTrace() {
-            return this;
+        // 检查是否有任何超类、接口或注解是外部(非接受)类，需要安排扫描，
+        // 以便为任何接受类扫描类图的整个"向上"方向，即使超类/接口/注解本身不是接受类
+        if (scanSpec.extendScanningUpwardsToExternalClasses) {
+            extendScanningUpwards(subLog);
+            // 如果发现任何外部类，安排它们进行扫描
+            if (additionalWorkUnits != null) {
+                workQueue.addWorkUnits(additionalWorkUnits);
+            }
         }
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Extend scanning to a superclass, interface or annotation.
+     * 将扫描扩展到超类、接口或注解
      *
      * @param className
-     *            the class name
+     *            类名
      * @param relationship
-     *            the relationship type
+     *            关系类型
      * @param log
-     *            the log
+     *            日志
      */
     private void scheduleScanningIfExternalClass(final String className, final String relationship,
-            final LogNode log) {
-        // Don't scan Object
-        if (className != null && !className.equals("java.lang.Object")
-        // Don't schedule a class for scanning that was already found to be accepted
+                                                 final LogNode log) {
+        // 不扫描 Object
+        if (className != null && !"java.lang.Object".equals(className)
+                // 不安排已经发现为接受类的类进行扫描
                 && !acceptedClassNamesFound.contains(className)
-                // Only schedule each external class once for scanning, across all threads
+                // 在所有线程中，每个外部类只安排一次扫描
                 && classNamesScheduledForExtendedScanning.add(className)) {
             if (scanSpec.classAcceptReject.isRejected(className)) {
                 if (log != null) {
@@ -290,17 +286,17 @@ class Classfile {
                             + ", since it is rejected");
                 }
             } else {
-                // Search for the named class' classfile among classpath elements, in classpath order (this is O(N)
-                // for each class, but there shouldn't be too many cases of extending scanning upwards)
+                // 在类路径元素中按类路径顺序搜索指定类的 classfile(这对每个类是 O(N)，
+                // 但向上扩展扫描的情况不应太多)
                 final String classfilePath = JarUtils.classNameToClassfilePath(className);
-                // First check current classpath element, to avoid iterating through other classpath elements
+                // 首先检查当前类路径元素，避免遍历其他类路径元素
                 Resource classResource = classpathElement.getResource(classfilePath);
                 ClasspathElement foundInClasspathElt = null;
                 if (classResource != null) {
-                    // Found the classfile in the current classpath element
+                    // 在当前类路径元素中找到了 classfile
                     foundInClasspathElt = classpathElement;
                 } else {
-                    // Didn't find the classfile in the current classpath element -- iterate through other elements
+                    // 在当前类路径元素中未找到 classfile -- 遍历其他元素
                     for (final ClasspathElement classpathOrderElt : classpathOrder) {
                         if (classpathOrderElt != classpathElement) {
                             classResource = classpathOrderElt.getResource(classfilePath);
@@ -312,21 +308,20 @@ class Classfile {
                     }
                 }
                 if (classResource != null) {
-                    // Found class resource 
+                    // 找到了类资源
                     if (log != null) {
-                        // Log the extended scan as a child LogNode of the current class' scan log, since the
-                        // external class is not scanned at the regular place in the classpath element hierarchy
-                        // traversal
+                        // 将扩展扫描记录为当前类扫描日志的子 LogNode，因为外部类不是在
+                        // 类路径元素层次结构遍历中的常规位置扫描的
                         classResource.scanLog = log
                                 .log("Extending scanning to external " + relationship
                                         + (foundInClasspathElt == classpathElement ? " in same classpath element"
-                                                : " in classpath element " + foundInClasspathElt)
+                                        : " in classpath element " + foundInClasspathElt)
                                         + ": " + className);
                     }
                     if (additionalWorkUnits == null) {
                         additionalWorkUnits = new ArrayList<>();
                     }
-                    // Schedule class resource for scanning
+                    // 安排类资源进行扫描
                     additionalWorkUnits.add(new ClassfileScanWorkUnit(foundInClasspathElt, classResource,
                             /* isExternalClass = */ true));
                 } else {
@@ -340,17 +335,17 @@ class Classfile {
     }
 
     /**
-     * Check if scanning needs to be extended upwards from an annotation parameter value.
+     * 检查是否需要从注解参数值向上扩展扫描
      *
      * @param annotationParamVal
-     *            the {@link AnnotationInfo} object for an annotation, or for an annotation parameter value.
+     *            注解或注解参数值的 {@link AnnotationInfo} 对象
      * @param log
-     *            the log
+     *            日志
      */
     private void extendScanningUpwardsFromAnnotationParameterValues(final Object annotationParamVal,
-            final LogNode log) {
+                                                                    final LogNode log) {
         if (annotationParamVal == null) {
-            // Should not be possible -- ignore
+            // 不应发生 -- 忽略
         } else if (annotationParamVal instanceof AnnotationInfo) {
             final AnnotationInfo annotationInfo = (AnnotationInfo) annotationParamVal;
             scheduleScanningIfExternalClass(annotationInfo.getClassName(), "annotation class", log);
@@ -368,41 +363,43 @@ class Classfile {
                 extendScanningUpwardsFromAnnotationParameterValues(Array.get(annotationParamVal, i), log);
             }
         } else {
-            // String etc. -- ignore
+            // String 等 -- 忽略
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Check if scanning needs to be extended upwards to an external superclass, interface or annotation.
+     * 检查是否需要向上扩展到外部超类、接口或注解进行扫描
      *
      * @param log
-     *            the log
+     *            日志
      */
     private void extendScanningUpwards(final LogNode log) {
-        // Check superclass
+        // 检查超类
         if (superclassName != null) {
             scheduleScanningIfExternalClass(superclassName, "superclass", log);
         }
-        // Check implemented interfaces
+        // 检查实现的接口
         if (implementedInterfaces != null) {
             for (final String interfaceName : implementedInterfaces) {
                 scheduleScanningIfExternalClass(interfaceName, "interface", log);
             }
         }
-        // Check class annotations
+        // 检查类注解
         if (classAnnotations != null) {
             for (final AnnotationInfo annotationInfo : classAnnotations) {
                 scheduleScanningIfExternalClass(annotationInfo.getName(), "class annotation", log);
                 extendScanningUpwardsFromAnnotationParameterValues(annotationInfo, log);
             }
         }
-        // Check annotation default parameter values
+        // 检查注解默认参数值
         if (annotationParamDefaultValues != null) {
             for (final AnnotationParameterValue apv : annotationParamDefaultValues) {
                 extendScanningUpwardsFromAnnotationParameterValues(apv.getValue(), log);
             }
         }
-        // Check method annotations and method parameter annotations
+        // 检查方法注解和方法参数注解
         if (methodInfoList != null) {
             for (final MethodInfo methodInfo : methodInfoList) {
                 if (methodInfo.annotationInfo != null) {
@@ -430,7 +427,7 @@ class Classfile {
                 }
             }
         }
-        // Check field annotations
+        // 检查字段注解
         if (fieldInfoList != null) {
             for (final FieldInfo fieldInfo : fieldInfoList) {
                 if (fieldInfo.annotationInfo != null) {
@@ -441,7 +438,7 @@ class Classfile {
                 }
             }
         }
-        // Check if this class is an inner class, and if so, extend scanning to outer class
+        // 检查此类是否为内部类，如果是，则将扫描扩展到外部类
         if (classContainmentEntries != null) {
             for (final ClassContainment classContainmentEntry : classContainmentEntries) {
                 if (classContainmentEntry.innerClassName.equals(className)) {
@@ -451,32 +448,30 @@ class Classfile {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Link classes. Not threadsafe, should be run in a single-threaded context.
+     * 链接类不是线程安全的，应在单线程上下文中运行
      *
      * @param classNameToClassInfo
-     *            map from class name to class info
+     *            类名到类信息的映射
      * @param packageNameToPackageInfo
-     *            map from package name to package info
+     *            包名到包信息的映射
      * @param moduleNameToModuleInfo
-     *            map from module name to module info
+     *            模块名到模块信息的映射
      */
     void link(final Map<String, ClassInfo> classNameToClassInfo,
-            final Map<String, PackageInfo> packageNameToPackageInfo,
-            final Map<String, ModuleInfo> moduleNameToModuleInfo) {
+              final Map<String, PackageInfo> packageNameToPackageInfo,
+              final Map<String, ModuleInfo> moduleNameToModuleInfo) {
         boolean isModuleDescriptor = false;
         boolean isPackageDescriptor = false;
         ClassInfo classInfo = null;
-        if (className.equals("module-info")) {
+        if ("module-info".equals(className)) {
             isModuleDescriptor = true;
 
-        } else if (className.equals("package-info") || className.endsWith(".package-info")) {
+        } else if ("package-info".equals(className) || className.endsWith(".package-info")) {
             isPackageDescriptor = true;
 
         } else {
-            // Handle regular classfile
+            // 处理常规 classfile
             classInfo = ClassInfo.addScannedClass(className, classModifiers, isExternalClass, classNameToClassInfo,
                     classpathElement, classfileResource);
             classInfo.setClassfileVersion(minorVersion, majorVersion);
@@ -524,55 +519,53 @@ class Classfile {
             }
         }
 
-        // Get or create PackageInfo, if this is not a module descriptor (the module descriptor's package is "")
+        // 获取或创建 PackageInfo，如果这不是模块描述符(模块描述符的包是 "")
         PackageInfo packageInfo = null;
         if (!isModuleDescriptor) {
-            // Get package for this class or package descriptor
+            // 获取此类或包描述符的包
             final String packageName = PackageInfo.getParentPackageName(className);
             packageInfo = PackageInfo.getOrCreatePackage(packageName, packageNameToPackageInfo, scanSpec);
             if (isPackageDescriptor) {
-                // Add any class annotations on the package-info.class file to the ModuleInfo
+                // 将 package-info.class 文件上的任何类注解添加到 ModuleInfo
                 packageInfo.addAnnotations(classAnnotations);
             } else if (classInfo != null) {
-                // Add ClassInfo to PackageInfo, and vice versa
+                // 将 ClassInfo 添加到 PackageInfo，反之亦然
                 packageInfo.addClassInfo(classInfo);
                 classInfo.packageInfo = packageInfo;
             }
         }
 
-        // Get or create ModuleInfo, if there is a module name
+        // 获取或创建 ModuleInfo，如果有模块名
         final String moduleName = classpathElement.getModuleName();
         if (moduleName != null) {
-            // Get or create a ModuleInfo object for this module
+            // 获取或创建此模块的 ModuleInfo 对象
             ModuleInfo moduleInfo = moduleNameToModuleInfo.get(moduleName);
             if (moduleInfo == null) {
                 moduleNameToModuleInfo.put(moduleName,
                         moduleInfo = new ModuleInfo(classfileResource.getModuleRef(), classpathElement));
             }
             if (isModuleDescriptor) {
-                // Add any class annotations on the module-info.class file to the ModuleInfo
+                // 将 module-info.class 文件上的任何类注解添加到 ModuleInfo
                 moduleInfo.addAnnotations(classAnnotations);
             }
             if (classInfo != null) {
-                // Add ClassInfo to ModuleInfo, and vice versa
+                // 将 ClassInfo 添加到 ModuleInfo，反之亦然
                 moduleInfo.addClassInfo(classInfo);
                 classInfo.moduleInfo = moduleInfo;
             }
             if (packageInfo != null) {
-                // Add PackageInfo to ModuleInfo
+                // 将 PackageInfo 添加到 ModuleInfo
                 moduleInfo.addPackageInfo(packageInfo);
             }
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Intern a string.
+     * 内部化字符串
      *
      * @param str
-     *            the str
-     * @return the string
+     *            字符串
+     * @return 内部化后的字符串
      */
     private String intern(final String str) {
         if (str == null) {
@@ -585,17 +578,19 @@ class Classfile {
         return str;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the byte offset within the buffer of a string from the constant pool, or 0 for a null string.
+     * 获取缓冲区中常量池字符串的字节偏移量，对于空字符串返回 0
      *
      * @param cpIdx
-     *            the constant pool index
+     *            常量池索引
      * @param subFieldIdx
-     *            should be 0 for CONSTANT_Utf8, CONSTANT_Class and CONSTANT_String, and for
-     *            CONSTANT_NameAndType_info, fetches the name for value 0, or the type descriptor for value 1.
-     * @return the constant pool string offset
+     *            对于 CONSTANT_Utf8、CONSTANT_Class 和 CONSTANT_String 应为 0；
+     *            对于 CONSTANT_NameAndType_info，值为 0 时获取名称，值为 1 时获取类型描述符
+     * @return 常量池字符串偏移量
      * @throws ClassfileFormatException
-     *             If a problem is detected
+     *             如果检测到问题
      */
     private int getConstantPoolStringOffset(final int cpIdx, final int subFieldIdx)
             throws ClassfileFormatException {
@@ -612,22 +607,23 @@ class Classfile {
         }
         int cpIdxToUse;
         if (t == 0) {
-            // Assume this means null
+            // 假设这意味着 null
             return 0;
         } else if (t == 1) {
             // CONSTANT_Utf8
             cpIdxToUse = cpIdx;
         } else if (t == 7 || t == 8 || t == 19) {
-            // t == 7 => CONSTANT_Class, e.g. "[[I", "[Ljava/lang/Thread;"; t == 8 => CONSTANT_String;
+            // t == 7 => CONSTANT_Class，例如 "[[I", "[Ljava/lang/Thread;";
+            // t == 8 => CONSTANT_String;
             // t == 19 => CONSTANT_Method_Info
             final int indirIdx = indirectStringRefs[cpIdx];
             if (indirIdx == -1) {
-                // Should not happen
+                // 不应发生
                 throw new ClassfileFormatException("Bad string indirection index, cannot continue reading class. "
                         + "Please report this at https://github.com/classgraph/classgraph/issues");
             }
             if (indirIdx == 0) {
-                // I assume this represents a null string, since the zeroeth entry is unused
+                // 假设这表示空字符串，因为第零个条目未被使用
                 return 0;
             }
             cpIdxToUse = indirIdx;
@@ -635,13 +631,13 @@ class Classfile {
             // CONSTANT_NameAndType_info
             final int compoundIndirIdx = indirectStringRefs[cpIdx];
             if (compoundIndirIdx == -1) {
-                // Should not happen
+                // 不应发生
                 throw new ClassfileFormatException("Bad string indirection index, cannot continue reading class. "
                         + "Please report this at https://github.com/classgraph/classgraph/issues");
             }
             final int indirIdx = (subFieldIdx == 0 ? (compoundIndirIdx >> 16) : compoundIndirIdx) & 0xffff;
             if (indirIdx == 0) {
-                // Should not happen
+                // 不应发生
                 throw new ClassfileFormatException("Bad string indirection index, cannot continue reading class. "
                         + "Please report this at https://github.com/classgraph/classgraph/issues");
             }
@@ -659,24 +655,25 @@ class Classfile {
         return entryOffset[cpIdxToUse];
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get a string from the constant pool, optionally replacing '/' with '.'.
+     * 从常量池获取字符串，可选择将 '/' 替换为 '.'
      *
      * @param cpIdx
-     *            the constant pool index
+     *            常量池索引
      * @param replaceSlashWithDot
-     *            if true, replace slash with dot in the result.
+     *            如果为 true，将结果中的斜杠替换为点号
      * @param stripLSemicolon
-     *            if true, strip 'L' from the beginning and ';' from the end before returning (for class reference
-     *            constants)
-     * @return the constant pool string
+     *            如果为 true，在返回之前从开头去掉 'L' 并从末尾去掉 ';'(用于类引用常量)
+     * @return 常量池字符串
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private String getConstantPoolString(final int cpIdx, final boolean replaceSlashWithDot,
-            final boolean stripLSemicolon) throws ClassfileFormatException, IOException {
+                                         final boolean stripLSemicolon) throws ClassfileFormatException, IOException {
         final int constantPoolStringOffset = getConstantPoolStringOffset(cpIdx, /* subFieldIdx = */ 0);
         if (constantPoolStringOffset == 0) {
             return null;
@@ -690,18 +687,18 @@ class Classfile {
     }
 
     /**
-     * Get a string from the constant pool.
+     * 从常量池获取字符串
      *
      * @param cpIdx
-     *            the constant pool index
+     *            常量池索引
      * @param subFieldIdx
-     *            should be 0 for CONSTANT_Utf8, CONSTANT_Class and CONSTANT_String, and for
-     *            CONSTANT_NameAndType_info, fetches the name for value 0, or the type descriptor for value 1.
-     * @return the constant pool string
+     *            对于 CONSTANT_Utf8、CONSTANT_Class 和 CONSTANT_String 应为 0；
+     *            对于 CONSTANT_NameAndType_info，值为 0 时获取名称，值为 1 时获取类型描述符
+     * @return 常量池字符串
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private String getConstantPoolString(final int cpIdx, final int subFieldIdx)
             throws ClassfileFormatException, IOException {
@@ -718,30 +715,30 @@ class Classfile {
     }
 
     /**
-     * Get a string from the constant pool.
+     * 从常量池获取字符串
      *
      * @param cpIdx
-     *            the constant pool index
-     * @return the constant pool string
+     *            常量池索引
+     * @return 常量池字符串
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private String getConstantPoolString(final int cpIdx) throws ClassfileFormatException, IOException {
         return getConstantPoolString(cpIdx, /* subFieldIdx = */ 0);
     }
 
     /**
-     * Get the first UTF8 byte of a string in the constant pool, or '\0' if the string is null or empty.
+     * 获取常量池中字符串的第一个 UTF8 字节，如果字符串为 null 或空则返回 '\0'
      *
      * @param cpIdx
-     *            the constant pool index
-     * @return the first byte of the constant pool string
+     *            常量池索引
+     * @return 常量池字符串的第一个字节
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private byte getConstantPoolStringFirstByte(final int cpIdx) throws ClassfileFormatException, IOException {
         final int constantPoolStringOffset = getConstantPoolStringOffset(cpIdx, /* subFieldIdx = */ 0);
@@ -756,50 +753,48 @@ class Classfile {
     }
 
     /**
-     * Get a string from the constant pool, and interpret it as a class name by replacing '/' with '.'.
+     * 从常量池获取字符串，并通过将 '/' 替换为 '.' 来解释为类名
      *
      * @param cpIdx
-     *            the constant pool index
-     * @return the constant pool class name
+     *            常量池索引
+     * @return 常量池类名
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private String getConstantPoolClassName(final int cpIdx) throws ClassfileFormatException, IOException {
         return getConstantPoolString(cpIdx, /* replaceSlashWithDot = */ true, /* stripLSemicolon = */ false);
     }
 
     /**
-     * Get a string from the constant pool representing an internal string descriptor for a class name
-     * ("Lcom/xyz/MyClass;"), and interpret it as a class name by replacing '/' with '.', and removing the leading
-     * "L" and the trailing ";".
+     * 从常量池获取表示类名内部字符串描述符("Lcom/xyz/MyClass;")的字符串，并通过将 '/' 替换为 '.'，
+     * 并移除开头的 "L" 和末尾的 ";" 来解释为类名
      *
      * @param cpIdx
-     *            the constant pool index
-     * @return the constant pool class descriptor
+     *            常量池索引
+     * @return 常量池类描述符
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private String getConstantPoolClassDescriptor(final int cpIdx) throws ClassfileFormatException, IOException {
         return getConstantPoolString(cpIdx, /* replaceSlashWithDot = */ true, /* stripLSemicolon = */ true);
     }
 
     /**
-     * Compare a string in the constant pool with a given ASCII string, without constructing the constant pool
-     * String object.
+     * 将常量池中的字符串与给定的 ASCII 字符串进行比较，而不构造常量池 String 对象
      *
      * @param cpIdx
-     *            the constant pool index
+     *            常量池索引
      * @param asciiStr
-     *            the ASCII string to compare to
-     * @return true, if successful
+     *            要比较的 ASCII 字符串
+     * @return 如果相等则返回 true
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private boolean constantPoolStringEquals(final int cpIdx, final String asciiStr)
             throws ClassfileFormatException, IOException {
@@ -825,16 +820,14 @@ class Classfile {
         return true;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Read an int from the constant pool.
+     * 从常量池读取 int
      *
      * @param cpIdx
-     *            the constant pool index.
-     * @return the int
+     *            常量池索引
+     * @return int 值
      * @throws IOException
-     *             If an I/O exception occurred.
+     *             如果发生 I/O 异常
      */
     private int cpReadInt(final int cpIdx) throws IOException {
         if (cpIdx < 1 || cpIdx >= cpCount) {
@@ -846,13 +839,13 @@ class Classfile {
     }
 
     /**
-     * Read a long from the constant pool.
+     * 从常量池读取 long
      *
      * @param cpIdx
-     *            the constant pool index.
-     * @return the long
+     *            常量池索引
+     * @return long 值
      * @throws IOException
-     *             If an I/O exception occurred.
+     *             如果发生 I/O 异常
      */
     private long cpReadLong(final int cpIdx) throws IOException {
         if (cpIdx < 1 || cpIdx >= cpCount) {
@@ -866,70 +859,68 @@ class Classfile {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get a field constant from the constant pool.
+     * 从常量池获取字段常量
      *
      * @param tag
-     *            the tag
+     *            标签
      * @param fieldTypeDescriptorFirstChar
-     *            the first char of the field type descriptor
+     *            字段类型描述符的第一个字符
      * @param cpIdx
-     *            the constant pool index
-     * @return the field constant pool value
+     *            常量池索引
+     * @return 字段常量池值
      * @throws ClassfileFormatException
-     *             If a problem occurs.
+     *             如果发生问题
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private Object getFieldConstantPoolValue(final int tag, final char fieldTypeDescriptorFirstChar,
-            final int cpIdx) throws ClassfileFormatException, IOException {
+                                             final int cpIdx) throws ClassfileFormatException, IOException {
         switch (tag) {
-        case 1: // Modified UTF8
-        case 7: // Class -- N.B. Unused? Class references do not seem to actually be stored as constant initalizers
-        case 8: // String
-            // Forward or backward indirect reference to a modified UTF8 entry
-            return getConstantPoolString(cpIdx);
-        case 3: // int, short, char, byte, boolean are all represented by Constant_INTEGER
-            final int intVal = cpReadInt(cpIdx);
-            switch (fieldTypeDescriptorFirstChar) {
-            case 'I':
-                return intVal;
-            case 'S':
-                return (short) intVal;
-            case 'C':
-                return (char) intVal;
-            case 'B':
-                return (byte) intVal;
-            case 'Z':
-                return intVal != 0;
+            case 1: // Modified UTF8
+            case 7: // Class -- 注意：未使用？类引用似乎实际上不会作为常量初始化器存储
+            case 8: // String
+                // 对 Modified UTF8 条目的前向或后向间接引用
+                return getConstantPoolString(cpIdx);
+            case 3: // int, short, char, byte, boolean 都由 Constant_INTEGER 表示
+                final int intVal = cpReadInt(cpIdx);
+                switch (fieldTypeDescriptorFirstChar) {
+                    case 'I':
+                        return intVal;
+                    case 'S':
+                        return (short) intVal;
+                    case 'C':
+                        return (char) intVal;
+                    case 'B':
+                        return (byte) intVal;
+                    case 'Z':
+                        return intVal != 0;
+                    default:
+                        // 穿透
+                }
+                throw new ClassfileFormatException("Unknown Constant_INTEGER type " + fieldTypeDescriptorFirstChar
+                        + ", " + "cannot continue reading class. Please report this at "
+                        + "https://github.com/classgraph/classgraph/issues");
+            case 4: // float
+                return Float.intBitsToFloat(cpReadInt(cpIdx));
+            case 5: // long
+                return cpReadLong(cpIdx);
+            case 6: // double
+                return Double.longBitsToDouble(cpReadLong(cpIdx));
             default:
-                // Fall through
-            }
-            throw new ClassfileFormatException("Unknown Constant_INTEGER type " + fieldTypeDescriptorFirstChar
-                    + ", " + "cannot continue reading class. Please report this at "
-                    + "https://github.com/classgraph/classgraph/issues");
-        case 4: // float
-            return Float.intBitsToFloat(cpReadInt(cpIdx));
-        case 5: // long
-            return cpReadLong(cpIdx);
-        case 6: // double
-            return Double.longBitsToDouble(cpReadLong(cpIdx));
-        default:
-            // ClassGraph doesn't expect other types
-            // (N.B. in particular, enum values are not stored in the constant pool, so don't need to be handled)  
-            throw new ClassfileFormatException("Unknown field constant pool tag " + tag + ", "
-                    + "cannot continue reading class. Please report this at "
-                    + "https://github.com/classgraph/classgraph/issues");
+                // ClassGraph 不需要其他类型
+                // (注意：特别地，枚举值不存储在常量池中，因此不需要处理)
+                throw new ClassfileFormatException("Unknown field constant pool tag " + tag + ", "
+                        + "cannot continue reading class. Please report this at "
+                        + "https://github.com/classgraph/classgraph/issues");
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Read annotation entry from classfile.
+     * 从 classfile 读取注解条目
      *
-     * @return the annotation, as an {@link AnnotationInfo} object.
+     * @return 注解，作为 {@link AnnotationInfo} 对象
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private AnnotationInfo readAnnotation() throws IOException {
         // Lcom/xyz/Annotation; -> Lcom.xyz.Annotation;
@@ -947,91 +938,66 @@ class Classfile {
         return new AnnotationInfo(annotationClassName, paramVals);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Read annotation element value from classfile.
+     * 从 classfile 读取注解元素值
      *
-     * @return the annotation element value
+     * @return 注解元素值
      * @throws IOException
-     *             If an IO exception occurs.
+     *             如果发生 I/O 异常
      */
     private Object readAnnotationElementValue() throws IOException {
         final int tag = (char) reader.readUnsignedByte();
         switch (tag) {
-        case 'B':
-            return (byte) cpReadInt(reader.readUnsignedShort());
-        case 'C':
-            return (char) cpReadInt(reader.readUnsignedShort());
-        case 'D':
-            return Double.longBitsToDouble(cpReadLong(reader.readUnsignedShort()));
-        case 'F':
-            return Float.intBitsToFloat(cpReadInt(reader.readUnsignedShort()));
-        case 'I':
-            return cpReadInt(reader.readUnsignedShort());
-        case 'J':
-            return cpReadLong(reader.readUnsignedShort());
-        case 'S':
-            return (short) cpReadInt(reader.readUnsignedShort());
-        case 'Z':
-            return cpReadInt(reader.readUnsignedShort()) != 0;
-        case 's':
-            return getConstantPoolString(reader.readUnsignedShort());
-        case 'e': {
-            // Return type is AnnotationEnumVal.
-            final String annotationClassName = getConstantPoolClassDescriptor(reader.readUnsignedShort());
-            final String annotationConstName = getConstantPoolString(reader.readUnsignedShort());
-            return new AnnotationEnumValue(annotationClassName, annotationConstName);
-        }
-        case 'c':
-            // Return type is AnnotationClassRef (for class references in annotations)
-            final String classRefTypeDescriptor = getConstantPoolString(reader.readUnsignedShort());
-            return new AnnotationClassRef(classRefTypeDescriptor);
-        case '@':
-            // Complex (nested) annotation. Return type is AnnotationInfo.
-            return readAnnotation();
-        case '[':
-            // Return type is Object[] (of nested annotation element values)
-            final int count = reader.readUnsignedShort();
-            final Object[] arr = new Object[count];
-            for (int i = 0; i < count; ++i) {
-                // Nested annotation element value
-                arr[i] = readAnnotationElementValue();
+            case 'B':
+                return (byte) cpReadInt(reader.readUnsignedShort());
+            case 'C':
+                return (char) cpReadInt(reader.readUnsignedShort());
+            case 'D':
+                return Double.longBitsToDouble(cpReadLong(reader.readUnsignedShort()));
+            case 'F':
+                return Float.intBitsToFloat(cpReadInt(reader.readUnsignedShort()));
+            case 'I':
+                return cpReadInt(reader.readUnsignedShort());
+            case 'J':
+                return cpReadLong(reader.readUnsignedShort());
+            case 'S':
+                return (short) cpReadInt(reader.readUnsignedShort());
+            case 'Z':
+                return cpReadInt(reader.readUnsignedShort()) != 0;
+            case 's':
+                return getConstantPoolString(reader.readUnsignedShort());
+            case 'e': {
+                // 返回类型为 AnnotationEnumVal
+                final String annotationClassName = getConstantPoolClassDescriptor(reader.readUnsignedShort());
+                final String annotationConstName = getConstantPoolString(reader.readUnsignedShort());
+                return new AnnotationEnumValue(annotationClassName, annotationConstName);
             }
-            return arr;
-        default:
-            throw new ClassfileFormatException("Class " + className + " has unknown annotation element type tag '"
-                    + ((char) tag) + "': element size unknown, cannot continue reading class. "
-                    + "Please report this at https://github.com/classgraph/classgraph/issues");
+            case 'c':
+                // 返回类型为 AnnotationClassRef(用于注解中的类引用)
+                final String classRefTypeDescriptor = getConstantPoolString(reader.readUnsignedShort());
+                return new AnnotationClassRef(classRefTypeDescriptor);
+            case '@':
+                // 复杂(嵌套)注解返回类型为 AnnotationInfo
+                return readAnnotation();
+            case '[':
+                // 返回类型为 Object[](嵌套注解元素值)
+                final int count = reader.readUnsignedShort();
+                final Object[] arr = new Object[count];
+                for (int i = 0; i < count; ++i) {
+                    // 嵌套注解元素值
+                    arr[i] = readAnnotationElementValue();
+                }
+                return arr;
+            default:
+                throw new ClassfileFormatException("Class " + className + " has unknown annotation element type tag '"
+                        + ((char) tag) + "': element size unknown, cannot continue reading class. "
+                        + "Please report this at https://github.com/classgraph/classgraph/issues");
         }
     }
 
     // -------------------------------------------------------------------------------------------------------------
-
-    interface ClassTypeAnnotationDecorator {
-        void decorate(ClassTypeSignature classTypeSignature);
-    }
-
-    interface MethodTypeAnnotationDecorator {
-        void decorate(MethodTypeSignature methodTypeSignature);
-    }
-
-    interface TypeAnnotationDecorator {
-        void decorate(TypeSignature typeSignature);
-    }
-
-    static class TypePathNode {
-        short typePathKind;
-        short typeArgumentIdx;
-
-        public TypePathNode(final int typePathKind, final int typeArgumentIdx) {
-            this.typePathKind = (short) typePathKind;
-            this.typeArgumentIdx = (short) typeArgumentIdx;
-        }
-
-        @Override
-        public String toString() {
-            return "(" + typePathKind + "," + typeArgumentIdx + ")";
-        }
-    }
 
     private List<TypePathNode> readTypePath() throws IOException {
         final int typePathLength = reader.readUnsignedByte();
@@ -1048,18 +1014,16 @@ class Classfile {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Read constant pool entries.
+     * 读取常量池条目
      *
      * @param log
-     *            The log
+     *            日志
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             表示发生了 I/O 异常
      */
     private void readConstantPoolEntries(final LogNode log) throws IOException {
-        // Only record class dependency info if inter-class dependencies are enabled
+        // 仅在启用了类间依赖时才记录类依赖信息
         List<Integer> classNameCpIdxs = null;
         List<Integer> typeSignatureIdxs = null;
         if (scanSpec.enableInterClassDependencies) {
@@ -1067,123 +1031,123 @@ class Classfile {
             typeSignatureIdxs = new ArrayList<>();
         }
 
-        // Read size of constant pool
+        // 读取常量池大小
         cpCount = reader.readUnsignedShort();
 
-        // Allocate storage for constant pool
+        // 为常量池分配存储空间
         entryOffset = new int[cpCount];
         entryTag = new int[cpCount];
         indirectStringRefs = new int[cpCount];
         Arrays.fill(indirectStringRefs, 0, cpCount, -1);
 
-        // Read constant pool entries
+        // 读取常量池条目
         for (int i = 1, skipSlot = 0; i < cpCount; i++) {
             if (skipSlot == 1) {
-                // Skip a slot (keeps Scrutinizer happy -- it doesn't like i++ in case 6)
+                // 跳过一个槽位(让 Scrutinizer 满意 -- 它不喜欢 case 6 中的 i++)
                 skipSlot = 0;
                 continue;
             }
             entryTag[i] = reader.readUnsignedByte();
             entryOffset[i] = reader.currPos();
             switch (entryTag[i]) {
-            case 0: // Impossible, probably buffer underflow
-                throw new ClassfileFormatException("Invalid constant pool tag 0 in classfile " + relativePath
-                        + " (possible buffer underflow issue). Please report this at "
-                        + "https://github.com/classgraph/classgraph/issues");
-            case 1: // Modified UTF8
-                final int strLen = reader.readUnsignedShort();
-                reader.skip(strLen);
-                break;
-            // There is no constant pool tag type 2
-            case 3: // int, short, char, byte, boolean are all represented by Constant_INTEGER
-            case 4: // float
-                reader.skip(4);
-                break;
-            case 5: // long
-            case 6: // double
-                reader.skip(8);
-                skipSlot = 1; // double slot
-                break;
-            case 7: // Class reference (format is e.g. "java/lang/String")
-                // Forward or backward indirect reference to a modified UTF8 entry
-                indirectStringRefs[i] = reader.readUnsignedShort();
-                if (classNameCpIdxs != null) {
-                    // If this is a class ref, and inter-class dependencies are enabled, record the dependency
-                    classNameCpIdxs.add(indirectStringRefs[i]);
-                }
-                break;
-            case 8: // String
-                // Forward or backward indirect reference to a modified UTF8 entry
-                indirectStringRefs[i] = reader.readUnsignedShort();
-                break;
-            case 9: // field ref
-                // Refers to a class ref (case 7) and then a name and type (case 12)
-                reader.skip(4);
-                break;
-            case 10: // method ref
-                // Refers to a class ref (case 7) and then a name and type (case 12)
-                reader.skip(4);
-                break;
-            case 11: // interface method ref
-                // Refers to a class ref (case 7) and then a name and type (case 12)
-                reader.skip(4);
-                break;
-            case 12: // name and type
-                final int nameRef = reader.readUnsignedShort();
-                final int typeRef = reader.readUnsignedShort();
-                if (typeSignatureIdxs != null) {
-                    typeSignatureIdxs.add(typeRef);
-                }
-                indirectStringRefs[i] = (nameRef << 16) | typeRef;
-                break;
-            // There is no constant pool tag type 13 or 14
-            case 15: // method handle
-                reader.skip(3);
-                break;
-            case 16: // method type
-                reader.skip(2);
-                break;
-            case 17: // dynamic
-                reader.skip(4);
-                break;
-            case 18: // invoke dynamic
-                reader.skip(4);
-                break;
-            case 19: // module (for module-info.class in JDK9+)
-                // see https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.4
-                indirectStringRefs[i] = reader.readUnsignedShort();
-                break;
-            case 20: // package (for module-info.class in JDK9+)
-                // see https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.4
-                reader.skip(2);
-                break;
-            default:
-                throw new ClassfileFormatException("Unknown constant pool tag " + entryTag[i]
-                        + " (element size unknown, cannot continue reading class). Please report this at "
-                        + "https://github.com/classgraph/classgraph/issues");
+                case 0: // 不可能，可能是缓冲区欠载
+                    throw new ClassfileFormatException("Invalid constant pool tag 0 in classfile " + relativePath
+                            + " (possible buffer underflow issue). Please report this at "
+                            + "https://github.com/classgraph/classgraph/issues");
+                case 1: // Modified UTF8
+                    final int strLen = reader.readUnsignedShort();
+                    reader.skip(strLen);
+                    break;
+                // 没有常量池标签类型 2
+                case 3: // int, short, char, byte, boolean 都由 Constant_INTEGER 表示
+                case 4: // float
+                    reader.skip(4);
+                    break;
+                case 5: // long
+                case 6: // double
+                    reader.skip(8);
+                    skipSlot = 1; // 双槽位
+                    break;
+                case 7: // 类引用(格式如 "java/lang/String")
+                    // 对 Modified UTF8 条目的前向或后向间接引用
+                    indirectStringRefs[i] = reader.readUnsignedShort();
+                    if (classNameCpIdxs != null) {
+                        // 如果这是类引用，且启用了类间依赖，则记录依赖关系
+                        classNameCpIdxs.add(indirectStringRefs[i]);
+                    }
+                    break;
+                case 8: // String
+                    // 对 Modified UTF8 条目的前向或后向间接引用
+                    indirectStringRefs[i] = reader.readUnsignedShort();
+                    break;
+                case 9: // 字段引用
+                    // 引用一个类引用(case 7)，然后是一个名称和类型(case 12)
+                    reader.skip(4);
+                    break;
+                case 10: // 方法引用
+                    // 引用一个类引用(case 7)，然后是一个名称和类型(case 12)
+                    reader.skip(4);
+                    break;
+                case 11: // 接口方法引用
+                    // 引用一个类引用(case 7)，然后是一个名称和类型(case 12)
+                    reader.skip(4);
+                    break;
+                case 12: // 名称和类型
+                    final int nameRef = reader.readUnsignedShort();
+                    final int typeRef = reader.readUnsignedShort();
+                    if (typeSignatureIdxs != null) {
+                        typeSignatureIdxs.add(typeRef);
+                    }
+                    indirectStringRefs[i] = (nameRef << 16) | typeRef;
+                    break;
+                // 没有常量池标签类型 13 或 14
+                case 15: // 方法句柄
+                    reader.skip(3);
+                    break;
+                case 16: // 方法类型
+                    reader.skip(2);
+                    break;
+                case 17: // 动态
+                    reader.skip(4);
+                    break;
+                case 18: // 调用动态
+                    reader.skip(4);
+                    break;
+                case 19: // 模块(用于 JDK9+ 中的 module-info.class)
+                    // 参见 https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.4
+                    indirectStringRefs[i] = reader.readUnsignedShort();
+                    break;
+                case 20: // 包(用于 JDK9+ 中的 module-info.class)
+                    // 参见 https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.4
+                    reader.skip(2);
+                    break;
+                default:
+                    throw new ClassfileFormatException("Unknown constant pool tag " + entryTag[i]
+                            + " (element size unknown, cannot continue reading class). Please report this at "
+                            + "https://github.com/classgraph/classgraph/issues");
             }
         }
 
-        // Find classes referenced in the constant pool. Note that there are some class refs that will not be
-        // found this way, e.g. enum classes and class refs in annotation parameter values, since they are
-        // referenced as strings (tag 1) rather than classes (tag 7) or type signatures (part of tag 12).
-        // Therefore, a hybrid approach needs to be applied of extracting these other class refs from
-        // the ClassInfo graph, and combining them with class names extracted from the constant pool here.
+        // 查找常量池中引用的类注意，有些类引用无法通过此方式找到，
+        // 例如枚举类和注解参数值中的类引用，因为它们被引用为字符串(标签 1)
+        // 而非类(标签 7)或类型签名(标签 12 的一部分)
+        // 因此，需要采用混合方法，从 ClassInfo 图中提取这些其他类引用，
+        // 并将其与此处从常量池中提取的类名结合
         if (classNameCpIdxs != null) {
             refdClassNames = new HashSet<>();
-            // Get class names from direct class references in constant pool
+            // 从常量池中的直接类引用获取类名
             for (final int cpIdx : classNameCpIdxs) {
                 final String refdClassName = getConstantPoolString(cpIdx, /* replaceSlashWithDot = */ true,
                         /* stripLSemicolon = */ false);
                 if (refdClassName != null) {
                     if (refdClassName.startsWith("[")) {
-                        // Parse array type signature, e.g. "[Ljava.lang.String;" -- uses '.' rather than '/'
+                        // 解析数组类型签名，例如 "[Ljava.lang.String;" -- 使用 '.' 而非 '/'
                         try {
                             final TypeSignature typeSig = TypeSignature.parse(refdClassName.replace('.', '/'),
                                     /* definingClass = */ null);
                             typeSig.findReferencedClassNames(refdClassNames);
                         } catch (final ParseException e) {
-                            // Should not happen
+                            // 不应发生
                             throw new ClassfileFormatException("Could not parse class name: " + refdClassName, e);
                         }
                     } else {
@@ -1193,22 +1157,22 @@ class Classfile {
             }
         }
         if (typeSignatureIdxs != null) {
-            // Get class names from type signatures in "name and type" entries in constant pool
+            // 从常量池中"名称和类型"条目的类型签名获取类名
             for (final int cpIdx : typeSignatureIdxs) {
                 final String typeSigStr = getConstantPoolString(cpIdx);
                 if (typeSigStr != null) {
                     try {
                         if (typeSigStr.startsWith("L") && typeSigStr.endsWith(";")) {
-                            // Parse the class name
+                            // 解析类名
                             final TypeSignature typeSig = TypeSignature.parse(typeSigStr,
                                     /* definingClassName = */ null);
-                            // Extract class names from type signature
+                            // 从类型签名中提取类名
                             typeSig.findReferencedClassNames(refdClassNames);
                         } else if (typeSigStr.indexOf('(') >= 0 || "<init>".equals(typeSigStr)) {
-                            // Parse the type signature
+                            // 解析类型签名
                             final MethodTypeSignature typeSig = MethodTypeSignature.parse(typeSigStr,
                                     /* definingClassName = */ null);
-                            // Extract class names from type signature
+                            // 从类型签名中提取类名
                             typeSig.findReferencedClassNames(refdClassNames);
                         } else {
                             if (log != null) {
@@ -1230,46 +1194,45 @@ class Classfile {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Read basic class information.
-     * 
+     * 读取基本类信息
+     *
      * @throws IOException
-     *             if an I/O exception occurs.
+     *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             if the classfile is incorrectly formatted.
+     *             如果 classfile 格式不正确
      * @throws SkipClassException
-     *             if the classfile needs to be skipped (e.g. the class is non-public, and ignoreClassVisibility is
-     *             false)
+     *             如果 classfile 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
      */
     private void readBasicClassInfo() throws IOException, ClassfileFormatException, SkipClassException {
-        // Modifier flags
+        // 修饰符标志
         classModifiers = reader.readUnsignedShort();
 
         isInterface = (classModifiers & 0x0200) != 0;
         isAnnotation = (classModifiers & 0x2000) != 0;
 
-        // The fully-qualified class name of this class, with slashes replaced with dots
+        // 此类的完全限定类名，斜杠替换为点号
         final String classNamePath = getConstantPoolString(reader.readUnsignedShort());
         if (classNamePath == null) {
             throw new ClassfileFormatException("Class name is null");
         }
         className = classNamePath.replace('/', '.');
         if ("java.lang.Object".equals(className)) {
-            // Don't process java.lang.Object (it has a null superclass), though you can still search for classes
-            // that are subclasses of java.lang.Object (as an external class).
+            // 不处理 java.lang.Object(它有空超类)，但你仍然可以搜索作为
+            // java.lang.Object 子类的类(作为外部类)
             throw new SkipClassException("No need to scan java.lang.Object");
         }
 
-        // Check class visibility modifiers
-        final boolean isModule = (classModifiers & 0x8000) != 0; // Equivalently filename is "module-info.class"
+        // 检查类可见性修饰符
+        final boolean isModule = (classModifiers & 0x8000) != 0; // 等同于文件名为 "module-info.class"
         final boolean isPackage = relativePath.regionMatches(relativePath.lastIndexOf('/') + 1,
                 "package-info.class", 0, 18);
         if (!scanSpec.ignoreClassVisibility && !Modifier.isPublic(classModifiers) && !isModule && !isPackage) {
             throw new SkipClassException("Class is not public, and ignoreClassVisibility() was not called");
         }
 
-        // Make sure classname matches relative path
+        // 确保类名与相对路径匹配
         if (!relativePath.endsWith(".class")) {
-            // Should not happen
+            // 不应发生
             throw new SkipClassException("Classfile filename " + relativePath + " does not end in \".class\"");
         }
         final int len = classNamePath.length();
@@ -1278,23 +1241,21 @@ class Classfile {
                     "Relative path " + relativePath + " does not match class name " + className);
         }
 
-        // Superclass name, with slashes replaced with dots
+        // 超类名，斜杠替换为点号
         final int superclassNameCpIdx = reader.readUnsignedShort();
         if (superclassNameCpIdx > 0) {
             superclassName = getConstantPoolClassName(superclassNameCpIdx);
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Read the class' interfaces.
+     * 读取类的接口
      *
      * @throws IOException
-     *             if an I/O exception occurs.
+     *             如果发生 I/O 异常
      */
     private void readInterfaces() throws IOException {
-        // Interfaces
+        // 接口
         final int interfaceCount = reader.readUnsignedShort();
         for (int i = 0; i < interfaceCount; i++) {
             final String interfaceName = getConstantPoolClassName(reader.readUnsignedShort());
@@ -1305,21 +1266,19 @@ class Classfile {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Read the class' fields.
+     * 读取类的字段
      *
      * @throws IOException
-     *             if an I/O exception occurs.
+     *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             if the classfile is incorrectly formatted.
+     *             如果 classfile 格式不正确
      */
     private void readFields() throws IOException, ClassfileFormatException {
-        // Fields
+        // 字段
         final int fieldCount = reader.readUnsignedShort();
         for (int i = 0; i < fieldCount; i++) {
-            // Info on modifier flags: http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.5
+            // 修饰符标志信息：http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.5
             final int fieldModifierFlags = reader.readUnsignedShort();
             final boolean isPublicField = ((fieldModifierFlags & 0x0001) == 0x0001);
             final boolean fieldIsVisible = isPublicField || scanSpec.ignoreFieldVisibility;
@@ -1327,7 +1286,7 @@ class Classfile {
                     && fieldIsVisible;
             List<TypeAnnotationDecorator> fieldTypeAnnotationDecorators = null;
             if (!fieldIsVisible || (!scanSpec.enableFieldInfo && !getStaticFinalFieldConstValue)) {
-                // Skip field
+                // 跳过字段
                 reader.readUnsignedShort(); // fieldNameCpIdx
                 reader.readUnsignedShort(); // fieldTypeDescriptorCpIdx
                 final int attributesCount = reader.readUnsignedShort();
@@ -1352,8 +1311,7 @@ class Classfile {
                 for (int j = 0; j < attributesCount; j++) {
                     final int attributeNameCpIdx = reader.readUnsignedShort();
                     final int attributeLength = reader.readInt(); // == 2
-                    // See if field name matches one of the requested names for this class, and if it does,
-                    // check if it is initialized with a constant value
+                    // 查看字段名是否匹配此类的请求名称之一，如果匹配，检查是否用常量值初始化
                     if ((getStaticFinalFieldConstValue)
                             && constantPoolStringEquals(attributeNameCpIdx, "ConstantValue")) {
                         // http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.2
@@ -1370,9 +1328,9 @@ class Classfile {
                         fieldTypeSignatureStr = getConstantPoolString(reader.readUnsignedShort());
                     } else if (scanSpec.enableAnnotationInfo //
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleAnnotations")
-                                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
-                                            attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
-                        // Read annotation names
+                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
+                        // 读取注解名称
                         final int fieldAnnotationCount = reader.readUnsignedShort();
                         if (fieldAnnotationCount > 0) {
                             if (fieldAnnotationInfo == null) {
@@ -1385,8 +1343,8 @@ class Classfile {
                         }
                     } else if (scanSpec.enableAnnotationInfo //
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleTypeAnnotations")
-                                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
-                                            attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
+                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
                         final int annotationCount = reader.readUnsignedShort();
                         if (annotationCount > 0) {
                             fieldTypeAnnotationDecorators = new ArrayList<>();
@@ -1411,7 +1369,7 @@ class Classfile {
                             }
                         }
                     } else {
-                        // No match, just skip attribute
+                        // 不匹配，直接跳过属性
                         reader.skip(attributeLength);
                     }
                 }
@@ -1427,21 +1385,19 @@ class Classfile {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Read the class' methods.
+     * 读取类的方法
      *
      * @throws IOException
-     *             if an I/O exception occurs.
+     *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             if the classfile is incorrectly formatted.
+     *             如果 classfile 格式不正确
      */
     private void readMethods() throws IOException, ClassfileFormatException {
-        // Methods
+        // 方法
         final int methodCount = reader.readUnsignedShort();
         for (int i = 0; i < methodCount; i++) {
-            // Info on modifier flags: http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.6
+            // 修饰符标志信息：http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.6
             final int methodModifierFlags = reader.readUnsignedShort();
             final boolean isPublicMethod = ((methodModifierFlags & 0x0001) == 0x0001);
             final boolean methodIsVisible = isPublicMethod || scanSpec.ignoreMethodVisibility;
@@ -1449,9 +1405,9 @@ class Classfile {
             String methodName = null;
             String methodTypeDescriptor = null;
             String methodTypeSignatureStr = null;
-            // Always enable MethodInfo for annotations (this is how annotation constants are defined)
+            // 始终为注解启用 MethodInfo(这是注解常量定义的方式)
             final boolean enableMethodInfo = scanSpec.enableMethodInfo || isAnnotation;
-            if (enableMethodInfo || isAnnotation) { // Annotations store defaults in method_info
+            if (enableMethodInfo || isAnnotation) { // 注解在 method_info 中存储默认值
                 final int methodNameCpIdx = reader.readUnsignedShort();
                 methodName = getConstantPoolString(methodNameCpIdx);
                 final int methodTypeDescriptorCpIdx = reader.readUnsignedShort();
@@ -1469,21 +1425,21 @@ class Classfile {
             int minLineNum = 0;
             int maxLineNum = 0;
             if (!methodIsVisible || (!enableMethodInfo && !isAnnotation)) {
-                // Skip method attributes
+                // 跳过方法属性
                 for (int j = 0; j < attributesCount; j++) {
                     reader.skip(2); // attribute_name_index
                     final int attributeLength = reader.readInt();
                     reader.skip(attributeLength);
                 }
             } else {
-                // Look for method annotations
+                // 查找方法注解
                 for (int j = 0; j < attributesCount; j++) {
                     final int attributeNameCpIdx = reader.readUnsignedShort();
                     final int attributeLength = reader.readInt();
                     if (scanSpec.enableAnnotationInfo
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleAnnotations")
-                                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
-                                            attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
+                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
                         final int methodAnnotationCount = reader.readUnsignedShort();
                         if (methodAnnotationCount > 0) {
                             if (methodAnnotationInfo == null) {
@@ -1496,13 +1452,11 @@ class Classfile {
                         }
                     } else if (scanSpec.enableAnnotationInfo
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleParameterAnnotations")
-                                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
-                                            attributeNameCpIdx, "RuntimeInvisibleParameterAnnotations")))) {
-                        // Merge together runtime visible and runtime invisible annotations into a single array
-                        // of annotations for each method parameter (runtime visible and runtime invisible
-                        // annotations are given in separate attributes, so if both attributes are present,
-                        // have to make the parameter annotation arrays larger when the second attribute is
-                        // encountered).
+                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            attributeNameCpIdx, "RuntimeInvisibleParameterAnnotations")))) {
+                        // 将运行时可见和运行时不可见注解合并到每个方法参数的单个注解数组中
+                        // (运行时可见和运行时不可见注解在单独的属性中给出，因此如果两个属性都存在，
+                        // 在遇到第二个属性时需要扩大参数注解数组)
                         final int numParams = reader.readUnsignedByte();
                         if (methodParameterAnnotations == null) {
                             methodParameterAnnotations = new AnnotationInfo[numParams][];
@@ -1531,8 +1485,8 @@ class Classfile {
                         }
                     } else if (scanSpec.enableAnnotationInfo //
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleTypeAnnotations")
-                                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
-                                            attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
+                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
                         final int annotationCount = reader.readUnsignedShort();
                         if (annotationCount > 0) {
                             methodTypeAnnotationDecorators = new ArrayList<>(annotationCount);
@@ -1543,62 +1497,58 @@ class Classfile {
                                 final int formalParameterIndex;
                                 final int throwsTypeIndex;
                                 if (targetType == 0x01) {
-                                    // Type parameter declaration of generic method or constructor
+                                    // 泛型方法或构造函数的类型参数声明
                                     typeParameterIndex = reader.readUnsignedByte();
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x10) {
-                                    // This target_type is not supposed to be added to methods, it is intended
-                                    // for ClassFile annotations, but Google's Java compiler adds annotations
-                                    // of this type to methods in guava for some reason. Just ignore these
-                                    // annotations. (#861)
+                                    // 此 target_type 不应添加方法，它用于 ClassFile 注解，
+                                    // 但 Google 的 Java 编译器出于某种原因将此类注解添加到 guava 的方法中
+                                    // 直接忽略这些注解(#861)
                                     reader.readUnsignedShort();
                                     typeParameterIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x12) {
-                                    // Type in bound of type parameter declaration of generic method
-                                    // or constructor    
+                                    // 泛型方法或构造函数类型参数声明的边界中的类型
                                     typeParameterIndex = reader.readUnsignedByte();
                                     boundIndex = reader.readUnsignedByte();
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x13) {
-                                    // Type in field or record component declaration
-                                    // (empty target)
-                                    // This target_type is not supposed to be added to methods, but it seems
-                                    // that the JDK 17 compiler is buggy, and adds this target_type to the
-                                    // methods of records anyway (#797). Therefore, accept this, but ignore
-                                    // it (the same target_type should also be added to the fields of records).
+                                    // 字段或记录组件声明中的类型
+                                    // (空目标)
+                                    // 此 target_type 不应添加到方法中，但似乎 JDK 17 编译器有 bug，
+                                    // 仍然将此 target_type 添加到记录的方法中(#797)因此接受它，
+                                    // 但忽略它(相同的 target_type 也应该添加到记录的字段中)
                                     typeParameterIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x14) {
-                                    // Return type of method, or type of newly constructed object
-                                    // (empty target)
+                                    // 方法的返回类型，或新构造对象的类型
+                                    // (空目标)
                                     typeParameterIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x15) {
-                                    // Receiver type of method or constructor   
-                                    // (empty target)
+                                    // 方法或构造函数的接收者类型
+                                    // (空目标)
                                     typeParameterIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x16) {
-                                    // Type in formal parameter declaration of method, constructor,
-                                    // or lambda expression    
+                                    // 方法、构造函数或 Lambda 表达式的形式参数声明中的类型
                                     typeParameterIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = reader.readUnsignedByte();
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x17) {
-                                    // Type in throws clause of method or constructor   
+                                    // 方法或构造函数 throws 子句中的类型
                                     typeParameterIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
@@ -1617,7 +1567,7 @@ class Classfile {
                                     @Override
                                     public void decorate(final MethodTypeSignature methodTypeSignature) {
                                         if (targetType == 0x01) {
-                                            // Type parameter declaration of generic method or constructor
+                                            // 泛型方法或构造函数的类型参数声明
                                             final List<TypeParameter> typeParameters = methodTypeSignature
                                                     .getTypeParameters();
                                             if (typeParameters != null
@@ -1625,18 +1575,16 @@ class Classfile {
                                                 typeParameters.get(typeParameterIndex).addTypeAnnotation(typePath,
                                                         annotationInfo);
                                             }
-                                            // else this is a method type descriptor, not a method type signature,
-                                            // so there are no type parameters
+                                            // 否则这是方法类型描述符，而不是方法类型签名，因此没有类型参数
                                         } else if (targetType == 0x12) {
-                                            // Type in bound of type parameter declaration of generic method or
-                                            // constructor
+                                            // 泛型方法或构造函数类型参数声明的边界中的类型
                                             final List<TypeParameter> typeParameters = methodTypeSignature
                                                     .getTypeParameters();
                                             if (typeParameters != null
                                                     && typeParameterIndex < typeParameters.size()) {
                                                 final TypeParameter typeParameter = typeParameters
                                                         .get(typeParameterIndex);
-                                                // boundIndex == 0 => class bound; boundIndex > 0 => interface bound 
+                                                // boundIndex == 0 => 类边界；boundIndex > 0 => 接口边界
                                                 if (boundIndex == 0) {
                                                     final ReferenceTypeSignature classBound = typeParameter
                                                             .getClassBound();
@@ -1653,29 +1601,27 @@ class Classfile {
                                                     }
                                                 }
                                             }
-                                            // else this is a method type descriptor, not a method type signature,
-                                            // so there are no type parameters
+                                            // 否则这是方法类型描述符，而不是方法类型签名，因此没有类型参数
                                         } else if (targetType == 0x14) {
-                                            // Return type of method, or type of newly constructed object 
+                                            // 方法的返回类型，或新构造对象的类型
                                             methodTypeSignature.getResultType().addTypeAnnotation(typePath,
                                                     annotationInfo);
                                         } else if (targetType == 0x15) {
-                                            // Receiver type of method or constructor (explicit receiver parameter)
+                                            // 方法或构造函数的接收者类型(显式接收者参数)
                                             methodTypeSignature.addRecieverTypeAnnotation(annotationInfo);
                                         } else if (targetType == 0x16) {
-                                            // Type in formal parameter declaration of method, constructor,
-                                            // or lambda expression.
-                                            // N.B. formal parameter indices are dodgy, because not all compilers
-                                            // index parameters the same way -- so be robust here.
-                                            // The classfile spec says "A formal_parameter_index value of i may,
+                                            // 方法、构造函数或 Lambda 表达式的形式参数声明中的类型
+                                            // 注意：形式参数索引不可靠，因为并非所有编译器以相同方式索引参数 --
+                                            // 所以这里需要健壮处理
+                                            // classfile 规范说："A formal_parameter_index value of i may,
                                             // but is not required to, correspond to the i'th parameter descriptor
-                                            // in the method descriptor". Also "The formal_parameter_target item
-                                            // records that a formal parameter's type is annotated, but does not
-                                            // record the type itself. The type may be found by inspecting the
-                                            // method descriptor, although a formal_parameter_index value of 0
-                                            // does not always indicate the first parameter descriptor in the
-                                            // method descriptor."
-                                            // What the heck, guys.
+                                            // in the method descriptor"还有：
+                                            // "The formal_parameter_target item records that a formal parameter's
+                                            // type is annotated, but does not record the type itself. The type
+                                            // may be found by inspecting the method descriptor, although a
+                                            // formal_parameter_index value of 0 does not always indicate the
+                                            // first parameter descriptor in the method descriptor."
+                                            // 真是够了，伙计们
                                             final List<TypeSignature> parameterTypeSignatures = methodTypeSignature
                                                     .getParameterTypeSignatures();
                                             if (formalParameterIndex < parameterTypeSignatures.size()) {
@@ -1683,7 +1629,7 @@ class Classfile {
                                                         .addTypeAnnotation(typePath, annotationInfo);
                                             }
                                         } else if (targetType == 0x17) {
-                                            // Type in throws clause of method or constructor
+                                            // 方法或构造函数 throws 子句中的类型
                                             final List<ClassRefOrTypeVariableSignature> throwsSignatures = //
                                                     methodTypeSignature.getThrowsSignatures();
                                             if (throwsSignatures != null
@@ -1697,26 +1643,26 @@ class Classfile {
                             }
                         }
                     } else if (constantPoolStringEquals(attributeNameCpIdx, "MethodParameters")) {
-                        // Read method parameters. For Java, these are only produced in JDK8+, and only if the
-                        // commandline switch `-parameters` is provided at compiletime.
+                        // 读取方法参数对于 Java，这些仅在 JDK8+ 中生成，且仅在编译时
+                        // 提供了命令行开关 `-parameters` 时才生成
                         final int paramCount = reader.readUnsignedByte();
                         methodParameterNames = new String[paramCount];
                         methodParameterModifiers = new int[paramCount];
                         for (int k = 0; k < paramCount; k++) {
                             final int cpIdx = reader.readUnsignedShort();
-                            // If the constant pool index is zero, then the parameter is unnamed => use null
+                            // 如果常量池索引为零，则参数是未命名的 => 使用 null
                             methodParameterNames[k] = cpIdx == 0 ? null : getConstantPoolString(cpIdx);
                             methodParameterModifiers[k] = reader.readUnsignedShort();
                         }
                     } else if (constantPoolStringEquals(attributeNameCpIdx, "Signature")) {
-                        // Add type params to method type signature
+                        // 将类型参数添加到方法类型签名
                         methodTypeSignatureStr = getConstantPoolString(reader.readUnsignedShort());
                     } else if (constantPoolStringEquals(attributeNameCpIdx, "AnnotationDefault")) {
                         if (annotationParamDefaultValues == null) {
                             annotationParamDefaultValues = new AnnotationParameterValueList();
                         }
                         this.annotationParamDefaultValues.add(new AnnotationParameterValue(methodName,
-                                // Get annotation parameter default value
+                                // 获取注解参数默认值
                                 readAnnotationElementValue()));
                     } else if (constantPoolStringEquals(attributeNameCpIdx, "Exceptions")) {
                         final int exceptionCount = reader.readUnsignedShort();
@@ -1752,7 +1698,7 @@ class Classfile {
                         reader.skip(attributeLength);
                     }
                 }
-                // Create MethodInfo
+                // 创建 MethodInfo
                 if (enableMethodInfo) {
                     if (methodInfoList == null) {
                         methodInfoList = new MethodInfoList();
@@ -1766,26 +1712,24 @@ class Classfile {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Read class attributes.
+     * 读取类属性
      *
      * @throws IOException
-     *             if an I/O exception occurs.
+     *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             if the classfile is incorrectly formatted.
+     *             如果 classfile 格式不正确
      */
     private void readClassAttributes() throws IOException, ClassfileFormatException {
-        // Class attributes (including class annotations, class type variables, module info, etc.)
+        // 类属性(包括类注解、类类型变量、模块信息等)
         final int attributesCount = reader.readUnsignedShort();
         for (int i = 0; i < attributesCount; i++) {
             final int attributeNameCpIdx = reader.readUnsignedShort();
             final int attributeLength = reader.readInt();
             if (scanSpec.enableAnnotationInfo //
                     && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleAnnotations")
-                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
-                                    attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
+                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                    attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
                 final int annotationCount = reader.readUnsignedShort();
                 if (annotationCount > 0) {
                     if (classAnnotations == null) {
@@ -1797,8 +1741,8 @@ class Classfile {
                 }
             } else if (scanSpec.enableAnnotationInfo //
                     && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleTypeAnnotations")
-                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
-                                    attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
+                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                    attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
                 final int annotationCount = reader.readUnsignedShort();
                 if (annotationCount > 0) {
                     classTypeAnnotationDecorators = new ArrayList<>(annotationCount);
@@ -1808,19 +1752,18 @@ class Classfile {
                         final int supertypeIndex;
                         final int boundIndex;
                         if (targetType == 0x00) {
-                            // Type parameter declaration of generic class or interface
+                            // 泛型类或接口的类型参数声明
                             typeParameterIndex = reader.readUnsignedByte();
                             supertypeIndex = -1;
                             boundIndex = -1;
                         } else if (targetType == 0x10) {
-                            // Type in extends or implements clause of class declaration (including
-                            // the direct superclass or direct superinterface of an anonymous class
-                            // declaration), or in extends clause of interface declaration    
+                            // 类声明的 extends 或 implements 子句中的类型(包括匿名类声明的
+                            // 直接超类或直接超接口)，或接口声明的 extends 子句中的类型
                             supertypeIndex = reader.readUnsignedShort();
                             typeParameterIndex = -1;
                             boundIndex = -1;
                         } else if (targetType == 0x11) {
-                            // Type in bound of type parameter declaration of generic class or interface
+                            // 泛型类或接口类型参数声明的边界中的类型
                             typeParameterIndex = reader.readUnsignedByte();
                             boundIndex = reader.readUnsignedByte();
                             supertypeIndex = -1;
@@ -1837,7 +1780,7 @@ class Classfile {
                             @Override
                             public void decorate(final ClassTypeSignature classTypeSignature) {
                                 if (targetType == 0x00) {
-                                    // Type parameter declaration of generic class or interface
+                                    // 泛型类或接口的类型参数声明
                                     final List<TypeParameter> typeParameters = classTypeSignature
                                             .getTypeParameters();
                                     if (typeParameters != null && typeParameterIndex < typeParameters.size()) {
@@ -1845,25 +1788,24 @@ class Classfile {
                                                 annotationInfo);
                                     }
                                 } else if (targetType == 0x10) {
-                                    // Type in extends or implements clause of class declaration (including
-                                    // the direct superclass or direct superinterface of an anonymous class 
-                                    // declaration), or in extends clause of interface declaration    
+                                    // 类声明的 extends 或 implements 子句中的类型(包括匿名类声明的
+                                    // 直接超类或直接超接口)，或接口声明的 extends 子句中的类型
                                     if (supertypeIndex == 65535) {
-                                        // Type in extends clause of class declaration
+                                        // 类声明的 extends 子句中的类型
                                         classTypeSignature.getSuperclassSignature().addTypeAnnotation(typePath,
                                                 annotationInfo);
                                     } else {
-                                        // Type in implements clause of interface declaration
+                                        // 接口声明的 implements 子句中的类型
                                         classTypeSignature.getSuperinterfaceSignatures().get(supertypeIndex)
                                                 .addTypeAnnotation(typePath, annotationInfo);
                                     }
                                 } else if (targetType == 0x11) {
-                                    // Type in bound of type parameter declaration of generic class or interface
+                                    // 泛型类或接口类型参数声明的边界中的类型
                                     final List<TypeParameter> typeParameters = classTypeSignature
                                             .getTypeParameters();
                                     if (typeParameters != null && typeParameterIndex < typeParameters.size()) {
                                         final TypeParameter typeParameter = typeParameters.get(typeParameterIndex);
-                                        // boundIndex == 0 => class bound; boundIndex > 0 => interface bound 
+                                        // boundIndex == 0 => 类边界；boundIndex > 0 => 接口边界
                                         if (boundIndex == 0) {
                                             final ReferenceTypeSignature classBound = typeParameter.getClassBound();
                                             if (classBound != null) {
@@ -1886,9 +1828,8 @@ class Classfile {
                 }
             } else if (constantPoolStringEquals(attributeNameCpIdx, "Record")) {
                 isRecord = true;
-                // No need to read record_components_info entries -- there is a 1:1 correspondence between
-                // record components and fields/methods of the same name and type as the record component,
-                // so we can just rely on the field and method reading code to work correctly with records.
+                // 不需要读取 record_components_info 条目 -- 记录组件与同名的字段和方法
+                // 存在一一对应关系，因此我们可以依赖字段和方法的读取代码正确处理记录
                 reader.skip(attributeLength);
             } else if (constantPoolStringEquals(attributeNameCpIdx, "InnerClasses")) {
                 final int numInnerClasses = reader.readUnsignedShort();
@@ -1901,17 +1842,17 @@ class Classfile {
                         final String innerClassName = getConstantPoolClassName(innerClassInfoCpIdx);
                         final String outerClassName = getConstantPoolClassName(outerClassInfoCpIdx);
                         if (innerClassName == null || outerClassName == null) {
-                            // Should not happen (fix static analyzer warning)
+                            // 不应发生(修复静态分析器警告)
                             throw new ClassfileFormatException("Inner and/or outer class name is null");
                         }
                         if (innerClassName.equals(outerClassName)) {
-                            // Invalid according to spec
+                            // 根据规范这是无效的
                             throw new ClassfileFormatException("Inner and outer class name cannot be the same");
                         }
-                        // Record types have a Lookup inner class for boostrap methods in JDK 14 -- drop this
+                        // JDK 14 中记录类型有一个用于引导方法的 Lookup 内部类 -- 丢弃它
                         if (!("java.lang.invoke.MethodHandles$Lookup".equals(innerClassName)
                                 && "java.lang.invoke.MethodHandles".equals(outerClassName))) {
-                            // Store relationship between inner class and outer class
+                            // 存储内部类和外部类之间的关系
                             if (classContainmentEntries == null) {
                                 classContainmentEntries = new ArrayList<>();
                             }
@@ -1921,7 +1862,7 @@ class Classfile {
                     }
                 }
             } else if (constantPoolStringEquals(attributeNameCpIdx, "Signature")) {
-                // Get class type signature, including type variables
+                // 获取类类型签名，包括类型变量
                 typeSignatureStr = getConstantPoolString(reader.readUnsignedShort());
             } else if (constantPoolStringEquals(attributeNameCpIdx, "SourceFile")) {
                 sourceFile = getConstantPoolString(reader.readUnsignedShort());
@@ -1930,26 +1871,24 @@ class Classfile {
                 final int enclosingMethodCpIdx = reader.readUnsignedShort();
                 String definingMethodName;
                 if (enclosingMethodCpIdx == 0) {
-                    // A cpIdx of 0 (which is an invalid value) is used for anonymous inner classes declared in
-                    // class initializer code, e.g. assigned to a class field.
+                    // cpIdx 为 0(无效值)用于在类初始化代码中声明的匿名内部类，例如赋值给类字段
                     definingMethodName = "<clinit>";
                 } else {
                     definingMethodName = getConstantPoolString(enclosingMethodCpIdx, /* subFieldIdx = */ 0);
-                    // Could also fetch method type signature using subFieldIdx = 1, if needed
+                    // 如果需要，也可以使用 subFieldIdx = 1 获取方法类型签名
                 }
-                // Link anonymous inner classes into the class with their containing method
+                // 将匿名内部类链接到其包含方法所在的类
                 if (classContainmentEntries == null) {
                     classContainmentEntries = new ArrayList<>();
                 }
                 classContainmentEntries
                         .add(new ClassContainment(className, classModifiers, innermostEnclosingClassName));
-                // Also store the fully-qualified name of the enclosing method, to mark this as an anonymous inner
-                // class
+                // 同时存储包含方法的完全限定名称，以标记此为匿名内部类
                 this.fullyQualifiedDefiningMethodName = innermostEnclosingClassName + "." + definingMethodName;
             } else if (constantPoolStringEquals(attributeNameCpIdx, "Module")) {
                 final int moduleNameCpIdx = reader.readUnsignedShort();
                 classpathElement.moduleNameFromModuleDescriptor = getConstantPoolString(moduleNameCpIdx);
-                // (Future work): parse the rest of the module descriptor fields, and add to ModuleInfo:
+                // (未来工作)：解析模块描述符字段的其余部分，并添加到 ModuleInfo：
                 // https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25
                 reader.skip(attributeLength - 2);
             } else {
@@ -1960,147 +1899,137 @@ class Classfile {
 
     // -------------------------------------------------------------------------------------------------------------
 
+    interface ClassTypeAnnotationDecorator {
+        void decorate(ClassTypeSignature classTypeSignature);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    interface MethodTypeAnnotationDecorator {
+        void decorate(MethodTypeSignature methodTypeSignature);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    interface TypeAnnotationDecorator {
+        void decorate(TypeSignature typeSignature);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Directly examine contents of classfile binary header to determine annotations, implemented interfaces, the
-     * super-class etc. Creates a new ClassInfo object, and adds it to classNameToClassInfoOut. Assumes classpath
-     * masking has already been performed, so that only one class of a given name will be added.
-     *
-     * @param classpathElement
-     *            the classpath element
-     * @param classpathOrder
-     *            the classpath order
-     * @param acceptedClassNamesFound
-     *            the names of accepted classes found in the classpath while scanning paths within classpath
-     *            elements.
-     * @param classNamesScheduledForExtendedScanning
-     *            the names of external (non-accepted) classes scheduled for extended scanning (where scanning is
-     *            extended upwards to superclasses, interfaces and annotations).
-     * @param relativePath
-     *            the relative path
-     * @param classfileResource
-     *            the classfile resource
-     * @param isExternalClass
-     *            if this is an external class
-     * @param stringInternMap
-     *            the string intern map
-     * @param workQueue
-     *            the work queue
-     * @param scanSpec
-     *            the scan spec
-     * @param log
-     *            the log
-     * @throws IOException
-     *             If an IO exception occurs.
-     * @throws ClassfileFormatException
-     *             If a problem occurs while parsing the classfile.
-     * @throws SkipClassException
-     *             if the classfile needs to be skipped (e.g. the class is non-public, and ignoreClassVisibility is
-     *             false)
+     * 类包含关系
      */
-    Classfile(final ClasspathElement classpathElement, final List<ClasspathElement> classpathOrder,
-            final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
-            final String relativePath, final Resource classfileResource, final boolean isExternalClass,
-            final ConcurrentHashMap<String, String> stringInternMap,
-            final WorkQueue<ClassfileScanWorkUnit> workQueue, final ScanSpec scanSpec, final LogNode log)
-            throws IOException, ClassfileFormatException, SkipClassException {
-        this.classpathElement = classpathElement;
-        this.classpathOrder = classpathOrder;
-        this.relativePath = relativePath;
-        this.acceptedClassNamesFound = acceptedClassNamesFound;
-        this.classNamesScheduledForExtendedScanning = classNamesScheduledForExtendedScanning;
-        this.classfileResource = classfileResource;
-        this.isExternalClass = isExternalClass;
-        this.stringInternMap = stringInternMap;
-        this.scanSpec = scanSpec;
+    static class ClassContainment {
+        /** 内部类名 */
+        public final String innerClassName;
 
-        // Open a BufferedSequentialReader for the classfile
-        try (ClassfileReader classfileReader = classfileResource.openClassfile()) {
-            reader = classfileReader;
+        /** 内部类修饰符位 */
+        public final int innerClassModifierBits;
 
-            // Check magic number
-            if (reader.readInt() != 0xCAFEBABE) {
-                throw new ClassfileFormatException("Classfile does not have correct magic number");
-            }
+        /** 外部类名 */
+        public final String outerClassName;
 
-            // Read classfile minor and major version
-            minorVersion = reader.readUnsignedShort();
-            majorVersion = reader.readUnsignedShort();
+        /**
+         * 构造函数
+         *
+         * @param innerClassName
+         *            内部类名
+         * @param innerClassModifierBits
+         *            内部类修饰符位
+         * @param outerClassName
+         *            外部类名
+         */
+        public ClassContainment(final String innerClassName, final int innerClassModifierBits,
+                                final String outerClassName) {
+            this.innerClassName = innerClassName;
+            this.innerClassModifierBits = innerClassModifierBits;
+            this.outerClassName = outerClassName;
+        }
+    }
 
-            // Read the constant pool
-            readConstantPoolEntries(log);
+    // -------------------------------------------------------------------------------------------------------------
 
-            // Read basic class info (
-            readBasicClassInfo();
+    /** 当 classfile 的内容格式不正确时抛出 */
+    static class ClassfileFormatException extends IOException {
+        /** serialVersionUID */
+        static final long serialVersionUID = 1L;
 
-            // Read interfaces
-            readInterfaces();
-
-            // Read fields
-            readFields();
-
-            // Read methods
-            readMethods();
-
-            // Read class attributes
-            readClassAttributes();
-
-            reader = null;
+        /**
+         * 构造函数
+         *
+         * @param message
+         *            消息
+         */
+        public ClassfileFormatException(final String message) {
+            super(message);
         }
 
-        // Write class info to log 
-        final LogNode subLog = log == null ? null
-                : log.log("Found " //
-                        + (isAnnotation ? "annotation class" : isInterface ? "interface class" : "class") //
-                        + " " + className);
-        if (subLog != null) {
-            if (superclassName != null) {
-                subLog.log(
-                        "Super" + (isInterface && !isAnnotation ? "interface" : "class") + ": " + superclassName);
-            }
-            if (implementedInterfaces != null) {
-                subLog.log("Interfaces: " + StringUtils.join(", ", implementedInterfaces));
-            }
-            if (classAnnotations != null) {
-                subLog.log("Class annotations: " + StringUtils.join(", ", classAnnotations));
-            }
-            if (annotationParamDefaultValues != null) {
-                for (final AnnotationParameterValue apv : annotationParamDefaultValues) {
-                    subLog.log("Annotation default param value: " + apv);
-                }
-            }
-            if (fieldInfoList != null) {
-                for (final FieldInfo fieldInfo : fieldInfoList) {
-                    final String modifierStr = fieldInfo.getModifiersStr();
-                    subLog.log("Field: " + modifierStr + (modifierStr.isEmpty() ? "" : " ") + fieldInfo.getName());
-                }
-            }
-            if (methodInfoList != null) {
-                for (final MethodInfo methodInfo : methodInfoList) {
-                    final String modifierStr = methodInfo.getModifiersStr();
-                    subLog.log(
-                            "Method: " + modifierStr + (modifierStr.isEmpty() ? "" : " ") + methodInfo.getName());
-                }
-            }
-            if (typeSignatureStr != null) {
-                subLog.log("Class type signature: " + typeSignatureStr);
-            }
-            if (refdClassNames != null) {
-                final List<String> refdClassNamesSorted = new ArrayList<>(refdClassNames);
-                CollectionUtils.sortIfNotEmpty(refdClassNamesSorted);
-                subLog.log("Additional referenced class names: " + StringUtils.join(", ", refdClassNamesSorted));
-            }
+        /**
+         * 构造函数
+         *
+         * @param message
+         *            消息
+         * @param cause
+         *            原因
+         */
+        public ClassfileFormatException(final String message, final Throwable cause) {
+            super(message, cause);
         }
 
-        // Check if any superclasses, interfaces or annotations are external (non-accepted) classes
-        // that need to be scheduled for scanning, so that all of the "upwards" direction of the class
-        // graph is scanned for any accepted class, even if the superclasses / interfaces / annotations
-        // are not themselves accepted.
-        if (scanSpec.extendScanningUpwardsToExternalClasses) {
-            extendScanningUpwards(subLog);
-            // If any external classes were found, schedule them for scanning
-            if (additionalWorkUnits != null) {
-                workQueue.addWorkUnits(additionalWorkUnits);
-            }
+        /**
+         * 加速异常(此异常不需要堆栈跟踪)
+         *
+         * @return this
+         */
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /** 当 classfile 需要被跳过时抛出 */
+    static class SkipClassException extends IOException {
+        /** serialVersionUID */
+        static final long serialVersionUID = 1L;
+
+        /**
+         * 构造函数
+         *
+         * @param message
+         *            消息
+         */
+        public SkipClassException(final String message) {
+            super(message);
+        }
+
+        /**
+         * 加速异常(此异常不需要堆栈跟踪)
+         *
+         * @return this
+         */
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    static class TypePathNode {
+        short typePathKind;
+        short typeArgumentIdx;
+
+        public TypePathNode(final int typePathKind, final int typeArgumentIdx) {
+            this.typePathKind = (short) typePathKind;
+            this.typeArgumentIdx = (short) typeArgumentIdx;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + typePathKind + "," + typeArgumentIdx + ")";
         }
     }
 }

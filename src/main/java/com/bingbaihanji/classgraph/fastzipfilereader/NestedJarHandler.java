@@ -26,29 +26,32 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fastzipfilereader;
+package com.bingbaihanji.classgraph.fastzipfilereader;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.RandomAccessFile;
+import com.bingbaihanji.classgraph.concurrency.InterruptionChecker;
+import com.bingbaihanji.classgraph.concurrency.SingletonMap;
+import com.bingbaihanji.classgraph.core.ModuleReaderProxy;
+import com.bingbaihanji.classgraph.core.ModuleRef;
+import com.bingbaihanji.classgraph.core.ScanResult;
+import com.bingbaihanji.classgraph.fileslice.ArraySlice;
+import com.bingbaihanji.classgraph.fileslice.FileSlice;
+import com.bingbaihanji.classgraph.fileslice.Slice;
+import com.bingbaihanji.classgraph.recycler.Recycler;
+import com.bingbaihanji.classgraph.recycler.Resettable;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.FastPathResolver;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.JarUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
+
+import java.io.*;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.*;
 import java.nio.file.FileSystem;
-import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,104 +65,30 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
 
-import io.github.classgraph.ModuleReaderProxy;
-import io.github.classgraph.ModuleRef;
-import io.github.classgraph.ScanResult;
-import nonapi.io.github.classgraph.concurrency.InterruptionChecker;
-import nonapi.io.github.classgraph.concurrency.SingletonMap;
-import nonapi.io.github.classgraph.fileslice.ArraySlice;
-import nonapi.io.github.classgraph.fileslice.FileSlice;
-import nonapi.io.github.classgraph.fileslice.Slice;
-import nonapi.io.github.classgraph.recycler.Recycler;
-import nonapi.io.github.classgraph.recycler.Resettable;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.FastPathResolver;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.JarUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
-
-/** Open and read jarfiles, which may be nested within other jarfiles. */
+/** 打开并读取 JAR 文件，这些文件可能嵌套在其他 JAR 文件中 */
 public class NestedJarHandler {
-    /** The {@link ScanSpec}. */
+    /** 随机临时文件名部分与叶子名称之间的分隔符 */
+    public static final String TEMP_FILENAME_LEAF_SEPARATOR = "---";
+    /** 文件缓冲区的默认大小 */
+    private static final int DEFAULT_BUFFER_SIZE = 16384;
+    /** 最大初始缓冲区大小 */
+    private static final int MAX_INITIAL_BUFFER_SIZE = 16 * 1024 * 1024;
+    /** HTTP(S) 超时时间(毫秒) */
+    private static final int HTTP_TIMEOUT = 5000;
+    /**
+     * System.runFinalization() -- 在 JDK 18 中已被弃用，因此通过反射访问
+     */
+    private static Method runFinalizationMethod;
+    /** {@link ScanSpec} 扫描规范 */
     public final ScanSpec scanSpec;
-
+    /** 如果 {@link #close(LogNode)} 已被调用则为 true */
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     public ReflectionUtils reflectionUtils;
-
     /**
-     * A singleton map from a zipfile's {@link File} to the {@link PhysicalZipFile} for that file, used to ensure
-     * that the {@link RandomAccessFile} and {@link FileChannel} for any given zipfile is opened only once.
-     */
-    private SingletonMap<File, PhysicalZipFile, IOException> //
-    canonicalFileToPhysicalZipFileMap = new SingletonMap<File, PhysicalZipFile, IOException>() {
-        @Override
-        public PhysicalZipFile newInstance(final File canonicalFile, final LogNode log) throws IOException {
-            return new PhysicalZipFile(canonicalFile, NestedJarHandler.this, log);
-        }
-    };
-
-    /**
-     * A singleton map from a {@link FastZipEntry} to the {@link ZipFileSlice} wrapping either the zip entry data,
-     * if the entry is stored, or a ByteBuffer, if the zip entry was inflated to memory, or a physical file on disk
-     * if the zip entry was inflated to a temporary file.
-     */
-    private SingletonMap<FastZipEntry, ZipFileSlice, IOException> //
-    fastZipEntryToZipFileSliceMap = new SingletonMap<FastZipEntry, ZipFileSlice, IOException>() {
-        @Override
-        public ZipFileSlice newInstance(final FastZipEntry childZipEntry, final LogNode log)
-                throws IOException, InterruptedException {
-            ZipFileSlice childZipEntrySlice;
-            if (!childZipEntry.isDeflated) {
-                // The child zip entry is a stored nested zipfile -- wrap it in a new
-                // ZipFileSlice.
-                // Hopefully nested zipfiles are stored, not deflated, as this is the fast path.
-                childZipEntrySlice = new ZipFileSlice(childZipEntry);
-
-            } else {
-                // If child entry is deflated i.e. (for a deflated nested zipfile), must inflate
-                // the contents of the entry before its central directory can be read (most of
-                // the time nested zipfiles are stored, not deflated, so this should be rare)
-                if (log != null) {
-                    log.log("Inflating nested zip entry: " + childZipEntry + " ; uncompressed size: "
-                            + childZipEntry.uncompressedSize);
-                }
-
-                // Read the InputStream for the child zip entry to a RAM buffer, or spill to
-                // disk if it's too large
-                final PhysicalZipFile physicalZipFile = new PhysicalZipFile(childZipEntry.getSlice().open(),
-                        childZipEntry.uncompressedSize >= 0L
-                                && childZipEntry.uncompressedSize <= FileUtils.MAX_BUFFER_SIZE
-                                        ? (int) childZipEntry.uncompressedSize
-                                        : -1,
-                        childZipEntry.entryName, NestedJarHandler.this, log);
-
-                // Create a new logical slice of the extracted inner zipfile
-                childZipEntrySlice = new ZipFileSlice(physicalZipFile, childZipEntry);
-            }
-            return childZipEntrySlice;
-        }
-    };
-
-    /**
-     * A singleton map from a {@link ZipFileSlice} to the {@link LogicalZipFile} for that slice.
-     */
-    private SingletonMap<ZipFileSlice, LogicalZipFile, IOException> //
-    zipFileSliceToLogicalZipFileMap = new SingletonMap<ZipFileSlice, LogicalZipFile, IOException>() {
-        @Override
-        public LogicalZipFile newInstance(final ZipFileSlice zipFileSlice, final LogNode log)
-                throws IOException, InterruptedException {
-            // Read the central directory for the zipfile
-            return new LogicalZipFile(zipFileSlice, NestedJarHandler.this, log,
-                    scanSpec.enableMultiReleaseVersions);
-        }
-    };
-
-    /**
-     * A singleton map from nested jarfile path to a tuple of the logical zipfile for the path, and the package root
-     * within the logical zipfile.
+     * 从嵌套 JAR 文件路径到(该路径的逻辑 ZIP 文件，逻辑 ZIP 文件中的包根)二元组的单例映射
      */
     public SingletonMap<String, Entry<LogicalZipFile, String>, IOException> //
-    nestedPathToLogicalZipFileAndPackageRootMap = //
+            nestedPathToLogicalZipFileAndPackageRootMap = //
             new SingletonMap<String, Entry<LogicalZipFile, String>, IOException>() {
                 @Override
                 public Entry<LogicalZipFile, String> newInstance(final String nestedJarPathRaw, final LogNode log)
@@ -167,50 +96,47 @@ public class NestedJarHandler {
                     final String nestedJarPath = FastPathResolver.resolve(nestedJarPathRaw);
                     final int lastPlingIdx = nestedJarPath.lastIndexOf('!');
                     if (lastPlingIdx < 0) {
-                        // nestedJarPath is a simple file path or URL (i.e. doesn't have any '!'
-                        // sections).
-                        // This is also the last frame of recursion for the 'else' clause below.
+                        // nestedJarPath 是一个简单的文件路径或 URL(即不包含任何 '!' 部分)
+                        // 这也是下面 'else' 子句递归的最后一帧
 
-                        // If the path starts with "http://" or "https://" or any other URI/URL scheme,
-                        // download the jar to a temp file or to a ByteBuffer in RAM. ("jar:" and
-                        // "file:"
-                        // have already been stripped from any URL/URI.)
+                        // 如果路径以 "http://" 或 "https://" 或任何其他 URI/URL 方案开头，
+                        // 则将 JAR 下载到临时文件或 RAM 中的 ByteBuffer("jar:" 和 "file:"
+                        // 前缀已从任何 URL/URI 中去除)
                         final boolean isURL = JarUtils.URL_SCHEME_PATTERN.matcher(nestedJarPath).matches();
                         PhysicalZipFile physicalZipFile;
                         if (isURL) {
                             final String scheme = nestedJarPath.substring(0, nestedJarPath.indexOf(':'));
                             if (scanSpec.allowedURLSchemes == null
                                     || !scanSpec.allowedURLSchemes.contains(scheme)) {
-                                // No URL schemes other than "file:" (with optional "jar:" prefix) allowed
-                                // (these
-                                // schemes were already stripped by FastPathResolver.resolve(nestedJarPathRaw))
+                                // 不允许 "file:"(带可选的 "jar:" 前缀)以外的 URL 方案
+                                // (这些方案已由 FastPathResolver.resolve(nestedJarPathRaw) 去除)
                                 throw new IOException("Scanning of URL scheme \"" + scheme
                                         + "\" has not been enabled -- cannot scan classpath element: "
                                         + nestedJarPath);
                             }
 
-                            // Download jar from URL to a ByteBuffer in RAM, or to a temp file on disk
+                            // 从 URL 下载 JAR 到 RAM 中的 ByteBuffer，或磁盘上的临时文件
                             physicalZipFile = downloadJarFromURL(nestedJarPath, log);
 
                         } else {
-                            // Jarfile should be a local file -- wrap in a PhysicalZipFile instance
+                            // JAR 文件应该是本地文件 -- 包装到 PhysicalZipFile 实例中
                             try {
-                                // Get canonical file
+                                // 获取规范文件
                                 final File canonicalFile = new File(nestedJarPath).getCanonicalFile();
-                                // Get or create a PhysicalZipFile instance for the canonical file
+                                // 获取或创建规范文件的 PhysicalZipFile 实例
                                 physicalZipFile = canonicalFileToPhysicalZipFileMap.get(canonicalFile, log);
                             } catch (final NullSingletonException | NewInstanceException e) {
-                                // If getting PhysicalZipFile failed, re-wrap in IOException
+                                // 如果获取 PhysicalZipFile 失败，重新包装为 IOException
                                 throw new IOException("Could not get PhysicalZipFile for path " + nestedJarPath
                                         + " : " + (e.getCause() == null ? e : e.getCause()));
                             } catch (final SecurityException e) {
-                                // getCanonicalFile() failed (it may have also failed with IOException)
+                                // getCanonicalFile() 失败(可能也已因 IOException 失败)
                                 throw new IOException(
                                         "Path component " + nestedJarPath + " could not be canonicalized: " + e);
                             }
                         }
 
-                        // Create a new logical slice of the whole physical zipfile
+                        // 创建整个物理 ZIP 文件的新逻辑切片
                         final ZipFileSlice topLevelSlice = new ZipFileSlice(physicalZipFile);
                         LogicalZipFile logicalZipFile;
                         try {
@@ -221,24 +147,20 @@ public class NestedJarHandler {
                             throw new IOException("Could not get toplevel slice " + topLevelSlice, e);
                         }
 
-                        // Return new logical zipfile with an empty package root
+                        // 返回带有空包根的新逻辑 ZIP 文件
                         return new SimpleEntry<>(logicalZipFile, "");
 
                     } else {
-                        // This path has one or more '!' sections.
+                        // 此路径包含一个或多个 '!' 部分
                         final String parentPath = nestedJarPath.substring(0, lastPlingIdx);
                         String childPath = nestedJarPath.substring(lastPlingIdx + 1);
                         // "file.jar!/path" -> "file.jar!path"
                         childPath = FileUtils.sanitizeEntryPath(childPath, /* removeInitialSlash = */ true,
                                 /* removeFinalSlash = */ true);
 
-                        // Recursively remove one '!' section at a time, back towards the beginning of
-                        // the URL or
-                        // file path. At the last frame of recursion, the toplevel jarfile will be
-                        // reached and
-                        // returned. The recursion is guaranteed to terminate because parentPath gets
-                        // one
-                        // '!'-section shorter with each recursion frame.
+                        // 每次递归移除一个 '!' 部分，向 URL 或文件路径的开头方向回溯
+                        // 在递归的最后一帧，将达到并返回顶层 JAR 文件
+                        // 递归保证会终止，因为 parentPath 每次递归帧都会缩短一个 '!' 部分
                         Entry<LogicalZipFile, String> parentLogicalZipFileAndPackageRoot;
                         try {
                             parentLogicalZipFileAndPackageRoot = nestedPathToLogicalZipFileAndPackageRootMap
@@ -249,32 +171,24 @@ public class NestedJarHandler {
                             throw new IOException("Could not get parent logical zipfile " + parentPath, e);
                         }
 
-                        // Only the last item in a '!'-delimited list can be a non-jar path, so the
-                        // parent must
-                        // always be a jarfile.
+                        // '!'-分隔列表中的最后一项才可能是非 JAR 路径，因此父项必须始终是 JAR 文件
                         final LogicalZipFile parentLogicalZipFile = parentLogicalZipFileAndPackageRoot.getKey();
 
-                        // Look up the child path within the parent zipfile
+                        // 在父 ZIP 文件中查找子路径
                         boolean isDirectory = false;
                         while (childPath.endsWith("/")) {
-                            // Child path is definitely a directory, it ends with a slash
+                            // 子路径肯定是一个目录，因为它以斜杠结尾
                             isDirectory = true;
                             childPath = childPath.substring(0, childPath.length() - 1);
                         }
                         FastZipEntry childZipEntry = null;
                         if (!isDirectory) {
-                            // If child path doesn't end with a slash, see if there's a non-directory entry
-                            // with a name matching the child path (LogicalZipFile discards directory
-                            // entries
-                            // ending with a slash when reading the central directory of a zipfile).
-                            // N.B. We perform an O(N) search here because we assume the number of classpath
-                            // elements containing "!" sections is relatively small compared to the total
-                            // number
-                            // of entries in all jarfiles (i.e. building a HashMap of entry path to entry
-                            // for
-                            // every jarfile would generally be more expensive than performing this linear
-                            // search, and unless the classpath is enormous, the overall time performance
-                            // will not tend towards O(N^2).
+                            // 如果子路径不以斜杠结尾，查看是否存在名称匹配子路径的非目录条目
+                            // (LogicalZipFile 在读取 ZIP 文件的中央目录时会丢弃以斜杠结尾的目录条目)
+                            // 注意：我们在此执行 O(N) 搜索，因为假设包含 "!" 部分的 classpath 元素数量
+                            // 相对于所有 JAR 文件中的条目总数来说较少(即为每个 JAR 文件建立一个从条目路径
+                            // 到条目的 HashMap 通常比执行此线性搜索更昂贵，而且除非 classpath 非常庞大，
+                            // 整体时间性能不会趋向 O(N^2))
                             for (final FastZipEntry entry : parentLogicalZipFile.entries) {
                                 if (entry.entryName.equals(childPath)) {
                                     childZipEntry = entry;
@@ -283,9 +197,8 @@ public class NestedJarHandler {
                             }
                         }
                         if (childZipEntry == null) {
-                            // If there is no non-directory zipfile entry with a name matching the child
-                            // path,
-                            // test to see if any entries in the zipfile have the child path as a dir prefix
+                            // 如果没有名称匹配子路径的非目录 ZIP 文件条目，
+                            // 则测试 ZIP 文件中是否有条目以子路径作为目录前缀
                             final String childPathPrefix = childPath + "/";
                             for (final FastZipEntry entry : parentLogicalZipFile.entries) {
                                 if (entry.entryName.startsWith(childPathPrefix)) {
@@ -294,21 +207,21 @@ public class NestedJarHandler {
                                 }
                             }
                         }
-                        // At this point, either isDirectory is true, or childZipEntry is non-null
+                        // 此时，要么 isDirectory 为 true，要么 childZipEntry 非 null
 
-                        // If path component is a directory, it is a package root
+                        // 如果路径组件是目录，则它是包根
                         if (isDirectory) {
                             if (!childPath.isEmpty()) {
-                                // Add directory path to parent jarfile root relative paths set
-                                // (this has the side effect of adding this parent jarfile root
-                                // to the set of roots for all references to the parent path)
+                                // 将目录路径添加到父 JAR 文件根相对路径集合中
+                                // (这会产生副作用，即对于所有对父路径的引用，
+                                // 将此父 JAR 文件根也添加到根集合中)
                                 if (log != null) {
                                     log.log("Path " + childPath + " in jarfile " + parentLogicalZipFile
                                             + " is a directory, not a file -- using as package root");
                                 }
                                 parentLogicalZipFile.classpathRoots.add(childPath);
                             }
-                            // Return parent logical zipfile, and child path as the package root
+                            // 返回父逻辑 ZIP 文件，并将子路径作为包根
                             return new SimpleEntry<>(parentLogicalZipFile, childPath);
                         }
 
@@ -317,22 +230,19 @@ public class NestedJarHandler {
                                     "Path " + childPath + " does not exist in jarfile " + parentLogicalZipFile);
                         }
 
-                        // Do not extract nested jar, if nested jar scanning is disabled
+                        // 如果嵌套 JAR 扫描被禁用，则不提取嵌套 JAR
                         if (!scanSpec.scanNestedJars) {
                             throw new IOException(
                                     "Nested jar scanning is disabled -- skipping nested jar " + nestedJarPath);
                         }
 
-                        // The child path corresponds to a non-directory zip entry, so it must be a
-                        // nested jar
-                        // (since non-jar nested files cannot be used on the classpath). Map the nested
-                        // jar as
-                        // a new ZipFileSlice if it is stored, or inflate it to RAM or to a temporary
-                        // file if
-                        // it is deflated, then create a new ZipFileSlice over the temporary file or
-                        // ByteBuffer.
+                        // 子路径对应一个非目录 ZIP 条目，因此它必须是一个嵌套 JAR
+                        // (因为非 JAR 的嵌套文件不能在 classpath 上使用)
+                        // 如果嵌套 JAR 是已存储的，则将其映射为新的 ZipFileSlice；
+                        // 如果它是已压缩的，则将其膨胀到 RAM 或临时文件，
+                        // 然后在临时文件或 ByteBuffer 上创建新的 ZipFileSlice
 
-                        // Get zip entry as a ZipFileSlice, possibly inflating to disk or RAM
+                        // 将 ZIP 条目获取为 ZipFileSlice，可能膨胀到磁盘或 RAM
 
                         final ZipFileSlice childZipEntrySlice;
                         try {
@@ -346,9 +256,9 @@ public class NestedJarHandler {
 
                         final LogNode zipSliceLog = log == null ? null
                                 : log.log("Getting zipfile slice " + childZipEntrySlice + " for nested jar "
-                                        + childZipEntry.entryName);
+                                + childZipEntry.entryName);
 
-                        // Get or create a new LogicalZipFile for the child zipfile
+                        // 获取或创建子 ZIP 文件的新 LogicalZipFile
                         LogicalZipFile childLogicalZipFile;
                         try {
                             childLogicalZipFile = zipFileSliceToLogicalZipFileMap.get(childZipEntrySlice,
@@ -360,21 +270,20 @@ public class NestedJarHandler {
                             throw new IOException("Could not get child logical zipfile " + childZipEntrySlice, e);
                         }
 
-                        // Return new logical zipfile with an empty package root
+                        // 返回带有空包根的新逻辑 ZIP 文件
                         return new SimpleEntry<>(childLogicalZipFile, "");
                     }
                 }
             };
-
     /**
-     * A singleton map from a {@link ModuleRef} to a {@link ModuleReaderProxy} recycler for the module.
+     * 从 {@link ModuleRef} 到该模块的 {@link ModuleReaderProxy} 回收器的单例映射
      */
     public SingletonMap<ModuleRef, Recycler<ModuleReaderProxy, IOException>, IOException> //
-    moduleRefToModuleReaderProxyRecyclerMap = //
+            moduleRefToModuleReaderProxyRecyclerMap = //
             new SingletonMap<ModuleRef, Recycler<ModuleReaderProxy, IOException>, IOException>() {
                 @Override
                 public Recycler<ModuleReaderProxy, IOException> newInstance(final ModuleRef moduleRef,
-                        final LogNode ignored) {
+                                                                            final LogNode ignored) {
                     return new Recycler<ModuleReaderProxy, IOException>() {
                         @Override
                         public ModuleReaderProxy newInstance() throws IOException {
@@ -383,76 +292,176 @@ public class NestedJarHandler {
                     };
                 }
             };
+    /** 中断检查器 */
+    public InterruptionChecker interruptionChecker;
+    /**
+     * 从 ZIP 文件的 {@link File} 到该文件对应的 {@link PhysicalZipFile} 的单例映射，
+     * 用于确保任何给定 ZIP 文件的 {@link RandomAccessFile} 和 {@link FileChannel} 只被打开一次
+     */
+    private SingletonMap<File, PhysicalZipFile, IOException> //
+            canonicalFileToPhysicalZipFileMap = new SingletonMap<File, PhysicalZipFile, IOException>() {
+        @Override
+        public PhysicalZipFile newInstance(final File canonicalFile, final LogNode log) throws IOException {
+            return new PhysicalZipFile(canonicalFile, NestedJarHandler.this, log);
+        }
+    };
+    /**
+     * 从 {@link FastZipEntry} 到 {@link ZipFileSlice} 的单例映射，
+     * 包装的内容要么是 ZIP 条目数据(如果条目已存储)，
+     * 要么是 ByteBuffer(如果 ZIP 条目已膨胀到内存)，
+     * 要么是磁盘上的物理文件(如果 ZIP 条目已膨胀到临时文件)
+     */
+    private SingletonMap<FastZipEntry, ZipFileSlice, IOException> //
+            fastZipEntryToZipFileSliceMap = new SingletonMap<FastZipEntry, ZipFileSlice, IOException>() {
+        @Override
+        public ZipFileSlice newInstance(final FastZipEntry childZipEntry, final LogNode log)
+                throws IOException, InterruptedException {
+            ZipFileSlice childZipEntrySlice;
+            if (!childZipEntry.isDeflated) {
+                // 子 ZIP 条目是一个已存储的嵌套 ZIP 文件 -- 将其包装在新的 ZipFileSlice 中
+                // 希望嵌套 ZIP 文件是已存储的而非已压缩的，因为这是快速路径
+                childZipEntrySlice = new ZipFileSlice(childZipEntry);
 
-    /** A recycler for {@link Inflater} instances. */
+            } else {
+                // 如果子条目已压缩(即对于已压缩的嵌套 ZIP 文件)，必须先膨胀
+                // 条目的内容，然后才能读取其中央目录(大多数情况下嵌套 ZIP 文件
+                // 是已存储的而非已压缩的，因此这种情况应该很罕见)
+                if (log != null) {
+                    log.log("Inflating nested zip entry: " + childZipEntry + " ; uncompressed size: "
+                            + childZipEntry.uncompressedSize);
+                }
+
+                // 将子 ZIP 条目的 InputStream 读取到 RAM 缓冲区，或者如果太大则溢出到磁盘
+                final PhysicalZipFile physicalZipFile = new PhysicalZipFile(childZipEntry.getSlice().open(),
+                        childZipEntry.uncompressedSize >= 0L
+                                && childZipEntry.uncompressedSize <= FileUtils.MAX_BUFFER_SIZE
+                                ? (int) childZipEntry.uncompressedSize
+                                : -1,
+                        childZipEntry.entryName, NestedJarHandler.this, log);
+
+                // 创建解压出的内部 ZIP 文件的新逻辑切片
+                childZipEntrySlice = new ZipFileSlice(physicalZipFile, childZipEntry);
+            }
+            return childZipEntrySlice;
+        }
+    };
+    /**
+     * 从 {@link ZipFileSlice} 到该切片对应的 {@link LogicalZipFile} 的单例映射
+     */
+    private SingletonMap<ZipFileSlice, LogicalZipFile, IOException> //
+            zipFileSliceToLogicalZipFileMap = new SingletonMap<ZipFileSlice, LogicalZipFile, IOException>() {
+        @Override
+        public LogicalZipFile newInstance(final ZipFileSlice zipFileSlice, final LogNode log)
+                throws IOException, InterruptedException {
+            // 读取 ZIP 文件的中央目录
+            return new LogicalZipFile(zipFileSlice, NestedJarHandler.this, log,
+                    scanSpec.enableMultiReleaseVersions);
+        }
+    };
+    /** {@link Inflater} 实例的回收器 */
     private Recycler<RecyclableInflater, RuntimeException> //
-    inflaterRecycler = new Recycler<RecyclableInflater, RuntimeException>() {
+            inflaterRecycler = new Recycler<RecyclableInflater, RuntimeException>() {
         @Override
         public RecyclableInflater newInstance() throws RuntimeException {
             return new RecyclableInflater();
         }
     };
-
-    /** {@link FileSlice} instances that are currently open. */
+    /** 当前打开的 {@link FileSlice} 实例 */
     private Set<Slice> openSlices = Collections.newSetFromMap(new ConcurrentHashMap<Slice, Boolean>());
 
-    /** Any temporary files created while scanning. */
+    // -------------------------------------------------------------------------------------------------------------
+    /** 扫描过程中创建的所有临时文件 */
     private Set<File> tempFiles = Collections.newSetFromMap(new ConcurrentHashMap<File, Boolean>());
-
-    /** The separator between random temp filename part and leafname. */
-    public static final String TEMP_FILENAME_LEAF_SEPARATOR = "---";
-
-    /** True if {@link #close(LogNode)} has been called. */
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-
-    /** The interruption checker. */
-    public InterruptionChecker interruptionChecker;
-
-    /** The default size of a file buffer. */
-    private static final int DEFAULT_BUFFER_SIZE = 16384;
-
-    /** The maximum initial buffer size. */
-    private static final int MAX_INITIAL_BUFFER_SIZE = 16 * 1024 * 1024;
-
-    /** HTTP(S) timeout, ms. */
-    private static final int HTTP_TIMEOUT = 5000;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * A handler for nested jars.
+     * 嵌套 JAR 的处理器
      *
      * @param scanSpec
-     *            The {@link ScanSpec}.
+     *            {@link ScanSpec} 扫描规范
      * @param interruptionChecker
-     *            the interruption checker
+     *            中断检查器
      */
     public NestedJarHandler(final ScanSpec scanSpec, final InterruptionChecker interruptionChecker,
-            final ReflectionUtils reflectionUtils) {
+                            final ReflectionUtils reflectionUtils) {
         this.scanSpec = scanSpec;
         this.interruptionChecker = interruptionChecker;
         this.reflectionUtils = reflectionUtils;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Get the leafname of a path.
+     * 获取路径的叶子名称
      *
      * @param path
-     *            the path
-     * @return the string
+     *            路径
+     * @return 叶子名称字符串
      */
     private static String leafname(final String path) {
         return path.substring(path.lastIndexOf('/') + 1);
     }
 
     /**
-     * Sanitize filename.
+     * 读取 {@link InputStream} 中的所有字节
+     *
+     * @param inputStream
+     *            {@link InputStream} 输入流
+     * @param uncompressedLengthHint
+     *            从 {@link InputStream} 膨胀后数据的长度(如果已知)，否则为 -1L
+     * @return {@link InputStream} 的内容，以字节数组形式返回
+     * @throws IOException
+     *             如果内容无法读取
+     */
+    public static byte[] readAllBytesAsArray(final InputStream inputStream, final long uncompressedLengthHint)
+            throws IOException {
+        if (uncompressedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
+            throw new IOException("InputStream is too large to read");
+        }
+        try (InputStream inptStream = inputStream) {
+            final int bufferSize = uncompressedLengthHint < 1L
+                    // 如果 fileSizeHint 为零或未知，使用默认缓冲区大小
+                    ? DEFAULT_BUFFER_SIZE
+                    // fileSizeHint 只是一个提示 -- 限制最大分配的缓冲区大小，
+                    // 以防止无效的 ZipEntry 长度成为内存分配攻击向量
+                    : Math.min((int) uncompressedLengthHint, MAX_INITIAL_BUFFER_SIZE);
+            byte[] buf = new byte[bufferSize];
+            int totBytesRead = 0;
+            for (int bytesRead; ; ) {
+                while ((bytesRead = inptStream.read(buf, totBytesRead, buf.length - totBytesRead)) > 0) {
+                    // 填充缓冲区直到无法读取更多内容
+                    totBytesRead += bytesRead;
+                }
+                if (bytesRead < 0) {
+                    // 已达到流末尾，缓冲区未被填满
+                    break;
+                }
+
+                // bytesRead == 0：要么缓冲区大小刚好正确且已达到流末尾，
+                // 要么缓冲区太小需要尝试再读取一个字节来分辨是哪种情况
+                final int extraByte = inptStream.read();
+                if (extraByte == -1) {
+                    // 已达到流末尾
+                    break;
+                }
+
+                // 尚未达到流末尾需要增大缓冲区(翻倍)，并追加刚刚读取的额外字节
+                if (buf.length == FileUtils.MAX_BUFFER_SIZE) {
+                    throw new IOException("InputStream too large to read into array");
+                }
+                buf = Arrays.copyOf(buf, (int) Math.min(buf.length * 2L, FileUtils.MAX_BUFFER_SIZE));
+                buf[totBytesRead++] = (byte) extraByte;
+            }
+            // 返回缓冲区及已读取的字节数
+            return totBytesRead == buf.length ? buf : Arrays.copyOf(buf, totBytesRead);
+        }
+    }
+
+    /**
+     * 清理文件名
      *
      * @param filename
-     *            the filename
-     * @return the sanitized filename
+     *            原始文件名
+     * @return 清理后的文件名
      */
     private String sanitizeFilename(final String filename) {
         return filename.replace('/', '_').replace('\\', '_').replace(':', '_').replace('?', '_').replace('&', '_')
@@ -460,15 +469,15 @@ public class NestedJarHandler {
     }
 
     /**
-     * Create a temporary file, and mark it for deletion on exit.
-     * 
+     * 创建临时文件，并标记为在退出时删除
+     *
      * @param filePathBase
-     *            The path to derive the temporary filename from.
+     *            用于派生临时文件名的路径
      * @param onlyUseLeafname
-     *            If true, only use the leafname of filePath to derive the temporary filename.
-     * @return The temporary {@link File}.
+     *            如果为 true，则仅使用 filePath 的叶子名称来派生临时文件名
+     * @return 临时 {@link File}
      * @throws IOException
-     *             If the temporary file could not be created.
+     *             如果无法创建临时文件
      */
     public File makeTempFile(final String filePathBase, final boolean onlyUseLeafname) throws IOException {
         final File tempFile = File.createTempFile("ClassGraph--", TEMP_FILENAME_LEAF_SEPARATOR
@@ -479,14 +488,14 @@ public class NestedJarHandler {
     }
 
     /**
-     * Attempt to remove a temporary file.
+     * 尝试移除临时文件
      *
      * @param tempFile
-     *            the temp file
+     *            临时文件
      * @throws IOException
-     *             If the temporary file could not be removed.
+     *             如果无法移除临时文件
      * @throws SecurityException
-     *             If the temporary file is inaccessible.
+     *             如果临时文件不可访问
      */
     void removeTempFile(final File tempFile) throws IOException, SecurityException {
         if (tempFiles.remove(tempFile)) {
@@ -497,45 +506,45 @@ public class NestedJarHandler {
     }
 
     /**
-     * Mark a {@link Slice} as open, so it can be closed when the {@link ScanResult} is closed.
+     * 将 {@link Slice} 标记为打开状态，以便在 {@link ScanResult} 关闭时可以将其关闭
      *
      * @param slice
-     *            the {@link Slice} that was just opened.
+     *            刚刚打开的 {@link Slice}
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             表示发生了 I/O 异常
      */
     public void markSliceAsOpen(final Slice slice) throws IOException {
         openSlices.add(slice);
     }
 
     /**
-     * Mark a {@link Slice} as closed.
-     * 
+     * 将 {@link Slice} 标记为已关闭
+     *
      * @param slice
-     *            the {@link Slice} to close.
+     *            要关闭的 {@link Slice}
      */
     public void markSliceAsClosed(final Slice slice) {
         openSlices.remove(slice);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Download a jar from a URL to a temporary file, or to a ByteBuffer if the temporary directory is not writeable
-     * or full. The downloaded jar is returned wrapped in a {@link PhysicalZipFile} instance.
+     * 从 URL 下载 JAR 到临时文件，或者如果临时目录不可写或已满，则下载到 ByteBuffer
+     * 下载的 JAR 包装在 {@link PhysicalZipFile} 实例中返回
      *
      * @param jarURL
-     *            the jar URL
+     *            JAR 的 URL
      * @param log
-     *            the log
-     * @return the temporary file or {@link ByteBuffer} the jar was downloaded to, wrapped in a
-     *         {@link PhysicalZipFile} instance.
+     *            日志
+     * @return JAR 下载到的临时文件或 {@link ByteBuffer}，包装在 {@link PhysicalZipFile} 实例中
      * @throws IOException
-     *             If the jar could not be downloaded, or the jar URL is malformed.
+     *             如果无法下载 JAR，或 JAR URL 格式错误
      * @throws InterruptedException
-     *             if the thread was interrupted
+     *             如果线程被中断
      * @throws IllegalArgumentException
-     *             If the temp dir is not writeable, or has insufficient space to download the jar. (This is thrown
-     *             as a separate exception from IOException, so that the case of an unwriteable temp dir can be
-     *             handled separately, by downloading the jar to a ByteBuffer in RAM.)
+     *             如果临时目录不可写或空间不足以下载 JAR(此异常与 IOException 分开抛出，
+     *             以便可以单独处理临时目录不可写的情况，即通过将 JAR 下载到 RAM 中的 ByteBuffer)
      */
     private PhysicalZipFile downloadJarFromURL(final String jarURL, final LogNode log)
             throws IOException, InterruptedException {
@@ -551,23 +560,22 @@ public class NestedJarHandler {
         }
 
         final String scheme = url.getProtocol();
-        if (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https")) {
-            // Check if this URL is backed by a filesystem -- if it is, don't download a
-            // copy of the file
-            // over the URL; instead, access the filesystem directly
+        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+            // 检查此 URL 是否由文件系统支撑 -- 如果是，则不通过 URL 下载文件的副本；
+            // 而是直接访问文件系统
             try {
                 final Path path = Paths.get(url.toURI());
-                // Fails with FileSystemNotFoundException if filesystem not registered for URL
+                // 如果 URL 的文件系统未注册，将抛出 FileSystemNotFoundException
                 final FileSystem fs = path.getFileSystem();
                 if (log != null) {
                     log.log("URL " + jarURL + " is backed by filesystem " + fs.getClass().getName());
                 }
-                // Wrap Path in PhysicalZipFile and return it
+                // 将 Path 包装在 PhysicalZipFile 中并返回
                 return new PhysicalZipFile(path, this, log);
             } catch (final IllegalArgumentException | SecurityException | URISyntaxException e) {
                 throw new IOException("Could not convert URL to URI (" + e + "): " + url);
             } catch (final FileSystemNotFoundException e) {
-                // Not a custom filesystem
+                // 不是自定义文件系统
             }
         }
         try (final CloseableUrlConnection urlConn = new CloseableUrlConnection(url)) {
@@ -575,37 +583,33 @@ public class NestedJarHandler {
             urlConn.conn.setConnectTimeout(HTTP_TIMEOUT);
             urlConn.conn.connect();
             if (urlConn.httpConn != null) {
-                // Get content length from HTTP headers, if available
+                // 从 HTTP 头部获取内容长度(如果可用)
                 if (urlConn.httpConn.getResponseCode() != HttpURLConnection.HTTP_OK) {
                     throw new IOException(
                             "Got response code " + urlConn.httpConn.getResponseCode() + " for URL " + url);
                 }
-            } else if (url.getProtocol().equalsIgnoreCase("file")) {
-                // We ended up with a "file:" URL, which can happen as a result of a custom URL
-                // scheme that
-                // rewrites its URLs into "file:" URLs (see Issue400.java).
+            } else if ("file".equalsIgnoreCase(url.getProtocol())) {
+                // 我们得到了一个 "file:" URL，这可能是因为自定义 URL 方案
+                // 将其 URL 重写为 "file:" URL(参见 Issue400.java)
                 try {
-                    // If this is a "file:" URL, get the file from the URL and return it as a new
-                    // PhysicalZipFile
-                    // (this avoids going through an InputStream). Throws IOException if the file
-                    // cannot be read.
+                    // 如果这是 "file:" URL，从 URL 获取文件并将其作为新的 PhysicalZipFile 返回
+                    // (这避免了通过 InputStream 的方式)如果文件无法读取则抛出 IOException
                     final File file = Paths.get(url.toURI()).toFile();
                     return new PhysicalZipFile(file, this, log);
 
                 } catch (final Exception e) {
-                    // Fall through -- unknown URL type
+                    // 穿透 -- 未知的 URL 类型
                 }
             }
-            // Try to read content length hint
+            // 尝试读取内容长度提示
             contentLengthHint = urlConn.conn.getContentLengthLong();
             if (contentLengthHint < -1L) {
                 contentLengthHint = -1L;
             }
-            // Fetch content from URL
+            // 从 URL 获取内容
             final LogNode subLog = log == null ? null : log.log("Downloading jar from URL " + jarURL);
             try (InputStream inputStream = urlConn.conn.getInputStream()) {
-                // Fetch the jar contents from the URL's InputStream. If it doesn't fit in RAM,
-                // spill over to disk.
+                // 从 URL 的 InputStream 获取 JAR 内容如果内容无法装入 RAM，则溢出到磁盘
                 final PhysicalZipFile physicalZipFile = new PhysicalZipFile(inputStream, contentLengthHint, jarURL,
                         this, subLog);
                 if (subLog != null) {
@@ -622,82 +626,26 @@ public class NestedJarHandler {
         }
     }
 
-    private static class CloseableUrlConnection implements AutoCloseable {
-        public final URLConnection conn;
-        public final HttpURLConnection httpConn;
-
-        public CloseableUrlConnection(final URL url) throws IOException {
-            conn = url.openConnection();
-            httpConn = conn instanceof HttpURLConnection ? (HttpURLConnection) conn : null;
-        }
-
-        @Override
-        public void close() {
-            if (httpConn != null) {
-                httpConn.disconnect();
-            }
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Wrapper class that allows an {@link Inflater} instance to be reset for reuse and then recycled by a
-     * {@link Recycler}.
-     */
-    private static class RecyclableInflater implements Resettable, AutoCloseable {
-        /**
-         * Create a new {@link Inflater} instance with the "nowrap" option (which is needed for zipfile entries).
-         */
-        private final Inflater inflater = new Inflater(/* nowrap = */ true);
-
-        /**
-         * Get the {@link Inflater} instance.
-         *
-         * @return the {@link Inflater} instance.
-         */
-        public Inflater getInflater() {
-            return inflater;
-        }
-
-        /**
-         * Called when an {@link Inflater} instance is recycled, to reset the inflater so it can accept new input.
-         */
-        @Override
-        public void reset() {
-            inflater.reset();
-        }
-
-        /**
-         * Called when the {@link Recycler} instance is closed, to destroy the {@link Inflater} instance.
-         */
-        @Override
-        public void close() {
-            inflater.end();
-        }
-    }
-
-    /**
-     * Wrap an {@link InputStream} with an {@link InflaterInputStream}, recycling the {@link Inflater} instance.
+     * 用 {@link InflaterInputStream} 包装 {@link InputStream}，同时回收 {@link Inflater} 实例
      *
      * @param rawInputStream
-     *            the raw input stream
-     * @return the inflater input stream
+     *            原始输入流
+     * @return 膨胀输入流
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             表示发生了 I/O 异常
      */
     public InputStream openInflaterInputStream(final InputStream rawInputStream) throws IOException {
         if (closed.get()) {
             throw new IOException("Already closed");
         }
-        @SuppressWarnings("resource")
-        final RecyclableInflater recyclableInflater = inflaterRecycler.acquire();
+        @SuppressWarnings("resource") final RecyclableInflater recyclableInflater = inflaterRecycler.acquire();
         final Inflater inflater = recyclableInflater.getInflater();
         return new InputStream() {
-            // Gen Inflater instance with nowrap set to true (needed by zip entries)
+            private static final int INFLATE_BUF_SIZE = 8192;
+            // 生成 Inflater 实例，nowrap 设置为 true(ZIP 条目需要此设置)
             private final AtomicBoolean closed = new AtomicBoolean();
             private final byte[] buf = new byte[INFLATE_BUF_SIZE];
-            private static final int INFLATE_BUF_SIZE = 8192;
 
             @Override
             public int read() throws IOException {
@@ -724,27 +672,25 @@ public class NestedJarHandler {
                     return 0;
                 }
                 try {
-                    // Keep fetching data from rawInputStream until buffer is full or inflater has
-                    // finished
+                    // 持续从 rawInputStream 获取数据，直到缓冲区填满或 inflater 完成
                     int totInflatedBytes = 0;
                     while (!inflater.finished() && totInflatedBytes < len) {
                         final int numInflatedBytes = inflater.inflate(outBuf, off + totInflatedBytes,
                                 len - totInflatedBytes);
                         if (numInflatedBytes == 0) {
                             if (inflater.needsDictionary()) {
-                                // Should not happen for jarfiles
+                                // 对于 JAR 文件不应发生此情况
                                 throw new IOException("Inflater needs preset dictionary");
                             } else if (inflater.needsInput()) {
-                                // Read a chunk of data from the raw InputStream
+                                // 从原始 InputStream 读取一块数据
                                 final int numRawBytesRead = rawInputStream.read(buf, 0, buf.length);
                                 if (numRawBytesRead == -1) {
-                                    // An extra dummy byte is needed at the end of the input stream when
-                                    // using the "nowrap" Inflater option.
-                                    // See: ZipFile.ZipFileInflaterInputStream.fill()
+                                    // 使用 "nowrap" Inflater 选项时，输入流末尾需要一个额外的哑字节
+                                    // 参见：ZipFile.ZipFileInflaterInputStream.fill()
                                     buf[0] = (byte) 0;
                                     inflater.setInput(buf, 0, 1);
                                 } else {
-                                    // Deflate the chunk of data
+                                    // 压缩(deflate)数据块
                                     inflater.setInput(buf, 0, numRawBytesRead);
                                 }
                             }
@@ -753,7 +699,7 @@ public class NestedJarHandler {
                         }
                     }
                     if (totInflatedBytes == 0) {
-                        // If no bytes were inflated, return -1 as required by read() API contract
+                        // 如果没有膨胀任何字节，按照 read() API 约定返回 -1
                         return -1;
                     }
                     return totInflatedBytes;
@@ -776,11 +722,11 @@ public class NestedJarHandler {
                     return -1;
                 }
                 long totBytesSkipped = 0L;
-                for (;;) {
+                for (; ; ) {
                     final int readLen = (int) Math.min(numToSkip - totBytesSkipped, buf.length);
                     final int numBytesRead = read(buf, 0, readLen);
                     if (numBytesRead > 0) {
-                        totBytesSkipped -= numBytesRead;
+                        totBytesSkipped += numBytesRead;
                     } else {
                         break;
                     }
@@ -793,10 +739,8 @@ public class NestedJarHandler {
                 if (closed.get()) {
                     throw new IOException("Already closed");
                 }
-                // We don't know how many bytes are available, but have to return greater than
-                // zero if there is still input, according to the API contract. Hopefully
-                // nothing
-                // relies on this and ends up reading just one byte at a time.
+                // 我们不知道有多少字节可用，但根据 API 约定，如果仍有输入，
+                // 必须返回大于零的值希望没有代码依赖此方法并最终一次只读取一个字节
                 return inflater.finished() ? 0 : 1;
             }
 
@@ -821,9 +765,9 @@ public class NestedJarHandler {
                     try {
                         rawInputStream.close();
                     } catch (final Exception e) {
-                        // Ignore
+                        // 忽略
                     }
-                    // Reset and recycle inflater instance
+                    // 重置并回收 inflater 实例
                     inflaterRecycler.recycle(recyclableInflater);
                 }
             }
@@ -833,106 +777,92 @@ public class NestedJarHandler {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Read all the bytes in an {@link InputStream}, with spillover to a temporary file on disk if a maximum buffer
-     * size is exceeded.
+     * 读取 {@link InputStream} 中的所有字节，如果超过最大缓冲区大小则溢出到磁盘上的临时文件
      *
      * @param inputStream
-     *            the {@link InputStream} to read from.
+     *            要从中读取的 {@link InputStream}
      * @param tempFileBaseName
-     *            the source URL or zip entry that inputStream was opened from (used to name temporary file, if
-     *            needed).
+     *            inputStream 打开的源 URL 或 ZIP 条目(用于命名临时文件，如果需要)
      * @param inputStreamLengthHint
-     *            the length of inputStream if known, else -1L.
+     *            inputStream 的长度(如果已知)，否则为 -1L
      * @param log
-     *            the log.
-     * @return if the {@link InputStream} could be read into a byte array, an {@link ArraySlice} will be returned.
-     *         If this fails and the {@link InputStream} is spilled over to disk, a {@link FileSlice} will be
-     *         returned.
-     * 
+     *            日志
+     * @return 如果 {@link InputStream} 可以读入字节数组，则返回 {@link ArraySlice}
+     *         如果失败且 {@link InputStream} 溢出到磁盘，则返回 {@link FileSlice}
+     *
      * @throws IOException
-     *             If the contents could not be read.
+     *             如果内容无法读取
      */
     public Slice readAllBytesWithSpilloverToDisk(final InputStream inputStream, final String tempFileBaseName,
-            final long inputStreamLengthHint, final LogNode log) throws IOException {
-        // Open an InflaterInputStream on the slice
+                                                 final long inputStreamLengthHint, final LogNode log) throws IOException {
+        // 在切片上打开 InflaterInputStream
         try (InputStream inptStream = inputStream) {
             if (inputStreamLengthHint <= scanSpec.maxBufferedJarRAMSize) {
-                // inputStreamLengthHint is unknown (-1) or shorter than
-                // scanSpec.maxBufferedJarRAMSize,
-                // so try reading from the InputStream into an array of size
-                // scanSpec.maxBufferedJarRAMSize
-                // or inputStreamLengthHint respectively. Also if inputStreamLengthHint == 0,
-                // which may or
-                // may not be valid, use a buffer size of 16kB to avoid spilling to disk in case
-                // this is
-                // wrong but the file is still small.
+                // inputStreamLengthHint 未知 (-1) 或小于 scanSpec.maxBufferedJarRAMSize，
+                // 因此尝试从 InputStream 读取到大小为 scanSpec.maxBufferedJarRAMSize
+                // 或 inputStreamLengthHint 的数组中此外，如果 inputStreamLengthHint == 0
+                // (可能有效也可能无效)，使用 16kB 的缓冲区大小，以防此值有误但文件仍然较小，
+                // 从而避免溢出到磁盘
                 final int bufSize = inputStreamLengthHint == -1L ? scanSpec.maxBufferedJarRAMSize
                         : inputStreamLengthHint == 0L ? 16384
-                                : Math.min((int) inputStreamLengthHint, scanSpec.maxBufferedJarRAMSize);
+                        : Math.min((int) inputStreamLengthHint, scanSpec.maxBufferedJarRAMSize);
                 byte[] buf = new byte[bufSize];
                 final int bufLength = buf.length;
 
                 int bufBytesUsed = 0;
                 int bytesRead = 0;
                 while ((bytesRead = inptStream.read(buf, bufBytesUsed, bufLength - bufBytesUsed)) > 0) {
-                    // Fill buffer until nothing more can be read
+                    // 填充缓冲区直到无法读取更多内容
                     bufBytesUsed += bytesRead;
                 }
                 if (bytesRead == 0) {
-                    // If bytesRead was zero rather than -1, we need to probe the InputStream (by
-                    // reading
-                    // one more byte) to see if inputStreamHint underestimated the actual length of
-                    // the stream
+                    // 如果 bytesRead 是 0 而不是 -1，我们需要探测 InputStream(通过再读取一个字节)，
+                    // 以查看 inputStreamHint 是否低估了流的实际长度
                     final byte[] overflowBuf = new byte[1];
                     final int overflowBufBytesUsed = inptStream.read(overflowBuf, 0, 1);
                     if (overflowBufBytesUsed == 1) {
-                        // We were able to read one more byte, so we're still not at the end of the
-                        // stream,
-                        // and we need to spill to disk, because buf is full
+                        // 我们能够读取到额外一个字节，说明仍未到达流末尾，
+                        // 需要溢出到磁盘，因为 buf 已满
                         return spillToDisk(inptStream, tempFileBaseName, buf, overflowBuf, log);
                     }
-                    // else (overflowBufBytesUsed == -1), so reached the end of the stream => don't
-                    // spill to disk
+                    // else (overflowBufBytesUsed == -1)，说明已到达流末尾 => 不溢出到磁盘
                 }
-                // Successfully reached end of stream
+                // 成功到达流末尾
                 if (bufBytesUsed < buf.length) {
-                    // Trim array if needed (this is needed if inputStreamLengthHint was -1, or
-                    // overestimated
-                    // the length of the InputStream)
+                    // 如果需要则裁剪数组(当 inputStreamLengthHint 为 -1 或高估了
+                    // InputStream 长度时需要这样做)
                     buf = Arrays.copyOf(buf, bufBytesUsed);
                 }
-                // Return buf as new ArraySlice
+                // 将 buf 作为新的 ArraySlice 返回
                 return new ArraySlice(buf, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */
                         0L, this);
 
             }
-            // inputStreamLengthHint is longer than scanSpec.maxJarRamSize, so immediately
-            // spill to disk
+            // inputStreamLengthHint 大于 scanSpec.maxJarRamSize，因此立即溢出到磁盘
             return spillToDisk(inptStream, tempFileBaseName, /* buf = */ null, /* overflowBuf = */ null, log);
         }
     }
 
     /**
-     * Spill an {@link InputStream} to disk if the stream is too large to fit in RAM.
+     * 如果流太大无法放入 RAM，则将 {@link InputStream} 溢出到磁盘
      *
      * @param inputStream
-     *            The {@link InputStream}.
+     *            {@link InputStream} 输入流
      * @param tempFileBaseName
-     *            The stem to base the temporary filename on.
+     *            临时文件名的词干
      * @param buf
-     *            The first buffer to write to the beginning of the file, or null if none.
+     *            要写入文件开头的第一个缓冲区，如果没有则为 null
      * @param overflowBuf
-     *            The second buffer to write to the beginning of the file, or null if none. (Should have same
-     *            nullity as buf.)
+     *            要写入文件开头的第二个缓冲区，如果没有则为 null(应与 buf 具有相同的空值性)
      * @param log
-     *            The log.
-     * @return the file slice
+     *            日志
+     * @return 文件切片
      * @throws IOException
-     *             If anything went wrong creating or writing to the temp file.
+     *             如果创建或写入临时文件时出现任何问题
      */
     private FileSlice spillToDisk(final InputStream inputStream, final String tempFileBaseName, final byte[] buf,
-            final byte[] overflowBuf, final LogNode log) throws IOException {
-        // Create temp file
+                                  final byte[] overflowBuf, final LogNode log) throws IOException {
+        // 创建临时文件
         File tempFile;
         try {
             tempFile = makeTempFile(tempFileBaseName, /* onlyUseLeafname = */ true);
@@ -944,93 +874,29 @@ public class NestedJarHandler {
                     + tempFileBaseName + " -> " + tempFile);
         }
 
-        // Copy everything read so far and the rest of the InputStream to the temporary
-        // file
+        // 将迄今为止读取的所有内容以及 InputStream 的其余部分复制到临时文件
         try (OutputStream outputStream = new BufferedOutputStream(new FileOutputStream(tempFile))) {
-            // Write already-read buffered bytes to temp file, if anything was read
+            // 将已读取的缓冲字节写入临时文件(如果有读取任何内容)
             if (buf != null) {
                 outputStream.write(buf);
                 outputStream.write(overflowBuf);
             }
-            // Copy the rest of the InputStream to the file
+            // 将 InputStream 的其余部分复制到文件
             final byte[] copyBuf = new byte[8192];
-            for (int bytesRead; (bytesRead = inputStream.read(copyBuf, 0, copyBuf.length)) > 0;) {
+            for (int bytesRead; (bytesRead = inputStream.read(copyBuf, 0, copyBuf.length)) > 0; ) {
                 outputStream.write(copyBuf, 0, bytesRead);
             }
         }
 
-        // Return a new FileSlice for the temporary file
+        // 为临时文件返回新的 FileSlice
         return new FileSlice(tempFile, this, log);
     }
 
     /**
-     * Read all the bytes in an {@link InputStream}.
-     * 
-     * @param inputStream
-     *            The {@link InputStream}.
-     * @param uncompressedLengthHint
-     *            The length of the data once inflated from the {@link InputStream}, if known, otherwise -1L.
-     * @return The contents of the {@link InputStream} as a byte array.
-     * @throws IOException
-     *             If the contents could not be read.
-     */
-    public static byte[] readAllBytesAsArray(final InputStream inputStream, final long uncompressedLengthHint)
-            throws IOException {
-        if (uncompressedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
-            throw new IOException("InputStream is too large to read");
-        }
-        try (InputStream inptStream = inputStream) {
-            final int bufferSize = uncompressedLengthHint < 1L
-                    // If fileSizeHint is zero or unknown, use default buffer size
-                    ? DEFAULT_BUFFER_SIZE
-                    // fileSizeHint is just a hint -- limit the max allocated buffer size, so that
-                    // invalid ZipEntry
-                    // lengths do not become a memory allocation attack vector
-                    : Math.min((int) uncompressedLengthHint, MAX_INITIAL_BUFFER_SIZE);
-            byte[] buf = new byte[bufferSize];
-            int totBytesRead = 0;
-            for (int bytesRead;;) {
-                while ((bytesRead = inptStream.read(buf, totBytesRead, buf.length - totBytesRead)) > 0) {
-                    // Fill buffer until nothing more can be read
-                    totBytesRead += bytesRead;
-                }
-                if (bytesRead < 0) {
-                    // Reached end of stream without filling buf
-                    break;
-                }
-
-                // bytesRead == 0: either the buffer was the correct size and the end of the
-                // stream has been
-                // reached, or the buffer was too small. Need to try reading one more byte to
-                // see which is
-                // the case.
-                final int extraByte = inptStream.read();
-                if (extraByte == -1) {
-                    // Reached end of stream
-                    break;
-                }
-
-                // Haven't reached end of stream yet. Need to grow the buffer (double its size),
-                // and append
-                // the extra byte that was just read.
-                if (buf.length == FileUtils.MAX_BUFFER_SIZE) {
-                    throw new IOException("InputStream too large to read into array");
-                }
-                buf = Arrays.copyOf(buf, (int) Math.min(buf.length * 2L, FileUtils.MAX_BUFFER_SIZE));
-                buf[totBytesRead++] = (byte) extraByte;
-            }
-            // Return buffer and number of bytes read
-            return totBytesRead == buf.length ? buf : Arrays.copyOf(buf, totBytesRead);
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Close zipfiles, modules, and recyclers, and delete temporary files. Called by {@link ScanResult#close()}.
-     * 
+     * 关闭 ZIP 文件、模块和回收器，并删除临时文件由 {@link ScanResult#close()} 调用
+     *
      * @param log
-     *            The log.
+     *            日志
      */
     public void close(final LogNode log) {
         if (!closed.getAndSet(true)) {
@@ -1040,12 +906,12 @@ public class NestedJarHandler {
                 while (!completedWithoutInterruption) {
                     try {
                         for (final Recycler<ModuleReaderProxy, IOException> recycler : //
-                        moduleRefToModuleReaderProxyRecyclerMap.values()) {
+                                moduleRefToModuleReaderProxyRecyclerMap.values()) {
                             recycler.forceClose();
                         }
                         completedWithoutInterruption = true;
                     } catch (final InterruptedException e) {
-                        // Try again if interrupted
+                        // 如果被中断则重试
                         interrupted = true;
                     }
                 }
@@ -1074,7 +940,7 @@ public class NestedJarHandler {
                         try {
                             slice.close();
                         } catch (final IOException e) {
-                            // Ignore
+                            // 忽略
                         }
                         markSliceAsClosed(slice);
                     }
@@ -1085,8 +951,7 @@ public class NestedJarHandler {
             if (inflaterRecycler != null) {
                 inflaterRecycler.forceClose();
             }
-            // Temp files have to be deleted last, after all PhysicalZipFiles are closed and
-            // files are unmapped
+            // 临时文件必须最后删除，在所有 PhysicalZipFile 关闭且文件取消映射之后
             if (tempFiles != null) {
                 final LogNode rmLog = tempFiles.isEmpty() || log == null ? null
                         : log.log("Removing temporary files");
@@ -1109,10 +974,7 @@ public class NestedJarHandler {
         }
     }
 
-    /**
-     * System.runFinalization() -- deprecated in JDK 18, so accessed by reflection.
-     */
-    private static Method runFinalizationMethod;
+    // -------------------------------------------------------------------------------------------------------------
 
     public void runFinalizationMethod() {
         if (runFinalizationMethod == null) {
@@ -1120,15 +982,67 @@ public class NestedJarHandler {
         }
         if (runFinalizationMethod != null) {
             try {
-                // Call System.runFinalization() (deprecated in JDK 18)
+                // 调用 System.runFinalization()(在 JDK 18 中已弃用)
                 runFinalizationMethod.invoke(null);
             } catch (final Throwable t) {
-                // Ignore
+                // 忽略
             }
         }
     }
 
     public void closeDirectByteBuffer(final ByteBuffer backingByteBuffer) {
         FileUtils.closeDirectByteBuffer(backingByteBuffer, reflectionUtils, /* log = */ null);
+    }
+
+    private static class CloseableUrlConnection implements AutoCloseable {
+        public final URLConnection conn;
+        public final HttpURLConnection httpConn;
+
+        public CloseableUrlConnection(final URL url) throws IOException {
+            conn = url.openConnection();
+            httpConn = conn instanceof HttpURLConnection ? (HttpURLConnection) conn : null;
+        }
+
+        @Override
+        public void close() {
+            if (httpConn != null) {
+                httpConn.disconnect();
+            }
+        }
+    }
+
+    /**
+     * 包装类，允许 {@link Inflater} 实例被重置以供复用，然后由 {@link Recycler} 回收
+     */
+    private static class RecyclableInflater implements Resettable, AutoCloseable {
+        /**
+         * 创建新的 {@link Inflater} 实例，使用 "nowrap" 选项(ZIP 文件条目需要此选项)
+         */
+        private final Inflater inflater = new Inflater(/* nowrap = */ true);
+
+        /**
+         * 获取 {@link Inflater} 实例
+         *
+         * @return {@link Inflater} 实例
+         */
+        public Inflater getInflater() {
+            return inflater;
+        }
+
+        /**
+         * 当 {@link Inflater} 实例被回收时调用，用于重置 inflater 以便接受新输入
+         */
+        @Override
+        public void reset() {
+            inflater.reset();
+        }
+
+        /**
+         * 当 {@link Recycler} 实例关闭时调用，用于销毁 {@link Inflater} 实例
+         */
+        @Override
+        public void close() {
+            inflater.end();
+        }
     }
 }

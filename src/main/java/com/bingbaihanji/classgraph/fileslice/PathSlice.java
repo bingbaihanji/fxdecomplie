@@ -26,7 +26,13 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice;
+package com.bingbaihanji.classgraph.fileslice;
+
+import com.bingbaihanji.classgraph.core.ClassGraph;
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.fileslice.reader.RandomAccessFileChannelReader;
+import com.bingbaihanji.classgraph.fileslice.reader.RandomAccessReader;
+import com.bingbaihanji.classgraph.utils.FileUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,49 +43,39 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.github.classgraph.ClassGraph;
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.fileslice.reader.RandomAccessFileChannelReader;
-import nonapi.io.github.classgraph.fileslice.reader.RandomAccessReader;
-import nonapi.io.github.classgraph.utils.FileUtils;
-
-/** A {@link Path} slice. */
+/** {@link Path} 切片 */
 public class PathSlice extends Slice {
-    /** The {@link Path}. */
+    /** {@link Path} 路径 */
     public final Path path;
 
-    /** The file length. */
+    /** 文件长度 */
     private final long fileLength;
-
-    /** The {@link FileChannel} opened on the {@link Path}. */
-    private FileChannel fileChannel;
-
-    /** True if this is a top level file slice. */
+    /** 如果这是顶级文件切片则为 true */
     private final boolean isTopLevelFileSlice;
-
-    /** True if {@link #close} has been called. */
+    /** 如果已调用 {@link #close} 则为 true */
     private final AtomicBoolean isClosed = new AtomicBoolean();
+    /** 在 {@link Path} 上打开的 {@link FileChannel} */
+    private volatile FileChannel fileChannel;
 
     /**
-     * Constructor for treating a range of a file as a slice.
+     * 用于将文件的一个范围视为切片的构造函数
      *
      * @param parentSlice
-     *            the parent slice
+     *            父切片
      * @param offset
-     *            the offset of the sub-slice within the parent slice
+     *            子切片在父切片中的偏移量
      * @param length
-     *            the length of the sub-slice
+     *            子切片的长度
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      */
     private PathSlice(final PathSlice parentSlice, final long offset, final long length,
-            final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-            final NestedJarHandler nestedJarHandler) {
+                      final boolean isDeflatedZipEntry, final long inflatedLengthHint,
+                      final NestedJarHandler nestedJarHandler) {
         super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
 
         this.path = parentSlice.path;
@@ -87,55 +83,51 @@ public class PathSlice extends Slice {
         this.fileLength = parentSlice.fileLength;
         this.isTopLevelFileSlice = false;
 
-        // Only mark toplevel file slices as open (sub slices don't need to be marked as
-        // open since
-        // they don't need to be closed, they just copy the resource references of the
-        // toplevel slice)
+        // 仅将顶级文件切片标记为打开状态(子切片不需要标记为打开状态，因为
+        // 它们不需要被关闭，它们只是复制顶级切片的资源引用)
     }
 
     /**
-     * Constructor for toplevel file slice.
+     * 顶级文件切片的构造函数
      *
      * @param path
-     *            the path
+     *            路径
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      * @throws IOException
-     *             if the file cannot be opened.
+     *             如果文件无法打开
      */
     public PathSlice(final Path path, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-            final NestedJarHandler nestedJarHandler) throws IOException {
+                     final NestedJarHandler nestedJarHandler) throws IOException {
         this(path, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler, true);
     }
 
     /**
-     * Constructor for toplevel file slice.
+     * 顶级文件切片的构造函数
      *
      * @param path
-     *            the path
+     *            路径
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      * @param checkAccess
-     *            whether it is needed to check read access and if it is a file
+     *            是否需要检查读取权限以及是否为文件
      * @throws IOException
-     *             if the file cannot be opened.
+     *             如果文件无法打开
      */
     public PathSlice(final Path path, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-            final NestedJarHandler nestedJarHandler, final boolean checkAccess) throws IOException {
+                     final NestedJarHandler nestedJarHandler, final boolean checkAccess) throws IOException {
         super(0L, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
 
         if (checkAccess) {
-            // Make sure the File is readable and is a regular file
+            // 确保文件可读且是普通文件
             FileUtils.checkCanReadAndIsFile(path);
         }
 
@@ -144,45 +136,44 @@ public class PathSlice extends Slice {
         this.fileLength = fileChannel.size();
         this.isTopLevelFileSlice = true;
 
-        // Had to use 0L for sliceLength in call to super, since FileChannel wasn't open
-        // yet => update sliceLength
+        // 调用 super 时不得不使用 0L 作为 sliceLength，因为那时 FileChannel 尚未打开
+        // => 现在更新 sliceLength
         this.sliceLength = fileLength;
 
-        // Mark toplevel slice as open
+        // 将顶级切片标记为打开状态
         nestedJarHandler.markSliceAsOpen(this);
     }
 
     /**
-     * Constructor for toplevel file slice.
+     * 顶级文件切片的构造函数
      *
      * @param path
-     *            the path
+     *            路径
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      * @throws IOException
-     *             if the file cannot be opened.
+     *             如果文件无法打开
      */
     public PathSlice(final Path path, final NestedJarHandler nestedJarHandler) throws IOException {
         this(path, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L, nestedJarHandler);
     }
 
     /**
-     * Slice the file.
+     * 切片文件
      *
      * @param offset
-     *            the offset of the sub-slice within the parent slice
+     *            子切片在父切片中的偏移量
      * @param length
-     *            the length of the sub-slice
+     *            子切片的长度
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
-     * @return the slice
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     * @return 切片
      */
     @Override
     public Slice slice(final long offset, final long length, final boolean isDeflatedZipEntry,
-            final long inflatedLengthHint) {
+                       final long inflatedLengthHint) {
         if (this.isDeflatedZipEntry) {
             throw new IllegalArgumentException("Cannot slice a deflated zip entry");
         }
@@ -190,27 +181,27 @@ public class PathSlice extends Slice {
     }
 
     /**
-     * Read directly from FileChannel (slow path, but handles >2GB).
+     * 直接从 FileChannel 读取(慢速路径，但可以处理大于 2GB 的文件)
      *
-     * @return the random access reader
+     * @return 随机访问读取器
      */
     @Override
     public RandomAccessReader randomAccessReader() {
-        // Return a RandomAccessReader that uses the FileChannel
+        // 返回使用 FileChannel 的 RandomAccessReader
         return new RandomAccessFileChannelReader(fileChannel, sliceStartPos, sliceLength);
     }
 
     /**
-     * Load the slice as a byte array.
+     * 将切片作为字节数组加载
      *
-     * @return the byte[]
+     * @return 字节数组
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             如果发生 I/O 异常
      */
     @Override
     public byte[] load() throws IOException {
         if (isDeflatedZipEntry) {
-            // Inflate into RAM if deflated
+            // 如果已压缩，则解压到内存中
             if (inflatedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
@@ -218,14 +209,14 @@ public class PathSlice extends Slice {
                 return NestedJarHandler.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else {
-            // Copy from FileChannel to byte array
+            // 从 FileChannel 复制到字节数组
             if (sliceLength > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("File is larger than 2GB");
             }
             final RandomAccessReader reader = randomAccessReader();
             final byte[] content = new byte[(int) sliceLength];
             if (reader.read(0, content, 0, content.length) < content.length) {
-                // Should not happen
+                // 不应发生
                 throw new IOException("File is truncated");
             }
             return content;
@@ -233,26 +224,24 @@ public class PathSlice extends Slice {
     }
 
     /**
-     * Read the slice into a {@link ByteBuffer} (or memory-map the slice to a {@link MappedByteBuffer}, if
-     * {@link ClassGraph#enableMemoryMapping()} was called.)
+     * 将切片读入 {@link ByteBuffer}(或者，如果调用了 {@link ClassGraph#enableMemoryMapping()}，
+     * 则将切片内存映射到 {@link MappedByteBuffer})
      *
-     * @return the byte buffer
+     * @return 字节缓冲区
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             如果发生 I/O 异常
      */
     @Override
     public ByteBuffer read() throws IOException {
         if (isDeflatedZipEntry) {
-            // Inflate to RAM if deflated (unfortunately there is no lazy-loading ByteBuffer
-            // that will
-            // decompress partial streams on demand, so we have to decompress the whole zip
-            // entry)
+            // 如果已压缩，则解压到内存中(遗憾的是，没有可以按需解压部分流的懒加载
+            // ByteBuffer，因此我们不得不解压整个 zip 条目)
             if (inflatedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
             return ByteBuffer.wrap(load());
         }
-        // Copy from FileChannel to byte array, then wrap in a ByteBuffer
+        // 从 FileChannel 复制到字节数组，然后包装成 ByteBuffer
         if (sliceLength > FileUtils.MAX_BUFFER_SIZE) {
             throw new IOException("File is larger than 2GB");
         }
@@ -269,18 +258,17 @@ public class PathSlice extends Slice {
         return super.hashCode();
     }
 
-    /** Close the slice. Unmaps any backing {@link MappedByteBuffer}. */
+    /** 关闭切片取消映射所有后备 {@link MappedByteBuffer} */
     @Override
     public void close() {
         if (!isClosed.getAndSet(true)) {
             if (isTopLevelFileSlice && fileChannel != null) {
-                // Only close the FileChannel in the toplevel file slice, so that it is only
-                // closed once
+                // 仅在顶级文件切片中关闭 FileChannel，这样它只关闭一次
                 try {
-                    // Closing raf will also close the associated FileChannel
+                    // 关闭 raf 也会关闭关联的 FileChannel
                     fileChannel.close();
                 } catch (final IOException e) {
-                    // Ignore
+                    // 忽略
                 }
                 fileChannel = null;
             }

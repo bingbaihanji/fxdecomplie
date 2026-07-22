@@ -31,6 +31,20 @@ public final class JadxDecompilerFacade {
                 .replace("\n", " ");
     }
 
+    /** 判断异常是否由线程中断/取消引起 */
+    private static boolean isInterruptRelated(Throwable ex) {
+        Throwable cause = ex;
+        while (cause != null) {
+            if (cause instanceof InterruptedException
+                    || cause instanceof java.util.concurrent.CancellationException
+                    || "Thread interrupted".equalsIgnoreCase(cause.getMessage())) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return Thread.currentThread().isInterrupted();
+    }
+
     public String decompile(JadxDecompilerRequest request) {
         JadxDecompilerResult result = decompileResult(request);
         if (result.isSuccess()) {
@@ -95,7 +109,11 @@ public final class JadxDecompilerFacade {
             long elapsed = System.currentTimeMillis() - start;
             String message = e.getMessage() == null || e.getMessage().isBlank()
                     ? e.getClass().getSimpleName() : e.getMessage();
-            log.error("jadx decompile exception: {} ({}ms): {}", typeName, elapsed, message, e);
+            if (isInterruptRelated(e)) {
+                log.debug("jadx decompile cancelled: {} ({}ms): {}", typeName, elapsed, message);
+            } else {
+                log.error("jadx decompile exception: {} ({}ms): {}", typeName, elapsed, message, e);
+            }
             return new JadxDecompilerResult(null, JadxResultStatus.EXCEPTION,
                     new JadxDiagnostic(JadxResultStatus.EXCEPTION,
                             sanitize(message), typeName.isBlank() ? null : typeName, elapsed));

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
  * 桥接项目 RenameService 的持久重命名与 jadx 内核 alias
  * <p>
  * 反编译完成后对源码应用项目级重命名，确保源码展示和导出路径与 RenameService 一致
- * 无 rename 时为空适配器（no-op）
+ * 无 rename 时为空适配器(no-op)
  *
  * @author bingbaihanji
  */

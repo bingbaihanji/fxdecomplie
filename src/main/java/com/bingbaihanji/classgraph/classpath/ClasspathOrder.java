@@ -26,7 +26,17 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.classpath;
+package com.bingbaihanji.classgraph.classpath;
+
+import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
+import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementFilter;
+import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementURLFilter;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.FastPathResolver;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.JarUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.File;
 import java.io.IOError;
@@ -38,41 +48,15 @@ import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.github.classgraph.ClassGraph.ClasspathElementFilter;
-import io.github.classgraph.ClassGraph.ClasspathElementURLFilter;
-import nonapi.io.github.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.FastPathResolver;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.JarUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
-
-/** A class to find the unique ordered classpath elements. */
+/** 用于查找唯一有序类路径元素的类 */
 public class ClasspathOrder {
-    /** The scan spec. */
-    private final ScanSpec scanSpec;
-
-    public ReflectionUtils reflectionUtils;
-
-    /** Unique classpath entries. */
-    private final Set<String> classpathEntryUniqueResolvedPaths = new HashSet<>();
-
-    /** The classpath order. Keys are instances of {@link String} or {@link URL}. */
-    private final List<ClasspathEntry> order = new ArrayList<>();
-
-    /** Suffixes for automatic package roots, e.g. "!/BOOT-INF/classes". */
+    /** 自动包根的后缀，例如 "!/BOOT-INF/classes" */
     private static final List<String> AUTOMATIC_PACKAGE_ROOT_SUFFIXES = new ArrayList<>();
-
-    /** Match URL schemes (must consist of at least two chars, otherwise this is Windows drive letter). */
+    /** 匹配 URL 方案(必须包含至少两个字符，否则可能是 Windows 驱动器号) */
     private static final Pattern schemeMatcher = Pattern.compile("^[a-zA-Z][a-zA-Z+\\-.]+:");
 
     static {
@@ -81,23 +65,517 @@ public class ClasspathOrder {
         }
     }
 
+    /** 扫描规格 */
+    private final ScanSpec scanSpec;
+    /** 唯一的类路径条目 */
+    private final Set<String> classpathEntryUniqueResolvedPaths = new HashSet<>();
+    /** 类路径顺序键是 {@link String} 或 {@link URL} 的实例 */
+    private final List<ClasspathEntry> order = new ArrayList<>();
+    public ReflectionUtils reflectionUtils;
+
     /**
-     * A classpath element and the {@link ClassLoader} it was obtained from.
+     * 构造函数
+     *
+     * @param scanSpec
+     *            扫描规格
+     */
+    ClasspathOrder(final ScanSpec scanSpec, final ReflectionUtils reflectionUtils) {
+        this.scanSpec = scanSpec;
+        this.reflectionUtils = reflectionUtils;
+    }
+
+    /**
+     * 获取类路径元素的顺序，已去重且有序
+     *
+     * @return 类路径顺序
+     */
+    public List<ClasspathEntry> getOrder() {
+        return order;
+    }
+
+    /**
+     * 获取唯一的类路径条目字符串
+     *
+     * @return 类路径条目字符串
+     */
+    public Set<String> getClasspathEntryUniqueResolvedPaths() {
+        return classpathEntryUniqueResolvedPaths;
+    }
+
+    /**
+     * 测试类路径元素是否被用户过滤掉
+     *
+     * @param classpathElementURL
+     *            类路径元素 URL
+     * @param classpathElementPath
+     *            类路径元素路径
+     * @return 如果未被过滤掉则返回 true
+     */
+    private boolean filter(final URL classpathElementURL, final String classpathElementPath) {
+        if (scanSpec.classpathElementFilters != null) {
+            for (final Object filterObj : scanSpec.classpathElementFilters) {
+                if ((classpathElementURL != null && filterObj instanceof ClasspathElementURLFilter
+                        && !((ClasspathElementURLFilter) filterObj).includeClasspathElement(classpathElementURL))
+                        || (classpathElementPath != null && filterObj instanceof ClasspathElementFilter
+                        && !((ClasspathElementFilter) filterObj)
+                        .includeClasspathElement(classpathElementPath))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 添加系统类路径条目
+     *
+     * @param pathEntry
+     *            系统类路径条目 -- 路径字符串应该已经通过
+     *            FastPathResolver.resolve(FileUtils.currDirPath(), path) 处理过
+     * @param classLoader
+     *            类加载器
+     * @return 如果添加成功且唯一则返回 true
+     */
+    boolean addSystemClasspathEntry(final String pathEntry, final ClassLoader classLoader) {
+        if (classpathEntryUniqueResolvedPaths.add(pathEntry)) {
+            order.add(new ClasspathEntry(pathEntry, classLoader));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 添加类路径条目
+     *
+     * @param pathElement
+     *            类路径元素的 {@link String} 路径、{@link File}、{@link Path}、{@link URL} 或 {@link URI}
+     * @param pathElementStr
+     *            字符串格式的路径元素
+     * @param classLoader
+     *            类加载器
+     * @param scanSpec
+     *            扫描规格
+     * @return 如果添加成功且唯一则返回 true
+     */
+    private boolean addClasspathEntry(final Object pathElement, final String pathElementStr,
+                                      final ClassLoader classLoader, final ScanSpec scanSpec) {
+        // 检查类路径元素路径是否以自动包根结尾如果是，则将其剥离以
+        // 消除重复，因为自动包根会被自动检测到(#435)
+        String pathElementStrWithoutSuffix = pathElementStr;
+        boolean hasSuffix = false;
+        for (final String suffix : AUTOMATIC_PACKAGE_ROOT_SUFFIXES) {
+            if (pathElementStr.endsWith(suffix)) {
+                // 剥离自动包根后缀
+                pathElementStrWithoutSuffix = pathElementStr.substring(0,
+                        pathElementStr.length() - suffix.length());
+                hasSuffix = true;
+                break;
+            }
+        }
+        if (pathElement instanceof URL || pathElement instanceof URI || pathElement instanceof Path
+                || pathElement instanceof File) {
+            Object pathElementWithoutSuffix = pathElement;
+            if (hasSuffix) {
+                try {
+                    pathElementWithoutSuffix = pathElement instanceof URL ? new URL(pathElementStrWithoutSuffix)
+                            : pathElement instanceof URI ? new URI(pathElementStrWithoutSuffix)
+                            : pathElement instanceof Path ? Paths.get(pathElementStrWithoutSuffix)
+                            // 对于 File，仅使用路径字符串
+                            : pathElementStrWithoutSuffix;
+                } catch (MalformedURLException | URISyntaxException | InvalidPathException e) {
+                    try {
+                        pathElementWithoutSuffix = pathElement instanceof URL
+                                ? new URL("file:" + pathElementStrWithoutSuffix)
+                                : pathElement instanceof URI ? new URI("file:" + pathElementStrWithoutSuffix)
+                                : pathElementStrWithoutSuffix;
+                    } catch (MalformedURLException | URISyntaxException | InvalidPathException e2) {
+                        return false;
+                    }
+                }
+            }
+            // 去重类路径元素
+            if (classpathEntryUniqueResolvedPaths.add(pathElementStrWithoutSuffix)) {
+                // 在类路径顺序中记录类路径元素
+                order.add(new ClasspathEntry(pathElementWithoutSuffix, classLoader));
+                return true;
+            }
+        } else {
+            final String pathElementStrResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
+                    pathElementStrWithoutSuffix);
+            if (scanSpec.overrideClasspath == null //
+                    && (SystemJarFinder.getJreLibOrExtJars().contains(pathElementStrResolved)
+                    || pathElementStrResolved.equals(SystemJarFinder.getJreRtJarPath()))) {
+                // JRE lib 和 ext JAR 会单独处理，因此如果它们由系统类加载器返回，
+                // 则作为重复项拒绝
+                return false;
+            }
+            if (classpathEntryUniqueResolvedPaths.add(pathElementStrResolved)) {
+                order.add(new ClasspathEntry(pathElementStrResolved, classLoader));
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 添加相对于基础文件的类路径元素可由 ClassLoaderHandler 调用以添加其已知的类路径元素
+     * ClassLoader 将按顺序被调用
+     *
+     * @param pathElement
+     *            类路径元素的 {@link String} 路径、{@link URL} 或 {@link URI}，或是某个可以调用其
+     *            {@link Object#toString()} 方法来获取类路径元素的对象
+     * @param classLoader
+     *            获取此 classpath 元素的 ClassLoader
+     * @param scanSpec
+     *            扫描规格
+     * @param log
+     *            在详细模式下记录日志时使用的 LogNode 实例
+     * @return 如果 pathElement 不为 null、不为空、存在且未被用户指定的条件过滤掉，则返回 true
+     *         (并添加类路径元素)，否则返回 false
+     */
+    public boolean addClasspathEntry(final Object pathElement, final ClassLoader classLoader,
+                                     final ScanSpec scanSpec, final LogNode log) {
+        if (pathElement == null) {
+            return false;
+        }
+        String pathElementStr;
+        if (pathElement instanceof Path) {
+            try {
+                // Path 对象在调用 .toString() 之前必须先转换为 URI，否则 scheme 会丢失
+                pathElementStr = ((Path) pathElement).toUri().toString();
+                // Windows 路径("C:\x\y")会被 Path.toUri().toString() 编码为 "file:///C:/x/y"，
+                // 但 Paths.get() 无法处理 "///C:/x/y" 形式的路径
+                if (pathElementStr.startsWith("file:///")) {
+                    pathElementStr = ((Path) pathElement).toFile().toString();
+                }
+            } catch (IOError | SecurityException e) {
+                pathElementStr = pathElement.toString();
+            }
+        } else {
+            pathElementStr = pathElement.toString();
+        }
+        pathElementStr = FastPathResolver.resolve(FileUtils.currDirPath(), pathElementStr);
+        if (pathElementStr.isEmpty()) {
+            return false;
+        }
+        URL pathElementURL = null;
+        boolean hasWildcardSuffix = false;
+        // 回退方案 -- 对路径元素调用 toString()，然后尝试转换为 URL
+        if (pathElementStr.endsWith("/*") || pathElementStr.endsWith("\\*")) {
+            hasWildcardSuffix = true;
+            pathElementStr = pathElementStr.substring(0, pathElementStr.length() - 2);
+            // 将 pathElementURL 保持为 null，以便下面可以处理通配符
+        } else if ("*".equals(pathElementStr)) {
+            hasWildcardSuffix = true;
+            pathElementStr = "";
+            // 将 pathElementURL 保持为 null，以便下面可以处理通配符
+        } else {
+            final Matcher m1 = schemeMatcher.matcher(pathElementStr);
+            if (m1.find()) {
+                // 路径元素字符串是带有 `[jar:]file:` 以外 scheme 的 URL，因此需要实际
+                // 解析 URL，因为 scheme 可能是自定义 scheme
+                try {
+                    pathElementURL = pathElement instanceof URL ? (URL) pathElement
+                            : pathElement instanceof URI ? ((URI) pathElement).toURL()
+                            : pathElement instanceof Path ? ((Path) pathElement).toUri().toURL()
+                            : pathElement instanceof File ? ((File) pathElement).toURI().toURL()
+                            : null;
+                } catch (final MalformedURLException | IllegalArgumentException | IOError | SecurityException e2) {
+                    // 穿透处理
+                }
+                if (pathElementURL == null) {
+                    // 对 URL 中的百分号字符进行转义(#255)
+                    final String urlStr = pathElementStr.replace("%", "%25");
+                    try {
+                        pathElementURL = new URL(urlStr);
+                    } catch (final MalformedURLException e) {
+                        try {
+                            pathElementURL = new File(urlStr).toURI().toURL();
+                        } catch (final MalformedURLException | IllegalArgumentException | IOError
+                                       | SecurityException e1) {
+                            // 最终回退方案 -- 尝试直接使用原始字符串作为 URL
+                            try {
+                                pathElementURL = new URL(pathElementStr);
+                            } catch (final MalformedURLException e2) {
+                                // 穿透处理
+                            }
+                        }
+                    }
+                }
+                if (pathElementURL == null) {
+                    if (log != null) {
+                        log.log("Failed to convert classpath element to URL: " + pathElement);
+                    }
+                }
+            }
+        }
+        if (pathElementURL != null || pathElement instanceof URI || pathElement instanceof File
+                || pathElement instanceof Path) {
+            if (!filter(pathElementURL, pathElementStr)) {
+                if (log != null) {
+                    log.log("Classpath element did not match filter criterion, skipping: " + pathElementStr);
+                }
+                return false;
+            }
+            // 对于 URL 对象，使用对象本身(以便稍后可以进行 URL scheme 处理)；
+            // 对于 URI 和 Path 对象，转换为 URL；对于 File 对象，使用 toString 结果(路径)
+            final Object classpathElementObj;
+            classpathElementObj = pathElement instanceof File ? pathElementStr
+                    : pathElementURL != null ? pathElementURL : pathElement;
+            if (addClasspathEntry(classpathElementObj, pathElementStr, classLoader, scanSpec)) {
+                if (log != null) {
+                    log.log("Found classpath element: " + pathElementStr);
+                }
+                return true;
+            } else {
+                if (log != null) {
+                    log.log("Ignoring duplicate classpath element: " + pathElementStr);
+                }
+                return false;
+            }
+        }
+        if (hasWildcardSuffix) {
+            // 具有通配符路径元素(自 JDK 6 起允许用于本地类路径)
+            // 应用类路径元素过滤器(如果有的话)
+            final String baseDirPath = pathElementStr;
+            final String baseDirPathResolved = FastPathResolver.resolve(FileUtils.currDirPath(), baseDirPath);
+            if (!filter(pathElementURL, baseDirPath)
+                    || (!baseDirPathResolved.equals(baseDirPath) && !filter(pathElementURL, baseDirPathResolved))) {
+                if (log != null) {
+                    log.log("Classpath element did not match filter criterion, skipping: " + pathElementStr);
+                }
+                return false;
+            }
+
+            // 检查 "/*" 后缀之前的路径是否为目录
+            final File baseDir = new File(baseDirPathResolved);
+            if (!baseDir.exists()) {
+                if (log != null) {
+                    log.log("Directory does not exist for wildcard classpath element: " + pathElementStr);
+                }
+                return false;
+            }
+            if (!FileUtils.canRead(baseDir)) {
+                if (log != null) {
+                    log.log("Cannot read directory for wildcard classpath element: " + pathElementStr);
+                }
+                return false;
+            }
+            if (!baseDir.isDirectory()) {
+                if (log != null) {
+                    log.log("Wildcard is appended to something other than a directory: " + pathElementStr);
+                }
+                return false;
+            }
+
+            // 将请求目录中的所有元素添加到类路径
+            final LogNode dirLog = log == null ? null
+                    : log.log("Adding classpath elements from wildcarded directory: " + pathElementStr);
+            final File[] baseDirFiles = baseDir.listFiles();
+            if (baseDirFiles != null) {
+                for (final File fileInDir : baseDirFiles) {
+                    final String name = fileInDir.getName();
+                    if (!".".equals(name) && !"..".equals(name)) {
+                        // 将每个目录条目作为类路径元素添加
+                        final String fileInDirPath = fileInDir.getPath();
+                        final String fileInDirPathResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
+                                fileInDirPath);
+                        if (addClasspathEntry(fileInDirPathResolved, fileInDirPathResolved, classLoader,
+                                scanSpec)) {
+                            if (dirLog != null) {
+                                dirLog.log("Found classpath element: " + fileInDirPath
+                                        + (fileInDirPath.equals(fileInDirPathResolved) ? ""
+                                        : " -> " + fileInDirPathResolved));
+                            }
+                        } else {
+                            if (dirLog != null) {
+                                dirLog.log("Ignoring duplicate classpath element: " + fileInDirPath
+                                        + (fileInDirPath.equals(fileInDirPathResolved) ? ""
+                                        : " -> " + fileInDirPathResolved));
+                            }
+                        }
+                    }
+                }
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            // 非通配符(标准)类路径元素
+            if (pathElementStr.indexOf('*') >= 0) {
+                if (log != null) {
+                    log.log("Wildcard classpath elements can only end with a suffix of \"/*\", "
+                            + "can't use globs elsewhere in the path: " + pathElementStr);
+                }
+                return false;
+            }
+            final String pathElementResolved = FastPathResolver.resolve(FileUtils.currDirPath(), pathElementStr);
+            if (!filter(pathElementURL, pathElementStr) || (!pathElementResolved.equals(pathElementStr)
+                    && !filter(pathElementURL, pathElementResolved))) {
+                if (log != null) {
+                    log.log("Classpath element did not match filter criterion, skipping: " + pathElementStr
+                            + (pathElementStr.equals(pathElementResolved) ? "" : " -> " + pathElementResolved));
+                }
+                return false;
+            }
+            if (pathElementResolved.startsWith("//")) {
+                // 处理 Windows UNC 路径(#705)
+                // File 直接支持 UNC 路径：
+                // https://wiki.eclipse.org/Eclipse/UNC_Paths#Programming_with_UNC_paths
+                try {
+                    final File file = new File(pathElementResolved);
+                    if (addClasspathEntry(file, pathElementResolved, classLoader, scanSpec)) {
+                        if (log != null) {
+                            log.log("Found classpath element: " + file
+                                    + (pathElementStr.equals(pathElementResolved) ? ""
+                                    : " -> " + pathElementResolved));
+                        }
+                        return true;
+                    } else {
+                        if (log != null) {
+                            log.log("Ignoring duplicate classpath element: " + pathElementStr
+                                    + (pathElementStr.equals(pathElementResolved) ? ""
+                                    : " -> " + pathElementResolved));
+                        }
+                        return false;
+                    }
+                } catch (final Exception e) {
+                    // 穿透处理
+                }
+            }
+            if (addClasspathEntry(pathElementResolved, pathElementResolved, classLoader, scanSpec)) {
+                if (log != null) {
+                    log.log("Found classpath element: " + pathElementStr
+                            + (pathElementStr.equals(pathElementResolved) ? "" : " -> " + pathElementResolved));
+                }
+                return true;
+            } else {
+                if (log != null) {
+                    log.log("Ignoring duplicate classpath element: " + pathElementStr
+                            + (pathElementStr.equals(pathElementResolved) ? "" : " -> " + pathElementResolved));
+                }
+                return false;
+            }
+        }
+    }
+
+    /**
+     * 添加由系统路径分隔符分隔的类路径条目
+     *
+     * @param overrideClasspath
+     *            一个由 {@link String}、{@link URL}、{@link URI} 或 {@link File} 对象组成的路径列表
+     * @param classLoader
+     *            获取此 classpath 的 ClassLoader
+     * @param scanSpec
+     *            扫描规格
+     * @param log
+     *            在详细模式下记录日志时使用的 LogNode 实例
+     * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
+     */
+    public boolean addClasspathEntries(final List<Object> overrideClasspath, final ClassLoader classLoader,
+                                       final ScanSpec scanSpec, final LogNode log) {
+        if (overrideClasspath == null || overrideClasspath.isEmpty()) {
+            return false;
+        } else {
+            for (final Object pathElement : overrideClasspath) {
+                addClasspathEntry(pathElement, classLoader, scanSpec, log);
+            }
+            return true;
+        }
+    }
+
+    /**
+     * 添加由系统路径分隔符分隔的类路径条目
+     *
+     * @param pathStr
+     *            包含 URL 或路径的分隔字符串形式的类路径
+     * @param classLoader
+     *            获取此 classpath 的 ClassLoader
+     * @param scanSpec
+     *            扫描规格
+     * @param log
+     *            在详细模式下记录日志时使用的 LogNode 实例
+     * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
+     */
+    public boolean addClasspathPathStr(final String pathStr, final ClassLoader classLoader, final ScanSpec scanSpec,
+                                       final LogNode log) {
+        if (pathStr == null || pathStr.isEmpty()) {
+            return false;
+        } else {
+            final String[] parts = JarUtils.smartPathSplit(pathStr, scanSpec);
+            if (parts.length == 0) {
+                return false;
+            } else {
+                for (final String pathElement : parts) {
+                    addClasspathEntry(pathElement, classLoader, scanSpec, log);
+                }
+                return true;
+            }
+        }
+    }
+
+    /**
+     * 从通过反射获取的对象中添加类路径条目该对象可以是 {@link URL}、{@link URI}、
+     * {@link File}、{@link Path} 或 {@link String}(包含单个类路径元素路径，或包含由
+     * File.pathSeparator 分隔的多个路径)、List 或其他 Iterable，或数组对象对于 Iterable
+     * 和数组，元素可以是任何其 {@code toString()} 方法返回路径或 URL 字符串的类型(包括
+     * {@code URL} 和 {@code Path} 类型)
+     *
+     * @param pathObject
+     *            包含一个或多个类路径字符串的对象
+     * @param classLoader
+     *            获取此 classpath 的 ClassLoader
+     * @param scanSpec
+     *            扫描规格
+     * @param log
+     *            在详细模式下记录日志时使用的 LogNode 实例
+     * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
+     */
+    public boolean addClasspathEntryObject(final Object pathObject, final ClassLoader classLoader,
+                                           final ScanSpec scanSpec, final LogNode log) {
+        boolean valid = false;
+        if (pathObject != null) {
+            if (pathObject instanceof URL || pathObject instanceof URI || pathObject instanceof Path
+                    || pathObject instanceof File) {
+                valid |= addClasspathEntry(pathObject, classLoader, scanSpec, log);
+            } else if (pathObject instanceof Iterable) {
+                for (final Object elt : (Iterable<?>) pathObject) {
+                    valid |= addClasspathEntryObject(elt, classLoader, scanSpec, log);
+                }
+            } else {
+                final Class<?> valClass = pathObject.getClass();
+                if (valClass.isArray()) {
+                    for (int j = 0, n = Array.getLength(pathObject); j < n; j++) {
+                        final Object elt = Array.get(pathObject, j);
+                        valid |= addClasspathEntryObject(elt, classLoader, scanSpec, log);
+                    }
+                } else {
+                    // 作为最终回退方案，简单地调用 toString() 来处理 String 对象，
+                    // 或尝试处理其他任何类型
+                    valid |= addClasspathPathStr(pathObject.toString(), classLoader, scanSpec, log);
+                }
+            }
+        }
+        return valid;
+    }
+
+    /**
+     * 一个类路径元素及其来源的 {@link ClassLoader}
      */
     public static class ClasspathEntry {
-        /** The classpath entry object (a {@link String} path, {@link Path}, {@link URL} or {@link URI}). */
+        /** 类路径条目对象({@link String} 路径、{@link Path}、{@link URL} 或 {@link URI}) */
         public final Object classpathEntryObj;
 
-        /** The classloader the classpath element was obtained from. */
+        /** 获取此 classpath 元素的类加载器 */
         public final ClassLoader classLoader;
 
         /**
-         * Constructor.
+         * 构造函数
          *
          * @param classpathEntryObj
-         *            the classpath entry object (a {@link String} or {@link URL} or {@link Path}).
+         *            类路径条目对象({@link String} 或 {@link URL} 或 {@link Path})
          * @param classLoader
-         *            the classloader the classpath element was obtained from.
+         *            获取此 classpath 元素的类加载器
          */
         public ClasspathEntry(final Object classpathEntryObj, final ClassLoader classLoader) {
             this.classpathEntryObj = classpathEntryObj;
@@ -124,492 +602,5 @@ public class ClasspathOrder {
         public String toString() {
             return classpathEntryObj + " [" + classLoader + "]";
         }
-    }
-
-    /**
-     * Constructor.
-     *
-     * @param scanSpec
-     *            the scan spec
-     */
-    ClasspathOrder(final ScanSpec scanSpec, final ReflectionUtils reflectionUtils) {
-        this.scanSpec = scanSpec;
-        this.reflectionUtils = reflectionUtils;
-    }
-
-    /**
-     * Get the order of classpath elements, uniquified and in order.
-     *
-     * @return the classpath order.
-     */
-    public List<ClasspathEntry> getOrder() {
-        return order;
-    }
-
-    /**
-     * Get the unique classpath entry strings.
-     *
-     * @return the classpath entry strings.
-     */
-    public Set<String> getClasspathEntryUniqueResolvedPaths() {
-        return classpathEntryUniqueResolvedPaths;
-    }
-
-    /**
-     * Test to see if a classpath element has been filtered out by the user.
-     * 
-     * @param classpathElementURL
-     *            the classpath element URL
-     * @param classpathElementPath
-     *            the classpath element path
-     * @return true, if not filtered out
-     */
-    private boolean filter(final URL classpathElementURL, final String classpathElementPath) {
-        if (scanSpec.classpathElementFilters != null) {
-            for (final Object filterObj : scanSpec.classpathElementFilters) {
-                if ((classpathElementURL != null && filterObj instanceof ClasspathElementURLFilter
-                        && !((ClasspathElementURLFilter) filterObj).includeClasspathElement(classpathElementURL))
-                        || (classpathElementPath != null && filterObj instanceof ClasspathElementFilter
-                                && !((ClasspathElementFilter) filterObj)
-                                        .includeClasspathElement(classpathElementPath))) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Add a system classpath entry.
-     *
-     * @param pathEntry
-     *            the system classpath entry -- the path string should already have been run through
-     *            FastPathResolver.resolve(FileUtils.currDirPath(), path)
-     * @param classLoader
-     *            the classloader
-     * @return true, if added and unique
-     */
-    boolean addSystemClasspathEntry(final String pathEntry, final ClassLoader classLoader) {
-        if (classpathEntryUniqueResolvedPaths.add(pathEntry)) {
-            order.add(new ClasspathEntry(pathEntry, classLoader));
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Add a classpath entry.
-     *
-     * @param pathElement
-     *            the {@link String} path, {@link File}, {@link Path}, {@link URL} or {@link URI} of the classpath
-     *            element.
-     * @param pathElementStr
-     *            the path element in string format
-     * @param classLoader
-     *            the classloader
-     * @param scanSpec
-     *            the scan spec
-     * @return true, if added and unique
-     */
-    private boolean addClasspathEntry(final Object pathElement, final String pathElementStr,
-            final ClassLoader classLoader, final ScanSpec scanSpec) {
-        // Check if classpath element path ends with an automatic package root. If so, strip it off to
-        // eliminate duplication, since automatic package roots are detected automatically (#435)
-        String pathElementStrWithoutSuffix = pathElementStr;
-        boolean hasSuffix = false;
-        for (final String suffix : AUTOMATIC_PACKAGE_ROOT_SUFFIXES) {
-            if (pathElementStr.endsWith(suffix)) {
-                // Strip off automatic package root suffix
-                pathElementStrWithoutSuffix = pathElementStr.substring(0,
-                        pathElementStr.length() - suffix.length());
-                hasSuffix = true;
-                break;
-            }
-        }
-        if (pathElement instanceof URL || pathElement instanceof URI || pathElement instanceof Path
-                || pathElement instanceof File) {
-            Object pathElementWithoutSuffix = pathElement;
-            if (hasSuffix) {
-                try {
-                    pathElementWithoutSuffix = pathElement instanceof URL ? new URL(pathElementStrWithoutSuffix)
-                            : pathElement instanceof URI ? new URI(pathElementStrWithoutSuffix)
-                                    : pathElement instanceof Path ? Paths.get(pathElementStrWithoutSuffix)
-                                            // For File, just use path string
-                                            : pathElementStrWithoutSuffix;
-                } catch (MalformedURLException | URISyntaxException | InvalidPathException e) {
-                    try {
-                        pathElementWithoutSuffix = pathElement instanceof URL
-                                ? new URL("file:" + pathElementStrWithoutSuffix)
-                                : pathElement instanceof URI ? new URI("file:" + pathElementStrWithoutSuffix)
-                                        : pathElementStrWithoutSuffix;
-                    } catch (MalformedURLException | URISyntaxException | InvalidPathException e2) {
-                        return false;
-                    }
-                }
-            }
-            // Deduplicate classpath elements
-            if (classpathEntryUniqueResolvedPaths.add(pathElementStrWithoutSuffix)) {
-                // Record classpath element in classpath order
-                order.add(new ClasspathEntry(pathElementWithoutSuffix, classLoader));
-                return true;
-            }
-        } else {
-            final String pathElementStrResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
-                    pathElementStrWithoutSuffix);
-            if (scanSpec.overrideClasspath == null //
-                    && (SystemJarFinder.getJreLibOrExtJars().contains(pathElementStrResolved)
-                            || pathElementStrResolved.equals(SystemJarFinder.getJreRtJarPath()))) {
-                // JRE lib and ext jars are handled separately, so reject them as duplicates if they are 
-                // returned by a system classloader
-                return false;
-            }
-            if (classpathEntryUniqueResolvedPaths.add(pathElementStrResolved)) {
-                order.add(new ClasspathEntry(pathElementStrResolved, classLoader));
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Add a classpath element relative to a base file. May be called by a ClassLoaderHandler to add classpath
-     * elements that it knows about. ClassLoaders will be called in order.
-     *
-     * @param pathElement
-     *            the {@link String} path, {@link URL} or {@link URI} of the classpath element, or some object whose
-     *            {@link Object#toString()} method can be called to obtain the classpath element.
-     * @param classLoader
-     *            the ClassLoader that this classpath element was obtained from.
-     * @param scanSpec
-     *            the scan spec
-     * @param log
-     *            the LogNode instance to use if logging in verbose mode.
-     * @return true (and add the classpath element) if pathElement is not null, empty, nonexistent, or filtered out
-     *         by user-specified criteria, otherwise return false.
-     */
-    public boolean addClasspathEntry(final Object pathElement, final ClassLoader classLoader,
-            final ScanSpec scanSpec, final LogNode log) {
-        if (pathElement == null) {
-            return false;
-        }
-        String pathElementStr;
-        if (pathElement instanceof Path) {
-            try {
-                // Path objects have to be converted to URIs before calling .toString(), otherwise scheme is dropped 
-                pathElementStr = ((Path) pathElement).toUri().toString();
-                // Windows paths ("C:\x\y") are encoded as "file:///C:/x/y" by Path.toUri().toString(),
-                // but then Paths.get() can't handle paths of the form "///C:/x/y"
-                if (pathElementStr.startsWith("file:///")) {
-                    pathElementStr = ((Path) pathElement).toFile().toString();
-                }
-            } catch (IOError | SecurityException e) {
-                pathElementStr = pathElement.toString();
-            }
-        } else {
-            pathElementStr = pathElement.toString();
-        }
-        pathElementStr = FastPathResolver.resolve(FileUtils.currDirPath(), pathElementStr);
-        if (pathElementStr.isEmpty()) {
-            return false;
-        }
-        URL pathElementURL = null;
-        boolean hasWildcardSuffix = false;
-        // Fallback -- call toString() on the path element, then try converting to a URL
-        if (pathElementStr.endsWith("/*") || pathElementStr.endsWith("\\*")) {
-            hasWildcardSuffix = true;
-            pathElementStr = pathElementStr.substring(0, pathElementStr.length() - 2);
-            // Leave pathElementURL null, so that wildcards can be handled below
-        } else if (pathElementStr.equals("*")) {
-            hasWildcardSuffix = true;
-            pathElementStr = "";
-            // Leave pathElementURL null, so that wildcards can be handled below
-        } else {
-            final Matcher m1 = schemeMatcher.matcher(pathElementStr);
-            if (m1.find()) {
-                // Path element string is URL with scheme other than `[jar:]file:`, so need to actually
-                // parse URL, since the scheme may be a custom scheme
-                try {
-                    pathElementURL = pathElement instanceof URL ? (URL) pathElement
-                            : pathElement instanceof URI ? ((URI) pathElement).toURL()
-                                    : pathElement instanceof Path ? ((Path) pathElement).toUri().toURL()
-                                            : pathElement instanceof File ? ((File) pathElement).toURI().toURL()
-                                                    : null;
-                } catch (final MalformedURLException | IllegalArgumentException | IOError | SecurityException e2) {
-                    // Fall through
-                }
-                if (pathElementURL == null) {
-                    // Escape percentage characters in URLs (#255)
-                    final String urlStr = pathElementStr.replace("%", "%25");
-                    try {
-                        pathElementURL = new URL(urlStr);
-                    } catch (final MalformedURLException e) {
-                        try {
-                            pathElementURL = new File(urlStr).toURI().toURL();
-                        } catch (final MalformedURLException | IllegalArgumentException | IOError
-                                | SecurityException e1) {
-                            // Final fallback -- try just using the raw string as a URL
-                            try {
-                                pathElementURL = new URL(pathElementStr);
-                            } catch (final MalformedURLException e2) {
-                                // Fall through
-                            }
-                        }
-                    }
-                }
-                if (pathElementURL == null) {
-                    if (log != null) {
-                        log.log("Failed to convert classpath element to URL: " + pathElement);
-                    }
-                }
-            }
-        }
-        if (pathElementURL != null || pathElement instanceof URI || pathElement instanceof File
-                || pathElement instanceof Path) {
-            if (!filter(pathElementURL, pathElementStr)) {
-                if (log != null) {
-                    log.log("Classpath element did not match filter criterion, skipping: " + pathElementStr);
-                }
-                return false;
-            }
-            // For URL objects, use the object itself (so that URL scheme handling can be undertaken later);
-            // for URI and Path objects, convert to URL; for File objects, use the toString result (the path)
-            final Object classpathElementObj;
-            classpathElementObj = pathElement instanceof File ? pathElementStr
-                    : pathElementURL != null ? pathElementURL : pathElement;
-            if (addClasspathEntry(classpathElementObj, pathElementStr, classLoader, scanSpec)) {
-                if (log != null) {
-                    log.log("Found classpath element: " + pathElementStr);
-                }
-                return true;
-            } else {
-                if (log != null) {
-                    log.log("Ignoring duplicate classpath element: " + pathElementStr);
-                }
-                return false;
-            }
-        }
-        if (hasWildcardSuffix) {
-            // Has wildcard path element (allowable for local classpaths as of JDK 6)
-            // Apply classpath element filters, if any 
-            final String baseDirPath = pathElementStr;
-            final String baseDirPathResolved = FastPathResolver.resolve(FileUtils.currDirPath(), baseDirPath);
-            if (!filter(pathElementURL, baseDirPath)
-                    || (!baseDirPathResolved.equals(baseDirPath) && !filter(pathElementURL, baseDirPathResolved))) {
-                if (log != null) {
-                    log.log("Classpath element did not match filter criterion, skipping: " + pathElementStr);
-                }
-                return false;
-            }
-
-            // Check the path before the "/*" suffix is a directory 
-            final File baseDir = new File(baseDirPathResolved);
-            if (!baseDir.exists()) {
-                if (log != null) {
-                    log.log("Directory does not exist for wildcard classpath element: " + pathElementStr);
-                }
-                return false;
-            }
-            if (!FileUtils.canRead(baseDir)) {
-                if (log != null) {
-                    log.log("Cannot read directory for wildcard classpath element: " + pathElementStr);
-                }
-                return false;
-            }
-            if (!baseDir.isDirectory()) {
-                if (log != null) {
-                    log.log("Wildcard is appended to something other than a directory: " + pathElementStr);
-                }
-                return false;
-            }
-
-            // Add all elements in the requested directory to the classpath
-            final LogNode dirLog = log == null ? null
-                    : log.log("Adding classpath elements from wildcarded directory: " + pathElementStr);
-            final File[] baseDirFiles = baseDir.listFiles();
-            if (baseDirFiles != null) {
-                for (final File fileInDir : baseDirFiles) {
-                    final String name = fileInDir.getName();
-                    if (!name.equals(".") && !name.equals("..")) {
-                        // Add each directory entry as a classpath element
-                        final String fileInDirPath = fileInDir.getPath();
-                        final String fileInDirPathResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
-                                fileInDirPath);
-                        if (addClasspathEntry(fileInDirPathResolved, fileInDirPathResolved, classLoader,
-                                scanSpec)) {
-                            if (dirLog != null) {
-                                dirLog.log("Found classpath element: " + fileInDirPath
-                                        + (fileInDirPath.equals(fileInDirPathResolved) ? ""
-                                                : " -> " + fileInDirPathResolved));
-                            }
-                        } else {
-                            if (dirLog != null) {
-                                dirLog.log("Ignoring duplicate classpath element: " + fileInDirPath
-                                        + (fileInDirPath.equals(fileInDirPathResolved) ? ""
-                                                : " -> " + fileInDirPathResolved));
-                            }
-                        }
-                    }
-                }
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            // Non-wildcarded (standard) classpath element
-            if (pathElementStr.indexOf('*') >= 0) {
-                if (log != null) {
-                    log.log("Wildcard classpath elements can only end with a suffix of \"/*\", "
-                            + "can't use globs elsewhere in the path: " + pathElementStr);
-                }
-                return false;
-            }
-            final String pathElementResolved = FastPathResolver.resolve(FileUtils.currDirPath(), pathElementStr);
-            if (!filter(pathElementURL, pathElementStr) || (!pathElementResolved.equals(pathElementStr)
-                    && !filter(pathElementURL, pathElementResolved))) {
-                if (log != null) {
-                    log.log("Classpath element did not match filter criterion, skipping: " + pathElementStr
-                            + (pathElementStr.equals(pathElementResolved) ? "" : " -> " + pathElementResolved));
-                }
-                return false;
-            }
-            if (pathElementResolved.startsWith("//")) {
-                // Handle Windows UNC paths (#705).
-                // File supports UNC paths directly:
-                // https://wiki.eclipse.org/Eclipse/UNC_Paths#Programming_with_UNC_paths
-                try {
-                    final File file = new File(pathElementResolved);
-                    if (addClasspathEntry(file, pathElementResolved, classLoader, scanSpec)) {
-                        if (log != null) {
-                            log.log("Found classpath element: " + file
-                                    + (pathElementStr.equals(pathElementResolved) ? ""
-                                            : " -> " + pathElementResolved));
-                        }
-                        return true;
-                    } else {
-                        if (log != null) {
-                            log.log("Ignoring duplicate classpath element: " + pathElementStr
-                                    + (pathElementStr.equals(pathElementResolved) ? ""
-                                            : " -> " + pathElementResolved));
-                        }
-                        return false;
-                    }
-                } catch (final Exception e) {
-                    // Fall through
-                }
-            }
-            if (addClasspathEntry(pathElementResolved, pathElementResolved, classLoader, scanSpec)) {
-                if (log != null) {
-                    log.log("Found classpath element: " + pathElementStr
-                            + (pathElementStr.equals(pathElementResolved) ? "" : " -> " + pathElementResolved));
-                }
-                return true;
-            } else {
-                if (log != null) {
-                    log.log("Ignoring duplicate classpath element: " + pathElementStr
-                            + (pathElementStr.equals(pathElementResolved) ? "" : " -> " + pathElementResolved));
-                }
-                return false;
-            }
-        }
-    }
-
-    /**
-     * Add classpath entries, separated by the system path separator character.
-     *
-     * @param overrideClasspath
-     *            a list of delimited path {@link String}, {@link URL}, {@link URI} or {@link File} objects.
-     * @param classLoader
-     *            the ClassLoader that this classpath was obtained from.
-     * @param scanSpec
-     *            the scan spec
-     * @param log
-     *            the LogNode instance to use if logging in verbose mode.
-     * @return true (and add the classpath element) if pathElement is not null or empty, otherwise return false.
-     */
-    public boolean addClasspathEntries(final List<Object> overrideClasspath, final ClassLoader classLoader,
-            final ScanSpec scanSpec, final LogNode log) {
-        if (overrideClasspath == null || overrideClasspath.isEmpty()) {
-            return false;
-        } else {
-            for (final Object pathElement : overrideClasspath) {
-                addClasspathEntry(pathElement, classLoader, scanSpec, log);
-            }
-            return true;
-        }
-    }
-
-    /**
-     * Add classpath entries, separated by the system path separator character.
-     *
-     * @param pathStr
-     *            the delimited string of URLs or paths of the classpath.
-     * @param classLoader
-     *            the ClassLoader that this classpath was obtained from.
-     * @param scanSpec
-     *            the scan spec
-     * @param log
-     *            the LogNode instance to use if logging in verbose mode.
-     * @return true (and add the classpath element) if pathElement is not null or empty, otherwise return false.
-     */
-    public boolean addClasspathPathStr(final String pathStr, final ClassLoader classLoader, final ScanSpec scanSpec,
-            final LogNode log) {
-        if (pathStr == null || pathStr.isEmpty()) {
-            return false;
-        } else {
-            final String[] parts = JarUtils.smartPathSplit(pathStr, scanSpec);
-            if (parts.length == 0) {
-                return false;
-            } else {
-                for (final String pathElement : parts) {
-                    addClasspathEntry(pathElement, classLoader, scanSpec, log);
-                }
-                return true;
-            }
-        }
-    }
-
-    /**
-     * Add classpath entries from an object obtained from reflection. The object may be a {@link URL}, a
-     * {@link URI}, a {@link File}, a {@link Path} or a {@link String} (containing a single classpath element path,
-     * or several paths separated with File.pathSeparator), a List or other Iterable, or an array object. In the
-     * case of Iterables and arrays, the elements may be any type whose {@code toString()} method returns a path or
-     * URL string (including the {@code URL} and {@code Path} types).
-     *
-     * @param pathObject
-     *            the object containing a classpath string or strings.
-     * @param classLoader
-     *            the ClassLoader that this classpath was obtained from.
-     * @param scanSpec
-     *            the scan spec
-     * @param log
-     *            the LogNode instance to use if logging in verbose mode.
-     * @return true (and add the classpath element) if pathEl)ement is not null or empty, otherwise return false.
-     */
-    public boolean addClasspathEntryObject(final Object pathObject, final ClassLoader classLoader,
-            final ScanSpec scanSpec, final LogNode log) {
-        boolean valid = false;
-        if (pathObject != null) {
-            if (pathObject instanceof URL || pathObject instanceof URI || pathObject instanceof Path
-                    || pathObject instanceof File) {
-                valid |= addClasspathEntry(pathObject, classLoader, scanSpec, log);
-            } else if (pathObject instanceof Iterable) {
-                for (final Object elt : (Iterable<?>) pathObject) {
-                    valid |= addClasspathEntryObject(elt, classLoader, scanSpec, log);
-                }
-            } else {
-                final Class<?> valClass = pathObject.getClass();
-                if (valClass.isArray()) {
-                    for (int j = 0, n = Array.getLength(pathObject); j < n; j++) {
-                        final Object elt = Array.get(pathObject, j);
-                        valid |= addClasspathEntryObject(elt, classLoader, scanSpec, log);
-                    }
-                } else {
-                    // Try simply calling toString() as a final fallback, to handle String objects, or to
-                    // try to handle anything else
-                    valid |= addClasspathPathStr(pathObject.toString(), classLoader, scanSpec, log);
-                }
-            }
-        }
-        return valid;
     }
 }

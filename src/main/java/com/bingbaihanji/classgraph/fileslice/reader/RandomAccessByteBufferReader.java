@@ -26,43 +26,38 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice.reader;
+package com.bingbaihanji.classgraph.fileslice.reader;
+
+import com.bingbaihanji.classgraph.utils.StringUtils;
 
 import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ReadOnlyBufferException;
-
-import nonapi.io.github.classgraph.utils.StringUtils;
+import java.nio.*;
 
 /**
- * {@link RandomAccessReader} for a {@link ByteBuffer}. Reads in <b>little endian</b> order, as required by the
- * zipfile format.
+ * 用于 {@link ByteBuffer} 的 {@link RandomAccessReader}按 zipfile 格式所需的<b>小端序</b>读取
  */
 public class RandomAccessByteBufferReader implements RandomAccessReader {
-    /** The byte buffer. */
+    /** 字节缓冲区 */
     private final ByteBuffer byteBuffer;
 
-    /** The slice start pos. */
+    /** 切片起始位置 */
     private final int sliceStartPos;
 
-    /** The slice length. */
+    /** 切片长度 */
     private final int sliceLength;
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param byteBuffer
-     *            the byte buffer
+     *            字节缓冲区
      * @param sliceStartPos
-     *            the slice start pos
+     *            切片起始位置
      * @param sliceLength
-     *            the slice length
+     *            切片长度
      */
     public RandomAccessByteBufferReader(final ByteBuffer byteBuffer, final long sliceStartPos,
-            final long sliceLength) {
+                                        final long sliceLength) {
         this.byteBuffer = byteBuffer.duplicate();
         this.byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         this.sliceStartPos = (int) sliceStartPos;
@@ -164,13 +159,12 @@ public class RandomAccessByteBufferReader implements RandomAccessReader {
 
     @Override
     public String readString(final long offset, final int numBytes, final boolean replaceSlashWithDot,
-            final boolean stripLSemicolon) throws IOException {
-        final int idx = (int) (sliceStartPos + offset);
+                             final boolean stripLSemicolon) throws IOException {
         final byte[] arr = new byte[numBytes];
         if (read(offset, arr, 0, numBytes) < numBytes) {
             throw new IOException("Premature EOF while reading string");
         }
-        return StringUtils.readString(arr, idx, numBytes, replaceSlashWithDot, stripLSemicolon);
+        return StringUtils.readString(arr, 0, numBytes, replaceSlashWithDot, stripLSemicolon);
     }
 
     @Override

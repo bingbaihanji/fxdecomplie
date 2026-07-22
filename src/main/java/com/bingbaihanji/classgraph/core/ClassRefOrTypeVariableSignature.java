@@ -26,11 +26,11 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-/** A class type or type variable. Subclasses are ClassRefTypeSignature and TypeVariableSignature. */
+/** 类类型或类型变量子类包括 ClassRefTypeSignature 和 TypeVariableSignature */
 public abstract class ClassRefOrTypeVariableSignature extends ReferenceTypeSignature {
-    /** Constructor. */
+    /** 构造器 */
     protected ClassRefOrTypeVariableSignature() {
         super();
     }

@@ -247,7 +247,7 @@ public class Types {
      * @param type
      * 		待检查的类型
      *
-     * @return 若为宽类型（占两个槽位）则返回 {@code true}
+     * @return 若为宽类型(占两个槽位)则返回 {@code true}
      */
     public static boolean isWide(Type type) {
         if (type == null) {

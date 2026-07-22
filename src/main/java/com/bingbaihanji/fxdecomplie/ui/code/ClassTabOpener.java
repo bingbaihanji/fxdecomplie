@@ -1223,11 +1223,7 @@ public final class ClassTabOpener {
             }
         }
 
-        // ---- 提取元数据用于 Ctrl+Click 导航 大源码的链接扫描会被禁用,这里也跳过避免拖慢首屏 ----
-        CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
-                ? OutlineParser.extractMetadata(sourceCode, bytes)
-                : new CodeMetadata(Map.of());
-        return new DecompileResult(sourceCode, metadata, effectiveEngine);
+        return new DecompileResult(sourceCode, effectiveEngine);
     }
 
     /** 强制重新反编译当前类,跳过 L2/L3 读取 成功后用新结果回填缓存 */
@@ -1260,10 +1256,7 @@ public final class ClassTabOpener {
                     DiskCodeCache.save(cacheWsKey, internalName, effectiveEngine, optionsHash, finalSource));
         }
 
-        CodeMetadata metadata = sourceCode != null && sourceCode.length() <= METADATA_SOURCE_THRESHOLD
-                ? OutlineParser.extractMetadata(sourceCode, bytes)
-                : new CodeMetadata(Map.of());
-        return new DecompileResult(sourceCode, metadata, effectiveEngine);
+        return new DecompileResult(sourceCode, effectiveEngine);
     }
 
     private DecompilerTypeEnum effectiveEngineFor(byte[] bytes, DecompilerTypeEnum requestedEngine) {
@@ -1312,8 +1305,8 @@ public final class ClassTabOpener {
         return WorkspaceIndex.EMPTY;
     }
 
-    /** 反编译结果,包含源码和元数据 */
-    private record DecompileResult(String sourceCode, CodeMetadata metadata, DecompilerTypeEnum engine) {
+    /** 反编译结果,包含源码和实际使用的引擎 */
+    private record DecompileResult(String sourceCode, DecompilerTypeEnum engine) {
     }
 
 }

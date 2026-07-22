@@ -378,12 +378,12 @@ public abstract class FieldAccess {
             case Type.LONG:
                 setterMethodName = "setLong";
                 loadValueInstruction = LLOAD;
-                maxLocals++; // （LLOAD 与 DLOAD 实际占用两个槽位）
+                maxLocals++; // (LLOAD 与 DLOAD 实际占用两个槽位)
                 break;
             case Type.DOUBLE:
                 setterMethodName = "setDouble";
                 loadValueInstruction = DLOAD;
-                maxLocals++; // （LLOAD 与 DLOAD 实际占用两个槽位）
+                maxLocals++; // (LLOAD 与 DLOAD 实际占用两个槽位)
                 break;
             default:
                 setterMethodName = "set";

@@ -26,35 +26,35 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.ParseException;
 
 /**
- * Stores the type descriptor of a {@code Class<?>}, as found in an annotation parameter value.
+ * 存储在注解参数值中找到的 {@code Class<?>} 类型描述符
  */
 public class AnnotationClassRef extends ScanResultObject {
-    /** The type descriptor str. */
+    /** 类型描述符字符串 */
     private String typeDescriptorStr;
 
-    /** The type signature. */
+    /** 类型签名 */
     private transient TypeSignature typeSignature;
 
-    /** The class name. */
+    /** 类名 */
     private transient String className;
 
     /**
-     * Constructor.
+     * 构造函数
      */
     AnnotationClassRef() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param typeDescriptorStr
-     *            the type descriptor str
+     *            类型描述符字符串
      */
     AnnotationClassRef(final String typeDescriptorStr) {
         super();
@@ -64,25 +64,25 @@ public class AnnotationClassRef extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the name of the referenced class.
+     * 获取被引用类的名称
      *
-     * @return The name of the referenced class.
+     * @return 被引用类的名称
      */
     public String getName() {
         return getClassName();
     }
 
     /**
-     * Get the type signature.
+     * 获取类型签名
      *
-     * @return The type signature of the {@code Class<?>} reference. This will be a {@link ClassRefTypeSignature}, a
-     *         {@link BaseTypeSignature}, or an {@link ArrayTypeSignature}.
+     * @return {@code Class<?>} 引用的类型签名可能是 {@link ClassRefTypeSignature}、
+     *         {@link BaseTypeSignature} 或 {@link ArrayTypeSignature}
      */
     private TypeSignature getTypeSignature() {
         if (typeSignature == null) {
             try {
-                // There can't be any type variables to resolve in ClassRefTypeSignature,
-                // BaseTypeSignature or ArrayTypeSignature, so just set definingClassName to null
+                // ClassRefTypeSignature、BaseTypeSignature 或 ArrayTypeSignature 中不可能有待解析的类型变量，
+                // 所以直接将 definingClassName 设为 null
                 typeSignature = TypeSignature.parse(typeDescriptorStr, /* definingClassName = */ null);
                 typeSignature.setScanResult(scanResult);
             } catch (final ParseException e) {
@@ -93,13 +93,13 @@ public class AnnotationClassRef extends ScanResultObject {
     }
 
     /**
-     * Loads the referenced class, returning a {@code Class<?>} reference for the referenced class.
-     * 
+     * 加载被引用的类，返回被引用类的 {@code Class<?>} 引用
+     *
      * @param ignoreExceptions
-     *            if true, ignore exceptions and instead return null if the class could not be loaded.
-     * @return The {@code Class<?>} reference for the referenced class.
+     *            如果为 true，则忽略异常，在类无法加载时返回 null
+     * @return 被引用类的 {@code Class<?>} 引用
      * @throws IllegalArgumentException
-     *             if the class could not be loaded and ignoreExceptions was false.
+     *             如果类无法加载且 ignoreExceptions 为 false
      */
     @Override
     public Class<?> loadClass(final boolean ignoreExceptions) {
@@ -117,11 +117,11 @@ public class AnnotationClassRef extends ScanResultObject {
     }
 
     /**
-     * Loads the referenced class, returning a {@code Class<?>} reference for the referenced class.
-     * 
-     * @return The {@code Class<?>} reference for the referenced class.
+     * 加载被引用的类，返回被引用类的 {@code Class<?>} 引用
+     *
+     * @return 被引用类的 {@code Class<?>} 引用
      * @throws IllegalArgumentException
-     *             if the class could not be loaded.
+     *             如果类无法加载
      */
     @Override
     public Class<?> loadClass() {
@@ -131,7 +131,7 @@ public class AnnotationClassRef extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -152,12 +152,11 @@ public class AnnotationClassRef extends ScanResultObject {
     }
 
     /**
-     * Get the class info.
+     * 获取类信息
      *
-     * @return The {@link ClassInfo} object for the referenced class, or null if the referenced class was not
-     *         encountered during scanning (i.e. if no ClassInfo object was created for the class during scanning).
-     *         N.B. even if this method returns null, {@link #loadClass()} may be able to load the referenced class
-     *         by name.
+     * @return 被引用类的 {@link ClassInfo} 对象，如果被引用类在扫描期间未被遇到则返回 null
+     *         (即在扫描期间没有为该类创建 ClassInfo 对象)
+     *         注意：即使此方法返回 null，{@link #loadClass()} 也可能能够按名称加载被引用类
      */
     @Override
     public ClassInfo getClassInfo() {
@@ -166,7 +165,7 @@ public class AnnotationClassRef extends ScanResultObject {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -201,14 +200,13 @@ public class AnnotationClassRef extends ScanResultObject {
 
     @Override
     protected void toString(final boolean useSimpleNames, final StringBuilder buf) {
-        // More recent versions of Annotation::toString() have dropped the "class"/"interface" prefix,
-        // and added ".class" to the end of the class reference (which does not actually match the
-        // annotation source syntax...)
+        // 较新版本的 Annotation::toString() 已经去掉了 "class"/"interface" 前缀，
+        // 并在类引用末尾添加了 ".class"(这实际上并不匹配注解源码语法……)
 
         //        String prefix = "class ";
         //        if (scanResult != null) {
         //            final ClassInfo ci = getClassInfo();
-        //            // The JDK uses "interface" for both interfaces and annotations in Annotation::toString
+        //            // JDK 在 Annotation::toString 中对接口和注解都使用 "interface"
         //            if (ci != null && ci.isInterfaceOrAnnotation()) {
         //                prefix = "interface ";
         //            }

@@ -26,13 +26,12 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.recycler;
+package com.bingbaihanji.classgraph.recycler;
 
 /**
- * An interface for recycleable objects that need to be reset when {@link RecycleOnClose#close()} is called to
- * recycle the object.
+ * 可回收对象的接口，当调用 {@link RecycleOnClose#close()} 回收对象时需要重置该对象
  */
 public interface Resettable {
-    /** Reset a recycleable object (called when the object is recycled). */
+    /** 重置一个可回收对象(在对象被回收时调用) */
     void reset();
 }

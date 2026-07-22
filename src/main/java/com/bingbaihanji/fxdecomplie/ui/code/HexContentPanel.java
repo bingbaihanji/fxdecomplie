@@ -9,7 +9,7 @@ import javafx.scene.Node;
 
 /**
  * HEX 内容面板，使用 {@link HexView} 以十六进制表格展示类文件原始字节，
- * 支持选择、搜索、跳转、复制和 Java 字节码结构高亮。
+ * 支持选择、搜索、跳转、复制和 Java 字节码结构高亮
  *
  * @author bingbaihanji
  * @date 2026-06-30
@@ -28,7 +28,7 @@ public class HexContentPanel extends AbstractCodeContentPanel {
     /**
      * 构造 HEX 内容面板
      *
-     * @param classBytes 类文件原始字节码（内部会做防御性拷贝）
+     * @param classBytes 类文件原始字节码(内部会做防御性拷贝)
      * @param theme      编辑器主题数据
      */
     public HexContentPanel(byte[] classBytes, ThemeData theme) {

@@ -26,7 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.utils;
+package com.bingbaihanji.classgraph.utils;
+
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -36,51 +39,48 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-
 /**
- * Jarfile utilities.
+ * Jar 文件工具类
  */
 public final class JarUtils {
     /**
-     * Check if a path has a URL scheme at the beginning. Require at least 2 chars in a URL scheme, so that Windows
-     * drive designations don't get treated as URL schemes.
+     * 检查路径开头是否具有 URL 方案要求 URL 方案至少包含 2 个字符，
+     * 以防止 Windows 驱动器标识被误认为是 URL 方案
      */
     public static final Pattern URL_SCHEME_PATTERN = Pattern.compile("[a-zA-Z][a-zA-Z0-9+-.]+[:].*");
 
-    /** The Constant DASH_VERSION. */
+    /** 常量 DASH_VERSION */
     private static final Pattern DASH_VERSION = Pattern.compile("-(\\d+(\\.|$))");
 
-    /** The Constant NON_ALPHANUM. */
+    /** 常量 NON_ALPHANUM */
     private static final Pattern NON_ALPHANUM = Pattern.compile("[^A-Za-z0-9]");
 
-    /** The Constant REPEATING_DOTS. */
+    /** 常量 REPEATING_DOTS */
     private static final Pattern REPEATING_DOTS = Pattern.compile("(\\.)(\\1)+");
 
-    /** The Constant LEADING_DOTS. */
+    /** 常量 LEADING_DOTS */
     private static final Pattern LEADING_DOTS = Pattern.compile("^\\.");
 
-    /** The Constant TRAILING_DOTS. */
+    /** 常量 TRAILING_DOTS */
     private static final Pattern TRAILING_DOTS = Pattern.compile("\\.$");
 
-    /** The Constant DOUBLE_BACKSHLASH_WITH_COLON. */
+    /** 常量 DOUBLE_BACKSHLASH_WITH_COLON */
     private static final Pattern DOUBLE_BACKSHLASH_WITH_COLON = Pattern.compile("\\\\:");
 
     /**
-     * On everything but Windows, where the path separator is ':', need to treat the colon in these substrings as
-     * non-separators, when at the beginning of the string or following a ':'.
+     * 在路径分隔符为 ':' 的非 Windows 系统上，
+     * 当以下子字符串出现在字符串开头或跟随 ':' 时，需要将其中的冒号视为非分隔符
      */
     private static final String[] UNIX_NON_PATH_SEPARATORS = { //
             "jar:", "file:", "http://", "https://", //
-            // Allow for escaping of ':' characters in paths, which probably goes beyond what the spec would allow
-            // for, but would make sense, since File.separatorChar will never be '\\' when File.pathSeparatorChar is
-            // ':'
+            // 允许在路径中转义 ':' 字符，这可能超出规范允许的范围，
+            // 但这样做是合理的，因为当 File.pathSeparatorChar 为 ':' 时，
+            // File.separatorChar 永远不会是 '\\'
             "\\:" //
     };
 
     /**
-     * The position of the colon characters in the corresponding UNIX_NON_PATH_SEPARATORS array entry.
+     * 对应 UNIX_NON_PATH_SEPARATORS 数组条目中冒号字符的位置
      */
     private static final int[] UNIX_NON_PATH_SEPARATOR_COLON_POSITIONS;
 
@@ -95,44 +95,44 @@ public final class JarUtils {
     }
 
     /**
-     * Constructor.
+     * 构造方法
      */
     private JarUtils() {
-        // Cannot be constructed
+        // 不可构造
     }
 
     /**
-     * Split a path on File.pathSeparator (':' on Linux, ';' on Windows), but also allow for the use of URLs with
-     * protocol specifiers, e.g. "http://domain/jar1.jar:http://domain/jar2.jar".
+     * 按 File.pathSeparator(Linux 上为 ':'，Windows 上为 ';')拆分路径，
+     * 但同时允许使用带协议说明符的 URL，例如 "http://domain/jar1.jar:http://domain/jar2.jar"
      *
      * @param pathStr
-     *            The path to split.
+     *            要拆分的路径
      * @param scanSpec
-     *            the scan spec
-     * @return The path element substrings.
+     *            扫描规格
+     * @return 路径元素子字符串数组
      */
     public static String[] smartPathSplit(final String pathStr, final ScanSpec scanSpec) {
         return smartPathSplit(pathStr, File.pathSeparatorChar, scanSpec);
     }
 
     /**
-     * Split a path on the given separator char. If the separator char is ':', also allow for the use of URLs with
-     * protocol specifiers, e.g. "http://domain/jar1.jar:http://domain/jar2.jar".
+     * 按给定的分隔符字符拆分路径如果分隔符字符是 ':'，
+     * 则同时允许使用带协议说明符的 URL，例如 "http://domain/jar1.jar:http://domain/jar2.jar"
      *
      * @param pathStr
-     *            The path to split.
+     *            要拆分的路径
      * @param separatorChar
-     *            The separator char to use.
+     *            要使用的分隔符字符
      * @param scanSpec
-     *            the scan spec
-     * @return The path element substrings.
+     *            扫描规格
+     * @return 路径元素子字符串数组
      */
     public static String[] smartPathSplit(final String pathStr, final char separatorChar, final ScanSpec scanSpec) {
         if (pathStr == null || pathStr.isEmpty()) {
             return new String[0];
         }
         if (separatorChar != ':') {
-            // The fast path for Windows (which uses ';' as a path separator), or for separator other than ':'
+            // Windows(使用 ';' 作为路径分隔符)或分隔符不是 ':' 时的快速路径
             final List<String> partsFiltered = new ArrayList<>();
             for (final String part : pathStr.split(String.valueOf(separatorChar))) {
                 final String partFiltered = part.trim();
@@ -142,30 +142,30 @@ public final class JarUtils {
             }
             return partsFiltered.toArray(new String[0]);
         } else {
-            // If the separator char is ':', don't split on URL protocol boundaries.
-            // This will allow for HTTP(S) jars to be given in java.class.path.
-            // (The JRE may not even support them, but we may as well do so.)
+            // 如果分隔符字符是 ':'，不要在 URL 协议边界处拆分
+            // 这将允许 HTTP(S) JAR 在 java.class.path 中使用
+            // (JRE 甚至可能不支持它们，但我们不妨支持一下)
             final Set<Integer> splitPoints = new HashSet<>();
-            for (int i = -1;;) {
+            for (int i = -1; ; ) {
                 boolean foundNonPathSeparator = false;
                 for (int j = 0; j < UNIX_NON_PATH_SEPARATORS.length; j++) {
-                    // Skip ':' characters in the middle of non-path-separators such as "http://"
+                    // 跳过非路径分隔符(如 "http://")中间的 ':' 字符
                     final int startIdx = i - UNIX_NON_PATH_SEPARATOR_COLON_POSITIONS[j];
                     if (pathStr.regionMatches(true, startIdx, UNIX_NON_PATH_SEPARATORS[j], 0,
                             UNIX_NON_PATH_SEPARATORS[j].length())
                             && (startIdx == 0 || pathStr.charAt(startIdx - 1) == ':')) {
-                        // Don't treat the "jar:" in the middle of "x.jar:y.jar" as a URL scheme
+                        // 不要把 "x.jar:y.jar" 中间的 "jar:" 当作 URL 方案
                         foundNonPathSeparator = true;
                         break;
                     }
                 }
                 if (!foundNonPathSeparator && scanSpec != null && scanSpec.allowedURLSchemes != null
                         && !scanSpec.allowedURLSchemes.isEmpty()) {
-                    // If custom URL schemes have been registered, allow those to be used as delimiters too
+                    // 如果注册了自定义 URL 方案，也将其用作分隔符
                     for (final String scheme : scanSpec.allowedURLSchemes) {
-                        // Skip schemes already handled by the faster matching code above
-                        if (!scheme.equals("http") && !scheme.equals("https") && !scheme.equals("jar")
-                                && !scheme.equals("file")) {
+                        // 跳过上方更快匹配代码中已处理的方案
+                        if (!"http".equals(scheme) && !"https".equals(scheme) && !"jar".equals(scheme)
+                                && !"file".equals(scheme)) {
                             final int schemeLen = scheme.length();
                             final int startIdx = i - schemeLen;
                             if (pathStr.regionMatches(true, startIdx, scheme, 0, schemeLen)
@@ -177,13 +177,13 @@ public final class JarUtils {
                     }
                 }
                 if (!foundNonPathSeparator) {
-                    // The ':' character is a valid path separator
+                    // ':' 字符是有效的路径分隔符
                     splitPoints.add(i);
                 }
-                // Search for next ':' character
+                // 搜索下一个 ':' 字符
                 i = pathStr.indexOf(':', i + 1);
                 if (i < 0) {
-                    // Add end of string marker once last ':' has been found
+                    // 找到最后一个 ':' 后添加字符串结束标记
                     splitPoints.add(pathStr.length());
                     break;
                 }
@@ -194,10 +194,10 @@ public final class JarUtils {
             for (int i = 1; i < splitPointsSorted.size(); i++) {
                 final int idx0 = splitPointsSorted.get(i - 1);
                 final int idx1 = splitPointsSorted.get(i);
-                // Trim, and unescape "\\:"
+                // 去空格，并反转义 "\\:"
                 String part = pathStr.substring(idx0 + 1, idx1).trim();
-                part = DOUBLE_BACKSHLASH_WITH_COLON.matcher(part).replaceAll( ":");
-                // Remove empty path components
+                part = DOUBLE_BACKSHLASH_WITH_COLON.matcher(part).replaceAll(":");
+                // 移除空路径组件
                 if (!part.isEmpty()) {
                     parts.add(part);
                 }
@@ -209,33 +209,31 @@ public final class JarUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Append a path element to a buffer.
+     * 向缓冲区追加路径元素
      *
      * @param pathElt
-     *            the path element
+     *            路径元素
      * @param buf
-     *            the buf
+     *            缓冲区
      */
     private static void appendPathElt(final Object pathElt, final StringBuilder buf) {
         if (buf.length() > 0) {
             buf.append(File.pathSeparatorChar);
         }
-        // Escape any rogue path separators, as long as file separator is not '\\' (on Windows, if there are any
-        // extra ';' characters in a path element, there's really nothing we can do to escape them, since they can't
-        // be escaped as "\\;")
+        // 转义任何异常路径分隔符，只要文件分隔符不是 '\\'(在 Windows 上，
+        // 如果路径元素中有任何额外的 ';' 字符，我们无法将它们转义为 "\\;")
         final String path = File.separatorChar == '\\' ? pathElt.toString()
                 : pathElt.toString().replaceAll(File.pathSeparator, "\\" + File.pathSeparator);
         buf.append(path);
     }
 
     /**
-     * Get a set of path elements as a string, from an array of objects (e.g. of String, File or URL type, whose
-     * toString() method will be called to get the path component), and return the path as a single string
-     * delineated with the standard path separator character.
-     * 
+     * 从对象数组(例如 String、File 或 URL 类型，将调用其 toString() 方法以获取路径组件)
+     * 获取一组路径元素的字符串表示，并将路径作为以标准路径分隔符字符分隔的单个字符串返回
+     *
      * @param pathElts
-     *            The path elements.
-     * @return The delimited path formed out of the path elements.
+     *            路径元素
+     * @return 由路径元素组成的带分隔符的路径
      */
     public static String pathElementsToPathStr(final Object... pathElts) {
         final StringBuilder buf = new StringBuilder();
@@ -246,13 +244,12 @@ public final class JarUtils {
     }
 
     /**
-     * Get a set of path elements as a string, from an array of objects (e.g. of String, File or URL type, whose
-     * toString() method will be called to get the path component), and return the path as a single string
-     * delineated with the standard path separator character.
-     * 
+     * 从对象数组(例如 String、File 或 URL 类型，将调用其 toString() 方法以获取路径组件)
+     * 获取一组路径元素的字符串表示，并将路径作为以标准路径分隔符字符分隔的单个字符串返回
+     *
      * @param pathElts
-     *            The path elements.
-     * @return The delimited path formed out of the path elements, after calling each of their toString() methods.
+     *            路径元素
+     * @return 调用每个对象的 toString() 方法后，由路径元素组成的带分隔符的路径
      */
     public static String pathElementsToPathStr(final Iterable<?> pathElts) {
         final StringBuilder buf = new StringBuilder();
@@ -265,18 +262,18 @@ public final class JarUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Returns the leafname of a path, after first stripping off everything after the first '!', if present.
-     * 
+     * 返回路径的叶子名称，首先剥离第一个 '!' 之后的所有内容(如果存在)
+     *
      * @param path
-     *            A file path.
-     * @return The leafname of the path.
+     *            文件路径
+     * @return 路径的叶子名称
      */
     public static String leafName(final String path) {
         final int bangIdx = path.indexOf('!');
         final int endIdx = bangIdx >= 0 ? bangIdx : path.length();
         int leafStartIdx = 1 + (File.separatorChar == '/' ? path.lastIndexOf('/', endIdx)
                 : Math.max(path.lastIndexOf('/', endIdx), path.lastIndexOf(File.separatorChar, endIdx)));
-        // In case of temp files (for jars extracted from within jars), remove the temp filename prefix -- see
+        // 对于临时文件(从 JAR 中提取的 JAR)，移除临时文件名前缀 -- 参见
         // NestedJarHandler.unzipToTempFile()
         int sepIdx = path.indexOf(NestedJarHandler.TEMP_FILENAME_LEAF_SEPARATOR);
         if (sepIdx >= 0) {
@@ -290,11 +287,11 @@ public final class JarUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Convert a classfile path to the corresponding class name.
+     * 将类文件路径转换为对应的类名
      *
      * @param classfilePath
-     *            the classfile path
-     * @return the class name
+     *            类文件路径
+     * @return 类名
      */
     public static String classfilePathToClassName(final String classfilePath) {
         if (!classfilePath.endsWith(".class")) {
@@ -304,11 +301,11 @@ public final class JarUtils {
     }
 
     /**
-     * Convert a class name to the corresponding classfile path.
+     * 将类名转换为对应的类文件路径
      *
      * @param className
-     *            the class name
-     * @return the classfile path
+     *            类名
+     * @return 类文件路径
      */
     public static String classNameToClassfilePath(final String className) {
         return className.replace('.', '/') + ".class";
@@ -317,57 +314,56 @@ public final class JarUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Derive automatic module name from jar name, using <a href=
-     * "https://docs.oracle.com/javase/9/docs/api/java/lang/module/ModuleFinder.html#of-java.nio.file.Path...-">this
-     * algorithm</a>.
-     * 
+     * 根据 JAR 名称推导自动模块名称，使用 <a href=
+     * "https://docs.oracle.com/javase/9/docs/api/java/lang/module/ModuleFinder.html#of-java.nio.file.Path...-">此算法</a>
+     *
      * @param jarPath
-     *            The jar path.
-     * @return The automatic module name.
+     *            JAR 路径
+     * @return 自动模块名称
      */
     public static String derivedAutomaticModuleName(final String jarPath) {
-        // If jar path does not end in a file extension (with ".jar" most likely), strip off everything after
-        // the last '!', in order to remove package root
+        // 如果 JAR 路径不以文件扩展名结尾(最可能是 ".jar")，
+        // 则剥离最后一个 '!' 之后的所有内容，以便移除包根目录
         int endIdx = jarPath.length();
         final int lastPlingIdx = jarPath.lastIndexOf('!');
         if (lastPlingIdx > 0
-                // If there is no '.' after the last '/' (if any) after the last '!'
+                // 如果最后一个 '!' 之后的最后一个 '/'(如果有)之后没有 '.'
                 && jarPath.lastIndexOf('.') <= Math.max(lastPlingIdx, jarPath.lastIndexOf('/'))) {
-            // Then truncate at last '!'
+            // 则在最后一个 '!' 处截断
             endIdx = lastPlingIdx;
         }
-        // Find the second to last '!' (or -1, if none)
+        // 找到倒数第二个 '!'(或 -1，如果没有)
         final int secondToLastPlingIdx = endIdx == 0 ? -1 : jarPath.lastIndexOf("!", endIdx - 1);
-        // Find last '/' between the second to last and the last '!'
+        // 找到倒数第二个到最后一个 '!' 之间的最后一个 '/'
         final int startIdx = Math.max(secondToLastPlingIdx, jarPath.lastIndexOf('/', endIdx - 1)) + 1;
-        // Find last '.' after that '/'
+        // 找到该 '/' 之后的最后一个 '.'
         final int lastDotBeforeLastPlingIdx = jarPath.lastIndexOf('.', endIdx - 1);
         if (lastDotBeforeLastPlingIdx > startIdx) {
-            // Strip off extension
+            // 剥离扩展名
             endIdx = lastDotBeforeLastPlingIdx;
         }
 
-        // Remove .jar extension
+        // 移除 .jar 扩展名
         String moduleName = jarPath.substring(startIdx, endIdx);
 
-        // Find first occurrence of "-[0-9]"
+        // 查找第一次出现的 "-[0-9]"
         final Matcher matcher = DASH_VERSION.matcher(moduleName);
         if (matcher.find()) {
             moduleName = moduleName.substring(0, matcher.start());
         }
 
-        // Replace non-alphanumeric characters with dots
+        // 将非字母数字字符替换为点号
         moduleName = NON_ALPHANUM.matcher(moduleName).replaceAll(".");
 
-        // Collapse repeating dots into a single dot
+        // 将连续的点号折叠为单个点号
         moduleName = REPEATING_DOTS.matcher(moduleName).replaceAll(".");
 
-        // Drop leading dots
+        // 删除前导点号
         if (moduleName.length() > 0 && moduleName.charAt(0) == '.') {
             moduleName = LEADING_DOTS.matcher(moduleName).replaceAll("");
         }
 
-        // Drop trailing dots
+        // 删除尾部点号
         final int len = moduleName.length();
         if (len > 0 && moduleName.charAt(len - 1) == '.') {
             moduleName = TRAILING_DOTS.matcher(moduleName).replaceAll("");

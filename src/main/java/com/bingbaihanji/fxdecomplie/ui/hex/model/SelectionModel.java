@@ -206,7 +206,7 @@ public class SelectionModel {
     }
 
     /**
-     * 返回选区结束地址的 {@link LongProperty} 
+     * 返回选区结束地址的 {@link LongProperty}
      *
      * @return 结束地址属性
      */

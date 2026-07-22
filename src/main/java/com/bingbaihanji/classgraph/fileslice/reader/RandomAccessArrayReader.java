@@ -26,7 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice.reader;
+package com.bingbaihanji.classgraph.fileslice.reader;
+
+import com.bingbaihanji.classgraph.utils.StringUtils;
 
 import java.io.IOException;
 import java.nio.Buffer;
@@ -34,31 +36,28 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 
-import nonapi.io.github.classgraph.utils.StringUtils;
-
 /**
- * {@link RandomAccessReader} backed by a byte array. Reads in <b>little endian</b> order, as required by the
- * zipfile format.
+ * 由字节数组支持的 {@link RandomAccessReader}按 zipfile 格式所需的<b>小端序</b>读取
  */
 public class RandomAccessArrayReader implements RandomAccessReader {
-    /** The array. */
+    /** 数组 */
     private final byte[] arr;
 
-    /** The start index of the slice within the array. */
+    /** 切片在数组中的起始索引 */
     private final int sliceStartPos;
 
-    /** The length of the slice within the array. */
+    /** 切片在数组中的长度 */
     private final int sliceLength;
 
     /**
-     * Constructor for slicing an array.
+     * 用于切片数组的构造函数
      *
      * @param arr
-     *            the array to slice.
+     *            要切片的数组
      * @param sliceStartPos
-     *            the start index of the slice within the array.
+     *            切片在数组中的起始索引
      * @param sliceLength
-     *            the length of the slice within the array.
+     *            切片在数组中的长度
      */
     public RandomAccessArrayReader(final byte[] arr, final int sliceStartPos, final int sliceLength) {
         this.arr = arr;
@@ -165,7 +164,7 @@ public class RandomAccessArrayReader implements RandomAccessReader {
 
     @Override
     public String readString(final long offset, final int numBytes, final boolean replaceSlashWithDot,
-            final boolean stripLSemicolon) throws IOException {
+                             final boolean stripLSemicolon) throws IOException {
         final int idx = sliceStartPos + (int) offset;
         return StringUtils.readString(arr, idx, numBytes, replaceSlashWithDot, stripLSemicolon);
     }

@@ -26,59 +26,123 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.utils.Assert;
-import nonapi.io.github.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.utils.Assert;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-/** Holds metadata about a package encountered during a scan. */
+/** 保存扫描过程中遇到的包的元数据 */
 public class PackageInfo implements Comparable<PackageInfo>, HasName {
-    /** Name of the package. */
+    /** 包名称 */
     private String name;
 
     /**
-     * Unique {@link AnnotationInfo} objects for any annotations on the package-info.class file, if present, else
-     * null.
+     * 对 package-info.class 文件上的注解的唯 {@link AnnotationInfo} 对象集合(如果存在)，否则为 null
      */
     private Set<AnnotationInfo> annotationInfoSet;
 
-    /** {@link AnnotationInfo} for any annotations on the package-info.class file, if present, else null. */
+    /** 对 package-info.class 文件上的注解的 {@link AnnotationInfo}(如果存在)，否则为 null */
     private AnnotationInfoList annotationInfo;
 
-    /** The parent package of this package. */
+    /** 此包的父包 */
     private PackageInfo parent;
 
-    /** The child packages of this package. */
+    /** 此包的子包 */
     private Set<PackageInfo> children;
 
-    /** Set of classes in the package. */
+    /** 包中的类集合 */
     private Map<String, ClassInfo> memberClassNameToClassInfo;
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Deerialization constructor. */
+    /** 反序列化构造函数 */
     PackageInfo() {
-        // Empty
+        // 空
     }
 
     /**
-     * Construct a PackageInfo object.
+     * 构造一个 PackageInfo 对象
      *
      * @param packageName
-     *            the package name
+     *            包名称
      */
     PackageInfo(final String packageName) {
         this.name = packageName;
     }
 
     /**
-     * The package name ("" for the root package).
+     * 获取父包的名称，或命名类所属包的名称
      *
-     * @return the name
+     * @param packageOrClassName
+     *            包名或类名
+     * @return 父包名称，或命名类所属包的名称，如果 packageOrClassName 是根包("")则返回 null
+     */
+    static String getParentPackageName(final String packageOrClassName) {
+        if (packageOrClassName.isEmpty()) {
+            return null;
+        }
+        final int lastDotIdx = packageOrClassName.lastIndexOf('.');
+        return lastDotIdx < 0 ? "" : packageOrClassName.substring(0, lastDotIdx);
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 获取指定名称包的 {@link PackageInfo} 对象，如果不存在则创建它，同时为任何尚未创建的
+     * 所需父包创建 {@link PackageInfo} 对象
+     *
+     * @param packageName
+     *            包名称
+     * @param packageNameToPackageInfo
+     *            从包名到包信息的映射
+     * @param scanSpec
+     *            ScanSpec 配置
+     * @return 指定名称包的 {@link PackageInfo}
+     */
+    static PackageInfo getOrCreatePackage(final String packageName,
+                                          final Map<String, PackageInfo> packageNameToPackageInfo, final ScanSpec scanSpec) {
+        // 获取或创建此包的 PackageInfo 对象
+        PackageInfo packageInfo = packageNameToPackageInfo.get(packageName);
+        if (packageInfo != null) {
+            // 此包的 PackageInfo 对象已存在
+            return packageInfo;
+        }
+
+        // 为此包创建新的 PackageInfo
+        packageNameToPackageInfo.put(packageName, packageInfo = new PackageInfo(packageName));
+
+        // 如果这不是根包("")
+        if (!packageName.isEmpty()) {
+            // 递归为父包创建 PackageInfo 对象(直到到达已存在或不被接受的父包)，
+            // 并将每个祖先包连接到其父包
+            final String parentPackageName = getParentPackageName(packageInfo.name);
+            if (scanSpec.packageAcceptReject.isAcceptedAndNotRejected(parentPackageName)
+                    || scanSpec.packagePrefixAcceptReject.isAcceptedAndNotRejected(parentPackageName)) {
+                final PackageInfo parentPackageInfo = getOrCreatePackage(parentPackageName,
+                        packageNameToPackageInfo, scanSpec);
+                if (parentPackageInfo != null) {
+                    // 将包链接到父包
+                    if (parentPackageInfo.children == null) {
+                        parentPackageInfo.children = new HashSet<>();
+                    }
+                    parentPackageInfo.children.add(packageInfo);
+                    packageInfo.parent = parentPackageInfo;
+                }
+            }
+        }
+
+        // 返回新创建的 PackageInfo 对象
+        return packageInfo;
+    }
+
+    /**
+     * 包名称(对于根包则为 "")
+     *
+     * @return 名称
      */
     @Override
     public String getName() {
@@ -88,13 +152,13 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Add annotations found in a package descriptor classfile.
+     * 添加在包描述符 classfile 中找到的注解
      *
      * @param packageAnnotations
-     *            the package annotations
+     *            包注解
      */
     void addAnnotations(final AnnotationInfoList packageAnnotations) {
-        // Add class annotations from the package-info.class file
+        // 添加来自 package-info.class 文件的类注解
         if (packageAnnotations != null && !packageAnnotations.isEmpty()) {
             if (annotationInfoSet == null) {
                 annotationInfoSet = new LinkedHashSet<>();
@@ -104,11 +168,11 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     }
 
     /**
-     * Merge a {@link ClassInfo} object for a package-info.class file into this PackageInfo. (The same
-     * package-info.class file may be present in multiple definitions of the package in different modules.)
+     * 将 package-info.class 文件的 {@link ClassInfo} 对象合并到此 PackageInfo 中
+     * (同一个 package-info.class 文件可能存在于不同模块中同一个包的多个定义中)
      *
      * @param classInfo
-     *            the {@link ClassInfo} object to add to the package.
+     *            要添加到包中的 {@link ClassInfo} 对象
      */
     void addClassInfo(final ClassInfo classInfo) {
         if (memberClassNameToClassInfo == null) {
@@ -116,8 +180,6 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
         }
         memberClassNameToClassInfo.put(classInfo.getName(), classInfo);
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     void setScanResult(final ScanResult scanResult) {
         if (annotationInfoSet != null) {
@@ -128,12 +190,11 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     }
 
     /**
-     * Get a the annotation on this package, or null if the package does not have the annotation.
-     * 
+     * 获取此包上的某个注解，如果包没有该注解则返回 null
+     *
      * @param annotation
-     *            The annotation.
-     * @return An {@link AnnotationInfo} object representing the annotation on this package, or null if the package
-     *         does not have the annotation.
+     *            注解类
+     * @return 表示此包上该注解的 {@link AnnotationInfo} 对象，如果包没有该注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -141,21 +202,20 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     }
 
     /**
-     * Get a the named annotation on this package, or null if the package does not have the named annotation.
+     * 获取此包上的某个命名注解，如果包没有该命名注解则返回 null
      *
      * @param annotationName
-     *            The annotation name.
-     * @return An {@link AnnotationInfo} object representing the named annotation on this package, or null if the
-     *         package does not have the named annotation.
+     *            注解名称
+     * @return 表示此包上该命名注解的 {@link AnnotationInfo} 对象，如果包没有该命名注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
         return getAnnotationInfo().get(annotationName);
     }
 
     /**
-     * Get any annotations on the {@code package-info.class} file.
+     * 获取 {@code package-info.class} 文件上的所有注解
      *
-     * @return the annotations on the {@code package-info.class} file.
+     * @return {@code package-info.class} 文件上的所有注解
      */
     public AnnotationInfoList getAnnotationInfo() {
         if (annotationInfo == null) {
@@ -169,12 +229,14 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
         return annotationInfo;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Check if the package has the annotation.
+     * 检查此包是否有该注解
      *
      * @param annotation
-     *            The annotation.
-     * @return true if this package has the annotation.
+     *            注解类
+     * @return 如果此包有该注解则返回 true
      */
     public boolean hasAnnotation(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -182,11 +244,11 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     }
 
     /**
-     * Check if the package has the named annotation.
+     * 检查此包是否有该命名注解
      *
      * @param annotationName
-     *            The name of an annotation.
-     * @return true if this package has the named annotation.
+     *            注解名称
+     * @return 如果此包有该命名注解则返回 true
      */
     public boolean hasAnnotation(final String annotationName) {
         return getAnnotationInfo().containsName(annotationName);
@@ -195,25 +257,25 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * The parent package of this package, or null if this is the root package.
+     * 此包的父包，如果是根包则返回 null
      *
-     * @return the parent package, or null if this is the root package.
+     * @return 父包，如果是根包则返回 null
      */
     public PackageInfo getParent() {
         return parent;
     }
 
     /**
-     * The child packages of this package, or the empty list if none.
+     * 此包的子包，如果没有则返回空列表
      *
-     * @return the child packages, or the empty list if none.
+     * @return 子包，如果没有则返回空列表
      */
     public PackageInfoList getChildren() {
         if (children == null) {
             return PackageInfoList.EMPTY_LIST;
         }
         final PackageInfoList childrenSorted = new PackageInfoList(children);
-        // Ensure children are sorted
+        // 确保子包已排序
         CollectionUtils.sortIfNotEmpty(childrenSorted, new Comparator<PackageInfo>() {
             @Override
             public int compare(final PackageInfo o1, final PackageInfo o2) {
@@ -223,36 +285,34 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
         return childrenSorted;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Get the {@link ClassInfo} object for the named class in this package, or null if the class was not found in
-     * this package.
+     * 获取此包中指定名称类的 {@link ClassInfo} 对象，如果在此包中未找到该类则返回 null
      *
      * @param className
-     *            the class name
-     * @return the {@link ClassInfo} object for the named class in this package, or null if the class was not found
-     *         in this package.
+     *            类名
+     * @return 此包中指定名称类的 {@link ClassInfo} 对象，如果在此包中未找到该类则返回 null
      */
     public ClassInfo getClassInfo(final String className) {
         return memberClassNameToClassInfo == null ? null : memberClassNameToClassInfo.get(className);
     }
 
     /**
-     * Get the {@link ClassInfo} objects for all classes that are members of this package.
+     * 获取此包中所有成员类的 {@link ClassInfo} 对象
      *
-     * @return the {@link ClassInfo} objects for all classes that are members of this package.
+     * @return 此包中所有成员类的 {@link ClassInfo} 对象
      */
     public ClassInfoList getClassInfo() {
         return memberClassNameToClassInfo == null ? ClassInfoList.EMPTY_LIST
                 : new ClassInfoList(new HashSet<>(memberClassNameToClassInfo.values()), /* sortByName = */ true);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the {@link ClassInfo} objects within this package recursively.
+     * 递归获取此包内的 {@link ClassInfo} 对象
      *
      * @param reachableClassInfo
-     *            the reachable class info
+     *            可到达的类信息集合
      */
     private void obtainClassInfoRecursive(final Set<ClassInfo> reachableClassInfo) {
         if (memberClassNameToClassInfo != null) {
@@ -264,81 +324,14 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     }
 
     /**
-     * Get the {@link ClassInfo} objects for all classes that are members of this package or a sub-package.
+     * 获取此包或其子包中所有成员类的 {@link ClassInfo} 对象
      *
-     * @return the the {@link ClassInfo} objects for all classes that are members of this package or a sub-package.
+     * @return 此包或其子包中所有成员类的 {@link ClassInfo} 对象
      */
     public ClassInfoList getClassInfoRecursive() {
         final Set<ClassInfo> reachableClassInfo = new HashSet<>();
         obtainClassInfoRecursive(reachableClassInfo);
         return new ClassInfoList(reachableClassInfo, /* sortByName = */ true);
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Get the name of the parent package of a parent, or the package of the named class.
-     *
-     * @param packageOrClassName
-     *            The package or class name.
-     * @return the parent package, or the package of the named class, or null if packageOrClassName is the root
-     *         package ("").
-     */
-    static String getParentPackageName(final String packageOrClassName) {
-        if (packageOrClassName.isEmpty()) {
-            return null;
-        }
-        final int lastDotIdx = packageOrClassName.lastIndexOf('.');
-        return lastDotIdx < 0 ? "" : packageOrClassName.substring(0, lastDotIdx);
-    }
-
-    /**
-     * Get the {@link PackageInfo} object for the named package, creating it if it doesn't exist, and also creating
-     * {@link PackageInfo} objects for any needed parent packages for which a {@link PackageInfo} has not yet been
-     * created.
-     *
-     * @param packageName
-     *            the package name
-     * @param packageNameToPackageInfo
-     *            a map from package name to package info
-     * @param scanSpec
-     *            the ScanSpec.
-     * @return the {@link PackageInfo} for the named package.
-     */
-    static PackageInfo getOrCreatePackage(final String packageName,
-            final Map<String, PackageInfo> packageNameToPackageInfo, final ScanSpec scanSpec) {
-        // Get or create PackageInfo object for this package
-        PackageInfo packageInfo = packageNameToPackageInfo.get(packageName);
-        if (packageInfo != null) {
-            // PackageInfo object already exists for this package
-            return packageInfo;
-        }
-
-        // Create new PackageInfo for this package
-        packageNameToPackageInfo.put(packageName, packageInfo = new PackageInfo(packageName));
-
-        // If this is not the root package ("")
-        if (!packageName.isEmpty()) {
-            // Recursively create PackageInfo objects for parent packages (until a parent package that already
-            // exists or that is not accepted is reached), and connect each ancestral package to its parent
-            final String parentPackageName = getParentPackageName(packageInfo.name);
-            if (scanSpec.packageAcceptReject.isAcceptedAndNotRejected(parentPackageName)
-                    || scanSpec.packagePrefixAcceptReject.isAcceptedAndNotRejected(parentPackageName)) {
-                final PackageInfo parentPackageInfo = getOrCreatePackage(parentPackageName,
-                        packageNameToPackageInfo, scanSpec);
-                if (parentPackageInfo != null) {
-                    // Link package to parent
-                    if (parentPackageInfo.children == null) {
-                        parentPackageInfo.children = new HashSet<>();
-                    }
-                    parentPackageInfo.children.add(packageInfo);
-                    packageInfo.parent = parentPackageInfo;
-                }
-            }
-        }
-
-        // Return the newly-created PackageInfo object
-        return packageInfo;
     }
 
     // -------------------------------------------------------------------------------------------------------------

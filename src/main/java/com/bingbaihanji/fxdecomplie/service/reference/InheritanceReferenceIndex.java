@@ -1,13 +1,9 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfo;
-import com.bingbaihanji.fxdecomplie.core.classgraph.ScanResult;
+import com.bingbaihanji.classgraph.core.ClassInfo;
+import com.bingbaihanji.classgraph.core.ScanResult;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class InheritanceReferenceIndex {
 
@@ -18,7 +14,7 @@ public final class InheritanceReferenceIndex {
     private final Map<String, List<String>> annotationToAnnotatedClasses;
 
     public InheritanceReferenceIndex(ScanResult scanResult,
-                                      Map<String, String> internalNameToFullPath) {
+                                     Map<String, String> internalNameToFullPath) {
         this.scanResult = scanResult != null ? scanResult : new ScanResult(Map.of());
         this.internalNameToFullPath = internalNameToFullPath != null
                 ? Map.copyOf(internalNameToFullPath) : Map.of();

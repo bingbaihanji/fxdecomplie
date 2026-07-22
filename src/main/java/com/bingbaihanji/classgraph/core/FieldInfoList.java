@@ -26,75 +26,75 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-/** A list of {@link FieldInfo} objects. */
+/** {@link FieldInfo} 对象的列表 */
 public class FieldInfoList extends MappableInfoList<FieldInfo> {
+    /** 不可修改的空 {@link FieldInfoList} */
+    static final FieldInfoList EMPTY_LIST = new FieldInfoList();
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
-    /** An unmodifiable empty {@link FieldInfoList}. */
-    static final FieldInfoList EMPTY_LIST = new FieldInfoList();
     static {
         EMPTY_LIST.makeUnmodifiable();
     }
 
     /**
-     * Return an unmodifiable empty {@link FieldInfoList}.
-     *
-     * @return the unmodifiable empty {@link FieldInfoList}.
-     */
-    public static FieldInfoList emptyList() {
-        return EMPTY_LIST;
-    }
-
-    /**
-     * Construct a new modifiable empty list of {@link FieldInfo} objects.
+     * 构造一个新的可修改的空 {@link FieldInfo} 对象列表
      */
     public FieldInfoList() {
         super();
     }
 
     /**
-     * Construct a new modifiable empty list of {@link FieldInfo} objects, given a size hint.
+     * 根据大小提示构造一个新的可修改的空 {@link FieldInfo} 对象列表
      *
      * @param sizeHint
-     *            the size hint
+     *            大小提示
      */
     public FieldInfoList(final int sizeHint) {
         super(sizeHint);
     }
 
     /**
-     * Construct a new modifiable empty {@link FieldInfoList}, given an initial list of {@link FieldInfo} objects.
+     * 根据给定的初始 {@link FieldInfo} 对象集合构造一个新的可修改的空 {@link FieldInfoList}
      *
      * @param fieldInfoCollection
-     *            the collection of {@link FieldInfo} objects.
+     *            {@link FieldInfo} 对象的集合
      */
     public FieldInfoList(final Collection<FieldInfo> fieldInfoCollection) {
         super(fieldInfoCollection);
     }
 
+    /**
+     * 返回一个不可修改的空 {@link FieldInfoList}
+     *
+     * @return 不可修改的空 {@link FieldInfoList}
+     */
+    public static FieldInfoList emptyList() {
+        return EMPTY_LIST;
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in the list.
+     * 获取列表中引用的所有类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            已引用的类信息集合
      * @param log
-     *            the log
+     *            日志
      */
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         for (final FieldInfo fi : this) {
             fi.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         }
@@ -103,29 +103,11 @@ public class FieldInfoList extends MappableInfoList<FieldInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Filter an {@link FieldInfoList} using a predicate mapping an {@link FieldInfo} object to a boolean, producing
-     * another {@link FieldInfoList} for all items in the list for which the predicate is true.
-     */
-    @FunctionalInterface
-    public interface FieldInfoFilter {
-        /**
-         * Whether or not to allow an {@link FieldInfo} list item through the filter.
-         *
-         * @param fieldInfo
-         *            The {@link FieldInfo} item to filter.
-         * @return Whether or not to allow the item through the filter. If true, the item is copied to the output
-         *         list; if false, it is excluded.
-         */
-        boolean accept(FieldInfo fieldInfo);
-    }
-
-    /**
-     * Find the subset of the {@link FieldInfo} objects in this list for which the given filter predicate is true.
+     * 查找此列表中满足给定过滤谓词条件的 {@link FieldInfo} 对象子集
      *
      * @param filter
-     *            The {@link FieldInfoFilter} to apply.
-     * @return The subset of the {@link FieldInfo} objects in this list for which the given filter predicate is
-     *         true.
+     *            要应用的 {@link FieldInfoFilter}
+     * @return 此列表中满足给定过滤谓词条件的 {@link FieldInfo} 对象子集
      */
     public FieldInfoList filter(final FieldInfoFilter filter) {
         final FieldInfoList fieldInfoFiltered = new FieldInfoList();
@@ -135,5 +117,21 @@ public class FieldInfoList extends MappableInfoList<FieldInfo> {
             }
         }
         return fieldInfoFiltered;
+    }
+
+    /**
+     * 使用将 {@link FieldInfo} 对象映射为布尔值的谓词过滤 {@link FieldInfoList}，
+     * 生成一个新的 {@link FieldInfoList}，其中包含谓词为 true 的所有项
+     */
+    @FunctionalInterface
+    public interface FieldInfoFilter {
+        /**
+         * 是否允许某个 {@link FieldInfo} 列表项通过过滤器
+         *
+         * @param fieldInfo
+         *            要过滤的 {@link FieldInfo} 项
+         * @return 是否允许该项通过过滤器如果为 true，该项将被复制到输出列表；如果为 false，则被排除
+         */
+        boolean accept(FieldInfo fieldInfo);
     }
 }

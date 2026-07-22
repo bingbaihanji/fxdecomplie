@@ -26,114 +26,186 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.ClassInfo.RelType;
-import nonapi.io.github.classgraph.utils.Assert;
-import nonapi.io.github.classgraph.utils.CollectionUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.core.ClassInfo.RelType;
+import com.bingbaihanji.classgraph.utils.Assert;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.util.*;
 
-/** A list of {@link AnnotationInfo} objects. */
+/** {@link AnnotationInfo} 对象的列表 */
 public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
-    /**
-     * The set of annotations directly related to a class or method and not inherited through a meta-annotated
-     * annotation. This field is nullable, as the annotation info list is incrementally built. See
-     * {@link #directOnly()}.
-     */
-    private AnnotationInfoList directlyRelatedAnnotations;
-
+    /** 一个不可修改的空 {@link AnnotationInfoList} */
+    static final AnnotationInfoList EMPTY_LIST = new AnnotationInfoList();
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
-    /** An unmodifiable empty {@link AnnotationInfoList}. */
-    static final AnnotationInfoList EMPTY_LIST = new AnnotationInfoList();
     static {
         EMPTY_LIST.makeUnmodifiable();
     }
 
     /**
-     * Return an unmodifiable empty {@link AnnotationInfoList}.
-     *
-     * @return the unmodifiable empty {@link AnnotationInfoList}.
+     * 与类或方法直接相关、且不是通过元注解继承的注解集合
+     * 此字段可为 null，因为注解信息列表是增量构建的参见 {@link #directOnly()}
      */
-    public static AnnotationInfoList emptyList() {
-        return EMPTY_LIST;
-    }
+    private AnnotationInfoList directlyRelatedAnnotations;
 
     /**
-     * Construct a new modifiable empty list of {@link AnnotationInfo} objects.
+     * 构造一个新的可修改的空 {@link AnnotationInfo} 对象列表
      */
     public AnnotationInfoList() {
         super();
     }
 
     /**
-     * Construct a new modifiable empty list of {@link AnnotationInfo} objects, given a size hint.
+     * 构造一个新的可修改的空 {@link AnnotationInfo} 对象列表，并给出大小提示
      *
      * @param sizeHint
-     *            the size hint
+     *            大小提示
      */
     public AnnotationInfoList(final int sizeHint) {
         super(sizeHint);
     }
 
     /**
-     * Construct a new modifiable empty {@link AnnotationInfoList}, given an initial list of {@link AnnotationInfo}
-     * objects.
+     * 构造一个新的可修改的空 {@link AnnotationInfoList}，并给出初始的 {@link AnnotationInfo} 对象列表
      *
      * @param reachableAnnotations
-     *            the reachable annotations
+     *            可达的注解
      */
     public AnnotationInfoList(final AnnotationInfoList reachableAnnotations) {
-        // If only reachable annotations are given, treat all of them as direct
+        // 如果只给出了可达的注解，则将它们全部视为直接注解
         this(reachableAnnotations, reachableAnnotations);
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param reachableAnnotations
-     *            the reachable annotations
+     *            可达的注解
      * @param directlyRelatedAnnotations
-     *            the directly related annotations
+     *            直接相关的注解
      */
     AnnotationInfoList(final AnnotationInfoList reachableAnnotations,
-            final AnnotationInfoList directlyRelatedAnnotations) {
+                       final AnnotationInfoList directlyRelatedAnnotations) {
         super(reachableAnnotations);
         this.directlyRelatedAnnotations = directlyRelatedAnnotations;
+    }
+
+    /**
+     * 返回一个不可修改的空 {@link AnnotationInfoList}
+     *
+     * @return 不可修改的空 {@link AnnotationInfoList}
+     */
+    public static AnnotationInfoList emptyList() {
+        return EMPTY_LIST;
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Filter an {@link AnnotationInfoList} using a predicate mapping an {@link AnnotationInfo} object to a boolean,
-     * producing another {@link AnnotationInfoList} for all items in the list for which the predicate is true.
+     * 查找元注解的传递闭包
+     *
+     * @param ai
+     *            AnnotationInfo 对象
+     * @param allAnnotationsOut
+     *            输出的注解集合
+     * @param visited
+     *            已访问的集合
      */
-    @FunctionalInterface
-    public interface AnnotationInfoFilter {
-        /**
-         * Whether or not to allow an {@link AnnotationInfo} list item through the filter.
-         *
-         * @param annotationInfo
-         *            The {@link AnnotationInfo} item to filter.
-         * @return Whether or not to allow the item through the filter. If true, the item is copied to the output
-         *         list; if false, it is excluded.
-         */
-        boolean accept(AnnotationInfo annotationInfo);
+    private static void findMetaAnnotations(final AnnotationInfo ai, final AnnotationInfoList allAnnotationsOut,
+                                            final Set<ClassInfo> visited) {
+        final ClassInfo annotationClassInfo = ai.getClassInfo();
+        if (annotationClassInfo != null && annotationClassInfo.annotationInfo != null
+                // 避免循环
+                && visited.add(annotationClassInfo)) {
+            for (final AnnotationInfo metaAnnotationInfo : annotationClassInfo.annotationInfo) {
+                final ClassInfo metaAnnotationClassInfo = metaAnnotationInfo.getClassInfo();
+                if (metaAnnotationClassInfo == null) {
+                    continue;
+                }
+                final String metaAnnotationClassName = metaAnnotationClassInfo.getName();
+                // 不将 java.lang.annotation 中的注解视为元注解
+                if (!metaAnnotationClassName.startsWith("java.lang.annotation.")) {
+                    // 将元注解添加到传递闭包中
+                    allAnnotationsOut.add(metaAnnotationInfo);
+                    // 递归处理元-元注解
+                    findMetaAnnotations(metaAnnotationInfo, allAnnotationsOut, visited);
+                }
+            }
+        }
     }
 
     /**
-     * Find the subset of the {@link AnnotationInfo} objects in this list for which the given filter predicate is
-     * true.
+     * 获取类上的间接注解(元注解和/或继承的注解)
+     *
+     * @param directAnnotationInfo
+     *            类、方法、方法参数或字段上的直接注解
+     * @param annotatedClass
+     *            对于类注解，这是被注解的类，否则为 null
+     * @return 间接注解
+     */
+    static AnnotationInfoList getIndirectAnnotations(final AnnotationInfoList directAnnotationInfo,
+                                                     final ClassInfo annotatedClass) {
+        // 添加直接注解
+        final Set<ClassInfo> directOrInheritedAnnotationClasses = new HashSet<>();
+        final Set<ClassInfo> reachedAnnotationClasses = new HashSet<>();
+        final AnnotationInfoList reachableAnnotationInfo = new AnnotationInfoList(
+                directAnnotationInfo == null ? 2 : directAnnotationInfo.size());
+        if (directAnnotationInfo != null) {
+            for (final AnnotationInfo dai : directAnnotationInfo) {
+                final ClassInfo daiClassInfo = dai.getClassInfo();
+                if (daiClassInfo != null) {
+                    directOrInheritedAnnotationClasses.add(daiClassInfo);
+                }
+                reachableAnnotationInfo.add(dai);
+                findMetaAnnotations(dai, reachableAnnotationInfo, reachedAnnotationClasses);
+            }
+        }
+        if (annotatedClass != null) {
+            // 添加超类上任何 @Inherited 注解
+            for (final ClassInfo superclass : annotatedClass.getSuperclasses()) {
+                if (superclass.annotationInfo != null) {
+                    for (final AnnotationInfo sai : superclass.annotationInfo) {
+                        // 如果继承的超类注解在子类中被覆盖，则不添加
+                        if (sai.isInherited() && directOrInheritedAnnotationClasses.add(sai.getClassInfo())) {
+                            reachableAnnotationInfo.add(sai);
+                            final AnnotationInfoList reachableMetaAnnotationInfo = new AnnotationInfoList(2);
+                            findMetaAnnotations(sai, reachableMetaAnnotationInfo, reachedAnnotationClasses);
+                            // 元注解也必须具有 @Inherited 才能被继承
+                            for (final AnnotationInfo rmai : reachableMetaAnnotationInfo) {
+                                if (rmai.isInherited()) {
+                                    reachableAnnotationInfo.add(rmai);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // 返回排序后的注解列表
+        final AnnotationInfoList directAnnotationInfoSorted = directAnnotationInfo == null
+                ? AnnotationInfoList.EMPTY_LIST
+                : new AnnotationInfoList(directAnnotationInfo);
+        CollectionUtils.sortIfNotEmpty(directAnnotationInfoSorted);
+        final AnnotationInfoList annotationInfoList = new AnnotationInfoList(reachableAnnotationInfo,
+                directAnnotationInfoSorted);
+        CollectionUtils.sortIfNotEmpty(annotationInfoList);
+        return annotationInfoList;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 查找此列表中满足给定过滤谓词的 {@link AnnotationInfo} 对象子集
      *
      * @param filter
-     *            The {@link AnnotationInfoFilter} to apply.
-     * @return The subset of the {@link AnnotationInfo} objects in this list for which the given filter predicate is
-     *         true.
+     *            要应用的 {@link AnnotationInfoFilter}
+     * @return 此列表中满足给定过滤谓词的 {@link AnnotationInfo} 对象子集
      */
     public AnnotationInfoList filter(final AnnotationInfoFilter filter) {
         final AnnotationInfoList annotationInfoFiltered = new AnnotationInfoList();
@@ -148,17 +220,17 @@ public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in this list.
+     * 获取此列表中引用的任何类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            被引用的类信息
      * @param log
-     *            the log
+     *            日志
      */
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         for (final AnnotationInfo ai : this) {
             ai.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         }
@@ -167,22 +239,22 @@ public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Handle {@link Repeatable} annotations.
+     * 处理 {@link Repeatable} 注解
      *
      * @param allRepeatableAnnotationNames
-     *            the names of all repeatable annotations
+     *            所有可重复注解的名称
      * @param containingClassInfo
-     *            the containing class
+     *            包含的类
      * @param forwardRelType
-     *            the forward relationship type for linking (or null for none)
+     *            用于链接的正向关系类型(或 null 表示不链接)
      * @param reverseRelType0
-     *            the first reverse relationship type for linking (or null for none)
+     *            用于链接的第一个反向关系类型(或 null 表示不链接)
      * @param reverseRelType1
-     *            the second reverse relationship type for linking (or null for none)
+     *            用于链接的第二个反向关系类型(或 null 表示不链接)
      */
     void handleRepeatableAnnotations(final Set<String> allRepeatableAnnotationNames,
-            final ClassInfo containingClassInfo, final RelType forwardRelType, final RelType reverseRelType0,
-            final RelType reverseRelType1) {
+                                     final ClassInfo containingClassInfo, final RelType forwardRelType, final RelType reverseRelType0,
+                                     final RelType reverseRelType1) {
         List<AnnotationInfo> repeatableAnnotations = null;
         for (int i = size() - 1; i >= 0; --i) {
             final AnnotationInfo ai = get(i);
@@ -191,11 +263,11 @@ public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
                     repeatableAnnotations = new ArrayList<>();
                 }
                 repeatableAnnotations.add(ai);
-                // Remove repeatable annotation
+                // 移除可重复注解
                 remove(i);
             }
         }
-        // Add the component annotations in each of the parameters of the repeatable annotation
+        // 将每个可重复注解参数中的组件注解添加进来
         if (repeatableAnnotations != null) {
             for (final AnnotationInfo repeatableAnnotation : repeatableAnnotations) {
                 final AnnotationParameterValueList values = repeatableAnnotation.getParameterValues();
@@ -209,7 +281,7 @@ public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
                                     final AnnotationInfo ai = (AnnotationInfo) value;
                                     add(ai);
 
-                                    // Link annotation, if necessary
+                                    // 如果需要，链接注解
                                     if (forwardRelType != null
                                             && (reverseRelType0 != null || reverseRelType1 != null)) {
                                         final ClassInfo annotationClass = ai.getClassInfo();
@@ -234,154 +306,58 @@ public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Find the transitive closure of meta-annotations.
+     * 返回直接注解的列表，不包括元注解如果此 {@link AnnotationInfoList} 由类注解组成，
+     * 即通过 `ClassInfo#getAnnotationInfo()` 生成，则返回的列表也会排除从超类或实现的接口
+     * 继承的注解(这些超类或接口被 {@link java.lang.annotation.Inherited @Inherited} 元注解修饰)
      *
-     * @param ai
-     *            the annotationInfo object
-     * @param allAnnotationsOut
-     *            annotations out
-     * @param visited
-     *            visited
-     */
-    private static void findMetaAnnotations(final AnnotationInfo ai, final AnnotationInfoList allAnnotationsOut,
-            final Set<ClassInfo> visited) {
-        final ClassInfo annotationClassInfo = ai.getClassInfo();
-        if (annotationClassInfo != null && annotationClassInfo.annotationInfo != null
-        // Don't get in a cycle
-                && visited.add(annotationClassInfo)) {
-            for (final AnnotationInfo metaAnnotationInfo : annotationClassInfo.annotationInfo) {
-                final ClassInfo metaAnnotationClassInfo = metaAnnotationInfo.getClassInfo();
-                final String metaAnnotationClassName = metaAnnotationClassInfo.getName();
-                // Don't treat java.lang.annotation annotations as meta-annotations 
-                if (!metaAnnotationClassName.startsWith("java.lang.annotation.")) {
-                    // Add the meta-annotation to the transitive closure
-                    allAnnotationsOut.add(metaAnnotationInfo);
-                    // Recurse to meta-meta-annotation
-                    findMetaAnnotations(metaAnnotationInfo, allAnnotationsOut, visited);
-                }
-            }
-        }
-    }
-
-    /**
-     * Get the indirect annotations on a class (meta-annotations and/or inherited annotations).
-     *
-     * @param directAnnotationInfo
-     *            the direct annotations on the class, method, method parameter or field.
-     * @param annotatedClass
-     *            for class annotations, this is the annotated class, else null.
-     * @return the indirect annotations
-     */
-    static AnnotationInfoList getIndirectAnnotations(final AnnotationInfoList directAnnotationInfo,
-            final ClassInfo annotatedClass) {
-        // Add direct annotations
-        final Set<ClassInfo> directOrInheritedAnnotationClasses = new HashSet<>();
-        final Set<ClassInfo> reachedAnnotationClasses = new HashSet<>();
-        final AnnotationInfoList reachableAnnotationInfo = new AnnotationInfoList(
-                directAnnotationInfo == null ? 2 : directAnnotationInfo.size());
-        if (directAnnotationInfo != null) {
-            for (final AnnotationInfo dai : directAnnotationInfo) {
-                directOrInheritedAnnotationClasses.add(dai.getClassInfo());
-                reachableAnnotationInfo.add(dai);
-                findMetaAnnotations(dai, reachableAnnotationInfo, reachedAnnotationClasses);
-            }
-        }
-        if (annotatedClass != null) {
-            // Add any @Inherited annotations on superclasses
-            for (final ClassInfo superclass : annotatedClass.getSuperclasses()) {
-                if (superclass.annotationInfo != null) {
-                    for (final AnnotationInfo sai : superclass.annotationInfo) {
-                        // Don't add inherited superclass annotation if it is overridden in a subclass 
-                        if (sai.isInherited() && directOrInheritedAnnotationClasses.add(sai.getClassInfo())) {
-                            reachableAnnotationInfo.add(sai);
-                            final AnnotationInfoList reachableMetaAnnotationInfo = new AnnotationInfoList(2);
-                            findMetaAnnotations(sai, reachableMetaAnnotationInfo, reachedAnnotationClasses);
-                            // Meta-annotations also have to have @Inherited to be inherited
-                            for (final AnnotationInfo rmai : reachableMetaAnnotationInfo) {
-                                if (rmai.isInherited()) {
-                                    reachableAnnotationInfo.add(rmai);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // Return sorted annotation list
-        final AnnotationInfoList directAnnotationInfoSorted = directAnnotationInfo == null
-                ? AnnotationInfoList.EMPTY_LIST
-                : new AnnotationInfoList(directAnnotationInfo);
-        CollectionUtils.sortIfNotEmpty(directAnnotationInfoSorted);
-        final AnnotationInfoList annotationInfoList = new AnnotationInfoList(reachableAnnotationInfo,
-                directAnnotationInfoSorted);
-        CollectionUtils.sortIfNotEmpty(annotationInfoList);
-        return annotationInfoList;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * returns the list of direct annotations, excluding meta-annotations. If this {@link AnnotationInfoList}
-     * consists of class annotations, i.e. if it was produced using `ClassInfo#getAnnotationInfo()`, then the
-     * returned list also excludes annotations inherited from a superclass or implemented interface that was
-     * meta-annotated with {@link java.lang.annotation.Inherited @Inherited}.
-     *
-     * @return The list of directly-related annotations.
+     * @return 直接相关注解的列表
      */
     public AnnotationInfoList directOnly() {
-        // If directlyRelatedAnnotations == null, this is already a list of direct annotations (the list of
-        // AnnotationInfo objects created when the classfile is read). Otherwise return a new list consisting
-        // of only the direct annotations.
+        // 如果 directlyRelatedAnnotations == null，则这已经是一个直接注解列表
+        // (即读取 class 文件时创建的 AnnotationInfo 对象列表)
+        // 否则，返回一个仅包含直接注解的新列表
         return this.directlyRelatedAnnotations == null ? this
-                // Make .directOnly() idempotent
+                // 使 .directOnly() 幂等
                 : new AnnotationInfoList(directlyRelatedAnnotations, /* directlyRelatedAnnotations = */ null);
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the {@link Repeatable} annotation with the given class, or the empty list if none found.
+     * 获取具有给定类的 {@link Repeatable} 注解，如果没有找到则返回空列表
      *
      * @param annotationClass
-     *            The class to search for.
-     * @return The list of annotations with the given class, or the empty list if none found.
+     *            要搜索的类
+     * @return 具有给定类的注解列表，如果没有找到则返回空列表
      */
     public AnnotationInfoList getRepeatable(final Class<? extends Annotation> annotationClass) {
         Assert.isAnnotation(annotationClass);
         return getRepeatable(annotationClass.getName());
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the {@link Repeatable} annotation with the given name, or the empty list if none found.
+     * 获取具有给定名称的 {@link Repeatable} 注解，如果没有找到则返回空列表
      *
      * @param name
-     *            The name to search for.
-     * @return The list of annotations with the given name, or the empty list if none found.
+     *            要搜索的名称
+     * @return 具有给定名称的注解列表，如果没有找到则返回空列表
      */
     public AnnotationInfoList getRepeatable(final String name) {
-        boolean hasNamedAnnotation = false;
-        for (final AnnotationInfo ai : this) {
-            if (ai.getName().equals(name)) {
-                hasNamedAnnotation = true;
-                break;
-            }
-        }
-        if (!hasNamedAnnotation) {
-            return AnnotationInfoList.EMPTY_LIST;
-        }
-        final AnnotationInfoList matchingAnnotations = new AnnotationInfoList(size());
+        final AnnotationInfoList matchingAnnotations = new AnnotationInfoList();
         for (final AnnotationInfo ai : this) {
             if (ai.getName().equals(name)) {
                 matchingAnnotations.add(ai);
             }
         }
+        if (matchingAnnotations.isEmpty()) {
+            return AnnotationInfoList.EMPTY_LIST;
+        }
+        matchingAnnotations.trimToSize();
         return matchingAnnotations;
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.util.ArrayList#equals(java.lang.Object)
@@ -403,11 +379,29 @@ public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
         return super.equals(other) && directlyRelatedAnnotations.equals(other.directlyRelatedAnnotations);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /* (non-Javadoc)
      * @see java.util.ArrayList#hashCode()
      */
     @Override
     public int hashCode() {
         return super.hashCode() ^ (directlyRelatedAnnotations == null ? 0 : directlyRelatedAnnotations.hashCode());
+    }
+
+    /**
+     * 使用一个将 {@link AnnotationInfo} 对象映射为布尔值的谓词来过滤 {@link AnnotationInfoList}，
+     * 生成另一个 {@link AnnotationInfoList}，包含列表中所有谓词为 true 的元素
+     */
+    @FunctionalInterface
+    public interface AnnotationInfoFilter {
+        /**
+         * 是否允许 {@link AnnotationInfo} 列表项通过过滤器
+         *
+         * @param annotationInfo
+         *            要过滤的 {@link AnnotationInfo} 项
+         * @return 是否允许该项通过过滤器如果为 true，则该项被复制到输出列表；如果为 false，则被排除
+         */
+        boolean accept(AnnotationInfo annotationInfo);
     }
 }

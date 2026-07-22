@@ -26,12 +26,12 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.HashSet;
 import java.util.List;
@@ -39,77 +39,26 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A type signature for a reference type or base type. Subclasses are {@link ReferenceTypeSignature} (whose own
- * subclasses are {@link ClassRefTypeSignature}, {@link TypeVariableSignature}, and {@link ArrayTypeSignature}), and
- * {@link BaseTypeSignature}.
+ * 引用类型或基本类型的类型签名子类包括 {@link ReferenceTypeSignature}
+ * (其子类为 {@link ClassRefTypeSignature}、{@link TypeVariableSignature} 和 {@link ArrayTypeSignature})和
+ * {@link BaseTypeSignature}
  */
 public abstract class TypeSignature extends HierarchicalTypeSignature {
-    /** Constructor. */
+    /** 构造函数 */
     protected TypeSignature() {
-        // Empty
+        // 空
     }
 
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 解析一个类型签名
      *
-     * @param refdClassNames
-     *            the referenced class names.
-     */
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
-        final String className = getClassName();
-        if (className != null && !className.isEmpty()) {
-            refdClassNames.add(getClassName());
-        }
-    }
-
-    /**
-     * Get {@link ClassInfo} objects for any classes referenced in the type signature.
-     *
-     * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
-     * @param refdClassInfo
-     *            the referenced class info.
-     */
-    @Override
-    final protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
-        final Set<String> refdClassNames = new HashSet<>();
-        findReferencedClassNames(refdClassNames);
-        for (final String refdClassName : refdClassNames) {
-            final ClassInfo classInfo = ClassInfo.getOrCreateClassInfo(refdClassName, classNameToClassInfo);
-            classInfo.scanResult = scanResult;
-            refdClassInfo.add(classInfo);
-        }
-    }
-
-    /**
-     * Get a list of {@link AnnotationInfo} objects for any type annotations on this type, or null if none.
-     * 
-     * @return a list of {@link AnnotationInfo} objects for any type annotations on this type, or null if none.
-     */
-    public AnnotationInfoList getTypeAnnotationInfo() {
-        return typeAnnotationInfo;
-    }
-
-    /**
-     * Compare base types, ignoring generic type parameters.
-     * 
-     * @param other
-     *            the other {@link TypeSignature} to compare to.
-     * @return True if the two {@link TypeSignature} objects are equal, ignoring type parameters.
-     */
-    public abstract boolean equalsIgnoringTypeParams(final TypeSignature other);
-
-    /**
-     * Parse a type signature.
-     * 
      * @param parser
-     *            The parser
+     *            解析器
      * @param definingClass
-     *            The class containing the type descriptor.
-     * @return The parsed type descriptor or type signature.
+     *            包含该类型描述符的类
+     * @return 解析后的类型描述符或类型签名
      * @throws ParseException
-     *             If the type signature could not be parsed.
+     *             如果类型签名无法解析
      */
     static TypeSignature parse(final Parser parser, final String definingClass) throws ParseException {
         final ReferenceTypeSignature referenceTypeSignature = ReferenceTypeSignature
@@ -125,15 +74,15 @@ public abstract class TypeSignature extends HierarchicalTypeSignature {
     }
 
     /**
-     * Parse a type signature.
-     * 
+     * 解析一个类型签名
+     *
      * @param typeDescriptor
-     *            The type descriptor or type signature to parse.
+     *            要解析的类型描述符或类型签名
      * @param definingClass
-     *            The class containing the type descriptor.
-     * @return The parsed type descriptor or type signature.
+     *            包含该类型描述符的类
+     * @return 解析后的类型描述符或类型签名
      * @throws ParseException
-     *             If the type signature could not be parsed.
+     *             如果类型签名无法解析
      */
     static TypeSignature parse(final String typeDescriptor, final String definingClass) throws ParseException {
         final Parser parser = new Parser(typeDescriptor);
@@ -149,12 +98,64 @@ public abstract class TypeSignature extends HierarchicalTypeSignature {
     }
 
     /**
-     * Add a type annotation to this type.
-     * 
+     * 获取类型签名中引用的任何类的名称
+     *
+     * @param refdClassNames
+     *            引用的类名
+     */
+    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+        final String className = getClassName();
+        if (className != null && !className.isEmpty()) {
+            refdClassNames.add(getClassName());
+        }
+    }
+
+    /**
+     * 获取类型签名中引用的任何类对应的 {@link ClassInfo} 对象
+     *
+     * @param classNameToClassInfo
+     *            从类名到 {@link ClassInfo} 的映射
+     * @param refdClassInfo
+     *            引用的类信息
+     */
+    @Override
+    final protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
+                                                 final Set<ClassInfo> refdClassInfo, final LogNode log) {
+        final Set<String> refdClassNames = new HashSet<>();
+        findReferencedClassNames(refdClassNames);
+        for (final String refdClassName : refdClassNames) {
+            final ClassInfo classInfo = ClassInfo.getOrCreateClassInfo(refdClassName, classNameToClassInfo);
+            classInfo.scanResult = scanResult;
+            refdClassInfo.add(classInfo);
+        }
+    }
+
+    /**
+     * 获取此类型上的任何类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     *
+     * @return 此类型上的任何类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     */
+    @Override
+    public AnnotationInfoList getTypeAnnotationInfo() {
+        return typeAnnotationInfo;
+    }
+
+    /**
+     * 比较基本类型，忽略泛型类型参数
+     *
+     * @param other
+     *            要比较的另一个 {@link TypeSignature}
+     * @return 如果两个 {@link TypeSignature} 对象相等(忽略类型参数)，则返回 true
+     */
+    public abstract boolean equalsIgnoringTypeParams(final TypeSignature other);
+
+    /**
+     * 向此类型添加一个类型注解
+     *
      * @param typePath
-     *            The type path.
+     *            类型路径
      * @param annotationInfo
-     *            The annotation to add.
+     *            要添加的注解
      */
     @Override
     protected abstract void addTypeAnnotation(List<TypePathNode> typePath, AnnotationInfo annotationInfo);

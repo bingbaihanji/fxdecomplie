@@ -85,6 +85,14 @@ public final class ClassNameUtil {
      */
     public static String stripContainerClassPrefix(String className) {
         String normalized = normalizeInternalName(className);
+        int archiveSep = normalized.lastIndexOf(':');
+        if (archiveSep > 1) {
+            String archivePrefix = normalized.substring(0, archiveSep);
+            if (archivePrefix.endsWith(".jar") || archivePrefix.endsWith(".zip")
+                    || archivePrefix.endsWith(".war") || archivePrefix.endsWith(".ear")) {
+                normalized = normalized.substring(archiveSep + 1);
+            }
+        }
         for (String prefix : CONTAINER_CLASS_PREFIXES) {
             // 直接匹配：如 BOOT-INF/classes/com/example/Foo
             if (normalized.startsWith(prefix)) {
@@ -95,6 +103,11 @@ public final class ClassNameUtil {
             int index = normalized.indexOf(nested);
             if (index >= 0) {
                 return normalized.substring(index + nested.length());
+            }
+            String nestedArchive = ":" + prefix;
+            int archiveIndex = normalized.lastIndexOf(nestedArchive);
+            if (archiveIndex >= 0) {
+                return normalized.substring(archiveIndex + nestedArchive.length());
             }
         }
         return normalized;

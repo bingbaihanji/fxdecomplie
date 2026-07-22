@@ -26,11 +26,11 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.fileslice.reader.ClassfileReader;
-import nonapi.io.github.classgraph.utils.LogNode;
-import nonapi.io.github.classgraph.utils.URLPathEncoder;
+import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
+import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.URLPathEncoder;
 
 import java.io.Closeable;
 import java.io.File;
@@ -47,40 +47,37 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 
 /**
- * A classpath or module path resource (i.e. file) that was found in an accepted/non-rejected package inside a
- * classpath element or module.
+ * 一个在类路径元素或模块中被接受/未被拒绝的包中找到的类路径或模块路径资源(即文件)
  */
 public abstract class Resource implements Closeable, Comparable<Resource> {
-    /** The classpath element this resource was obtained from. */
+    /** 此资源所来自的类路径元素 */
     private final ClasspathElement classpathElement;
 
-    /** The input stream, or null. */
+    /** 输入流，或为 null */
     protected InputStream inputStream;
 
-    /** The byte buffer, or null. */
+    /** 字节缓冲区，或为 null */
     protected ByteBuffer byteBuffer;
 
-    /** The length, or -1L for unknown. */
+    /** 长度，未知时为 -1L */
     protected long length;
-
-    /** The cached result of toString(). */
-    private String toString;
-
     /**
-     * The {@link LogNode} used to log that the resource was found when classpath element paths are scanned. In the
-     * case of accepted classfile resources, sublog entries are added when the classfile's contents are scanned.
+     * 用于记录在扫描类路径元素路径时发现资源的 {@link LogNode}对于被接受的类文件资源，
+     * 在扫描类文件内容时会添加子日志条目
      */
     LogNode scanLog;
+    /** toString() 的缓存结果 */
+    private String toString;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param classpathElement
-     *            the classpath element this resource was obtained from.
+     *            此资源所来自的类路径元素
      * @param length
-     *            the length the length of the resource.
+     *            资源的长度
      */
     public Resource(final ClasspathElement classpathElement, final long length) {
         this.classpathElement = classpathElement;
@@ -90,20 +87,20 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Convert a URI to URL, catching "jrt:" URIs as invalid.
+     * 将 URI 转换为 URL，捕获 "jrt:" URI 为无效
      *
      * @param uri
-     *            the uri
-     * @return the URL.
+     *            URI
+     * @return URL
      * @throws IllegalArgumentException
-     *             if the URI could not be converted to a URL, or the URI had "jrt:" scheme.
+     *             如果 URI 无法转换为 URL，或者 URI 具有 "jrt:" 协议
      */
     private static URL uriToURL(final URI uri) {
         try {
             return uri.toURL();
         } catch (final IllegalArgumentException | MalformedURLException e) {
-            if (uri.getScheme().equals("jrt")) {
-                // Currently URL cannot handle the "jrt:" scheme, used by system modules.
+            if ("jrt".equals(uri.getScheme())) {
+                // 目前 URL 无法处理系统模块使用的 "jrt:" 协议
                 throw new IllegalArgumentException("Could not create URL from URI with \"jrt:\" scheme "
                         + "(\"jrt:\" is not supported by the URL class without a custom URL protocol handler): "
                         + uri);
@@ -114,17 +111,17 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     }
 
     /**
-     * Get the {@link URI} representing the resource's location.
+     * 获取表示资源位置的 {@link URI}
      *
-     * @return A {@link URI} representing the resource's location.
+     * @return 表示资源位置的 {@link URI}
      * @throws IllegalArgumentException
-     *             the resource was obtained from a module and the module's location URI is null.
+     *             如果资源来自模块且该模块的位置 URI 为 null
      */
     public URI getURI() {
         final URI locationURI = getClasspathElementURI();
         final String locationURIStr = locationURI.toString();
         final String resourcePath = getPathRelativeToClasspathElement();
-        // Check if this is a directory-based module (location URI will end in "/")
+        // 检查这是否是一个基于目录的模块(位置 URI 将以 "/" 结尾)
         final boolean isDir = locationURIStr.endsWith("/");
         try {
             return new URI(
@@ -138,64 +135,61 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     }
 
     /**
-     * Get the {@link URL} representing the resource's location. Use {@link #getURI()} instead if the resource may
-     * have come from a system module, or if this is a jlink'd runtime image, since "jrt:" URI schemes used by
-     * system modules and jlink'd runtime images are not supported by {@link URL}, and this will cause
-     * {@link IllegalArgumentException} to be thrown.
+     * 获取表示资源位置的 {@link URL}如果资源可能来自系统模块，或者这是一个 jlink 运行时镜像，
+     * 请改用 {@link #getURI()}，因为系统模块和 jlink 运行时镜像使用的 "jrt:" URI 协议不被 {@link URL} 支持，
+     * 这将导致抛出 {@link IllegalArgumentException}
      *
-     * @return A {@link URL} representing the resource's location.
+     * @return 表示资源位置的 {@link URL}
      * @throws IllegalArgumentException
-     *             if the resource was obtained from a system module or jlink'd runtime image with a "jrt:" location
-     *             URI, or the resource was obtained from a module and the module's location URI is null
+     *             如果资源来自具有 "jrt:" 位置 URI 的系统模块或 jlink 运行时镜像，
+     *             或者资源来自模块且该模块的位置 URI 为 null
      */
     public URL getURL() {
         return uriToURL(getURI());
     }
 
     /**
-     * Get the {@link URI} of the classpath element or module that this resource was obtained from.
+     * 获取此资源所来自的类路径元素或模块的 {@link URI}
      *
-     * @return The {@link URL} of the classpath element or module that this resource was found within.
+     * @return 此资源所在类路径元素或模块的 {@link URL}
      * @throws IllegalArgumentException
-     *             if the classpath element does not have a valid URI (e.g. for modules whose location URI is null).
+     *             如果类路径元素没有有效的 URI(例如对于位置 URI 为 null 的模块)
      */
     public URI getClasspathElementURI() {
         return classpathElement.getURI();
     }
 
     /**
-     * Get the {@link URL} of the classpath element or module that this resource was obtained from. Use
-     * {@link #getClasspathElementURI()} instead if the resource may have come from a system module, or if this is a
-     * jlink'd runtime image, since "jrt:" URI schemes used by system modules and jlink'd runtime images are not
-     * supported by {@link URL}, and this will cause {@link IllegalArgumentException} to be thrown.
+     * 获取此资源所来自的类路径元素或模块的 {@link URL}如果资源可能来自系统模块，或者这是一个 jlink 运行时镜像，
+     * 请改用 {@link #getClasspathElementURI()}，因为系统模块和 jlink 运行时镜像使用的 "jrt:" URI 协议不被
+     * {@link URL} 支持，这将导致抛出 {@link IllegalArgumentException}
      *
-     * @return The {@link URL} of the classpath element or module that this resource was found within.
+     * @return 此资源所在类路径元素或模块的 {@link URL}
      * @throws IllegalArgumentException
-     *             if the resource was obtained from a system module or jlink'd runtime image with a "jrt:" location
-     *             URI, or the resource was obtained from a module and the module's location URI is null.
+     *             如果资源来自具有 "jrt:" 位置 URI 的系统模块或 jlink 运行时镜像，
+     *             或者资源来自模块且该模块的位置 URI 为 null
      */
     public URL getClasspathElementURL() {
         return uriToURL(getClasspathElementURI());
     }
 
     /**
-     * Get the classpath element {@link File}.
+     * 获取类路径元素的 {@link File}
      *
-     * @return The {@link File} for the classpath element package root dir or jar that this {@link Resource} was
-     *         found within, or null if this {@link Resource} was found in a module backed by a "jrt:" URI, or a
-     *         module with an unknown location. May also return null if the classpath element was an http/https URL,
-     *         and the jar was downloaded directly to RAM, rather than to a temp file on disk (e.g. if the temp dir
-     *         is not writeable).
+     * @return 此 {@link Resource} 所在类路径元素包根目录或 jar 的 {@link File}，
+     *         如果此 {@link Resource} 位于由 "jrt:" URI 支持的模块中或位置未知的模块中，则返回 null
+     *         如果类路径元素是 http/https URL，并且 jar 直接下载到 RAM 中而非磁盘上的临时文件
+     *         (例如临时目录不可写)，也可能返回 null
      */
     public File getClasspathElementFile() {
         return classpathElement.getFile();
     }
 
     /**
-     * Get the The {@link ModuleRef} for the module that this {@link Resource} was found within.
+     * 获取此 {@link Resource} 所在模块的 {@link ModuleRef} 引用
      *
-     * @return The {@link ModuleRef} for the module that this {@link Resource} was found within, as a
-     *         {@link ModuleRef}, or null if this {@link Resource} was found in a directory or jar in the classpath.
+     * @return 此 {@link Resource} 所在模块的 {@link ModuleRef} 引用，
+     *         如果此 {@link Resource} 位于类路径中的目录或 jar 中，则返回 null
      */
     public ModuleRef getModuleRef() {
         return classpathElement instanceof ClasspathElementModule
@@ -204,12 +198,11 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     }
 
     /**
-     * Convenience method to get the content of this {@link Resource} as a String. Assumes UTF8 encoding. (Calls
-     * {@link #close()} after completion.)
+     * 以字符串形式获取此 {@link Resource} 内容的便捷方法假定为 UTF8 编码(完成后调用 {@link #close()})
      *
-     * @return the content of this {@link Resource} as a String.
+     * @return 此 {@link Resource} 的内容，以字符串形式返回
      * @throws IOException
-     *             If an I/O exception occurred.
+     *             如果发生 I/O 异常
      */
     public String getContentAsString() throws IOException {
         final String content = new String(load(), StandardCharsets.UTF_8);
@@ -220,63 +213,62 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the path of this classpath resource relative to the package root.
+     * 获取此类路径资源相对于包根的路径
      *
-     * @return the path of this classpath resource relative to the package root. For example, for a resource path of
-     *         {@code "BOOT-INF/classes/com/xyz/resource.xml"} and a package root of {@code "BOOT-INF/classes/"},
-     *         returns {@code "com/xyz/resource.xml"}. Also drops version prefixes for multi-version jars, for
-     *         example for a resource path of {@code "META-INF/versions/11/com/xyz/resource.xml"} while running on
-     *         JDK 9+, returns {@code "com/xyz/resource.xml"}.
+     * @return 此类路径资源相对于包根的路径例如，对于资源路径
+     *         {@code "BOOT-INF/classes/com/xyz/resource.xml"} 和包根 {@code "BOOT-INF/classes/"}，
+     *         返回 {@code "com/xyz/resource.xml"}对于多版本 jar，也会删除版本前缀，
+     *         例如在 JDK 9+ 上运行时，对于资源路径 {@code "META-INF/versions/11/com/xyz/resource.xml"}，
+     *         返回 {@code "com/xyz/resource.xml"}
      */
     public abstract String getPath();
 
     /**
-     * Get the full path of this classpath resource relative to the root of the classpath element.
+     * 获取此类路径资源相对于类路径元素根目录的完整路径
      *
-     * @return the full path of this classpath resource within the classpath element. For example, will return the
-     *         full path of {@code "BOOT-INF/classes/com/xyz/resource.xml"} or
-     *         {@code "META-INF/versions/11/com/xyz/resource.xml"}, not {@code "com/xyz/resource.xml"}.
+     * @return 此类路径资源在类路径元素中的完整路径例如，将返回
+     *         {@code "BOOT-INF/classes/com/xyz/resource.xml"} 或
+     *         {@code "META-INF/versions/11/com/xyz/resource.xml"} 的完整路径，
+     *         而不是 {@code "com/xyz/resource.xml"}
      */
     public String getPathRelativeToClasspathElement() {
-        // Only overridden for jars
+        // 仅对 jar 重写
         return getPath();
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Open an {@link InputStream} for a classpath resource. Make sure you call {@link Resource#close()} when you
-     * are finished with the {@link InputStream}, so that the {@link InputStream} is closed.
+     * 为类路径资源打开一个 {@link InputStream}当你使用完 {@link InputStream} 后，确保调用
+     * {@link Resource#close()}，以便关闭 {@link InputStream}
      *
-     * @return The opened {@link InputStream}.
+     * @return 打开的 {@link InputStream}
      * @throws IOException
-     *             If the {@link InputStream} could not be opened.
+     *             如果 {@link InputStream} 无法打开
      */
     public abstract InputStream open() throws IOException;
 
     /**
-     * Open a {@link ByteBuffer} for a classpath resource. Make sure you call {@link Resource#close()} when you are
-     * finished with the {@link ByteBuffer}, so that the {@link ByteBuffer} is released or unmapped. See also
-     * {@link #readCloseable()}.
+     * 为类路径资源打开一个 {@link ByteBuffer}当你使用完 {@link ByteBuffer} 后，确保调用
+     * {@link Resource#close()}，以便释放或取消映射 {@link ByteBuffer}另请参阅 {@link #readCloseable()}
      *
-     * @return The allocated or mapped {@link ByteBuffer} for the resource file content.
+     * @return 为资源文件内容分配或映射的 {@link ByteBuffer}
      * @throws IOException
-     *             If the resource could not be read.
+     *             如果资源无法读取
      */
     public abstract ByteBuffer read() throws IOException;
 
     /**
-     * Open a {@link ByteBuffer} for a classpath resource, and wrap it in a {@link CloseableByteBuffer} instance,
-     * which implements the {@link Closeable#close()} method to free the underlying {@link ByteBuffer} when
-     * {@link CloseableByteBuffer#close()} is called, by automatically calling {@link Resource#close()}.
-     * 
-     * <p>
-     * Call {@link CloseableByteBuffer#getByteBuffer()} on the returned instance to access the underlying
-     * {@link ByteBuffer}.
+     * 为类路径资源打开一个 {@link ByteBuffer}，并将其包装在一个 {@link CloseableByteBuffer} 实例中，
+     * 该实例实现了 {@link Closeable#close()} 方法，在调用 {@link CloseableByteBuffer#close()} 时
+     * 通过自动调用 {@link Resource#close()} 来释放底层的 {@link ByteBuffer}
      *
-     * @return The allocated or mapped {@link ByteBuffer} for the resource file content.
+     * <p>
+     * 调用返回实例的 {@link CloseableByteBuffer#getByteBuffer()} 方法来访问底层的 {@link ByteBuffer}
+     *
+     * @return 为资源文件内容分配或映射的 {@link ByteBuffer}
      * @throws IOException
-     *             If the resource could not be read.
+     *             如果资源无法读取
      */
     public CloseableByteBuffer readCloseable() throws IOException {
         return new CloseableByteBuffer(read(), new Runnable() {
@@ -288,70 +280,64 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     }
 
     /**
-     * Load a classpath resource and return its content as a byte array. Automatically calls
-     * {@link Resource#close()} after loading the byte array and before returning it, so that the underlying
-     * InputStream is closed or the underlying ByteBuffer is released or unmapped.
+     * 加载类路径资源并以字节数组形式返回其内容在加载字节数组后、返回之前自动调用
+     * {@link Resource#close()}，以便关闭底层的 InputStream 或释放/取消映射底层的 ByteBuffer
      *
-     * @return The contents of the resource file.
+     * @return 资源文件的内容
      * @throws IOException
-     *             If the file contents could not be loaded in their entirety.
+     *             如果文件内容无法完整加载
      */
     public abstract byte[] load() throws IOException;
 
     /**
-     * Open a {@link ClassfileReader} on the resource (for reading classfiles).
+     * 在资源上打开一个 {@link ClassfileReader}(用于读取类文件)
      *
-     * @return the {@link ClassfileReader}.
+     * @return {@link ClassfileReader}
      * @throws IOException
-     *             if an I/O exception occurs.
+     *             如果发生 I/O 异常
      */
     abstract ClassfileReader openClassfile() throws IOException;
 
     /**
-     * Get the length of the resource.
+     * 获取资源的长度
      *
-     * @return The length of the resource. This only reliably returns a valid value after calling {@link #open()},
-     *         {@link #read()}, or {@link #load()} (and for {@link #open()}, only if the underlying jarfile has
-     *         length information for corresponding {@link ZipEntry} -- some jarfiles may not have length
-     *         information in their zip entries). Returns -1L if the length is unknown.
+     * @return 资源的长度这仅在调用 {@link #open()}、{@link #read()} 或 {@link #load()} 之后
+     *         才可靠地返回有效值(对于 {@link #open()}，仅当底层 jar 文件包含相应 {@link ZipEntry} 的
+     *         长度信息时——某些 jar 文件的 zip 条目可能没有长度信息)如果长度未知，则返回 -1L
      */
     public long getLength() {
         return length;
     }
 
     /**
-     * Get the last modified time for the resource, in milliseconds since the epoch. This time is obtained from the
-     * directory entry, if this resource is a file on disk, or from the zipfile central directory, if this resource
-     * is a zipfile entry. Timestamps are not available for resources obtained from system modules or jlink'd
-     * modules.
-     * 
-     * <p>
-     * Note: The ZIP format has no notion of timezone, so timestamps are only meaningful if it is known what
-     * timezone they were created in. We arbitrarily assume that zipfile timestamps are in the UTC timezone. This
-     * may be a wrong assumption, so you may need to apply a timezone correction if you know the timezone used by
-     * the zipfile creator.
+     * 获取资源的最后修改时间，以自纪元以来的毫秒数表示如果此资源是磁盘上的文件，此时间来自目录条目；
+     * 如果此资源是 zip 文件条目，则来自 zip 文件中央目录对于从系统模块或 jlink 模块获取的资源，
+     * 时间戳不可用
      *
-     * @return The millis since the epoch indicating the date / time that this file resource was last modified.
-     *         Returns 0L if the last modified date is unknown.
+     * <p>
+     * 注意：ZIP 格式没有时区概念，因此只有知道时间戳是在哪个时区创建的，时间戳才有意义
+     * 我们任意假设 zip 文件时间戳处于 UTC 时区这可能是一个错误的假设，
+     * 因此如果您知道 zip 文件创建者使用的时区，可能需要应用时区校正
+     *
+     * @return 表示此文件资源最后修改日期/时间的自纪元以来的毫秒数如果最后修改日期未知，则返回 0L
      */
     public abstract long getLastModified();
 
     /**
-     * Get the POSIX file permissions for the resource. POSIX file permissions are obtained from the directory
-     * entry, if this resource is a file on disk, or from the zipfile central directory, if this resource is a
-     * zipfile entry. POSIX file permissions are not available for resources obtained from system modules or jlink'd
-     * modules, and may not be available on non-POSIX-compliant operating systems or non-POSIX filesystems.
+     * 获取资源的 POSIX 文件权限如果此资源是磁盘上的文件，POSIX 文件权限来自目录条目；
+     * 如果此资源是 zip 文件条目，则来自 zip 文件中央目录对于从系统模块或 jlink 模块获取的资源，
+     * POSIX 文件权限不可用，并且在不符合 POSIX 标准的操作系统或非 POSIX 文件系统上也可能不可用
      *
-     * @return The set of {@link PosixFilePermission} permission flags for the resource, or null if unknown.
+     * @return 资源的 {@link PosixFilePermission} 权限标志集合，如果未知则返回 null
      */
     public abstract Set<PosixFilePermission> getPosixFilePermissions();
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get a string representation of the resource's location (as a URL string).
+     * 获取资源位置的字符串表示(以 URL 字符串形式)
      *
-     * @return the resource location as a URL String.
+     * @return 资源位置，以 URL 字符串形式返回
      */
     @Override
     public String toString() {
@@ -363,9 +349,9 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     }
 
     /**
-     * Hash code.
+     * 哈希码
      *
-     * @return the int
+     * @return 哈希码整数
      */
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -376,11 +362,11 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     }
 
     /**
-     * Equals.
+     * 相等性比较
      *
      * @param obj
-     *            the obj
-     * @return true, if successful
+     *            要比较的对象
+     * @return 如果相等则返回 true
      */
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
@@ -396,11 +382,11 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     }
 
     /**
-     * Compare to.
+     * 比较
      *
      * @param o
-     *            the o
-     * @return the int
+     *            要比较的对象
+     * @return 比较结果整数
      */
     /* (non-Javadoc)
      * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -412,15 +398,15 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Close the underlying InputStream, or release/unmap the underlying ByteBuffer. */
+    /** 关闭底层的 InputStream，或释放/取消映射底层的 ByteBuffer */
     @Override
     public void close() {
-        // Override in subclasses, and call super.close(), then at end, markAsClosed()
+        // 在子类中重写，并调用 super.close()，然后最后调用 markAsClosed()
         if (inputStream != null) {
             try {
                 inputStream.close();
             } catch (final IOException e) {
-                // Ignore
+                // 忽略
             }
             inputStream = null;
         }

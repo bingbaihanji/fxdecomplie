@@ -26,10 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.IncompleteAnnotationException;
@@ -43,37 +43,48 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-/** Holds metadata about a specific annotation instance on a class, method, method parameter or field. */
+/** 保存类、方法、方法参数或字段上特定注解实例的元数据 */
 public class AnnotationInfo extends ScanResultObject implements Comparable<AnnotationInfo>, HasName {
-    /** The name. */
+    /** 名称 */
     private String name;
 
-    /** The annotation param values. */
+    /** 注解参数值 */
     private AnnotationParameterValueList annotationParamValues;
 
     /**
-     * Set to true once any Object[] arrays of boxed types in annotationParamValues have been lazily converted to
-     * primitive arrays.
+     * 当 annotationParamValues 中任何包装类型的 Object[] 数组被延迟转换为基本类型数组后，设置为 true
      */
     private transient boolean annotationParamValuesHasBeenConvertedToPrimitive;
 
-    /** The annotation param values with defaults. */
-    private transient AnnotationParameterValueList annotationParamValuesWithDefaults;
+    /** 带默认值的注解参数值 */
+    private transient volatile AnnotationParameterValueList annotationParamValuesWithDefaults;
 
-    /** Default constructor for deserialization. */
+    /** 用于反序列化的默认构造函数 */
     AnnotationInfo() {
         super();
+    }
+
+    /**
+     * 为 ClassGraphWorkspaceAdapter 提供的简单构造函数
+     *
+     * @param name
+     *            注解的名称
+     */
+    public AnnotationInfo(final String name) {
+        super();
+        this.name = name;
+        this.annotationParamValues = new AnnotationParameterValueList();
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param name
-     *            The name of the annotation.
+     *            注解的名称
      * @param annotationParamValues
-     *            The annotation parameter values, or null if none.
+     *            注解参数值，如果没有则为 null
      */
     AnnotationInfo(final String name, final AnnotationParameterValueList annotationParamValues) {
         super();
@@ -84,9 +95,9 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the name.
+     * 获取名称
      *
-     * @return The name of the annotation class.
+     * @return 注解类的名称
      */
     @Override
     public String getName() {
@@ -94,114 +105,129 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
     }
 
     /**
-     * Checks if the annotation is inherited.
+     * 检查注解是否被继承
      *
-     * @return true if this annotation is meta-annotated with {@link Inherited}.
+     * @return 如果此注解被 {@link Inherited} 元注解修饰，则返回 true
      */
     public boolean isInherited() {
-        return getClassInfo().isInherited;
+        final ClassInfo classInfo = getClassInfo();
+        return classInfo != null && classInfo.isInherited;
     }
 
     /**
-     * Get the default parameter values.
+     * 获取默认参数值
      *
-     * @return the list of default parameter values for this annotation, or the empty list if none.
+     * @return 此注解的默认参数值列表，如果没有则返回空列表
      */
     public AnnotationParameterValueList getDefaultParameterValues() {
         return getClassInfo().getAnnotationDefaultParameterValues();
     }
 
     /**
-     * Get the parameter values.
+     * 获取参数值
      *
      * @param includeDefaultValues
-     *            if true, include default values for any annotation parameter value that is missing.
-     * @return The parameter values of this annotation, including any default parameter values inherited from the
-     *         annotation class definition (if requested), or the empty list if none.
+     *            如果为 true，则为任何缺失的注解参数值包含默认值
+     * @return 此注解的参数值，包括(如果需要的话)从注解类定义继承的默认参数值，如果没有则返回空列表
      */
     public AnnotationParameterValueList getParameterValues(final boolean includeDefaultValues) {
         final ClassInfo classInfo = getClassInfo();
         if (classInfo == null) {
-            // ClassInfo has not yet been set, just return values without defaults
-            // (happens when trying to log AnnotationInfo during scanning, before ScanResult is available)
+            // ClassInfo 尚未设置，只返回不带默认值的值
+            // (在扫描期间尝试记录 AnnotationInfo 时发生，此时 ScanResult 尚不可用)
             return annotationParamValues == null ? AnnotationParameterValueList.EMPTY_LIST : annotationParamValues;
         }
-        // Lazily convert any Object[] arrays of boxed types to primitive arrays
+        // 延迟将任何包装类型的 Object[] 数组转换为基本类型数组
         if (annotationParamValues != null && !annotationParamValuesHasBeenConvertedToPrimitive) {
             annotationParamValues.convertWrapperArraysToPrimitiveArrays(classInfo);
             annotationParamValuesHasBeenConvertedToPrimitive = true;
         }
         if (!includeDefaultValues) {
-            // Don't include defaults
+            // 不包含默认值
             return annotationParamValues == null ? AnnotationParameterValueList.EMPTY_LIST : annotationParamValues;
         }
-        if (annotationParamValuesWithDefaults == null) {
-            if (classInfo.annotationDefaultParamValues != null
-                    && !classInfo.annotationDefaultParamValuesHasBeenConvertedToPrimitive) {
-                classInfo.annotationDefaultParamValues.convertWrapperArraysToPrimitiveArrays(classInfo);
-                classInfo.annotationDefaultParamValuesHasBeenConvertedToPrimitive = true;
+        AnnotationParameterValueList result = annotationParamValuesWithDefaults;
+        if (result == null) {
+            synchronized (this) {
+                result = annotationParamValuesWithDefaults;
+                if (result == null) {
+                    result = buildParameterValuesWithDefaults(classInfo);
+                    annotationParamValuesWithDefaults = result;
+                }
             }
+        }
+        return result;
+    }
 
-            // Check if one or both of the defaults and the values in this annotation instance are null (empty)
-            final AnnotationParameterValueList defaultParamValues = classInfo.annotationDefaultParamValues;
-            if (defaultParamValues == null && annotationParamValues == null) {
-                return AnnotationParameterValueList.EMPTY_LIST;
-            } else if (defaultParamValues == null) {
-                return annotationParamValues;
-            } else if (annotationParamValues == null) {
-                return defaultParamValues;
-            }
+    /**
+     * 构建包含默认值的注解参数值列表(线程不安全，应在同步块内调用)
+     *
+     * @param classInfo
+     *            注解类信息
+     * @return 包含默认值的参数值列表
+     */
+    private AnnotationParameterValueList buildParameterValuesWithDefaults(final ClassInfo classInfo) {
+        if (classInfo.annotationDefaultParamValues != null
+                && !classInfo.annotationDefaultParamValuesHasBeenConvertedToPrimitive) {
+            classInfo.annotationDefaultParamValues.convertWrapperArraysToPrimitiveArrays(classInfo);
+            classInfo.annotationDefaultParamValuesHasBeenConvertedToPrimitive = true;
+        }
 
-            // Overwrite defaults with non-defaults
-            final Map<String, Object> allParamValues = new HashMap<>();
-            for (final AnnotationParameterValue defaultParamValue : defaultParamValues) {
-                allParamValues.put(defaultParamValue.getName(), defaultParamValue.getValue());
-            }
-            for (final AnnotationParameterValue annotationParamValue : this.annotationParamValues) {
-                allParamValues.put(annotationParamValue.getName(), annotationParamValue.getValue());
-            }
+        // 检查默认值和此注解实例中的值是否有一个或两个为 null(空)
+        final AnnotationParameterValueList defaultParamValues = classInfo.annotationDefaultParamValues;
+        if (defaultParamValues == null && annotationParamValues == null) {
+            return AnnotationParameterValueList.EMPTY_LIST;
+        } else if (defaultParamValues == null) {
+            return annotationParamValues;
+        } else if (annotationParamValues == null) {
+            return defaultParamValues;
+        }
 
-            // Put annotation values in the same order as the annotation methods (there is one method for each
-            // annotation constant)
-            if (classInfo.methodInfo == null) {
-                // Should not happen (when classfile is read, methods are always read, whether or not
-                // scanSpec.enableMethodInfo is true)
-                throw new IllegalArgumentException("Could not find methods for annotation " + classInfo.getName());
-            }
-            annotationParamValuesWithDefaults = new AnnotationParameterValueList();
-            for (final MethodInfo mi : classInfo.methodInfo) {
-                final String paramName = mi.getName();
-                switch (paramName) {
-                // None of these method names should be present in the @interface class itself, it should only
-                // contain methods for the annotation constants (but skip them anyway to be safe). These methods
-                // should only exist in concrete instances of the annotation.
+        // 用非默认值覆盖默认值
+        final Map<String, Object> allParamValues = new HashMap<>();
+        for (final AnnotationParameterValue defaultParamValue : defaultParamValues) {
+            allParamValues.put(defaultParamValue.getName(), defaultParamValue.getValue());
+        }
+        for (final AnnotationParameterValue annotationParamValue : this.annotationParamValues) {
+            allParamValues.put(annotationParamValue.getName(), annotationParamValue.getValue());
+        }
+
+        // 将注解值按与注解方法相同的顺序排列(每个注解常量对应一个方法)
+        if (classInfo.methodInfo == null) {
+            // 不应发生(读取 class 文件时，无论 scanSpec.enableMethodInfo 是否为 true，方法总是会被读取)
+            throw new IllegalArgumentException("Could not find methods for annotation " + classInfo.getName());
+        }
+        final AnnotationParameterValueList result = new AnnotationParameterValueList();
+        for (final MethodInfo mi : classInfo.methodInfo) {
+            final String paramName = mi.getName();
+            switch (paramName) {
+                // 这些方法名称不应出现在 @interface 类本身中，它应该只包含注解常量的方法
+                // (但为了安全起见还是跳过它们)这些方法只应存在于注解的具体实例中
                 case "<init>":
                 case "<clinit>":
                 case "hashCode":
                 case "equals":
                 case "toString":
                 case "annotationType":
-                    // Skip
+                    // 跳过
                     break;
                 default:
-                    // Annotation constant
+                    // 注解常量
                     final Object paramValue = allParamValues.get(paramName);
-                    // Annotation values cannot be null (or absent, from either defaults or annotation instance)
+                    // 注解值不能为 null(或从默认值或注解实例中缺失)
                     if (paramValue != null) {
-                        annotationParamValuesWithDefaults.add(new AnnotationParameterValue(paramName, paramValue));
+                        result.add(new AnnotationParameterValue(paramName, paramValue));
                     }
                     break;
-                }
             }
         }
-        return annotationParamValuesWithDefaults;
+        return result;
     }
 
     /**
-     * Get the parameter values.
+     * 获取参数值
      *
-     * @return The parameter values of this annotation, including any default parameter values inherited from the
-     *         annotation class definition, or the empty list if none.
+     * @return 此注解的参数值，包括从注解类定义继承的默认参数值，如果没有则返回空列表
      */
     public AnnotationParameterValueList getParameterValues() {
         return getParameterValues(true);
@@ -210,9 +236,9 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the name of the annotation class, for {@link #getClassInfo()}.
+     * 获取注解类的名称，供 {@link #getClassInfo()} 使用
      *
-     * @return the class name
+     * @return 类名
      */
     @Override
     protected String getClassName() {
@@ -220,7 +246,7 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -233,16 +259,16 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
     }
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in the type descriptor or type signature.
+     * 获取类型描述符或类型签名中引用的任何类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            被引用的类信息
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         super.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         if (annotationParamValues != null) {
             for (final AnnotationParameterValue annotationParamValue : annotationParamValues) {
@@ -253,231 +279,49 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Return the {@link ClassInfo} object for the annotation class. */
+    /** 返回注解类的 {@link ClassInfo} 对象 */
     @Override
     public ClassInfo getClassInfo() {
         return super.getClassInfo();
     }
 
     /**
-     * Load the {@link Annotation} class corresponding to this {@link AnnotationInfo} object, by calling
-     * {@code getClassInfo().loadClass()}, then create a new instance of the annotation, with the annotation
-     * parameter values obtained from this {@link AnnotationInfo} object, possibly overriding default annotation
-     * parameter values obtained from calling {@link AnnotationInfo#getClassInfo()} then
-     * {@link ClassInfo#getAnnotationDefaultParameterValues()}.
-     * 
+     * 通过调用 {@code getClassInfo().loadClass()} 加载与此 {@link AnnotationInfo} 对象对应的 {@link Annotation} 类，
+     * 然后创建一个新的注解实例，注解参数值来自此 {@link AnnotationInfo} 对象，可能会覆盖通过调用
+     * {@link AnnotationInfo#getClassInfo()} 然后 {@link ClassInfo#getAnnotationDefaultParameterValues()}
+     * 获取的默认注解参数值
+     *
      * <p>
-     * Note that the returned {@link Annotation} will have some sort of {@link InvocationHandler} proxy type, such
-     * as {@code io.github.classgraph.features.$Proxy4} or {@code com.sun.proxy.$Proxy6}. This is an unavoidable
-     * side effect of the fact that concrete {@link Annotation} instances cannot be instantiated directly.
-     * (ClassGraph uses <a href=
-     * "http://hg.openjdk.java.net/jdk7/jdk7/jdk/file/9b8c96f96a0f/src/share/classes/sun/reflect/annotation/AnnotationParser.java#l255">the
-     * same approach that the JDK uses to instantiate annotations from a map</a>.) However, proxy instances are
-     * <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/reflect/Proxy.html">handled
-     * specially</a> when it comes to casting and {@code instanceof}: you are able to cast the returned proxy
-     * instance to the annotation type, and {@code instanceof} checks against the annotation class will succeed.
-     * 
+     * 注意，返回的 {@link Annotation} 将具有某种 {@link InvocationHandler} 代理类型，
+     * 例如 {@code com.bingbaihanji.classgraph.core.features.$Proxy4} 或 {@code com.sun.proxy.$Proxy6}
+     * 这是具体 {@link Annotation} 实例无法直接实例化这一事实的不可避免的副作用
+     * (ClassGraph 使用了<a href=
+     * "http://hg.openjdk.java.net/jdk7/jdk7/jdk/file/9b8c96f96a0f/src/share/classes/sun/reflect/annotation/AnnotationParser.java#l255">
+     * 与 JDK 从 map 实例化注解相同的方法</a>)然而，代理实例在类型转换和 {@code instanceof}
+     * 方面<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/reflect/Proxy.html">
+     * 会被特殊处理</a>：你可以将返回的代理实例强制转换为注解类型，
+     * 并且针对注解类的 {@code instanceof} 检查也会成功
+     *
      * <p>
-     * Of course another option you have for getting the concrete annotations, rather than instantiating the
-     * annotations on a {@link ClassInfo} object via this method, is to call {@link ClassInfo#loadClass()}, and read
-     * the annotations directly from the returned {@link Class} object.
-     * 
-     * @return The new {@link Annotation} instance, as a dynamic proxy object that can be cast to the expected
-     *         annotation type.
+     * 当然，获取具体注解的另一种选择(而不是通过此方法实例化 {@link ClassInfo} 对象上的注解)
+     * 是调用 {@link ClassInfo#loadClass()}，并直接从返回的 {@link Class} 对象读取注解
+     *
+     * @return 新的 {@link Annotation} 实例，作为一个可以强制转换为预期注解类型的动态代理对象
      */
     public Annotation loadClassAndInstantiate() {
         final Class<? extends Annotation> annotationClass = getClassInfo().loadClass(Annotation.class);
         return (Annotation) Proxy.newProxyInstance(annotationClass.getClassLoader(),
-                new Class<?>[] { annotationClass }, new AnnotationInvocationHandler(annotationClass, this));
-    }
-
-    /** {@link InvocationHandler} for dynamically instantiating an {@link Annotation} object. */
-    private static class AnnotationInvocationHandler implements InvocationHandler {
-
-        /** The annotation class. */
-        private final Class<? extends Annotation> annotationClass;
-
-        /** The {@link AnnotationInfo} object for this annotation. */
-        private final AnnotationInfo annotationInfo;
-
-        /** The annotation parameter values instantiated. */
-        private final Map<String, Object> annotationParameterValuesInstantiated = new HashMap<>();
-
-        /**
-         * Constructor.
-         *
-         * @param annotationClass
-         *            the annotation class
-         * @param annotationInfo
-         *            the annotation info
-         */
-        AnnotationInvocationHandler(final Class<? extends Annotation> annotationClass,
-                final AnnotationInfo annotationInfo) {
-            this.annotationClass = annotationClass;
-            this.annotationInfo = annotationInfo;
-
-            // Instantiate the annotation parameter values (this loads and gets references for class literals,
-            // enum constants, etc.)
-            for (final AnnotationParameterValue apv : annotationInfo.getParameterValues()) {
-                final Object instantiatedValue = apv.instantiate(annotationInfo.getClassInfo());
-                if (instantiatedValue == null) {
-                    // Annotations cannot contain null values
-                    throw new IllegalArgumentException("Got null value for annotation parameter " + apv.getName()
-                            + " of annotation " + annotationInfo.name);
-                }
-                this.annotationParameterValuesInstantiated.put(apv.getName(), instantiatedValue);
-            }
-        }
-
-        /* (non-Javadoc)
-         * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method,
-         * java.lang.Object[])
-         */
-        @Override
-        public Object invoke(final Object proxy, final Method method, final Object[] args) {
-            final String methodName = method.getName();
-            final Class<?>[] paramTypes = method.getParameterTypes();
-            if ((args == null ? 0 : args.length) != paramTypes.length) {
-                throw new IllegalArgumentException(
-                        "Wrong number of arguments for " + annotationClass.getName() + "." + methodName + ": got "
-                                + (args == null ? 0 : args.length) + ", expected " + paramTypes.length);
-            }
-            if (args != null && paramTypes.length == 1) {
-                if ("equals".equals(methodName) && paramTypes[0] == Object.class) {
-                    // equals() needs to function the same as the JDK implementation 
-                    // (see src/share/classes/sun/reflect/annotation/AnnotationInvocationHandler.java in the JDK)
-                    if (this == args[0]) {
-                        return true;
-                    } else if (!annotationClass.isInstance(args[0])) {
-                        return false;
-                    }
-                    final ReflectionUtils reflectionUtils = annotationInfo.scanResult == null
-                            ? new ReflectionUtils()
-                            : annotationInfo.scanResult.reflectionUtils;
-                    for (final Entry<String, Object> ent : annotationParameterValuesInstantiated.entrySet()) {
-                        final String paramName = ent.getKey();
-                        final Object paramVal = ent.getValue();
-                        final Object otherParamVal = reflectionUtils.invokeMethod(/* throwException = */ false,
-                                args[0], paramName);
-                        if ((paramVal == null) != (otherParamVal == null)) {
-                            // Annotation values should never be null, but just to be safe
-                            return false;
-                        } else if (paramVal == null && otherParamVal == null) {
-                            return true;
-                        } else if (paramVal == null || !paramVal.equals(otherParamVal)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                } else {
-                    // .equals(Object) is the only method of an enum that can take one parameter
-                    throw new IllegalArgumentException();
-                }
-            } else if (paramTypes.length == 0) {
-                // Handle .toString(), .hashCode(), .annotationType()
-                switch (methodName) {
-                case "toString":
-                    return annotationInfo.toString();
-                case "hashCode": {
-                    // hashCode() needs to function the same as the JDK implementation
-                    // (see src/share/classes/sun/reflect/annotation/AnnotationInvocationHandler.java in the JDK)
-                    int result = 0;
-                    for (final Entry<String, Object> ent : annotationParameterValuesInstantiated.entrySet()) {
-                        final String paramName = ent.getKey();
-                        final Object paramVal = ent.getValue();
-                        int paramValHashCode;
-                        if (paramVal == null) {
-                            // Annotation values should never be null, but just to be safe
-                            paramValHashCode = 0;
-                        } else {
-                            final Class<?> type = paramVal.getClass();
-                            if (!type.isArray()) {
-                                paramValHashCode = paramVal.hashCode();
-                            } else if (type == byte[].class) {
-                                paramValHashCode = Arrays.hashCode((byte[]) paramVal);
-                            } else if (type == char[].class) {
-                                paramValHashCode = Arrays.hashCode((char[]) paramVal);
-                            } else if (type == double[].class) {
-                                paramValHashCode = Arrays.hashCode((double[]) paramVal);
-                            } else if (type == float[].class) {
-                                paramValHashCode = Arrays.hashCode((float[]) paramVal);
-                            } else if (type == int[].class) {
-                                paramValHashCode = Arrays.hashCode((int[]) paramVal);
-                            } else if (type == long[].class) {
-                                paramValHashCode = Arrays.hashCode((long[]) paramVal);
-                            } else if (type == short[].class) {
-                                paramValHashCode = Arrays.hashCode((short[]) paramVal);
-                            } else if (type == boolean[].class) {
-                                paramValHashCode = Arrays.hashCode((boolean[]) paramVal);
-                            } else {
-                                paramValHashCode = Arrays.hashCode((Object[]) paramVal);
-                            }
-                        }
-                        result += (127 * paramName.hashCode()) ^ paramValHashCode;
-                    }
-                    return result;
-                }
-                case "annotationType":
-                    return annotationClass;
-                default:
-                    // Fall through (other method names are used for returning annotation parameter values)
-                    break;
-                }
-            } else {
-                // Throw exception for 2 or more params
-                throw new IllegalArgumentException();
-            }
-
-            // Instantiate the annotation parameter value (this loads and gets references for class literals,
-            // enum constants, etc.)
-            final Object annotationParameterValue = annotationParameterValuesInstantiated.get(methodName);
-            if (annotationParameterValue == null) {
-                // Undefined enum constant (enum values cannot be null)
-                throw new IncompleteAnnotationException(annotationClass, methodName);
-            }
-
-            // Clone any array-typed annotation parameter values, in keeping with the Java Annotation API
-            final Class<?> annotationParameterValueClass = annotationParameterValue.getClass();
-            if (annotationParameterValueClass.isArray()) {
-                // Handle array types
-                if (annotationParameterValueClass == String[].class) {
-                    return ((String[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == byte[].class) {
-                    return ((byte[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == char[].class) {
-                    return ((char[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == double[].class) {
-                    return ((double[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == float[].class) {
-                    return ((float[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == int[].class) {
-                    return ((int[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == long[].class) {
-                    return ((long[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == short[].class) {
-                    return ((short[]) annotationParameterValue).clone();
-                } else if (annotationParameterValueClass == boolean[].class) {
-                    return ((boolean[]) annotationParameterValue).clone();
-                } else {
-                    // Handle arrays of nested annotation types
-                    final Object[] arr = (Object[]) annotationParameterValue;
-                    return arr.clone();
-                }
-            }
-            return annotationParameterValue;
-        }
+                new Class<?>[]{annotationClass}, new AnnotationInvocationHandler(annotationClass, this));
     }
 
     /**
-     * Convert wrapper arrays to primitive arrays.
+     * 将包装类型数组转换为基本类型数组
      */
     void convertWrapperArraysToPrimitiveArrays() {
         if (annotationParamValues != null) {
             annotationParamValues.convertWrapperArraysToPrimitiveArrays(getClassInfo());
         }
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -496,7 +340,7 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
             return 1;
         } else {
             for (int i = 0,
-                    max = Math.max(annotationParamValues.size(), o.annotationParamValues.size()); i < max; i++) {
+                 max = Math.max(annotationParamValues.size(), o.annotationParamValues.size()); i < max; i++) {
                 if (i >= annotationParamValues.size()) {
                     return -1;
                 } else if (i >= o.annotationParamValues.size()) {
@@ -511,6 +355,8 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
         }
         return 0;
     }
+
+    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
@@ -558,6 +404,181 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
                 }
             }
             buf.append(')');
+        }
+    }
+
+    /** 用于动态实例化 {@link Annotation} 对象的 {@link InvocationHandler} */
+    private static class AnnotationInvocationHandler implements InvocationHandler {
+
+        /** 注解类 */
+        private final Class<? extends Annotation> annotationClass;
+
+        /** 此注解的 {@link AnnotationInfo} 对象 */
+        private final AnnotationInfo annotationInfo;
+
+        /** 已实例化的注解参数值 */
+        private final Map<String, Object> annotationParameterValuesInstantiated = new HashMap<>();
+
+        /**
+         * 构造函数
+         *
+         * @param annotationClass
+         *            注解类
+         * @param annotationInfo
+         *            注解信息
+         */
+        AnnotationInvocationHandler(final Class<? extends Annotation> annotationClass,
+                                    final AnnotationInfo annotationInfo) {
+            this.annotationClass = annotationClass;
+            this.annotationInfo = annotationInfo;
+
+            // 实例化注解参数值(这会加载并获取类字面量、枚举常量等的引用)
+            for (final AnnotationParameterValue apv : annotationInfo.getParameterValues()) {
+                final Object instantiatedValue = apv.instantiate(annotationInfo.getClassInfo());
+                if (instantiatedValue == null) {
+                    // 注解不能包含 null 值
+                    throw new IllegalArgumentException("Got null value for annotation parameter " + apv.getName()
+                            + " of annotation " + annotationInfo.name);
+                }
+                this.annotationParameterValuesInstantiated.put(apv.getName(), instantiatedValue);
+            }
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method,
+         * java.lang.Object[])
+         */
+        @Override
+        public Object invoke(final Object proxy, final Method method, final Object[] args) {
+            final String methodName = method.getName();
+            final Class<?>[] paramTypes = method.getParameterTypes();
+            if ((args == null ? 0 : args.length) != paramTypes.length) {
+                throw new IllegalArgumentException(
+                        "Wrong number of arguments for " + annotationClass.getName() + "." + methodName + ": got "
+                                + (args == null ? 0 : args.length) + ", expected " + paramTypes.length);
+            }
+            if (args != null && paramTypes.length == 1) {
+                if ("equals".equals(methodName) && paramTypes[0] == Object.class) {
+                    // equals() 需要与 JDK 实现行为一致
+                    // (参见 JDK 中的 src/share/classes/sun/reflect/annotation/AnnotationInvocationHandler.java)
+                    if (this == args[0]) {
+                        return true;
+                    } else if (!annotationClass.isInstance(args[0])) {
+                        return false;
+                    }
+                    final ReflectionUtils reflectionUtils = annotationInfo.scanResult == null
+                            ? new ReflectionUtils()
+                            : annotationInfo.scanResult.reflectionUtils;
+                    for (final Entry<String, Object> ent : annotationParameterValuesInstantiated.entrySet()) {
+                        final String paramName = ent.getKey();
+                        final Object paramVal = ent.getValue();
+                        final Object otherParamVal = reflectionUtils.invokeMethod(/* throwException = */ false,
+                                args[0], paramName);
+                        if ((paramVal == null) != (otherParamVal == null)) {
+                            // 注解值不应为 null，但为了安全起见
+                            return false;
+                        } else if (paramVal == null && otherParamVal == null) {
+                            return true;
+                        } else if (paramVal == null || !paramVal.equals(otherParamVal)) {
+                            return false;
+                        }
+                    }
+                    return true;
+                } else {
+                    // .equals(Object) 是枚举中唯一可以接受一个参数的方法
+                    throw new IllegalArgumentException();
+                }
+            } else if (paramTypes.length == 0) {
+                // 处理 .toString()、.hashCode()、.annotationType()
+                switch (methodName) {
+                    case "toString":
+                        return annotationInfo.toString();
+                    case "hashCode": {
+                        // hashCode() 需要与 JDK 实现行为一致
+                        // (参见 JDK 中的 src/share/classes/sun/reflect/annotation/AnnotationInvocationHandler.java)
+                        int result = 0;
+                        for (final Entry<String, Object> ent : annotationParameterValuesInstantiated.entrySet()) {
+                            final String paramName = ent.getKey();
+                            final Object paramVal = ent.getValue();
+                            int paramValHashCode;
+                            if (paramVal == null) {
+                                // 注解值不应为 null，但为了安全起见
+                                paramValHashCode = 0;
+                            } else {
+                                final Class<?> type = paramVal.getClass();
+                                if (!type.isArray()) {
+                                    paramValHashCode = paramVal.hashCode();
+                                } else if (type == byte[].class) {
+                                    paramValHashCode = Arrays.hashCode((byte[]) paramVal);
+                                } else if (type == char[].class) {
+                                    paramValHashCode = Arrays.hashCode((char[]) paramVal);
+                                } else if (type == double[].class) {
+                                    paramValHashCode = Arrays.hashCode((double[]) paramVal);
+                                } else if (type == float[].class) {
+                                    paramValHashCode = Arrays.hashCode((float[]) paramVal);
+                                } else if (type == int[].class) {
+                                    paramValHashCode = Arrays.hashCode((int[]) paramVal);
+                                } else if (type == long[].class) {
+                                    paramValHashCode = Arrays.hashCode((long[]) paramVal);
+                                } else if (type == short[].class) {
+                                    paramValHashCode = Arrays.hashCode((short[]) paramVal);
+                                } else if (type == boolean[].class) {
+                                    paramValHashCode = Arrays.hashCode((boolean[]) paramVal);
+                                } else {
+                                    paramValHashCode = Arrays.hashCode((Object[]) paramVal);
+                                }
+                            }
+                            result += (127 * paramName.hashCode()) ^ paramValHashCode;
+                        }
+                        return result;
+                    }
+                    case "annotationType":
+                        return annotationClass;
+                    default:
+                        // 继续向下执行(其他方法名用于返回注解参数值)
+                        break;
+                }
+            } else {
+                // 对 2 个或更多参数抛出异常
+                throw new IllegalArgumentException();
+            }
+
+            // 实例化注解参数值(这会加载并获取类字面量、枚举常量等的引用)
+            final Object annotationParameterValue = annotationParameterValuesInstantiated.get(methodName);
+            if (annotationParameterValue == null) {
+                // 未定义的枚举常量(枚举值不能为 null)
+                throw new IncompleteAnnotationException(annotationClass, methodName);
+            }
+
+            // 克隆任何数组类型的注解参数值，以符合 Java 注解 API 的规范
+            final Class<?> annotationParameterValueClass = annotationParameterValue.getClass();
+            if (annotationParameterValueClass.isArray()) {
+                // 处理数组类型
+                if (annotationParameterValueClass == String[].class) {
+                    return ((String[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == byte[].class) {
+                    return ((byte[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == char[].class) {
+                    return ((char[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == double[].class) {
+                    return ((double[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == float[].class) {
+                    return ((float[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == int[].class) {
+                    return ((int[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == long[].class) {
+                    return ((long[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == short[].class) {
+                    return ((short[]) annotationParameterValue).clone();
+                } else if (annotationParameterValueClass == boolean[].class) {
+                    return ((boolean[]) annotationParameterValue).clone();
+                } else {
+                    // 处理嵌套注解类型的数组
+                    final Object[] arr = (Object[]) annotationParameterValue;
+                    return arr.clone();
+                }
+            }
+            return annotationParameterValue;
         }
     }
 }

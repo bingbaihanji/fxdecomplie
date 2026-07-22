@@ -23,8 +23,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.Utils;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -34,10 +35,9 @@ import java.util.Map;
 
 public class JsonCodeGen {
 
-    private static final Gson GSON = new com.google.gson.GsonBuilder().disableJdkUnsafe().disableInnerClassSerialization().setStrictness(com.google.gson.Strictness.STRICT).setPrettyPrinting()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
-            .disableHtmlEscaping()
-            .create();
+    private static final ObjectMapper GSON = new ObjectMapper()
+            .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+            .enable(SerializationFeature.INDENT_OUTPUT);
 
     private final ClassNode cls;
     private final JadxArgs args;
@@ -51,7 +51,11 @@ public class JsonCodeGen {
 
     public String process() {
         JsonClass jsonCls = processCls(cls, null);
-        return GSON.toJson(jsonCls);
+        try {
+            return GSON.writeValueAsString(jsonCls);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new JadxRuntimeException("Failed to serialize class to JSON", e);
+        }
     }
 
     private JsonClass processCls(ClassNode cls, @Nullable ClassGen parentCodeGen) {

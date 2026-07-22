@@ -40,7 +40,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * 从 Quarkus ClassLoader 提取类路径条目。
+ * 从 Quarkus ClassLoader 提取类路径条目
  */
 class QuarkusClassLoaderHandler implements ClassLoaderHandler {
     // Quarkus 1.2 之前的类加载器
@@ -63,65 +63,9 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 类不可构造。
+     * 类不可构造
      */
     public QuarkusClassLoaderHandler() {
-    }
-
-    /**
-     * 能否处理。
-     *
-     * @param classLoaderClass
-     *            类加载器类
-     * @param log
-     *            日志
-     * @return 如果 classLoaderClass 是 Quarkus RuntimeClassloader 或 QuarkusClassloader，则返回 true
-     */
-    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
-        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, RUNTIME_CLASSLOADER)
-                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, QUARKUS_CLASSLOADER)
-                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, RUNNER_CLASSLOADER);
-    }
-
-    /**
-     * 查找类加载器顺序。
-     *
-     * @param classLoader
-     *            类加载器
-     * @param classLoaderOrder
-     *            类加载器顺序
-     * @param log
-     *            日志
-     */
-    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-                                            final LogNode log) {
-        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
-        classLoaderOrder.add(classLoader, log);
-    }
-
-    /**
-     * 查找关联 {@link ClassLoader} 的类路径条目。
-     *
-     * @param classLoader
-     *            要查找类路径条目顺序的 {@link ClassLoader}。
-     * @param classpathOrder
-     *            要更新的 {@link ClasspathOrder} 对象。
-     * @param scanSpec
-     *            {@link ScanSpec}。
-     * @param log
-     *            日志。
-     */
-    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                          final ScanSpec scanSpec, final LogNode log) {
-
-        final String classLoaderName = classLoader.getClass().getName();
-        if (RUNTIME_CLASSLOADER.equals(classLoaderName)) {
-            findClasspathOrderForRuntimeClassloader(classLoader, classpathOrder, scanSpec, log);
-        } else if (QUARKUS_CLASSLOADER.equals(classLoaderName)) {
-            findClasspathOrderForQuarkusClassloader(classLoader, classpathOrder, scanSpec, log);
-        } else if (RUNNER_CLASSLOADER.equals(classLoaderName)) {
-            findClasspathOrderForRunnerClassloader(classLoader, classpathOrder, scanSpec, log);
-        }
     }
 
     private static void findClasspathOrderForQuarkusClassloader(final ClassLoader classLoader,
@@ -197,6 +141,65 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
                             scanSpec, log);
                 }
             }
+        }
+    }
+
+    /**
+     * 能否处理
+     *
+     * @param classLoaderClass
+     *            类加载器类
+     * @param log
+     *            日志
+     * @return 如果 classLoaderClass 是 Quarkus RuntimeClassloader 或 QuarkusClassloader，则返回 true
+     */
+    @Override
+    public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, RUNTIME_CLASSLOADER)
+                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, QUARKUS_CLASSLOADER)
+                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, RUNNER_CLASSLOADER);
+    }
+
+    /**
+     * 查找类加载器顺序
+     *
+     * @param classLoader
+     *            类加载器
+     * @param classLoaderOrder
+     *            类加载器顺序
+     * @param log
+     *            日志
+     */
+    @Override
+    public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                     final LogNode log) {
+        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
+        classLoaderOrder.add(classLoader, log);
+    }
+
+    /**
+     * 查找关联 {@link ClassLoader} 的类路径条目
+     *
+     * @param classLoader
+     *            要查找类路径条目顺序的 {@link ClassLoader}
+     * @param classpathOrder
+     *            要更新的 {@link ClasspathOrder} 对象
+     * @param scanSpec
+     *            {@link ScanSpec}
+     * @param log
+     *            日志
+     */
+    @Override
+    public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                   final ScanSpec scanSpec, final LogNode log) {
+
+        final String classLoaderName = classLoader.getClass().getName();
+        if (RUNTIME_CLASSLOADER.equals(classLoaderName)) {
+            findClasspathOrderForRuntimeClassloader(classLoader, classpathOrder, scanSpec, log);
+        } else if (QUARKUS_CLASSLOADER.equals(classLoaderName)) {
+            findClasspathOrderForQuarkusClassloader(classLoader, classpathOrder, scanSpec, log);
+        } else if (RUNNER_CLASSLOADER.equals(classLoaderName)) {
+            findClasspathOrderForRunnerClassloader(classLoader, classpathOrder, scanSpec, log);
         }
     }
 }

@@ -38,32 +38,18 @@ import com.bingbaihanji.classgraph.utils.LogNode;
 import java.io.File;
 import java.util.List;
 
-/** 从 Tomcat/Catalina WebappClassLoaderBase 提取类路径条目。 */
+/** 从 Tomcat/Catalina WebappClassLoaderBase 提取类路径条目 */
 class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
-    /** 类不可构造。 */
+    /** 类不可构造 */
     public TomcatWebappClassLoaderBaseHandler() {
     }
 
     /**
-     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}。
-     *
-     * @param classLoaderClass
-     *            {@link ClassLoader} 类或其超类。
-     * @param log
-     *            日志
-     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true。
-     */
-    @Override public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
-        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "org.apache.catalina.loader.WebappClassLoaderBase");
-    }
-
-    /**
-     * 如果此类加载器委托给其父级，则返回 true。
+     * 如果此类加载器委托给其父级，则返回 true
      *
      * @param classLoader
-     *            {@link ClassLoader}。
-     * @return 如果此类加载器委托给其父级，则返回 true。
+     *            {@link ClassLoader}
+     * @return 如果此类加载器委托给其父级，则返回 true
      */
     private static boolean isParentFirst(final ClassLoader classLoader, final ReflectionUtils reflectionUtils) {
         final Object delegateObject = reflectionUtils.getFieldVal(false, classLoader, "delegate");
@@ -75,17 +61,33 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序。
+     * 检查此 {@link ClassLoaderHandler} 是否能够处理给定的 {@link ClassLoader}
+     *
+     * @param classLoaderClass
+     *            {@link ClassLoader} 类或其超类
+     * @param log
+     *            日志
+     * @return 如果此 {@link ClassLoaderHandler} 能够处理 {@link ClassLoader}，则返回 true
+     */
+    @Override
+    public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
+        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
+                "org.apache.catalina.loader.WebappClassLoaderBase");
+    }
+
+    /**
+     * 查找某个 {@link ClassLoader} 的 {@link ClassLoader} 委托顺序
      *
      * @param classLoader
-     *            要查找委托顺序的 {@link ClassLoader}。
+     *            要查找委托顺序的 {@link ClassLoader}
      * @param classLoaderOrder
-     *            要更新的 {@link ClassLoaderOrder} 对象。
+     *            要更新的 {@link ClassLoaderOrder} 对象
      * @param log
      *            日志
      */
-    @Override public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
-                                            final LogNode log) {
+    @Override
+    public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
+                                     final LogNode log) {
         final boolean isParentFirst = isParentFirst(classLoader, classLoaderOrder.reflectionUtils);
         if (isParentFirst) {
             // 使用父级优先委托顺序
@@ -93,7 +95,7 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
         }
         if ("org.apache.tomee.catalina.TomEEWebappClassLoader".equals(classLoader.getClass().getName())) {
             // TomEEWebappClassLoader 有很多复杂的委托规则，包括特定于类名的委托，
-            // 当前 ClassGraph 模型不支持这些规则，因此我们只是尝试用固定顺序来近似委托顺序。
+            // 当前 ClassGraph 模型不支持这些规则，因此我们只是尝试用固定顺序来近似委托顺序
             try {
                 classLoaderOrder.delegateTo(Class.forName("org.apache.openejb.OpenEJB").getClassLoader(),
                         /* isParent = */ true, log);
@@ -109,20 +111,21 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
     }
 
     /**
-     * 查找关联 {@link ClassLoader} 的类路径条目。
+     * 查找关联 {@link ClassLoader} 的类路径条目
      *
      * @param classLoader
-     *            要查找类路径条目顺序的 {@link ClassLoader}。
+     *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
-     *            要更新的 {@link ClasspathOrder} 对象。
+     *            要更新的 {@link ClasspathOrder} 对象
      * @param scanSpec
-     *            {@link ScanSpec}。
+     *            {@link ScanSpec}
      * @param log
-     *            日志。
+     *            日志
      */
-    @Override public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                          final ScanSpec scanSpec, final LogNode log) {
-        // 类型 StandardRoot（实现 WebResourceRoot）
+    @Override
+    public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
+                                   final ScanSpec scanSpec, final LogNode log) {
+        // 类型 StandardRoot(实现 WebResourceRoot)
         final Object resources = classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getResources");
         // 类型 List<URL>
         final Object baseURLs = classpathOrder.reflectionUtils.invokeMethod(false, resources, "getBaseUrls");

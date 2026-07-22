@@ -26,10 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.Assert;
-import nonapi.io.github.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.utils.Assert;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.net.URI;
@@ -37,49 +37,48 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/** Holds metadata about a package encountered during a scan. */
+/** 保存扫描过程中遇到的包的元数据 */
 public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
-    /** The name of the module. */
+    /** 模块名称 */
     private String name;
 
-    /** The classpath element. */
+    /** 类路径元素 */
     private transient ClasspathElement classpathElement;
 
-    /** The {@link ModuleRef}. */
+    /** {@link ModuleRef} 引用 */
     private transient ModuleRef moduleRef;
 
-    /** The location of the module as a URI. */
+    /** 模块位置(URI 形式) */
     private transient URI locationURI;
 
     /**
-     * Unique {@link AnnotationInfo} objects for any annotations on the module-info.class file, if present, else
-     * null.
+     * 对 module-info.class 文件上的注解的唯 {@link AnnotationInfo} 对象集合(如果存在)，否则为 null
      */
     private Set<AnnotationInfo> annotationInfoSet;
 
-    /** {@link AnnotationInfo} objects for any annotations on the module-info.class file, if present, else null. */
+    /** 对 module-info.class 文件上的注解的 {@link AnnotationInfo} 对象集合(如果存在)，否则为 null */
     private AnnotationInfoList annotationInfo;
 
-    /** {@link PackageInfo} objects for packages found within the class, if any, else null. */
+    /** 在这个类中找到的包的 {@link PackageInfo} 对象集合(如果有)，否则为 null */
     private Set<PackageInfo> packageInfoSet;
 
-    /** Set of classes in the module. */
+    /** 模块中的类集合 */
     private Set<ClassInfo> classInfoSet;
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Deerialization constructor. */
+    /** 反序列化构造函数 */
     ModuleInfo() {
-        // Empty
+        // 空
     }
 
     /**
-     * Construct a ModuleInfo object.
+     * 构造一个 ModuleInfo 对象
      *
      * @param moduleRef
-     *            the module ref
+     *            模块引用
      * @param classpathElement
-     *            the classpath element
+     *            类路径元素
      */
     ModuleInfo(final ModuleRef moduleRef, final ClasspathElement classpathElement) {
         this.moduleRef = moduleRef;
@@ -88,9 +87,9 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * The module name, or {@code ""} for the unnamed module.
+     * 模块名称，对于未命名模块则为 {@code ""}
      *
-     * @return the module name, or {@code ""} for the unnamed module.
+     * @return 模块名称，对于未命名模块则为 {@code ""}
      */
     @Override
     public String getName() {
@@ -98,9 +97,9 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * The module location, or null for modules whose location is unknown.
+     * 模块位置，对于位置未知的模块则为 null
      *
-     * @return the module location, or null for modules whose location is unknown.
+     * @return 模块位置，对于位置未知的模块则为 null
      */
     public URI getLocation() {
         if (locationURI == null) {
@@ -113,11 +112,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * The {@link ModuleRef} for this module, or null if this module was obtained from a classpath element on the
-     * traditional classpath that contained a {@code module-info.class} file.
+     * 此模块的 {@link ModuleRef}如果此模块是从传统类路径上包含 {@code module-info.class} 文件的类路径元素
+     * 获取的，则返回 null
      *
-     * @return the {@link ModuleRef}, or null if this module was obtained from a classpath element on the
-     *         traditional classpath that contained a {@code module-info.class} file.
+     * @return 此模块的 {@link ModuleRef}如果此模块是从传统类路径上包含 {@code module-info.class} 文件的
+     *         类路径元素获取的，则返回 null
      */
     public ModuleRef getModuleRef() {
         return moduleRef;
@@ -126,10 +125,10 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Add a {@link ClassInfo} object to this {@link ModuleInfo}.
+     * 向此 {@link ModuleInfo} 添加一个 {@link ClassInfo} 对象
      *
      * @param classInfo
-     *            the {@link ClassInfo} object to add
+     *            要添加的 {@link ClassInfo} 对象
      */
     void addClassInfo(final ClassInfo classInfo) {
         if (classInfoSet == null) {
@@ -139,13 +138,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Get the {@link ClassInfo} object for the named class in this module, or null if the class was not found in
-     * this module.
+     * 获取此模块中指定名称类的 {@link ClassInfo} 对象，如果在此模块中未找到该类则返回 null
      *
      * @param className
-     *            the class name
-     * @return the {@link ClassInfo} object for the named class in this module, or null if the class was not found
-     *         in this module.
+     *            类名
+     * @return 此模块中指定名称类的 {@link ClassInfo} 对象，如果在此模块中未找到该类则返回 null
      */
     public ClassInfo getClassInfo(final String className) {
         for (final ClassInfo ci : classInfoSet) {
@@ -157,9 +154,9 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Get the list of {@link ClassInfo} objects for all classes that are members of this package.
+     * 获取此包中所有成员类的 {@link ClassInfo} 对象列表
      *
-     * @return the list of {@link ClassInfo} objects for all classes that are members of this package.
+     * @return 此包中所有成员类的 {@link ClassInfo} 对象列表
      */
     public ClassInfoList getClassInfo() {
         return new ClassInfoList(classInfoSet, /* sortByName = */ true);
@@ -168,10 +165,10 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Add a {@link PackageInfo} object to this {@link ModuleInfo}.
+     * 向此 {@link ModuleInfo} 添加一个 {@link PackageInfo} 对象
      *
      * @param packageInfo
-     *            the {@link PackageInfo} object
+     *            要添加的 {@link PackageInfo} 对象
      */
     void addPackageInfo(final PackageInfo packageInfo) {
         if (packageInfoSet == null) {
@@ -181,13 +178,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Get the {@link PackageInfo} object for the named package in this module, or null if the package was not found
-     * in this module.
+     * 获取此模块中指定名称包的 {@link PackageInfo} 对象，如果在此模块中未找到该包则返回 null
      *
      * @param packageName
-     *            the package name
-     * @return the {@link PackageInfo} object for the named package in this module, or null if the package was not
-     *         found in this module.
+     *            包名
+     * @return 此模块中指定名称包的 {@link PackageInfo} 对象，如果在此模块中未找到该包则返回 null
      */
     public PackageInfo getPackageInfo(final String packageName) {
         if (packageInfoSet == null) {
@@ -202,9 +197,9 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Get the {@link PackageInfo} objects for all packages that are members of this module.
+     * 获取此模块中所有成员包的 {@link PackageInfo} 对象列表
      *
-     * @return the list of {@link PackageInfo} objects for all packages that are members of this module.
+     * @return 此模块中所有成员包的 {@link PackageInfo} 对象列表
      */
     public PackageInfoList getPackageInfo() {
         if (packageInfoSet == null) {
@@ -218,21 +213,21 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     // -------------------------------------------------------------------------------------------------------------
 
     void setScanResult(final ScanResult scanResult) {
-      if (annotationInfoSet != null) {
-        for (final AnnotationInfo ai : annotationInfoSet) {
-          ai.setScanResult(scanResult);
+        if (annotationInfoSet != null) {
+            for (final AnnotationInfo ai : annotationInfoSet) {
+                ai.setScanResult(scanResult);
+            }
         }
-      }
     }
 
     /**
-     * Add annotations found in a module descriptor classfile.
+     * 添加在模块描述符 classfile 中找到的注解
      *
      * @param moduleAnnotations
-     *            the module annotations
+     *            模块注解
      */
     void addAnnotations(final AnnotationInfoList moduleAnnotations) {
-        // Currently only class annotations are used in the module-info.class file
+        // 目前 module-info.class 文件中仅使用类注解
         if (moduleAnnotations != null && !moduleAnnotations.isEmpty()) {
             if (annotationInfoSet == null) {
                 annotationInfoSet = new LinkedHashSet<>();
@@ -242,12 +237,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Get a the annotation on this module, or null if the module does not have the annotation.
+     * 获取此模块上的某个注解，如果模块没有该注解则返回 null
      *
      * @param annotation
-     *            The annotation.
-     * @return An {@link AnnotationInfo} object representing the annotation on this module, or null if the module
-     *         does not have the annotation.
+     *            注解类
+     * @return 表示此模块上该注解的 {@link AnnotationInfo} 对象，如果模块没有该注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -255,21 +249,20 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Get a the named annotation on this module, or null if the module does not have the named annotation.
+     * 获取此模块上的某个命名注解，如果模块没有该命名注解则返回 null
      *
      * @param annotationName
-     *            The annotation name.
-     * @return An {@link AnnotationInfo} object representing the named annotation on this module, or null if the
-     *         module does not have the named annotation.
+     *            注解名称
+     * @return 表示此模块上该命名注解的 {@link AnnotationInfo} 对象，如果模块没有该命名注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
         return getAnnotationInfo().get(annotationName);
     }
 
     /**
-     * Get any annotations on the {@code package-info.class} file.
+     * 获取 {@code package-info.class} 文件上的所有注解
      *
-     * @return the list of {@link AnnotationInfo} objects for annotations on the {@code package-info.class} file.
+     * @return {@code package-info.class} 文件上注解的 {@link AnnotationInfo} 对象列表
      */
     public AnnotationInfoList getAnnotationInfo() {
         if (annotationInfo == null) {
@@ -284,11 +277,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Check if this module has the annotation.
+     * 检查此模块是否有该注解
      *
      * @param annotation
-     *            The annotation.
-     * @return true if this module has the annotation.
+     *            注解类
+     * @return 如果此模块有该注解则返回 true
      */
     public boolean hasAnnotation(final Class<? extends Annotation> annotation) {
         Assert.isAnnotation(annotation);
@@ -296,11 +289,11 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * Check if this module has the named annotation.
+     * 检查此模块是否有该命名注解
      *
      * @param annotationName
-     *            The name of an annotation.
-     * @return true if this module has the named annotation.
+     *            注解名称
+     * @return 如果此模块有该命名注解则返回 true
      */
     public boolean hasAnnotation(final String annotationName) {
         return getAnnotationInfo().containsName(annotationName);

@@ -60,7 +60,7 @@ public final class HexViewController {
     }
 
     /**
-     * 辅助方法：创建带 Alpha 通道的 {@link Color} 
+     * 辅助方法：创建带 Alpha 通道的 {@link Color}
      *
      * @param r 红色分量 (0-255)
      * @param g 绿色分量 (0-255)
@@ -148,7 +148,7 @@ public final class HexViewController {
     }
 
     /**
-     * 根据数据提供者内容应用高亮到指定的 {@link PatternModel} 
+     * 根据数据提供者内容应用高亮到指定的 {@link PatternModel}
      * <p>
      * 遍历已注册的高亮器选择第一个匹配的高亮器执行高亮操作 
      * 若 {@code patternModel} 为 {@code null} 则直接返回 

@@ -26,21 +26,21 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Scanner.ClasspathEntryWorkUnit;
-import nonapi.io.github.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
-import nonapi.io.github.classgraph.concurrency.SingletonMap.NewInstanceException;
-import nonapi.io.github.classgraph.concurrency.SingletonMap.NullSingletonException;
-import nonapi.io.github.classgraph.concurrency.WorkQueue;
-import nonapi.io.github.classgraph.fastzipfilereader.FastZipEntry;
-import nonapi.io.github.classgraph.fastzipfilereader.LogicalZipFile;
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.fastzipfilereader.ZipFileSlice;
-import nonapi.io.github.classgraph.fileslice.reader.ClassfileReader;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
-import nonapi.io.github.classgraph.utils.*;
+import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
+import com.bingbaihanji.classgraph.concurrency.SingletonMap.NewInstanceException;
+import com.bingbaihanji.classgraph.concurrency.SingletonMap.NullSingletonException;
+import com.bingbaihanji.classgraph.concurrency.WorkQueue;
+import com.bingbaihanji.classgraph.core.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.fastzipfilereader.FastZipEntry;
+import com.bingbaihanji.classgraph.fastzipfilereader.LogicalZipFile;
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.fastzipfilereader.ZipFileSlice;
+import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.utils.*;
 
 import java.io.File;
 import java.io.IOError;
@@ -57,68 +57,66 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** A zip/jarfile classpath element. */
+/** 一个 zip/jar 文件类路径元素 */
 class ClasspathElementZip extends ClasspathElement {
     /**
-     * The {@link String} representation of the path string, {@link URL}, {@link URI}, or {@link Path} for this
-     * zipfile.
+     * 此 zip 文件的路径字符串、{@link URL}、{@link URI} 或 {@link Path} 的 {@link String} 表示形式
      */
     private final String rawPath;
-    /** The logical zipfile for this classpath element. */
-    LogicalZipFile logicalZipFile;
-    /** The normalized path of the jarfile, "!/"-separated if nested, excluding any package root. */
-    private String zipFilePath;
-    /** A map from relative path to {@link Resource} for non-rejected zip entries. */
+    /** 从相对路径到未被拒绝的 zip 条目的 {@link Resource} 映射 */
     private final ConcurrentHashMap<String, Resource> relativePathToResource = new ConcurrentHashMap<>();
-    /** A list of all automatic package root prefixes found as prefixes of paths within this zipfile. */
+    /** 在此 zip 文件内作为路径前缀找到的所有自动包根前缀的列表 */
     private final Set<String> strippedAutomaticPackageRootPrefixes = new HashSet<>();
-    /** The nested jar handler. */
+    /** 嵌套 jar 处理器 */
     private final NestedJarHandler nestedJarHandler;
+    /** 此类路径元素的逻辑 zip 文件 */
+    LogicalZipFile logicalZipFile;
     /**
-     * The name of the module from the {@code Automatic-Module-Name} manifest attribute, if one is present in the
-     * root of the classpath element.
+     * 从 {@code Automatic-Module-Name} 清单属性中获取的模块名称(如果类路径元素根中存在该属性)
      */
     String moduleNameFromManifestFile;
-    /** The automatic module name, derived from the jarfile filename. */
+    /** jar 文件的规范化路径，如果嵌套则以 "!/" 分隔，不包含任何包根路径 */
+    private String zipFilePath;
+    /** 从 jar 文件名派生的自动模块名称 */
     private String derivedAutomaticModuleName;
 
     /**
-     * A jarfile classpath element.
+     * 一个 jar 文件类路径元素
      *
      * @param workUnit
-     *            the work unit
+     *            工作单元
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      * @param scanSpec
-     *            the scan spec
+     *            扫描规格
      */
     ClasspathElementZip(final ClasspathEntryWorkUnit workUnit, final NestedJarHandler nestedJarHandler,
-            final ScanSpec scanSpec) {
+                        final ScanSpec scanSpec) {
         super(workUnit, scanSpec);
         final Object rawPathObj = workUnit.classpathEntryObj;
 
-        // Convert the raw path object (Path, URL, or URI) to a string.
-        // Any required URL/URI parsing are done in NestedJarHandler.
+        // 将原始路径对象(Path、URL 或 URI)转换为字符串
+        // 任何需要的 URL/URI 解析都在 NestedJarHandler 中完成
         String rawPath = null;
         if (rawPathObj instanceof Path) {
-            // Path.toString does not include URI scheme => turn into a URI so that toString works
+            // Path.toString 不包含 URI 协议 => 转换为 URI 以便 toString 正常工作
             try {
                 rawPath = ((Path) rawPathObj).toUri().toString();
             } catch (final IOError | SecurityException e) {
-                // Fall through
+                // 继续执行
             }
         }
         if (rawPath == null) {
             rawPath = rawPathObj.toString();
         }
         this.rawPath = rawPath;
-        this.zipFilePath = rawPath; // May change when open() is called
+        this.zipFilePath = rawPath; // 可能在调用 open() 时更改
         this.nestedJarHandler = nestedJarHandler;
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ClasspathElement#open(
-     * nonapi.io.github.classgraph.concurrency.WorkQueue, nonapi.io.github.classgraph.utils.LogNode)
+     * @see com.bingbaihanji.classgraph.core.ClasspathElement#open(
+     * com.bingbaihanji.classgraph.concurrency.WorkQueue, com.bingbaihanji.classgraph.utils.LogNode)
      */
     @Override
     void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log) throws InterruptedException {
@@ -143,27 +141,27 @@ class ClasspathElementZip extends ClasspathElement {
         }
 
         try {
-            // Get LogicalZipFile for innermost nested jarfile
+            // 获取最内层嵌套 jar 文件的 LogicalZipFile
             Entry<LogicalZipFile, String> logicalZipFileAndPackageRoot;
             try {
                 logicalZipFileAndPackageRoot = nestedJarHandler.nestedPathToLogicalZipFileAndPackageRootMap
                         .get(rawPath, subLog);
             } catch (final NullSingletonException | NewInstanceException e) {
-                // Generally thrown on the second and subsequent attempt to call .get(), after the first failed,
-                // or newInstance() threw an exception
+                // 通常在第一次调用 .get() 失败后，第二次及后续尝试时抛出，
+                // 或者 newInstance() 抛出了异常
                 throw new IOException("Could not get logical zipfile " + rawPath + " : "
                         + (e.getCause() == null ? e : e.getCause()));
             }
             logicalZipFile = logicalZipFileAndPackageRoot.getKey();
             if (logicalZipFile == null) {
-                // Should not happen, but this keeps lgtm static analysis happy
+                // 不应该发生，但这样可以让 lgtm 静态分析满意
                 throw new IOException("Logical zipfile was null");
             }
 
-            // Get the normalized path of the logical zipfile
+            // 获取逻辑 zip 文件的规范化路径
             zipFilePath = FastPathResolver.resolve(FileUtils.currDirPath(), logicalZipFile.getPath());
 
-            // Get package root of jarfile
+            // 获取 jar 文件的包根路径
             final String packageRoot = logicalZipFileAndPackageRoot.getValue();
             if (!packageRoot.isEmpty()) {
                 packageRootPrefix = packageRoot + "/";
@@ -177,8 +175,8 @@ class ClasspathElementZip extends ClasspathElement {
         }
 
         if (!scanSpec.enableSystemJarsAndModules && logicalZipFile.isJREJar) {
-            // Found a rejected JRE jar that was not caught by filtering for rt.jar in ClasspathFinder
-            // (the isJREJar value was set by detecting JRE headers in the jar's manifest file)
+            // 发现一个被拒绝的 JRE jar，该 jar 未被 ClasspathFinder 中的 rt.jar 过滤捕获
+            // (isJREJar 值是通过检测 jar 清单文件中的 JRE 头设置的)
             if (subLog != null) {
                 subLog.log("Ignoring JRE jar: " + rawPath);
             }
@@ -194,13 +192,13 @@ class ClasspathElementZip extends ClasspathElement {
             return;
         }
 
-        // Automatically add any nested "lib/" dirs to classpath, since not all classloaders return them
-        // as classpath elements
+        // 自动将任何嵌套的 "lib/" 目录添加到类路径中，因为并非所有类加载器都将其
+        // 作为类路径元素返回
         int childClasspathEntryIdx = 0;
         if (scanSpec.scanNestedJars) {
             for (final FastZipEntry zipEntry : logicalZipFile.entries) {
                 for (final String libDirPrefix : ClassLoaderHandlerRegistry.AUTOMATIC_LIB_DIR_PREFIXES) {
-                    // Even if a package root is given, e.g. BOOT-INF/classes, still look in lib/ etc. for jars
+                    // 即使给出了包根路径(例如 BOOT-INF/classes)，仍然在 lib/ 等目录中查找 jar 文件
                     if (zipEntry.entryNameUnversioned.startsWith(libDirPrefix)
                             && zipEntry.entryNameUnversioned.endsWith(".jar")) {
                         final String entryPath = zipEntry.getPath();
@@ -217,35 +215,35 @@ class ClasspathElementZip extends ClasspathElement {
             }
         }
 
-        // Don't add child classpath elements that are identical to this classpath element, or that are duplicates
+        // 不要添加与此类路径元素相同或重复的子类路径元素
         final Set<String> scheduledChildClasspathElements = new HashSet<>();
         scheduledChildClasspathElements.add(rawPath);
 
-        // Create child classpath elements from values obtained from Class-Path entry in manifest, resolving
-        // the paths relative to the dir or parent jarfile that the jarfile is contained in
+        // 从清单文件 Class-Path 条目中获取的值创建子类路径元素，
+        // 将路径解析为相对于包含该 jar 文件的目录或父 jar 文件的路径
         if (logicalZipFile.classPathManifestEntryValue != null) {
-            // Get parent dir of logical zipfile within grandparent slice,
-            // e.g. for a zipfile slice path of "/path/to/jar1.jar!/lib/jar2.jar", this is "lib",
-            // or for "/path/to/jar1.jar", this is "/path/to", or "" if the jar is in the toplevel dir.
+            // 获取逻辑 zip 文件在祖父切片中的父目录，
+            // 例如，对于 zip 文件切片路径 "/path/to/jar1.jar!/lib/jar2.jar"，结果是 "lib"，
+            // 对于 "/path/to/jar1.jar"，结果是 "/path/to"，如果 jar 在顶层目录则结果为 ""
             final String jarParentDir = FileUtils
                     .getParentDirPath(logicalZipFile.getPathWithinParentZipFileSlice());
-            // Add paths in manifest file's "Class-Path" entry to the classpath, resolving paths relative to
-            // the parent directory or jar
+            // 将清单文件 "Class-Path" 条目中的路径添加到类路径中，
+            // 将路径解析为相对于父目录或 jar 的路径
             for (final String childClassPathEltPathRelative : logicalZipFile.classPathManifestEntryValue
                     .split(" ")) {
                 if (!childClassPathEltPathRelative.isEmpty()) {
-                    // Resolve Class-Path entry relative to containing dir
+                    // 将 Class-Path 条目解析为相对于包含目录的路径
                     final String childClassPathEltPath = FastPathResolver.resolve(jarParentDir,
                             childClassPathEltPathRelative);
-                    // If this is a nested jar, prepend outer jar prefix
+                    // 如果这是一个嵌套 jar，则在前面添加外部 jar 前缀
                     final ZipFileSlice parentZipFileSlice = logicalZipFile.getParentZipFileSlice();
                     final String childClassPathEltPathWithPrefix = parentZipFileSlice == null
                             ? childClassPathEltPath
                             : parentZipFileSlice.getPath() + (childClassPathEltPath.startsWith("/") ? "!" : "!/")
-                                    + childClassPathEltPath;
-                    // Only add child classpath elements once
+                            + childClassPathEltPath;
+                    // 只添加子类路径元素一次
                     if (scheduledChildClasspathElements.add(childClassPathEltPathWithPrefix)) {
-                        // Schedule child classpath element for scanning
+                        // 安排子类路径元素进行扫描
                         workQueue.addWorkUnit( //
                                 new ClasspathEntryWorkUnit(childClassPathEltPathWithPrefix, getClassLoader(),
                                         /* parentClasspathElement = */ this,
@@ -255,27 +253,27 @@ class ClasspathElementZip extends ClasspathElement {
                 }
             }
         }
-        // Add paths in an OSGi bundle jar manifest's "Bundle-ClassPath" entry to the classpath, resolving
-        // the paths relative to the root of the jarfile
+        // 将 OSGi bundle jar 清单文件 "Bundle-ClassPath" 条目中的路径添加到类路径中，
+        // 将路径解析为相对于 jar 文件根目录的路径
         if (logicalZipFile.bundleClassPathManifestEntryValue != null) {
             final String zipFilePathPrefix = zipFilePath + "!/";
-            // Class-Path is split on " ", but Bundle-ClassPath is split on ","
+            // Class-Path 以 " " 分隔，但 Bundle-ClassPath 以 "," 分隔
             for (String childBundlePath : logicalZipFile.bundleClassPathManifestEntryValue.split(",")) {
-                // Assume that Bundle-ClassPath paths have to be given relative to jarfile root
+                // 假设 Bundle-ClassPath 路径必须相对于 jar 文件根目录给出
                 while (childBundlePath.startsWith("/")) {
                     childBundlePath = childBundlePath.substring(1);
                 }
-                // Currently the position of "." relative to child classpath entries is ignored (the
-                // Bundle-ClassPath path is treated as if "." is in the first position, since child
-                // classpath entries are always added to the classpath after the parent classpath
-                // entry that they were obtained from).
-                if (!childBundlePath.isEmpty() && !childBundlePath.equals(".")) {
-                    // Resolve Bundle-ClassPath entry within jar
+                // 目前 "." 相对于子类路径条目的位置被忽略(
+                // Bundle-ClassPath 路径被当作 "." 在第一个位置，因为子
+                // 类路径条目总是在父类路径条目之后添加到类路径中，
+                // 它们是从父类路径条目获取的)
+                if (!childBundlePath.isEmpty() && !".".equals(childBundlePath)) {
+                    // 在 jar 内解析 Bundle-ClassPath 条目
                     final String childClassPathEltPath = zipFilePathPrefix + FileUtils.sanitizeEntryPath(
                             childBundlePath, /* removeInitialSlash = */ true, /* removeFinalSlash = */ true);
-                    // Only add child classpath elements once
+                    // 只添加子类路径元素一次
                     if (scheduledChildClasspathElements.add(childClassPathEltPath)) {
-                        // Schedule child classpath element for scanning
+                        // 安排子类路径元素进行扫描
                         workQueue.addWorkUnit(new ClasspathEntryWorkUnit(childClassPathEltPath, getClassLoader(),
                                 /* parentClasspathElement = */ this,
                                 /* orderWithinParentClasspathElement = */
@@ -287,22 +285,21 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Create a new {@link Resource} object for a resource or classfile discovered while scanning paths.
+     * 为扫描路径时发现的资源或 class 文件创建新的 {@link Resource} 对象
      *
      * @param zipEntry
-     *            the zip entry
+     *            zip 条目
      * @param pathRelativeToPackageRoot
-     *            the path relative to package root
-     * @return the resource
+     *            相对于包根的路径
+     * @return 资源对象
      */
     private Resource newResource(final FastZipEntry zipEntry, final String pathRelativeToPackageRoot) {
         return new Resource(this, zipEntry.uncompressedSize) {
-            /** True if the resource is open. */
+            /** 如果资源已打开，则为 true */
             private final AtomicBoolean isOpen = new AtomicBoolean();
 
             /**
-             * Path with package root prefix and/or any Spring Boot prefix ("BOOT-INF/classes/" or
-             * "WEB-INF/classes/") removed.
+             * 已移除包根前缀和/或任何 Spring Boot 前缀("BOOT-INF/classes/" 或 "WEB-INF/classes/")的路径
              */
             @Override
             public String getPath() {
@@ -364,7 +361,7 @@ class ClasspathElementZip extends ClasspathElement {
 
             protected void checkCanOpen() {
                 if (skipClasspathElement) {
-                    // Shouldn't happen
+                    // 不应该发生
                     throw new IllegalStateException("Classpath element could not be opened");
                 }
                 if (isOpen.getAndSet(true)) {
@@ -411,7 +408,7 @@ class ClasspathElementZip extends ClasspathElement {
             @Override
             public byte[] load() throws IOException {
                 checkCanOpen();
-                try (Resource res = this) { // Close this after use
+                try (Resource res = this) { // 使用后关闭
                     final byte[] byteArray = zipEntry.getSlice().load();
                     res.length = byteArray.length;
                     return byteArray;
@@ -422,12 +419,12 @@ class ClasspathElementZip extends ClasspathElement {
             public void close() {
                 if (isOpen.getAndSet(false)) {
                     if (byteBuffer != null) {
-                        // ByteBuffer should be a duplicate or slice, or should wrap an array, so it doesn't
-                        // need to be unmapped
+                        // ByteBuffer 应为副本或切片，或包装了数组，因此它不需要
+                        // 被取消映射
                         byteBuffer = null;
                     }
 
-                    // Close inputStream
+                    // 关闭 inputStream
                     super.close();
                 }
             }
@@ -435,12 +432,11 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Get the {@link Resource} for a given relative path.
+     * 获取给定相对路径的 {@link Resource}
      *
      * @param relativePath
-     *            The relative path of the {@link Resource} to return.
-     * @return The {@link Resource} for the given relative path, or null if relativePath does not exist in this
-     *         classpath element.
+     *            要返回的 {@link Resource} 的相对路径
+     * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
     Resource getResource(final String relativePath) {
@@ -448,10 +444,10 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Scan for path matches within jarfile, and record ZipEntry objects of matching files.
+     * 扫描 jar 文件内的路径匹配，并记录匹配文件的 ZipEntry 对象
      *
      * @param log
-     *            the log
+     *            日志
      */
     @Override
     void scanPaths(final LogNode log) {
@@ -465,7 +461,7 @@ class ClasspathElementZip extends ClasspathElement {
             return;
         }
         if (scanned.getAndSet(true)) {
-            // Should not happen
+            // 不应该发生
             throw new IllegalArgumentException("Already scanned classpath element " + getZipFilePath());
         }
 
@@ -474,7 +470,7 @@ class ClasspathElementZip extends ClasspathElement {
 
         boolean isModularJar = false;
         if (VersionFinder.JAVA_MAJOR_VERSION >= 9) {
-            // Determine whether this is a modular jar running under JRE 9+
+            // 确定是否是在 JRE 9+ 下运行的模块化 jar
             String moduleName = moduleNameFromModuleDescriptor;
             if (moduleName == null || moduleName.isEmpty()) {
                 moduleName = moduleNameFromManifestFile;
@@ -493,10 +489,10 @@ class ClasspathElementZip extends ClasspathElement {
         for (final FastZipEntry zipEntry : logicalZipFile.entries) {
             String relativePath = zipEntry.entryNameUnversioned;
 
-            // Paths should never start with "META-INF/versions/{version}/", because either this is a versioned
-            // jar, in which case zipEntry.entryNameUnversioned has the version prefix stripped, or this is an
-            // unversioned jar (e.g. the multi-version flag is not set in the manifest file) and there are some
-            // spurious files in a multi-version path (in which case, they should be ignored).
+            // 路径不应以 "META-INF/versions/{version}/" 开头，因为要么这是一个版本化
+            // jar，此时 zipEntry.entryNameUnversioned 已剥离版本前缀，要么这是一个
+            // 非版本化 jar(例如清单文件中未设置多版本标志)，并且多版本路径中有一些
+            // 多余的条目(在这种情况下，应忽略它们)
             if (!scanSpec.enableMultiReleaseVersions
                     && relativePath.startsWith(LogicalZipFile.MULTI_RELEASE_PATH_PREFIX)) {
                 if (subLog != null) {
@@ -512,20 +508,20 @@ class ClasspathElementZip extends ClasspathElement {
                 continue;
             }
 
-            // If this is a modular jar, ignore all classfiles other than "module-info.class" in the
-            // default package, since these are disallowed.
+            // 如果这是一个模块化 jar，则忽略默认包中除 "module-info.class" 之外的所有 class 文件，
+            // 因为这些都是不允许的
             if (isModularJar && relativePath.indexOf('/') < 0 && relativePath.endsWith(".class")
-                    && !relativePath.equals("module-info.class")) {
+                    && !"module-info.class".equals(relativePath)) {
                 continue;
             }
 
-            // Check if the relative path is within a nested classpath root
+            // 检查相对路径是否在嵌套类路径根内
             if (nestedClasspathRootPrefixes != null) {
-                // This is O(mn), which is inefficient, but the number of nested classpath roots should be small
+                // 这是 O(mn) 复杂度，效率不高，但嵌套类路径根的数量应该很少
                 boolean reachedNestedRoot = false;
                 for (final String nestedClasspathRoot : nestedClasspathRootPrefixes) {
                     if (relativePath.startsWith(nestedClasspathRoot)) {
-                        // relativePath has a prefix of nestedClasspathRoot
+                        // relativePath 具有 nestedClasspathRoot 的前缀
                         if (subLog != null) {
                             if (loggedNestedClasspathRootPrefixes == null) {
                                 loggedNestedClasspathRootPrefixes = new HashSet<>();
@@ -544,38 +540,38 @@ class ClasspathElementZip extends ClasspathElement {
                 }
             }
 
-            // Ignore entries without the correct classpath root prefix
+            // 忽略没有正确类路径根前缀的条目
             if (!packageRootPrefix.isEmpty() && !relativePath.startsWith(packageRootPrefix)) {
                 continue;
             }
 
-            // Strip the package root prefix from the relative path
+            // 从相对路径中去除包根前缀
             if (!packageRootPrefix.isEmpty()) {
                 relativePath = relativePath.substring(packageRootPrefix.length());
             } else {
-                // Strip any package root prefix from the relative path
+                // 从相对路径中去除任何包根前缀
                 for (int i = 0; i < ClassLoaderHandlerRegistry.AUTOMATIC_PACKAGE_ROOT_PREFIXES.length; i++) {
                     final String packageRoot = ClassLoaderHandlerRegistry.AUTOMATIC_PACKAGE_ROOT_PREFIXES[i];
                     if (relativePath.startsWith(packageRoot)) {
-                        // Strip package root
+                        // 去除包根
                         relativePath = relativePath.substring(packageRoot.length());
-                        // Strip final slash from package root
+                        // 去除包根的尾部斜杠
                         final String packageRootWithoutFinalSlash = packageRoot.endsWith("/")
                                 ? packageRoot.substring(0, packageRoot.length() - 1)
                                 : packageRoot;
-                        // Store package root for use by getAllURIs()
+                        // 存储包根供 getAllURIs() 使用
                         strippedAutomaticPackageRootPrefixes.add(packageRootWithoutFinalSlash);
                     }
                 }
             }
 
-            // Accept/reject classpath elements based on file resource paths
+            // 根据文件资源路径接受/拒绝类路径元素
             if (!checkResourcePathAcceptReject(relativePath, log)) {
                 continue;
             }
 
-            // Get match status of the parent directory of this ZipEntry file's relative path (or reuse the last
-            // match status for speed, if the directory name hasn't changed).
+            // 获取此 ZipEntry 文件相对路径的父目录的匹配状态(或重用上一次的
+            // 匹配状态以提高速度，如果目录名未更改的话)
             final int lastSlashIdx = relativePath.lastIndexOf('/');
             final String parentRelativePath = lastSlashIdx < 0 ? "/" : relativePath.substring(0, lastSlashIdx + 1);
             final boolean parentRelativePathChanged = !parentRelativePath.equals(prevParentRelativePath);
@@ -586,33 +582,33 @@ class ClasspathElementZip extends ClasspathElement {
             prevParentMatchStatus = parentMatchStatus;
 
             if (parentMatchStatus == ScanSpecPathMatch.HAS_REJECTED_PATH_PREFIX) {
-                // The parent dir or one of its ancestral dirs is rejected
+                // 父目录或其某个祖先目录被拒绝
                 if (subLog != null) {
                     subLog.log("Skipping rejected path: " + relativePath);
                 }
                 continue;
             }
 
-            // Add the ZipEntry path as a Resource
+            // 将 ZipEntry 路径添加为 Resource
             final Resource resource = newResource(zipEntry, relativePath);
             if (relativePathToResource.putIfAbsent(relativePath, resource) == null) {
-                // If resource is accepted
+                // 如果资源被接受
                 if (parentMatchStatus == ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX
                         || parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_PATH
                         || (parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_CLASS_PACKAGE
-                                && scanSpec.classfileIsSpecificallyAccepted(relativePath))) {
-                    // Resource is accepted
+                        && scanSpec.classfileIsSpecificallyAccepted(relativePath))) {
+                    // 资源被接受
                     addAcceptedResource(resource, parentMatchStatus, /* isClassfileOnly = */ false, subLog);
-                } else if (scanSpec.enableClassInfo && relativePath.equals("module-info.class")) {
-                    // Add module descriptor as an accepted classfile resource, so that it is scanned,
-                    // but don't add it to the list of resources in the ScanResult, since it is not
-                    // in an accepted package (#352)
+                } else if (scanSpec.enableClassInfo && "module-info.class".equals(relativePath)) {
+                    // 将模块描述符添加为被接受的 class 文件资源，以便对其进行扫描，
+                    // 但不要将其添加到 ScanResult 的资源列表中，因为它不在
+                    // 被接受的包中 (#352)
                     addAcceptedResource(resource, parentMatchStatus, /* isClassfileOnly = */ true, subLog);
                 }
             }
         }
 
-        // Save the last modified time for the zipfile
+        // 保存 zip 文件的最后修改时间
         final File zipfile = getFile();
         if (zipfile != null) {
             fileToLastModified.put(zipfile, zipfile.lastModified());
@@ -622,10 +618,9 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Get module name from module descriptor, or get the automatic module name from the manifest file, or derive an
-     * automatic module name from the jar name.
+     * 从模块描述符获取模块名称，或从清单文件获取自动模块名称，或从 jar 名称派生自动模块名称
      *
-     * @return the module name
+     * @return 模块名称
      */
     @Override
     public String getModuleName() {
@@ -643,9 +638,9 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Get the zipfile path.
+     * 获取 zip 文件路径
      *
-     * @return the path of the zipfile, including any package root.
+     * @return zip 文件的路径，包含任何包根路径
      */
     String getZipFilePath() {
         return packageRootPrefix.isEmpty() ? zipFilePath
@@ -653,7 +648,7 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ClasspathElement#getURI()
+     * @see com.bingbaihanji.classgraph.core.ClasspathElement#getURI()
      */
     @Override
     URI getURI() {
@@ -665,8 +660,7 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Return URI for classpath element, plus URIs for any stripped nested automatic package root prefixes, e.g.
-     * "!/BOOT-INF/classes".
+     * 返回类路径元素的 URI，以及任何已去除的嵌套自动包根前缀的 URI，例如 "!/BOOT-INF/classes"
      */
     @Override
     List<URI> getAllURIs() {
@@ -681,7 +675,7 @@ class ClasspathElementZip extends ClasspathElement {
                 try {
                     uris.add(new URI(uriStr + "!/" + prefix));
                 } catch (final URISyntaxException e) {
-                    // Ignore
+                    // 忽略
                 }
             }
             return uris;
@@ -689,18 +683,18 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Get the {@link File} for the outermost zipfile of this classpath element.
+     * 获取此类路径元素的最外层 zip 文件的 {@link File}
      *
-     * @return The {@link File} for the outermost zipfile of this classpath element, or null if this file was
-     *         downloaded from a URL directly to RAM, or if the classpath element was backed by a custom filesystem
-     *         that supports the {@link Path} API put not the {@link File} API.
+     * @return 此类路径元素的最外层 zip 文件的 {@link File}，如果此文件是从 URL 直接下载到 RAM，
+     *         或者类路径元素由支持 {@link Path} API 但不支持 {@link File} API 的自定义文件系统支持，
+     *         则返回 null
      */
     @Override
     File getFile() {
         if (logicalZipFile != null) {
             return logicalZipFile.getPhysicalFile();
         } else {
-            // Not performing a full scan (only getting classpath elements), so logicalZipFile is not set
+            // 未执行完整扫描(仅获取类路径元素)，因此未设置 logicalZipFile
             final int plingIdx = rawPath.indexOf('!');
             final String outermostZipFilePathResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
                     plingIdx < 0 ? rawPath : rawPath.substring(0, plingIdx));
@@ -709,9 +703,9 @@ class ClasspathElementZip extends ClasspathElement {
     }
 
     /**
-     * Return the classpath element path.
+     * 返回类路径元素路径
      *
-     * @return the string
+     * @return 字符串表示
      */
     @Override
     public String toString() {

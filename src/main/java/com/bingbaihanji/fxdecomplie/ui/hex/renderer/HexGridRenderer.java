@@ -11,8 +11,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
-import java.util.Optional;
-
 /**
  * 在 JavaFX Canvas 上绘制十六进制编辑器网格的渲染器 
  * <p>

@@ -26,153 +26,153 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice.reader;
+package com.bingbaihanji.classgraph.fileslice.reader;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-/** Interface for random access to values in byte order. */
+/** 用于按字节顺序随机访问各值的接口 */
 public interface RandomAccessReader {
     /**
-     * Read bytes into a {@link ByteBuffer}.
-     * 
+     * 将字节读入 {@link ByteBuffer}
+     *
      * @param srcOffset
-     *            The offset to start reading from.
+     *            开始读取的偏移量
      * @param dstBuf
-     *            The {@link ByteBuffer} to write into.
+     *            要写入的 {@link ByteBuffer}
      * @param dstBufStart
-     *            The offset within the destination buffer to start writing at.
+     *            目标缓冲区中开始写入的偏移量
      * @param numBytes
-     *            The number of bytes to read.
-     * @return The number of bytes actually read, or -1 if no more bytes could be read.
+     *            要读取的字节数
+     * @return 实际读取的字节数，如果无法读取更多字节则返回 -1
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int read(long srcOffset, ByteBuffer dstBuf, int dstBufStart, int numBytes) throws IOException;
 
     /**
-     * Read bytes into a byte array.
-     * 
+     * 将字节读入字节数组
+     *
      * @param srcOffset
-     *            The offset to start reading from.
+     *            开始读取的偏移量
      * @param dstArr
-     *            The byte array to write into.
+     *            要写入的字节数组
      * @param dstArrStart
-     *            The offset within the destination array to start writing at.
+     *            目标数组中开始写入的偏移量
      * @param numBytes
-     *            The number of bytes to read.
-     * @return The number of bytes actually read, or -1 if no more bytes could be read.
+     *            要读取的字节数
+     * @return 实际读取的字节数，如果无法读取更多字节则返回 -1
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int read(long srcOffset, byte[] dstArr, int dstArrStart, int numBytes) throws IOException;
 
     /**
-     * Read a byte at a specific offset (without changing the current cursor offset).
+     * 在指定偏移量处读取一个字节(不改变当前游标偏移量)
      *
      * @param offset
-     *            The buffer offset to read from.
-     * @return The byte at the offset.
+     *            要读取的缓冲区偏移量
+     * @return 该偏移量处的字节
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     byte readByte(final long offset) throws IOException;
 
     /**
-     * Read an unsigned byte at a specific offset (without changing the current cursor offset).
+     * 在指定偏移量处读取一个无符号字节(不改变当前游标偏移量)
      *
      * @param offset
-     *            The buffer offset to read from.
-     * @return The unsigned byte at the offset.
+     *            要读取的缓冲区偏移量
+     * @return 该偏移量处的无符号字节
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int readUnsignedByte(final long offset) throws IOException;
 
     /**
-     * Read a short at a specific offset (without changing the current cursor offset).
+     * 在指定偏移量处读取一个 short(不改变当前游标偏移量)
      *
      * @param offset
-     *            The buffer offset to read from.
-     * @return The short at the offset.
+     *            要读取的缓冲区偏移量
+     * @return 该偏移量处的 short
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     short readShort(final long offset) throws IOException;
 
     /**
-     * Read a unsigned short at a specific offset (without changing the current cursor offset).
+     * 在指定偏移量处读取一个无符号 short(不改变当前游标偏移量)
      *
      * @param offset
-     *            The buffer offset to read from.
-     * @return The unsigned short at the offset.
+     *            要读取的缓冲区偏移量
+     * @return 该偏移量处的无符号 short
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int readUnsignedShort(final long offset) throws IOException;
 
     /**
-     * Read a int at a specific offset (without changing the current cursor offset).
+     * 在指定偏移量处读取一个 int(不改变当前游标偏移量)
      *
      * @param offset
-     *            The buffer offset to read from.
-     * @return The int at the offset.
+     *            要读取的缓冲区偏移量
+     * @return 该偏移量处的 int
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int readInt(final long offset) throws IOException;
 
     /**
-     * Read a unsigned int at a specific offset (without changing the current cursor offset).
+     * 在指定偏移量处读取一个无符号 int(不改变当前游标偏移量)
      *
      * @param offset
-     *            The buffer offset to read from.
-     * @return The int at the offset, as a long.
+     *            要读取的缓冲区偏移量
+     * @return 该偏移量处的 int，以 long 形式返回
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     long readUnsignedInt(final long offset) throws IOException;
 
     /**
-     * Read a long at a specific offset (without changing the current cursor offset).
-     * 
+     * 在指定偏移量处读取一个 long(不改变当前游标偏移量)
+     *
      * @param offset
-     *            The buffer offset to read from.
-     * @return The long at the offset.
+     *            要读取的缓冲区偏移量
+     * @return 该偏移量处的 long
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     long readLong(final long offset) throws IOException;
 
     /**
-     * Reads the "modified UTF8" format defined in the Java classfile spec, optionally replacing '/' with '.', and
-     * optionally removing the prefix "L" and the suffix ";".
+     * 读取 Java classfile 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
+     * 并可选择去除前缀 "L" 和后缀 ";"
      *
      * @param offset
-     *            The start offset of the string.
+     *            字符串的起始偏移量
      * @param numBytes
-     *            The number of bytes of the UTF8 encoding of the string.
+     *            字符串 UTF8 编码的字节数
      * @param replaceSlashWithDot
-     *            If true, replace '/' with '.'.
+     *            如果为 true，将 '/' 替换为 '.'
      * @param stripLSemicolon
-     *            If true, string final ';' character.
-     * @return The string.
+     *            如果为 true，去除字符串末尾的 ';' 字符
+     * @return 字符串
      * @throws IOException
-     *             If an I/O exception occurs.
+     *             如果发生 I/O 异常
      */
     String readString(final long offset, final int numBytes, final boolean replaceSlashWithDot,
-            final boolean stripLSemicolon) throws IOException;
+                      final boolean stripLSemicolon) throws IOException;
 
     /**
-     * Reads the "modified UTF8" format defined in the Java classfile spec.
+     * 读取 Java classfile 规范中定义的"modified UTF8"格式
      *
      * @param offset
-     *            The start offset of the string.
+     *            字符串的起始偏移量
      * @param numBytes
-     *            The number of bytes of the UTF8 encoding of the string.
-     * @return The string.
+     *            字符串 UTF8 编码的字节数
+     * @return 字符串
      * @throws IOException
-     *             If an I/O exception occurs.
+     *             如果发生 I/O 异常
      */
     String readString(final long offset, final int numBytes) throws IOException;
 }

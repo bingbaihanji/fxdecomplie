@@ -26,491 +26,59 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.scanspec;
+package com.bingbaihanji.classgraph.scanspec;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.utils.FastPathResolver;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.JarUtils;
+
+import java.util.*;
 import java.util.regex.Pattern;
 
-import nonapi.io.github.classgraph.utils.CollectionUtils;
-import nonapi.io.github.classgraph.utils.FastPathResolver;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.JarUtils;
-
-/** A class storing accept or reject criteria. */
+/** 存储接受或拒绝条件的类 */
 public abstract class AcceptReject {
-    /** Accepted items (whole-string match). */
+    /** 已接受的项(全字符串匹配) */
     protected Set<String> accept;
-    /** Rejected items (whole-string match). */
+    /** 已拒绝的项(全字符串匹配) */
     protected Set<String> reject;
-    /** Accepted items (prefix match), as a set. */
+    /** 已接受的项(前缀匹配)，以集合形式存储 */
     protected Set<String> acceptPrefixesSet;
-    /** Accepted items (prefix match), as a sorted list. */
+    /** 已接受的项(前缀匹配)，以排序列表形式存储 */
     protected List<String> acceptPrefixes;
-    /** Rejected items (prefix match). */
+    /** 已拒绝的项(前缀匹配) */
     protected List<String> rejectPrefixes;
-    /** Accept glob strings. (Serialized to JSON, for logging purposes.) */
+    /** 接受的通配符字符串(序列化为 JSON，用于日志记录) */
     protected Set<String> acceptGlobs;
-    /** Reject glob strings. (Serialized to JSON, for logging purposes.) */
+    /** 拒绝的通配符字符串(序列化为 JSON，用于日志记录) */
     protected Set<String> rejectGlobs;
-    /** Accept regexp patterns. (Not serialized to JSON.) */
+    /** 接受的正则表达式模式(不序列化为 JSON) */
     protected transient List<Pattern> acceptPatterns;
-    /** Reject regexp patterns. (Not serialized to JSON.) */
+    /** 拒绝的正则表达式模式(不序列化为 JSON) */
     protected transient List<Pattern> rejectPatterns;
-    /** The separator character. */
+    /** 分隔符字符 */
     protected char separatorChar;
 
-    /** Deserialization constructor. */
+    /** 反序列化构造函数 */
     public AcceptReject() {
     }
 
     /**
-     * Constructor for deserialization.
+     * 反序列化用构造函数
      *
      * @param separatorChar
-     *            the separator char
+     *            分隔符字符
      */
     public AcceptReject(final char separatorChar) {
         this.separatorChar = separatorChar;
     }
 
-    /** Accept/reject for prefix strings. */
-    public static class AcceptRejectPrefix extends AcceptReject {
-        /** Deserialization constructor. */
-        public AcceptRejectPrefix() {
-            super();
-        }
-
-        /**
-         * Instantiate a new accept/reject for prefix strings.
-         *
-         * @param separatorChar
-         *            the separator char
-         */
-        public AcceptRejectPrefix(final char separatorChar) {
-            super(separatorChar);
-        }
-
-        /**
-         * Add to the accept.
-         *
-         * @param str
-         *            the string to accept
-         */
-        @Override
-        public void addToAccept(final String str) {
-            if (str.contains("*")) {
-                throw new IllegalArgumentException("Cannot use a glob wildcard here: " + str);
-            }
-            if (this.acceptPrefixesSet == null) {
-                this.acceptPrefixesSet = new HashSet<>();
-            }
-            this.acceptPrefixesSet.add(str);
-        }
-
-        /**
-         * Add to the reject.
-         *
-         * @param str
-         *            the string to reject
-         */
-        @Override
-        public void addToReject(final String str) {
-            if (str.contains("*")) {
-                throw new IllegalArgumentException("Cannot use a glob wildcard here: " + str);
-            }
-            if (this.rejectPrefixes == null) {
-                this.rejectPrefixes = new ArrayList<>();
-            }
-            this.rejectPrefixes.add(str);
-        }
-
-        /**
-         * Check if the requested string has an accepted/non-rejected prefix.
-         *
-         * @param str
-         *            the string to test
-         * @return true if string is accepted and not rejected
-         */
-        @Override
-        public boolean isAcceptedAndNotRejected(final String str) {
-            boolean isAccepted = acceptPrefixes == null;
-            if (!isAccepted) {
-                for (final String prefix : acceptPrefixes) {
-                    if (str.startsWith(prefix)) {
-                        isAccepted = true;
-                        break;
-                    }
-                }
-            }
-            if (!isAccepted) {
-                return false;
-            }
-            if (rejectPrefixes != null) {
-                for (final String prefix : rejectPrefixes) {
-                    if (str.startsWith(prefix)) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        /**
-         * Check if the requested string has an accepted prefix.
-         *
-         * @param str
-         *            the string to test
-         * @return true if string is accepted
-         */
-        @Override
-        public boolean isAccepted(final String str) {
-            boolean isAccepted = acceptPrefixes == null;
-            if (!isAccepted) {
-                for (final String prefix : acceptPrefixes) {
-                    if (str.startsWith(prefix)) {
-                        isAccepted = true;
-                        break;
-                    }
-                }
-            }
-            return isAccepted;
-        }
-
-        /**
-         * Prefix-of-prefix is invalid -- throws {@link IllegalArgumentException}.
-         *
-         * @param str
-         *            the string to test
-         * @return (does not return, throws exception)
-         * @throws IllegalArgumentException
-         *             always
-         */
-        @Override
-        public boolean acceptHasPrefix(final String str) {
-            throw new IllegalArgumentException("Can only find prefixes of whole strings");
-        }
-
-        /**
-         * Check if the requested string has a rejected prefix.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string has a rejected prefix
-         */
-        @Override
-        public boolean isRejected(final String str) {
-            if (rejectPrefixes != null) {
-                for (final String prefix : rejectPrefixes) {
-                    if (str.startsWith(prefix)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
-    /** Accept/reject for whole-strings matches. */
-    public static class AcceptRejectWholeString extends AcceptReject {
-        /** Deserialization constructor. */
-        public AcceptRejectWholeString() {
-            super();
-        }
-
-        /**
-         * Instantiate a new accept/reject for whole-string matches.
-         *
-         * @param separatorChar
-         *            the separator char
-         */
-        public AcceptRejectWholeString(final char separatorChar) {
-            super(separatorChar);
-        }
-
-        /**
-         * Add to the accept.
-         *
-         * @param str
-         *            the string to accept
-         */
-        @Override
-        public void addToAccept(final String str) {
-            if (str.contains("*")) {
-                if (this.acceptGlobs == null) {
-                    this.acceptGlobs = new HashSet<>();
-                    this.acceptPatterns = new ArrayList<>();
-                }
-                this.acceptGlobs.add(str);
-                this.acceptPatterns.add(globToPattern(str, /* simpleGlob = */ true));
-            } else {
-                if (this.accept == null) {
-                    this.accept = new HashSet<>();
-                }
-                this.accept.add(str);
-            }
-
-            // For AcceptRejectWholeString, which doesn't perform prefix matches like AcceptRejectPrefix,
-            // use acceptPrefixes to store all parent prefixes of an accepted path, so that
-            // acceptHasPrefix() can operate efficiently on very large accepts (#338),
-            // in particular where the size of the accept is much larger than the maximum path depth.
-            if (this.acceptPrefixesSet == null) {
-                this.acceptPrefixesSet = new HashSet<>();
-                acceptPrefixesSet.add("");
-                acceptPrefixesSet.add("/");
-            }
-            final String separator = Character.toString(separatorChar);
-            String prefix = str;
-            if (prefix.contains("*")) {
-                // Stop performing prefix search at first '*' -- this means prefix matching will
-                // break if there is more than one '*' in the path
-                prefix = prefix.substring(0, prefix.indexOf('*'));
-                // /path/to/wildcard*.jar -> /path/to
-                // /path/to/*.jar -> /path/to
-                final int sepIdx = prefix.lastIndexOf(separatorChar);
-                if (sepIdx < 0) {
-                    prefix = "";
-                } else {
-                    prefix = prefix.substring(0, prefix.lastIndexOf(separatorChar));
-                }
-            }
-            // Strip off any final separator
-            while (prefix.endsWith(separator)) {
-                prefix = prefix.substring(0, prefix.length() - 1);
-            }
-            // Add str itself as a prefix (this will only match a parent dir for 
-            for (; !prefix.isEmpty(); prefix = FileUtils.getParentDirPath(prefix, separatorChar)) {
-                acceptPrefixesSet.add(prefix + separatorChar);
-            }
-        }
-
-        /**
-         * Add to the reject.
-         *
-         * @param str
-         *            the string to reject
-         */
-        @Override
-        public void addToReject(final String str) {
-            if (str.contains("*")) {
-                if (this.rejectGlobs == null) {
-                    this.rejectGlobs = new HashSet<>();
-                    this.rejectPatterns = new ArrayList<>();
-                }
-                this.rejectGlobs.add(str);
-                this.rejectPatterns.add(globToPattern(str, /* simpleGlob = */ true));
-            } else {
-                if (this.reject == null) {
-                    this.reject = new HashSet<>();
-                }
-                this.reject.add(str);
-            }
-        }
-
-        /**
-         * Check if the requested string is accepted and not rejected.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string is accepted and not rejected
-         */
-        @Override
-        public boolean isAcceptedAndNotRejected(final String str) {
-            return isAccepted(str) && !isRejected(str);
-        }
-
-        /**
-         * Check if the requested string is accepted.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string is accepted
-         */
-        @Override
-        public boolean isAccepted(final String str) {
-            return (accept == null && acceptPatterns == null) || (accept != null && accept.contains(str))
-                    || matchesPatternList(str, acceptPatterns);
-        }
-
-        /**
-         * Check if the requested string is a prefix of an accepted string.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string is a prefix of an accepted string
-         */
-        @Override
-        public boolean acceptHasPrefix(final String str) {
-            if (acceptPrefixesSet == null) {
-                return false;
-            }
-            return acceptPrefixesSet.contains(str);
-        }
-
-        /**
-         * Check if the requested string is rejected.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string is rejected
-         */
-        @Override
-        public boolean isRejected(final String str) {
-            return (reject != null && reject.contains(str)) || matchesPatternList(str, rejectPatterns);
-        }
-    }
-
-    /** Accept/reject for leaf matches. */
-    public static class AcceptRejectLeafname extends AcceptRejectWholeString {
-        /** Deserialization constructor. */
-        public AcceptRejectLeafname() {
-            super();
-        }
-
-        /**
-         * Instantiates a new accept/reject for leaf matches.
-         *
-         * @param separatorChar
-         *            the separator char
-         */
-        public AcceptRejectLeafname(final char separatorChar) {
-            super(separatorChar);
-        }
-
-        /**
-         * Add to the accept.
-         *
-         * @param str
-         *            the string to accept
-         */
-        @Override
-        public void addToAccept(final String str) {
-            super.addToAccept(JarUtils.leafName(str));
-        }
-
-        /**
-         * Add to the reject.
-         *
-         * @param str
-         *            the string to reject
-         */
-        @Override
-        public void addToReject(final String str) {
-            super.addToReject(JarUtils.leafName(str));
-        }
-
-        /**
-         * Check if the requested string is accepted and not rejected.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string is accepted and not rejected
-         */
-        @Override
-        public boolean isAcceptedAndNotRejected(final String str) {
-            return super.isAcceptedAndNotRejected(JarUtils.leafName(str));
-        }
-
-        /**
-         * Check if the requested string is accepted.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string is accepted
-         */
-        @Override
-        public boolean isAccepted(final String str) {
-            return super.isAccepted(JarUtils.leafName(str));
-        }
-
-        /**
-         * Prefix tests are invalid for jar leafnames -- throws {@link IllegalArgumentException}.
-         *
-         * @param str
-         *            the string to test
-         * @return (does not return, throws exception)
-         * @throws IllegalArgumentException
-         *             always
-         */
-        @Override
-        public boolean acceptHasPrefix(final String str) {
-            throw new IllegalArgumentException("Can only find prefixes of whole strings");
-        }
-
-        /**
-         * Check if the requested string is rejected.
-         *
-         * @param str
-         *            the string to test
-         * @return true if the string is rejected
-         */
-        @Override
-        public boolean isRejected(final String str) {
-            return super.isRejected(JarUtils.leafName(str));
-        }
-    }
-
     /**
-     * Add to the accept.
+     * 移除开头和结尾的 '/' 字符(如果存在)
      *
-     * @param str
-     *            The string to accept.
-     */
-    public abstract void addToAccept(final String str);
-
-    /**
-     * Add to the reject.
-     *
-     * @param str
-     *            The string to reject.
-     */
-    public abstract void addToReject(final String str);
-
-    /**
-     * Check if a string is accepted and not rejected.
-     *
-     * @param str
-     *            The string to test.
-     * @return true if the string is accepted and not rejected.
-     */
-    public abstract boolean isAcceptedAndNotRejected(final String str);
-
-    /**
-     * Check if a string is accepted.
-     *
-     * @param str
-     *            The string to test.
-     * @return true if the string is accepted.
-     */
-    public abstract boolean isAccepted(final String str);
-
-    /**
-     * Check if a string is a prefix of an accepted string.
-     *
-     * @param str
-     *            The string to test.
-     * @return true if the string is a prefix of an accepted string.
-     */
-    public abstract boolean acceptHasPrefix(final String str);
-
-    /**
-     * Check if a string is rejected.
-     *
-     * @param str
-     *            The string to test.
-     * @return true if the string is rejected.
-     */
-    public abstract boolean isRejected(final String str);
-
-    /**
-     * Remove initial and final '/' characters, if any.
-     * 
      * @param path
-     *            The path to normalize.
-     * @return The normalized path.
+     *            要规范化的路径
+     * @return 规范化后的路径
      */
     public static String normalizePath(final String path) {
         String pathResolved = FastPathResolver.resolve(path);
@@ -521,87 +89,86 @@ public abstract class AcceptReject {
     }
 
     /**
-     * Remove initial and final '.' characters, if any.
-     * 
+     * 移除开头和结尾的 '.' 字符(如果存在)
+     *
      * @param packageOrClassName
-     *            The package or class name.
-     * @return The normalized package or class name.
+     *            包名或类名
+     * @return 规范化后的包名或类名
      */
     public static String normalizePackageOrClassName(final String packageOrClassName) {
         return normalizePath(packageOrClassName.replace('.', '/')).replace('/', '.');
     }
 
     /**
-     * Convert a path to a package name.
-     * 
+     * 将路径转换为包名
+     *
      * @param path
-     *            The path.
-     * @return The package name.
+     *            路径
+     * @return 包名
      */
     public static String pathToPackageName(final String path) {
         return path.replace('/', '.');
     }
 
     /**
-     * Convert a package name to a path.
-     * 
+     * 将包名转换为路径
+     *
      * @param packageName
-     *            The package name.
-     * @return The path.
+     *            包名
+     * @return 路径
      */
     public static String packageNameToPath(final String packageName) {
         return packageName.replace('.', '/');
     }
 
     /**
-     * Convert a class name to a classfile path.
-     * 
+     * 将类名转换为类文件路径
+     *
      * @param className
-     *            The class name.
-     * @return The classfile path (including a ".class" suffix).
+     *            类名
+     * @return 类文件路径(包含 ".class" 后缀)
      */
     public static String classNameToClassfilePath(final String className) {
         return JarUtils.classNameToClassfilePath(className);
     }
 
     /**
-     * Convert a spec with a '*' glob character into a regular expression.
-     * 
+     * 将带有 '*' 通配符的规范转换为正则表达式
+     *
      * @param glob
-     *            The glob string.
+     *            通配符字符串
      * @param simpleGlob
-     *            if true, handles simple globs: "*" matches zero or more characters (replaces "." with "\\.", "*"
-     *            with ".*", then compiles a regular expression). If false, handles filesystem-style globs: "**"
-     *            matches zero or more characters, "*" matches zero or more characters other than "/", "?" matches
-     *            one character (replaces "." with "\\.", "**" with ".*", "*" with "[^/]*", and "?" with ".", then
-     *            compiles a regular expression).
-     * @return The Pattern created from the glob string.
+     *            如果为 true，处理简单通配符："*" 匹配零个或多个字符(将 "." 替换为 "\\."，将 "*"
+     *            替换为 ".*"，然后编译为正则表达式)如果为 false，处理文件系统风格的通配符："**"
+     *            匹配零个或多个字符，"*" 匹配除 "/" 之外的零个或多个字符，"?" 匹配
+     *            一个字符(将 "." 替换为 "\\."，将 "**" 替换为 ".*"，将 "*" 替换为 "[^/]*"，将 "?" 替换为 "."，然后
+     *            编译为正则表达式)
+     * @return 从通配符字符串创建的 Pattern
      */
     public static Pattern globToPattern(final String glob, final boolean simpleGlob) {
-        // TODO: when API is next changed, make all glob behavior consistent between accept/reject criteria
-        // and resource filtering (i.e. enforce simpleGlob == false, at least for accept/reject criteria for
-        // paths, although packages/classes would need different handling because ** should work across
-        // packages of any depth, rather than paths of any number of segments)
+        // TODO: 下次 API 变更时，使所有通配符行为在接受/拒绝条件与资源过滤之间保持一致
+        // (即对路径的接受/拒绝条件强制 simpleGlob == false，但包/类需要不同处理，
+        // 因为 ** 应跨任意深度的包而不是任意段数的路径工作)
         return Pattern.compile("^" //
                 + (simpleGlob //
-                        ? glob.replace(".", "\\.") //
-                                .replace("*", ".*") //
-                        : glob.replace(".", "\\.") //
-                                .replace("*", "[^/]*") //
-                                .replace("[^/]*[^/]*", ".*") //
-                                .replace('?', '.') //
-                ) //
+                ? glob.replace(".", "\\.") //
+                .replace("*", ".*") //
+                : glob.replace(".", "\\.") //
+                .replace("*", "[^/]*") //
+                .replace("[^/]*[^/]*", ".*") //
+                .replace('?', '.') //
+        ) //
                 + "$");
     }
 
     /**
-     * Check if a string matches one of the patterns in the provided list.
+     * 检查字符串是否匹配提供的列表中的某个模式
      *
      * @param str
-     *            the string to test
+     *            要测试的字符串
      * @param patterns
-     *            the patterns
-     * @return true, if successful
+     *            模式列表
+     * @return 如果匹配成功则返回 true
      */
     private static boolean matchesPatternList(final String str, final List<Pattern> patterns) {
         if (patterns != null) {
@@ -615,76 +182,12 @@ public abstract class AcceptReject {
     }
 
     /**
-     * Check if the accept is empty.
-     *
-     * @return true if there were no accept criteria added.
-     */
-    public boolean acceptIsEmpty() {
-        return accept == null && acceptPrefixes == null && acceptGlobs == null;
-    }
-
-    /**
-     * Check if the reject is empty.
-     *
-     * @return true if there were no reject criteria added.
-     */
-    public boolean rejectIsEmpty() {
-        return reject == null && rejectPrefixes == null && rejectGlobs == null;
-    }
-
-    /**
-     * Check if the accept and reject are empty.
-     *
-     * @return true if there were no accept or reject criteria added.
-     */
-    public boolean acceptAndRejectAreEmpty() {
-        return acceptIsEmpty() && rejectIsEmpty();
-    }
-
-    /**
-     * Check if a string is specifically accepted and not rejected.
-     *
-     * @param str
-     *            The string to test.
-     * @return true if the requested string is <i>specifically</i> accepted and not rejected, i.e. will not return
-     *         true if the accept is empty, or if the string is rejected.
-     */
-    public boolean isSpecificallyAcceptedAndNotRejected(final String str) {
-        return !acceptIsEmpty() && isAcceptedAndNotRejected(str);
-    }
-
-    /**
-     * Check if a string is specifically accepted.
-     *
-     * @param str
-     *            The string to test.
-     * @return true if the requested string is <i>specifically</i> accepted, i.e. will not return true if the accept
-     *         is empty.
-     */
-    public boolean isSpecificallyAccepted(final String str) {
-        return !acceptIsEmpty() && isAccepted(str);
-    }
-
-    /** Need to sort prefixes to ensure correct accept/reject evaluation (see Issue #167). */
-    void sortPrefixes() {
-        if (acceptPrefixesSet != null) {
-            acceptPrefixes = new ArrayList<>(acceptPrefixesSet);
-        }
-        if (acceptPrefixes != null) {
-            CollectionUtils.sortIfNotEmpty(acceptPrefixes);
-        }
-        if (rejectPrefixes != null) {
-            CollectionUtils.sortIfNotEmpty(rejectPrefixes);
-        }
-    }
-
-    /**
-     * Quote list.
+     * 对列表进行引号格式化
      *
      * @param coll
-     *            the coll
+     *            集合
      * @param buf
-     *            the buf
+     *            字符串缓冲区
      */
     private static void quoteList(final Collection<String> coll, final StringBuilder buf) {
         buf.append('[');
@@ -707,6 +210,120 @@ public abstract class AcceptReject {
             buf.append('"');
         }
         buf.append(']');
+    }
+
+    /**
+     * 添加到接受列表
+     *
+     * @param str
+     *            要接受的字符串
+     */
+    public abstract void addToAccept(final String str);
+
+    /**
+     * 添加到拒绝列表
+     *
+     * @param str
+     *            要拒绝的字符串
+     */
+    public abstract void addToReject(final String str);
+
+    /**
+     * 检查字符串是否被接受且未被拒绝
+     *
+     * @param str
+     *            要测试的字符串
+     * @return 如果字符串被接受且未被拒绝则返回 true
+     */
+    public abstract boolean isAcceptedAndNotRejected(final String str);
+
+    /**
+     * 检查字符串是否被接受
+     *
+     * @param str
+     *            要测试的字符串
+     * @return 如果字符串被接受则返回 true
+     */
+    public abstract boolean isAccepted(final String str);
+
+    /**
+     * 检查字符串是否为某个已接受字符串的前缀
+     *
+     * @param str
+     *            要测试的字符串
+     * @return 如果字符串是某个已接受字符串的前缀则返回 true
+     */
+    public abstract boolean acceptHasPrefix(final String str);
+
+    /**
+     * 检查字符串是否被拒绝
+     *
+     * @param str
+     *            要测试的字符串
+     * @return 如果字符串被拒绝则返回 true
+     */
+    public abstract boolean isRejected(final String str);
+
+    /**
+     * 检查接受列表是否为空
+     *
+     * @return 如果没有添加任何接受条件则返回 true
+     */
+    public boolean acceptIsEmpty() {
+        return accept == null && acceptPrefixes == null && acceptGlobs == null;
+    }
+
+    /**
+     * 检查拒绝列表是否为空
+     *
+     * @return 如果没有添加任何拒绝条件则返回 true
+     */
+    public boolean rejectIsEmpty() {
+        return reject == null && rejectPrefixes == null && rejectGlobs == null;
+    }
+
+    /**
+     * 检查接受和拒绝列表是否均为空
+     *
+     * @return 如果没有添加任何接受或拒绝条件则返回 true
+     */
+    public boolean acceptAndRejectAreEmpty() {
+        return acceptIsEmpty() && rejectIsEmpty();
+    }
+
+    /**
+     * 检查字符串是否被明确接受且未被拒绝
+     *
+     * @param str
+     *            要测试的字符串
+     * @return 如果请求的字符串被<i>明确</i>接受且未被拒绝则返回 true，即如果接受列表为空或字符串被拒绝则不会返回 true
+     */
+    public boolean isSpecificallyAcceptedAndNotRejected(final String str) {
+        return !acceptIsEmpty() && isAcceptedAndNotRejected(str);
+    }
+
+    /**
+     * 检查字符串是否被明确接受
+     *
+     * @param str
+     *            要测试的字符串
+     * @return 如果请求的字符串被<i>明确</i>接受则返回 true，即如果接受列表为空则不会返回 true
+     */
+    public boolean isSpecificallyAccepted(final String str) {
+        return !acceptIsEmpty() && isAccepted(str);
+    }
+
+    /** 需要对前缀进行排序以确保正确的接受/拒绝评估(参见 Issue #167) */
+    void sortPrefixes() {
+        if (acceptPrefixesSet != null) {
+            acceptPrefixes = new ArrayList<>(acceptPrefixesSet);
+        }
+        if (acceptPrefixes != null) {
+            CollectionUtils.sortIfNotEmpty(acceptPrefixes);
+        }
+        if (rejectPrefixes != null) {
+            CollectionUtils.sortIfNotEmpty(rejectPrefixes);
+        }
     }
 
     /* (non-Javadoc)
@@ -755,5 +372,380 @@ public abstract class AcceptReject {
             quoteList(rejectGlobs, buf);
         }
         return buf.toString();
+    }
+
+    /** 用于前缀字符串的接受/拒绝 */
+    public static class AcceptRejectPrefix extends AcceptReject {
+        /** 反序列化构造函数 */
+        public AcceptRejectPrefix() {
+            super();
+        }
+
+        /**
+         * 实例化一个用于前缀字符串的接受/拒绝
+         *
+         * @param separatorChar
+         *            分隔符字符
+         */
+        public AcceptRejectPrefix(final char separatorChar) {
+            super(separatorChar);
+        }
+
+        /**
+         * 添加到接受列表
+         *
+         * @param str
+         *            要接受的字符串
+         */
+        @Override
+        public void addToAccept(final String str) {
+            if (str.contains("*")) {
+                throw new IllegalArgumentException("Cannot use a glob wildcard here: " + str);
+            }
+            if (this.acceptPrefixesSet == null) {
+                this.acceptPrefixesSet = new HashSet<>();
+            }
+            this.acceptPrefixesSet.add(str);
+        }
+
+        /**
+         * 添加到拒绝列表
+         *
+         * @param str
+         *            要拒绝的字符串
+         */
+        @Override
+        public void addToReject(final String str) {
+            if (str.contains("*")) {
+                throw new IllegalArgumentException("Cannot use a glob wildcard here: " + str);
+            }
+            if (this.rejectPrefixes == null) {
+                this.rejectPrefixes = new ArrayList<>();
+            }
+            this.rejectPrefixes.add(str);
+        }
+
+        /**
+         * 检查请求的字符串是否具有已接受/未拒绝的前缀
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被接受且未被拒绝则返回 true
+         */
+        @Override
+        public boolean isAcceptedAndNotRejected(final String str) {
+            boolean isAccepted = acceptPrefixes == null;
+            if (!isAccepted) {
+                for (final String prefix : acceptPrefixes) {
+                    if (str.startsWith(prefix)) {
+                        isAccepted = true;
+                        break;
+                    }
+                }
+            }
+            if (!isAccepted) {
+                return false;
+            }
+            if (rejectPrefixes != null) {
+                for (final String prefix : rejectPrefixes) {
+                    if (str.startsWith(prefix)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /**
+         * 检查请求的字符串是否具有已接受的前缀
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被接受则返回 true
+         */
+        @Override
+        public boolean isAccepted(final String str) {
+            boolean isAccepted = acceptPrefixes == null;
+            if (!isAccepted) {
+                for (final String prefix : acceptPrefixes) {
+                    if (str.startsWith(prefix)) {
+                        isAccepted = true;
+                        break;
+                    }
+                }
+            }
+            return isAccepted;
+        }
+
+        /**
+         * 前缀的前缀无效 -- 抛出 {@link IllegalArgumentException}
+         *
+         * @param str
+         *            要测试的字符串
+         * @return (不返回，抛出异常)
+         * @throws IllegalArgumentException
+         *             始终抛出
+         */
+        @Override
+        public boolean acceptHasPrefix(final String str) {
+            throw new IllegalArgumentException("Can only find prefixes of whole strings");
+        }
+
+        /**
+         * 检查请求的字符串是否具有被拒绝的前缀
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串具有被拒绝的前缀则返回 true
+         */
+        @Override
+        public boolean isRejected(final String str) {
+            if (rejectPrefixes != null) {
+                for (final String prefix : rejectPrefixes) {
+                    if (str.startsWith(prefix)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    /** 用于全字符串匹配的接受/拒绝 */
+    public static class AcceptRejectWholeString extends AcceptReject {
+        /** 反序列化构造函数 */
+        public AcceptRejectWholeString() {
+            super();
+        }
+
+        /**
+         * 实例化一个用于全字符串匹配的接受/拒绝
+         *
+         * @param separatorChar
+         *            分隔符字符
+         */
+        public AcceptRejectWholeString(final char separatorChar) {
+            super(separatorChar);
+        }
+
+        /**
+         * 添加到接受列表
+         *
+         * @param str
+         *            要接受的字符串
+         */
+        @Override
+        public void addToAccept(final String str) {
+            if (str.contains("*")) {
+                if (this.acceptGlobs == null) {
+                    this.acceptGlobs = new HashSet<>();
+                    this.acceptPatterns = new ArrayList<>();
+                }
+                this.acceptGlobs.add(str);
+                this.acceptPatterns.add(globToPattern(str, /* simpleGlob = */ true));
+            } else {
+                if (this.accept == null) {
+                    this.accept = new HashSet<>();
+                }
+                this.accept.add(str);
+            }
+
+            // 对于不执行前缀匹配的 AcceptRejectWholeString(不同于 AcceptRejectPrefix)，
+            // 使用 acceptPrefixes 存储已接受路径的所有父级前缀，以便
+            // acceptHasPrefix() 能够在非常大的接受列表上高效运行(#338)，
+            // 特别是当接受列表的大小远大于最大路径深度时
+            if (this.acceptPrefixesSet == null) {
+                this.acceptPrefixesSet = new HashSet<>();
+                acceptPrefixesSet.add("");
+                acceptPrefixesSet.add("/");
+            }
+            final String separator = Character.toString(separatorChar);
+            String prefix = str;
+            if (prefix.contains("*")) {
+                // 在第一个 '*' 处停止前缀搜索 -- 这意味着如果路径中有多个 '*'，前缀匹配将中断
+                prefix = prefix.substring(0, prefix.indexOf('*'));
+                // /path/to/wildcard*.jar -> /path/to
+                // /path/to/*.jar -> /path/to
+                final int sepIdx = prefix.lastIndexOf(separatorChar);
+                if (sepIdx < 0) {
+                    prefix = "";
+                } else {
+                    prefix = prefix.substring(0, prefix.lastIndexOf(separatorChar));
+                }
+            }
+            // 去掉末尾的分隔符
+            while (prefix.endsWith(separator)) {
+                prefix = prefix.substring(0, prefix.length() - 1);
+            }
+            // 将 str 本身添加为前缀(这仅会匹配父目录)
+            for (; !prefix.isEmpty(); prefix = FileUtils.getParentDirPath(prefix, separatorChar)) {
+                acceptPrefixesSet.add(prefix + separatorChar);
+            }
+        }
+
+        /**
+         * 添加到拒绝列表
+         *
+         * @param str
+         *            要拒绝的字符串
+         */
+        @Override
+        public void addToReject(final String str) {
+            if (str.contains("*")) {
+                if (this.rejectGlobs == null) {
+                    this.rejectGlobs = new HashSet<>();
+                    this.rejectPatterns = new ArrayList<>();
+                }
+                this.rejectGlobs.add(str);
+                this.rejectPatterns.add(globToPattern(str, /* simpleGlob = */ true));
+            } else {
+                if (this.reject == null) {
+                    this.reject = new HashSet<>();
+                }
+                this.reject.add(str);
+            }
+        }
+
+        /**
+         * 检查请求的字符串是否被接受且未被拒绝
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被接受且未被拒绝则返回 true
+         */
+        @Override
+        public boolean isAcceptedAndNotRejected(final String str) {
+            return isAccepted(str) && !isRejected(str);
+        }
+
+        /**
+         * 检查请求的字符串是否被接受
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被接受则返回 true
+         */
+        @Override
+        public boolean isAccepted(final String str) {
+            return (accept == null && acceptPatterns == null) || (accept != null && accept.contains(str))
+                    || matchesPatternList(str, acceptPatterns);
+        }
+
+        /**
+         * 检查请求的字符串是否为某个已接受字符串的前缀
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串是某个已接受字符串的前缀则返回 true
+         */
+        @Override
+        public boolean acceptHasPrefix(final String str) {
+            if (acceptPrefixesSet == null) {
+                return false;
+            }
+            return acceptPrefixesSet.contains(str);
+        }
+
+        /**
+         * 检查请求的字符串是否被拒绝
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被拒绝则返回 true
+         */
+        @Override
+        public boolean isRejected(final String str) {
+            return (reject != null && reject.contains(str)) || matchesPatternList(str, rejectPatterns);
+        }
+    }
+
+    /** 用于叶子名称匹配的接受/拒绝 */
+    public static class AcceptRejectLeafname extends AcceptRejectWholeString {
+        /** 反序列化构造函数 */
+        public AcceptRejectLeafname() {
+            super();
+        }
+
+        /**
+         * 实例化一个用于叶子名称匹配的接受/拒绝
+         *
+         * @param separatorChar
+         *            分隔符字符
+         */
+        public AcceptRejectLeafname(final char separatorChar) {
+            super(separatorChar);
+        }
+
+        /**
+         * 添加到接受列表
+         *
+         * @param str
+         *            要接受的字符串
+         */
+        @Override
+        public void addToAccept(final String str) {
+            super.addToAccept(JarUtils.leafName(str));
+        }
+
+        /**
+         * 添加到拒绝列表
+         *
+         * @param str
+         *            要拒绝的字符串
+         */
+        @Override
+        public void addToReject(final String str) {
+            super.addToReject(JarUtils.leafName(str));
+        }
+
+        /**
+         * 检查请求的字符串是否被接受且未被拒绝
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被接受且未被拒绝则返回 true
+         */
+        @Override
+        public boolean isAcceptedAndNotRejected(final String str) {
+            return super.isAcceptedAndNotRejected(JarUtils.leafName(str));
+        }
+
+        /**
+         * 检查请求的字符串是否被接受
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被接受则返回 true
+         */
+        @Override
+        public boolean isAccepted(final String str) {
+            return super.isAccepted(JarUtils.leafName(str));
+        }
+
+        /**
+         * 前缀测试对 jar 叶子名称无效 -- 抛出 {@link IllegalArgumentException}
+         *
+         * @param str
+         *            要测试的字符串
+         * @return (不返回，抛出异常)
+         * @throws IllegalArgumentException
+         *             始终抛出
+         */
+        @Override
+        public boolean acceptHasPrefix(final String str) {
+            throw new IllegalArgumentException("Can only find prefixes of whole strings");
+        }
+
+        /**
+         * 检查请求的字符串是否被拒绝
+         *
+         * @param str
+         *            要测试的字符串
+         * @return 如果字符串被拒绝则返回 true
+         */
+        @Override
+        public boolean isRejected(final String str) {
+            return super.isRejected(JarUtils.leafName(str));
+        }
     }
 }

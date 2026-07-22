@@ -1,14 +1,14 @@
-package nonapi.io.github.classgraph.utils;
+package com.bingbaihanji.classgraph.utils;
 
-/** Assertions. */
+/** 断言工具 */
 public final class Assert {
     /**
-     * Throw {@link IllegalArgumentException} if the class is not an annotation.
-     * 
+     * 如果类不是注解，则抛出 {@link IllegalArgumentException}
+     *
      * @param clazz
-     *            the class.
+     *            类
      * @throws IllegalArgumentException
-     *             if the class is not an annotation.
+     *             如果类不是注解
      */
     public static void isAnnotation(final Class<?> clazz) {
         if (!clazz.isAnnotation()) {
@@ -17,12 +17,12 @@ public final class Assert {
     }
 
     /**
-     * Throw {@link IllegalArgumentException} if the class is not an interface.
-     * 
+     * 如果类不是接口，则抛出 {@link IllegalArgumentException}
+     *
      * @param clazz
-     *            the class.
+     *            类
      * @throws IllegalArgumentException
-     *             if the class is not an interface.
+     *             如果类不是接口
      */
     public static void isInterface(final Class<?> clazz) {
         if (!clazz.isInterface()) {

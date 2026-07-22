@@ -13,18 +13,17 @@ import com.bingbaihanji.fxdecomplie.util.collection.ArraySet;
 import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
 import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import com.bingbaihanji.fxdecomplie.util.jvm.ClassNameUtil;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.TypeAdapter;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
+import com.bingbaihanji.utils.json.JSONUtils;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,13 +51,13 @@ public final class RenameService {
     public static final String TYPE_IDENTIFIER = RenameTypes.IDENTIFIER;
 
     private static final Logger log = LoggerFactory.getLogger(RenameService.class);
-    /** Gson 实例：注册了 RenameEntryAdapter 用于 JSON 序列化/反序列化 */
-    private static final Gson GSON = new GsonBuilder()
-            .registerTypeAdapter(RenameEntry.class, new RenameEntryAdapter().nullSafe())
-            .setPrettyPrinting()
-            .create();
-    private static final Type LIST_TYPE = new TypeToken<List<RenameEntry>>() {
-    }.getType();
+    /** Jackson ObjectMapper：注册了 RenameEntry 自定义序列化器 */
+    private static final ObjectMapper MAPPER = JSONUtils.getPrettyMapper().copy()
+            .registerModule(new SimpleModule()
+                    .addSerializer(RenameEntry.class, new RenameEntrySerializer())
+                    .addDeserializer(RenameEntry.class, new RenameEntryDeserializer()));
+    private static final TypeReference<List<RenameEntry>> LIST_TYPE = new TypeReference<>() {
+    };
 
     // ---- 正则与关键词集合：用于源码解析 ----
     /** 匹配合法 Java 标识符的正则 */
@@ -297,7 +296,7 @@ public final class RenameService {
         }
         try {
             String json = Files.readString(file, StandardCharsets.UTF_8);
-            List<RenameEntry> list = GSON.fromJson(json, LIST_TYPE);
+            List<RenameEntry> list = MAPPER.readValue(json, LIST_TYPE);
             if (list == null) {
                 return new ArrayList<>();
             }
@@ -2785,7 +2784,7 @@ public final class RenameService {
             AtomicFile af = new AtomicFile(file.toFile());
             af.write(os -> {
                 try {
-                    os.write(GSON.toJson(list).getBytes(StandardCharsets.UTF_8));
+                    os.write(MAPPER.writeValueAsString(list).getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -2894,51 +2893,49 @@ public final class RenameService {
     }
 
     /**
-     * Gson 自定义序列化器：确保 RenameEntry 字段在 JSON 中使用友好名称,
-     * 并处理 null 值安全回退
+     * Jackson 自定义序列化器：确保 RenameEntry 字段使用友好名称
      */
-    private static final class RenameEntryAdapter extends TypeAdapter<RenameEntry> {
+    private static final class RenameEntrySerializer extends JsonSerializer<RenameEntry> {
         @Override
-        public void write(JsonWriter out, RenameEntry value) throws IOException {
-            out.beginObject();
-            out.name("type").value(value.type());
-            out.name("className").value(value.className());
-            out.name("oldName").value(value.oldName());
-            out.name("newName").value(value.newName());
-            out.name("desc").value(value.desc());
-            out.endObject();
+        public void serialize(RenameEntry value, JsonGenerator gen,
+                              SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("type", value.type());
+            gen.writeStringField("className", value.className());
+            gen.writeStringField("oldName", value.oldName());
+            gen.writeStringField("newName", value.newName());
+            gen.writeStringField("desc", value.desc());
+            gen.writeEndObject();
         }
+    }
 
+    /**
+     * Jackson 自定义反序列化器：处理 null 值安全回退，忽略未知字段保证向前兼容
+     */
+    private static final class RenameEntryDeserializer extends JsonDeserializer<RenameEntry> {
         @Override
-        public RenameEntry read(JsonReader in) throws IOException {
+        public RenameEntry deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             String type = "";
             String className = "";
             String oldName = "";
             String newName = "";
             String desc = "";
-            in.beginObject();
-            while (in.hasNext()) {
-                String name = in.nextName();
-                switch (name) {
-                    case "type" -> type = nextString(in);
-                    case "className" -> className = nextString(in);
-                    case "oldName" -> oldName = nextString(in);
-                    case "newName" -> newName = nextString(in);
-                    case "desc" -> desc = nextString(in);
-                    default -> in.skipValue(); // 忽略未知字段,保证向前兼容
+            if (p.currentToken() != JsonToken.START_OBJECT) {
+                p.nextToken();
+            }
+            while (p.nextToken() != JsonToken.END_OBJECT) {
+                String fieldName = p.currentName();
+                p.nextToken();
+                switch (fieldName) {
+                    case "type" -> type = p.getValueAsString("");
+                    case "className" -> className = p.getValueAsString("");
+                    case "oldName" -> oldName = p.getValueAsString("");
+                    case "newName" -> newName = p.getValueAsString("");
+                    case "desc" -> desc = p.getValueAsString("");
+                    default -> p.skipChildren(); // 忽略未知字段,保证向前兼容
                 }
             }
-            in.endObject();
             return new RenameEntry(type, className, oldName, newName, desc);
-        }
-
-        /** 读取下一个字符串值,null 时返回空字符串 */
-        private String nextString(JsonReader in) throws IOException {
-            if (in.peek() == JsonToken.NULL) {
-                in.nextNull();
-                return "";
-            }
-            return in.nextString();
         }
     }
 }

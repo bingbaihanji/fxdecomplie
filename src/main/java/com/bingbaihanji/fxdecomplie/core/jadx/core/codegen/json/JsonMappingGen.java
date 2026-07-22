@@ -13,8 +13,9 @@ import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.MethodNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.dex.nodes.RootNode;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.exceptions.JadxRuntimeException;
 import com.bingbaihanji.fxdecomplie.core.jadx.core.utils.files.IoUtils;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +28,9 @@ import java.util.List;
 public class JsonMappingGen {
     private static final Logger LOG = LoggerFactory.getLogger(JsonMappingGen.class);
 
-    private static final Gson GSON = new com.google.gson.GsonBuilder().disableJdkUnsafe().disableInnerClassSerialization().setStrictness(com.google.gson.Strictness.STRICT).setPrettyPrinting()
-            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
-            .disableHtmlEscaping()
-            .create();
+    private static final ObjectMapper GSON = new ObjectMapper()
+            .setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE)
+            .enable(SerializationFeature.INDENT_OUTPUT);
 
     private JsonMappingGen() {
     }
@@ -44,7 +44,7 @@ public class JsonMappingGen {
         File mappingFile = new File(outDirSrc, "mapping.json");
         IoUtils.makeDirsForFile(mappingFile);
         try (Writer writer = new FileWriter(mappingFile)) {
-            GSON.toJson(mapping, writer);
+            GSON.writeValue(writer, mapping);
             LOG.info("Save mappings to {}", mappingFile.getAbsolutePath());
         } catch (Exception e) {
             throw new JadxRuntimeException("Failed to save mapping json", e);

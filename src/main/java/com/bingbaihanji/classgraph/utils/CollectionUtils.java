@@ -26,69 +26,62 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.utils;
+package com.bingbaihanji.classgraph.utils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.ConcurrentModificationException;
-import java.util.List;
+import java.util.*;
 
 /**
- * Collection utilities.
+ * 集合工具类
  */
 public final class CollectionUtils {
-    /** Class can't be constructed. */
+    /** 不可构造 */
     private CollectionUtils() {
-        // Empty
+        // 空
     }
 
     /**
-     * Sort a collection if it is not empty (to prevent {@link ConcurrentModificationException} if an immutable
-     * empty list that has been returned more than once is being sorted in one thread and iterated through in
-     * another thread -- #334).
+     * 如果集合非空则排序(防止当一个不可变空列表被多次返回时，
+     * 在一个线程中排序而在另一个线程中遍历时抛出 {@link ConcurrentModificationException} -- #334)
      *
      * @param <T>
-     *            the element type
+     *            元素类型
      * @param list
-     *            the list
+     *            列表
      */
     public static <T extends Comparable<? super T>> void sortIfNotEmpty(final List<T> list) {
         if (list.size() > 1) {
-            Collections.sort(list);
+            list.sort(null);
         }
     }
 
     /**
-     * Sort a collection if it is not empty (to prevent {@link ConcurrentModificationException} if an immutable
-     * empty list that has been returned more than once is being sorted in one thread and iterated through in
-     * another thread -- #334).
+     * 如果集合非空则排序(防止当一个不可变空列表被多次返回时，
+     * 在一个线程中排序而在另一个线程中遍历时抛出 {@link ConcurrentModificationException} -- #334)
      *
      * @param <T>
-     *            the element type
+     *            元素类型
      * @param list
-     *            the list
+     *            列表
      * @param comparator
-     *            the comparator
+     *            比较器
      */
     public static <T> void sortIfNotEmpty(final List<T> list, final Comparator<? super T> comparator) {
         if (list.size() > 1) {
-            Collections.sort(list, comparator);
+            list.sort(comparator);
         }
     }
 
     /**
-     * Copy and sort a collection.
+     * 复制并排序集合
      *
      * @param elts
-     *            the collection to copy and sort
-     * @return a sorted copy of the collection
+     *            要复制并排序的集合
+     * @return 排序后的集合副本
      */
     public static <T extends Comparable<T>> List<T> sortCopy(final Collection<T> elts) {
         final List<T> sortedCopy = new ArrayList<>(elts);
         if (sortedCopy.size() > 1) {
-            Collections.sort(sortedCopy);
+            sortedCopy.sort(null);
         }
         return sortedCopy;
     }

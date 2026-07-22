@@ -27,7 +27,12 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice;
+package com.bingbaihanji.classgraph.fileslice;
+
+import com.bingbaihanji.classgraph.core.Resource;
+import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
+import com.bingbaihanji.classgraph.fileslice.reader.RandomAccessReader;
+import com.bingbaihanji.classgraph.utils.FileUtils;
 
 import java.io.Closeable;
 import java.io.File;
@@ -37,56 +42,44 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.github.classgraph.Resource;
-import nonapi.io.github.classgraph.fastzipfilereader.NestedJarHandler;
-import nonapi.io.github.classgraph.fileslice.reader.RandomAccessReader;
-import nonapi.io.github.classgraph.utils.FileUtils;
-
 /**
- * A slice of a {@link File}, {@link ByteBuffer} or {@link InputStream}. A single {@link Slice} instance should only
- * be used by a single thread.
+ * {@link File}、{@link ByteBuffer} 或 {@link InputStream} 的切片单个 {@link Slice} 实例应仅由
+ * 单个线程使用
  */
 public abstract class Slice implements Closeable {
-    /** The {@link NestedJarHandler}. */
-    protected final NestedJarHandler nestedJarHandler;
-
-    /** The parent slice. */
-    protected final Slice parentSlice;
-
-    /** The start position of the slice. */
+    /** 切片的起始位置 */
     public final long sliceStartPos;
-
-    /** The length of the slice, or -1L if unknown (for {@link InputStream}). */
-    public long sliceLength;
-
-    /** If true, the slice is a deflated zip entry, and needs to be inflated to access the content. */
+    /** 如果为 true，则切片是压缩的 zip 条目，需要解压才能访问内容 */
     public final boolean isDeflatedZipEntry;
-
-    /** If the slice is a deflated zip entry, this is the expected uncompressed length, or -1L if unknown. */
+    /** 如果切片是压缩的 zip 条目，则这是预期的未压缩长度，未知则为 -1L */
     public final long inflatedLengthHint;
-
-    /** The cached hashCode. */
+    /** {@link NestedJarHandler} */
+    protected final NestedJarHandler nestedJarHandler;
+    /** 父切片 */
+    protected final Slice parentSlice;
+    /** 切片的长度，如果未知(对于 {@link InputStream})则为 -1L */
+    public long sliceLength;
+    /** 缓存的 hashCode */
     private int hashCode;
 
     /**
-     * Constructor for treating a range of a slice as a sub-slice.
+     * 用于将切片的一个范围视为子切片的构造函数
      *
      * @param parentSlice
-     *            the parent slice
+     *            父切片
      * @param offset
-     *            the offset of the sub-slice within the parent slice
+     *            子切片在父切片中的偏移量
      * @param length
-     *            the length of the sub-slice
+     *            子切片的长度
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      */
     protected Slice(final Slice parentSlice, final long offset, final long length, final boolean isDeflatedZipEntry,
-            final long inflatedLengthHint, final NestedJarHandler nestedJarHandler) {
+                    final long inflatedLengthHint, final NestedJarHandler nestedJarHandler) {
         this.parentSlice = parentSlice;
         final long parentSliceStartPos = parentSlice == null ? 0L : parentSlice.sliceStartPos;
         this.sliceStartPos = parentSliceStartPos + offset;
@@ -108,68 +101,66 @@ public abstract class Slice implements Closeable {
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param length
-     *            the length
+     *            长度
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
      * @param nestedJarHandler
-     *            the nested jar handler
+     *            嵌套 jar 处理器
      */
     protected Slice(final long length, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-            final NestedJarHandler nestedJarHandler) {
+                    final NestedJarHandler nestedJarHandler) {
         this(/* parentSlice = */ null, 0L, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
     }
 
     /**
-     * Get a child {@link Slice} from this parent {@link Slice}. The child slice must be smaller than the parent
-     * slice, and completely contained within it.
-     * 
+     * 从此父 {@link Slice} 获取子 {@link Slice}子切片必须小于父切片，
+     * 并且完全包含在父切片中
+     *
      * @param offset
-     *            The offset to start slicing from, relative to this parent slice's start position.
+     *            相对于此父切片起始位置开始切片的偏移量
      * @param length
-     *            The length of the slice.
+     *            切片的长度
      * @param isDeflatedZipEntry
-     *            true if this is a deflated zip entry
+     *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
-     *            the uncompressed size of a deflated zip entry, or -1 if unknown, or 0 of this is not a deflated
-     *            zip entry.
-     * @return The child slice.
+     *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
+     * @return 子切片
      */
     public abstract Slice slice(long offset, long length, boolean isDeflatedZipEntry,
-            final long inflatedLengthHint);
+                                final long inflatedLengthHint);
 
     /**
-     * Open this {@link Slice} as an {@link InputStream}.
+     * 将此 {@link Slice} 作为 {@link InputStream} 打开
      *
-     * @return the input stream
+     * @return 输入流
      * @throws IOException
-     *             if an inflater cannot be created for this {@link Slice}.
+     *             如果无法为此 {@link Slice} 创建解压器
      */
     public InputStream open() throws IOException {
         return open(null);
     }
 
     /**
-     * Open this {@link Slice} as an {@link InputStream}.
+     * 将此 {@link Slice} 作为 {@link InputStream} 打开
      *
      * @param resourceToClose
-     *            the {@link Resource} to close when the returned {@code InputStream} is closed, or null if none.
-     * @return the input stream
+     *            当返回的 {@code InputStream} 关闭时需要关闭的 {@link Resource}，如果没有则为 null
+     * @return 输入流
      * @throws IOException
-     *             if an inflater cannot be created for this {@link Slice}.
+     *             如果无法为此 {@link Slice} 创建解压器
      */
     public InputStream open(final Resource resourceToClose) throws IOException {
         final InputStream rawInputStream = new InputStream() {
+            private final byte[] byteBuf = new byte[1];
+            private final AtomicBoolean closed = new AtomicBoolean();
             RandomAccessReader randomAccessReader = randomAccessReader();
             private long currOff;
             private long markOff;
-            private final byte[] byteBuf = new byte[1];
-            private final AtomicBoolean closed = new AtomicBoolean();
 
             @Override
             public int read() throws IOException {
@@ -179,8 +170,8 @@ public abstract class Slice implements Closeable {
                 return read(byteBuf, 0, 1);
             }
 
-            // InputStream's default implementation of this method is very slow -- it calls read()
-            // for every byte. This method reads the maximum number of bytes possible in one call.
+            // InputStream 的默认实现此方法的方式非常慢 —— 它对每个字节调用 read()
+            // 本方法在一次调用中尽可能多地读取字节
             @Override
             public int read(final byte[] buf, final int off, final int len) throws IOException {
                 if (closed.get()) {
@@ -217,7 +208,7 @@ public abstract class Slice implements Closeable {
 
             @Override
             public synchronized void mark(final int readlimit) {
-                // Ignore readlimit
+                // 忽略 readlimit
                 markOff = currOff;
             }
 
@@ -237,7 +228,7 @@ public abstract class Slice implements Closeable {
                     try {
                         resourceToClose.close();
                     } catch (final Exception e) {
-                        // Ignore
+                        // 忽略
                     }
                 }
                 closed.getAndSet(true);
@@ -247,38 +238,38 @@ public abstract class Slice implements Closeable {
     }
 
     /**
-     * Create a new {@link RandomAccessReader} for this {@link Slice}.
+     * 为此 {@link Slice} 创建新的 {@link RandomAccessReader}
      *
-     * @return the random access reader
+     * @return 随机访问读取器
      */
     public abstract RandomAccessReader randomAccessReader();
 
     /**
-     * Load the slice as a byte array.
+     * 将切片作为字节数组加载
      *
-     * @return the byte[]
+     * @return 字节数组
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             如果发生 I/O 异常
      */
     public abstract byte[] load() throws IOException;
 
     /**
-     * Load the slice as a string.
+     * 将切片作为字符串加载
      *
-     * @return the string
+     * @return 字符串
      * @throws IOException
-     *             if slice cannot be read.
+     *             如果切片无法读取
      */
     public String loadAsString() throws IOException {
         return new String(load(), StandardCharsets.UTF_8);
     }
 
     /**
-     * Read the slice into a {@link ByteBuffer}.
+     * 将切片读入 {@link ByteBuffer}
      *
-     * @return the byte buffer
+     * @return 字节缓冲区
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             如果发生 I/O 异常
      */
     public ByteBuffer read() throws IOException {
         return ByteBuffer.wrap(load());

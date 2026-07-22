@@ -26,7 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.reflection;
+package com.bingbaihanji.classgraph.reflection;
+
+import com.bingbaihanji.classgraph.core.ClassGraph;
+import com.bingbaihanji.classgraph.core.ClassGraph.CircumventEncapsulationMethod;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -34,25 +37,22 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.Callable;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassGraph.CircumventEncapsulationMethod;
-
-/** Reflection utility methods that can be used by ClassLoaderHandlers. */
+/** 可供 ClassLoaderHandler 使用的反射工具方法 */
 public final class ReflectionUtils {
-    /** The reflection driver to use. */
+    /** 要使用的反射驱动 */
     public ReflectionDriver reflectionDriver;
     private Class<?> accessControllerClass;
     private Class<?> privilegedActionClass;
     private Method accessControllerDoPrivileged;
 
-    /** Call this if you change the value of {@link ClassGraph#CIRCUMVENT_ENCAPSULATION}. */
+    /** 如果更改了 {@link ClassGraph#CIRCUMVENT_ENCAPSULATION} 的值，请调用此方法 */
     public ReflectionUtils() {
         if (ClassGraph.CIRCUMVENT_ENCAPSULATION == CircumventEncapsulationMethod.NARCISSUS) {
             try {
                 reflectionDriver = new NarcissusReflectionDriver();
             } catch (final Throwable t) {
                 System.err.println("Could not load Narcissus reflection driver: " + t);
-                // Fall back to standard reflection driver
+                // 回退到标准反射驱动
             }
         }
         if (reflectionDriver == null) {
@@ -64,26 +64,25 @@ public final class ReflectionUtils {
             accessControllerDoPrivileged = reflectionDriver.findMethod(accessControllerClass, null, "doPrivileged",
                     privilegedActionClass);
         } catch (final Throwable t) {
-            // Ignore
+            // 忽略
         }
     }
 
     /**
-     * Get the value of the field in the class of the given object or any of its superclasses. If an exception is
-     * thrown while trying to read the field, and throwException is true, then IllegalArgumentException is thrown
-     * wrapping the cause, otherwise this will return null. If passed a null object, returns null unless
-     * throwException is true, then throws IllegalArgumentException.
-     * 
+     * 获取给定对象类或其任意超类中字段的值如果在尝试读取字段时抛出异常，且 throwException 为 true，
+     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
+     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     *
      * @param throwException
-     *            If true, throw an exception if the field value could not be read.
+     *            如果为 true，则在无法读取字段值时抛出异常
      * @param obj
-     *            The object.
+     *            对象
      * @param field
-     *            The field.
-     * 
-     * @return The field value.
+     *            字段
+     *
+     * @return 字段值
      * @throws IllegalArgumentException
-     *             If the field value could not be read.
+     *             如果无法读取字段值
      */
     public Object getFieldVal(final boolean throwException, final Object obj, final Field field)
             throws IllegalArgumentException {
@@ -109,21 +108,20 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Get the value of the named field in the class of the given object or any of its superclasses. If an exception
-     * is thrown while trying to read the field, and throwException is true, then IllegalArgumentException is thrown
-     * wrapping the cause, otherwise this will return null. If passed a null object, returns null unless
-     * throwException is true, then throws IllegalArgumentException.
-     * 
+     * 获取给定对象类或其任意超类中命名字段的值如果在尝试读取字段时抛出异常，且 throwException 为 true，
+     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
+     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     *
      * @param throwException
-     *            If true, throw an exception if the field value could not be read.
+     *            如果为 true，则在无法读取字段值时抛出异常
      * @param obj
-     *            The object.
+     *            对象
      * @param fieldName
-     *            The field name.
-     * 
-     * @return The field value.
+     *            字段名
+     *
+     * @return 字段值
      * @throws IllegalArgumentException
-     *             If the field value could not be read.
+     *             如果无法读取字段值
      */
     public Object getFieldVal(final boolean throwException, final Object obj, final String fieldName)
             throws IllegalArgumentException {
@@ -149,21 +147,20 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Get the value of the named field in the given class or any of its superclasses. If an exception is thrown
-     * while trying to read the field value, and throwException is true, then IllegalArgumentException is thrown
-     * wrapping the cause, otherwise this will return null. If passed a null class reference, returns null unless
-     * throwException is true, then throws IllegalArgumentException.
-     * 
+     * 获取给定类或其任意超类中命名字段的值如果在尝试读取字段值时抛出异常，且 throwException 为 true，
+     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
+     * 如果传入 null 类引用，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     *
      * @param throwException
-     *            If true, throw an exception if the field value could not be read.
+     *            如果为 true，则在无法读取字段值时抛出异常
      * @param cls
-     *            The class.
+     *            类
      * @param fieldName
-     *            The field name.
-     * 
-     * @return The field value.
+     *            字段名
+     *
+     * @return 字段值
      * @throws IllegalArgumentException
-     *             If the field value could not be read.
+     *             如果无法读取字段值
      */
     public Object getStaticFieldVal(final boolean throwException, final Class<?> cls, final String fieldName)
             throws IllegalArgumentException {
@@ -188,21 +185,20 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Invoke the named method in the given object or its superclasses. If an exception is thrown while trying to
-     * call the method, and throwException is true, then IllegalArgumentException is thrown wrapping the cause,
-     * otherwise this will return null. If passed a null object, returns null unless throwException is true, then
-     * throws IllegalArgumentException.
-     * 
+     * 调用给定对象或其超类中的命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
+     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
+     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     *
      * @param throwException
-     *            If true, throw an exception if the field value could not be read.
+     *            如果为 true，则在无法读取字段值时抛出异常
      * @param obj
-     *            The object.
+     *            对象
      * @param methodName
-     *            The method name.
-     * 
-     * @return The result of the method invocation.
+     *            方法名
+     *
+     * @return 方法调用的结果
      * @throws IllegalArgumentException
-     *             If the method could not be invoked.
+     *             如果无法调用方法
      */
     public Object invokeMethod(final boolean throwException, final Object obj, final String methodName)
             throws IllegalArgumentException {
@@ -227,28 +223,27 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Invoke the named method in the given object or its superclasses. If an exception is thrown while trying to
-     * call the method, and throwException is true, then IllegalArgumentException is thrown wrapping the cause,
-     * otherwise this will return null. If passed a null object, returns null unless throwException is true, then
-     * throws IllegalArgumentException.
-     * 
+     * 调用给定对象或其超类中的命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
+     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
+     * 如果传入 null 对象，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     *
      * @param throwException
-     *            Whether to throw an exception on failure.
+     *            失败时是否抛出异常
      * @param obj
-     *            The object.
+     *            对象
      * @param methodName
-     *            The method name.
+     *            方法名
      * @param argType
-     *            The type of the method argument.
+     *            方法参数的类型
      * @param param
-     *            The parameter value to use when invoking the method.
-     * 
-     * @return The result of the method invocation.
+     *            调用方法时使用的参数值
+     *
+     * @return 方法调用的结果
      * @throws IllegalArgumentException
-     *             If the method could not be invoked.
+     *             如果无法调用方法
      */
     public Object invokeMethod(final boolean throwException, final Object obj, final String methodName,
-            final Class<?> argType, final Object param) throws IllegalArgumentException {
+                               final Class<?> argType, final Object param) throws IllegalArgumentException {
         if (reflectionDriver == null) {
             throw new RuntimeException("Cannot use reflection after ScanResult has been closed");
         }
@@ -271,20 +266,20 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Invoke the named method. If an exception is thrown while trying to call the method, and throwException is
-     * true, then IllegalArgumentException is thrown wrapping the cause, otherwise this will return null. If passed
-     * a null class reference, returns null unless throwException is true, then throws IllegalArgumentException.
-     * 
+     * 调用命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
+     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
+     * 如果传入 null 类引用，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     *
      * @param throwException
-     *            Whether to throw an exception on failure.
+     *            失败时是否抛出异常
      * @param cls
-     *            The class.
+     *            类
      * @param methodName
-     *            The method name.
-     * 
-     * @return The result of the method invocation.
+     *            方法名
+     *
+     * @return 方法调用的结果
      * @throws IllegalArgumentException
-     *             If the method could not be invoked.
+     *             如果无法调用方法
      */
     public Object invokeStaticMethod(final boolean throwException, final Class<?> cls, final String methodName)
             throws IllegalArgumentException {
@@ -309,27 +304,27 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Invoke the named method. If an exception is thrown while trying to call the method, and throwException is
-     * true, then IllegalArgumentException is thrown wrapping the cause, otherwise this will return null. If passed
-     * a null class reference, returns null unless throwException is true, then throws IllegalArgumentException.
-     * 
+     * 调用命名方法如果在尝试调用方法时抛出异常，且 throwException 为 true，
+     * 则抛出 IllegalArgumentException 包装原始异常；否则此方法将返回 null
+     * 如果传入 null 类引用，则返回 null，除非 throwException 为 true，此时抛出 IllegalArgumentException
+     *
      * @param throwException
-     *            Whether to throw an exception on failure.
+     *            失败时是否抛出异常
      * @param cls
-     *            The class.
+     *            类
      * @param methodName
-     *            The method name.
+     *            方法名
      * @param argType
-     *            The type of the method argument.
+     *            方法参数的类型
      * @param param
-     *            The parameter value to use when invoking the method.
-     * 
-     * @return The result of the method invocation.
+     *            调用方法时使用的参数值
+     *
+     * @return 方法调用的结果
      * @throws IllegalArgumentException
-     *             If the method could not be invoked.
+     *             如果无法调用方法
      */
     public Object invokeStaticMethod(final boolean throwException, final Class<?> cls, final String methodName,
-            final Class<?> argType, final Object param) throws IllegalArgumentException {
+                                     final Class<?> argType, final Object param) throws IllegalArgumentException {
         if (reflectionDriver == null) {
             throw new RuntimeException("Cannot use reflection after ScanResult has been closed");
         }
@@ -352,11 +347,11 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Call Class.forName(className), but return null if any exception is thrown.
-     * 
+     * 调用 Class.forName(className)，但如果抛出任何异常则返回 null
+     *
      * @param className
-     *            The class name to load.
-     * @return The class of the requested name, or null if an exception was thrown while trying to load the class.
+     *            要加载的类名
+     * @return 请求名称对应的类，如果在尝试加载类时抛出异常则返回 null
      */
     public Class<?> classForNameOrNull(final String className) {
         if (reflectionDriver == null) {
@@ -370,11 +365,13 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Get a method by name, but return null if any exception is thrown.
-     * 
+     * 按名称获取方法，但如果抛出任何异常则返回 null
+     *
      * @param className
-     *            The class name to load.
-     * @return The class of the requested name, or null if an exception was thrown while trying to load the class.
+     *            要加载的类名
+     * @param staticMethodName
+     *            静态方法名
+     * @return 请求名称对应的类，如果在尝试加载类时抛出异常则返回 null
      */
     public Method staticMethodForNameOrNull(final String className, final String staticMethodName) {
         if (reflectionDriver == null) {
@@ -389,6 +386,22 @@ public final class ReflectionUtils {
 
     // -------------------------------------------------------------------------------------------------------------
 
+    /**
+     * 如果可能，使用反射在 AccessController.doPrivileged(PrivilegedAction) 上下文中调用方法
+     * (AccessController 在 JDK 17 中已弃用)
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T doPrivileged(final Callable<T> callable) throws Throwable {
+        if (accessControllerDoPrivileged != null) {
+            final Object privilegedAction = Proxy.newProxyInstance(privilegedActionClass.getClassLoader(),
+                    new Class<?>[]{privilegedActionClass}, new PrivilegedActionInvocationHandler<T>(callable));
+            return (T) accessControllerDoPrivileged.invoke(null, privilegedAction);
+        } else {
+            // 回退到非特权上下文中调用
+            return callable.call();
+        }
+    }
+
     private class PrivilegedActionInvocationHandler<T> implements InvocationHandler {
         private final Callable<T> callable;
 
@@ -398,22 +411,6 @@ public final class ReflectionUtils {
 
         @Override
         public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-            return callable.call();
-        }
-    }
-
-    /**
-     * Call a method in the AccessController.doPrivileged(PrivilegedAction) context, using reflection, if possible
-     * (AccessController is deprecated in JDK 17).
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T doPrivileged(final Callable<T> callable) throws Throwable {
-        if (accessControllerDoPrivileged != null) {
-            final Object privilegedAction = Proxy.newProxyInstance(privilegedActionClass.getClassLoader(),
-                    new Class<?>[] { privilegedActionClass }, new PrivilegedActionInvocationHandler<T>(callable));
-            return (T) accessControllerDoPrivileged.invoke(null, privilegedAction);
-        } else {
-            // Fall back to invoking in a non-privileged context
             return callable.call();
         }
     }

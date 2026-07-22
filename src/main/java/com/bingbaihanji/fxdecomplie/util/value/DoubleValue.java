@@ -150,7 +150,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）
+     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
      */
     default DoubleValue mul(DoubleValue other) {
         OptionalDouble value = value();
@@ -189,7 +189,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果（对应 {@code dcmpg} 指令，NaN 视为大于）；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code dcmpg} 指令，NaN 视为大于)；若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpg(DoubleValue other) {
         OptionalDouble value = value();
@@ -210,7 +210,7 @@ public non-sealed interface DoubleValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果（对应 {@code dcmpl} 指令，NaN 视为小于）；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code dcmpl} 指令，NaN 视为小于)；若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmpl(DoubleValue other) {
         OptionalDouble value = value();

@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,58 +34,58 @@ import java.util.Iterator;
 import java.util.ListIterator;
 
 /**
- * A potentially unmodifiable list of objects.
+ * 一个可能不可修改的对象列表
  *
  * @param <T>
- *            the element type
+ *            元素类型
  */
 class PotentiallyUnmodifiableList<T> extends ArrayList<T> {
-    /** serialVersionUID. */
+    /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 
-    /** Whether or not the list is modifiable. */
+    /** 列表是否可修改 */
     boolean modifiable = true;
 
     /**
-     * Constructor.
+     * 构造函数
      */
     PotentiallyUnmodifiableList() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param sizeHint
-     *            the size hint
+     *            大小提示
      */
     PotentiallyUnmodifiableList(final int sizeHint) {
         super(sizeHint);
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param collection
-     *            the initial elements.
+     *            初始元素
      */
     PotentiallyUnmodifiableList(final Collection<T> collection) {
         super(collection);
     }
 
-    // Keep Scrutinizer happy
+    // 保持 Scrutinizer 满意
     @Override
     public boolean equals(final Object o) {
         return super.equals(o);
     }
 
-    // Keep Scrutinizer happy
+    // 保持 Scrutinizer 满意
     @Override
     public int hashCode() {
         return super.hashCode();
     }
 
-    /** Make this list unmodifiable. */
+    /** 将此列表设置为不可修改 */
     void makeUnmodifiable() {
         modifiable = false;
     }
@@ -180,9 +180,8 @@ class PotentiallyUnmodifiableList<T> extends ArrayList<T> {
         }
     }
 
-    // Provide replacement iterators so that there is no chance of a thread that
-    // is trying to sort the empty list causing a ConcurrentModificationException
-    // in another thread that is iterating over the empty list (#334)
+    // 提供替换的迭代器，以避免一个正在尝试对空列表进行排序的线程
+    // 导致另一个正在遍历空列表的线程抛出 ConcurrentModificationException (#334)
 
     @Override
     public Iterator<T> iterator() {

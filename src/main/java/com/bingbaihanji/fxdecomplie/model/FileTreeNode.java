@@ -62,7 +62,7 @@ public class FileTreeNode {
         return nodeType;
     }
 
-    /** @return 缓存的字节码,可能为 null（SoftReference 可能已被 GC 回收） */
+    /** @return 缓存的字节码,可能为 null(SoftReference 可能已被 GC 回收) */
     public byte[] getCachedBytes() {
         SoftReference<byte[]> ref = cachedBytesRef;
         return ref != null ? ref.get() : null;

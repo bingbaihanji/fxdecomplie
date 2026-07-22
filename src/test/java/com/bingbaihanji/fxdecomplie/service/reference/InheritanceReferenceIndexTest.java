@@ -37,6 +37,22 @@ class InheritanceReferenceIndexTest {
         assertTrue(index.fullPathOf("com/example/FileService").endsWith("FileService.class"));
     }
 
+    @Test
+    void indexServiceWaitsForWorkspaceIndexBeforeScanning() throws Exception {
+        Workspace readyWorkspace = sampleWorkspace();
+        Workspace workspace = new Workspace("lazy", tempDir.toFile(),
+                readyWorkspace.getTreeRoot(), false);
+
+        assertNull(InheritanceReferenceIndexService.getOrStart(workspace));
+        var future = InheritanceReferenceIndexService.getFuture(workspace);
+        assertNotNull(future);
+
+        InheritanceReferenceIndex index = future.join();
+        assertFalse(index.scanResult().getAllClasses().isEmpty());
+        assertTrue(index.implementationsOf("com/example/FileService")
+                .contains("com/example/FileServiceImpl"));
+    }
+
     private Workspace sampleWorkspace() throws Exception {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("com/example/Service.java",

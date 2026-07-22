@@ -26,45 +26,41 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
 
 import java.lang.reflect.Array;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** An array type signature. */
+/** 数组类型签名 */
 public class ArrayTypeSignature extends ReferenceTypeSignature {
-    /** The raw type signature string for the array type. */
+    /** 数组类型的原始类型签名字符串 */
     private final String typeSignatureStr;
-
-    /** Human-readable class name, e.g. "java.lang.String[]". */
-    private String className;
-
-    /** Array class info. */
-    private ArrayClassInfo arrayClassInfo;
-
-    /** The element class. */
-    private Class<?> elementClassRef;
-
-    /** The nested type (another {@link ArrayTypeSignature}, or the base element type). */
+    /** 嵌套类型(另一个 {@link ArrayTypeSignature}，或基础元素类型) */
     private final TypeSignature nestedType;
+    /** 人类可读的类名，例如 "java.lang.String[]" */
+    private String className;
+    /** 数组类信息 */
+    private ArrayClassInfo arrayClassInfo;
+    /** 元素类 */
+    private Class<?> elementClassRef;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param elementTypeSignature
-     *            The type signature of the array elements.
+     *            数组元素的类型签名
      * @param numDims
-     *            The number of array dimensions.
+     *            数组维度数
      * @param typeSignatureStr
-     *            Raw array type signature string (e.g. "[[I")
+     *            原始数组类型签名字符串(例如 "[[I")
      */
     ArrayTypeSignature(final TypeSignature elementTypeSignature, final int numDims, final String typeSignatureStr) {
         super();
@@ -76,25 +72,55 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
         }
         this.typeSignatureStr = typeSignatureStr;
         this.nestedType = typeSigHasTwoOrMoreDims
-                // Strip one array dimension for nested type
+                // 为嵌套类型剥离一个数组维度
                 ? new ArrayTypeSignature(elementTypeSignature, numDims - 1, typeSignatureStr.substring(1))
-                // Nested type for innermost dimension is element type 
+                // 最内层维度的嵌套类型是元素类型
                 : elementTypeSignature;
     }
 
     /**
-     * Get the raw array type signature string, e.g. "[[I".
-     * 
-     * @return the raw array type signature string.
+     * 解析数组类型签名
+     *
+     * @param parser
+     *            解析器
+     * @param definingClassName
+     *            定义类名
+     * @return 数组类型签名
+     * @throws ParseException
+     *             如果解析失败
+     */
+    static ArrayTypeSignature parse(final Parser parser, final String definingClassName) throws ParseException {
+        int numArrayDims = 0;
+        final int begin = parser.getPosition();
+        while (parser.peek() == '[') {
+            numArrayDims++;
+            parser.next();
+        }
+        if (numArrayDims > 0) {
+            final TypeSignature elementTypeSignature = TypeSignature.parse(parser, definingClassName);
+            if (elementTypeSignature == null) {
+                throw new ParseException(parser, "elementTypeSignature == null");
+            }
+            final String typeSignatureStr = parser.getSubsequence(begin, parser.getPosition()).toString();
+            return new ArrayTypeSignature(elementTypeSignature, numArrayDims, typeSignatureStr);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * 获取原始数组类型签名字符串，例如 "[[I"
+     *
+     * @return 原始数组类型签名字符串
      */
     public String getTypeSignatureStr() {
         return typeSignatureStr;
     }
 
     /**
-     * Get the type signature of the innermost element type of the array.
+     * 获取数组最内层元素类型的类型签名
      *
-     * @return The type signature of the innermost element type.
+     * @return 最内层元素类型的类型签名
      */
     public TypeSignature getElementTypeSignature() {
         ArrayTypeSignature curr = this;
@@ -105,9 +131,9 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     }
 
     /**
-     * Get the number of dimensions of the array.
+     * 获取数组的维度数
      *
-     * @return The number of dimensions of the array.
+     * @return 数组的维度数
      */
     public int getNumDimensions() {
         int numDims = 1;
@@ -120,10 +146,10 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     }
 
     /**
-     * Get the nested type, which is another {@link ArrayTypeSignature} with one dimension fewer, if this array has
-     * 2 or more dimensions, otherwise this returns the element type.
-     * 
-     * @return The nested type.
+     * 获取嵌套类型如果此数组有 2 个或更多维度，则为少一个维度的另一个 {@link ArrayTypeSignature}；
+     * 否则返回元素类型
+     *
+     * @return 嵌套类型
      */
     public TypeSignature getNestedType() {
         return nestedType;
@@ -142,23 +168,21 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get a list of {@link AnnotationInfo} objects for the type annotations on this array type, or null if none.
-     * 
-     * @see #getNestedType() if you want to read for type annotations on inner (nested) dimensions of the array
-     *      type.
-     * @return a list of {@link AnnotationInfo} objects for the type annotations of on this array type, or null if
-     *         none.
+     * 获取此数组类型上的类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
+     *
+     * @see #getNestedType() 如果需要读取数组类型内部(嵌套)维度上的类型注解
+     * @return 此数组类型上的类型注解的 {@link AnnotationInfo} 对象列表，如果没有则返回 null
      */
     @Override
     public AnnotationInfoList getTypeAnnotationInfo() {
         return typeAnnotationInfo;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -169,7 +193,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -177,22 +201,22 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     }
 
     /**
-     * Return an {@link ArrayClassInfo} instance for the array class, cast to its superclass.
+     * 返回数组类的 {@link ArrayClassInfo} 实例，并向上转型为其父类
      *
-     * @return the {@link ArrayClassInfo} instance.
+     * @return {@link ArrayClassInfo} 实例
      */
     public ArrayClassInfo getArrayClassInfo() {
         if (arrayClassInfo == null) {
             if (scanResult != null) {
                 final String clsName = getClassName();
-                // Cache ArrayClassInfo instances using scanResult.classNameToClassInfo, if scanResult is available
+                // 如果 scanResult 可用，则使用 scanResult.classNameToClassInfo 缓存 ArrayClassInfo 实例
                 arrayClassInfo = (ArrayClassInfo) scanResult.classNameToClassInfo.get(clsName);
                 if (arrayClassInfo == null) {
                     scanResult.classNameToClassInfo.put(clsName, arrayClassInfo = new ArrayClassInfo(this));
                     arrayClassInfo.setScanResult(this.scanResult);
                 }
             } else {
-                // scanResult is not yet available, create an uncached instance of an ArrayClassInfo for this type
+                // scanResult 尚不可用，为此类型创建一个未缓存的 ArrayClassInfo 实例
                 arrayClassInfo = new ArrayClassInfo(this);
             }
         }
@@ -200,7 +224,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -211,31 +235,29 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 获取类型签名中引用的任何类的名称
      *
      * @param refdClassNames
-     *            the referenced class names.
+     *            被引用的类名
      */
     @Override
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
         nestedType.findReferencedClassNames(refdClassNames);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Get a {@code Class<?>} reference for the innermost array element type. Causes the ClassLoader to load the
-     * class, if it is not already loaded.
+     * 获取最内层数组元素类型的 {@code Class<?>} 引用如果类尚未加载，会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
-     *            Whether or not to ignore exceptions.
-     * @return a {@code Class<?>} reference for the innermost array element type. Also works for arrays of primitive
-     *         element type.
+     *            是否忽略异常
+     * @return 最内层数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
     public Class<?> loadElementClass(final boolean ignoreExceptions) {
         if (elementClassRef == null) {
-            // Try resolving element type against base types (int, etc.)
+            // 尝试将元素类型解析为基本类型(int 等)
             final TypeSignature elementTypeSignature = getElementTypeSignature();
             if (elementTypeSignature instanceof BaseTypeSignature) {
                 elementClassRef = ((BaseTypeSignature) elementTypeSignature).getType();
@@ -243,7 +265,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
                 if (scanResult != null) {
                     elementClassRef = elementTypeSignature.loadClass(ignoreExceptions);
                 } else {
-                    // Fallback, if scanResult is not set
+                    // 回退方案，如果 scanResult 未设置
                     final String elementTypeName = elementTypeSignature.getClassName();
                     try {
                         elementClassRef = Class.forName(elementTypeName);
@@ -260,31 +282,28 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     }
 
     /**
-     * Get a {@code Class<?>} reference for the array element type. Causes the ClassLoader to load the element
-     * class, if it is not already loaded.
+     * 获取数组元素类型的 {@code Class<?>} 引用如果元素类尚未加载，会导致 ClassLoader 加载它
      *
-     * @return a {@code Class<?>} reference for the array element type. Also works for arrays of primitive element
-     *         type.
+     * @return 数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
     public Class<?> loadElementClass() {
         return loadElementClass(/* ignoreExceptions = */ false);
     }
 
     /**
-     * Obtain a {@code Class<?>} reference for the array class named by this {@link ArrayClassInfo} object. Causes
-     * the ClassLoader to load the element class, if it is not already loaded.
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 会导致 ClassLoader 加载它
      *
      * @param ignoreExceptions
-     *            Whether or not to ignore exceptions.
-     * @return The class reference, or null, if ignoreExceptions is true and there was an exception or error loading
-     *         the class.
+     *            是否忽略异常
+     * @return 类引用，如果 ignoreExceptions 为 true 且在加载类时发生了异常或错误，则返回 null
      * @throws IllegalArgumentException
-     *             if ignoreExceptions is false and there were problems loading the class.
+     *             如果 ignoreExceptions 为 false 且加载类时出现问题
      */
     @Override
     public Class<?> loadClass(final boolean ignoreExceptions) {
         if (classRef == null) {
-            // Get the element type
+            // 获取元素类型
             Class<?> eltClassRef = null;
             if (ignoreExceptions) {
                 try {
@@ -299,28 +318,28 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
                 throw new IllegalArgumentException(
                         "Could not load array element class " + getElementTypeSignature());
             }
-            // Create an array of the target number of dimensions, with size zero in each dimension
+            // 创建目标维度数的数组，每个维度大小为零
             final Object eltArrayInstance = Array.newInstance(eltClassRef, new int[getNumDimensions()]);
-            // Get the class reference from the array instance
+            // 从数组实例获取类引用
             classRef = eltArrayInstance.getClass();
         }
         return classRef;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Obtain a {@code Class<?>} reference for the array class named by this {@link ArrayClassInfo} object. Causes
-     * the ClassLoader to load the element class, if it is not already loaded.
-     * 
-     * @return The class reference.
+     * 获取此 {@link ArrayClassInfo} 对象所命名的数组类的 {@code Class<?>} 引用如果元素类尚未加载，
+     * 会导致 ClassLoader 加载它
+     *
+     * @return 类引用
      * @throws IllegalArgumentException
-     *             if there were problems loading the class.
+     *             如果加载类时出现问题
      */
     @Override
     public Class<?> loadClass() {
         return loadClass(/* ignoreExceptions = */ false);
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -345,8 +364,10 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
                 && this.nestedType.equals(other.nestedType);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /* (non-Javadoc)
-     * @see io.github.classgraph.TypeSignature#equalsIgnoringTypeParams(io.github.classgraph.TypeSignature)
+     * @see com.bingbaihanji.classgraph.core.TypeSignature#equalsIgnoringTypeParams(com.bingbaihanji.classgraph.core.TypeSignature)
      */
     @Override
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
@@ -364,12 +385,12 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
 
     @Override
     protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
-        // Start with innermost array element type
+                                    final StringBuilder buf) {
+        // 从最内层数组元素类型开始
         getElementTypeSignature().toStringInternal(useSimpleNames, annotationsToExclude, buf);
 
-        // Append array dimensions
-        for (ArrayTypeSignature curr = this;;) {
+        // 追加数组维度
+        for (ArrayTypeSignature curr = this; ; ) {
             if (curr.typeAnnotationInfo != null && !curr.typeAnnotationInfo.isEmpty()) {
                 for (final AnnotationInfo annotationInfo : curr.typeAnnotationInfo) {
                     if (buf.length() == 0 || buf.charAt(buf.length() - 1) != ' ') {
@@ -387,38 +408,6 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
             } else {
                 break;
             }
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Parses the array type signature.
-     *
-     * @param parser
-     *            the parser
-     * @param definingClassName
-     *            the defining class name
-     * @return the array type signature
-     * @throws ParseException
-     *             if parsing fails
-     */
-    static ArrayTypeSignature parse(final Parser parser, final String definingClassName) throws ParseException {
-        int numArrayDims = 0;
-        final int begin = parser.getPosition();
-        while (parser.peek() == '[') {
-            numArrayDims++;
-            parser.next();
-        }
-        if (numArrayDims > 0) {
-            final TypeSignature elementTypeSignature = TypeSignature.parse(parser, definingClassName);
-            if (elementTypeSignature == null) {
-                throw new ParseException(parser, "elementTypeSignature == null");
-            }
-            final String typeSignatureStr = parser.getSubsequence(begin, parser.getPosition()).toString();
-            return new ArrayTypeSignature(elementTypeSignature, numArrayDims, typeSignatureStr);
-        } else {
-            return null;
         }
     }
 }

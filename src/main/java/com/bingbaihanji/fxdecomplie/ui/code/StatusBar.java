@@ -1,6 +1,7 @@
 package com.bingbaihanji.fxdecomplie.ui.code;
 
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
+import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -31,6 +32,8 @@ public class StatusBar extends HBox {
     private final Label engineLabel;
     /** 当前后台任务提示 */
     private final Label taskLabel;
+    /** 索引构建提示 */
+    private final Label indexLabel;
     /** 进度条 */
     private final ProgressBar progressBar;
     /** 后台任务队列长度 */
@@ -41,6 +44,8 @@ public class StatusBar extends HBox {
     private final Label positionLabel;
     /** 定时刷新监控信息的时间线 */
     private final Timeline monitorTimeline;
+    /** 当前进度条是否由索引进度刷新逻辑显示 */
+    private boolean indexProgressVisible;
 
     /** 构建状态栏布局：路径 | 弹性空间 | 任务 | 进度条 | 队列 | 内存 | 引擎 | 编码 | 弹性空间 | 光标位置 */
     public StatusBar() {
@@ -58,6 +63,12 @@ public class StatusBar extends HBox {
         taskLabel = new Label("");
         taskLabel.getStyleClass().add("status-label");
         taskLabel.setPadding(new Insets(0, 8, 0, 0));
+
+        indexLabel = new Label("");
+        indexLabel.getStyleClass().add("status-label");
+        indexLabel.setPadding(new Insets(0, 8, 0, 0));
+        indexLabel.setVisible(false);
+        indexLabel.setManaged(false);
 
         progressBar = new ProgressBar(0);
         progressBar.getStyleClass().add("status-progress");
@@ -90,11 +101,11 @@ public class StatusBar extends HBox {
         positionLabel = new Label("1:1");
         positionLabel.getStyleClass().add("status-label");
 
-        getChildren().addAll(pathLabel, spacer1, taskLabel, progressBar, queueLabel, memLabel,
+        getChildren().addAll(pathLabel, spacer1, taskLabel, indexLabel, progressBar, queueLabel, memLabel,
                 engineLabel, encodingLabel, spacer2, positionLabel);
 
-        // 每 5 秒刷新内存和队列信息
-        monitorTimeline = new Timeline(new KeyFrame(Duration.seconds(5), e -> refreshMonitors()));
+        // 周期性刷新内存 队列和索引进度
+        monitorTimeline = new Timeline(new KeyFrame(Duration.millis(500), e -> refreshMonitors()));
         monitorTimeline.setCycleCount(Animation.INDEFINITE);
         monitorTimeline.play();
         // 启动时立即刷新一次
@@ -150,6 +161,7 @@ public class StatusBar extends HBox {
      * @param progress 0.0~1.0 的进度值，-1 表示不确定进度
      */
     public void setProgress(double progress) {
+        indexProgressVisible = false;
         progressBar.setVisible(true);
         progressBar.setManaged(true);
         progressBar.setProgress(progress);
@@ -157,6 +169,7 @@ public class StatusBar extends HBox {
 
     /** 隐藏进度条并重置为 0 */
     public void clearProgress() {
+        indexProgressVisible = false;
         progressBar.setVisible(false);
         progressBar.setManaged(false);
         progressBar.setProgress(0);
@@ -166,13 +179,16 @@ public class StatusBar extends HBox {
     public void clear() {
         pathLabel.setText("");
         taskLabel.setText("");
+        indexLabel.setText("");
+        indexLabel.setVisible(false);
+        indexLabel.setManaged(false);
         engineLabel.setText("");
         positionLabel.setText("1:1");
         encodingLabel.setText("UTF-8");
         clearProgress();
     }
 
-    /** 停止监控定时器（应用关闭时调用） */
+    /** 停止监控定时器(应用关闭时调用) */
     public void stopMonitor() {
         monitorTimeline.stop();
     }
@@ -198,6 +214,31 @@ public class StatusBar extends HBox {
         } else {
             queueLabel.setVisible(false);
             queueLabel.setManaged(false);
+        }
+
+        WorkspaceIndexService.IndexProgressSnapshot snapshot = WorkspaceIndexService.getProgressSnapshot();
+        if (snapshot != null && snapshot.progress() >= 0.0 && snapshot.progress() <= 1.0) {
+            int pct = (int) Math.round(snapshot.progress() * 100);
+            indexLabel.setText(I18nUtil.getString("status.indexing", snapshot.workspaceName())
+                    + " " + pct + "%");
+            indexLabel.setVisible(true);
+            indexLabel.setManaged(true);
+            progressBar.setVisible(true);
+            progressBar.setManaged(true);
+            progressBar.setProgress(snapshot.progress());
+            progressBar.setTooltip(new Tooltip(snapshot.processed() + "/" + snapshot.total()
+                    + " " + snapshot.phase()));
+            indexProgressVisible = true;
+        } else {
+            indexLabel.setVisible(false);
+            indexLabel.setManaged(false);
+            progressBar.setTooltip(null);
+            if (indexProgressVisible) {
+                progressBar.setVisible(false);
+                progressBar.setManaged(false);
+                progressBar.setProgress(0);
+                indexProgressVisible = false;
+            }
         }
     }
 }

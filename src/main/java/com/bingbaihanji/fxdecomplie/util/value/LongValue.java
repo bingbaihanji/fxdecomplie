@@ -151,7 +151,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）
+     * @return 两值之积；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
      */
     default LongValue mul(LongValue other) {
         OptionalLong value = value();
@@ -190,7 +190,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值按位与的结果；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 0 时结果为 0）
+     * @return 两值按位与的结果；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 0 时结果为 0)
      */
     default LongValue and(LongValue other) {
         OptionalLong value = value();
@@ -209,7 +209,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 两值按位或的结果；若任一值未知则为 {@link #UNKNOWN}（任一操作数为 -1 时结果为 -1）
+     * @return 两值按位或的结果；若任一值未知则为 {@link #UNKNOWN}(任一操作数为 -1 时结果为 -1)
      */
     default LongValue or(LongValue other) {
         OptionalLong value = value();
@@ -244,7 +244,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		另一个值
      *
-     * @return 比较结果（对应 {@code lcmp} 指令）；若任一值未知则为 {@link IntValue#UNKNOWN}
+     * @return 比较结果(对应 {@code lcmp} 指令)；若任一值未知则为 {@link IntValue#UNKNOWN}
      */
     default IntValue cmp(LongValue other) {
         OptionalLong value = value();
@@ -347,7 +347,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 逻辑右移（无符号右移）后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 逻辑右移(无符号右移)后的值；若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue ushr(LongValue other) {
         OptionalLong value = value();
@@ -363,7 +363,7 @@ public non-sealed interface LongValue extends ReValue {
      * @param other
      * 		移位位数
      *
-     * @return 逻辑右移（无符号右移）后的值；若任一值未知则为 {@link #UNKNOWN}
+     * @return 逻辑右移(无符号右移)后的值；若任一值未知则为 {@link #UNKNOWN}
      */
     default LongValue ushr(IntValue other) {
         OptionalLong value = value();

@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,49 +34,49 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A list of named objects.
+ * 命名对象列表
  *
  * @param <T>
- *            the element type
+ *            元素类型
  */
 public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> {
-    /** serialVersionUID. */
+    /** 序列化版本 UID */
     static final long serialVersionUID = 1L;
 
     /**
-     * Constructor.
+     * 构造函数
      */
     InfoList() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param sizeHint
-     *            the size hint
+     *            大小提示
      */
     InfoList(final int sizeHint) {
         super(sizeHint);
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param infoCollection
-     *            the initial elements.
+     *            初始元素集合
      */
     InfoList(final Collection<T> infoCollection) {
         super(infoCollection);
     }
 
-    // Keep Scrutinizer happy
+    // 令 Scrutinizer 满意
     @Override
     public boolean equals(final Object o) {
         return super.equals(o);
     }
 
-    // Keep Scrutinizer happy
+    // 令 Scrutinizer 满意
     @Override
     public int hashCode() {
         return super.hashCode();
@@ -85,9 +85,9 @@ public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the names of all items in this list, by calling {@code getName()} on each item in the list.
+     * 获取此列表中所有项的名称，通过对列表中的每一项调用 {@code getName()} 来获取
      *
-     * @return The names of all items in this list, by calling {@code getName()} on each item in the list.
+     * @return 此列表中所有项的名称，通过对列表中的每一项调用 {@code getName()} 来获取
      */
     public List<String> getNames() {
         if (this.isEmpty()) {
@@ -104,11 +104,9 @@ public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> 
     }
 
     /**
-     * Get the String representations of all items in this list, by calling {@code toString()} on each item in the
-     * list.
+     * 获取此列表中所有项的字符串表示，通过对列表中的每一项调用 {@code toString()} 来获取
      *
-     * @return The String representations of all items in this list, by calling {@code toString()} on each item in
-     *         the list.
+     * @return 此列表中所有项的字符串表示，通过对列表中的每一项调用 {@code toString()} 来获取
      */
     public List<String> getAsStrings() {
         if (this.isEmpty()) {
@@ -123,15 +121,15 @@ public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> 
     }
 
     /**
-     * Get the String representations of all items in this list, using only <a href=
-     * "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">simple
-     * names</a> of any named classes, by calling {@code ScanResultObject#toStringWithSimpleNames()} if the object
-     * is a subclass of {@code ScanResultObject} (e.g. {@link ClassInfo}, {@link MethodInfo} or {@link FieldInfo}
-     * object), otherwise calling {@code toString()}, for each item in the list.
+     * 获取此列表中所有项的字符串表示，仅使用命名类的<a href=
+     * "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">简单
+     * 名称</a>如果对象是 {@code ScanResultObject} 的子类(例如 {@link ClassInfo}、{@link MethodInfo} 或
+     * {@link FieldInfo} 对象)，则调用 {@code ScanResultObject#toStringWithSimpleNames()}；否则对列表中的每一项
+     * 调用 {@code toString()}
      *
-     * @return The String representations of all items in this list, using only the <a href=
+     * @return 此列表中所有项的字符串表示，仅使用命名类的<a href=
      *         "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">
-     *         simple names</a> of any named classes.
+     *         简单名称</a>
      */
     public List<String> getAsStringsWithSimpleNames() {
         if (this.isEmpty()) {
@@ -141,7 +139,7 @@ public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> 
             for (final T i : this) {
                 toStringVals.add(i == null ? "null"
                         : i instanceof ScanResultObject ? ((ScanResultObject) i).toStringWithSimpleNames()
-                                : i.toString());
+                        : i.toString());
             }
             return toStringVals;
         }

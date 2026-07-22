@@ -283,7 +283,7 @@ public final class ExportService {
                 || data.getNodeType() == FileTreeNode.NodeTypeEnum.JAVA_FILE));
     }
 
-    /** 将已反编译的内容写入目录（顺序写入，无并发） */
+    /** 将已反编译的内容写入目录(顺序写入，无并发) */
     private static void writeDecompiledToDir(List<FileTreeNode> items,
                                              Map<FileTreeNode, ExportContent> decompiled,
                                              ExportConfig config, ExportState state,
@@ -325,7 +325,7 @@ public final class ExportService {
         }
     }
 
-    /** 将已反编译的内容写入 ZIP（顺序写入，ZipOutputStream 非线程安全） */
+    /** 将已反编译的内容写入 ZIP(顺序写入，ZipOutputStream 非线程安全) */
     private static void writeDecompiledToZip(List<FileTreeNode> items,
                                              Map<FileTreeNode, ExportContent> decompiled,
                                              ExportConfig config, ExportState state,

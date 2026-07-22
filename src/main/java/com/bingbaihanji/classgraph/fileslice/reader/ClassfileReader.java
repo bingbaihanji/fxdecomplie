@@ -27,7 +27,14 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice.reader;
+package com.bingbaihanji.classgraph.fileslice.reader;
+
+import com.bingbaihanji.classgraph.core.Resource;
+import com.bingbaihanji.classgraph.fileslice.ArraySlice;
+import com.bingbaihanji.classgraph.fileslice.FileSlice;
+import com.bingbaihanji.classgraph.fileslice.Slice;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.StringUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -38,96 +45,78 @@ import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Arrays;
 
-import io.github.classgraph.Resource;
-import nonapi.io.github.classgraph.fileslice.ArraySlice;
-import nonapi.io.github.classgraph.fileslice.FileSlice;
-import nonapi.io.github.classgraph.fileslice.Slice;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.StringUtils;
-
 /**
- * A {@link Slice} reader that works as either a {@link RandomAccessReader} or a {@link SequentialReader}. The file
- * is buffered up to the point it has been read so far. Reads in <b>big endian</b> order, as required by the
- * classfile format.
+ * 一种 {@link Slice} 读取器，既可作为 {@link RandomAccessReader} 也可作为 {@link SequentialReader} 使用
+ * 文件缓冲到目前已读取的位置按 classfile 格式所需的<b>大端序</b>读取
  */
 public class ClassfileReader implements RandomAccessReader, SequentialReader, Closeable {
-    /** The underlying resource to close when {@link ClassfileReader#close()} is called. */
-    private Resource resourceToClose;
-
-    /** If slice is deflated, a wrapper for {@link InflateInputStream}. */
-    private InputStream inflaterInputStream;
-
     /**
-     * If slice is not deflated, a {@link RandomAccessReader} for either the {@link ArraySlice} or {@link FileSlice}
-     * concrete subclass.
+     * 初始缓冲区大小对于大多数 classfile，只需要读取前 16-64kb(我们不读取字节码)
+     */
+    private static final int INITIAL_BUF_SIZE = 16384;
+    /**
+     * 每次发生缓冲区不足时读取的字节数比 8k 小 8 字节，以防止当最后一个块不能完全容纳在
+     * INITIAL_BUF_SIZE 的 16kb 内时数组大小翻倍，因为最多可以请求读取 8 字节(用于 long 类型)
+     * 否则我们可能需要读取到 (8kb * 2 + 8)，这会将缓冲区大小翻倍到 32kb，但如果我们只需要读取
+     * 8kb 到 16kb 之间，则我们就不必要地多复制了一次缓冲区内容
+     */
+    private static final int BUF_CHUNK_SIZE = 8192 - 8;
+    /** 调用 {@link ClassfileReader#close()} 时要关闭的底层资源 */
+    private Resource resourceToClose;
+    /** 如果切片是压缩的，则是 {@link InflateInputStream} 的包装器 */
+    private InputStream inflaterInputStream;
+    /**
+     * 如果切片未压缩，则是 {@link ArraySlice} 或 {@link FileSlice} 具体子类的
+     * {@link RandomAccessReader}
      */
     private RandomAccessReader randomAccessReader;
-
-    /** Buffer. */
+    /** 缓冲区 */
     private byte[] arr;
-
-    /** The number of bytes used in arr. */
+    /** arr 中已使用的字节数 */
     private int arrUsed;
-
-    /** The current read index within the slice. */
+    /** 切片内的当前读取索引 */
     private int currIdx;
-
     /**
-     * The length of the classfile if known (because it is not deflated), or -1 if unknown (because it is deflated).
+     * 如果已知 classfile 长度(因为未压缩)则为该长度，如果未知(因为已压缩)则为 -1
      */
     private int classfileLengthHint = -1;
 
     /**
-     * Initial buffer size. For most classfiles, only the first 16-64kb needs to be read (we don't read the
-     * bytecodes).
-     */
-    private static final int INITIAL_BUF_SIZE = 16384;
-
-    /**
-     * Read this many bytes each time there is a buffer underrun. This is smaller than 8k by 8 bytes to prevent the
-     * doubling of the array size when the last chunk doesn't quite fit within the 16kb of INITIAL_BUF_SIZE, since
-     * the number of bytes that can be requested is up to 8 (for longs). Otherwise we could request to read to (8kb
-     * * 2 + 8), which would double the size of the buffer to 32kb, but if we only need to read between 8kb and
-     * 16kb, then we unnecessarily copied the buffer content one extra time.
-     */
-    private static final int BUF_CHUNK_SIZE = 8192 - 8;
-
-    /**
-     * Constructor.
-     * 
+     * 构造函数
+     *
      * @param slice
-     *            the {@link Slice} to read.
+     *            要读取的 {@link Slice}
      * @param resourceToClose
-     *            the resource to close when {@link ClassfileReader#close()} is called, or null.
+     *            调用 {@link ClassfileReader#close()} 时要关闭的资源，或 null
      * @throws IOException
-     *             If an inflater cannot be opened on the {@link Slice}.
+     *             如果无法在 {@link Slice} 上打开解压器
      */
     public ClassfileReader(final Slice slice, final Resource resourceToClose) throws IOException {
         this.classfileLengthHint = (int) slice.sliceLength;
         this.resourceToClose = resourceToClose;
         if (slice.isDeflatedZipEntry) {
-            // If this is a deflated slice, need to read from an InflaterInputStream to fill buffer
+            // 如果这是压缩的切片，需要从 InflaterInputStream 读取来填充缓冲区
             inflaterInputStream = slice.open();
             arr = new byte[INITIAL_BUF_SIZE];
             classfileLengthHint = (int) Math.min(slice.inflatedLengthHint, FileUtils.MAX_BUFFER_SIZE);
         } else {
             if (slice instanceof ArraySlice) {
-                // If slice is an ArraySlice, avoid copying by simply reusing the wrapped byte array
-                // in place of the buffer array, and mark it as fully loaded
+                // 如果切片是 ArraySlice，通过直接重用包装的字节数组代替缓冲区数组来避免复制，
+                // 并将其标记为已完全加载
                 final ArraySlice arraySlice = (ArraySlice) slice;
                 if (arraySlice.sliceStartPos == 0 && arraySlice.sliceLength == arraySlice.arr.length) {
-                    // ArraySlice is the whole array
+                    // ArraySlice 是整个数组
                     arr = arraySlice.arr;
                 } else {
-                    // ArraySlice covers only a partial array, and this class doesn't support a starting
-                    // offset, so copy the sliced part of the array to a new buffer
+                    // ArraySlice 仅覆盖部分数组，而此类不支持起始偏移量，
+                    // 因此将切片部分的数组复制到新缓冲区
                     arr = Arrays.copyOfRange(arraySlice.arr, (int) arraySlice.sliceStartPos,
                             (int) (arraySlice.sliceStartPos + arraySlice.sliceLength));
                 }
                 arrUsed = arr.length;
                 classfileLengthHint = arr.length;
             } else {
-                // Otherwise this is a FileSlice -- need to fetch chunks of bytes using a random access reader
+                // 否则这是一个 FileSlice —— 需要使用随机访问读取器获取字节块
                 randomAccessReader = slice.randomAccessReader();
                 arr = new byte[INITIAL_BUF_SIZE];
                 classfileLengthHint = (int) Math.min(slice.sliceLength, FileUtils.MAX_BUFFER_SIZE);
@@ -136,14 +125,14 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
     }
 
     /**
-     * Constructor for reader of module {@link InputStream} (which is not deflated).
-     * 
+     * 用于模块 {@link InputStream}(未压缩)的读取器构造函数
+     *
      * @param inputStream
-     *            the {@link InputStream} to read from.
+     *            要读取的 {@link InputStream}
      * @param resourceToClose
-     *            the underlying resource to close when {@link ClassfileReader#close()} is called, or null.
+     *            调用 {@link ClassfileReader#close()} 时要关闭的底层资源，或 null
      * @throws IOException
-     *             If an inflater cannot be opened on the {@link Slice}.
+     *             如果无法在 {@link Slice} 上打开解压器
      */
     public ClassfileReader(final InputStream inputStream, final Resource resourceToClose) throws IOException {
         inflaterInputStream = inputStream;
@@ -152,50 +141,50 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
     }
 
     /**
-     * Curr pos.
+     * 当前读取位置
      *
-     * @return the current read position.
+     * @return 当前读取位置
      */
     public int currPos() {
         return currIdx;
     }
 
     /**
-     * Buf.
+     * 缓冲区
      *
-     * @return the buffer.
+     * @return 缓冲区
      */
     public byte[] buf() {
         return arr;
     }
 
     /**
-     * Called when there is a buffer underrun to ensure there are sufficient bytes available in the array to read
-     * the given number of bytes at the given start index.
+     * 在发生缓冲区不足时调用，以确保数组中有足够的字节可用于从给定起始索引处
+     * 读取指定数量的字节
      *
      * @param targetArrUsed
-     *            the target value for {@link #arrUsed} (i.e. the number of bytes that must be filled in the array)
+     *            {@link #arrUsed} 的目标值(即数组中必须填充的字节数)
      * @throws IOException
-     *             Signals that an I/O exception has occurred.
+     *             如果发生 I/O 异常
      */
     private void readTo(final int targetArrUsed) throws IOException {
-        // Array does not need to grow larger than the length hint (if the uncompressed size of the zip entry
-        // is an underestimate, classfile will be truncated). If -1, assume 2GB is the max size.
+        // 数组不需要增长到超过长度提示的大小(如果 zip 条目的未压缩大小被低估，
+        // classfile 将被截断)如果为 -1，则假定 2GB 为最大大小
         final int maxArrLen = classfileLengthHint == -1 ? FileUtils.MAX_BUFFER_SIZE : classfileLengthHint;
         if (inflaterInputStream == null && randomAccessReader == null) {
-            // If neither inflaterInputStream nor randomAccessReader is set, then slice is an ArraySlice,
-            // and array is already "fully loaded" (the ArraySlice's backing array is used as the buffer).
+            // 如果 inflaterInputStream 和 randomAccessReader 都未设置，则切片是 ArraySlice，
+            // 并且数组已经"完全加载"(ArraySlice 的后备数组用作缓冲区)
             throw new IOException("Tried to read past end of fixed array buffer");
         }
         if (targetArrUsed > FileUtils.MAX_BUFFER_SIZE || targetArrUsed < 0 || arrUsed == maxArrLen) {
             throw new IOException("Hit 2GB limit while trying to grow buffer array");
         }
 
-        // Need to read at least BUF_CHUNK_SIZE (but don't overshoot past 2GB limit)
+        // 需要至少读取 BUF_CHUNK_SIZE 字节(但不要超过 2GB 限制)
         final int maxNewArrUsed = (int) Math.min(Math.max(targetArrUsed, (long) (arrUsed + BUF_CHUNK_SIZE)),
                 maxArrLen);
 
-        // Double the size of the array if it's too small to contain the new chunk of bytes
+        // 如果数组太小，无法容纳新的字节块，则将数组大小翻倍
         long newArrLength = arr.length;
         while (newArrLength < maxNewArrUsed) {
             newArrLength = Math.min(maxNewArrUsed, newArrLength * 2L);
@@ -205,20 +194,20 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
         }
         arr = Arrays.copyOf(arr, (int) Math.min(newArrLength, maxArrLen));
 
-        // Figure out the maximum number of bytes that can be read into the array
+        // 计算可以读入数组的最大字节数
         final int maxBytesToRead = arr.length - arrUsed;
 
-        // Read a new chunk into the buffer, starting at position arrUsed
+        // 将新的数据块读入缓冲区，从位置 arrUsed 开始
         if (inflaterInputStream != null) {
-            // Read from inflater input stream
+            // 从解压器输入流读取
             final int numRead = inflaterInputStream.read(arr, arrUsed, maxBytesToRead);
             if (numRead > 0) {
                 arrUsed += numRead;
             }
-        } else /* randomAccessReader == null, so this is a (non-deflated) FileSlice */ {
-            // Don't read past end of slice
+        } else /* randomAccessReader != null，所以这是一个(未压缩的)FileSlice */ {
+            // 不要读超过切片末尾
             final int bytesToRead = Math.min(maxBytesToRead, maxArrLen - arrUsed);
-            // Read bytes from FileSlice into arr
+            // 从 FileSlice 读取字节到 arr
             final int numBytesRead = randomAccessReader.read(/* srcOffset = */ arrUsed, /* dstArr = */ arr,
                     /* dstArrStart = */ arrUsed, /* numBytes = */ bytesToRead);
             if (numBytesRead > 0) {
@@ -226,19 +215,19 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
             }
         }
 
-        // Check the buffer was able to be filled to the requested position
+        // 检查缓冲区是否能够填充到请求的位置
         if (arrUsed < targetArrUsed) {
             throw new IOException("Buffer underflow");
         }
     }
 
     /**
-     * Ensure that the given number of bytes have been read into the buffer from the beginning of the slice.
+     * 确保从切片开头已将指定数量的字节读入缓冲区
      *
      * @param numBytes
-     *            the number of bytes to ensure have been buffered
+     *            要确保已缓冲的字节数
      * @throws IOException
-     *             on EOF or if the bytes could not be read.
+     *             在 EOF 时或如果字节无法读取
      */
     public void bufferTo(final int numBytes) throws IOException {
         if (numBytes > arrUsed) {
@@ -421,7 +410,7 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
 
     @Override
     public String readString(final long offset, final int numBytes, final boolean replaceSlashWithDot,
-            final boolean stripLSemicolon) throws IOException {
+                             final boolean stripLSemicolon) throws IOException {
         final int idx = (int) offset;
         if (idx + numBytes > arrUsed) {
             readTo(idx + numBytes);

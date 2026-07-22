@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.reflection;
+package com.bingbaihanji.classgraph.reflection;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
@@ -34,9 +34,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
- * Narcissus reflection driver (uses the <a href="https://github.com/toolfactory/narcissus">Narcissus</a> library,
- * if it is available, which allows access to non-public fields and methods, circumventing encapsulation and
- * visibility controls via JNI).
+ * Narcissus 反射驱动(如果可用，则使用 <a href="https://github.com/toolfactory/narcissus">Narcissus</a> 库，
+ * 通过 JNI 允许访问非公开字段和方法，绕过封装和可见性控制)
  */
 class NarcissusReflectionDriver extends ReflectionDriver {
     private final Class<?> narcissusClass;
@@ -52,14 +51,14 @@ class NarcissusReflectionDriver extends ReflectionDriver {
     private final Method invokeStaticMethod;
 
     NarcissusReflectionDriver() throws Exception {
-        // Load Narcissus class via reflection, so that there is no runtime dependency
+        // 通过反射加载 Narcissus 类，从而避免运行时依赖
         final StandardReflectionDriver drv = new StandardReflectionDriver();
         narcissusClass = drv.findClass("io.github.toolfactory.narcissus.Narcissus");
         if (!(Boolean) drv.getStaticField(drv.findStaticField(narcissusClass, "libraryLoaded"))) {
             throw new IllegalArgumentException("Could not load Narcissus native library");
         }
 
-        // Look up needed methods
+        // 查找所需的方法
         findClass = drv.findStaticMethod(narcissusClass, "findClass", String.class);
         getDeclaredMethods = drv.findStaticMethod(narcissusClass, "getDeclaredMethods", Class.class);
         getDeclaredConstructors = drv.findStaticMethod(narcissusClass, "getDeclaredConstructors", Class.class);

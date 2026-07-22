@@ -26,58 +26,56 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A list of named objects that can be indexed by name.
+ * 可通过名称索引的命名对象列表
  *
  * @param <T>
- *            the element type
+ *            元素类型
  */
 public class MappableInfoList<T extends HasName> extends InfoList<T> {
-    /** serialVersionUID */
+    /** 序列化版本 UID */
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructor.
+     * 构造函数
      */
     MappableInfoList() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param sizeHint
-     *            the size hint
+     *            大小提示
      */
     MappableInfoList(final int sizeHint) {
         super(sizeHint);
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param infoCollection
-     *            the initial elements
+     *            初始元素集合
      */
     MappableInfoList(final Collection<T> infoCollection) {
         super(infoCollection);
     }
 
     /**
-     * Get an index for this list, as a map from the name of each list item (obtained by calling {@code getName()}
-     * on each list item) to the list item.
+     * 获取此列表的索引，作为从每个列表项的名称(通过对每个列表项调用 {@code getName()} 获取)到列表项的映射
      *
-     * @return An index for this list, as a map from the name of each list item (obtained by calling
-     *         {@code getName()} on each list item) to the list item.
+     * @return 此列表的索引，作为从每个列表项的名称(通过对每个列表项调用 {@code getName()} 获取)到列表项的映射
      */
     public Map<String, T> asMap() {
-        final Map<String, T> nameToInfoObject = new HashMap<>();
+        final Map<String, T> nameToInfoObject = new HashMap<>(Math.max(16, (int) Math.ceil(size() / 0.75f)));
         for (final T i : this) {
             if (i != null) {
                 nameToInfoObject.put(i.getName(), i);
@@ -87,11 +85,11 @@ public class MappableInfoList<T extends HasName> extends InfoList<T> {
     }
 
     /**
-     * Check if this list contains an item with the given name.
+     * 检查此列表是否包含具有给定名称的项
      *
      * @param name
-     *            The name to search for.
-     * @return true if this list contains an item with the given name.
+     *            要搜索的名称
+     * @return 如果此列表包含具有给定名称的项，则返回 true
      */
     public boolean containsName(final String name) {
         for (final T i : this) {
@@ -103,11 +101,11 @@ public class MappableInfoList<T extends HasName> extends InfoList<T> {
     }
 
     /**
-     * Get the list item with the given name, or null if not found.
+     * 获取具有给定名称的列表项，如果未找到则返回 null
      *
      * @param name
-     *            The name to search for.
-     * @return The list item with the given name, or null if not found.
+     *            要搜索的名称
+     * @return 具有给定名称的列表项，如果未找到则返回 null
      */
     @SuppressWarnings("null")
     public T get(final String name) {

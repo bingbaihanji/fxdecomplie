@@ -26,39 +26,35 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.types;
+package com.bingbaihanji.classgraph.types;
 
-import nonapi.io.github.classgraph.json.JSONUtils;
+
+import com.bingbaihanji.utils.json.JSONUtils;
 
 /**
- * A generic PEG parser.
+ * 通用 PEG 解析器
  */
 public class Parser {
-    /** The string being parsed. */
+    /** 当前位置之前显示的上下文字符数 */
+    private static final int SHOW_BEFORE = 80;
+    /** 当前位置之后显示的上下文字符数 */
+    private static final int SHOW_AFTER = 80;
+    /** 正在解析的字符串 */
     private final String string;
-
-    /** The current position. */
-    private int position;
-
-    /** The token buffer. */
+    /** Token 缓冲区 */
     private final StringBuilder token = new StringBuilder();
-
-    /** Extra parsing state. */
+    /** 当前位置 */
+    private int position;
+    /** 额外的解析状态 */
     private Object state;
 
-    /** How much context to show before the current position. */
-    private static final int SHOW_BEFORE = 80;
-
-    /** How much context to show after the current position. */
-    private static final int SHOW_AFTER = 80;
-
     /**
-     * Construct a parser.
-     * 
+     * 构造一个解析器
+     *
      * @param string
-     *            The string to parse.
+     *            要解析的字符串
      * @throws ParseException
-     *             If the string was null.
+     *             如果字符串为 null
      */
     public Parser(final String string) throws ParseException {
         if (string == null) {
@@ -68,9 +64,9 @@ public class Parser {
     }
 
     /**
-     * Get the parsing context as a string, for debugging.
+     * 获取解析上下文字符串，用于调试
      *
-     * @return A string showing parsing context, for debugging.
+     * @return 显示解析上下文的字符串，用于调试
      */
     public String getPositionInfo() {
         final int showStart = Math.max(0, position - SHOW_BEFORE);
@@ -81,11 +77,11 @@ public class Parser {
     }
 
     /**
-     * Set the "state object" from the parser (can be used to parse state between parser functions).
-     * 
+     * 设置解析器的"状态对象"(可用于在解析函数之间传递状态)
+     *
      * @param state
-     *            The state object.
-     * @return The old value of the state object.
+     *            状态对象
+     * @return 状态对象的旧值
      */
     public Object setState(final Object state) {
         final Object oldState = this.state;
@@ -94,20 +90,20 @@ public class Parser {
     }
 
     /**
-     * Get the "state object" from the parser (can be used to parse state between parser functions).
-     * 
-     * @return The current value of the state object.
+     * 获取解析器的"状态对象"(可用于在解析函数之间传递状态)
+     *
+     * @return 状态对象的当前值
      */
     public Object getState() {
         return state;
     }
 
     /**
-     * Get the next character.
-     * 
-     * @return The next character.
+     * 获取下一个字符
+     *
+     * @return 下一个字符
      * @throws ParseException
-     *             If there were no more characters in the string.
+     *             如果字符串中没有更多字符
      */
     public char getc() throws ParseException {
         if (position >= string.length()) {
@@ -117,12 +113,12 @@ public class Parser {
     }
 
     /**
-     * Expect the next character.
-     * 
+     * 期望下一个字符为指定字符
+     *
      * @param expectedChar
-     *            The expected character.
+     *            期望的字符
      * @throws ParseException
-     *             If the next character was not the expected character.
+     *             如果下一个字符不是期望的字符
      */
     public void expect(final char expectedChar) throws ParseException {
         final int next = getc();
@@ -132,22 +128,21 @@ public class Parser {
     }
 
     /**
-     * Peek at the next character without reading it.
+     * 查看下一个字符但不读取它
      *
-     * @return The next character, or '\0' if at the end of the string.
+     * @return 下一个字符，如果已到字符串末尾则返回 '\0'
      */
     public char peek() {
         return position == string.length() ? '\0' : string.charAt(position);
     }
 
     /**
-     * Get the next character, throwing a {@link ParseException} if the next character is not the expected
-     * character.
-     * 
+     * 查看下一个字符，如果下一个字符不是期望的字符则抛出{@link ParseException}
+     *
      * @param expectedChar
-     *            The expected next character.
+     *            期望的下一个字符
      * @throws ParseException
-     *             If the next character is not the expected next character.
+     *             如果下一个字符不是期望的字符
      */
     public void peekExpect(final char expectedChar) throws ParseException {
         if (position == string.length()) {
@@ -160,30 +155,30 @@ public class Parser {
     }
 
     /**
-     * Peek operator that can look ahead several characters.
-     * 
+     * 向前查看操作符，可以向前查看多个字符
+     *
      * @param strMatch
-     *            The string to compare, starting at the current position, as a "peek" operation.
-     * @return True if the strMatch matches a substring of the remaining string starting at the current position.
+     *            要比较的字符串，从当前位置开始，作为"向前查看"操作
+     * @return 如果 strMatch 与从当前位置开始的剩余字符串的子串匹配，则返回 true
      */
     public boolean peekMatches(final String strMatch) {
         return string.regionMatches(position, strMatch, 0, strMatch.length());
     }
 
     /**
-     * Advance one character without returning the value of the character.
+     * 前进一个字符，不返回该字符的值
      */
     public void next() {
         position++;
     }
 
     /**
-     * Advance numChars character positions.
-     * 
+     * 前进 numChars 个字符位置
+     *
      * @param numChars
-     *            The number of character positions to advance.
+     *            要前进的字符位置数
      * @throws IllegalArgumentException
-     *             If there are insufficient characters remaining in the string.
+     *             如果字符串中剩余字符不足
      */
     public void advance(final int numChars) {
         if (position + numChars >= string.length()) {
@@ -193,30 +188,30 @@ public class Parser {
     }
 
     /**
-     * Check to see if there are more characters to parse.
+     * 检查是否还有更多字符可供解析
      *
-     * @return true if the input has not all been consumed.
+     * @return 如果输入尚未全部消耗则返回 true
      */
     public boolean hasMore() {
         return position < string.length();
     }
 
     /**
-     * Get the current position.
+     * 获取当前位置
      *
-     * @return the current position.
+     * @return 当前位置
      */
     public int getPosition() {
         return position;
     }
 
     /**
-     * Set the position of the parser within the string.
-     * 
+     * 设置解析器在字符串中的位置
+     *
      * @param position
-     *            The position to move to.
+     *            要移动到的位置
      * @throws IllegalArgumentException
-     *             If the position is out of range.
+     *             如果位置超出范围
      */
     public void setPosition(final int position) {
         if (position < 0 || position >= string.length()) {
@@ -226,53 +221,53 @@ public class Parser {
     }
 
     /**
-     * Return a subsequence of the input string.
-     * 
+     * 返回输入字符串的子序列
+     *
      * @param startPosition
-     *            The start position.
+     *            起始位置
      * @param endPosition
-     *            The end position.
-     * @return The subsequence.
+     *            结束位置
+     * @return 子序列
      */
     public CharSequence getSubsequence(final int startPosition, final int endPosition) {
         return string.subSequence(startPosition, endPosition);
     }
 
     /**
-     * Return a substring of the input string.
-     * 
+     * 返回输入字符串的子字符串
+     *
      * @param startPosition
-     *            The start position.
+     *            起始位置
      * @param endPosition
-     *            The end position.
-     * @return The substring.
+     *            结束位置
+     * @return 子字符串
      */
     public String getSubstring(final int startPosition, final int endPosition) {
         return string.substring(startPosition, endPosition);
     }
 
     /**
-     * Append the given string to the token buffer.
-     * 
+     * 将给定字符串追加到 token 缓冲区
+     *
      * @param str
-     *            The string to append.
+     *            要追加的字符串
      */
     public void appendToToken(final String str) {
         token.append(str);
     }
 
     /**
-     * Append the given character to the token buffer.
-     * 
+     * 将给定字符追加到 token 缓冲区
+     *
      * @param c
-     *            The character to append.
+     *            要追加的字符
      */
     public void appendToToken(final char c) {
         token.append(c);
     }
 
     /**
-     * Skip whitespace starting at the current position.
+     * 从当前位置开始跳过空白字符
      */
     public void skipWhitespace() {
         while (position < string.length()) {
@@ -286,9 +281,9 @@ public class Parser {
     }
 
     /**
-     * Get the current token, and reset the token to empty.
-     * 
-     * @return The current token. Resets the current token to empty.
+     * 获取当前 token，并将 token 重置为空
+     *
+     * @return 当前 token将当前 token 重置为空
      */
     public String currToken() {
         final String tok = token.toString();

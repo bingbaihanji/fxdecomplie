@@ -26,7 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.utils;
+package com.bingbaihanji.classgraph.utils;
+
+import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.utils.VersionFinder.OperatingSystem;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,91 +51,81 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import nonapi.io.github.classgraph.reflection.ReflectionUtils;
-import nonapi.io.github.classgraph.utils.VersionFinder.OperatingSystem;
-
 /**
- * File utilities.
+ * 文件工具类
  */
 public final class FileUtils {
-    /** The DirectByteBuffer.cleaner() method. */
-    private static Method directByteBufferCleanerMethod;
-
-    /** The Cleaner.clean() method. */
-    private static Method cleanerCleanMethod;
-
-    //    /** The jdk.incubator.foreign.MemorySegment class (JDK14+). */
-    //    private static Class<?> memorySegmentClass;
-    //
-    //    /** The jdk.incubator.foreign.MemorySegment.ofByteBuffer method (JDK14+). */
-    //    private static Method memorySegmentOfByteBufferMethod;
-    //
-    //    /** The jdk.incubator.foreign.MemorySegment.ofByteBuffer method (JDK14+). */
-    //    private static Method memorySegmentCloseMethod;
-
-    /** The attachment() method. */
-    private static Method attachmentMethod;
-
-    /** The Unsafe object. */
-    private static Object theUnsafe;
-
-    /** True if class' static fields have been initialized. */
-    private static AtomicBoolean initialized = new AtomicBoolean();
-
     /**
-     * The current directory path (only reads the current directory once, the first time this field is accessed, so
-     * will not reflect subsequent changes to the current directory).
-     */
-    private static String currDirPath;
-
-    /**
-     * The maximum size of a file buffer array. Eight bytes smaller than {@link Integer#MAX_VALUE}, since some VMs
-     * reserve header words in arrays.
+     * 文件缓冲区数组的最大大小比 {@link Integer#MAX_VALUE} 小 8 字节，
+     * 因为某些虚拟机在数组中保留头字
      */
     public static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+    /** DirectByteBuffer.cleaner() 方法 */
+    private static Method directByteBufferCleanerMethod;
+
+    //    /** jdk.incubator.foreign.MemorySegment 类(JDK 14+) */
+    //    private static Class<?> memorySegmentClass;
+    //
+    //    /** jdk.incubator.foreign.MemorySegment.ofByteBuffer 方法(JDK 14+) */
+    //    private static Method memorySegmentOfByteBufferMethod;
+    //
+    //    /** jdk.incubator.foreign.MemorySegment.ofByteBuffer 方法(JDK 14+) */
+    //    private static Method memorySegmentCloseMethod;
+    /** Cleaner.clean() 方法 */
+    private static Method cleanerCleanMethod;
+    /** attachment() 方法 */
+    private static Method attachmentMethod;
+    /** Unsafe 对象 */
+    private static Object theUnsafe;
+    /** 类的静态字段是否已初始化 */
+    private static AtomicBoolean initialized = new AtomicBoolean();
+    /**
+     * 当前目录路径(仅在首次访问此字段时读取当前目录一次，
+     * 因此不会反映当前目录的后续更改)
+     */
+    private static String currDirPath;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造方法
      */
     private FileUtils() {
-        // Cannot be constructed
+        // 不可构造
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the current directory (only looks at the current directory the first time it is called, then caches this
-     * value for future reads).
-     * 
-     * @return The current directory, as a string
+     * 获取当前目录(仅在首次调用时查看当前目录，然后缓存此值供将来读取)
+     *
+     * @return 当前目录，以字符串形式返回
      */
     public static String currDirPath() {
         if (currDirPath == null) {
-            // user.dir should be the current directory at the time the JVM is started, which is
-            // where classpath elements should be resolved relative to
+            // user.dir 应该是 JVM 启动时的当前目录，
+            // 这也是类路径元素相对于其解析的位置
             Path path = null;
             final String currDirPathStr = System.getProperty("user.dir");
             if (currDirPathStr != null) {
                 try {
                     path = Paths.get(currDirPathStr);
                 } catch (final InvalidPathException e) {
-                    // Fall through
+                    // 穿透到备用方案
                 }
             }
             if (path == null) {
-                // user.dir should probably always be set. But just in case it is not, try reading the
-                // actual current directory at the time ClassGraph is first invoked.
+                // user.dir 很可能总是被设置的但万一没有设置，就尝试读取
+                // ClassGraph 首次被调用时的实际当前目录
                 try {
                     path = Paths.get("");
                 } catch (final InvalidPathException e) {
-                    // Fall through
+                    // 穿透到备用方案
                 }
             }
 
-            // Normalize current directory the same way all other paths are normalized in ClassGraph,
-            // for consistency
+            // 以 ClassGraph 中规范化所有其他路径的相同方式规范化当前目录，
+            // 以保持一致性
             currDirPath = FastPathResolver.resolve(path == null ? "" : path.toString());
         }
         return currDirPath;
@@ -141,25 +134,25 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Sanitize relative paths against "zip slip" vulnerability, by removing path segments if ".." is found in the
-     * URL, but without allowing navigation above the path hierarchy root. Treats each "!" character as a new path
-     * hierarchy root. Also removes "." and empty path segments ("//").
-     * 
+     * 针对"zip slip"漏洞对相对路径进行清理：如果 URL 中发现 ".." 则移除路径段，
+     * 但不允许导航到路径层次根目录之上将每个 "!" 字符视为新的路径层次根目录
+     * 同时移除 "." 和空路径段("//")
+     *
      * @param path
-     *            The path to sanitize.
+     *            要清理的路径
      * @param removeInitialSlash
-     *            If true, remove any '/' character(s) from the beginning of the returned path.
+     *            如果为 true，则从返回路径的开头移除所有 '/' 字符
      * @param removeFinalSlash
-     *            If true, remove any '/' character(s) from the end of the returned path.
-     * @return The sanitized path.
+     *            如果为 true，则从返回路径的末尾移除所有 '/' 字符
+     * @return 清理后的路径
      */
     public static String sanitizeEntryPath(final String path, final boolean removeInitialSlash,
-            final boolean removeFinalSlash) {
+                                           final boolean removeFinalSlash) {
         if (path.isEmpty()) {
             return "";
         }
 
-        // Find all '/' and '!' character positions, which split a path into segments 
+        // 查找所有 '/' 和 '!' 字符位置，这些字符将路径分割为多个段
         boolean foundSegmentToSanitize = false;
         final int pathLen = path.length();
         final char[] pathChars = new char[pathLen];
@@ -172,12 +165,12 @@ public final class FileUtils {
                 if (c == '/' || c == '!' || c == '\0') {
                     final int segmentLength = i - (lastSepIdx + 1);
                     if (
-                    // Found empty segment "//" or "!!"
-                    (segmentLength == 0 && prevC == c)
-                            // Found segment "."
-                            || (segmentLength == 1 && pathChars[i - 1] == '.')
-                            // Found segment ".."
-                            || (segmentLength == 2 && pathChars[i - 2] == '.' && pathChars[i - 1] == '.')) {
+                        // 发现空段 "//" 或 "!!"
+                            (segmentLength == 0 && prevC == c)
+                                    // 发现段 "."
+                                    || (segmentLength == 1 && pathChars[i - 1] == '.')
+                                    // 发现段 ".."
+                                    || (segmentLength == 2 && pathChars[i - 2] == '.' && pathChars[i - 1] == '.')) {
                         foundSegmentToSanitize = true;
                     }
                     lastSepIdx = i;
@@ -186,12 +179,12 @@ public final class FileUtils {
             }
         }
 
-        // Handle "..", "." and empty path segments, if any were found
+        // 处理 ".."、"." 和空路径段(如果发现任何)
         final boolean pathHasInitialSlash = pathChars[0] == '/';
         final boolean pathHasInitialSlashSlash = pathHasInitialSlash && pathLen > 1 && pathChars[1] == '/';
         final StringBuilder pathSanitized = new StringBuilder(pathLen + 16);
         if (foundSegmentToSanitize) {
-            // Sanitize between "!" section markers separately (".." should not apply past preceding "!")
+            // 在 "!" 段标记之间分别进行清理(".." 不应跨越前导的 "!" 应用)
             final List<List<CharSequence>> allSectionSegments = new ArrayList<>();
             List<CharSequence> currSectionSegments = new ArrayList<>();
             allSectionSegments.add(currSectionSegments);
@@ -202,29 +195,29 @@ public final class FileUtils {
                     final int segmentStartIdx = lastSepIdx + 1;
                     final int segmentLen = i - segmentStartIdx;
                     if (segmentLen == 0 || (segmentLen == 1 && pathChars[segmentStartIdx] == '.')) {
-                        // Ignore empty segment "//" or idempotent segment "/./"
+                        // 忽略空段 "//" 或等幂段 "/./"
                     } else if (segmentLen == 2 && pathChars[segmentStartIdx] == '.'
                             && pathChars[segmentStartIdx + 1] == '.') {
-                        // Remove one segment if ".." encountered, but do not allow ".." above top of hierarchy
+                        // 遇到 ".." 时移除一个段，但不允许 ".." 超过层次结构的顶部
                         if (!currSectionSegments.isEmpty()) {
                             currSectionSegments.remove(currSectionSegments.size() - 1);
                         }
                     } else {
-                        // Encountered normal path segment
+                        // 遇到普通路径段
                         currSectionSegments.add(path.subSequence(segmentStartIdx, segmentStartIdx + segmentLen));
                     }
                     if (c == '!' && !currSectionSegments.isEmpty()) {
-                        // Begin new section
+                        // 开始新的段
                         currSectionSegments = new ArrayList<>();
                         allSectionSegments.add(currSectionSegments);
                     }
                     lastSepIdx = i;
                 }
             }
-            // Turn sections and segments back into path string
+            // 将段和子段转回路径字符串
             for (final List<CharSequence> sectionSegments : allSectionSegments) {
                 if (!sectionSegments.isEmpty()) {
-                    // Delineate segments with "!"
+                    // 用 "!" 分隔段
                     if (pathSanitized.length() > 0) {
                         pathSanitized.append('!');
                     }
@@ -241,17 +234,17 @@ public final class FileUtils {
             pathSanitized.append(path);
         }
 
-        // Intended to preserve the double slash at the start of UNC paths (#736).
-        // e.g. //server/file/path
+        // 旨在保留 UNC 路径开头的双斜杠(#736)
+        // 例如 //server/file/path
         if (VersionFinder.OS == OperatingSystem.Windows && pathHasInitialSlashSlash) {
             pathSanitized.insert(0, '/');
         }
 
         int startIdx = 0;
         if (removeInitialSlash || !pathHasInitialSlash) {
-            // Strip off leading "/" if it needs to be removed, or if it wasn't present in the original path
-            // (the string-building code above prepends "/" to every segment). Note that "/" is always added
-            // after "!", since "jar:" URLs expect this.
+            // 如果需要移除前导 "/"，或者原始路径中本不存在前导斜杠，
+            // 则剥离前导 "/"(上面构建字符串的代码在每个段前都添加了 "/")
+            // 注意："/" 总是在 "!" 之后添加，因为 "jar:" URL 期望如此
             while (startIdx < pathSanitized.length() && pathSanitized.charAt(startIdx) == '/') {
                 startIdx++;
             }
@@ -268,11 +261,11 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Check if the path ends with a ".class" extension, ignoring case.
+     * 检查路径是否以 ".class" 扩展名结尾，忽略大小写
      *
      * @param path
-     *            A file path.
-     * @return true if path has a ".class" extension, ignoring case.
+     *            文件路径
+     * @return 如果路径具有 ".class" 扩展名(忽略大小写)则返回 true
      */
     public static boolean isClassfile(final String path) {
         final int len = path.length();
@@ -282,11 +275,11 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Check if a {@link File} exists and can be read.
+     * 检查 {@link File} 是否存在且可读
      *
      * @param file
-     *            A {@link File}.
-     * @return true if a file exists and can be read.
+     *            一个 {@link File}
+     * @return 如果文件存在且可读则返回 true
      */
     public static boolean canRead(final File file) {
         try {
@@ -297,11 +290,11 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link Path} exists and can be read.
+     * 检查 {@link Path} 是否存在且可读
      *
      * @param path
-     *            A {@link Path}.
-     * @return true if the file exists and can be read.
+     *            一个 {@link Path}
+     * @return 如果文件存在且可读则返回 true
      */
     public static boolean canRead(final Path path) {
         try {
@@ -316,11 +309,11 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link File} exists, is a regular file, and can be read.
+     * 检查 {@link File} 是否存在、是普通文件且可读
      *
      * @param file
-     *            A {@link File}.
-     * @return true if the file exists, is a regular file, and can be read.
+     *            一个 {@link File}
+     * @return 如果文件存在、是普通文件且可读则返回 true
      */
     public static boolean canReadAndIsFile(final File file) {
         try {
@@ -334,11 +327,11 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link Path} exists, is a regular file, and can be read.
+     * 检查 {@link Path} 是否存在、是普通文件且可读
      *
      * @param path
-     *            A {@link Path}.
-     * @return true if the file exists, is a regular file, and can be read.
+     *            一个 {@link Path}
+     * @return 如果文件存在、是普通文件且可读则返回 true
      */
     public static boolean canReadAndIsFile(final Path path) {
         try {
@@ -366,12 +359,13 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link File} exists, is a regular file, and can be read.
+     * 检查 {@link File} 是否可读：如果不存在、不是普通文件或无法读取，
+     * 则抛出 IOException
      *
      * @param file
-     *            A {@link File}.
+     *            一个 {@link File}
      * @throws IOException
-     *             if the file does not exist, is not a regular file, or cannot be read.
+     *             如果文件不存在、不是普通文件或无法读取
      */
     public static void checkCanReadAndIsFile(final File file) throws IOException {
         try {
@@ -387,12 +381,13 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link Path} exists, is a regular file, and can be read.
+     * 检查 {@link Path} 是否可读：如果不存在、不是普通文件或无法读取，
+     * 则抛出 IOException
      *
      * @param path
-     *            A {@link Path}.
+     *            一个 {@link Path}
      * @throws IOException
-     *             if the path does not exist, is not a regular file, or cannot be read.
+     *             如果路径不存在、不是普通文件或无法读取
      */
     public static void checkCanReadAndIsFile(final Path path) throws IOException {
         try {
@@ -413,11 +408,11 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link File} exists, is a directory, and can be read.
+     * 检查 {@link File} 是否存在、是目录且可读
      *
      * @param file
-     *            A {@link File}.
-     * @return true if the file exists, is a directory, and can be read.
+     *            一个 {@link File}
+     * @return 如果文件存在、是目录且可读则返回 true
      */
     public static boolean canReadAndIsDir(final File file) {
         try {
@@ -431,11 +426,11 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link Path} exists, is a directory, and can be read.
+     * 检查 {@link Path} 是否存在、是目录且可读
      *
      * @param path
-     *            A {@link Path}.
-     * @return true if the file exists, is a directory, and can be read.
+     *            一个 {@link Path}
+     * @return 如果文件存在、是目录且可读则返回 true
      */
     public static boolean canReadAndIsDir(final Path path) {
         try {
@@ -463,12 +458,13 @@ public final class FileUtils {
     }
 
     /**
-     * Check if a {@link File} exists, is a directory, and can be read.
+     * 检查 {@link File} 是否可读：如果不存在、不是目录或无法读取，
+     * 则抛出 IOException
      *
      * @param file
-     *            A {@link File}.
+     *            一个 {@link File}
      * @throws IOException
-     *             if the file does not exist, is not a directory, or cannot be read.
+     *             如果文件不存在、不是目录或无法读取
      */
     public static void checkCanReadAndIsDir(final File file) throws IOException {
         try {
@@ -486,13 +482,13 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the parent dir path.
+     * 获取父目录路径
      *
      * @param path
-     *            the path
+     *            路径
      * @param separator
-     *            the separator
-     * @return the parent dir path
+     *            分隔符
+     * @return 父目录路径
      */
     public static String getParentDirPath(final String path, final char separator) {
         final int lastSlashIdx = path.lastIndexOf(separator);
@@ -503,11 +499,11 @@ public final class FileUtils {
     }
 
     /**
-     * Get the parent dir path.
+     * 获取父目录路径
      *
      * @param path
-     *            the path
-     * @return the parent dir path
+     *            路径
+     * @return 父目录路径
      */
     public static String getParentDirPath(final String path) {
         return getParentDirPath(path, '/');
@@ -516,12 +512,12 @@ public final class FileUtils {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the clean() method, attachment() method, and theUnsafe field, called inside doPrivileged.
+     * 获取 clean() 方法、attachment() 方法和 theUnsafe 字段，在 doPrivileged 中调用
      */
     private static void lookupCleanMethodPrivileged() {
         if (VersionFinder.JAVA_MAJOR_VERSION < 9) {
             try {
-                // See:
+                // 参见:
                 // https://stackoverflow.com/a/19447758/3950982
                 cleanerCleanMethod = Class.forName("sun.misc.Cleaner").getDeclaredMethod("clean");
                 cleanerCleanMethod.setAccessible(true);
@@ -535,14 +531,14 @@ public final class FileUtils {
                                 + "and ReflectPermission(\"suppressAccessChecks\")",
                         e);
             } catch (final ReflectiveOperationException | LinkageError e) {
-                // Ignore
+                // 忽略
             }
         } else if (VersionFinder.JAVA_MAJOR_VERSION < 24) {
-            // JDK 24+ reports: "A terminally deprecated method in sun.misc.Unsafe has been called"
-            // if Unsafe::invokeCleaner is used, and we don't actually need the cleaner method unless
-            // direct memory mapping is used rather than FileChannel (ClassGraph#enableMemoryMapping
-            // disables this now for JDK 24+).
-            // See: https://github.com/classgraph/classgraph/issues/899
+            // JDK 24+ 报告："A terminally deprecated method in sun.misc.Unsafe has been called"
+            // 如果使用了 Unsafe::invokeCleaner，除非使用直接内存映射而不是 FileChannel，
+            // 否则我们实际上不需要 cleaner 方法(ClassGraph#enableMemoryMapping
+            // 现在对 JDK 24+ 已禁用此功能)
+            // 参见: https://github.com/classgraph/classgraph/issues/899
             try {
                 Class<?> unsafeClass;
                 try {
@@ -561,24 +557,24 @@ public final class FileUtils {
                                 + "and ReflectPermission(\"suppressAccessChecks\")",
                         e);
             } catch (final ReflectiveOperationException | LinkageError ex) {
-                // Ignore
+                // 忽略
             }
             //}
         }
     }
 
     /**
-     * Close a direct byte buffer (run in doPrivileged).
+     * 关闭直接字节缓冲区(在 doPrivileged 中运行)
      *
      * @param byteBuffer
-     *            the byte buffer
+     *            字节缓冲区
      * @param log
-     *            the log
-     * @return true if successful
+     *            日志
+     * @return 如果成功则返回 true
      */
     private static boolean closeDirectByteBufferPrivileged(final ByteBuffer byteBuffer, final LogNode log) {
         if (!byteBuffer.isDirect()) {
-            // Nothing to do
+            // 无需操作
             return true;
         }
         try {
@@ -589,15 +585,15 @@ public final class FileUtils {
                     }
                     return false;
                 }
-                // Make sure duplicates and slices are not cleaned, since this can result in duplicate
-                // attempts to clean the same buffer, which trigger a crash with:
+                // 确保不清理重复项和切片，因为这可能导致对同一缓冲区进行重复清理尝试，
+                // 从而触发崩溃：
                 // "A fatal error has been detected by the Java Runtime Environment: EXCEPTION_ACCESS_VIOLATION"
-                // See: https://stackoverflow.com/a/31592947/3950982
+                // 参见: https://stackoverflow.com/a/31592947/3950982
                 if (attachmentMethod.invoke(byteBuffer) != null) {
-                    // Buffer is a duplicate or slice
+                    // 缓冲区是重复项或切片
                     return false;
                 }
-                // Invoke ((DirectBuffer) byteBuffer).cleaner().clean()
+                // 调用 ((DirectBuffer) byteBuffer).cleaner().clean()
                 if (directByteBufferCleanerMethod == null) {
                     if (log != null) {
                         log.log("Could not unmap ByteBuffer, cleanerMethod == null");
@@ -662,11 +658,11 @@ public final class FileUtils {
                     cleanerCleanMethod.invoke(theUnsafe, byteBuffer);
                     return true;
                 } catch (final IllegalArgumentException e) {
-                    // Buffer is a duplicate or slice
+                    // 缓冲区是重复项或切片
                     return false;
                 }
             } else {
-                // TODO: on JDK 24+, use Arena -- see FileSlice
+                // TODO: 在 JDK 24+ 上，使用 Arena -- 参见 FileSlice
                 return false;
             }
         } catch (final ReflectiveOperationException | SecurityException e) {
@@ -678,16 +674,18 @@ public final class FileUtils {
     }
 
     /**
-     * Close a {@code DirectByteBuffer} -- in particular, will unmap a {@link MappedByteBuffer}.
-     * 
+     * 关闭一个 {@code DirectByteBuffer} -- 特别是将取消映射 {@link MappedByteBuffer}
+     *
      * @param byteBuffer
-     *            The {@link ByteBuffer} to close/unmap.
+     *            要关闭/取消映射的 {@link ByteBuffer}
+     * @param reflectionUtils
+     *            反射工具
      * @param log
-     *            The log.
-     * @return True if the byteBuffer was closed/unmapped.
+     *            日志
+     * @return 如果 byteBuffer 已关闭/取消映射则返回 true
      */
     public static boolean closeDirectByteBuffer(final ByteBuffer byteBuffer, final ReflectionUtils reflectionUtils,
-            final LogNode log) {
+                                                final LogNode log) {
         if (byteBuffer != null && byteBuffer.isDirect()) {
             if (!initialized.get()) {
                 try {
@@ -714,7 +712,7 @@ public final class FileUtils {
                 return false;
             }
         } else {
-            // Nothing to unmap
+            // 无需取消映射
             return false;
         }
     }

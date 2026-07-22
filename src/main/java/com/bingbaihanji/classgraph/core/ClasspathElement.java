@@ -26,15 +26,15 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Scanner.ClasspathEntryWorkUnit;
-import nonapi.io.github.classgraph.concurrency.WorkQueue;
-import nonapi.io.github.classgraph.scanspec.ScanSpec;
-import nonapi.io.github.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
-import nonapi.io.github.classgraph.utils.FileUtils;
-import nonapi.io.github.classgraph.utils.JarUtils;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.concurrency.WorkQueue;
+import com.bingbaihanji.classgraph.core.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.utils.JarUtils;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.File;
 import java.net.URI;
@@ -43,88 +43,67 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/** A classpath element (a directory or jarfile on the classpath). */
+/** 类路径元素(类路径上的目录或 jar 文件) */
 abstract class ClasspathElement implements Comparable<ClasspathElement> {
-    /** The index of the classpath element within the classpath or module path. */
-    int classpathElementIdx;
-
     /**
-     * If non-null, contains a list of resolved paths for any classpath element roots nested inside this classpath
-     * element. (Scanning should stop at a nested classpath element root, otherwise that subtree will be scanned
-     * more than once.) N.B. contains only the nested part of the resolved path (the common prefix is removed). Also
-     * includes a trailing '/', since only nested directory classpath elements need to be caught (nested jars do not
-     * need to be caught, because we don't scan jars-within-jars unless the inner jar is explicitly listed on the
-     * classpath).
-     */
-    List<String> nestedClasspathRootPrefixes;
-
-    /**
-     * True if there was an exception when trying to open this classpath element (e.g. a corrupt ZipFile).
-     */
-    boolean skipClasspathElement;
-
-    /** True if classpath element contains a specifically-accepted resource path. */
-    boolean containsSpecificallyAcceptedClasspathElementResourcePath;
-
-    /**
-     * The index of the classpath element within the parent classpath element (e.g. for classpath elements added via
-     * a Class-Path entry in the manifest). Set to -1 initially in case the same ClasspathElement is present twice
-     * in the classpath, as a child of different parent ClasspathElements.
-     */
-    final int classpathElementIdxWithinParent;
-
-    /**
-     * The child classpath elements, keyed by the order of the child classpath element within the Class-Path entry
-     * of the manifest file the child classpath element was listed in (or the position of the file within the sorted
-     * entries of a lib directory).
-     */
-    Collection<ClasspathElement> childClasspathElements = new ConcurrentLinkedQueue<>();
-
-    /**
-     * Resources found within this classpath element that were accepted and not rejected. (Only written by one
-     * thread, so doesn't need to be a concurrent list.)
+     * 在此类路径元素中找到的被接受且未被拒绝的资源(仅由一个线程写入，因此不需要使用并发列表)
      */
     protected final List<Resource> acceptedResources = new ArrayList<>();
-
+    /** 如果 scanFiles 为 true，则从 File 到上次修改时间戳的映射 */
+    protected final Map<File, Long> fileToLastModified = new ConcurrentHashMap<>();
+    /** 确保类路径元素只被扫描一次的标志 */
+    protected final AtomicBoolean scanned = new AtomicBoolean(false);
     /**
-     * The list of all classfiles found within this classpath element that were accepted and not rejected. (Only
-     * written by one thread, so doesn't need to be a concurrent list.)
+     * 在父类路径元素中的类路径元素索引(例如，对于通过清单文件中的 Class-Path 条目添加的类路径元素)
+     * 初始设置为 -1，以防同一个 ClasspathElement 在类路径中出现两次(作为不同父 ClasspathElement 的子元素)
+     */
+    final int classpathElementIdxWithinParent;
+    /** 扫描规格 */
+    final ScanSpec scanSpec;
+    /**
+     * 在此类路径元素中找到的所有被接受且未被拒绝的 class 文件列表(仅由一个线程写入，因此不需要使用并发列表)
      */
     protected List<Resource> acceptedClassfileResources = new ArrayList<>();
-
-    /** The map from File to last modified timestamp, if scanFiles is true. */
-    protected final Map<File, Long> fileToLastModified = new ConcurrentHashMap<>();
-
-    /** Flag to ensure classpath element is only scanned once. */
-    protected final AtomicBoolean scanned = new AtomicBoolean(false);
-
-    /** The classloader that this classpath element was obtained from. */
+    /** 获取此类路径元素的类加载器 */
     protected ClassLoader classLoader;
-
-    /** The package root within the jarfile or Path. */
+    /** jar 文件或 Path 中的包根路径 */
     protected String packageRootPrefix;
-
+    /** 此类路径元素所属的 ScanResult */
+    protected ScanResult scanResult;
+    /** 类路径元素在类路径或模块路径中的索引 */
+    int classpathElementIdx;
     /**
-     * The name of the module from the {@code module-info.class} module descriptor, if one is present in the root of
-     * the classpath element.
+     * 如果非空，包含嵌套在此类路径元素内部的任何类路径元素根的已解析路径列表(扫描应在嵌套类路径元素根处停止，
+     * 否则该子树将被多次扫描)注意：仅包含已解析路径的嵌套部分(已移除公共前缀)还包括尾部 '/'，
+     * 因为只需要捕获嵌套的目录类路径元素(嵌套 jar 不需要捕获，因为我们不会扫描 jar 内嵌 jar，
+     * 除非内部 jar 被显式列在类路径上)
+     */
+    List<String> nestedClasspathRootPrefixes;
+    /**
+     * 如果尝试打开此类路径元素时发生异常(例如损坏的 ZipFile)，则为 true
+     */
+    boolean skipClasspathElement;
+    /** 如果类路径元素包含一个被明确接受的资源路径，则为 true */
+    boolean containsSpecificallyAcceptedClasspathElementResourcePath;
+    /**
+     * 子类路径元素，按子类路径元素在其所在清单文件的 Class-Path 条目中的顺序(或文件在排序后的 lib 目录条目中的位置)
+     * 作为键
+     */
+    Collection<ClasspathElement> childClasspathElements = new ConcurrentLinkedQueue<>();
+    /**
+     * 从 {@code module-info.class} 模块描述符中获取的模块名称(如果类路径元素根中存在该描述符)
      */
     String moduleNameFromModuleDescriptor;
-
-    /** The scan spec. */
-    final ScanSpec scanSpec;
-
-    /** The ScanResult that the classpath element came from. */
-    protected ScanResult scanResult;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * A classpath element.
+     * 一个类路径元素
      *
      * @param workUnit
-     *            the work unit
+     *            工作单元
      * @param scanSpec
-     *            the scan spec
+     *            扫描规格
      */
     ClasspathElement(final ClasspathEntryWorkUnit workUnit, final ScanSpec scanSpec) {
         this.packageRootPrefix = workUnit.packageRootPrefix;
@@ -135,14 +114,14 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Used to set the ScanResult after the scan is complete. */
+    /** 用于在扫描完成后设置 ScanResult */
     void setScanResult(final ScanResult scanResult) {
         this.scanResult = scanResult;
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** Sort in increasing order of classpathElementIdxWithinParent. */
+    /** 按 classpathElementIdxWithinParent 升序排序 */
     @Override
     public int compareTo(final ClasspathElement other) {
         return this.classpathElementIdxWithinParent - other.classpathElementIdxWithinParent;
@@ -151,18 +130,18 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the ClassLoader the classpath element was obtained from.
+     * 获取此类路径元素所属的 ClassLoader
      *
-     * @return the classloader
+     * @return 类加载器
      */
     ClassLoader getClassLoader() {
         return classLoader;
     }
 
     /**
-     * Get the number of classfile matches.
+     * 获取匹配的 class 文件数量
      *
-     * @return the num classfile matches
+     * @return class 文件匹配数量
      */
     int getNumClassfileMatches() {
         return acceptedClassfileResources == null ? 0 : acceptedClassfileResources.size();
@@ -171,16 +150,16 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Check relativePath against classpathElementResourcePathAcceptReject.
+     * 检查 relativePath 是否符合 classpathElementResourcePathAcceptReject 的接受/拒绝条件
      *
      * @param relativePath
-     *            the relative path
+     *            相对路径
      * @param log
-     *            the log
-     * @return true if path should be scanned
+     *            日志
+     * @return 如果路径应该被扫描，则返回 true
      */
     protected boolean checkResourcePathAcceptReject(final String relativePath, final LogNode log) {
-        // Accept/reject classpath elements based on file resource paths
+        // 根据文件资源路径接受/拒绝类路径元素
         if (!scanSpec.classpathElementResourcePathAcceptReject.acceptAndRejectAreEmpty()) {
             if (scanSpec.classpathElementResourcePathAcceptReject.isRejected(relativePath)) {
                 if (log != null) {
@@ -201,38 +180,37 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Apply relative path masking within this classpath resource -- remove relative paths that were found in an
-     * earlier classpath element.
+     * 在此类路径资源中应用相对路径屏蔽 -- 移除在较早类路径元素中已找到的相对路径
      *
      * @param classpathIdx
-     *            the classpath index
+     *            类路径索引
      * @param classpathRelativePathsFound
-     *            the classpath relative paths found
+     *            已发现的类路径相对路径集合
      * @param log
-     *            the log
+     *            日志
      */
     void maskClassfiles(final int classpathIdx, final Set<String> classpathRelativePathsFound, final LogNode log) {
-        // Find relative paths that occur more than once in the classpath / module path.
-        // Usually duplicate relative paths occur only between classpath / module path elements, not within,
-        // but actually there is no restriction for paths within a zipfile to be unique, and in fact
-        // zipfiles in the wild do contain the same classfiles multiple times with the same exact path,
-        // e.g.: xmlbeans-2.6.0.jar!org/apache/xmlbeans/xml/stream/Location.class
+        // 查找在类路径/模块路径中出现多次的相对路径
+        // 通常重复的相对路径仅出现在类路径/模块路径元素之间，而非内部，
+        // 但实际上 zip 文件中的路径并没有唯一性限制，事实上
+        // 现实中的 zip 文件确实可能多次包含具有完全相同路径的 class 文件，
+        // 例如：xmlbeans-2.6.0.jar!org/apache/xmlbeans/xml/stream/Location.class
         final List<Resource> acceptedClassfileResourcesFiltered = new ArrayList<>(
                 acceptedClassfileResources.size());
         boolean foundMasked = false;
         for (final Resource res : acceptedClassfileResources) {
             final String pathRelativeToPackageRoot = res.getPath();
-            // Don't mask module-info.class or package-info.class, these are read for every module/package,
-            // and they don't result in a ClassInfo object, so there will be no duplicate ClassInfo objects
-            // created, even if they are encountered multiple times. Instead, any annotations on modules or
-            // packages are merged into the appropriate ModuleInfo / PackageInfo object.
-            if (!pathRelativeToPackageRoot.equals("module-info.class")
-                    && !pathRelativeToPackageRoot.equals("package-info.class")
+            // 不要屏蔽 module-info.class 或 package-info.class，这些会为每个模块/包读取，
+            // 它们不会产生 ClassInfo 对象，因此不会创建重复的 ClassInfo 对象，
+            // 即使它们被多次遇到对于模块或包上的注解，
+            // 会被合并到相应的 ModuleInfo/PackageInfo 对象中
+            if (!"module-info.class".equals(pathRelativeToPackageRoot)
+                    && !"package-info.class".equals(pathRelativeToPackageRoot)
                     && !pathRelativeToPackageRoot.endsWith("/package-info.class")
-                    // Check if pathRelativeToPackageRoot has been seen before
+                    // 检查 pathRelativeToPackageRoot 是否之前已见过
                     && !classpathRelativePathsFound.add(pathRelativeToPackageRoot)) {
-                // This relative path has been encountered more than once;
-                // mask the second and subsequent occurrences of the path
+                // 此相对路径已多次遇到；
+                // 屏蔽第二次及之后出现的该路径
                 foundMasked = true;
                 if (log != null) {
                     log.log(String.format("%06d-1", classpathIdx), "Ignoring duplicate (masked) class "
@@ -243,9 +221,9 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
             }
         }
         if (foundMasked) {
-            // Remove masked (duplicated) paths. N.B. this replaces the concurrent collection with a non-concurrent
-            // collection, but this is the last time the collection is changed during a scan, and this method is
-            // run from a single thread.
+            // 移除被屏蔽(重复)的路径注意：这将并发集合替换为非并发集合，
+            // 但这是扫描期间最后一次更改该集合，且此方法
+            // 由单个线程运行
             acceptedClassfileResources = acceptedClassfileResourcesFiltered;
         }
     }
@@ -253,61 +231,60 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Add a resource discovered during the scan.
+     * 添加扫描过程中发现的资源
      *
      * @param resource
-     *            the resource
+     *            资源
      * @param parentMatchStatus
-     *            the parent match status
+     *            父级匹配状态
      * @param isClassfileOnly
-     *            if true, only add the resource to the list of classfile resources, not to the list of
-     *            non-classfile resources
+     *            如果为 true，则仅将资源添加到 class 文件资源列表，而不添加到非 class 文件资源列表
      * @param log
-     *            the log
+     *            日志
      */
     protected void addAcceptedResource(final Resource resource, final ScanSpecPathMatch parentMatchStatus,
-            final boolean isClassfileOnly, final LogNode log) {
+                                       final boolean isClassfileOnly, final LogNode log) {
         final String path = resource.getPath();
         final boolean isClassFile = FileUtils.isClassfile(path);
         boolean isAccepted = false;
         if (isClassFile) {
-            // Check classfile scanning is enabled, and classfile is not specifically rejected
+            // 检查 class 文件扫描是否已启用，且该 class 文件未被明确拒绝
             if (scanSpec.enableClassInfo && !scanSpec.classfilePathAcceptReject.isRejected(path)) {
-                // ClassInfo is enabled, and found an accepted classfile
+                // ClassInfo 已启用，且发现了一个被接受的 class 文件
                 acceptedClassfileResources.add(resource);
                 isAccepted = true;
             }
         } else {
-            // Resources are always accepted if found in accepted directories
+            // 如果在被接受的目录中发现资源，则始终接受
             isAccepted = true;
         }
 
         if (!isClassfileOnly) {
-            // Add resource to list of accepted resources, whether for a classfile or non-classfile resource
+            // 将资源添加到已接受资源列表中，无论其为 class 文件资源还是非 class 文件资源
             acceptedResources.add(resource);
         }
 
-        // Write to log if enabled, and as long as classfile scanning is not disabled, and this is not
-        // a rejected classfile
+        // 如果启用了日志记录，且只要 class 文件扫描未被禁用，且这不是
+        // 被拒绝的 class 文件
         if (log != null && isAccepted) {
             final String type = isClassFile ? "classfile" : "resource";
             String logStr;
             switch (parentMatchStatus) {
-            case HAS_ACCEPTED_PATH_PREFIX:
-                logStr = "Found " + type + " within subpackage of accepted package: ";
-                break;
-            case AT_ACCEPTED_PATH:
-                logStr = "Found " + type + " within accepted package: ";
-                break;
-            case AT_ACCEPTED_CLASS_PACKAGE:
-                logStr = "Found specifically-accepted " + type + ": ";
-                break;
-            default:
-                logStr = "Found accepted " + type + ": ";
-                break;
+                case HAS_ACCEPTED_PATH_PREFIX:
+                    logStr = "Found " + type + " within subpackage of accepted package: ";
+                    break;
+                case AT_ACCEPTED_PATH:
+                    logStr = "Found " + type + " within accepted package: ";
+                    break;
+                case AT_ACCEPTED_CLASS_PACKAGE:
+                    logStr = "Found specifically-accepted " + type + ": ";
+                    break;
+                default:
+                    logStr = "Found accepted " + type + ": ";
+                    break;
             }
-            // Precede log entry sort key with "0:file:" so that file entries come before dir entries for
-            // ClasspathElementDir classpath elements
+            // 在日志条目的排序键前加上 "0:file:"，使文件条目在目录条目之前出现(针对
+            // ClasspathElementDir 类路径元素)
             resource.scanLog = log.log("0:" + path,
                     logStr + path + (path.equals(resource.getPathRelativeToClasspathElement()) ? ""
                             : " ; full path: " + resource.getPathRelativeToClasspathElement()));
@@ -317,10 +294,10 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Called by scanPaths() after scan completion.
+     * 扫描完成后由 scanPaths() 调用
      *
      * @param log
-     *            the log
+     *            日志
      */
     protected void finishScanPaths(final LogNode log) {
         if (log != null) {
@@ -342,32 +319,32 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Write entries to log in classpath / module path order.
+     * 按类路径/模块路径顺序将条目写入日志
      *
      * @param classpathElementIdx
-     *            the classpath element idx
+     *            类路径元素索引
      * @param msg
-     *            the log message
+     *            日志消息
      * @param log
-     *            the log
-     * @return the new {@link LogNode}
+     *            日志
+     * @return 新的 {@link LogNode}
      */
     protected LogNode log(final int classpathElementIdx, final String msg, final LogNode log) {
         return log.log(String.format("%07d", classpathElementIdx), msg);
     }
 
     /**
-     * Write entries to log in classpath / module path order.
+     * 按类路径/模块路径顺序将条目写入日志
      *
      * @param classpathElementIdx
-     *            the classpath element idx
+     *            类路径元素索引
      * @param msg
-     *            the log message
+     *            日志消息
      * @param t
-     *            The exception that was thrown
+     *            抛出的异常
      * @param log
-     *            the log
-     * @return the new {@link LogNode}
+     *            日志
+     * @return 新的 {@link LogNode}
      */
     protected LogNode log(final int classpathElementIdx, final String msg, final Throwable t, final LogNode log) {
         return log.log(String.format("%07d", classpathElementIdx), msg, t);
@@ -376,68 +353,64 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Determine if this classpath element is valid. If it is not valid, sets skipClasspathElement. For
-     * {@link ClasspathElementZip}, may also open or extract inner jars, and also causes jarfile manifests to be
-     * read to look for Class-Path entries. If nested jars or Class-Path entries are found, they are added to the
-     * work queue. This method is only run once per classpath element, from a single thread.
+     * 判断此类路径元素是否有效如果无效，则设置 skipClasspathElement对于 {@link ClasspathElementZip}，
+     * 可能还会打开或提取内部 jar，并读取 jar 文件清单以查找 Class-Path 条目如果发现嵌套 jar 或 Class-Path 条目，
+     * 它们将被添加到工作队列中此方法每个类路径元素仅运行一次，且由单个线程执行
      *
      * @param workQueue
-     *            the work queue
+     *            工作队列
      * @param log
-     *            the log
+     *            日志
      * @throws InterruptedException
-     *             if the thread was interrupted while trying to open the classpath element.
+     *             如果线程在尝试打开类路径元素时被中断
      */
     abstract void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log)
             throws InterruptedException;
 
     /**
-     * Scan paths in the classpath element for accept/reject criteria, creating Resource objects for accepted and
-     * non-rejected resources and classfiles.
+     * 扫描类路径元素中的路径，根据接受/拒绝条件创建被接受且未被拒绝的资源和 class 文件的 Resource 对象
      *
      * @param log
-     *            the log
+     *            日志
      */
     abstract void scanPaths(final LogNode log);
 
     /**
-     * Get the {@link Resource} for a given relative path.
+     * 获取给定相对路径的 {@link Resource}
      *
      * @param relativePath
-     *            The relative path of the {@link Resource} to return. Path should have already be sanitized by
-     *            calling {@link FileUtils#sanitizeEntryPath(String, boolean)}, or by providing a path that is
-     *            already sanitized (i.e. doesn't start or end with "/", doesn't contain "/../" or "/./", etc.).
-     * @return The {@link Resource} for the given relative path, or null if relativePath does not exist in this
-     *         classpath element.
+     *            要返回的 {@link Resource} 的相对路径路径应已通过调用
+     *            {@link FileUtils#sanitizeEntryPath(String, boolean)} 进行清理，或提供的路径已经是清理过的
+     *            (即不以 "/" 开头或结尾，不包含 "/../" 或 "/./" 等)
+     * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
      */
     abstract Resource getResource(final String relativePath);
 
     /**
-     * Get the URI for this classpath element.
+     * 获取此类路径元素的 URI
      *
-     * @return the URI for the classpath element.
+     * @return 类路径元素的 URI
      */
     abstract URI getURI();
 
     /**
-     * Get the URI for this classpath element, and the URIs for any automatic nested package prefixes (e.g.
-     * "spring-boot.jar/BOOT-INF/classes") within this jarfile.
+     * 获取此类路径元素的 URI，以及此 jar 文件内任何自动嵌套包前缀(例如 "spring-boot.jar/BOOT-INF/classes")的 URI
      *
-     * @return the URI for the classpath element.
+     * @return 类路径元素的 URI
      */
     abstract List<URI> getAllURIs();
 
     /**
-     * Get the file for this classpath element, or null if this is a module with a "jrt:" URI.
+     * 获取此类路径元素的文件，如果这是一个带有 "jrt:" URI 的模块，则返回 null
      *
-     * @return the file for the classpath element.
+     * @return 类路径元素的文件
      */
     abstract File getFile();
 
     /**
-     * Get the name of this classpath element's module, or null if there is no module name.
+     * 获取此类路径元素的模块名称，如果没有模块名称则返回 null
      *
-     * @return the module name
+     * @return 模块名称
      */
     abstract String getModuleName();
 }

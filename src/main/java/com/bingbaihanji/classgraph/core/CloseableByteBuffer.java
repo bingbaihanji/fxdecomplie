@@ -26,28 +26,28 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * A wrapper for {@link ByteBuffer} that implements the {@link Closeable} interface, releasing the
- * {@link ByteBuffer} when it is no longer needed.
+ * {@link ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
+ * {@link ByteBuffer}
  */
 public class CloseableByteBuffer implements Closeable {
     private ByteBuffer byteBuffer;
     private Runnable onClose;
 
     /**
-     * A wrapper for {@link ByteBuffer} that implements the {@link Closeable} interface, releasing the
-     * {@link ByteBuffer} when it is no longer needed.
-     * 
+     * {@link ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
+     * {@link ByteBuffer}
+     *
      * @param byteBuffer
-     *            The {@link ByteBuffer} to wrap
+     *            要包装的 {@link ByteBuffer}
      * @param onClose
-     *            The method to run when {@link #close()} is called.
+     *            当 {@link #close()} 被调用时要执行的方法
      */
     CloseableByteBuffer(final ByteBuffer byteBuffer, final Runnable onClose) {
         this.byteBuffer = byteBuffer;
@@ -55,22 +55,22 @@ public class CloseableByteBuffer implements Closeable {
     }
 
     /**
-     * Get the wrapped ByteBuffer.
-     * 
-     * @return The wrapped {@link ByteBuffer}.
+     * 获取被包装的 ByteBuffer
+     *
+     * @return 被包装的 {@link ByteBuffer}
      */
     public ByteBuffer getByteBuffer() {
         return byteBuffer;
     }
 
-    /** Release the wrapped {@link ByteBuffer}. */
+    /** 释放被包装的 {@link ByteBuffer} */
     @Override
     public void close() throws IOException {
         if (onClose != null) {
             try {
                 onClose.run();
             } catch (final Exception e) {
-                // Ignore
+                // 忽略异常
             }
             onClose = null;
         }

@@ -26,31 +26,31 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
 
 /**
- * A type signature for a reference type. Subclasses are {@link ClassRefOrTypeVariableSignature}
- * ({@link ClassRefTypeSignature} or {@link TypeVariableSignature}), and {@link ArrayTypeSignature}.
+ * 引用类型的类型签名子类包括 {@link ClassRefOrTypeVariableSignature}
+ * ({@link ClassRefTypeSignature} 或 {@link TypeVariableSignature})，以及 {@link ArrayTypeSignature}
  */
 public abstract class ReferenceTypeSignature extends TypeSignature {
-    /** Constructor. */
+    /** 构造函数 */
     protected ReferenceTypeSignature() {
         super();
     }
 
     /**
-     * Parse a reference type signature.
-     * 
+     * 解析一个引用类型签名
+     *
      * @param parser
-     *            The parser
+     *            解析器
      * @param definingClassName
-     *            The class containing the type descriptor.
-     * @return The parsed type reference type signature.
+     *            包含该类型描述符的类
+     * @return 解析后的引用类型签名
      * @throws ParseException
-     *             If the type signature could not be parsed.
+     *             如果类型签名无法解析
      */
     static ReferenceTypeSignature parseReferenceTypeSignature(final Parser parser, final String definingClassName)
             throws ParseException {
@@ -70,20 +70,20 @@ public abstract class ReferenceTypeSignature extends TypeSignature {
     }
 
     /**
-     * Parse a class bound.
-     * 
+     * 解析一个类边界
+     *
      * @param parser
-     *            The parser.
+     *            解析器
      * @param definingClassName
-     *            The class containing the type descriptor.
-     * @return The parsed class bound.
+     *            包含该类型描述符的类
+     * @return 解析后的类边界
      * @throws ParseException
-     *             If the type signature could not be parsed.
+     *             如果类型签名无法解析
      */
     static ReferenceTypeSignature parseClassBound(final Parser parser, final String definingClassName)
             throws ParseException {
         parser.expect(':');
-        // May return null if there is no signature after ':' (class bound signature may be empty)
+        // 如果 ':' 之后没有签名，则可能返回 null(类边界签名可以为空)
         return parseReferenceTypeSignature(parser, definingClassName);
     }
 }

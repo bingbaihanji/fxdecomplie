@@ -26,36 +26,36 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-/** A wrapper used to pair annotation parameter names with annotation parameter values. */
+/** 用于将注解参数名与注解参数值配对包装的包装器 */
 public class AnnotationParameterValue extends ScanResultObject
         implements HasName, Comparable<AnnotationParameterValue> {
-    /** The the parameter name. */
+    /** 参数名 */
     private String name;
 
-    /** The parameter value. */
+    /** 参数值 */
     private ObjectTypedValueWrapper value;
 
-    /** Default constructor for deserialization. */
+    /** 用于反序列化的默认构造函数 */
     AnnotationParameterValue() {
         super();
     }
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param name
-     *            The annotation paramater name.
+     *            注解参数名
      * @param value
-     *            The annotation parameter value.
+     *            注解参数值
      */
     AnnotationParameterValue(final String name, final Object value) {
         super();
@@ -64,9 +64,29 @@ public class AnnotationParameterValue extends ScanResultObject
     }
 
     /**
-     * Get the annotation parameter name.
+     * 将注解参数值的字符串表示写入缓冲区
      *
-     * @return The annotation parameter name.
+     * @param val
+     *            参数值
+     * @param useSimpleNames
+     *            是否使用简单名称
+     * @param buf
+     *            缓冲区
+     */
+    private static void toString(final Object val, final boolean useSimpleNames, final StringBuilder buf) {
+        if (val == null) {
+            buf.append("null");
+        } else if (val instanceof ScanResultObject) {
+            ((ScanResultObject) val).toString(useSimpleNames, buf);
+        } else {
+            buf.append(val);
+        }
+    }
+
+    /**
+     * 获取注解参数名
+     *
+     * @return 注解参数名
      */
     @Override
     public String getName() {
@@ -74,52 +94,48 @@ public class AnnotationParameterValue extends ScanResultObject
     }
 
     /**
-     * Get the annotation parameter value.
+     * 获取注解参数值
      *
-     * @return The annotation parameter value. May be one of the following types:
+     * @return 注解参数值可能为以下类型之一：
      *         <ul>
-     *         <li>String for string constants
-     *         <li>String[] for arrays of strings
-     *         <li>A boxed type, e.g. Integer or Character, for primitive-typed constants
-     *         <li>A 1-dimensional primitive-typed array (i.e. int[], long[], short[], char[], byte[], boolean[],
-     *         float[], or double[]), for arrays of primitives
-     *         <li>A 1-dimensional {@link Object}[] array for array types (and then the array element type may be
-     *         one of the types in this list)
-     *         <li>{@link AnnotationEnumValue}, for enum constants (this wraps the enum class and the string name of
-     *         the constant)
-     *         <li>{@link AnnotationClassRef}, for Class references within annotations (this wraps the name of the
-     *         referenced class)
-     *         <li>{@link AnnotationInfo}, for nested annotations
+     *         <li>String —— 字符串常量
+     *         <li>String[] —— 字符串数组
+     *         <li>包装类型，如 Integer 或 Character —— 基本类型常量
+     *         <li>一维基本类型数组(即 int[]、long[]、short[]、char[]、byte[]、boolean[]、
+     *         float[] 或 double[])—— 基本类型数组
+     *         <li>一维 {@link Object}[] 数组 —— 数组类型(且数组元素类型可能为此列表中的类型之一)
+     *         <li>{@link AnnotationEnumValue} —— 枚举常量(包装了枚举类及其常量的字符串名称)
+     *         <li>{@link AnnotationClassRef} —— 注解中的 Class 引用(包装了被引用类的名称)
+     *         <li>{@link AnnotationInfo} —— 嵌套注解
      *         </ul>
      */
     public Object getValue() {
         return value == null ? null : value.get();
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Set (update) the value of the annotation parameter. Used to replace Object[] arrays containing boxed types
-     * into primitive arrays.
+     * 设置(更新)注解参数的值用于将包含包装类型的 Object[] 数组替换为基本类型数组
      *
      * @param newValue
-     *            the new value
+     *            新的值
      */
     void setValue(final Object newValue) {
         this.value = new ObjectTypedValueWrapper(newValue);
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
-        // getClassInfo() is not valid for this type, so getClassName() does not need to be implemented
+        // getClassInfo() 对此类型无效，因此 getClassName() 无需实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -127,7 +143,7 @@ public class AnnotationParameterValue extends ScanResultObject
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -137,30 +153,30 @@ public class AnnotationParameterValue extends ScanResultObject
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in the annotation parameters.
+     * 获取注解参数中引用的任何类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            被引用的类信息
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         if (value != null) {
             value.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * For primitive array type params, replace Object[] arrays containing boxed types with primitive arrays (need
-     * to check the type of each method of the annotation class to determine if it is a primitive array type).
+     * 对于基本类型数组参数，将包含包装类型的 Object[] 数组替换为基本类型数组(需要检查注解类的每个方法
+     * 的类型，以确定其是否为基本类型数组)
      *
      * @param annotationClassInfo
-     *            the annotation class info
+     *            注解类信息
      */
     void convertWrapperArraysToPrimitiveArrays(final ClassInfo annotationClassInfo) {
         if (value != null) {
@@ -168,18 +184,18 @@ public class AnnotationParameterValue extends ScanResultObject
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Instantiate an annotation parameter value.
+     * 实例化一个注解参数值
      *
      * @param annotationClassInfo
-     *            the annotation class info
-     * @return the instance
+     *            注解类信息
+     * @return 实例
      */
     Object instantiate(final ClassInfo annotationClassInfo) {
         return value.instantiateOrGet(annotationClassInfo, name);
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -196,8 +212,8 @@ public class AnnotationParameterValue extends ScanResultObject
         if (value.equals(other.value)) {
             return 0;
         }
-        // Use toString() order (which can be slow) as a last-ditch effort -- only happens
-        // if the annotation has multiple parameters of the same name but different value. 
+        // 使用 toString() 顺序(可能较慢)作为最后的比较手段 —— 仅当注解具有
+        // 多个同名但不同值的参数时才发生
         final Object p0 = getValue();
         final Object p1 = other.getValue();
         return p0 == null || p1 == null ? (p0 == null ? 0 : 1) - (p1 == null ? 0 : 1)
@@ -219,6 +235,8 @@ public class AnnotationParameterValue extends ScanResultObject
                 && (value == null || value.equals(other.value));
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -226,8 +244,6 @@ public class AnnotationParameterValue extends ScanResultObject
     public int hashCode() {
         return Objects.hash(name, value);
     }
-
-    // -------------------------------------------------------------------------------------------------------------
 
     @Override
     protected void toString(final boolean useSimpleNames, final StringBuilder buf) {
@@ -237,30 +253,10 @@ public class AnnotationParameterValue extends ScanResultObject
     }
 
     /**
-     * Write an annotation parameter value's string representation to the buffer.
-     *
-     * @param val
-     *            the value
-     * @param useSimpleNames
-     *            the use simple names
-     * @param buf
-     *            the buffer
-     */
-    private static void toString(final Object val, final boolean useSimpleNames, final StringBuilder buf) {
-        if (val == null) {
-            buf.append("null");
-        } else if (val instanceof ScanResultObject) {
-            ((ScanResultObject) val).toString(useSimpleNames, buf);
-        } else {
-            buf.append(val);
-        }
-    }
-
-    /**
-     * To string, param value only.
+     * 转换为字符串，仅包含参数值
      *
      * @param buf
-     *            the buf
+     *            缓冲区
      */
     void toStringParamValueOnly(final boolean useSimpleNames, final StringBuilder buf) {
         if (value == null) {
@@ -293,9 +289,9 @@ public class AnnotationParameterValue extends ScanResultObject
     }
 
     /**
-     * To string, param value only.
-     * 
-     * @return the string.
+     * 转换为字符串，仅包含参数值
+     *
+     * @return 字符串
      */
     private String toStringParamValueOnly() {
         final StringBuilder buf = new StringBuilder();

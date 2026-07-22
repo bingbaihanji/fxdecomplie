@@ -26,110 +26,110 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.fileslice.reader;
+package com.bingbaihanji.classgraph.fileslice.reader;
 
 import java.io.IOException;
 
-/** Interface for sequentially reading values in byte order. */
+/** 用于按字节顺序顺序读取各值的接口 */
 public interface SequentialReader {
     /**
-     * Read a byte at the current cursor position.
+     * 在当前游标位置读取一个字节
      *
-     * @return The byte at the current cursor position.
+     * @return 当前游标位置的字节
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     byte readByte() throws IOException;
 
     /**
-     * Read an unsigned byte at the current cursor position.
+     * 在当前游标位置读取一个无符号字节
      *
-     * @return The unsigned byte at the current cursor position.
+     * @return 当前游标位置的无符号字节
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int readUnsignedByte() throws IOException;
 
     /**
-     * Read a short at the current cursor position.
+     * 在当前游标位置读取一个 short
      *
-     * @return The short at the current cursor position.
+     * @return 当前游标位置的 short
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     short readShort() throws IOException;
 
     /**
-     * Read a unsigned short at the current cursor position.
+     * 在当前游标位置读取一个无符号 short
      *
-     * @return The unsigned shortat the current cursor position.
+     * @return 当前游标位置的无符号 short
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int readUnsignedShort() throws IOException;
 
     /**
-     * Read a int at the current cursor position.
+     * 在当前游标位置读取一个 int
      *
-     * @return The int at the current cursor position.
+     * @return 当前游标位置的 int
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     int readInt() throws IOException;
 
     /**
-     * Read a unsigned int at the current cursor position.
+     * 在当前游标位置读取一个无符号 int
      *
-     * @return The int at the current cursor position, as a long.
+     * @return 当前游标位置的 int，以 long 形式返回
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     long readUnsignedInt() throws IOException;
 
     /**
-     * Read a long at the current cursor position.
-     * 
-     * @return The long at the current cursor position.
+     * 在当前游标位置读取一个 long
+     *
+     * @return 当前游标位置的 long
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     long readLong() throws IOException;
 
     /**
-     * Skip the given number of bytes.
-     * 
+     * 跳过指定数量的字节
+     *
      * @param bytesToSkip
-     *            The number of bytes to skip.
+     *            要跳过的字节数
      * @throws IOException
-     *             If there was an exception while reading.
+     *             如果读取时发生异常
      */
     void skip(final int bytesToSkip) throws IOException;
 
     /**
-     * Reads the "modified UTF8" format defined in the Java classfile spec, optionally replacing '/' with '.', and
-     * optionally removing the prefix "L" and the suffix ";".
+     * 读取 Java classfile 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
+     * 并可选择去除前缀 "L" 和后缀 ";"
      *
      * @param numBytes
-     *            The number of bytes of the UTF8 encoding of the string.
+     *            字符串 UTF8 编码的字节数
      * @param replaceSlashWithDot
-     *            If true, replace '/' with '.'.
+     *            如果为 true，将 '/' 替换为 '.'
      * @param stripLSemicolon
-     *            If true, string final ';' character.
-     * @return The string.
+     *            如果为 true，去除字符串末尾的 ';' 字符
+     * @return 字符串
      * @throws IOException
-     *             If an I/O exception occurs.
+     *             如果发生 I/O 异常
      */
     String readString(final int numBytes, final boolean replaceSlashWithDot, final boolean stripLSemicolon)
             throws IOException;
 
     /**
-     * Reads the "modified UTF8" format defined in the Java classfile spec.
+     * 读取 Java classfile 规范中定义的"modified UTF8"格式
      *
      * @param numBytes
-     *            The number of bytes of the UTF8 encoding of the string.
-     * @return The string.
+     *            字符串 UTF8 编码的字节数
+     * @return 字符串
      * @throws IOException
-     *             If an I/O exception occurs.
+     *             如果发生 I/O 异常
      */
     String readString(final int numBytes) throws IOException;
 }

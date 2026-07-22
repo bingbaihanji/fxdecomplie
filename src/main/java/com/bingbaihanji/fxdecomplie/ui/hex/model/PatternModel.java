@@ -81,7 +81,7 @@ public class PatternModel {
      * 获取指定地址处的颜色 
      * <p>
      * 本质上是 {@link #getRegionsAt(long)} 的第一个结果的颜色(最内层区域),
-     * 若不存在任何区域则返回 {@code null} 
+     * 若不存在任何区域则返回 {@code null}
      * </p>
      *
      * @param address 要查询的地址
@@ -96,11 +96,11 @@ public class PatternModel {
      * 获取指定地址的层级路径字符串 
      * <p>
      * 路径由所有包含该地址的区域名称按从外层到内层的顺序拼接而成,
-     * 用 " > " 分隔 若该地址无任何区域,则返回 {@code null} 
+     * 用 " > " 分隔 若该地址无任何区域,则返回 {@code null}
      * </p>
      * <p>
      * 例如：对于 Java 类文件中的字段区域,路径可能为
-     * {@code "constant_pool > cp[5] > field[0] > attribute[2]"} 
+     * {@code "constant_pool > cp[5] > field[0] > attribute[2]"}
      * </p>
      *
      * @param address 要查询的地址

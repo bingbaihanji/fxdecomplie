@@ -110,12 +110,26 @@ public final class DiskCodeCache {
             }
             if (totalSize > MAX_CACHE_SIZE_BYTES) {
                 cleanupInProgress = true;
-                cleanIfNeeded();
+                // 异步执行清理,避免阻塞当前保存任务
+                var cleanupTask = BackgroundTasks.run(BackgroundTasks.PoolType.IO,
+                        "DiskCache-Cleanup", () -> {
+                            try {
+                                cleanIfNeeded();
+                            } finally {
+                                cleanupInProgress = false;
+                            }
+                        });
+                // 若任务提交即失败(如队列满/已关闭),立即释放标志,避免永久跳过清理
+                if (cleanupTask.isDone()) {
+                    try {
+                        cleanupTask.get();
+                    } catch (Exception e) {
+                        cleanupInProgress = false;
+                    }
+                }
             }
         } catch (IOException e) {
             log.warn("磁盘缓存惰性检查失败", e);
-        } finally {
-            cleanupInProgress = false;
         }
     }
 

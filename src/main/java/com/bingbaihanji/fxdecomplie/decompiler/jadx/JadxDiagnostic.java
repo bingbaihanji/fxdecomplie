@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param status   结果状态
  * @param message  诊断消息
- * @param className 关联类名（可为 null）
- * @param elapsedMs 反编译耗时（毫秒）
+ * @param className 关联类名(可为 null)
+ * @param elapsedMs 反编译耗时(毫秒)
  * @author bingbaihanji
  */
 public record JadxDiagnostic(

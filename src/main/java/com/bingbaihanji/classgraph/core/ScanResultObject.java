@@ -26,45 +26,43 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * A superclass of objects accessible from a {@link ScanResult} that are associated with a {@link ClassInfo} object.
+ * 可从 {@link ScanResult} 中访问且与一个 {@link ClassInfo} 对象相关联的对象的超类
  */
 abstract class ScanResultObject {
-    /** The scan result. */
+    /** 扫描结果 */
     transient protected ScanResult scanResult;
-
-    /** The associated {@link ClassInfo} object. */
-    private transient ClassInfo classInfo;
-
-    /** The class ref, once the class is loaded. */
+    /** 类引用，在类被加载后设置 */
     protected transient Class<?> classRef;
+    /** 关联的 {@link ClassInfo} 对象 */
+    private transient ClassInfo classInfo;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Set ScanResult backreferences in info objects after scan has completed.
+     * 在扫描完成后，在信息对象中设置 {@link ScanResult} 的反向引用
      *
      * @param scanResult
-     *            the scan result
+     *            扫描结果
      */
     void setScanResult(final ScanResult scanResult) {
         this.scanResult = scanResult;
     }
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced by this object.
+     * 获取此对象引用的任何类对应的 {@link ClassInfo} 对象
      *
      * @param log
-     *            the log
-     * @return the referenced class info.
+     *            日志
+     * @return 引用的类信息
      */
     final Set<ClassInfo> findReferencedClassInfo(final LogNode log) {
         final Set<ClassInfo> refdClassInfo = new LinkedHashSet<>();
@@ -75,17 +73,17 @@ abstract class ScanResultObject {
     }
 
     /**
-     * Get {@link ClassInfo} objects for any classes referenced by this object.
+     * 获取此对象引用的任何类对应的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            引用的类信息
      * @param log
-     *            the log
+     *            日志
      */
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final ClassInfo ci = getClassInfo();
         if (ci != null) {
             refdClassInfo.add(ci);
@@ -95,18 +93,17 @@ abstract class ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * The name of the class (used by {@link #getClassInfo()} to fetch the {@link ClassInfo} object for the class).
-     * 
-     * @return The class name.
+     * 类的名称(由 {@link #getClassInfo()} 使用，用于获取该类的 {@link ClassInfo} 对象)
+     *
+     * @return 类名
      */
     protected abstract String getClassName();
 
     /**
-     * Get the {@link ClassInfo} object for the referenced class, or null if the referenced class was not
-     * encountered during scanning (i.e. no ClassInfo object was created for the class during scanning). N.B. even
-     * if this method returns null, {@link #loadClass()} may be able to load the referenced class by name.
-     * 
-     * @return The {@link ClassInfo} object for the referenced class.
+     * 获取被引用类的 {@link ClassInfo} 对象，如果在扫描期间未遇到被引用的类(即在扫描期间未为该类创建
+     * ClassInfo 对象)，则返回 null注意，即使此方法返回 null，{@link #loadClass()} 也可能能够通过名称加载被引用的类
+     *
+     * @return 被引用类的 {@link ClassInfo} 对象
      */
     ClassInfo getClassInfo() {
         if (classInfo == null) {
@@ -123,9 +120,9 @@ abstract class ScanResultObject {
     }
 
     /**
-     * Get the class name by calling getClassInfo().getName(), or as a fallback, by calling getClassName().
+     * 通过调用 getClassInfo().getName() 获取类名，或者作为回退，通过调用 getClassName() 获取
      *
-     * @return the class name
+     * @return 类名
      */
     private String getClassInfoNameOrClassName() {
         String className;
@@ -133,16 +130,16 @@ abstract class ScanResultObject {
         try {
             ci = getClassInfo();
         } catch (final IllegalArgumentException e) {
-            // Just ignore wrong access to array classInfo
+            // 忽略对数组 classInfo 的错误访问
         }
         if (ci == null) {
             ci = classInfo;
         }
         if (ci != null) {
-            // Get class name from getClassInfo().getName() 
+            // 从 getClassInfo().getName() 获取类名
             className = ci.getName();
         } else {
-            // Get class name from getClassName() 
+            // 从 getClassName() 获取类名
             className = getClassName();
         }
         if (className == null) {
@@ -154,30 +151,28 @@ abstract class ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Load the class named returned by {@link #getClassInfo()}, or if that returns null, the class named by
-     * {@link #getClassName()}. Returns a {@code Class<?>} reference for the class, cast to the requested superclass
-     * or interface type.
+     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
+     * 返回该类的 {@code Class<?>} 引用，并将其转换为请求的超类或接口类型
      *
      * @param <T>
-     *            the superclass or interface type
+     *            超类或接口类型
      * @param superclassOrInterfaceType
-     *            The type to cast the resulting class reference to.
+     *            要将结果类引用转换到的类型
      * @param ignoreExceptions
-     *            If true, ignore classloading exceptions and return null on failure.
-     * @return The {@code Class<?>} reference for the referenced class, or null if the class could not be loaded (or
-     *         casting failed) and ignoreExceptions is true.
+     *            如果为 true，则忽略类加载异常并在失败时返回 null
+     * @return 被引用类的 {@code Class<?>} 引用，如果类无法加载(或转换失败)且 ignoreExceptions 为 true，则返回 null
      * @throws IllegalArgumentException
-     *             if the class could not be loaded or cast, and ignoreExceptions was false.
+     *             如果类无法加载或转换，且 ignoreExceptions 为 false
      */
     <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType, final boolean ignoreExceptions) {
         synchronized (this) {
-            // If class is not already loaded, try loading class
+            // 如果类尚未加载，尝试加载类
             if (classRef == null) {
                 final String className = getClassInfoNameOrClassName();
                 try {
                     classRef = scanResult != null
                             ? scanResult.loadClass(className, superclassOrInterfaceType, ignoreExceptions)
-                            // Fallback, if scanResult is not set
+                            // 回退，如果 scanResult 未设置
                             : Class.forName(className);
                     if (classRef == null && !ignoreExceptions) {
                         throw new IllegalArgumentException("Could not load class " + className);
@@ -188,40 +183,36 @@ abstract class ScanResultObject {
                     }
                 }
             }
-            @SuppressWarnings("unchecked")
-            final Class<T> classT = (Class<T>) classRef;
+            @SuppressWarnings("unchecked") final Class<T> classT = (Class<T>) classRef;
             return classT;
         }
     }
 
     /**
-     * Load the class named returned by {@link #getClassInfo()}, or if that returns null, the class named by
-     * {@link #getClassName()}. Returns a {@code Class<?>} reference for the class, cast to the requested superclass
-     * or interface type.
+     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
+     * 返回该类的 {@code Class<?>} 引用，并将其转换为请求的超类或接口类型
      *
      * @param <T>
-     *            the superclass or interface type
+     *            超类或接口类型
      * @param superclassOrInterfaceType
-     *            The type to cast the resulting class reference to.
-     * @return The {@code Class<?>} reference for the referenced class, or null if the class could not be loaded (or
-     *         casting failed) and ignoreExceptions is true.
+     *            要将结果类引用转换到的类型
+     * @return 被引用类的 {@code Class<?>} 引用，如果类无法加载(或转换失败)且 ignoreExceptions 为 true，则返回 null
      * @throws IllegalArgumentException
-     *             if the class could not be loaded or cast, and ignoreExceptions was false.
+     *             如果类无法加载或转换，且 ignoreExceptions 为 false
      */
     <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
         return loadClass(superclassOrInterfaceType, /* ignoreExceptions = */ false);
     }
 
     /**
-     * Load the class named returned by {@link #getClassInfo()}, or if that returns null, the class named by
-     * {@link #getClassName()}. Returns a {@code Class<?>} reference for the class.
-     * 
+     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
+     * 返回该类的 {@code Class<?>} 引用
+     *
      * @param ignoreExceptions
-     *            If true, ignore classloading exceptions and return null on failure.
-     * @return The {@code Class<?>} reference for the referenced class, or null if the class could not be loaded and
-     *         ignoreExceptions is true.
+     *            如果为 true，则忽略类加载异常并在失败时返回 null
+     * @return 被引用类的 {@code Class<?>} 引用，如果类无法加载且 ignoreExceptions 为 true，则返回 null
      * @throws IllegalArgumentException
-     *             if the class could not be loaded and ignoreExceptions was false.
+     *             如果类无法加载且 ignoreExceptions 为 false
      */
     Class<?> loadClass(final boolean ignoreExceptions) {
         if (classRef == null) {
@@ -229,7 +220,7 @@ abstract class ScanResultObject {
             if (scanResult != null) {
                 classRef = scanResult.loadClass(className, ignoreExceptions);
             } else {
-                // Fallback, if scanResult is not set
+                // 回退，如果 scanResult 未设置
                 try {
                     classRef = Class.forName(className);
                 } catch (final Throwable t) {
@@ -243,12 +234,12 @@ abstract class ScanResultObject {
     }
 
     /**
-     * Load the class named returned by {@link #getClassInfo()}, or if that returns null, the class named by
-     * {@link #getClassName()}. Returns a {@code Class<?>} reference for the class.
-     * 
-     * @return The {@code Class<?>} reference for the referenced class.
+     * 加载由 {@link #getClassInfo()} 返回名称的类，如果返回 null，则加载由 {@link #getClassName()} 返回名称的类
+     * 返回该类的 {@code Class<?>} 引用
+     *
+     * @return 被引用类的 {@code Class<?>} 引用
      * @throws IllegalArgumentException
-     *             if the class could not be loaded.
+     *             如果类无法加载
      */
     Class<?> loadClass() {
         return loadClass(/* ignoreExceptions = */ false);
@@ -257,21 +248,21 @@ abstract class ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Render to string.
+     * 渲染为字符串
      *
      * @param useSimpleNames
-     *            if true, use just the simple name of each class.
+     *            如果为 true，则仅使用每个类的简单名称
      * @param buf
-     *            the buf
+     *            缓冲区
      */
     protected abstract void toString(final boolean useSimpleNames, StringBuilder buf);
 
     /**
-     * Render to string, with simple names for classes if useSimpleNames is true.
+     * 渲染为字符串，如果 useSimpleNames 为 true，则使用类的简单名称
      *
      * @param useSimpleNames
-     *            if true, use just the simple name of each class.
-     * @return the string representation.
+     *            如果为 true，则仅使用每个类的简单名称
+     * @return 字符串表示
      */
     String toString(final boolean useSimpleNames) {
         final StringBuilder buf = new StringBuilder();
@@ -280,11 +271,10 @@ abstract class ScanResultObject {
     }
 
     /**
-     * Render to string, using only <a href=
-     * "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">simple
-     * names</a> for classes.
+     * 渲染为字符串，仅使用类的<a href=
+     * "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">简单名称</a>
      *
-     * @return the string representation, using simple names for classes.
+     * @return 字符串表示，使用类的简单名称
      */
     public String toStringWithSimpleNames() {
         final StringBuilder buf = new StringBuilder();
@@ -293,9 +283,9 @@ abstract class ScanResultObject {
     }
 
     /**
-     * Render to string.
+     * 渲染为字符串
      *
-     * @return the string representation.
+     * @return 字符串表示
      */
     @Override
     public String toString() {

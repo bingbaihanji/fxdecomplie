@@ -26,48 +26,48 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
-import nonapi.io.github.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.*;
 
-/** A method type signature (called "MethodSignature" in the classfile documentation). */
+/** 方法类型签名(在 classfile 文档中称为 "MethodSignature") */
 public final class MethodTypeSignature extends HierarchicalTypeSignature {
-    /** The method type parameters. */
+    /** 方法类型参数 */
     final List<TypeParameter> typeParameters;
 
-    /** The method parameter type signatures. */
+    /** 方法参数类型签名 */
     private final List<TypeSignature> parameterTypeSignatures;
 
-    /** The method result type. */
+    /** 方法结果类型 */
     private final TypeSignature resultType;
 
-    /** The throws type signatures. */
+    /** throws 类型签名 */
     private final List<ClassRefOrTypeVariableSignature> throwsSignatures;
 
-    /** Any type annotation(s) on an explicit receiver parameter. */
+    /** 显式接收器参数上的任何类型注解 */
     private AnnotationInfoList receiverTypeAnnotationInfo;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param typeParameters
-     *            The type parameters for the method.
+     *            方法的类型参数
      * @param paramTypes
-     *            The parameter types for the method.
+     *            方法的参数类型
      * @param resultType
-     *            The return type for the method.
+     *            方法的返回类型
      * @param throwsSignatures
-     *            The throws signatures for the method.
+     *            方法的 throws 签名
      */
     private MethodTypeSignature(final List<TypeParameter> typeParameters, final List<TypeSignature> paramTypes,
-            final TypeSignature resultType, final List<ClassRefOrTypeVariableSignature> throwsSignatures) {
+                                final TypeSignature resultType, final List<ClassRefOrTypeVariableSignature> throwsSignatures) {
         super();
         this.typeParameters = typeParameters;
         this.parameterTypeSignatures = paramTypes;
@@ -78,39 +78,114 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the type parameters for the method, if this is a
-     * <a href="https://docs.oracle.com/javase/tutorial/extra/generics/methods.html">generic method</a>.
-     * 
-     * @return The type parameters for the method, if any, otherwise null.
+     * 解析方法签名
+     *
+     * @param typeDescriptor
+     *            方法的类型描述符
+     * @param definingClassName
+     *            定义类的名称(用于解析类型变量)
+     * @return 解析后的方法类型签名
+     * @throws ParseException
+     *             如果方法类型签名无法解析
+     */
+    static MethodTypeSignature parse(final String typeDescriptor, final String definingClassName)
+            throws ParseException {
+        if ("<init>".equals(typeDescriptor)) {
+            // 特殊情况：CONSTANT_NameAndType_info 结构中的实例初始化方法签名：
+            // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.4.2
+            return new MethodTypeSignature(Collections.<TypeParameter>emptyList(),
+                    Collections.<TypeSignature>emptyList(), /* void */ new BaseTypeSignature('V'),
+                    Collections.<ClassRefOrTypeVariableSignature>emptyList());
+        }
+        final Parser parser = new Parser(typeDescriptor);
+        final List<TypeParameter> typeParameters = TypeParameter.parseList(parser, definingClassName);
+        parser.expect('(');
+        final List<TypeSignature> paramTypes = new ArrayList<>();
+        while (parser.peek() != ')') {
+            if (!parser.hasMore()) {
+                throw new ParseException(parser, "解析方法签名时输入耗尽");
+            }
+            final TypeSignature paramType = TypeSignature.parse(parser, definingClassName);
+            if (paramType == null) {
+                throw new ParseException(parser, "缺少方法参数类型签名");
+            }
+            paramTypes.add(paramType);
+        }
+        parser.expect(')');
+        final TypeSignature resultType = TypeSignature.parse(parser, definingClassName);
+        if (resultType == null) {
+            throw new ParseException(parser, "缺少方法结果类型签名");
+        }
+        List<ClassRefOrTypeVariableSignature> throwsSignatures;
+        if (parser.peek() == '^') {
+            throwsSignatures = new ArrayList<>();
+            while (parser.peek() == '^') {
+                parser.expect('^');
+                final ClassRefTypeSignature classTypeSignature = ClassRefTypeSignature.parse(parser,
+                        definingClassName);
+                if (classTypeSignature != null) {
+                    throwsSignatures.add(classTypeSignature);
+                } else {
+                    final TypeVariableSignature typeVariableSignature = TypeVariableSignature.parse(parser,
+                            definingClassName);
+                    if (typeVariableSignature != null) {
+                        throwsSignatures.add(typeVariableSignature);
+                    } else {
+                        throw new ParseException(parser, "缺少类型变量签名");
+                    }
+                }
+            }
+        } else {
+            throwsSignatures = Collections.emptyList();
+        }
+        if (parser.hasMore()) {
+            throw new ParseException(parser, "类型描述符末尾有多余字符");
+        }
+        final MethodTypeSignature methodSignature = new MethodTypeSignature(typeParameters, paramTypes, resultType,
+                throwsSignatures);
+        // 添加从类型变量签名到其所属方法签名以及封闭类类型签名的反向链接
+        @SuppressWarnings("unchecked") final List<TypeVariableSignature> typeVariableSignatures = (List<TypeVariableSignature>) parser.getState();
+        if (typeVariableSignatures != null) {
+            for (final TypeVariableSignature typeVariableSignature : typeVariableSignatures) {
+                typeVariableSignature.containingMethodSignature = methodSignature;
+            }
+        }
+        return methodSignature;
+    }
+
+    /**
+     * 获取方法的类型参数(如果这是一个
+     * <a href="https://docs.oracle.com/javase/tutorial/extra/generics/methods.html">泛型方法</a>)
+     *
+     * @return 方法的类型参数(如果有)，否则为 null
      */
     public List<TypeParameter> getTypeParameters() {
         return typeParameters;
     }
 
     /**
-     * Get the type signatures of the method parameters. N.B. this is non-public, since the types have to be aligned
-     * with other parameter metadata. The type of a parameter can be obtained post-alignment from the parameter's
-     * {@link MethodParameterInfo} object.
-     * 
-     * @return The parameter types for the method, as {@link TypeSignature} parsed type objects.
+     * 获取方法参数的类型签名注意：此方法不公开，因为类型需要与其他参数元数据对齐
+     * 参数的类型可以在对齐后从参数的 {@link MethodParameterInfo} 对象中获取
+     *
+     * @return 方法的参数类型，作为 {@link TypeSignature} 解析类型对象
      */
     List<TypeSignature> getParameterTypeSignatures() {
         return parameterTypeSignatures;
     }
 
     /**
-     * Get the result type for the method.
-     * 
-     * @return The result type for the method, as a {@link TypeSignature} parsed type object.
+     * 获取方法的结果类型
+     *
+     * @return 方法的结果类型，作为 {@link TypeSignature} 解析类型对象
      */
     public TypeSignature getResultType() {
         return resultType;
     }
 
     /**
-     * Get the throws type(s) for the method.
-     * 
-     * @return The throws types for the method, as {@link TypeSignature} parsed type objects.
+     * 获取方法的 throws 类型
+     *
+     * @return 方法的 throws 类型，作为 {@link TypeSignature} 解析类型对象
      */
     public List<ClassRefOrTypeVariableSignature> getThrowsSignatures() {
         return throwsSignatures;
@@ -118,16 +193,16 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
 
     @Override
     protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
-        // Individual parts of a class' type each have their own addTypeAnnotation methods
+        // 类的各个类型部分各自有其自己的 addTypeAnnotation 方法
         throw new IllegalArgumentException(
-                "Cannot call this method on " + MethodTypeSignature.class.getSimpleName());
+                "不能对 " + MethodTypeSignature.class.getSimpleName() + " 调用此方法");
     }
 
     /**
-     * Add a type annotation for an explicit receiver parameter.
+     * 为显式接收器参数添加类型注解
      *
      * @param annotationInfo
-     *            the receiver type annotation
+     *            接收器类型注解
      */
     void addRecieverTypeAnnotation(final AnnotationInfo annotationInfo) {
         if (receiverTypeAnnotationInfo == null) {
@@ -136,36 +211,36 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
         receiverTypeAnnotationInfo.add(annotationInfo);
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get type annotations on the explicit receiver parameter, or null if none.
-     * 
-     * @return type annotations on the explicit receiver parameter, or null if none.
+     * 获取显式接收器参数上的类型注解，如果没有则返回 null
+     *
+     * @return 显式接收器参数上的类型注解，如果没有则返回 null
      */
     public AnnotationInfoList getReceiverTypeAnnotationInfo() {
         return receiverTypeAnnotationInfo;
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
-        // getClassInfo() is not valid for this type, so getClassName() does not need to be implemented
-        throw new IllegalArgumentException("getClassName() cannot be called here");
+        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
+        throw new IllegalArgumentException("getClassName() 不能在此处调用");
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
-        throw new IllegalArgumentException("getClassInfo() cannot be called here");
+        throw new IllegalArgumentException("getClassInfo() 不能在此处调用");
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -191,10 +266,10 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     }
 
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 获取类型签名中引用的所有类的名称
      *
      * @param refdClassNames
-     *            the referenced class names.
+     *            引用的类名集合
      */
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
         for (final TypeParameter typeParameter : typeParameters) {
@@ -215,17 +290,19 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get {@link ClassInfo} objects for any classes referenced in the type descriptor or type signature.
+     * 获取类型描述符或类型签名中引用的所有类的 {@link ClassInfo} 对象
      *
      * @param classNameToClassInfo
-     *            the map from class name to {@link ClassInfo}.
+     *            从类名到 {@link ClassInfo} 的映射
      * @param refdClassInfo
-     *            the referenced class info
+     *            引用的类信息集合
      */
     @Override
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-            final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final Set<String> refdClassNames = new HashSet<>();
         findReferencedClassNames(refdClassNames);
         for (final String refdClassName : refdClassNames) {
@@ -235,8 +312,6 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -245,6 +320,8 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
         return typeParameters.hashCode() + parameterTypeSignatures.hashCode() * 7 + resultType.hashCode() * 15
                 + throwsSignatures.hashCode() * 31;
     }
+
+    // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
@@ -266,7 +343,7 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
 
     @Override
     protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
+                                    final StringBuilder buf) {
         if (!typeParameters.isEmpty()) {
             buf.append('<');
             for (int i = 0; i < typeParameters.size(); i++) {
@@ -301,85 +378,5 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
                 throwsSignatures.get(i).toString(useSimpleNames, buf);
             }
         }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Parse a method signature.
-     * 
-     * @param typeDescriptor
-     *            The type descriptor of the method.
-     * @param definingClassName
-     *            The name of the defining class (for resolving type variables).
-     * @return The parsed method type signature.
-     * @throws ParseException
-     *             If method type signature could not be parsed.
-     */
-    static MethodTypeSignature parse(final String typeDescriptor, final String definingClassName)
-            throws ParseException {
-        if (typeDescriptor.equals("<init>")) {
-            // Special case for instance initialization method signatures in a CONSTANT_NameAndType_info structure:
-            // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.4.2
-            return new MethodTypeSignature(Collections.<TypeParameter> emptyList(),
-                    Collections.<TypeSignature> emptyList(), /* void */ new BaseTypeSignature('V'),
-                    Collections.<ClassRefOrTypeVariableSignature> emptyList());
-        }
-        final Parser parser = new Parser(typeDescriptor);
-        final List<TypeParameter> typeParameters = TypeParameter.parseList(parser, definingClassName);
-        parser.expect('(');
-        final List<TypeSignature> paramTypes = new ArrayList<>();
-        while (parser.peek() != ')') {
-            if (!parser.hasMore()) {
-                throw new ParseException(parser, "Ran out of input while parsing method signature");
-            }
-            final TypeSignature paramType = TypeSignature.parse(parser, definingClassName);
-            if (paramType == null) {
-                throw new ParseException(parser, "Missing method parameter type signature");
-            }
-            paramTypes.add(paramType);
-        }
-        parser.expect(')');
-        final TypeSignature resultType = TypeSignature.parse(parser, definingClassName);
-        if (resultType == null) {
-            throw new ParseException(parser, "Missing method result type signature");
-        }
-        List<ClassRefOrTypeVariableSignature> throwsSignatures;
-        if (parser.peek() == '^') {
-            throwsSignatures = new ArrayList<>();
-            while (parser.peek() == '^') {
-                parser.expect('^');
-                final ClassRefTypeSignature classTypeSignature = ClassRefTypeSignature.parse(parser,
-                        definingClassName);
-                if (classTypeSignature != null) {
-                    throwsSignatures.add(classTypeSignature);
-                } else {
-                    final TypeVariableSignature typeVariableSignature = TypeVariableSignature.parse(parser,
-                            definingClassName);
-                    if (typeVariableSignature != null) {
-                        throwsSignatures.add(typeVariableSignature);
-                    } else {
-                        throw new ParseException(parser, "Missing type variable signature");
-                    }
-                }
-            }
-        } else {
-            throwsSignatures = Collections.emptyList();
-        }
-        if (parser.hasMore()) {
-            throw new ParseException(parser, "Extra characters at end of type descriptor");
-        }
-        final MethodTypeSignature methodSignature = new MethodTypeSignature(typeParameters, paramTypes, resultType,
-                throwsSignatures);
-        // Add back-links from type variable signature to the method signature it is part of,
-        // and to the enclosing class' type signature
-        @SuppressWarnings("unchecked")
-        final List<TypeVariableSignature> typeVariableSignatures = (List<TypeVariableSignature>) parser.getState();
-        if (typeVariableSignatures != null) {
-            for (final TypeVariableSignature typeVariableSignature : typeVariableSignatures) {
-                typeVariableSignature.containingMethodSignature = methodSignature;
-            }
-        }
-        return methodSignature;
     }
 }

@@ -26,38 +26,38 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
-import nonapi.io.github.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.types.TypeUtils;
 
 import java.util.*;
 
-/** A type variable signature. */
+/** 一个类型变量签名 */
 public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature {
-    /** The type variable name. */
+    /** 类型变量名称 */
     private final String name;
 
-    /** The name of the class that this type variable is defined in. */
+    /** 此类型变量所属类的名称 */
     private final String definingClassName;
 
-    /** The method signature that this type variable is part of. */
+    /** 此类型变量所属的方法签名 */
     MethodTypeSignature containingMethodSignature;
 
-    /** The resolved type parameter, if any. */
+    /** 解析后的类型形参(如果有) */
     private TypeParameter typeParameterCached;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param typeVariableName
-     *            The type variable name.
+     *            类型变量名称
      * @param definingClassName
-     *            the defining class name.
+     *            定义类名
      */
     private TypeVariableSignature(final String typeVariableName, final String definingClassName) {
         super();
@@ -68,29 +68,66 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get the name of the type variable.
-     * 
-     * @return The type variable name.
+     * 解析一个 TypeVariableSignature
+     *
+     * @param parser
+     *            解析器
+     * @param definingClassName
+     *            定义类名
+     * @return 类型变量签名
+     * @throws ParseException
+     *             如果解析失败
+     */
+    static TypeVariableSignature parse(final Parser parser, final String definingClassName) throws ParseException {
+        final char peek = parser.peek();
+        if (peek == 'T') {
+            parser.next();
+            // Scala 的类型变量名称中可能包含 '$' (#495)
+            if (!TypeUtils.getIdentifierToken(parser, /* stopAtDollarSign = */ false, /* stopAtDot = */ true)) {
+                throw new ParseException(parser, "Could not parse type variable signature");
+            }
+            parser.expect(';');
+            final TypeVariableSignature typeVariableSignature = new TypeVariableSignature(parser.currToken(),
+                    definingClassName);
+
+            // 将类型变量签名保存在解析器状态中，以便方法和类类型签名可以链接到类型签名
+            @SuppressWarnings("unchecked")
+            List<TypeVariableSignature> typeVariableSignatures = (List<TypeVariableSignature>) parser.getState();
+            if (typeVariableSignatures == null) {
+                parser.setState(typeVariableSignatures = new ArrayList<>());
+            }
+            typeVariableSignatures.add(typeVariableSignature);
+
+            return typeVariableSignature;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * 获取类型变量的名称
+     *
+     * @return 类型变量名称
      */
     public String getName() {
         return name;
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Look up a type variable (e.g. "T") in the defining method and/or enclosing class' type parameters, and return
-     * the type parameter with the same name (e.g. "T extends com.xyz.Cls").
-     * 
-     * @return the type parameter (e.g. "T extends com.xyz.Cls", or simply "T" if the type parameter does not have
-     *         any bounds).
+     * 在定义方法和/或封闭类的类型形参中查找类型变量(例如 "T")，并返回具有相同名称的
+     * 类型形参(例如 "T extends com.xyz.Cls")
+     *
+     * @return 类型形参(例如 "T extends com.xyz.Cls"，或者如果类型形参没有任何边界，则为简单的 "T")
      * @throws IllegalArgumentException
-     *             if a type parameter with the same name as the type variable could not be found in the defining
-     *             method or the enclosing class.
+     *             如果在定义方法或封闭类中找不到与类型变量同名的类型形参
      */
     public TypeParameter resolve() {
         if (typeParameterCached != null) {
             return typeParameterCached;
         }
-        // Try resolving the type variable against the containing method
+        // 尝试根据包含方法解析类型变量
         if (containingMethodSignature != null && containingMethodSignature.typeParameters != null
                 && !containingMethodSignature.typeParameters.isEmpty()) {
             for (final TypeParameter typeParameter : containingMethodSignature.typeParameters) {
@@ -100,7 +137,7 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
                 }
             }
         }
-        // If that failed, try resolving the type variable against the containing class
+        // 如果失败，尝试根据包含类解析类型变量
         if (getClassName() != null) {
             final ClassInfo containingClassInfo = getClassInfo();
             if (containingClassInfo == null) {
@@ -110,7 +147,7 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
             try {
                 containingClassSignature = containingClassInfo.getTypeSignature();
             } catch (final Exception e) {
-                // Ignore
+                // 忽略
             }
             if (containingClassSignature != null && containingClassSignature.typeParameters != null
                     && !containingClassSignature.typeParameters.isEmpty()) {
@@ -122,10 +159,10 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
                 }
             }
         }
-        // If that failed, then this is a type variable that cannot be resolved.
-        // Return a new TypeParameter that only has the name set, with no class or interface bounds. (#706)
+        // 如果失败，则这是一个无法解析的类型变量
+        // 返回一个仅设置了名称的新的 TypeParameter，没有类或接口边界(#706)
         final TypeParameter typeParameter = new TypeParameter(name, null,
-                Collections.<ReferenceTypeSignature> emptyList());
+                Collections.<ReferenceTypeSignature>emptyList());
         typeParameter.setScanResult(scanResult);
         typeParameterCached = typeParameter;
         return typeParameter;
@@ -145,50 +182,9 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Parse a TypeVariableSignature.
+     * 返回 definingClassName，以便 getClassInfo() 返回包含类的 {@link ClassInfo} 对象
      *
-     * @param parser
-     *            the parser
-     * @param definingClassName
-     *            the defining class name
-     * @return the type variable signature
-     * @throws ParseException
-     *             if parsing fails
-     */
-    static TypeVariableSignature parse(final Parser parser, final String definingClassName) throws ParseException {
-        final char peek = parser.peek();
-        if (peek == 'T') {
-            parser.next();
-            // Scala can contain '$' in type variable names (#495)
-            if (!TypeUtils.getIdentifierToken(parser, /* stopAtDollarSign = */ false, /* stopAtDot = */ true)) {
-                throw new ParseException(parser, "Could not parse type variable signature");
-            }
-            parser.expect(';');
-            final TypeVariableSignature typeVariableSignature = new TypeVariableSignature(parser.currToken(),
-                    definingClassName);
-
-            // Save type variable signatures in the parser state, so method and class type signatures can link
-            // to type signatures
-            @SuppressWarnings("unchecked")
-            List<TypeVariableSignature> typeVariableSignatures = (List<TypeVariableSignature>) parser.getState();
-            if (typeVariableSignatures == null) {
-                parser.setState(typeVariableSignatures = new ArrayList<>());
-            }
-            typeVariableSignatures.add(typeVariableSignature);
-
-            return typeVariableSignature;
-        } else {
-            return null;
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Return definingClassName, so that getClassInfo() returns the {@link ClassInfo} object for the containing
-     * class.
-     *
-     * @return the defining class name.
+     * @return 定义类名
      */
     @Override
     protected String getClassName() {
@@ -196,15 +192,15 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     }
 
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 获取类型签名中引用的任何类的名称
      *
      * @param refdClassNames
-     *            the referenced class names.
+     *            引用的类名
      */
     @Override
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
-        // Any class names present in resolved type variables have to be present in enclosing method or class,
-        // so there's no need to look up class references in resolved type variables
+        // 解析后的类型变量中存在的所有类名都必须存在于封闭方法或类中，
+        // 因此不需要在解析后的类型变量中查找类引用
     }
 
     @Override
@@ -240,39 +236,37 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.TypeSignature#equalsIgnoringTypeParams(io.github.classgraph.TypeSignature)
+     * @see com.bingbaihanji.classgraph.core.TypeSignature#equalsIgnoringTypeParams(com.bingbaihanji.classgraph.core.TypeSignature)
      */
     @Override
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
         if (other instanceof ClassRefTypeSignature) {
-            if (((ClassRefTypeSignature) other).className.equals("java.lang.Object")) {
-                // java.lang.Object can be reconciled with any type, so it can be reconciled with
-                // any type variable
+            if ("java.lang.Object".equals(((ClassRefTypeSignature) other).className)) {
+                // java.lang.Object 可以与任何类型协调，因此它可以与任何类型变量协调
                 return true;
             }
-            // Resolve the type variable against the containing class' type parameters
+            // 根据包含类的类型形参解析类型变量
             TypeParameter typeParameter;
             try {
                 typeParameter = resolve();
             } catch (final IllegalArgumentException e) {
-                // If the corresponding type parameter cannot be resolved:
-                // unknown type variables can always be reconciled with a concrete class
+                // 如果无法解析对应的类型形参：
+                // 未知类型变量始终可以与具体类协调
                 return true;
             }
             if (typeParameter.classBound == null
                     && (typeParameter.interfaceBounds == null || typeParameter.interfaceBounds.isEmpty())) {
-                // If the type parameter has no bounds, just assume the type variable can be reconciled
-                // to the class by type inference
+                // 如果类型形参没有边界，则仅假定类型变量可以通过类型推断与类协调
                 return true;
             }
             if (typeParameter.classBound != null) {
                 if (typeParameter.classBound instanceof ClassRefTypeSignature) {
                     if (typeParameter.classBound.equals(other)) {
-                        // T extends X, and X == other
+                        // T extends X，且 X == other
                         return true;
                     }
                 } else if (typeParameter.classBound instanceof TypeVariableSignature) {
-                    // "X" is reconcilable with "Y extends X"
+                    // "X" 可以与 "Y extends X" 协调
                     return this.equalsIgnoringTypeParams(typeParameter.classBound);
                 } else /* if (typeParameter.classBound instanceof ArrayTypeSignature) */ {
                     return false;
@@ -282,49 +276,47 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
                 for (final ReferenceTypeSignature interfaceBound : typeParameter.interfaceBounds) {
                     if (interfaceBound instanceof ClassRefTypeSignature) {
                         if (interfaceBound.equals(other)) {
-                            // T implements X, and X == other
+                            // T implements X，且 X == other
                             return true;
                         }
                     } else if (interfaceBound instanceof TypeVariableSignature) {
-                        // "X" is reconcilable with "Y implements X"
+                        // "X" 可以与 "Y implements X" 协调
                         return this.equalsIgnoringTypeParams(interfaceBound);
                     } else /* if (interfaceBound instanceof ArrayTypeSignature) */ {
                         return false;
                     }
                 }
             }
-            // Type variable has a concrete bound that is not reconcilable with 'other'
-            // (we don't follow the class hierarchy to compare the bound against the class reference,
-            // since the compiler should only use the bound during type erasure, not some other class
-            // in the class hierarchy)
+            // 类型变量有一个具体的边界，该边界不能与 'other' 协调
+            // (我们不遵循类层次结构将边界与类引用进行比较，
+            // 因为编译器在类型擦除期间只应使用边界，而不是类层次结构中的其他类)
             return false;
         }
-        // Technically I think type variables are never equal to each other, due to capturing,
-        // but just compare the variable name for equality here (this should never get
-        // triggered in general, since we only compare type-erased signatures to
-        // non-type-erased signatures currently).
+        // 技术上讲，我认为由于捕获的原因，类型变量永远不会彼此相等，
+        // 但这里仅比较变量名称是否相等
+        // (通常不应触发此逻辑，因为我们目前只比较类型擦除后的签名与非类型擦除的签名)
         return this.equals(other);
     }
 
     /**
-     * Returns the type variable along with its type bound, if available (e.g. "X extends xyz.Cls"). You can get
-     * this in structured form by calling {@link #resolve()}. Returns just the type variable if there is no type
-     * bound, or if no type bound is known (i.e. if {@link #resolve()} returns null).
-     * 
-     * @return The string representation.
+     * 返回类型变量及其类型边界(如果有)(例如 "X extends xyz.Cls")
+     * 你可以通过调用 {@link #resolve()} 来获取结构化形式
+     * 如果没有类型边界，或者类型边界未知(即 {@link #resolve()} 返回 null)，则仅返回类型变量
+     *
+     * @return 字符串表示
      */
     public String toStringWithTypeBound() {
         try {
             return resolve().toString();
         } catch (final IllegalArgumentException e) {
-            // Type parameter could not be resolved
+            // 无法解析类型形参
             return name;
         }
     }
 
     @Override
     protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
+                                    final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
                 if (annotationsToExclude == null || !annotationsToExclude.contains(annotationInfo)) {

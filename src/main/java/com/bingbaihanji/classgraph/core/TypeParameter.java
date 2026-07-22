@@ -26,40 +26,40 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph;
+package com.bingbaihanji.classgraph.core;
 
-import io.github.classgraph.Classfile.TypePathNode;
-import nonapi.io.github.classgraph.types.ParseException;
-import nonapi.io.github.classgraph.types.Parser;
-import nonapi.io.github.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.types.TypeUtils;
 
 import java.util.*;
 
-/** A type parameter. */
+/** 一个类型形参 */
 public final class TypeParameter extends HierarchicalTypeSignature {
-    /** The type parameter identifier. */
+    /** 类型形参标识符 */
     final String name;
 
-    /** Class bound -- may be null. */
+    /** 类边界 -- 可能为 null */
     final ReferenceTypeSignature classBound;
 
-    /** Interface bounds -- may be empty. */
+    /** 接口边界 -- 可能为空 */
     final List<ReferenceTypeSignature> interfaceBounds;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Constructor.
+     * 构造函数
      *
      * @param identifier
-     *            The type parameter identifier.
+     *            类型形参标识符
      * @param classBound
-     *            The type parameter class bound.
+     *            类型形参类边界
      * @param interfaceBounds
-     *            The type parameter interface bound.
+     *            类型形参接口边界
      */
     protected TypeParameter(final String identifier, final ReferenceTypeSignature classBound,
-            final List<ReferenceTypeSignature> interfaceBounds) {
+                            final List<ReferenceTypeSignature> interfaceBounds) {
         super();
         this.name = identifier;
         this.classBound = classBound;
@@ -67,53 +67,15 @@ public final class TypeParameter extends HierarchicalTypeSignature {
     }
 
     /**
-     * Get the type parameter identifier.
-     * 
-     * @return The type parameter identifier.
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Get the type parameter class bound.
-     * 
-     * @return The type parameter class bound. May be null.
-     */
-    public ReferenceTypeSignature getClassBound() {
-        return classBound;
-    }
-
-    /**
-     * Get the type parameter interface bound(s).
-     * 
-     * @return Get the type parameter interface bound(s), which may be the empty list.
-     */
-    public List<ReferenceTypeSignature> getInterfaceBounds() {
-        return interfaceBounds;
-    }
-
-    @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
-        if (typePath.isEmpty()) {
-            addTypeAnnotation(annotationInfo);
-        } else {
-            throw new IllegalArgumentException("Type parameter should have empty typePath");
-        }
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Parse a list of type parameters into {@link TypeParameter} objects.
+     * 将类型形参列表解析为 {@link TypeParameter} 对象
      *
      * @param parser
-     *            the parser
+     *            解析器
      * @param definingClassName
-     *            the defining class name
-     * @return the list of {@link TypeParameter} objects.
+     *            定义类名
+     * @return {@link TypeParameter} 对象的列表
      * @throws ParseException
-     *             if parsing fails
+     *             如果解析失败
      */
     static List<TypeParameter> parseList(final Parser parser, final String definingClassName)
             throws ParseException {
@@ -126,12 +88,12 @@ public final class TypeParameter extends HierarchicalTypeSignature {
             if (!parser.hasMore()) {
                 throw new ParseException(parser, "Missing '>'");
             }
-            // Scala can contain '$' in type parameter names (#495)
+            // Scala 的类型形参名称中可能包含 '$' (#495)
             if (!TypeUtils.getIdentifierToken(parser, /* stopAtDollarSign = */ false, /* stopAtDot = */ true)) {
                 throw new ParseException(parser, "Could not parse identifier token");
             }
             final String identifier = parser.currToken();
-            // classBound may be null
+            // classBound 可能为 null
             final ReferenceTypeSignature classBound = ReferenceTypeSignature.parseClassBound(parser,
                     definingClassName);
             List<ReferenceTypeSignature> interfaceBounds;
@@ -155,19 +117,57 @@ public final class TypeParameter extends HierarchicalTypeSignature {
         return typeParams;
     }
 
+    /**
+     * 获取类型形参标识符
+     *
+     * @return 类型形参标识符
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * 获取类型形参类边界
+     *
+     * @return 类型形参类边界可能为 null
+     */
+    public ReferenceTypeSignature getClassBound() {
+        return classBound;
+    }
+
+    /**
+     * 获取类型形参接口边界
+     *
+     * @return 获取类型形参接口边界，可能为空列表
+     */
+    public List<ReferenceTypeSignature> getInterfaceBounds() {
+        return interfaceBounds;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    @Override
+    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+        if (typePath.isEmpty()) {
+            addTypeAnnotation(annotationInfo);
+        } else {
+            throw new IllegalArgumentException("Type parameter should have empty typePath");
+        }
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
      */
     @Override
     protected String getClassName() {
-        // getClassInfo() is not valid for this type, so getClassName() does not need to be implemented
+        // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -175,7 +175,7 @@ public final class TypeParameter extends HierarchicalTypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see io.github.classgraph.ScanResultObject#setScanResult(io.github.classgraph.ScanResult)
+     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -191,10 +191,10 @@ public final class TypeParameter extends HierarchicalTypeSignature {
     }
 
     /**
-     * Get the names of any classes referenced in the type signature.
+     * 获取类型签名中引用的任何类的名称
      *
      * @param refdClassNames
-     *            the referenced class names.
+     *            引用的类名
      */
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
         if (classBound != null) {
@@ -229,7 +229,7 @@ public final class TypeParameter extends HierarchicalTypeSignature {
         final TypeParameter other = (TypeParameter) obj;
         return other.name.equals(this.name) && Objects.equals(other.typeAnnotationInfo, this.typeAnnotationInfo)
                 && ((other.classBound == null && this.classBound == null)
-                        || (other.classBound != null && other.classBound.equals(this.classBound)))
+                || (other.classBound != null && other.classBound.equals(this.classBound)))
                 && other.interfaceBounds.equals(this.interfaceBounds);
     }
 
@@ -237,7 +237,7 @@ public final class TypeParameter extends HierarchicalTypeSignature {
 
     @Override
     protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-            final StringBuilder buf) {
+                                    final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
                 if (annotationsToExclude == null || !annotationsToExclude.contains(annotationInfo)) {
@@ -252,9 +252,9 @@ public final class TypeParameter extends HierarchicalTypeSignature {
             classBoundStr = null;
         } else {
             classBoundStr = classBound.toString(useSimpleNames);
-            if (classBoundStr.equals("java.lang.Object") || (classBoundStr.equals("Object")
-                    && ((ClassRefTypeSignature) classBound).className.equals("java.lang.Object"))) {
-                // Don't add "extends java.lang.Object"
+            if ("java.lang.Object".equals(classBoundStr) || ("Object".equals(classBoundStr)
+                    && "java.lang.Object".equals(((ClassRefTypeSignature) classBound).className))) {
+                // 不添加 "extends java.lang.Object"
                 classBoundStr = null;
             }
         }

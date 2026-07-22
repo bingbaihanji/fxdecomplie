@@ -26,8 +26,17 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package nonapi.io.github.classgraph.utils;
+package com.bingbaihanji.classgraph.utils;
 
+import com.bingbaihanji.classgraph.core.ClassGraph;
+import org.w3c.dom.Document;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPathFactoryConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,43 +49,25 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathFactoryConfigurationException;
-
-import org.w3c.dom.Document;
-
-import io.github.classgraph.ClassGraph;
-
-/** Finds the version number of ClassGraph, and the version of the JDK. */
+/** 查找 ClassGraph 的版本号和 JDK 的版本 */
 public final class VersionFinder {
 
-    /** The Maven package for ClassGraph. */
-    private static final String MAVEN_PACKAGE = "io.github.classgraph";
-
-    /** The Maven artifact for ClassGraph. */
-    private static final String MAVEN_ARTIFACT = "classgraph";
-
-    /** The operating system type. */
+    /** 操作系统类型 */
     public static final OperatingSystem OS;
-
-    /** Java version string. */
+    /** Java 版本字符串 */
     public static final String JAVA_VERSION = getProperty("java.version");
-
-    /** Java major version -- 7 for "1.7", 8 for "1.8.0_244", 9 for "9", 11 for "11-ea", etc. */
+    /** Java 主版本号 -- 7 表示 "1.7"，8 表示 "1.8.0_244"，9 表示 "9"，11 表示 "11-ea" 等 */
     public static final int JAVA_MAJOR_VERSION;
-
-    /** Java minor version -- 0 for "11.0.4" */
+    /** Java 次版本号 -- "11.0.4" 则为 0 */
     public static final int JAVA_MINOR_VERSION;
-
-    /** Java minor version -- 4 for "11.0.4" */
+    /** Java 子版本号 -- "11.0.4" 则为 4 */
     public static final int JAVA_SUB_VERSION;
-
-    /** Java is EA release -- true for "11-ea", etc. */
+    /** Java 是否为 EA 版本 -- "11-ea" 等则为 true */
     public static final boolean JAVA_IS_EA_VERSION;
+    /** ClassGraph 的 Maven 包 */
+    private static final String MAVEN_PACKAGE = "com.bingbaihanji.classgraph.core";
+    /** ClassGraph 的 Maven 构件 */
+    private static final String MAVEN_ARTIFACT = "classgraph";
 
     static {
         int javaMajorVersion = 0;
@@ -88,11 +79,11 @@ public final class VersionFinder {
                 try {
                     versionParts.add(Integer.parseInt(versionPart));
                 } catch (final NumberFormatException e) {
-                    // Skip
+                    // 跳过
                 }
             }
             if (!versionParts.isEmpty() && versionParts.get(0) == 1) {
-                // 1.7 or 1.8 -> 7 or 8
+                // 1.7 或 1.8 -> 7 或 8
                 versionParts.remove(0);
             }
             if (versionParts.isEmpty()) {
@@ -110,30 +101,6 @@ public final class VersionFinder {
         JAVA_MINOR_VERSION = javaMinorVersion;
         JAVA_SUB_VERSION = javaSubVersion;
         JAVA_IS_EA_VERSION = JAVA_VERSION != null && JAVA_VERSION.endsWith("-ea");
-    }
-
-    /** The operating system type. */
-    public enum OperatingSystem {
-        /** Windows. */
-        Windows,
-
-        /** Mac OS X. */
-        MacOSX,
-
-        /** Linux. */
-        Linux,
-
-        /** Solaris. */
-        Solaris,
-
-        /** BSD. */
-        BSD,
-
-        /** Unix or AIX. */
-        Unix,
-
-        /** Unknown. */
-        Unknown
     }
 
     static {
@@ -159,23 +126,21 @@ public final class VersionFinder {
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Constructor.
+     * 构造方法
      */
     private VersionFinder() {
-        // Cannot be constructed
+        // 不可构造
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * Get a system property (returning null if a SecurityException was thrown).
+     * 获取系统属性(如果抛出 SecurityException 则返回 null)
      *
      * @param propName
-     *            the property name
-     * @return the property value
+     *            属性名称
+     * @return 属性值
      */
     public static String getProperty(final String propName) {
         try {
@@ -185,32 +150,32 @@ public final class VersionFinder {
         }
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Get a system property (returning null if a SecurityException was thrown).
+     * 获取系统属性(如果抛出 SecurityException 则返回 null)
      *
      * @param propName
-     *            the property name
+     *            属性名称
      * @param defaultVal
-     *            the default value for the property
-     * @return the property value, or the default if the property is not defined.
+     *            属性的默认值
+     * @return 属性值，如果属性未定义则返回默认值
      */
     public static String getProperty(final String propName, final String defaultVal) {
         try {
             return System.getProperty(propName, defaultVal);
         } catch (final SecurityException e) {
-            return null;
+            return defaultVal;
         }
     }
 
-    // -------------------------------------------------------------------------------------------------------------
-
     /**
-     * Get the version number of ClassGraph.
+     * 获取 ClassGraph 的版本号
      *
-     * @return the version number of ClassGraph.
+     * @return ClassGraph 的版本号
      */
     public static synchronized String getVersion() {
-        // Try to get version number from pom.xml (available when running in Eclipse)
+        // 尝试从 pom.xml 获取版本号(在 Eclipse 中运行时可用)
         final Class<?> cls = ClassGraph.class;
         try {
             final String className = cls.getName();
@@ -218,12 +183,12 @@ public final class VersionFinder {
             if (classpathResource != null) {
                 final Path absolutePackagePath = Paths.get(classpathResource.toURI()).getParent();
                 final int packagePathSegments = className.length() - className.replace(".", "").length();
-                // Remove package segments from path
+                // 从路径中移除包段
                 Path path = absolutePackagePath;
                 for (int i = 0; i < packagePathSegments && path != null; i++) {
                     path = path.getParent();
                 }
-                // Remove up to two more levels for "bin" or "target/classes"
+                // 再向上移除两到三个级别，以处理 "bin" 或 "target/classes"
                 for (int i = 0; i < 3 && path != null; i++, path = path.getParent()) {
                     final Path pom = path.resolve("pom.xml");
                     try (InputStream is = Files.newInputStream(pom)) {
@@ -238,15 +203,15 @@ public final class VersionFinder {
                             }
                         }
                     } catch (final IOException e) {
-                        // Not found
+                        // 未找到
                     }
                 }
             }
         } catch (final Exception e) {
-            // Ignore
+            // 忽略
         }
 
-        // Try to get version number from maven properties in jar's META-INF directory
+        // 尝试从 JAR 的 META-INF 目录中的 Maven 属性获取版本号
         try (InputStream is = cls.getResourceAsStream(
                 "/META-INF/maven/" + MAVEN_PACKAGE + "/" + MAVEN_ARTIFACT + "/pom.properties")) {
             if (is != null) {
@@ -258,10 +223,10 @@ public final class VersionFinder {
                 }
             }
         } catch (final IOException e) {
-            // Ignore
+            // 忽略
         }
 
-        // Fallback to using Java API (version number is obtained from MANIFEST.MF)
+        // 回退到使用 Java API(版本号从 MANIFEST.MF 获取)
         final Package pkg = cls.getPackage();
         if (pkg != null) {
             String version = pkg.getImplementationVersion();
@@ -283,13 +248,15 @@ public final class VersionFinder {
         return "unknown";
     }
 
+    // -------------------------------------------------------------------------------------------------------------
+
     /**
-     * Helper method to provide a XXE secured DocumentBuilder Factory.
+     * 提供 XXE 安全的 DocumentBuilder Factory 的辅助方法
      *
-     * reference - https://gist.github.com/AlainODea/1779a7c6a26a5c135280bc9b3b71868f
-     * 
-     * reference - https://rules.sonarsource.com/java/tag/owasp/RSPEC-2755
-     * 
+     * 参考 - https://gist.github.com/AlainODea/1779a7c6a26a5c135280bc9b3b71868f
+     *
+     * 参考 - https://rules.sonarsource.com/java/tag/owasp/RSPEC-2755
+     *
      * @return DocumentBuilderFactory
      * @throws ParserConfigurationException
      */
@@ -309,10 +276,10 @@ public final class VersionFinder {
     }
 
     /**
-     * Helper method to provide a XXE secured XPathFactory Factory.
+     * 提供 XXE 安全的 XPathFactory Factory 的辅助方法
      *
-     * reference - https://rules.sonarsource.com/java/tag/owasp/RSPEC-2755
-     * 
+     * 参考 - https://rules.sonarsource.com/java/tag/owasp/RSPEC-2755
+     *
      * @return XPathFactory
      * @throws XPathFactoryConfigurationException
      */
@@ -320,5 +287,29 @@ public final class VersionFinder {
         final XPathFactory xPathFactory = XPathFactory.newInstance();
         xPathFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         return xPathFactory;
+    }
+
+    /** 操作系统类型 */
+    public enum OperatingSystem {
+        /** Windows */
+        Windows,
+
+        /** Mac OS X */
+        MacOSX,
+
+        /** Linux */
+        Linux,
+
+        /** Solaris */
+        Solaris,
+
+        /** BSD */
+        BSD,
+
+        /** Unix 或 AIX */
+        Unix,
+
+        /** 未知 */
+        Unknown
     }
 }

@@ -43,8 +43,149 @@ public final class OutlineParser {
     private static final Pattern CLASS_REF_PATTERN = Pattern.compile(
             "\\b([a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)+\\.[A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)\\b");
 
+    /** 匹配接口声明的模式 */
+    private static final Pattern INTERFACE_PATTERN = Pattern.compile(
+            "^\\s*(?:public\\s+)?(?:abstract\\s+)?interface\\s+\\w+");
+
+    /** 匹配抽象类的模式 */
+    private static final Pattern ABSTRACT_CLASS_PATTERN = Pattern.compile(
+            "^\\s*(?:public\\s+)?(?:abstract\\s+)\\s*class\\s+\\w+");
+
     private OutlineParser() {
         throw new AssertionError("utility class");
+    }
+
+    /**
+     * 检测源码是否为接口声明
+     *
+     * @param sourceCode 反编译后的 Java 源码
+     * @return 如果源码声明了 interface(非 @interface)则返回 true
+     */
+    public static boolean isInterface(String sourceCode) {
+        if (sourceCode == null || sourceCode.isEmpty()) {
+            return false;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("//") || trimmed.startsWith("/*")
+                    || trimmed.startsWith("*") || trimmed.startsWith("@")) {
+                continue;
+            }
+            return INTERFACE_PATTERN.matcher(line).find()
+                    && !trimmed.contains("@interface");
+        }
+        return false;
+    }
+
+    /**
+     * 检测源码是否为抽象类
+     *
+     * @param sourceCode 反编译后的 Java 源码
+     * @return 如果源码声明了 abstract class 则返回 true
+     */
+    public static boolean isAbstractClass(String sourceCode) {
+        if (sourceCode == null || sourceCode.isEmpty()) {
+            return false;
+        }
+        String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty() || trimmed.startsWith("//") || trimmed.startsWith("/*")
+                    || trimmed.startsWith("*") || trimmed.startsWith("@")) {
+                continue;
+            }
+            return ABSTRACT_CLASS_PATTERN.matcher(line).find();
+        }
+        return false;
+    }
+
+    /**
+     * 从源码中提取方法签名列表,用于与字节码中的方法描述符匹配
+     *
+     * <p>返回的方法签名包含方法名和参数个数,用于在实现类字节码中进行模糊匹配</p>
+     *
+     * @param sourceCode 反编译后的 Java 源码
+     * @return 方法签名列表,每项为 {方法名, 参数个数}
+     */
+    public static List<MethodSignature> extractMethodSignatures(String sourceCode) {
+        if (sourceCode == null || sourceCode.isEmpty()) {
+            return List.of();
+        }
+        List<MethodSignature> signatures = new ArrayList<>();
+        String[] lines = sourceCode.replace("\r\n", "\n").replace("\r", "\n").split("\n");
+        int depth = 0;
+
+        for (String line : lines) {
+            int prevDepth = depth;
+            depth += count(line, '{') - count(line, '}');
+
+            if (prevDepth == 1 && !line.contains(" class ") && !line.contains(" interface ")
+                    && !line.contains(" enum ") && !line.contains(" record ")) {
+                Matcher m = METHOD_PATTERN.matcher(line);
+                if (m.find()) {
+                    int openParen = m.end() - 1;
+                    if (openParen >= 0 && hasMatchingCloseParen(line, openParen)) {
+                        String methodName = m.group(2);
+                        int paramCount = countParameters(line, openParen);
+                        signatures.add(new MethodSignature(methodName, paramCount));
+                    }
+                }
+            }
+        }
+        return signatures;
+    }
+
+    /**
+     * 统计方法参数个数(通过逗号分隔)
+     *
+     * @param line      包含方法声明的行
+     * @param openParen 开括号位置
+     * @return 参数个数
+     */
+    private static int countParameters(String line, int openParen) {
+        int closeParen = findMatchingCloseParenIndex(line, openParen);
+        if (closeParen < 0 || closeParen <= openParen + 1) {
+            return 0;
+        }
+        String params = line.substring(openParen + 1, closeParen).strip();
+        if (params.isEmpty()) {
+            return 0;
+        }
+        // 简单逗号计数(不处理嵌套泛型中的逗号,仅用于近似匹配)
+        int depth = 0, count = 1;
+        for (int i = 0; i < params.length(); i++) {
+            char c = params.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+            } else if (c == ',' && depth == 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** 查找与指定开括号匹配的闭括号索引 */
+    private static int findMatchingCloseParenIndex(String line, int openParen) {
+        int depth = 0;
+        for (int j = openParen; j < line.length(); j++) {
+            char c = line.charAt(j);
+            if (c == '"' || c == '\'') {
+                j = skipQuoted(line, j, c) - 1;
+                continue;
+            }
+            if (c == '(') {
+                depth++;
+            } else if (c == ')') {
+                depth--;
+                if (depth == 0) {
+                    return j;
+                }
+            }
+        }
+        return -1;
     }
 
     /**
@@ -612,6 +753,10 @@ public final class OutlineParser {
             return "";
         }
         return raw.trim().replaceAll("\\s+", " ");
+    }
+
+    /** 方法签名记录：包含方法名和参数个数 */
+    public record MethodSignature(String name, int paramCount) {
     }
 
     /** 泛型类型参数及其在源码行中的起始列号 */
