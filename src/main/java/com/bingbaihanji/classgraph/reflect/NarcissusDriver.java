@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.reflection;
+package com.bingbaihanji.classgraph.reflect;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
@@ -37,7 +37,7 @@ import java.lang.reflect.Method;
  * Narcissus 反射驱动(如果可用，则使用 <a href="https://github.com/toolfactory/narcissus">Narcissus</a> 库，
  * 通过 JNI 允许访问非公开字段和方法，绕过封装和可见性控制)
  */
-class NarcissusReflectionDriver extends ReflectionDriver {
+class NarcissusDriver extends ReflectionDriver {
     private final Class<?> narcissusClass;
     private final Method getDeclaredMethods;
     private final Method findClass;
@@ -50,9 +50,9 @@ class NarcissusReflectionDriver extends ReflectionDriver {
     private final Method invokeMethod;
     private final Method invokeStaticMethod;
 
-    NarcissusReflectionDriver() throws Exception {
+    NarcissusDriver() throws Exception {
         // 通过反射加载 Narcissus 类，从而避免运行时依赖
-        final StandardReflectionDriver drv = new StandardReflectionDriver();
+        final StandardDriver drv = new StandardDriver();
         narcissusClass = drv.findClass("io.github.toolfactory.narcissus.Narcissus");
         if (!(Boolean) drv.getStaticField(drv.findStaticField(narcissusClass, "libraryLoaded"))) {
             throw new IllegalArgumentException("Could not load Narcissus native library");

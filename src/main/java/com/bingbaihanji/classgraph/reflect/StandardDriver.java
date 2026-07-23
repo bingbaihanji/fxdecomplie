@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.reflection;
+package com.bingbaihanji.classgraph.reflect;
 
 import java.lang.reflect.*;
 import java.util.concurrent.Callable;
@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
 /**
  * 标准反射驱动(必要时使用 {@link AccessibleObject#setAccessible(boolean)} 访问非公开字段)
  */
-class StandardReflectionDriver extends ReflectionDriver {
+class StandardDriver extends ReflectionDriver {
     private static Method setAccessibleMethod;
     private static Method trySetAccessibleMethod;
     private static Class<?> accessControllerClass;

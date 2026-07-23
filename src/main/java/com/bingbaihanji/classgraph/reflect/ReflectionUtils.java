@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.reflection;
+package com.bingbaihanji.classgraph.reflect;
 
 import com.bingbaihanji.classgraph.core.ClassGraph;
 import com.bingbaihanji.classgraph.core.ClassGraph.CircumventEncapsulationMethod;
@@ -49,14 +49,14 @@ public final class ReflectionUtils {
     public ReflectionUtils() {
         if (ClassGraph.CIRCUMVENT_ENCAPSULATION == CircumventEncapsulationMethod.NARCISSUS) {
             try {
-                reflectionDriver = new NarcissusReflectionDriver();
+                reflectionDriver = new NarcissusDriver();
             } catch (final Throwable t) {
                 System.err.println("Could not load Narcissus reflection driver: " + t);
                 // 回退到标准反射驱动
             }
         }
         if (reflectionDriver == null) {
-            reflectionDriver = new StandardReflectionDriver();
+            reflectionDriver = new StandardDriver();
         }
         try {
             accessControllerClass = reflectionDriver.findClass("java.security.AccessController");

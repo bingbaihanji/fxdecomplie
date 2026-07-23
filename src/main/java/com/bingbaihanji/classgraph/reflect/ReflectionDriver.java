@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.reflection;
+package com.bingbaihanji.classgraph.reflect;
 
 import com.bingbaihanji.classgraph.concurrency.SingletonMap;
 import com.bingbaihanji.classgraph.utils.LogNode;
@@ -409,10 +409,7 @@ abstract class ReflectionDriver {
         }
 
         private void cacheMethod(final Method method) {
-            List<Method> methodsForName = methodNameToMethods.get(method.getName());
-            if (methodsForName == null) {
-                methodNameToMethods.put(method.getName(), methodsForName = new ArrayList<>());
-            }
+            List<Method> methodsForName = methodNameToMethods.computeIfAbsent(method.getName(), k -> new ArrayList<>());
             methodsForName.add(method);
         }
 
