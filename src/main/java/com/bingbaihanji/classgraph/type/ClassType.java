@@ -29,12 +29,12 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeParser;
-import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.ClassInfoList;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
@@ -75,9 +75,9 @@ public final class ClassType extends HierarchicalType {
      *            throws 签名(这些实际上是无效的，但可能由 Scala 添加：#495)通常为 null
      */
     public ClassType(final ClassInfo classInfo, final List<TypeParam> TypeParams,
-                               final ClassRef superclassSignature,
-                               final List<ClassRef> superinterfaceSignatures,
-                               final List<TypeRef> throwsSignatures) {
+                     final ClassRef superclassSignature,
+                     final List<ClassRef> superinterfaceSignatures,
+                     final List<TypeRef> throwsSignatures) {
         super();
         this.classInfo = classInfo;
         this.TypeParams = TypeParams;
@@ -378,8 +378,8 @@ public final class ClassType extends HierarchicalType {
      *            字符串构建器
      */
     public void toStringInternal(final String className, final boolean useSimpleNames, final int modifiers,
-                          final boolean isAnnotation, final boolean isInterface, final AnnotationInfoList annotationsToExclude,
-                          final StringBuilder buf) {
+                                 final boolean isAnnotation, final boolean isInterface, final AnnotationInfoList annotationsToExclude,
+                                 final StringBuilder buf) {
         if (throwsSignatures != null) {
             for (final TypeRef throwsSignature : throwsSignatures) {
                 if (buf.length() > 0) {

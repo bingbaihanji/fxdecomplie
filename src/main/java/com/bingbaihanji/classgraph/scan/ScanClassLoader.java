@@ -28,15 +28,10 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.reflect.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-
-import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.classpath.ModuleClasspath;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.resource.Resource;
+import com.bingbaihanji.classgraph.resource.ResourceList;
 import com.bingbaihanji.classgraph.util.JarUtils;
 import com.bingbaihanji.classgraph.util.VersionFinder;
 import com.bingbaihanji.classgraph.util.VersionFinder.OperatingSystem;

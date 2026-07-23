@@ -28,9 +28,6 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeParser;
-
 /**
  * 引用类型的类型签名子类包括 {@link TypeRef}
  * ({@link ClassRef} 或 {@link TypeVar})，以及 {@link ArrayType}

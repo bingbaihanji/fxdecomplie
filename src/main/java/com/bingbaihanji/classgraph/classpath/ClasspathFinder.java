@@ -30,8 +30,8 @@ package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.HandlerRegistryEntry;
-import com.bingbaihanji.classgraph.scan.ScanClassLoader;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanClassLoader;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.util.FastPathResolver;
 import com.bingbaihanji.classgraph.util.FileUtils;

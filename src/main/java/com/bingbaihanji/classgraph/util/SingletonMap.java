@@ -28,8 +28,6 @@
  */
 package com.bingbaihanji.classgraph.util;
 
-import com.bingbaihanji.classgraph.util.LogNode;
-
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.List;

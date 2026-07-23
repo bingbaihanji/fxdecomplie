@@ -28,10 +28,6 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.resource.ArraySlice;
-import com.bingbaihanji.classgraph.resource.FileSlice;
-import com.bingbaihanji.classgraph.resource.PathSlice;
-import com.bingbaihanji.classgraph.resource.Slice;
 import com.bingbaihanji.classgraph.util.FastPathResolver;
 import com.bingbaihanji.classgraph.util.FileUtils;
 import com.bingbaihanji.classgraph.util.LogNode;

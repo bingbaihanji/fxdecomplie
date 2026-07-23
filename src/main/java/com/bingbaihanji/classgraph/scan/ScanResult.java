@@ -28,11 +28,17 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
+import com.bingbaihanji.classgraph.classpath.Classpath;
+import com.bingbaihanji.classgraph.classpath.ClasspathFinder;
+import com.bingbaihanji.classgraph.classpath.ModuleClasspath;
+import com.bingbaihanji.classgraph.classpath.ModulePathInfo;
 import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.resource.*;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.Resource;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.Closeable;
 import java.io.File;
@@ -71,19 +77,19 @@ public final class ScanResult implements Closeable {
     private final LogNode topLevelLog;
     /** 此 ScanResult 的 {@link WeakReference} */
     private final WeakReference<ScanResult> weakReference;
-    public ReflectionUtils reflectionUtils;
-    /** 从类名到 {@link ClassInfo} 的映射 */
-    public Map<String, ClassInfo> classNameToClassInfo;
-    /** {@link ClasspathFinder} */
-    ClasspathFinder classpathFinder;
-    /** 扫描规格 */
-    public ScanConfig ScanConfig;
-    /** 扫描期间跳过的文件数(读取或解析失败的 class 文件) */
-    int skippedFileCount;
     /** Facade for class-related queries */
     private final ClassQuery classQuery;
     /** Facade for resource-related queries */
     private final ResourceQuery resourceQuery;
+    public ReflectionUtils reflectionUtils;
+    /** 从类名到 {@link ClassInfo} 的映射 */
+    public Map<String, ClassInfo> classNameToClassInfo;
+    /** 扫描规格 */
+    public ScanConfig ScanConfig;
+    /** {@link ClasspathFinder} */
+    ClasspathFinder classpathFinder;
+    /** 扫描期间跳过的文件数(读取或解析失败的 class 文件) */
+    int skippedFileCount;
     /** 原始类路径元素的顺序 */
     private List<String> rawClasspathEltOrderStrs;
     /**
@@ -242,46 +248,6 @@ public final class ScanResult implements Closeable {
     // 构造函数 / 访问器
 
     /**
-     * 获取 {@link ClassQuery} facade，提供所有类相关的查询方法
-     *
-     * @return {@link ClassQuery} 实例
-     */
-    public ClassQuery classes() {
-        return classQuery;
-    }
-
-    /**
-     * 获取 {@link ResourceQuery} facade，提供所有资源相关的查询方法
-     *
-     * @return {@link ResourceQuery} 实例
-     */
-    public ResourceQuery resources() {
-        return resourceQuery;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-    // 向后兼容的委托方法(供 ClassGraphWorkspaceAdapter 等内部调用者使用)
-
-    /**
-     * 获取扫描期间找到的所有类、接口和注解
-     *
-     * @return 扫描期间找到的所有被接受类的列表，如果没有则返回空列表
-     */
-    public ClassInfoList getAllClasses() {
-        return classQuery.getAllClasses();
-    }
-
-    /**
-     * 获取命名类的 {@link ClassInfo} 对象
-     *
-     * @param className 类名称
-     * @return 命名类的 {@link ClassInfo} 对象，如果未找到则返回 null
-     */
-    public ClassInfo getClassInfo(final String className) {
-        return classQuery.getClassInfo(className);
-    }
-
-    /**
      * 静态初始化(预热类加载)，在 ClassGraph 类初始化时调用
      */
     static void init(final ReflectionUtils reflectionUtils) {
@@ -309,6 +275,46 @@ public final class ScanResult implements Closeable {
                 scanResult.close();
             }
         }
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+    // 向后兼容的委托方法(供 ClassGraphWorkspaceAdapter 等内部调用者使用)
+
+    /**
+     * 获取 {@link ClassQuery} facade，提供所有类相关的查询方法
+     *
+     * @return {@link ClassQuery} 实例
+     */
+    public ClassQuery classes() {
+        return classQuery;
+    }
+
+    /**
+     * 获取 {@link ResourceQuery} facade，提供所有资源相关的查询方法
+     *
+     * @return {@link ResourceQuery} 实例
+     */
+    public ResourceQuery resources() {
+        return resourceQuery;
+    }
+
+    /**
+     * 获取扫描期间找到的所有类、接口和注解
+     *
+     * @return 扫描期间找到的所有被接受类的列表，如果没有则返回空列表
+     */
+    public ClassInfoList getAllClasses() {
+        return classQuery.getAllClasses();
+    }
+
+    /**
+     * 获取命名类的 {@link ClassInfo} 对象
+     *
+     * @param className 类名称
+     * @return 命名类的 {@link ClassInfo} 对象，如果未找到则返回 null
+     */
+    public ClassInfo getClassInfo(final String className) {
+        return classQuery.getClassInfo(className);
     }
 
     /**
@@ -539,6 +545,7 @@ public final class ScanResult implements Closeable {
         }
         return new PackageInfoList(packageNameToPackageInfo.values());
     }
+
     /**
      * 返回扫描期间跳过的文件数
      *

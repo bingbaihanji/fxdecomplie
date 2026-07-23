@@ -29,9 +29,6 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.resource.Resource;
-import com.bingbaihanji.classgraph.resource.JarReader;
-import com.bingbaihanji.classgraph.resource.RandomAccessReader;
 import com.bingbaihanji.classgraph.util.FileUtils;
 
 import java.io.Closeable;

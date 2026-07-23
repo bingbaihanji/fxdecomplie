@@ -28,11 +28,8 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.scan.*;
-
+import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.classgraph.type.TypeSignature;
 import com.bingbaihanji.classgraph.util.Assert;
 
 import java.lang.annotation.Annotation;
@@ -86,7 +83,7 @@ public class MethodParam {
      *            方法参数名称
      */
     MethodParam(final MethodInfo methodInfo, final AnnotationInfo[] annotationInfo, final int modifiers,
-                        final TypeSignature typeDescriptor, final TypeSignature typeSignature, final String name) {
+                final TypeSignature typeDescriptor, final TypeSignature typeSignature, final String name) {
         this.methodInfo = methodInfo;
         this.name = name;
         this.modifiers = modifiers;

@@ -28,9 +28,10 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.ClassInfoList;
+import com.bingbaihanji.classgraph.util.Assert;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
@@ -560,9 +561,9 @@ public class ClassQuery {
     /**
      * 获取从每个被接受类的 {@link ClassInfo} 对象到该类引用的类列表的映射
      * (即返回从依赖者到依赖项的映射)注意，你需要调用
-     * {@link ClassGraph#enableInterClassDependencies()} 然后再调用 {@link ClassGraph#scan()}，此方法才能工作
+     * {@link ClassGraph#withInterClassDependencies()} 然后再调用 {@link ClassGraph#scan()}，此方法才能工作
      * 如果你希望未被接受的类出现在结果中，你还应该在 {@link ClassGraph#scan()} 之前调用
-     * {@link ClassGraph#enableExternalClasses()}
+     * {@link ClassGraph#withExternalClasses()}
      * 另请参阅 {@link #getReverseClassDependencyMap()}，它将映射反转
      *
      * @return 从每个被接受类的 {@link ClassInfo} 对象到该类引用的类列表的映射
@@ -580,10 +581,10 @@ public class ClassQuery {
     /**
      * 获取反向类依赖映射，即从每个依赖类(无论是否被接受)的 {@link ClassInfo} 对象到
      * 将该类作为依赖引用的被接受类的列表的映射(即返回从依赖项到依赖者的映射)
-     * 注意，你需要调用 {@link ClassGraph#enableInterClassDependencies()} 然后再调用
+     * 注意，你需要调用 {@link ClassGraph#withInterClassDependencies()} 然后再调用
      * {@link ClassGraph#scan()}，此方法才能工作如果你希望未被接受的类出现在结果中，
-     * 你还应该在 {@link ClassGraph#scan()} 之前调用 {@link ClassGraph#enableExternalClasses()}
-     * 另请参阅 {@link #getClassDependencyMap}
+     * 你还应该在 {@link ClassGraph#scan()} 之前调用 {@link ClassGraph#withExternalClasses()}
+     * 另请参阅 {@link #getClassDependencyMap()}
      *
      * @return 从每个依赖类(无论是否被接受)的 {@link ClassInfo} 对象到
      *         将该类作为依赖引用的被接受类的列表的映射(即返回从依赖项到依赖者的映射)

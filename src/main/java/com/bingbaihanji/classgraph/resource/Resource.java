@@ -28,12 +28,10 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.metadata.ModuleRef;
-
 import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
+import com.bingbaihanji.classgraph.classpath.Classpath;
+import com.bingbaihanji.classgraph.classpath.ModuleClasspath;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 import com.bingbaihanji.classgraph.util.LogNode;
 import com.bingbaihanji.classgraph.util.URLPathEncoder;
 
@@ -56,13 +54,8 @@ import java.util.zip.ZipEntry;
 public abstract class Resource implements Closeable, Comparable<Resource> {
     /** 此资源所来自的类路径元素 */
     private final Classpath Classpath;
-
-    /** 输入流，或为 null */
-    protected InputStream inputStream;
-
     /** 字节缓冲区，或为 null */
     public java.nio.ByteBuffer byteBuffer;
-
     /** 长度，未知时为 -1L */
     public long length;
     /**
@@ -70,6 +63,8 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      * 在扫描类文件内容时会添加子日志条目
      */
     public LogNode scanLog;
+    /** 输入流，或为 null */
+    protected InputStream inputStream;
     /** toString() 的缓存结果 */
     private String toString;
 

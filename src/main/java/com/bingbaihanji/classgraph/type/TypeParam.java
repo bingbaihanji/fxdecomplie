@@ -29,24 +29,21 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeParser;
-import com.bingbaihanji.classgraph.type.TypeUtils;
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 
 import java.util.*;
 
 /** 一个类型形参 */
 public final class TypeParam extends HierarchicalType {
-    /** 类型形参标识符 */
-    final String name;
-
     /** 类边界 -- 可能为 null */
     public final ReferenceType classBound;
-
     /** 接口边界 -- 可能为空 */
     public final List<ReferenceType> interfaceBounds;
+    /** 类型形参标识符 */
+    final String name;
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -61,7 +58,7 @@ public final class TypeParam extends HierarchicalType {
      *            类型形参接口边界
      */
     protected TypeParam(final String identifier, final ReferenceType classBound,
-                            final List<ReferenceType> interfaceBounds) {
+                        final List<ReferenceType> interfaceBounds) {
         super();
         this.name = identifier;
         this.classBound = classBound;

@@ -29,8 +29,7 @@
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.metadata.ClassInfo;
-import com.bingbaihanji.classgraph.metadata.ClassInfoList;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.type.TypeSignature;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
@@ -509,9 +508,9 @@ public final class GraphvizDotfileGenerator {
      * @return GraphViz dot 文件内容字符串
      */
     public static String generateGraphVizDotFile(final ClassInfoList classInfoList, final float sizeX, final float sizeY,
-                                          final boolean showFields, final boolean showFieldTypeDependencyEdges, final boolean showMethods,
-                                          final boolean showMethodTypeDependencyEdges, final boolean showAnnotations,
-                                          final boolean useSimpleNames, final ScanConfig ScanConfig) {
+                                                 final boolean showFields, final boolean showFieldTypeDependencyEdges, final boolean showMethods,
+                                                 final boolean showMethodTypeDependencyEdges, final boolean showAnnotations,
+                                                 final boolean useSimpleNames, final ScanConfig ScanConfig) {
         final StringBuilder buf = new StringBuilder(1024 * 1024);
         buf.append("digraph {\n");
         buf.append("size=\"").append(sizeX).append(',').append(sizeY).append("\";\n");
@@ -644,7 +643,7 @@ public final class GraphvizDotfileGenerator {
      * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
      * 返回的图仅显示类间依赖关系sizeX 和 sizeY 参数是让 GraphViz 渲染 .dot 文件时使用的
      * 图像输出尺寸(以英寸为单位)使用此方法前必须调用
-     * {@link ClassGraph#enableInterClassDependencies()}
+     * {@link ClassGraph#withInterClassDependencies()}
      *
      * @param classInfoList
      *            其依赖关系需要绘制在图中的节点列表
@@ -657,10 +656,10 @@ public final class GraphvizDotfileGenerator {
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者在扫描前未调用
-     *             {@link ClassGraph#enableInterClassDependencies()}(因为将没有可绘制的内容)
+     *             {@link ClassGraph#withInterClassDependencies()}(因为将没有可绘制的内容)
      */
     public static String generateGraphVizDotFileFromInterClassDependencies(final ClassInfoList classInfoList,
-                                                                    final float sizeX, final float sizeY, final boolean includeExternalClasses) {
+                                                                           final float sizeX, final float sizeY, final boolean includeExternalClasses) {
 
         final StringBuilder buf = new StringBuilder(1024 * 1024);
         buf.append("digraph {\n");

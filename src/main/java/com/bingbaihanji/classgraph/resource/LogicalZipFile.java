@@ -28,8 +28,6 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.resource.ArraySlice;
-import com.bingbaihanji.classgraph.resource.RandomAccessReader;
 import com.bingbaihanji.classgraph.util.*;
 
 import java.io.ByteArrayOutputStream;

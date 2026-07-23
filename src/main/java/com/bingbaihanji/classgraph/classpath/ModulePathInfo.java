@@ -29,6 +29,8 @@
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.util.JarUtils;
 import com.bingbaihanji.classgraph.util.StringUtils;
 

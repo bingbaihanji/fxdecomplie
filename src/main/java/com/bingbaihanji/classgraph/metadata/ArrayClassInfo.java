@@ -28,11 +28,10 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.scan.*;
-import com.bingbaihanji.classgraph.util.*;
-
+import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.classgraph.type.ArrayType;
+import com.bingbaihanji.classgraph.type.BaseType;
+import com.bingbaihanji.classgraph.type.TypeSignature;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.Map;

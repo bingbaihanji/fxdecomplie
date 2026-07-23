@@ -36,7 +36,7 @@ import com.bingbaihanji.classgraph.util.LogNode;
 
 /**
  * 此处理器使用
- * {@link com.bingbaihanji.classgraph.classpath.handler.ClassLoaderHandler.DelegationOrder#PARENT_LAST} 来支持
+ * 父级最后委托顺序（PARENT_LAST）来支持
  * Spring Boot devtools 的 <code>RestartClassLoader</code><code>RestartClassLoader</code> 为指定的
  * URL(这些都是在开发过程中应更改的)提供父级最后加载因此，该类加载器的处理器也必须以
  * <code>PARENT_LAST</code> 顺序进行委托

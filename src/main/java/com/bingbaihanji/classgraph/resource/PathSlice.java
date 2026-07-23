@@ -29,9 +29,6 @@
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.scan.ClassGraph;
-import com.bingbaihanji.classgraph.resource.JarReader;
-import com.bingbaihanji.classgraph.resource.RandomAccessFileChannelReader;
-import com.bingbaihanji.classgraph.resource.RandomAccessReader;
 import com.bingbaihanji.classgraph.util.FileUtils;
 
 import java.io.IOException;
@@ -224,7 +221,7 @@ public class PathSlice extends Slice {
     }
 
     /**
-     * 将切片读入 {@link ByteBuffer}(或者，如果调用了 {@link ClassGraph#enableMemoryMapping()}，
+     * 将切片读入 {@link ByteBuffer}(或者，如果调用了 {@link ClassGraph#withMemoryMapping()}，
      * 则将切片内存映射到 {@link MappedByteBuffer})
      *
      * @return 字节缓冲区

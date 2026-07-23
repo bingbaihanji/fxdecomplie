@@ -97,7 +97,7 @@ public final class TypeUtils {
      * @param modifiers
      *            字段或方法的修饰符
      * @param modifierType
-     *            这些修饰符适用的{@link ModifierType}类型
+     *            这些修饰符适用的 ModifierType 类型
      * @param isDefault
      *            对于方法，如果这是默认方法则为 true(否则忽略)
      * @param buf

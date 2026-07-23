@@ -29,8 +29,6 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.ClassInfo.ClassType;
-import com.bingbaihanji.classgraph.metadata.MethodInfoList;
-import com.bingbaihanji.classgraph.scan.ScanConfig;
 
 import java.lang.annotation.Inherited;
 import java.util.*;
@@ -766,7 +764,7 @@ public class ClassHierarchy {
          * @param directlyRelatedClasses 直接关联的类
          */
         public ReachableAndDirectlyRelatedClasses(final Set<ClassInfo> reachableClasses,
-                                                   final Set<ClassInfo> directlyRelatedClasses) {
+                                                  final Set<ClassInfo> directlyRelatedClasses) {
             this.reachableClasses = reachableClasses;
             this.directlyRelatedClasses = directlyRelatedClasses;
         }

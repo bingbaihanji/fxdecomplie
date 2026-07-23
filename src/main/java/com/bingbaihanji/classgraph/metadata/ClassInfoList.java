@@ -28,11 +28,9 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator;
-import com.bingbaihanji.classgraph.util.*;
-
 import com.bingbaihanji.classgraph.metadata.ClassHierarchy.ReachableAndDirectlyRelatedClasses;
+import com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 
@@ -537,19 +535,19 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     /**
      * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
      * sizeX 和 sizeY 参数是要求 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
-     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#enableInterClassDependencies()}
+     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
      *
      * @param sizeX
      *            GraphViz 布局宽度(英寸)
      * @param sizeY
      *            GraphViz 布局高度(英寸)
      * @param includeExternalClasses
-     *            如果为 true，并且扫描前调用了 {@link ClassGraph#enableExternalClasses()}，则在依赖图中显示
+     *            如果为 true，并且扫描前调用了 {@link ClassGraph#withExternalClasses()}，则在依赖图中显示
      *            "外部类"(未被接受的类)
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableInterClassDependencies()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFileFromInterClassDependencies(final float sizeX, final float sizeY,
                                                                     final boolean includeExternalClasses) {
@@ -570,13 +568,13 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     /**
      * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
      * sizeX 和 sizeY 参数是要求 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
-     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#enableInterClassDependencies()}
+     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
      *
      * <p>
      * 等效于以 (10.5f, 8f, ScanConfig.enableExternalClasses) 参数调用
      * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)}，
      * 其中 ScanConfig.enableExternalClasses 在扫描前调用了
-     * {@link ClassGraph#enableExternalClasses()} 时为 true
+     * {@link ClassGraph#withExternalClasses()} 时为 true
      *
      * @param sizeX
      *            GraphViz 布局宽度(英寸)
@@ -585,7 +583,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableInterClassDependencies()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFileFromInterClassDependencies(final float sizeX, final float sizeY) {
         if (isEmpty()) {
@@ -603,18 +601,18 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     /**
      * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化返回的图表仅显示类间依赖关系
      * sizeX 和 sizeY 参数是要求 GraphViz 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
-     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#enableInterClassDependencies()}
+     * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#withInterClassDependencies()}
      *
      * <p>
      * 等效于以 (10.5f, 8f, ScanConfig.enableExternalClasses) 参数调用
      * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)}，
      * 其中 ScanConfig.enableExternalClasses 在扫描前调用了
-     * {@link ClassGraph#enableExternalClasses()} 时为 true
+     * {@link ClassGraph#withExternalClasses()} 时为 true
      *
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableInterClassDependencies()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFileFromInterClassDependencies() {
         if (isEmpty()) {
@@ -636,7 +634,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableInterClassDependencies()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withInterClassDependencies()}(因为没有可图表化的内容)
      */
     @Deprecated
     public String generateGraphVizDotFileFromClassDependencies() {
@@ -648,19 +646,19 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
      *
      * <p>
-     * 要显示非公共类，请在扫描前调用 {@link ClassGraph#ignoreClassVisibility()}
+     * 要显示非公共类，请在扫描前调用 {@link ClassGraph#withoutClassVisibilityFilter()}
      *
      * <p>
-     * 要显示字段，请在扫描前调用 {@link ClassGraph#enableFieldInfo()}要显示非公共字段，
-     * 还须在扫描前调用 {@link ClassGraph#ignoreFieldVisibility()}
+     * 要显示字段，请在扫描前调用 {@link ClassGraph#withFieldInfo()}要显示非公共字段，
+     * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * <p>
-     * 要显示方法，请在扫描前调用 {@link ClassGraph#enableMethodInfo()}要显示非公共方法，
-     * 还须在扫描前调用 {@link ClassGraph#ignoreMethodVisibility()}
+     * 要显示方法，请在扫描前调用 {@link ClassGraph#withMethodInfo()}要显示非公共方法，
+     * 还须在扫描前调用 {@link ClassGraph#withoutMethodVisibilityFilter()}
      *
      * <p>
-     * 要显示注解，请在扫描前调用 {@link ClassGraph#enableAnnotationInfo()}要显示非公共注解，
-     * 还须在扫描前调用 {@link ClassGraph#ignoreFieldVisibility()}(注解没有独立的可见性修饰符)
+     * 要显示注解，请在扫描前调用 {@link ClassGraph#withAnnotationInfo()}要显示非公共注解，
+     * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}(注解没有独立的可见性修饰符)
      *
      * @param sizeX
      *            GraphViz 布局宽度(英寸)
@@ -682,7 +680,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableClassInfo()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile(final float sizeX, final float sizeY, final boolean showFields,
                                           final boolean showFieldTypeDependencyEdges, final boolean showMethods,
@@ -707,19 +705,19 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * 渲染 .dot 文件时使用的图像输出尺寸(以英寸为单位)
      *
      * <p>
-     * 要显示非公共类，请在扫描前调用 {@link ClassGraph#ignoreClassVisibility()}
+     * 要显示非公共类，请在扫描前调用 {@link ClassGraph#withoutClassVisibilityFilter()}
      *
      * <p>
-     * 要显示字段，请在扫描前调用 {@link ClassGraph#enableFieldInfo()}要显示非公共字段，
-     * 还须在扫描前调用 {@link ClassGraph#ignoreFieldVisibility()}
+     * 要显示字段，请在扫描前调用 {@link ClassGraph#withFieldInfo()}要显示非公共字段，
+     * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * <p>
-     * 要显示方法，请在扫描前调用 {@link ClassGraph#enableMethodInfo()}要显示非公共方法，
-     * 还须在扫描前调用 {@link ClassGraph#ignoreMethodVisibility()}
+     * 要显示方法，请在扫描前调用 {@link ClassGraph#withMethodInfo()}要显示非公共方法，
+     * 还须在扫描前调用 {@link ClassGraph#withoutMethodVisibilityFilter()}
      *
      * <p>
-     * 要显示注解，请在扫描前调用 {@link ClassGraph#enableAnnotationInfo()}要显示非公共注解，
-     * 还须在扫描前调用 {@link ClassGraph#ignoreFieldVisibility()}(注解没有独立的可见性修饰符)
+     * 要显示注解，请在扫描前调用 {@link ClassGraph#withAnnotationInfo()}要显示非公共注解，
+     * 还须在扫描前调用 {@link ClassGraph#withoutFieldVisibilityFilter()}(注解没有独立的可见性修饰符)
      *
      * <p>
      * 此方法在字段和方法的类型签名中使用类的简单名称(去除包名)
@@ -741,7 +739,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableClassInfo()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile(final float sizeX, final float sizeY, final boolean showFields,
                                           final boolean showFieldTypeDependencyEdges, final boolean showMethods,
@@ -754,12 +752,12 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
      *
      * <p>
-     * 如果已通过 {@link ClassGraph#enableMethodInfo()}、{@link ClassGraph#enableFieldInfo()} 和
-     * {@link ClassGraph#enableAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
+     * 如果已通过 {@link ClassGraph#withMethodInfo()}、{@link ClassGraph#withFieldInfo()} 和
+     * {@link ClassGraph#withAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
      *
      * <p>
-     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#ignoreClassVisibility()}、
-     * {@link ClassGraph#ignoreMethodVisibility()} 和/或 {@link ClassGraph#ignoreFieldVisibility()}
+     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()}、
+     * {@link ClassGraph#withoutMethodVisibilityFilter()} 和/或 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * @param sizeX
      *            GraphViz 布局宽度(英寸)
@@ -768,7 +766,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableClassInfo()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile(final float sizeX, final float sizeY) {
         return generateGraphVizDotFile(sizeX, sizeY, /* showFields = */ true,
@@ -780,17 +778,17 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * 生成一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
      *
      * <p>
-     * 如果已通过 {@link ClassGraph#enableMethodInfo()}、{@link ClassGraph#enableFieldInfo()} 和
-     * {@link ClassGraph#enableAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
+     * 如果已通过 {@link ClassGraph#withMethodInfo()}、{@link ClassGraph#withFieldInfo()} 和
+     * {@link ClassGraph#withAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
      *
      * <p>
-     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#ignoreClassVisibility()}、
-     * {@link ClassGraph#ignoreMethodVisibility()} 和/或 {@link ClassGraph#ignoreFieldVisibility()}
+     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()}、
+     * {@link ClassGraph#withoutMethodVisibilityFilter()} 和/或 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * @return GraphViz 文件内容
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableClassInfo()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public String generateGraphVizDotFile() {
         return generateGraphVizDotFile(/* sizeX = */ 10.5f, /* sizeY = */ 8.0f, /* showFields = */ true,
@@ -802,12 +800,12 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * 生成并保存一个 .dot 文件，可输入到 GraphViz 中进行类图的布局和可视化
      *
      * <p>
-     * 如果已通过 {@link ClassGraph#enableMethodInfo()}、{@link ClassGraph#enableFieldInfo()} 和
-     * {@link ClassGraph#enableAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
+     * 如果已通过 {@link ClassGraph#withMethodInfo()}、{@link ClassGraph#withFieldInfo()} 和
+     * {@link ClassGraph#withAnnotationInfo()} 启用了方法、字段和注解，则会显示它们
      *
      * <p>
-     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#ignoreClassVisibility()}、
-     * {@link ClassGraph#ignoreMethodVisibility()} 和/或 {@link ClassGraph#ignoreFieldVisibility()}
+     * 仅显示公共类、方法和字段，除非已调用 {@link ClassGraph#withoutClassVisibilityFilter()}、
+     * {@link ClassGraph#withoutMethodVisibilityFilter()} 和/或 {@link ClassGraph#withoutFieldVisibilityFilter()}
      *
      * @param file
      *            用于保存 GraphViz .dot 文件的文件
@@ -815,7 +813,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      *             如果文件无法保存
      * @throws IllegalArgumentException
      *             如果此 {@link ClassInfoList} 为空，或者扫描前未调用
-     *             {@link ClassGraph#enableClassInfo()}(因为没有可图表化的内容)
+     *             {@link ClassGraph#withClassInfo()}(因为没有可图表化的内容)
      */
     public void generateGraphVizDotFile(final File file) throws IOException {
         try (PrintWriter writer = new PrintWriter(file)) {

@@ -28,11 +28,8 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.scan.*;
-
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.annotation.Annotation;

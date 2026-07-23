@@ -28,24 +28,13 @@
  */
 package com.bingbaihanji.classgraph.bytecode;
 
+import com.bingbaihanji.classgraph.classpath.Classpath;
 import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.scan.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.reflect.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-
-import com.bingbaihanji.classgraph.metadata.ModuleRef;
-import com.bingbaihanji.classgraph.util.WorkQueue;
-import com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit;
+import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.util.CollectionUtils;
-import com.bingbaihanji.classgraph.util.JarUtils;
-import com.bingbaihanji.classgraph.util.LogNode;
-import com.bingbaihanji.classgraph.util.StringUtils;
+import com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.util.*;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -165,10 +154,10 @@ public class ClassParser {
      * @throws SkipClassException 如果 ClassParser 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
      */
     public ClassParser(final Classpath Classpath, final List<Classpath> classpathOrder,
-              final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
-              final String relativePath, final Resource classfileResource, final boolean isExternalClass,
-              final ConcurrentHashMap<String, String> stringInternMap,
-              final WorkQueue<ClassfileScanWorkUnit> workQueue, final ScanConfig ScanConfig, final LogNode log)
+                       final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
+                       final String relativePath, final Resource classfileResource, final boolean isExternalClass,
+                       final ConcurrentHashMap<String, String> stringInternMap,
+                       final WorkQueue<ClassfileScanWorkUnit> workQueue, final ScanConfig ScanConfig, final LogNode log)
             throws IOException, ClassfileFormatException, SkipClassException {
         this.Classpath = Classpath;
         this.classpathOrder = classpathOrder;
@@ -468,8 +457,8 @@ public class ClassParser {
      *            模块名到模块信息的映射
      */
     public void link(final Map<String, ClassInfo> classNameToClassInfo,
-              final Map<String, PackageInfo> packageNameToPackageInfo,
-              final Map<String, ModuleInfo> moduleNameToModuleInfo) {
+                     final Map<String, PackageInfo> packageNameToPackageInfo,
+                     final Map<String, ModuleInfo> moduleNameToModuleInfo) {
         boolean isModuleDescriptor = false;
         boolean isPackageDescriptor = false;
         ClassInfo classInfo = null;

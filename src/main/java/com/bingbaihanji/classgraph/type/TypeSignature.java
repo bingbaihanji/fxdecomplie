@@ -29,9 +29,9 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeParser;
-import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.HashSet;
@@ -121,7 +121,7 @@ public abstract class TypeSignature extends HierarchicalType {
      */
     @Override
     public final void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-                                                 final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                              final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final Set<String> refdClassNames = new HashSet<>();
         findReferencedClassNames(refdClassNames);
         for (final String refdClassName : refdClassNames) {

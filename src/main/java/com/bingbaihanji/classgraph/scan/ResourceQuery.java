@@ -28,11 +28,14 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.classpath.Classpath;
+import com.bingbaihanji.classgraph.resource.Resource;
+import com.bingbaihanji.classgraph.resource.ResourceList;
+import com.bingbaihanji.classgraph.util.FileUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -248,7 +251,7 @@ public class ResourceQuery {
 
     /**
      * 获取在被接受的包中找到的路径与请求的正则表达式模式匹配的所有资源的列表
-     * 另请参阅 {{@link #getResourcesMatchingWildcard(String)}
+     * 另请参阅 {@link #getResourcesMatchingWildcard(String)}
      *
      * @param pattern
      *            用于匹配 {@link Resource} 路径的模式

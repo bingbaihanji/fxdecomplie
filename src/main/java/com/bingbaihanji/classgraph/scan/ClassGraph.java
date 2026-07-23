@@ -28,21 +28,11 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.reflect.*;
-import com.bingbaihanji.classgraph.metadata.ModuleRef;
-
+import com.bingbaihanji.classgraph.classpath.ModulePathInfo;
 import com.bingbaihanji.classgraph.classpath.SystemJarFinder;
-import com.bingbaihanji.classgraph.util.AutoCloseableExecutorService;
-import com.bingbaihanji.classgraph.util.InterruptionChecker;
+import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
-import com.bingbaihanji.classgraph.scan.Filter;
-import com.bingbaihanji.classgraph.scan.ScanConfig;
-import com.bingbaihanji.classgraph.util.JarUtils;
-import com.bingbaihanji.classgraph.util.LogNode;
-import com.bingbaihanji.classgraph.util.VersionFinder;
+import com.bingbaihanji.classgraph.util.*;
 
 import java.io.File;
 import java.io.InputStream;
@@ -345,8 +335,8 @@ public class ClassGraph {
 
     /**
      * Enable determination of inter-class dependencies, which can be read by calling
-     * {@link ClassInfo#getClassDependencies()}, {@link ScanResult#getClassDependencyMap()},
-     * or {@link ScanResult#getReverseClassDependencyMap()}
+     * {@link ClassInfo#getClassDependencies()}, getClassDependencyMap(),
+     * or getReverseClassDependencyMap()
      * (automatically calls {@link #withClassInfo()}, {@link #withFieldInfo()},
      * {@link #withMethodInfo()}, {@link #withAnnotationInfo()},
      * {@link #withoutClassVisibilityFilter()}, {@link #withoutFieldVisibilityFilter()},
@@ -625,7 +615,7 @@ public class ClassGraph {
 
     /**
      * 完全覆盖(并忽略)系统 ClassLoader 和 java.class.path 系统属性同时使模块不被扫描
-     * 请注意，您可能希望将此方法与 {@link #ignoreParentClassLoaders()} 一起使用，
+     * 请注意，您可能希望将此方法与 {@link #withoutParentClassLoaders()} 一起使用，
      * 以便仅从您在 `overrideClassLoaders` 参数中指定的类加载器(而非其父类加载器)中提取类路径 URL
      *
      * <p>
@@ -808,8 +798,8 @@ public class ClassGraph {
      * 扫描一个或多个特定包，但不会递归扫描子包，除非子包自身也被接受
      *
      * <p>
-     * 注意：自动调用 {@link #enableClassInfo()}——如果您只需要扫描资源，
-     * 请改用 {@link #acceptPathsNonRecursive(String...)}
+     * 注意：自动调用 {@link #withClassInfo()}——如果您只需要扫描资源，
+     * 请改用 {@link #filterPathsNonRecursive(String...)}
      *
      * <p>
      * 这对于扫描包根("")而不递归扫描 jar、目录或模块中的所有内容特别有用
@@ -837,12 +827,12 @@ public class ClassGraph {
     }
 
     /**
-     * 请改用 {@link #acceptPackagesNonRecursive(String...)}
+     * 请改用 {@link #filterPackagesNonRecursive(String...)}
      *
      * @param packageNames
      *            要扫描的包的全限定名称(使用 '.' 作为分隔符)不能包含 glob 通配符({@code '*'})
      * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptPackagesNonRecursive(String...)}
+     * @deprecated 请改用 {@link #filterPackagesNonRecursive(String...)}
      */
     @Deprecated
     public ClassGraph whitelistPackagesNonRecursive(final String... packageNames) {
@@ -876,12 +866,12 @@ public class ClassGraph {
     }
 
     /**
-     * 请改用 {@link #acceptPathsNonRecursive(String...)}
+     * 请改用 {@link #filterPathsNonRecursive(String...)}
      *
      * @param paths
      *            要扫描的路径，相对于类路径元素的包根(使用 '/' 作为分隔符)不能包含 glob 通配符({@code '*'})
      * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptPathsNonRecursive(String...)}
+     * @deprecated 请改用 {@link #filterPathsNonRecursive(String...)}
      */
     @Deprecated
     public ClassGraph whitelistPathsNonRecursive(final String... paths) {
@@ -1331,13 +1321,13 @@ public class ClassGraph {
     }
 
     /**
-     * 请改用 {@link #acceptClasspathsContainingResourcePath(String...)}
+     * 请改用 {@link #filterClasspathsContainingResourcePath(String...)}
      *
      * @param resourcePaths
      *            资源路径，其中任何一个必须存在于类路径元素中才能使该类路径元素被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptClasspathsContainingResourcePath(String...)}
+     * @deprecated 请改用 {@link #filterClasspathsContainingResourcePath(String...)}
      */
     @Deprecated
     public ClassGraph whitelistClasspathsContainingResourcePath(final String... resourcePaths) {
@@ -1361,13 +1351,13 @@ public class ClassGraph {
     }
 
     /**
-     * 请改用 {@link #rejectClasspathsContainingResourcePath(String...)}
+     * 请改用 {@link #excludeClasspathsContainingResourcePath(String...)}
      *
      * @param resourcePaths
      *            资源路径，如果其中任何一个存在于类路径元素中，则该类路径元素将不会被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectClasspathsContainingResourcePath(String...)}
+     * @deprecated 请改用 {@link #excludeClasspathsContainingResourcePath(String...)}
      */
     @Deprecated
     public ClassGraph blacklistClasspathsContainingResourcePath(final String... resourcePaths) {
@@ -1473,7 +1463,7 @@ public class ClassGraph {
 
     /**
      * 如果为 true，则使用多版本路径前缀提供多版本资源的所有版本，
-     * 而非仅提供运行 JVM 会选择的那一个版本隐式禁用 {@link #enableClassInfo()} 及其所有依赖功能
+     * 而非仅提供运行 JVM 会选择的那一个版本隐式禁用 {@link #withClassInfo()} 及其所有依赖功能
      *
      * @return this(用于方法链式调用)
      */

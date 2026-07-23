@@ -28,11 +28,8 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.scan.*;
-
 import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 
@@ -108,7 +105,7 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
      * @return 指定名称包的 {@link PackageInfo}
      */
     public static PackageInfo getOrCreatePackage(final String packageName,
-                                          final Map<String, PackageInfo> packageNameToPackageInfo, final ScanConfig ScanConfig) {
+                                                 final Map<String, PackageInfo> packageNameToPackageInfo, final ScanConfig ScanConfig) {
         // 获取或创建此包的 PackageInfo 对象
         PackageInfo packageInfo = packageNameToPackageInfo.get(packageName);
         if (packageInfo != null) {

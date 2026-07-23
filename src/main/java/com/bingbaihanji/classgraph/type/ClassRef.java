@@ -29,11 +29,11 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeParser;
-import com.bingbaihanji.classgraph.type.TypeUtils;
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationClassRef;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 
 import java.util.*;
 
@@ -69,7 +69,7 @@ public final class ClassRef extends TypeRef {
      *            后缀类型参数
      */
     private ClassRef(final String className, final List<TypeArg> TypeArgs,
-                                  final List<String> suffixes, final List<List<TypeArg>> suffixTypeArgs) {
+                     final List<String> suffixes, final List<List<TypeArg>> suffixTypeArgs) {
         super();
         this.className = className;
         this.TypeArgs = TypeArgs;

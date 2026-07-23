@@ -29,9 +29,10 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
 import com.bingbaihanji.classgraph.metadata.MetadataNode;
-import com.bingbaihanji.classgraph.scan.*;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 
 import java.util.List;
 
@@ -99,7 +100,7 @@ public abstract class HierarchicalType extends MetadataNode {
      *            要写入的 {@link StringBuilder}
      */
     public abstract void toStringInternal(final boolean useSimpleNames, AnnotationInfoList annotationsToExclude,
-                                             StringBuilder buf);
+                                          StringBuilder buf);
 
     /**
      * 将类型签名渲染为字符串

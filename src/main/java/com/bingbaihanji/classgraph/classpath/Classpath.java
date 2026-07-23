@@ -28,17 +28,15 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.scan.*;
-
-import com.bingbaihanji.classgraph.util.WorkQueue;
-import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
+import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
 import com.bingbaihanji.classgraph.util.FileUtils;
 import com.bingbaihanji.classgraph.util.JarUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.WorkQueue;
 
 import java.io.File;
 import java.net.URI;
@@ -68,12 +66,6 @@ public abstract class Classpath implements Comparable<Classpath> {
      * 在此类路径元素中找到的所有被接受且未被拒绝的 class 文件列表(仅由一个线程写入，因此不需要使用并发列表)
      */
     public List<Resource> acceptedClassfileResources = new ArrayList<>();
-    /** 获取此类路径元素的类加载器 */
-    protected ClassLoader classLoader;
-    /** jar 文件或 Path 中的包根路径 */
-    protected String packageRootPrefix;
-    /** 此类路径元素所属的 ScanResult */
-    protected ScanResult scanResult;
     /** 类路径元素在类路径或模块路径中的索引 */
     public int classpathElementIdx;
     /**
@@ -98,6 +90,12 @@ public abstract class Classpath implements Comparable<Classpath> {
      * 从 {@code module-info.class} 模块描述符中获取的模块名称(如果类路径元素根中存在该描述符)
      */
     public String moduleNameFromModuleDescriptor;
+    /** 获取此类路径元素的类加载器 */
+    protected ClassLoader classLoader;
+    /** jar 文件或 Path 中的包根路径 */
+    protected String packageRootPrefix;
+    /** 此类路径元素所属的 ScanResult */
+    protected ScanResult scanResult;
 
     // -------------------------------------------------------------------------------------------------------------
 

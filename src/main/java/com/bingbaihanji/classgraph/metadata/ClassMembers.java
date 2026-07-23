@@ -32,7 +32,6 @@ import com.bingbaihanji.classgraph.metadata.FieldInfoList.FieldInfoFilter;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
-import java.util.AbstractMap;
 import java.util.*;
 
 /** 管理类的字段和方法查询逻辑，包括覆盖顺序解析 */

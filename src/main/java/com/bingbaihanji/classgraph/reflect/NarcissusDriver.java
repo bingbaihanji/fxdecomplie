@@ -28,14 +28,6 @@
  */
 package com.bingbaihanji.classgraph.reflect;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.reflect.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;

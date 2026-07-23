@@ -28,19 +28,10 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.reflect.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-
+import com.bingbaihanji.classgraph.classpath.ModulePathInfo;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
 import com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathFilter;
 import com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathURLFilter;
-import com.bingbaihanji.classgraph.metadata.ClassInfo;
-import com.bingbaihanji.classgraph.classpath.ModulePathInfo;
-import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.scan.Filter.FilterLeafname;
 import com.bingbaihanji.classgraph.scan.Filter.FilterPrefix;
 import com.bingbaihanji.classgraph.scan.Filter.FilterWholeString;

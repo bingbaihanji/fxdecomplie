@@ -28,27 +28,15 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.scan.*;
-import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
+import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
-
-import com.bingbaihanji.classgraph.util.SingletonMap;
-import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceException;
-import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
-import com.bingbaihanji.classgraph.util.WorkQueue;
-import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.resource.LogicalZipFile;
-import com.bingbaihanji.classgraph.resource.RecycleOnClose;
-import com.bingbaihanji.classgraph.resource.Pool;
+import com.bingbaihanji.classgraph.resource.*;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
-import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
-import com.bingbaihanji.classgraph.util.CollectionUtils;
-import com.bingbaihanji.classgraph.util.LogNode;
-import com.bingbaihanji.classgraph.util.ProxyingInputStream;
-import com.bingbaihanji.classgraph.util.VersionFinder;
+import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceException;
+import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
 
 import java.io.File;
 import java.io.IOException;

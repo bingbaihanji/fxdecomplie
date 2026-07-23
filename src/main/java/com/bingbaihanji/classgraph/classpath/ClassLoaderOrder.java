@@ -30,8 +30,8 @@ package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.HandlerRegistryEntry;
-import com.bingbaihanji.classgraph.scan.ClassGraph;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
@@ -54,7 +54,7 @@ public class ClassLoaderOrder {
     private final Set<ClassLoader> delegatedTo = Collections
             .newSetFromMap(new IdentityHashMap<ClassLoader, Boolean>());
     /**
-     * 已委托的所有父级 {@link ClassLoader} 实例集合，用于支持 {@link ClassGraph#ignoreParentClassLoaders()}
+     * 已委托的所有父级 {@link ClassLoader} 实例集合，用于支持 {@link ClassGraph#withoutParentClassLoaders()}
      */
     private final Set<ClassLoader> allParentClassLoaders = Collections
             .newSetFromMap(new IdentityHashMap<ClassLoader, Boolean>());

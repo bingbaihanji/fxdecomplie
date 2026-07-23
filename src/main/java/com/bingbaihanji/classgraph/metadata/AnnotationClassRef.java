@@ -28,12 +28,8 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.scan.*;
-
-import com.bingbaihanji.classgraph.type.ParseException;
 
 /**
  * 存储在注解参数值中找到的 {@code Class<?>} 类型描述符

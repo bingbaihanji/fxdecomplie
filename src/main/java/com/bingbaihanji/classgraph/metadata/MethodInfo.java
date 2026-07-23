@@ -28,15 +28,10 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.scan.*;
-
 import com.bingbaihanji.classgraph.bytecode.ClassParser.MethodTypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.metadata.ClassHierarchy.RelType;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.classgraph.type.*;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -125,11 +120,11 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      *            此方法抛出的异常
      */
     public MethodInfo(final String definingClassName, final String methodName,
-               final AnnotationInfoList methodAnnotationInfo, final int modifiers, final String typeDescriptorStr,
-               final String typeSignatureStr, final String[] parameterNames, final int[] parameterModifiers,
-               final AnnotationInfo[][] parameterAnnotationInfo, final boolean hasBody, final int minLineNum,
-               final int maxLineNum, final List<MethodTypeAnnotationDecorator> methodTypeAnnotationDecorators,
-               final String[] thrownExceptionNames) {
+                      final AnnotationInfoList methodAnnotationInfo, final int modifiers, final String typeDescriptorStr,
+                      final String typeSignatureStr, final String[] parameterNames, final int[] parameterModifiers,
+                      final AnnotationInfo[][] parameterAnnotationInfo, final boolean hasBody, final int minLineNum,
+                      final int maxLineNum, final List<MethodTypeAnnotationDecorator> methodTypeAnnotationDecorators,
+                      final String[] thrownExceptionNames) {
         super(definingClassName, methodName, modifiers, typeDescriptorStr, typeSignatureStr, methodAnnotationInfo);
         this.parameterNames = parameterNames;
         this.parameterModifiers = parameterModifiers;

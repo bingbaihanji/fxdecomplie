@@ -28,7 +28,6 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.resource.Slice;
 import com.bingbaihanji.classgraph.scan.Filter.FilterLeafname;
 
 import java.io.File;

@@ -29,20 +29,7 @@
  */
 package com.bingbaihanji.classgraph.bytecode;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
 import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.util.*;
-import com.bingbaihanji.classgraph.reflect.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-
-import com.bingbaihanji.classgraph.resource.Resource;
-import com.bingbaihanji.classgraph.resource.ArraySlice;
-import com.bingbaihanji.classgraph.resource.FileSlice;
-import com.bingbaihanji.classgraph.resource.Slice;
-import com.bingbaihanji.classgraph.resource.RandomAccessReader;
-import com.bingbaihanji.classgraph.resource.SequentialReader;
 import com.bingbaihanji.classgraph.util.FileUtils;
 import com.bingbaihanji.classgraph.util.StringUtils;
 
@@ -73,7 +60,7 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
     private static final int BUF_CHUNK_SIZE = 8192 - 8;
     /** 调用 {@link ClassFileReader#close()} 时要关闭的底层资源 */
     private Resource resourceToClose;
-    /** 如果切片是压缩的，则是 {@link InflateInputStream} 的包装器 */
+    /** 如果切片是压缩的，则是 InflateInputStream 的包装器 */
     private InputStream inflaterInputStream;
     /**
      * 如果切片未压缩，则是 {@link ArraySlice} 或 {@link FileSlice} 具体子类的

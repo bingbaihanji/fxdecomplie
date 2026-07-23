@@ -28,9 +28,6 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-
 /** 具有名称的对象 */
 public interface Named {
     /**

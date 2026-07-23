@@ -29,9 +29,10 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.*;
-import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 
 import java.util.List;
 import java.util.Objects;
@@ -350,7 +351,7 @@ public class BaseType extends TypeSignature {
 
     @Override
     public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-                                    final StringBuilder buf) {
+                                 final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
                 if (annotationsToExclude == null || !annotationsToExclude.contains(annotationInfo)) {

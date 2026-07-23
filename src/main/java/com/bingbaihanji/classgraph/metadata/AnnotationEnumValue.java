@@ -28,9 +28,6 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-
 import java.lang.reflect.Field;
 
 /**

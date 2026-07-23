@@ -28,11 +28,7 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.scan.*;
-import com.bingbaihanji.classgraph.util.*;
-
+import com.bingbaihanji.classgraph.type.HierarchicalType;
 import com.bingbaihanji.classgraph.util.Assert;
 
 import java.lang.annotation.Annotation;
@@ -43,30 +39,24 @@ import java.lang.reflect.Modifier;
  * 保存扫描过程中遇到的类成员的元数据所有值均直接从类的 class 文件中提取
  */
 public abstract class ClassMemberInfo extends MetadataNode implements Named {
+    /** 类成员上的注解(如果有) */
+    public AnnotationInfoList annotationInfo;
     /** 定义该成员的类名 */
     protected String declaringClassName;
-
     /** 类成员的名称 */
     protected String name;
-
     /** 类成员的修饰符 */
     protected int modifiers;
-
     /**
      * JVM 内部的类型描述符(不含类型参数，但包含合成参数和强制参数的
      * 类成员参数类型)
      */
     protected String typeDescriptorStr;
-
     /**
      * 类型签名(如果存在且可用，可能包含类型参数信息)类成员
      * 参数类型是未对齐的
      */
     protected String typeSignatureStr;
-
-    /** 类成员上的注解(如果有) */
-    public AnnotationInfoList annotationInfo;
-
     /** 注解信息，在加载后缓存 */
     private AnnotationInfoList annotationInfoRef;
 

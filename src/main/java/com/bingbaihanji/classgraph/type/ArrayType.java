@@ -29,10 +29,11 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.*;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ArrayClassInfo;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 
 import java.lang.reflect.Array;
 import java.util.List;
@@ -387,7 +388,7 @@ public class ArrayType extends ReferenceType {
 
     @Override
     public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-                                    final StringBuilder buf) {
+                                 final StringBuilder buf) {
         // 从最内层数组元素类型开始
         getElementTypeSignature().toStringInternal(useSimpleNames, annotationsToExclude, buf);
 

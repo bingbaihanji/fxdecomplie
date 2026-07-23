@@ -28,20 +28,16 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
+import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
-import com.bingbaihanji.classgraph.util.WorkQueue;
-import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.resource.LogicalZipFile;
 import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.LogicalZipFile;
 import com.bingbaihanji.classgraph.resource.PathSlice;
 import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
-import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
-import com.bingbaihanji.classgraph.util.FastPathResolver;
-import com.bingbaihanji.classgraph.util.FileUtils;
-import com.bingbaihanji.classgraph.util.LogNode;
-import com.bingbaihanji.classgraph.util.VersionFinder;
+import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.util.*;
 
 import java.io.File;
 import java.io.IOError;

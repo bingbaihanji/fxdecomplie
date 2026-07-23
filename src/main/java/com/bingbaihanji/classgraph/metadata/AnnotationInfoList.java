@@ -28,9 +28,6 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-
 import com.bingbaihanji.classgraph.metadata.ClassHierarchy.RelType;
 import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
@@ -109,23 +106,6 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     }
 
     /**
-     * 通过注解名称获取 {@link AnnotationInfo}
-     *
-     * @param annotationName 注解名称
-     * @return 注解信息，若不存在则返回 null
-     */
-    public AnnotationInfo get(final String annotationName) {
-        for (final AnnotationInfo ai : this) {
-            if (ai.getName().equals(annotationName)) {
-                return ai;
-            }
-        }
-        return null;
-    }
-
-    // -------------------------------------------------------------------------------------------------------------
-
-    /**
      * 查找元注解的传递闭包
      *
      * @param ai
@@ -157,6 +137,8 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
             }
         }
     }
+
+    // -------------------------------------------------------------------------------------------------------------
 
     /**
      * 获取类上的间接注解(元注解和/或继承的注解)
@@ -214,6 +196,21 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
                 directAnnotationInfoSorted);
         CollectionUtils.sortIfNotEmpty(annotationInfoList);
         return annotationInfoList;
+    }
+
+    /**
+     * 通过注解名称获取 {@link AnnotationInfo}
+     *
+     * @param annotationName 注解名称
+     * @return 注解信息，若不存在则返回 null
+     */
+    public AnnotationInfo get(final String annotationName) {
+        for (final AnnotationInfo ai : this) {
+            if (ai.getName().equals(annotationName)) {
+                return ai;
+            }
+        }
+        return null;
     }
 
     // -------------------------------------------------------------------------------------------------------------

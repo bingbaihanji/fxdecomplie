@@ -2,7 +2,9 @@ package com.bingbaihanji.classgraph.util;
 
 /** String utility methods for ClassGraph. Pure JDK — no external dependencies. */
 public final class Strings {
-    private Strings() { throw new AssertionError("utility class"); }
+    private Strings() {
+        throw new AssertionError("utility class");
+    }
 
     /**
      * Escape a string for safe inclusion in JSON output.
@@ -17,7 +19,7 @@ public final class Strings {
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             switch (c) {
-                case '"'  -> buf.append("\\\"");
+                case '"' -> buf.append("\\\"");
                 case '\\' -> buf.append("\\\\");
                 case '\b' -> buf.append("\\b");
                 case '\f' -> buf.append("\\f");

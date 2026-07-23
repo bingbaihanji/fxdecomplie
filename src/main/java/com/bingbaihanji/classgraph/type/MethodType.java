@@ -29,10 +29,11 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
-import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.type.TypeParser;
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.*;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfo;
+import com.bingbaihanji.classgraph.metadata.AnnotationInfoList;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.MethodParam;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
@@ -69,7 +70,7 @@ public final class MethodType extends HierarchicalType {
      *            方法的 throws 签名
      */
     private MethodType(final List<TypeParam> TypeParams, final List<TypeSignature> paramTypes,
-                                final TypeSignature resultType, final List<TypeRef> throwsSignatures) {
+                       final TypeSignature resultType, final List<TypeRef> throwsSignatures) {
         super();
         this.TypeParams = TypeParams;
         this.parameterTypeSignatures = paramTypes;
@@ -304,7 +305,7 @@ public final class MethodType extends HierarchicalType {
      */
     @Override
     public void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
+                                        final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final Set<String> refdClassNames = new HashSet<>();
         findReferencedClassNames(refdClassNames);
         for (final String refdClassName : refdClassNames) {

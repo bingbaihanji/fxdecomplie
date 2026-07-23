@@ -28,8 +28,6 @@
  */
 package com.bingbaihanji.classgraph.util;
 
-import com.bingbaihanji.classgraph.util.LogNode;
-
 import java.util.Collection;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;

@@ -28,20 +28,15 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
+import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
-import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceException;
-import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
-import com.bingbaihanji.classgraph.util.WorkQueue;
-import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.resource.FastZipEntry;
-import com.bingbaihanji.classgraph.resource.LogicalZipFile;
-import com.bingbaihanji.classgraph.resource.JarReader;
-import com.bingbaihanji.classgraph.resource.ZipFileSlice;
-import com.bingbaihanji.classgraph.resource.Resource;
+import com.bingbaihanji.classgraph.resource.*;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
-import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
+import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceException;
+import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
 
 import java.io.File;
 import java.io.IOError;

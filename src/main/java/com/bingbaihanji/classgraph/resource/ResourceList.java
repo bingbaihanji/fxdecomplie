@@ -28,10 +28,8 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.util.*;
-
 import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.LazyList;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,11 +42,10 @@ import java.util.Map.Entry;
 
 /** 一个可自动关闭的 {@link Resource} 对象的可自动关闭列表 */
 public class ResourceList extends LazyList<Resource> implements AutoCloseable {
-    /** 序列化版本UID */
-    static final long serialVersionUID = 1L;
-
     /** 一个不可修改的空的 {@link ResourceList} */
     public static final ResourceList EMPTY_LIST = new ResourceList();
+    /** 序列化版本UID */
+    static final long serialVersionUID = 1L;
     /** 如果 Resource 的路径以 ".class" 结尾，则返回 true */
     private static final ResourceFilter CLASSFILE_FILTER = new ResourceFilter() {
         @Override

@@ -28,31 +28,23 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.bytecode.*;
-import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
-import com.bingbaihanji.classgraph.metadata.ModuleRef;
-
-import com.bingbaihanji.classgraph.classpath.ClasspathFinder;
-import com.bingbaihanji.classgraph.classpath.ClasspathOrder.ClasspathEntry;
-import com.bingbaihanji.classgraph.classpath.ModuleFinder;
-import com.bingbaihanji.classgraph.util.AutoCloseableExecutorService;
-import com.bingbaihanji.classgraph.util.InterruptionChecker;
-import com.bingbaihanji.classgraph.util.SingletonMap;
-import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceFactory;
-import com.bingbaihanji.classgraph.util.WorkQueue;
-import com.bingbaihanji.classgraph.util.WorkQueue.WorkUnitProcessor;
+import com.bingbaihanji.classgraph.bytecode.ClassParser;
 import com.bingbaihanji.classgraph.bytecode.ClassParser.ClassfileFormatException;
 import com.bingbaihanji.classgraph.bytecode.ClassParser.SkipClassException;
-import com.bingbaihanji.classgraph.bytecode.ClassParser;
+import com.bingbaihanji.classgraph.classpath.*;
+import com.bingbaihanji.classgraph.classpath.ClasspathOrder.ClasspathEntry;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.ModuleInfo;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
+import com.bingbaihanji.classgraph.metadata.PackageInfo;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ClassGraph.FailureHandler;
 import com.bingbaihanji.classgraph.scan.ClassGraph.ScanResultProcessor;
-import com.bingbaihanji.classgraph.resource.JarReader;
-import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
-import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceFactory;
+import com.bingbaihanji.classgraph.util.WorkQueue.WorkUnitProcessor;
 
 import java.io.File;
 import java.io.IOException;
@@ -551,7 +543,7 @@ public class Scanner implements Callable<ScanResult> {
      *            日志
      */
     private void findNestedClasspaths(final List<SimpleEntry<String, Classpath>> classpathElts,
-                                             final LogNode log) {
+                                      final LogNode log) {
         // 将类路径元素按字典序排序
         CollectionUtils.sortIfNotEmpty(classpathElts, new Comparator<SimpleEntry<String, Classpath>>() {
             @Override
@@ -613,7 +605,7 @@ public class Scanner implements Callable<ScanResult> {
      *            类路径查找器日志
      */
     private void preprocessClasspathsByType(final List<Classpath> finalTraditionalClasspathEltOrder,
-                                                   final LogNode classpathFinderLog) {
+                                            final LogNode classpathFinderLog) {
         final List<SimpleEntry<String, Classpath>> classpathEltDirs = new ArrayList<>();
         final List<SimpleEntry<String, Classpath>> classpathEltZips = new ArrayList<>();
         for (final Classpath classpathElt : finalTraditionalClasspathEltOrder) {
@@ -801,8 +793,8 @@ public class Scanner implements Callable<ScanResult> {
 
     /**
      * 打开每个类路径元素，查找需要扫描的额外子类路径元素(例如 jar 清单文件中的
-     * {@code Class-Path} 条目)，然后在 {@link ScanConfig#performScan} 为 true 时执行扫描，
-     * 或者在 {@link ScanConfig#performScan} 为 false 时仅获取类路径
+     * {@code Class-Path} 条目)，然后在 {@link #performScan} 为 true 时执行扫描，
+     * 或者在 {@link #performScan} 为 false 时仅获取类路径
      *
      * @return 扫描结果
      * @throws InterruptedException
@@ -1016,12 +1008,12 @@ public class Scanner implements Callable<ScanResult> {
     static public class ClasspathEntryWorkUnit {
         /** 类路径条目对象所来自的类加载器 */
         public final ClassLoader classLoader;
-        /** 父类路径元素 */
-        final Classpath parentClasspath;
         /** 在父类路径元素中的顺序 */
         public final int classpathElementIdxWithinParent;
         /** 包根前缀(例如 "BOOT-INF/classes/") */
         public final String packageRootPrefix;
+        /** 父类路径元素 */
+        final Classpath parentClasspath;
         /** 类路径条目对象({@link String} 路径、{@link Path}、{@link URL} 或 {@link URI}) */
         public Object classpathEntryObj;
 
@@ -1075,7 +1067,7 @@ public class Scanner implements Callable<ScanResult> {
          *            是否为外部类
          */
         public ClassfileScanWorkUnit(final Classpath Classpath, final Resource classfileResource,
-                              final boolean isExternalClass) {
+                                     final boolean isExternalClass) {
             this.Classpath = Classpath;
             this.classfileResource = classfileResource;
             this.isExternalClass = isExternalClass;

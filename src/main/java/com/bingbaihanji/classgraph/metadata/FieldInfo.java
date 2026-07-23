@@ -28,15 +28,12 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.scan.ClassGraph;
-import com.bingbaihanji.classgraph.scan.ScanResult;
-import com.bingbaihanji.classgraph.type.TypeSignature;
-import com.bingbaihanji.classgraph.util.*;
-
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.metadata.ClassHierarchy.RelType;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeSignature;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -91,8 +88,8 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
      *            字段上任何注解的 {@link AnnotationInfo}
      */
     public FieldInfo(final String definingClassName, final String fieldName, final int modifiers,
-              final String typeDescriptorStr, final String typeSignatureStr, final Object constantInitializerValue,
-              final AnnotationInfoList annotationInfo, final List<TypeAnnotationDecorator> typeAnnotationDecorators) {
+                     final String typeDescriptorStr, final String typeSignatureStr, final Object constantInitializerValue,
+                     final AnnotationInfoList annotationInfo, final List<TypeAnnotationDecorator> typeAnnotationDecorators) {
         super(definingClassName, fieldName, modifiers, typeDescriptorStr, typeSignatureStr, annotationInfo);
         if (fieldName == null) {
             throw new IllegalArgumentException("fieldName must not be null");
@@ -245,7 +242,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     }
 
     /**
-     * 返回字段的常量初始值需要先调用 {@link ClassGraph#enableStaticFinalFieldConstantInitializerValues()}
+     * 返回字段的常量初始值需要先调用 {@link ClassGraph#withConstantFieldValues()}
      * 仅对于具有常量初始化器的字段才返回非 null 值，通常这仅限于基本类型字段或 String 常量
      * 另请注意，常量值字段是否在字段定义本身中作为常量赋值，还是在静态或非静态类初始化块或构造函数中
      * 手动赋值，这取决于编译器 -- 因此在提取常量初始值方面效果可能因人而异

@@ -28,22 +28,11 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.util.InterruptionChecker;
-import com.bingbaihanji.classgraph.util.SingletonMap;
-import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
-import com.bingbaihanji.classgraph.scan.ScanResult;
-import com.bingbaihanji.classgraph.resource.ArraySlice;
-import com.bingbaihanji.classgraph.resource.FileSlice;
-import com.bingbaihanji.classgraph.resource.Slice;
-import com.bingbaihanji.classgraph.resource.Pool;
-import com.bingbaihanji.classgraph.resource.Resettable;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
-import com.bingbaihanji.classgraph.util.FastPathResolver;
-import com.bingbaihanji.classgraph.util.FileUtils;
-import com.bingbaihanji.classgraph.util.JarUtils;
-import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.classgraph.util.*;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -283,7 +272,7 @@ public class JarReader {
             new SingletonMap<ModuleRef, Pool<ModuleReaderProxy, IOException>, IOException>() {
                 @Override
                 public Pool<ModuleReaderProxy, IOException> newInstance(final ModuleRef moduleRef,
-                                                                            final LogNode ignored) {
+                                                                        final LogNode ignored) {
                     return new Pool<ModuleReaderProxy, IOException>() {
                         @Override
                         public ModuleReaderProxy newInstance() throws IOException {
@@ -358,7 +347,7 @@ public class JarReader {
                     ScanConfig.enableMultiReleaseVersions);
         }
     };
-    /** {@link Inflater} 实例的回收器 */
+    /** {@link java.util.zip.Inflater} 实例的回收器 */
     private Pool<RecyclableInflater, RuntimeException> //
             inflaterRecycler = new Pool<RecyclableInflater, RuntimeException>() {
         @Override
@@ -384,7 +373,7 @@ public class JarReader {
      *            中断检查器
      */
     public JarReader(final ScanConfig ScanConfig, final InterruptionChecker interruptionChecker,
-                            final ReflectionUtils reflectionUtils) {
+                     final ReflectionUtils reflectionUtils) {
         this.ScanConfig = ScanConfig;
         this.interruptionChecker = interruptionChecker;
         this.reflectionUtils = reflectionUtils;
@@ -627,7 +616,7 @@ public class JarReader {
     }
 
     /**
-     * 用 {@link InflaterInputStream} 包装 {@link InputStream}，同时回收 {@link Inflater} 实例
+     * 用 {@link InflaterInputStream} 包装 {@link InputStream}，同时回收 java.util.zip.Inflater 实例
      *
      * @param rawInputStream
      *            原始输入流
@@ -1012,25 +1001,25 @@ public class JarReader {
     }
 
     /**
-     * 包装类，允许 {@link Inflater} 实例被重置以供复用，然后由 {@link Pool} 回收
+     * 包装类，允许 java.util.zip.Inflater 实例被重置以供复用，然后由 {@link Pool} 回收
      */
     private static class RecyclableInflater implements Resettable, AutoCloseable {
         /**
-         * 创建新的 {@link Inflater} 实例，使用 "nowrap" 选项(ZIP 文件条目需要此选项)
+         * 创建新的 java.util.zip.Inflater 实例，使用 "nowrap" 选项(ZIP 文件条目需要此选项)
          */
         private final Inflater inflater = new Inflater(/* nowrap = */ true);
 
         /**
-         * 获取 {@link Inflater} 实例
+         * 获取 java.util.zip.Inflater 实例
          *
-         * @return {@link Inflater} 实例
+         * @return java.util.zip.Inflater 实例
          */
         public Inflater getInflater() {
             return inflater;
         }
 
         /**
-         * 当 {@link Inflater} 实例被回收时调用，用于重置 inflater 以便接受新输入
+         * 当 java.util.zip.Inflater 实例被回收时调用，用于重置 inflater 以便接受新输入
          */
         @Override
         public void reset() {
@@ -1038,7 +1027,7 @@ public class JarReader {
         }
 
         /**
-         * 当 {@link Pool} 实例关闭时调用，用于销毁 {@link Inflater} 实例
+         * 当 {@link Pool} 实例关闭时调用，用于销毁 java.util.zip.Inflater 实例
          */
         @Override
         public void close() {
