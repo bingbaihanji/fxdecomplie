@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
 import com.bingbaihanji.classgraph.concurrency.WorkQueue;
@@ -58,7 +58,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 目录类路径元素，使用 {@link Path} API */
-class ClasspathElementDir extends ClasspathElement {
+class DirClasspath extends ClasspathElement {
     /** 类路径元素根目录 */
     private final Path classpathEltPath;
 
@@ -78,7 +78,7 @@ class ClasspathElementDir extends ClasspathElement {
      * @param scanSpec
      *            扫描规格
      */
-    ClasspathElementDir(final ClasspathEntryWorkUnit workUnit, final NestedJarHandler nestedJarHandler,
+    DirClasspath(final ClasspathEntryWorkUnit workUnit, final NestedJarHandler nestedJarHandler,
                         final ScanSpec scanSpec) {
         super(workUnit, scanSpec);
         this.classpathEltPath = (Path) workUnit.classpathEntryObj;
@@ -594,10 +594,10 @@ class ClasspathElementDir extends ClasspathElement {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof ClasspathElementDir)) {
+        } else if (!(obj instanceof DirClasspath)) {
             return false;
         }
-        final ClasspathElementDir other = (ClasspathElementDir) obj;
+        final DirClasspath other = (DirClasspath) obj;
         return Objects.equals(this.classpathEltPath, other.classpathEltPath);
     }
 }

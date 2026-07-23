@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
@@ -38,46 +38,46 @@ import java.util.Collections;
 import java.util.List;
 
 /** ClassLoaderHandler 类的注册表 */
-public class ClassLoaderHandlerRegistry {
+public class HandlerRegistry {
     /**
      * 默认的 ClassLoaderHandler 列表如果向 ClassGraph 添加了 ClassLoaderHandler，则应将其添加到此列表中
      */
-    public static final List<ClassLoaderHandlerRegistryEntry> CLASS_LOADER_HANDLERS = //
+    public static final List<HandlerRegistryEntry> CLASS_LOADER_HANDLERS = //
             Collections.unmodifiableList(Arrays.asList(
                     // ClassGraph 处理的其他 ClassLoader 的 ClassLoaderHandler
-                    new ClassLoaderHandlerRegistryEntry(new AntClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new EquinoxClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new EquinoxContextFinderClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new FelixClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new JBossClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new WeblogicClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new WebsphereLibertyClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new WebsphereTraditionalClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new OSGiDefaultClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new SpringBootRestartClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new TomcatWebappClassLoaderBaseHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new CxfContainerClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new PlexusClassWorldsClassRealmClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new QuarkusClassLoaderHandler()),
-                    new ClassLoaderHandlerRegistryEntry(new UnoOneJarClassLoaderHandler()),
+                    new HandlerRegistryEntry(new AntClassLoaderHandler()),
+                    new HandlerRegistryEntry(new EquinoxClassLoaderHandler()),
+                    new HandlerRegistryEntry(new EquinoxContextFinderClassLoaderHandler()),
+                    new HandlerRegistryEntry(new FelixClassLoaderHandler()),
+                    new HandlerRegistryEntry(new JBossClassLoaderHandler()),
+                    new HandlerRegistryEntry(new WeblogicClassLoaderHandler()),
+                    new HandlerRegistryEntry(new WebsphereLibertyClassLoaderHandler()),
+                    new HandlerRegistryEntry(new WebsphereTraditionalClassLoaderHandler()),
+                    new HandlerRegistryEntry(new OSGiDefaultClassLoaderHandler()),
+                    new HandlerRegistryEntry(new SpringBootRestartClassLoaderHandler()),
+                    new HandlerRegistryEntry(new TomcatWebappClassLoaderBaseHandler()),
+                    new HandlerRegistryEntry(new CxfContainerClassLoaderHandler()),
+                    new HandlerRegistryEntry(new PlexusClassWorldsClassRealmClassLoaderHandler()),
+                    new HandlerRegistryEntry(new QuarkusClassLoaderHandler()),
+                    new HandlerRegistryEntry(new UnoOneJarClassLoaderHandler()),
 
                     // 用于 PARENT_LAST 委托顺序的单元测试
-                    new ClassLoaderHandlerRegistryEntry(new ParentLastDelegationOrderTestClassLoaderHandler()),
+                    new HandlerRegistryEntry(new ParentLastDelegationOrderTestClassLoaderHandler()),
 
                     // JPMS 支持(此处理器不执行任何操作，因为模块是单独处理的)
-                    new ClassLoaderHandlerRegistryEntry(new JPMSClassLoaderHandler()),
+                    new HandlerRegistryEntry(new JPMSClassLoaderHandler()),
 
                     // Java 7/8 URLClassLoader 支持(应位于倒数第二位，以便 URLClassLoader 的子类由上面更具体的处理器处理)
-                    new ClassLoaderHandlerRegistryEntry(new URLClassLoaderHandler()),
+                    new HandlerRegistryEntry(new URLClassLoaderHandler()),
 
                     // 用于从外部嵌套扫描委托给 ClassGraphClassLoader 实例的占位符
-                    new ClassLoaderHandlerRegistryEntry(new ClassGraphClassLoaderHandler())
+                    new HandlerRegistryEntry(new ClassGraphClassLoaderHandler())
 
                     // FallbackClassLoaderHandler.class 在下面单独注册
             ));
 
     /** 回退类加载器处理器 */
-    public static final ClassLoaderHandlerRegistryEntry FALLBACK_HANDLER = new ClassLoaderHandlerRegistryEntry(
+    public static final HandlerRegistryEntry FALLBACK_HANDLER = new HandlerRegistryEntry(
             new FallbackClassLoaderHandler());
 
     // -------------------------------------------------------------------------------------------------------------
@@ -119,14 +119,14 @@ public class ClassLoaderHandlerRegistry {
     /**
      * 构造函数
      */
-    private ClassLoaderHandlerRegistry() {
+    private HandlerRegistry() {
         // 不可构造
     }
 
     /**
      * 完全限定类加载器类名与可处理它们的 ClassLoaderHandler 的配对列表
      */
-    public static class ClassLoaderHandlerRegistryEntry {
+    public static class HandlerRegistryEntry {
         /** ClassLoaderHandler 实例 */
         public final ClassLoaderHandler classLoaderHandler;
 
@@ -136,7 +136,7 @@ public class ClassLoaderHandlerRegistry {
          * @param classLoaderHandler
          *            ClassLoaderHandler 实例
          */
-        private ClassLoaderHandlerRegistryEntry(final ClassLoaderHandler classLoaderHandler) {
+        private HandlerRegistryEntry(final ClassLoaderHandler classLoaderHandler) {
             this.classLoaderHandler = classLoaderHandler;
         }
 

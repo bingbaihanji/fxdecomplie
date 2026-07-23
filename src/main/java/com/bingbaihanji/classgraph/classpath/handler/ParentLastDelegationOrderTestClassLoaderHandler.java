@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
@@ -34,10 +34,10 @@ import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
 import com.bingbaihanji.classgraph.scanspec.ScanSpec;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
-/** 从 Uno-Jar 的 JarClassLoader 和 One-Jar 的 JarClassLoader 提取类路径条目 */
-class UnoOneJarClassLoaderHandler implements ClassLoaderHandler {
+/** 用于测试 PARENT_LAST 委托顺序的 ClassLoaderHandler */
+class ParentLastDelegationOrderTestClassLoaderHandler implements ClassLoaderHandler {
     /** 类不可构造 */
-    public UnoOneJarClassLoaderHandler() {
+    public ParentLastDelegationOrderTestClassLoaderHandler() {
     }
 
     /**
@@ -52,9 +52,7 @@ class UnoOneJarClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "com.needhamsoftware.unojar.JarClassLoader")
-                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "com.simontuffs.onejar.JarClassLoader");
+                "com.bingbaihanji.classgraph.core.issues.issue267.FakeRestartClassLoader");
     }
 
     /**
@@ -70,8 +68,9 @@ class UnoOneJarClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
                                      final LogNode log) {
-        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
+        // 先添加自身，然后委托给父级
         classLoaderOrder.add(classLoader, log);
+        classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
     }
 
     /**
@@ -89,36 +88,8 @@ class UnoOneJarClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
                                    final ScanSpec scanSpec, final LogNode log) {
-
-        // 对于 Uno-Jar：
-
-        final String unoJarOneJarPath = (String) classpathOrder.reflectionUtils.invokeMethod(false, classLoader,
-                "getOneJarPath");
-        classpathOrder.addClasspathEntry(unoJarOneJarPath, classLoader, scanSpec, log);
-
-        // 如果定义了此属性，则表示在命令行上指定了 Uno-Jar JAR 路径否则，JAR 路径应包含在
-        // java.class.path 中(只要类加载器/类路径未被重载且父级类加载器未被忽略，
-        // ClassGraph 将单独获取该路径)
-        final String unoJarJarPath = System.getProperty("uno-jar.jar.path");
-        classpathOrder.addClasspathEntry(unoJarJarPath, classLoader, scanSpec, log);
-
-        // 对于 One-Jar：
-
-        // 如果定义了此属性，则表示在命令行上指定了 One-Jar JAR 路径否则，JAR 路径应包含在
-        // java.class.path 中(只要类加载器/类路径未被重载且父级类加载器未被忽略，
-        // ClassGraph 将单独获取该路径)
-        final String oneJarJarPath = System.getProperty("one-jar.jar.path");
-        classpathOrder.addClasspathEntry(oneJarJarPath, classLoader, scanSpec, log);
-
-        // 如果定义了此属性，则表示在命令行上以 OneJar 格式指定了额外的类路径条目，
-        // 以 '|' 作为分隔符
-        final String oneJarClassPath = System.getProperty("one-jar.class.path");
-        if (oneJarClassPath != null) {
-            classpathOrder.addClasspathEntryObject(oneJarClassPath.split("\\|"), classLoader, scanSpec, log);
-        }
-
-        // 对于 UnoJar 和 OneJar，"libs/" 和 "main/" 都将基于
-        // ClassLoaderHandlerRegistry.AUTOMATIC_LIB_DIR_PREFIXES 自动作为嵌套 JAR 的库根目录被获取
-        // ("main/" 包含 "main.jar")
+        final String classpath = (String) classpathOrder.reflectionUtils.invokeMethod(/* throwException = */ true,
+                classLoader, "getClasspath");
+        classpathOrder.addClasspathEntry(classpath, classLoader, scanSpec, log);
     }
 }

@@ -9,4 +9,4 @@
 //  - OSGi(FelixClassLoaderHandler, EquinoxClassLoaderHandler)
 //  - WebLogic / WebSphere
 //  - JPMS 模块系统
-package com.bingbaihanji.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classpath.handler;

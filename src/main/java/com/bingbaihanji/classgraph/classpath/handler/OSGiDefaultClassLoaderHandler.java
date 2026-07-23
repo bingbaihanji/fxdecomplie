@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
@@ -34,10 +34,16 @@ import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
 import com.bingbaihanji.classgraph.scanspec.ScanSpec;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
-/** 从 Eclipse Equinox ContextFinder ClassLoader 提取类路径条目 */
-class EquinoxContextFinderClassLoaderHandler implements ClassLoaderHandler {
+import java.io.File;
+
+/**
+ * 处理 OSGi DefaultClassLoader
+ *
+ * @author lukehutch
+ */
+class OSGiDefaultClassLoaderHandler implements ClassLoaderHandler {
     /** 类不可构造 */
-    public EquinoxContextFinderClassLoaderHandler() {
+    public OSGiDefaultClassLoaderHandler() {
     }
 
     /**
@@ -52,7 +58,7 @@ class EquinoxContextFinderClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
         return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "org.eclipse.osgi.internal.framework.ContextFinder");
+                "org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader");
     }
 
     /**
@@ -68,8 +74,6 @@ class EquinoxContextFinderClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public void findClassLoaderOrder(final ClassLoader classLoader, final ClassLoaderOrder classLoaderOrder,
                                      final LogNode log) {
-        classLoaderOrder.delegateTo((ClassLoader) classLoaderOrder.reflectionUtils.getFieldVal(false, classLoader,
-                "parentContextClassLoader"), /* isParent = */ true, log);
         classLoaderOrder.delegateTo(classLoader.getParent(), /* isParent = */ true, log);
         classLoaderOrder.add(classLoader, log);
     }
@@ -89,6 +93,20 @@ class EquinoxContextFinderClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
                                    final ScanSpec scanSpec, final LogNode log) {
-        // 无需处理 -- 将改为使用嵌入的 parentContextClassLoader
+        final Object classpathManager = classpathOrder.reflectionUtils.invokeMethod(false, classLoader,
+                "getClasspathManager");
+        final Object[] entries = (Object[]) classpathOrder.reflectionUtils.getFieldVal(false, classpathManager,
+                "entries");
+        if (entries != null) {
+            for (final Object entry : entries) {
+                final Object bundleFile = classpathOrder.reflectionUtils.invokeMethod(false, entry,
+                        "getBundleFile");
+                final File baseFile = (File) classpathOrder.reflectionUtils.invokeMethod(false, bundleFile,
+                        "getBaseFile");
+                if (baseFile != null) {
+                    classpathOrder.addClasspathEntry(baseFile.getPath(), classLoader, scanSpec, log);
+                }
+            }
+        }
     }
 }

@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.concurrency.SingletonMap;
 import com.bingbaihanji.classgraph.concurrency.SingletonMap.NewInstanceException;
@@ -61,7 +61,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author luke
  */
-class ClasspathElementModule extends ClasspathElement {
+class ModuleClasspath extends ClasspathElement {
 
     /** 模块引用 */
     final ModuleRef moduleRef;
@@ -85,7 +85,7 @@ class ClasspathElementModule extends ClasspathElement {
      * @param scanSpec
      *            扫描规格
      */
-    ClasspathElementModule(final ModuleRef moduleRef,
+    ModuleClasspath(final ModuleRef moduleRef,
                            final SingletonMap<ModuleRef, Recycler<ModuleReaderProxy, IOException>, IOException> //
                                    moduleRefToModuleReaderProxyRecyclerMap, final ClasspathEntryWorkUnit workUnit,
                            final ScanSpec scanSpec) {
@@ -260,7 +260,7 @@ class ClasspathElementModule extends ClasspathElement {
                         moduleReaderProxyRecycler.recycle(moduleReaderProxy);
                         // 不要调用 ModuleReaderProxy#close()，让 ModuleReaderProxy 在回收器中保持打开状态
                         // 这里只需将引用设为 nullModuleReaderProxy 将由
-                        // ClasspathElementModule#close() 来关闭
+                        // ModuleClasspath#close() 来关闭
                         moduleReaderProxy = null;
                     }
 
@@ -509,10 +509,10 @@ class ClasspathElementModule extends ClasspathElement {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof ClasspathElementModule)) {
+        } else if (!(obj instanceof ModuleClasspath)) {
             return false;
         }
-        final ClasspathElementModule other = (ClasspathElementModule) obj;
+        final ModuleClasspath other = (ModuleClasspath) obj;
         return this.getModuleNameOrEmpty().equals(other.getModuleNameOrEmpty());
     }
 

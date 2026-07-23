@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
 import com.bingbaihanji.classgraph.concurrency.SingletonMap.NewInstanceException;
@@ -58,7 +58,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 一个 zip/jar 文件类路径元素 */
-class ClasspathElementZip extends ClasspathElement {
+class JarClasspath extends ClasspathElement {
     /**
      * 此 zip 文件的路径字符串、{@link URL}、{@link URI} 或 {@link Path} 的 {@link String} 表示形式
      */
@@ -90,7 +90,7 @@ class ClasspathElementZip extends ClasspathElement {
      * @param scanSpec
      *            扫描规格
      */
-    ClasspathElementZip(final ClasspathEntryWorkUnit workUnit, final NestedJarHandler nestedJarHandler,
+    JarClasspath(final ClasspathEntryWorkUnit workUnit, final NestedJarHandler nestedJarHandler,
                         final ScanSpec scanSpec) {
         super(workUnit, scanSpec);
         final Object rawPathObj = workUnit.classpathEntryObj;
@@ -719,10 +719,10 @@ class ClasspathElementZip extends ClasspathElement {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof ClasspathElementZip)) {
+        } else if (!(obj instanceof JarClasspath)) {
             return false;
         }
-        final ClasspathElementZip other = (ClasspathElementZip) obj;
+        final JarClasspath other = (JarClasspath) obj;
         return this.getZipFilePath().equals(other.getZipFilePath());
     }
 

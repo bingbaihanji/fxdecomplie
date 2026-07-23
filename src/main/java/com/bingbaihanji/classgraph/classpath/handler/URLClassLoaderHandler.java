@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.classloaderhandler;
+package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
@@ -35,13 +35,12 @@ import com.bingbaihanji.classgraph.scanspec.ScanSpec;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.net.URL;
+import java.net.URLClassLoader;
 
-/**
- * 一个占位 ClassLoaderHandler，用于匹配 Java 9+ 类加载器，但不尝试从中提取 URL(模块扫描使用与类路径扫描不同的机制)
- */
-class JPMSClassLoaderHandler implements ClassLoaderHandler {
+/** 能够从 URLClassLoader 提取 URL 的 ClassLoaderHandler */
+class URLClassLoaderHandler implements ClassLoaderHandler {
     /** 类不可构造 */
-    public JPMSClassLoaderHandler() {
+    public URLClassLoaderHandler() {
     }
 
     /**
@@ -55,10 +54,7 @@ class JPMSClassLoaderHandler implements ClassLoaderHandler {
      */
     @Override
     public boolean canHandle(final Class<?> classLoaderClass, final LogNode log) {
-        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "jdk.internal.loader.ClassLoaders$AppClassLoader")
-                || ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass,
-                "jdk.internal.loader.BuiltinClassLoader");
+        return ClassLoaderFinder.classIsOrExtendsOrImplements(classLoaderClass, "java.net.URLClassLoader");
     }
 
     /**
@@ -93,13 +89,13 @@ class JPMSClassLoaderHandler implements ClassLoaderHandler {
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
                                    final ScanSpec scanSpec, final LogNode log) {
-        // JDK9 类加载器有一个字段 URLClassPath ucp，其中包含未命名模块的 URL，但它不可见因此模块必须使用 JPMS API 进行扫描
-        // 然而，Java 代理可以通过直接添加到 ucp 字段来扩展 UCP(#537)，并且无法读取此字段
-        // 因此，我们需要使用 Narcissus 打破 Java 的封装来读取它，以应对这种小型边界情况
-        final Object ucpVal = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "ucp");
-        if (ucpVal != null) {
-            final URL[] urls = (URL[]) classpathOrder.reflectionUtils.invokeMethod(false, ucpVal, "getURLs");
-            classpathOrder.addClasspathEntryObject(urls, classLoader, scanSpec, log);
+        final URL[] urls = ((URLClassLoader) classLoader).getURLs();
+        if (urls != null) {
+            for (final URL url : urls) {
+                if (url != null) {
+                    classpathOrder.addClasspathEntry(url, classLoader, scanSpec, log);
+                }
+            }
         }
     }
 }

@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.concurrency.WorkQueue;
 import com.bingbaihanji.classgraph.core.Scanner.ClasspathEntryWorkUnit;
@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 类路径元素(类路径上的目录或 jar 文件) */
-abstract class ClasspathElement implements Comparable<ClasspathElement> {
+abstract class Classpath implements Comparable<Classpath> {
     /**
      * 在此类路径元素中找到的被接受且未被拒绝的资源(仅由一个线程写入，因此不需要使用并发列表)
      */
@@ -55,7 +55,7 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     protected final AtomicBoolean scanned = new AtomicBoolean(false);
     /**
      * 在父类路径元素中的类路径元素索引(例如，对于通过清单文件中的 Class-Path 条目添加的类路径元素)
-     * 初始设置为 -1，以防同一个 ClasspathElement 在类路径中出现两次(作为不同父 ClasspathElement 的子元素)
+     * 初始设置为 -1，以防同一个 Classpath 在类路径中出现两次(作为不同父 Classpath 的子元素)
      */
     final int classpathElementIdxWithinParent;
     /** 扫描规格 */
@@ -82,14 +82,14 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     /**
      * 如果尝试打开此类路径元素时发生异常(例如损坏的 ZipFile)，则为 true
      */
-    boolean skipClasspathElement;
+    boolean skipClasspath;
     /** 如果类路径元素包含一个被明确接受的资源路径，则为 true */
-    boolean containsSpecificallyAcceptedClasspathElementResourcePath;
+    boolean containsSpecificallyAcceptedClasspathResourcePath;
     /**
      * 子类路径元素，按子类路径元素在其所在清单文件的 Class-Path 条目中的顺序(或文件在排序后的 lib 目录条目中的位置)
      * 作为键
      */
-    Collection<ClasspathElement> childClasspathElements = new ConcurrentLinkedQueue<>();
+    Collection<Classpath> childClasspaths = new ConcurrentLinkedQueue<>();
     /**
      * 从 {@code module-info.class} 模块描述符中获取的模块名称(如果类路径元素根中存在该描述符)
      */
@@ -105,7 +105,7 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
      * @param scanSpec
      *            扫描规格
      */
-    ClasspathElement(final ClasspathEntryWorkUnit workUnit, final ScanSpec scanSpec) {
+    Classpath(final ClasspathEntryWorkUnit workUnit, final ScanSpec scanSpec) {
         this.packageRootPrefix = workUnit.packageRootPrefix;
         this.classpathElementIdxWithinParent = workUnit.classpathElementIdxWithinParent;
         this.classLoader = workUnit.classLoader;
@@ -123,7 +123,7 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
 
     /** 按 classpathElementIdxWithinParent 升序排序 */
     @Override
-    public int compareTo(final ClasspathElement other) {
+    public int compareTo(final Classpath other) {
         return this.classpathElementIdxWithinParent - other.classpathElementIdxWithinParent;
     }
 
@@ -171,7 +171,7 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
                 if (log != null) {
                     log.log("Reached specifically accepted classpath element resource path: " + relativePath);
                 }
-                containsSpecificallyAcceptedClasspathElementResourcePath = true;
+                containsSpecificallyAcceptedClasspathResourcePath = true;
             }
         }
         return true;
@@ -286,8 +286,8 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
             // 在日志条目的排序键前加上 "0:file:"，使文件条目在目录条目之前出现(针对
             // ClasspathElementDir 类路径元素)
             resource.scanLog = log.log("0:" + path,
-                    logStr + path + (path.equals(resource.getPathRelativeToClasspathElement()) ? ""
-                            : " ; full path: " + resource.getPathRelativeToClasspathElement()));
+                    logStr + path + (path.equals(resource.getPathRelativeToClasspath()) ? ""
+                            : " ; full path: " + resource.getPathRelativeToClasspath()));
         }
     }
 
@@ -353,7 +353,7 @@ abstract class ClasspathElement implements Comparable<ClasspathElement> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 判断此类路径元素是否有效如果无效，则设置 skipClasspathElement对于 {@link ClasspathElementZip}，
+     * 判断此类路径元素是否有效如果无效，则设置 skipClasspath对于 {@link ClasspathElementZip}，
      * 可能还会打开或提取内部 jar，并读取 jar 文件清单以查找 Class-Path 条目如果发现嵌套 jar 或 Class-Path 条目，
      * 它们将被添加到工作队列中此方法每个类路径元素仅运行一次，且由单个线程执行
      *
