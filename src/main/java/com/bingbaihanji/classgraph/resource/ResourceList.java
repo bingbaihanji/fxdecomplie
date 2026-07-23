@@ -28,6 +28,9 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.util.*;
+
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.io.IOException;

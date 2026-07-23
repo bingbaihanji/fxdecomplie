@@ -28,6 +28,9 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.util.*;
+
 import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
 import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.CollectionUtils;

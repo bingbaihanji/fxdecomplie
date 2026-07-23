@@ -28,6 +28,10 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.scan.*;
+
 import com.bingbaihanji.classgraph.util.WorkQueue;
 import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
 import com.bingbaihanji.classgraph.scan.ScanConfig;

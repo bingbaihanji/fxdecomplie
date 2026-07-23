@@ -27,6 +27,9 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.metadata;
+
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.util.*;
 import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 

@@ -28,6 +28,9 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.util.*;
+
 import java.util.Collection;
 
 /** {@link ModuleInfo} 对象列表 */

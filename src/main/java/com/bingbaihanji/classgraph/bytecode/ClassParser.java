@@ -28,6 +28,21 @@
  */
 package com.bingbaihanji.classgraph.bytecode;
 
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.classpath.*;
+import com.bingbaihanji.classgraph.scan.*;
+import com.bingbaihanji.classgraph.util.*;
+
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.classpath.*;
+import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.reflect.*;
+import com.bingbaihanji.classgraph.bytecode.*;
+
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 import com.bingbaihanji.classgraph.util.WorkQueue;
 import com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit;
