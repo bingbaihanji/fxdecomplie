@@ -26,35 +26,35 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
-import com.bingbaihanji.classgraph.types.TypeUtils;
-import com.bingbaihanji.classgraph.types.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.*;
 
 /** 类类型签名(在 classfile 文档中称为"ClassSignature") */
-public final class ClassTypeSignature extends HierarchicalTypeSignature {
+public final class ClassType extends HierarchicalType {
 
     /** 类类型参数 */
-    final List<TypeParameter> typeParameters;
+    final List<TypeParam> TypeParams;
     /** 类信息 */
     private final ClassInfo classInfo;
     /** 超类类型 */
-    private final ClassRefTypeSignature superclassSignature;
+    private final ClassRef superclassSignature;
 
     /** 超接口签名 */
-    private final List<ClassRefTypeSignature> superinterfaceSignatures;
+    private final List<ClassRef> superinterfaceSignatures;
 
     /**
      * throws 签名(通常为 null)这些仅出现在 Scala 类中，当类标记了 {@code @throws} 时出现，
      * 它们违反了 classfile 规范(#495)，但我们仍然解析它们
      */
-    private final List<ClassRefOrTypeVariableSignature> throwsSignatures;
+    private final List<ClassRefOrTypeVar> throwsSignatures;
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      *
      * @param classInfo
      *            类的 {@link ClassInfo} 对象
-     * @param typeParameters
+     * @param TypeParams
      *            类类型参数
      * @param superclassSignature
      *            超类签名
@@ -72,13 +72,13 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      * @param throwsSignatures
      *            throws 签名(这些实际上是无效的，但可能由 Scala 添加：#495)通常为 null
      */
-    private ClassTypeSignature(final ClassInfo classInfo, final List<TypeParameter> typeParameters,
-                               final ClassRefTypeSignature superclassSignature,
-                               final List<ClassRefTypeSignature> superinterfaceSignatures,
-                               final List<ClassRefOrTypeVariableSignature> throwsSignatures) {
+    private ClassType(final ClassInfo classInfo, final List<TypeParam> TypeParams,
+                               final ClassRef superclassSignature,
+                               final List<ClassRef> superinterfaceSignatures,
+                               final List<ClassRefOrTypeVar> throwsSignatures) {
         super();
         this.classInfo = classInfo;
-        this.typeParameters = typeParameters;
+        this.TypeParams = TypeParams;
         this.superclassSignature = superclassSignature;
         this.superinterfaceSignatures = superinterfaceSignatures;
         this.throwsSignatures = throwsSignatures;
@@ -94,26 +94,26 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      * @param interfaces
      *            实现的接口
      */
-    ClassTypeSignature(final ClassInfo classInfo, final ClassInfo superclass, final ClassInfoList interfaces) {
+    ClassType(final ClassInfo classInfo, final ClassInfo superclass, final ClassInfoList interfaces) {
         super();
         this.classInfo = classInfo;
-        this.typeParameters = Collections.emptyList();
-        ClassRefTypeSignature superclassSignature = null;
+        this.TypeParams = Collections.emptyList();
+        ClassRef superclassSignature = null;
         try {
             superclassSignature = superclass == null ? null
-                    : (ClassRefTypeSignature) TypeSignature
+                    : (ClassRef) TypeSignature
                     .parse("L" + superclass.getName().replace('.', '/') + ";", classInfo.getName());
         } catch (final ParseException e) {
             // 静默失败(不应发生)
         }
         this.superclassSignature = superclassSignature;
         this.superinterfaceSignatures = interfaces == null || interfaces.isEmpty()
-                ? Collections.<ClassRefTypeSignature>emptyList()
-                : new ArrayList<ClassRefTypeSignature>(interfaces.size());
+                ? Collections.<ClassRef>emptyList()
+                : new ArrayList<ClassRef>(interfaces.size());
         if (interfaces != null) {
             for (final ClassInfo iface : interfaces) {
                 try {
-                    final ClassRefTypeSignature ifaceSignature = (ClassRefTypeSignature) TypeSignature
+                    final ClassRef ifaceSignature = (ClassRef) TypeSignature
                             .parse("L" + iface.getName().replace('.', '/') + ";", classInfo.getName());
                     this.superinterfaceSignatures.add(ifaceSignature);
                 } catch (final ParseException e) {
@@ -137,34 +137,34 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      * @throws ParseException
      *             如果类类型签名无法解析
      */
-    static ClassTypeSignature parse(final String typeDescriptor, final ClassInfo classInfo) throws ParseException {
-        final Parser parser = new Parser(typeDescriptor);
+    static ClassType parse(final String typeDescriptor, final ClassInfo classInfo) throws ParseException {
+        final TypeParser TypeParser = new TypeParser(typeDescriptor);
         // 定义类名用于使用定义类的类型描述符解析类型变量
         // 但这里我们正在解析定义类的类型描述符，所以它不可能包含指向自身的变量 => 直接使用 null 作为定义类名
         final String definingClassNameNull = null;
-        final List<TypeParameter> typeParameters = TypeParameter.parseList(parser, definingClassNameNull);
-        final ClassRefTypeSignature superclassSignature = ClassRefTypeSignature.parse(parser,
+        final List<TypeParam> TypeParams = TypeParam.parseList(TypeParser, definingClassNameNull);
+        final ClassRef superclassSignature = ClassRef.parse(TypeParser,
                 definingClassNameNull);
-        List<ClassRefTypeSignature> superinterfaceSignatures;
-        if (parser.hasMore()) {
+        List<ClassRef> superinterfaceSignatures;
+        if (TypeParser.hasMore()) {
             superinterfaceSignatures = new ArrayList<>();
-            while (parser.hasMore()) {
-                if (parser.peek() == '^') {
+            while (TypeParser.hasMore()) {
+                if (TypeParser.peek() == '^') {
                     // 类类型签名中存在非法的 "throws" 后缀 -- 穿透处理
                     break;
                 }
-                final ClassRefTypeSignature superinterfaceSignature = ClassRefTypeSignature.parse(parser,
+                final ClassRef superinterfaceSignature = ClassRef.parse(TypeParser,
                         definingClassNameNull);
                 if (superinterfaceSignature == null) {
-                    throw new ParseException(parser, "Could not parse superinterface signature");
+                    throw new ParseException(TypeParser, "Could not parse superinterface signature");
                 }
                 superinterfaceSignatures.add(superinterfaceSignature);
             }
         } else {
             superinterfaceSignatures = Collections.emptyList();
         }
-        List<ClassRefOrTypeVariableSignature> throwsSignatures;
-        if (parser.peek() == '^') {
+        List<ClassRefOrTypeVar> throwsSignatures;
+        if (TypeParser.peek() == '^') {
             // 此类型签名的末尾存在非法的 "throws" 后缀
             // Scala 在将某个类标记为 "@throws" 时会添加这些后缀(#495)
             // 具有此类类型签名的类会被 javac 和 javap 拒绝，如果在子类上调用
@@ -174,29 +174,29 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
             // 由于此问题在 Scala 领域可能广泛存在，因此接受这些无效的类型签名并实际解析出
             // 所有 "throws" 后缀，比抛出异常并拒绝解析类型签名更好
             throwsSignatures = new ArrayList<>();
-            while (parser.peek() == '^') {
-                parser.expect('^');
-                final ClassRefTypeSignature classTypeSignature = ClassRefTypeSignature.parse(parser,
+            while (TypeParser.peek() == '^') {
+                TypeParser.expect('^');
+                final ClassRef ClassType = ClassRef.parse(TypeParser,
                         classInfo.getName());
-                if (classTypeSignature != null) {
-                    throwsSignatures.add(classTypeSignature);
+                if (ClassType != null) {
+                    throwsSignatures.add(ClassType);
                 } else {
-                    final TypeVariableSignature typeVariableSignature = TypeVariableSignature.parse(parser,
+                    final TypeVar TypeVar = TypeVar.parse(TypeParser,
                             classInfo.getName());
-                    if (typeVariableSignature != null) {
-                        throwsSignatures.add(typeVariableSignature);
+                    if (TypeVar != null) {
+                        throwsSignatures.add(TypeVar);
                     } else {
-                        throw new ParseException(parser, "Missing type variable signature");
+                        throw new ParseException(TypeParser, "Missing type variable signature");
                     }
                 }
             }
         } else {
             throwsSignatures = null;
         }
-        if (parser.hasMore()) {
-            throw new ParseException(parser, "Extra characters at end of type descriptor");
+        if (TypeParser.hasMore()) {
+            throw new ParseException(TypeParser, "Extra characters at end of type descriptor");
         }
-        return new ClassTypeSignature(classInfo, typeParameters, superclassSignature, superinterfaceSignatures,
+        return new ClassType(classInfo, TypeParams, superclassSignature, superinterfaceSignatures,
                 throwsSignatures);
     }
 
@@ -205,8 +205,8 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      *
      * @return 类的类型参数
      */
-    public List<TypeParameter> getTypeParameters() {
-        return typeParameters;
+    public List<TypeParam> getTypeParams() {
+        return TypeParams;
     }
 
     /**
@@ -214,7 +214,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      *
      * @return 超类的类型签名，如果无超类则返回 null(即对于 {@link Object})
      */
-    public ClassRefTypeSignature getSuperclassSignature() {
+    public ClassRef getSuperclassSignature() {
         return superclassSignature;
     }
 
@@ -223,7 +223,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      *
      * @return 所有超接口的类型签名
      */
-    public List<ClassRefTypeSignature> getSuperinterfaceSignatures() {
+    public List<ClassRef> getSuperinterfaceSignatures() {
         return superinterfaceSignatures;
     }
 
@@ -233,7 +233,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      *
      * @return throws 签名
      */
-    List<ClassRefOrTypeVariableSignature> getThrowsSignatures() {
+    List<ClassRefOrTypeVar> getThrowsSignatures() {
         return throwsSignatures;
     }
 
@@ -243,7 +243,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         // 类类型的各个部分各自具有其自己的 addTypeAnnotation 方法
         throw new IllegalArgumentException(
-                "Cannot call this method on " + ClassTypeSignature.class.getSimpleName());
+                "Cannot call this method on " + ClassType.class.getSimpleName());
     }
 
     /* (non-Javadoc)
@@ -268,17 +268,17 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     @Override
     void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
-        if (typeParameters != null) {
-            for (final TypeParameter typeParameter : typeParameters) {
-                typeParameter.setScanResult(scanResult);
+        if (TypeParams != null) {
+            for (final TypeParam TypeParam : TypeParams) {
+                TypeParam.setScanResult(scanResult);
             }
         }
         if (this.superclassSignature != null) {
             this.superclassSignature.setScanResult(scanResult);
         }
         if (superinterfaceSignatures != null) {
-            for (final ClassRefTypeSignature classRefTypeSignature : superinterfaceSignatures) {
-                classRefTypeSignature.setScanResult(scanResult);
+            for (final ClassRef ClassRef : superinterfaceSignatures) {
+                ClassRef.setScanResult(scanResult);
             }
         }
     }
@@ -290,19 +290,19 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      *            被引用的类名集合
      */
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
-        for (final TypeParameter typeParameter : typeParameters) {
-            typeParameter.findReferencedClassNames(refdClassNames);
+        for (final TypeParam TypeParam : TypeParams) {
+            TypeParam.findReferencedClassNames(refdClassNames);
         }
         if (superclassSignature != null) {
             superclassSignature.findReferencedClassNames(refdClassNames);
         }
         if (superinterfaceSignatures != null) {
-            for (final ClassRefTypeSignature typeSignature : superinterfaceSignatures) {
+            for (final ClassRef typeSignature : superinterfaceSignatures) {
                 typeSignature.findReferencedClassNames(refdClassNames);
             }
         }
         if (throwsSignatures != null) {
-            for (final ClassRefOrTypeVariableSignature typeSignature : throwsSignatures) {
+            for (final ClassRefOrTypeVar typeSignature : throwsSignatures) {
                 typeSignature.findReferencedClassNames(refdClassNames);
             }
         }
@@ -335,7 +335,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
      */
     @Override
     public int hashCode() {
-        return typeParameters.hashCode() + (superclassSignature == null ? 1 : superclassSignature.hashCode()) * 7
+        return TypeParams.hashCode() + (superclassSignature == null ? 1 : superclassSignature.hashCode()) * 7
                 + (superinterfaceSignatures == null ? 1 : superinterfaceSignatures.hashCode()) * 15;
     }
 
@@ -348,11 +348,11 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof ClassTypeSignature)) {
+        } else if (!(obj instanceof ClassType)) {
             return false;
         }
-        final ClassTypeSignature o = (ClassTypeSignature) obj;
-        return Objects.equals(o.typeParameters, this.typeParameters)
+        final ClassType o = (ClassType) obj;
+        return Objects.equals(o.TypeParams, this.TypeParams)
                 && Objects.equals(o.superclassSignature, this.superclassSignature)
                 && Objects.equals(o.superinterfaceSignatures, this.superinterfaceSignatures);
     }
@@ -379,7 +379,7 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
                           final boolean isAnnotation, final boolean isInterface, final AnnotationInfoList annotationsToExclude,
                           final StringBuilder buf) {
         if (throwsSignatures != null) {
-            for (final ClassRefOrTypeVariableSignature throwsSignature : throwsSignatures) {
+            for (final ClassRefOrTypeVar throwsSignature : throwsSignatures) {
                 if (buf.length() > 0) {
                     buf.append(' ');
                 }
@@ -401,13 +401,13 @@ public final class ClassTypeSignature extends HierarchicalTypeSignature {
         if (className != null) {
             buf.append(useSimpleNames ? ClassInfo.getSimpleName(className) : className);
         }
-        if (!typeParameters.isEmpty()) {
+        if (!TypeParams.isEmpty()) {
             buf.append('<');
-            for (int i = 0; i < typeParameters.size(); i++) {
+            for (int i = 0; i < TypeParams.size(); i++) {
                 if (i > 0) {
                     buf.append(", ");
                 }
-                typeParameters.get(i).toStringInternal(useSimpleNames, null, buf);
+                TypeParams.get(i).toStringInternal(useSimpleNames, null, buf);
             }
             buf.append('>');
         }

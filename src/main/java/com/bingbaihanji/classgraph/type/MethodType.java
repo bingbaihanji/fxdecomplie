@@ -26,19 +26,19 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.*;
 
 /** 方法类型签名(在 classfile 文档中称为 "MethodSignature") */
-public final class MethodTypeSignature extends HierarchicalTypeSignature {
+public final class MethodType extends HierarchicalType {
     /** 方法类型参数 */
-    final List<TypeParameter> typeParameters;
+    final List<TypeParam> TypeParams;
 
     /** 方法参数类型签名 */
     private final List<TypeSignature> parameterTypeSignatures;
@@ -47,7 +47,7 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     private final TypeSignature resultType;
 
     /** throws 类型签名 */
-    private final List<ClassRefOrTypeVariableSignature> throwsSignatures;
+    private final List<ClassRefOrTypeVar> throwsSignatures;
 
     /** 显式接收器参数上的任何类型注解 */
     private AnnotationInfoList receiverTypeAnnotationInfo;
@@ -57,7 +57,7 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     /**
      * 构造函数
      *
-     * @param typeParameters
+     * @param TypeParams
      *            方法的类型参数
      * @param paramTypes
      *            方法的参数类型
@@ -66,10 +66,10 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
      * @param throwsSignatures
      *            方法的 throws 签名
      */
-    private MethodTypeSignature(final List<TypeParameter> typeParameters, final List<TypeSignature> paramTypes,
-                                final TypeSignature resultType, final List<ClassRefOrTypeVariableSignature> throwsSignatures) {
+    private MethodType(final List<TypeParam> TypeParams, final List<TypeSignature> paramTypes,
+                                final TypeSignature resultType, final List<ClassRefOrTypeVar> throwsSignatures) {
         super();
-        this.typeParameters = typeParameters;
+        this.TypeParams = TypeParams;
         this.parameterTypeSignatures = paramTypes;
         this.resultType = resultType;
         this.throwsSignatures = throwsSignatures;
@@ -88,66 +88,66 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
      * @throws ParseException
      *             如果方法类型签名无法解析
      */
-    static MethodTypeSignature parse(final String typeDescriptor, final String definingClassName)
+    static MethodType parse(final String typeDescriptor, final String definingClassName)
             throws ParseException {
         if ("<init>".equals(typeDescriptor)) {
             // 特殊情况：CONSTANT_NameAndType_info 结构中的实例初始化方法签名：
             // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.4.2
-            return new MethodTypeSignature(Collections.<TypeParameter>emptyList(),
-                    Collections.<TypeSignature>emptyList(), /* void */ new BaseTypeSignature('V'),
-                    Collections.<ClassRefOrTypeVariableSignature>emptyList());
+            return new MethodType(Collections.<TypeParam>emptyList(),
+                    Collections.<TypeSignature>emptyList(), /* void */ new BaseType('V'),
+                    Collections.<ClassRefOrTypeVar>emptyList());
         }
-        final Parser parser = new Parser(typeDescriptor);
-        final List<TypeParameter> typeParameters = TypeParameter.parseList(parser, definingClassName);
-        parser.expect('(');
+        final TypeParser TypeParser = new TypeParser(typeDescriptor);
+        final List<TypeParam> TypeParams = TypeParam.parseList(TypeParser, definingClassName);
+        TypeParser.expect('(');
         final List<TypeSignature> paramTypes = new ArrayList<>();
-        while (parser.peek() != ')') {
-            if (!parser.hasMore()) {
-                throw new ParseException(parser, "解析方法签名时输入耗尽");
+        while (TypeParser.peek() != ')') {
+            if (!TypeParser.hasMore()) {
+                throw new ParseException(TypeParser, "解析方法签名时输入耗尽");
             }
-            final TypeSignature paramType = TypeSignature.parse(parser, definingClassName);
+            final TypeSignature paramType = TypeSignature.parse(TypeParser, definingClassName);
             if (paramType == null) {
-                throw new ParseException(parser, "缺少方法参数类型签名");
+                throw new ParseException(TypeParser, "缺少方法参数类型签名");
             }
             paramTypes.add(paramType);
         }
-        parser.expect(')');
-        final TypeSignature resultType = TypeSignature.parse(parser, definingClassName);
+        TypeParser.expect(')');
+        final TypeSignature resultType = TypeSignature.parse(TypeParser, definingClassName);
         if (resultType == null) {
-            throw new ParseException(parser, "缺少方法结果类型签名");
+            throw new ParseException(TypeParser, "缺少方法结果类型签名");
         }
-        List<ClassRefOrTypeVariableSignature> throwsSignatures;
-        if (parser.peek() == '^') {
+        List<ClassRefOrTypeVar> throwsSignatures;
+        if (TypeParser.peek() == '^') {
             throwsSignatures = new ArrayList<>();
-            while (parser.peek() == '^') {
-                parser.expect('^');
-                final ClassRefTypeSignature classTypeSignature = ClassRefTypeSignature.parse(parser,
+            while (TypeParser.peek() == '^') {
+                TypeParser.expect('^');
+                final ClassRef ClassType = ClassRef.parse(TypeParser,
                         definingClassName);
-                if (classTypeSignature != null) {
-                    throwsSignatures.add(classTypeSignature);
+                if (ClassType != null) {
+                    throwsSignatures.add(ClassType);
                 } else {
-                    final TypeVariableSignature typeVariableSignature = TypeVariableSignature.parse(parser,
+                    final TypeVar TypeVar = TypeVar.parse(TypeParser,
                             definingClassName);
-                    if (typeVariableSignature != null) {
-                        throwsSignatures.add(typeVariableSignature);
+                    if (TypeVar != null) {
+                        throwsSignatures.add(TypeVar);
                     } else {
-                        throw new ParseException(parser, "缺少类型变量签名");
+                        throw new ParseException(TypeParser, "缺少类型变量签名");
                     }
                 }
             }
         } else {
             throwsSignatures = Collections.emptyList();
         }
-        if (parser.hasMore()) {
-            throw new ParseException(parser, "类型描述符末尾有多余字符");
+        if (TypeParser.hasMore()) {
+            throw new ParseException(TypeParser, "类型描述符末尾有多余字符");
         }
-        final MethodTypeSignature methodSignature = new MethodTypeSignature(typeParameters, paramTypes, resultType,
+        final MethodType methodSignature = new MethodType(TypeParams, paramTypes, resultType,
                 throwsSignatures);
         // 添加从类型变量签名到其所属方法签名以及封闭类类型签名的反向链接
-        @SuppressWarnings("unchecked") final List<TypeVariableSignature> typeVariableSignatures = (List<TypeVariableSignature>) parser.getState();
-        if (typeVariableSignatures != null) {
-            for (final TypeVariableSignature typeVariableSignature : typeVariableSignatures) {
-                typeVariableSignature.containingMethodSignature = methodSignature;
+        @SuppressWarnings("unchecked") final List<TypeVar> TypeVars = (List<TypeVar>) TypeParser.getState();
+        if (TypeVars != null) {
+            for (final TypeVar TypeVar : TypeVars) {
+                TypeVar.containingMethodSignature = methodSignature;
             }
         }
         return methodSignature;
@@ -159,8 +159,8 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
      *
      * @return 方法的类型参数(如果有)，否则为 null
      */
-    public List<TypeParameter> getTypeParameters() {
-        return typeParameters;
+    public List<TypeParam> getTypeParams() {
+        return TypeParams;
     }
 
     /**
@@ -187,7 +187,7 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
      *
      * @return 方法的 throws 类型，作为 {@link TypeSignature} 解析类型对象
      */
-    public List<ClassRefOrTypeVariableSignature> getThrowsSignatures() {
+    public List<ClassRefOrTypeVar> getThrowsSignatures() {
         return throwsSignatures;
     }
 
@@ -195,7 +195,7 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         // 类的各个类型部分各自有其自己的 addTypeAnnotation 方法
         throw new IllegalArgumentException(
-                "不能对 " + MethodTypeSignature.class.getSimpleName() + " 调用此方法");
+                "不能对 " + MethodType.class.getSimpleName() + " 调用此方法");
     }
 
     /**
@@ -245,21 +245,21 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     @Override
     void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
-        if (typeParameters != null) {
-            for (final TypeParameter typeParameter : typeParameters) {
-                typeParameter.setScanResult(scanResult);
+        if (TypeParams != null) {
+            for (final TypeParam TypeParam : TypeParams) {
+                TypeParam.setScanResult(scanResult);
             }
         }
         if (this.parameterTypeSignatures != null) {
-            for (final TypeSignature typeParameter : parameterTypeSignatures) {
-                typeParameter.setScanResult(scanResult);
+            for (final TypeSignature TypeParam : parameterTypeSignatures) {
+                TypeParam.setScanResult(scanResult);
             }
         }
         if (this.resultType != null) {
             this.resultType.setScanResult(scanResult);
         }
         if (throwsSignatures != null) {
-            for (final ClassRefOrTypeVariableSignature throwsSignature : throwsSignatures) {
+            for (final ClassRefOrTypeVar throwsSignature : throwsSignatures) {
                 throwsSignature.setScanResult(scanResult);
             }
         }
@@ -272,9 +272,9 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
      *            引用的类名集合
      */
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
-        for (final TypeParameter typeParameter : typeParameters) {
-            if (typeParameter != null) {
-                typeParameter.findReferencedClassNames(refdClassNames);
+        for (final TypeParam TypeParam : TypeParams) {
+            if (TypeParam != null) {
+                TypeParam.findReferencedClassNames(refdClassNames);
             }
         }
         for (final TypeSignature typeSignature : parameterTypeSignatures) {
@@ -283,7 +283,7 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
             }
         }
         resultType.findReferencedClassNames(refdClassNames);
-        for (final ClassRefOrTypeVariableSignature typeSignature : throwsSignatures) {
+        for (final ClassRefOrTypeVar typeSignature : throwsSignatures) {
             if (typeSignature != null) {
                 typeSignature.findReferencedClassNames(refdClassNames);
             }
@@ -317,7 +317,7 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
      */
     @Override
     public int hashCode() {
-        return typeParameters.hashCode() + parameterTypeSignatures.hashCode() * 7 + resultType.hashCode() * 15
+        return TypeParams.hashCode() + parameterTypeSignatures.hashCode() * 7 + resultType.hashCode() * 15
                 + throwsSignatures.hashCode() * 31;
     }
 
@@ -330,11 +330,11 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof MethodTypeSignature)) {
+        } else if (!(obj instanceof MethodType)) {
             return false;
         }
-        final MethodTypeSignature o = (MethodTypeSignature) obj;
-        return o.typeParameters.equals(this.typeParameters)
+        final MethodType o = (MethodType) obj;
+        return o.TypeParams.equals(this.TypeParams)
                 && o.parameterTypeSignatures.equals(this.parameterTypeSignatures)
                 && o.resultType.equals(this.resultType) && o.throwsSignatures.equals(this.throwsSignatures);
     }
@@ -344,13 +344,13 @@ public final class MethodTypeSignature extends HierarchicalTypeSignature {
     @Override
     protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
                                     final StringBuilder buf) {
-        if (!typeParameters.isEmpty()) {
+        if (!TypeParams.isEmpty()) {
             buf.append('<');
-            for (int i = 0; i < typeParameters.size(); i++) {
+            for (int i = 0; i < TypeParams.size(); i++) {
                 if (i > 0) {
                     buf.append(", ");
                 }
-                typeParameters.get(i).toString(useSimpleNames, buf);
+                TypeParams.get(i).toString(useSimpleNames, buf);
             }
             buf.append('>');
         }

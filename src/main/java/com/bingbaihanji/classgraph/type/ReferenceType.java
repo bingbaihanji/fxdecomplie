@@ -26,25 +26,25 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
 
 /**
- * 引用类型的类型签名子类包括 {@link ClassRefOrTypeVariableSignature}
- * ({@link ClassRefTypeSignature} 或 {@link TypeVariableSignature})，以及 {@link ArrayTypeSignature}
+ * 引用类型的类型签名子类包括 {@link ClassRefOrTypeVar}
+ * ({@link ClassRef} 或 {@link TypeVar})，以及 {@link ArrayType}
  */
-public abstract class ReferenceTypeSignature extends TypeSignature {
+public abstract class ReferenceType extends TypeSignature {
     /** 构造函数 */
-    protected ReferenceTypeSignature() {
+    protected ReferenceType() {
         super();
     }
 
     /**
      * 解析一个引用类型签名
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            包含该类型描述符的类
@@ -52,19 +52,19 @@ public abstract class ReferenceTypeSignature extends TypeSignature {
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static ReferenceTypeSignature parseReferenceTypeSignature(final Parser parser, final String definingClassName)
+    static ReferenceType parseReferenceType(final TypeParser TypeParser, final String definingClassName)
             throws ParseException {
-        final ClassRefTypeSignature classTypeSignature = ClassRefTypeSignature.parse(parser, definingClassName);
-        if (classTypeSignature != null) {
-            return classTypeSignature;
+        final ClassRef ClassType = ClassRef.parse(TypeParser, definingClassName);
+        if (ClassType != null) {
+            return ClassType;
         }
-        final TypeVariableSignature typeVariableSignature = TypeVariableSignature.parse(parser, definingClassName);
-        if (typeVariableSignature != null) {
-            return typeVariableSignature;
+        final TypeVar TypeVar = TypeVar.parse(TypeParser, definingClassName);
+        if (TypeVar != null) {
+            return TypeVar;
         }
-        final ArrayTypeSignature arrayTypeSignature = ArrayTypeSignature.parse(parser, definingClassName);
-        if (arrayTypeSignature != null) {
-            return arrayTypeSignature;
+        final ArrayType ArrayType = ArrayType.parse(TypeParser, definingClassName);
+        if (ArrayType != null) {
+            return ArrayType;
         }
         return null;
     }
@@ -72,7 +72,7 @@ public abstract class ReferenceTypeSignature extends TypeSignature {
     /**
      * 解析一个类边界
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            包含该类型描述符的类
@@ -80,10 +80,10 @@ public abstract class ReferenceTypeSignature extends TypeSignature {
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static ReferenceTypeSignature parseClassBound(final Parser parser, final String definingClassName)
+    static ReferenceType parseClassBound(final TypeParser TypeParser, final String definingClassName)
             throws ParseException {
-        parser.expect(':');
+        TypeParser.expect(':');
         // 如果 ':' 之后没有签名，则可能返回 null(类边界签名可以为空)
-        return parseReferenceTypeSignature(parser, definingClassName);
+        return parseReferenceType(TypeParser, definingClassName);
     }
 }

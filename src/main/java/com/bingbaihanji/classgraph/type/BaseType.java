@@ -26,17 +26,17 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.type.TypeParser;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 /** 基本类型(byte、char、double、float、int、long、short、boolean 或 void)的类型签名 */
-public class BaseTypeSignature extends TypeSignature {
+public class BaseType extends TypeSignature {
     /** 用于表示基本类型的类型签名字符 */
     private final char typeSignatureChar;
 
@@ -45,7 +45,7 @@ public class BaseTypeSignature extends TypeSignature {
     /**
      * 构造函数
      */
-    BaseTypeSignature(final char typeSignatureChar) {
+    BaseType(final char typeSignatureChar) {
         super();
         switch (typeSignatureChar) {
             case 'B':
@@ -61,7 +61,7 @@ public class BaseTypeSignature extends TypeSignature {
                 break;
             default:
                 throw new IllegalArgumentException(
-                        "Illegal " + BaseTypeSignature.class.getSimpleName() + " type: '" + typeSignatureChar + "'");
+                        "Illegal " + BaseType.class.getSimpleName() + " type: '" + typeSignatureChar + "'");
         }
     }
 
@@ -168,39 +168,39 @@ public class BaseTypeSignature extends TypeSignature {
     /**
      * 解析基本类型
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @return 基本类型签名
      */
-    static BaseTypeSignature parse(final Parser parser) {
-        switch (parser.peek()) {
+    static BaseType parse(final TypeParser TypeParser) {
+        switch (TypeParser.peek()) {
             case 'B':
-                parser.next();
-                return new BaseTypeSignature('B');
+                TypeParser.next();
+                return new BaseType('B');
             case 'C':
-                parser.next();
-                return new BaseTypeSignature('C');
+                TypeParser.next();
+                return new BaseType('C');
             case 'D':
-                parser.next();
-                return new BaseTypeSignature('D');
+                TypeParser.next();
+                return new BaseType('D');
             case 'F':
-                parser.next();
-                return new BaseTypeSignature('F');
+                TypeParser.next();
+                return new BaseType('F');
             case 'I':
-                parser.next();
-                return new BaseTypeSignature('I');
+                TypeParser.next();
+                return new BaseType('I');
             case 'J':
-                parser.next();
-                return new BaseTypeSignature('J');
+                TypeParser.next();
+                return new BaseType('J');
             case 'S':
-                parser.next();
-                return new BaseTypeSignature('S');
+                TypeParser.next();
+                return new BaseType('S');
             case 'Z':
-                parser.next();
-                return new BaseTypeSignature('Z');
+                TypeParser.next();
+                return new BaseType('Z');
             case 'V':
-                parser.next();
-                return new BaseTypeSignature('V');
+                TypeParser.next();
+                return new BaseType('V');
             default:
                 return null;
         }
@@ -300,9 +300,9 @@ public class BaseTypeSignature extends TypeSignature {
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
-        // 不为 BaseTypeSignature 对象设置 ScanResult(#419)
+        // 不为 BaseType 对象设置 ScanResult(#419)
         // 不需要 ScanResult，因为此类不通过 ScanResult 进行类加载
-        // 此外，每个基本类型的 BaseTypeSignature 特定实例被赋值给此类中的静态字段，
+        // 此外，每个基本类型的 BaseType 特定实例被赋值给此类中的静态字段，
         // 这些字段在此类的所有使用中共享，因此不应包含任何特定于某个 ScanResult 的值
         // 从不同的扫描过程设置 ScanResult 将导致 scanResult 字段仅反映最近一次扫描的结果，
         // 并且对该扫描的引用将阻止垃圾回收
@@ -325,10 +325,10 @@ public class BaseTypeSignature extends TypeSignature {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof BaseTypeSignature)) {
+        } else if (!(obj instanceof BaseType)) {
             return false;
         }
-        final BaseTypeSignature other = (BaseTypeSignature) obj;
+        final BaseType other = (BaseType) obj;
         return Objects.equals(this.typeAnnotationInfo, other.typeAnnotationInfo)
                 && other.typeSignatureChar == this.typeSignatureChar;
     }
@@ -338,10 +338,10 @@ public class BaseTypeSignature extends TypeSignature {
      */
     @Override
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
-        if (!(other instanceof BaseTypeSignature)) {
+        if (!(other instanceof BaseType)) {
             return false;
         }
-        return typeSignatureChar == ((BaseTypeSignature) other).typeSignatureChar;
+        return typeSignatureChar == ((BaseType) other).typeSignatureChar;
     }
 
     // -------------------------------------------------------------------------------------------------------------

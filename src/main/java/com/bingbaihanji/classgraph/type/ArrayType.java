@@ -26,11 +26,11 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
 
 import java.lang.reflect.Array;
 import java.util.List;
@@ -38,10 +38,10 @@ import java.util.Objects;
 import java.util.Set;
 
 /** 数组类型签名 */
-public class ArrayTypeSignature extends ReferenceTypeSignature {
+public class ArrayType extends ReferenceType {
     /** 数组类型的原始类型签名字符串 */
     private final String typeSignatureStr;
-    /** 嵌套类型(另一个 {@link ArrayTypeSignature}，或基础元素类型) */
+    /** 嵌套类型(另一个 {@link ArrayType}，或基础元素类型) */
     private final TypeSignature nestedType;
     /** 人类可读的类名，例如 "java.lang.String[]" */
     private String className;
@@ -62,7 +62,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
      * @param typeSignatureStr
      *            原始数组类型签名字符串(例如 "[[I")
      */
-    ArrayTypeSignature(final TypeSignature elementTypeSignature, final int numDims, final String typeSignatureStr) {
+    ArrayType(final TypeSignature elementTypeSignature, final int numDims, final String typeSignatureStr) {
         super();
         final boolean typeSigHasTwoOrMoreDims = typeSignatureStr.startsWith("[[");
         if (numDims < 1) {
@@ -73,7 +73,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
         this.typeSignatureStr = typeSignatureStr;
         this.nestedType = typeSigHasTwoOrMoreDims
                 // 为嵌套类型剥离一个数组维度
-                ? new ArrayTypeSignature(elementTypeSignature, numDims - 1, typeSignatureStr.substring(1))
+                ? new ArrayType(elementTypeSignature, numDims - 1, typeSignatureStr.substring(1))
                 // 最内层维度的嵌套类型是元素类型
                 : elementTypeSignature;
     }
@@ -81,7 +81,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     /**
      * 解析数组类型签名
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            定义类名
@@ -89,20 +89,20 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
      * @throws ParseException
      *             如果解析失败
      */
-    static ArrayTypeSignature parse(final Parser parser, final String definingClassName) throws ParseException {
+    static ArrayType parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
         int numArrayDims = 0;
-        final int begin = parser.getPosition();
-        while (parser.peek() == '[') {
+        final int begin = TypeParser.getPosition();
+        while (TypeParser.peek() == '[') {
             numArrayDims++;
-            parser.next();
+            TypeParser.next();
         }
         if (numArrayDims > 0) {
-            final TypeSignature elementTypeSignature = TypeSignature.parse(parser, definingClassName);
+            final TypeSignature elementTypeSignature = TypeSignature.parse(TypeParser, definingClassName);
             if (elementTypeSignature == null) {
-                throw new ParseException(parser, "elementTypeSignature == null");
+                throw new ParseException(TypeParser, "elementTypeSignature == null");
             }
-            final String typeSignatureStr = parser.getSubsequence(begin, parser.getPosition()).toString();
-            return new ArrayTypeSignature(elementTypeSignature, numArrayDims, typeSignatureStr);
+            final String typeSignatureStr = TypeParser.getSubsequence(begin, TypeParser.getPosition()).toString();
+            return new ArrayType(elementTypeSignature, numArrayDims, typeSignatureStr);
         } else {
             return null;
         }
@@ -123,9 +123,9 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
      * @return 最内层元素类型的类型签名
      */
     public TypeSignature getElementTypeSignature() {
-        ArrayTypeSignature curr = this;
-        while (curr.nestedType instanceof ArrayTypeSignature) {
-            curr = (ArrayTypeSignature) curr.nestedType;
+        ArrayType curr = this;
+        while (curr.nestedType instanceof ArrayType) {
+            curr = (ArrayType) curr.nestedType;
         }
         return curr.getNestedType();
     }
@@ -137,16 +137,16 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
      */
     public int getNumDimensions() {
         int numDims = 1;
-        ArrayTypeSignature curr = this;
-        while (curr.nestedType instanceof ArrayTypeSignature) {
-            curr = (ArrayTypeSignature) curr.nestedType;
+        ArrayType curr = this;
+        while (curr.nestedType instanceof ArrayType) {
+            curr = (ArrayType) curr.nestedType;
             numDims++;
         }
         return numDims;
     }
 
     /**
-     * 获取嵌套类型如果此数组有 2 个或更多维度，则为少一个维度的另一个 {@link ArrayTypeSignature}；
+     * 获取嵌套类型如果此数组有 2 个或更多维度，则为少一个维度的另一个 {@link ArrayType}；
      * 否则返回元素类型
      *
      * @return 嵌套类型
@@ -161,7 +161,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
             addTypeAnnotation(annotationInfo);
         } else {
             final TypePathNode head = typePath.get(0);
-            if (head.typePathKind != 0 || head.typeArgumentIdx != 0) {
+            if (head.typePathKind != 0 || head.TypeArgIdx != 0) {
                 throw new IllegalArgumentException("typePath element contains bad values: " + head);
             }
             nestedType.addTypeAnnotation(typePath.subList(1, typePath.size()), annotationInfo);
@@ -259,8 +259,8 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
         if (elementClassRef == null) {
             // 尝试将元素类型解析为基本类型(int 等)
             final TypeSignature elementTypeSignature = getElementTypeSignature();
-            if (elementTypeSignature instanceof BaseTypeSignature) {
-                elementClassRef = ((BaseTypeSignature) elementTypeSignature).getType();
+            if (elementTypeSignature instanceof BaseType) {
+                elementClassRef = ((BaseType) elementTypeSignature).getType();
             } else {
                 if (scanResult != null) {
                     elementClassRef = elementTypeSignature.loadClass(ignoreExceptions);
@@ -356,10 +356,10 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof ArrayTypeSignature)) {
+        } else if (!(obj instanceof ArrayType)) {
             return false;
         }
-        final ArrayTypeSignature other = (ArrayTypeSignature) obj;
+        final ArrayType other = (ArrayType) obj;
         return Objects.equals(this.typeAnnotationInfo, other.typeAnnotationInfo)
                 && this.nestedType.equals(other.nestedType);
     }
@@ -374,10 +374,10 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof ArrayTypeSignature)) {
+        if (!(other instanceof ArrayType)) {
             return false;
         }
-        final ArrayTypeSignature o = (ArrayTypeSignature) other;
+        final ArrayType o = (ArrayType) other;
         return this.nestedType.equalsIgnoringTypeParams(o.nestedType);
     }
 
@@ -390,7 +390,7 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
         getElementTypeSignature().toStringInternal(useSimpleNames, annotationsToExclude, buf);
 
         // 追加数组维度
-        for (ArrayTypeSignature curr = this; ; ) {
+        for (ArrayType curr = this; ; ) {
             if (curr.typeAnnotationInfo != null && !curr.typeAnnotationInfo.isEmpty()) {
                 for (final AnnotationInfo annotationInfo : curr.typeAnnotationInfo) {
                     if (buf.length() == 0 || buf.charAt(buf.length() - 1) != ' ') {
@@ -403,8 +403,8 @@ public class ArrayTypeSignature extends ReferenceTypeSignature {
 
             buf.append("[]");
 
-            if (curr.nestedType instanceof ArrayTypeSignature) {
-                curr = (ArrayTypeSignature) curr.nestedType;
+            if (curr.nestedType instanceof ArrayType) {
+                curr = (ArrayType) curr.nestedType;
             } else {
                 break;
             }

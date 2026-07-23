@@ -34,10 +34,10 @@ import com.bingbaihanji.classgraph.core.FieldInfoList.FieldInfoFilter;
 
 import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
 import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
-import com.bingbaihanji.classgraph.types.TypeUtils;
-import com.bingbaihanji.classgraph.types.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.utils.Assert;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
@@ -101,7 +101,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     MethodInfoList methodInfo;
     /** 对于注解类，参数的默认值 */
     AnnotationParameterValueList annotationDefaultParamValues;
-    /** {@link ClassTypeSignature} 实例的类型注解装饰器 */
+    /** {@link ClassType} 实例的类型注解装饰器 */
     transient List<ClassTypeAnnotationDecorator> typeAnnotationDecorators;
     /**
      * 当 annotationDefaultParamValues 中的任何 Object[] 装箱类型数组已被延迟转换为原始数组时设置为 true
@@ -116,9 +116,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     /** 该类 class 文件的 class 文件格式主版本号 */
     private int classfileMajorVersion;
     /** 已解析的类类型签名 */
-    private transient ClassTypeSignature typeSignature;
+    private transient ClassType typeSignature;
     /** 合成的类类型描述符 */
-    private transient ClassTypeSignature typeDescriptor;
+    private transient ClassType typeDescriptor;
     /** 编译该类的源文件名 */
     private String sourceFile;
     /** 匿名内部类的完全限定定义方法名 */
@@ -240,17 +240,17 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                     arrayTypeSigStrBuf.append('[');
                 }
                 TypeSignature elementTypeSignature;
-                final char baseTypeChar = BaseTypeSignature.getTypeChar(baseClassName);
+                final char baseTypeChar = BaseType.getTypeChar(baseClassName);
                 if (baseTypeChar != '\0') {
                     // 元素类型是基本(原始)类型
                     arrayTypeSigStrBuf.append(baseTypeChar);
-                    elementTypeSignature = new BaseTypeSignature(baseTypeChar);
+                    elementTypeSignature = new BaseType(baseTypeChar);
                 } else {
                     // 元素类型不是基本(原始)类型——为元素类型创建类型签名
                     final String eltTypeSigStr = "L" + baseClassName.replace('.', '/') + ";";
                     arrayTypeSigStrBuf.append(eltTypeSigStr);
                     try {
-                        elementTypeSignature = ClassRefTypeSignature.parse(new Parser(eltTypeSigStr),
+                        elementTypeSignature = ClassRef.parse(new TypeParser(eltTypeSigStr),
                                 // 泛型类型无需解析类型变量
                                 /* definingClassName = */ null);
                         if (elementTypeSignature == null) {
@@ -263,7 +263,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                     }
                 }
                 classInfo = new ArrayClassInfo(
-                        new ArrayTypeSignature(elementTypeSignature, numArrayDims, arrayTypeSigStrBuf.toString()));
+                        new ArrayType(elementTypeSignature, numArrayDims, arrayTypeSigStrBuf.toString()));
             }
             classNameToClassInfo.put(className, classInfo);
         }
@@ -2821,14 +2821,14 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *             如果类类型签名无法解析(这通常只在 class 文件损坏或编译器 bug
      *             导致无效的类型签名被写入 class 文件时才应抛出)
      */
-    public ClassTypeSignature getTypeSignature() {
+    public ClassType getTypeSignature() {
         synchronized (this) {
             if (typeSignatureStr == null) {
                 return null;
             }
             if (typeSignature == null) {
                 try {
-                    typeSignature = ClassTypeSignature.parse(typeSignatureStr, this);
+                    typeSignature = ClassType.parse(typeSignatureStr, this);
                     typeSignature.setScanResult(scanResult);
                     if (typeAnnotationDecorators != null) {
                         for (final ClassTypeAnnotationDecorator decorator : typeAnnotationDecorators) {
@@ -2871,8 +2871,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @return 该类的已解析泛型类型签名，如果不可用则返回该类的合成类型描述符
      */
-    public ClassTypeSignature getTypeSignatureOrTypeDescriptor() {
-        ClassTypeSignature typeSig = null;
+    public ClassType getTypeSignatureOrTypeDescriptor() {
+        ClassType typeSig = null;
         try {
             typeSig = getTypeSignature();
             if (typeSig != null) {
@@ -2890,10 +2890,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @return 该类的合成类型描述符
      */
-    public ClassTypeSignature getTypeDescriptor() {
+    public ClassType getTypeDescriptor() {
         synchronized (this) {
             if (typeDescriptor == null) {
-                typeDescriptor = new ClassTypeSignature(this, getSuperclass(), getInterfaces());
+                typeDescriptor = new ClassType(this, getSuperclass(), getInterfaces());
                 typeDescriptor.setScanResult(scanResult);
                 if (typeAnnotationDecorators != null) {
                     for (final ClassTypeAnnotationDecorator decorator : typeAnnotationDecorators) {
@@ -3202,7 +3202,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
             annotationDefaultParamValues.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         }
         try {
-            final ClassTypeSignature classSig = getTypeSignature();
+            final ClassType classSig = getTypeSignature();
             if (classSig != null) {
                 classSig.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
             }
@@ -3307,7 +3307,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 annotation.toString(useSimpleNames, buf);
             }
         }
-        ClassTypeSignature typeSig = null;
+        ClassType typeSig = null;
         try {
             typeSig = getTypeSignature();
         } catch (final Exception e) {

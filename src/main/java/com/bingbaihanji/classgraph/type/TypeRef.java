@@ -26,24 +26,12 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.types;
+package com.bingbaihanji.classgraph.type;
 
-/**
- * 解析异常
- */
-public class ParseException extends Exception {
-    /** 序列化版本UID */
-    static final long serialVersionUID = 1L;
-
-    /**
-     * 解析异常
-     *
-     * @param parser
-     *            解析器
-     * @param msg
-     *            异常消息
-     */
-    public ParseException(final Parser parser, final String msg) {
-        super(parser == null ? msg : msg + " (" + parser.getPositionInfo() + ")");
+/** 类类型或类型变量子类包括 ClassRef 和 TypeVar */
+public abstract class TypeRef extends ReferenceType {
+    /** 构造器 */
+    protected TypeRef() {
+        super();
     }
 }

@@ -30,9 +30,9 @@ package com.bingbaihanji.classgraph.core;
 
 import com.bingbaihanji.classgraph.core.ClassFile.MethodTypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.core.ClassInfo.RelType;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.TypeUtils;
-import com.bingbaihanji.classgraph.types.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.utils.Assert;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
@@ -50,9 +50,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     /** 未对齐的参数注解 */
     AnnotationInfo[][] parameterAnnotationInfo;
     /** 解析后的类型描述符 */
-    private transient MethodTypeSignature typeDescriptor;
+    private transient MethodType typeDescriptor;
     /** 解析后的类型签名(如果没有则为 null)方法参数类型未对齐 */
-    private transient MethodTypeSignature typeSignature;
+    private transient MethodType typeSignature;
     /**
      * 未对齐的参数名称仅在 JDK8+ 中产生，且仅当编译时提供命令行开关 `-parameters`
      */
@@ -73,7 +73,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     /** 此方法体的最大行号，如果未知则为 0 */
     private int maxLineNum;
 
-    /** {@link MethodTypeSignature} 实例的类型注解装饰器 */
+    /** {@link MethodType} 实例的类型注解装饰器 */
     private transient List<MethodTypeAnnotationDecorator> typeAnnotationDecorators;
 
     private String[] thrownExceptionNames;
@@ -169,11 +169,11 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @return 方法的解析后类型描述符
      */
     @Override
-    public MethodTypeSignature getTypeDescriptor() {
+    public MethodType getTypeDescriptor() {
         synchronized (this) {
             if (typeDescriptor == null) {
                 try {
-                    typeDescriptor = MethodTypeSignature.parse(typeDescriptorStr, declaringClassName);
+                    typeDescriptor = MethodType.parse(typeDescriptorStr, declaringClassName);
                     typeDescriptor.setScanResult(scanResult);
                     if (typeAnnotationDecorators != null) {
                         // 类型注解从源代码中声明的第一个参数开始对形参进行索引
@@ -185,7 +185,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                         // 出于同样的原因对参数元数据进行"右对齐"(#897)
                         final int descNumParam = typeDescriptor.getParameterTypeSignatures().size();
                         int numImplicitPrefixParams;
-                        final MethodTypeSignature sig = getTypeSignature();
+                        final MethodType sig = getTypeSignature();
                         if (sig != null) {
                             // 泛型类型签名省略了隐式前缀参数，因此参数数量的差异揭示了多少个
                             // (规范认可的关系)
@@ -248,7 +248,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @param numImplicitPrefixParams
      *            装饰期间要剥离的隐式前缀参数数量(如果无则为 0)
      */
-    private void decorateMethodType(final MethodTypeSignature methodType, final int numImplicitPrefixParams) {
+    private void decorateMethodType(final MethodType methodType, final int numImplicitPrefixParams) {
         final List<TypeSignature> paramSigs = methodType.getParameterTypeSignatures();
         // 在移除隐式前缀参数之前先复制它们 —— 不要使用 List.subList() 返回的实时视图，
         // 因为下面的 paramSigs 结构修改会使其失效
@@ -281,11 +281,11 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      *             被写入 classfile 时抛出)
      */
     @Override
-    public MethodTypeSignature getTypeSignature() {
+    public MethodType getTypeSignature() {
         synchronized (this) {
             if (typeSignature == null && typeSignatureStr != null) {
                 try {
-                    typeSignature = MethodTypeSignature.parse(typeSignatureStr, declaringClassName);
+                    typeSignature = MethodType.parse(typeSignatureStr, declaringClassName);
                     typeSignature.setScanResult(scanResult);
                     if (typeAnnotationDecorators != null) {
                         // 泛型类型签名已经省略了所有隐式前缀参数，因此
@@ -313,8 +313,8 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @return 方法的解析后类型签名，如果不可用，则返回方法的解析后类型描述符
      */
     @Override
-    public MethodTypeSignature getTypeSignatureOrTypeDescriptor() {
-        MethodTypeSignature typeSig = null;
+    public MethodType getTypeSignatureOrTypeDescriptor() {
+        MethodType typeSig = null;
         try {
             typeSig = getTypeSignature();
             if (typeSig != null) {
@@ -476,7 +476,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
         // 至少对于 Kotlin 生成的代码来说是这样)
 
         // 实际上，Java 规范明确指出："给定方法或构造函数的签名和描述符可能由于
-        // 编译器生成的工件而不完全对应特别是，MethodTypeSignature 中编码形参的
+        // 编译器生成的工件而不完全对应特别是，MethodType 中编码形参的
         // TypeSignatures 数量可能少于 MethodDescriptor 中的 ParameterDescriptors 数量"
 
         // 这也曾被 Guava 28.2 中的一个隐式参数触发 (#660)
@@ -485,7 +485,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             if (parameterInfo == null) {
                 // 从方法的类型签名中获取参数类型签名
                 List<TypeSignature> paramTypeSignatures = null;
-                final MethodTypeSignature typeSig = getTypeSignature();
+                final MethodType typeSig = getTypeSignature();
                 if (typeSig != null) {
                     paramTypeSignatures = typeSig.getParameterTypeSignatures();
                 }
@@ -496,7 +496,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                 // 多少参数 —— 参见 #660)
                 List<TypeSignature> paramTypeDescriptors = null;
                 try {
-                    final MethodTypeSignature typeDesc = getTypeDescriptor();
+                    final MethodType typeDesc = getTypeDescriptor();
                     if (typeDesc != null) {
                         paramTypeDescriptors = typeDesc.getParameterTypeSignatures();
                     }
@@ -655,9 +655,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
         for (final MethodParameterInfo mpi : allParameterInfo) {
             final TypeSignature parameterType = mpi.getTypeSignatureOrTypeDescriptor();
             TypeSignature actualParameterType;
-            if (parameterType instanceof TypeVariableSignature) {
-                final TypeVariableSignature tvs = (TypeVariableSignature) parameterType;
-                final TypeParameter t = tvs.resolve();
+            if (parameterType instanceof TypeVar) {
+                final TypeVar tvs = (TypeVar) parameterType;
+                final TypeParam t = tvs.resolve();
                 if (t.classBound != null) {
                     // 如果可用，使用类型变量的类边界作为具体类型，
                     // 优先于使用第一个接口边界(忽略接口边界，如果存在的话)
@@ -668,7 +668,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     actualParameterType = t.interfaceBounds.get(0);
                 } else {
                     // 健全性检查，不应发生
-                    throw new IllegalArgumentException("TypeVariableSignature 没有边界");
+                    throw new IllegalArgumentException("TypeVar 没有边界");
                 }
             } else {
                 actualParameterType = parameterType;
@@ -838,7 +838,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
                                            final Set<ClassInfo> refdClassInfo, final LogNode log) {
         try {
-            final MethodTypeSignature methodSig = getTypeSignature();
+            final MethodType methodSig = getTypeSignature();
             if (methodSig != null) {
                 methodSig.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
             }
@@ -849,7 +849,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             }
         }
         try {
-            final MethodTypeSignature methodDesc = getTypeDescriptor();
+            final MethodType methodDesc = getTypeDescriptor();
             if (methodDesc != null) {
                 methodDesc.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
             }
@@ -946,7 +946,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      */
     @Override
     protected void toString(final boolean useSimpleNames, final StringBuilder buf) {
-        final MethodTypeSignature methodType = getTypeSignatureOrTypeDescriptor();
+        final MethodType methodType = getTypeSignatureOrTypeDescriptor();
 
         if (annotationInfo != null) {
             for (final AnnotationInfo annotation : annotationInfo) {
@@ -964,17 +964,17 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             TypeUtils.modifiersToString(modifiers, ModifierType.METHOD, isDefault(), buf);
         }
 
-        final List<TypeParameter> typeParameters = methodType.getTypeParameters();
-        if (!typeParameters.isEmpty()) {
+        final List<TypeParam> TypeParams = methodType.getTypeParams();
+        if (!TypeParams.isEmpty()) {
             if (buf.length() > 0) {
                 buf.append(' ');
             }
             buf.append('<');
-            for (int i = 0; i < typeParameters.size(); i++) {
+            for (int i = 0; i < TypeParams.size(); i++) {
                 if (i > 0) {
                     buf.append(", ");
                 }
-                typeParameters.get(i).toString(useSimpleNames, buf);
+                TypeParams.get(i).toString(useSimpleNames, buf);
             }
             buf.append('>');
         }
@@ -1014,7 +1014,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                 final int mods = allParamInfo[i].getModifiers();
                 if ((mods & /* synthetic */ 0x1000) == 0 && (mods & /* mandated */ 0x8000) == 0) {
                     final TypeSignature paramType = allParamInfo[i].getTypeSignatureOrTypeDescriptor();
-                    if (paramType instanceof ArrayTypeSignature) {
+                    if (paramType instanceof ArrayType) {
                         varArgsParamIndex = i;
                         break;
                     }
@@ -1044,11 +1044,11 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             if (paramTypeSignature != null) {
                 if (i == varArgsParamIndex) {
                     // 正确显示可变参数 —— 将最后一个 "[]" 替换为 "..."
-                    if (!(paramTypeSignature instanceof ArrayTypeSignature)) {
+                    if (!(paramTypeSignature instanceof ArrayType)) {
                         throw new IllegalArgumentException(
                                 "可变参数方法 " + name + " 的最后一个参数获得了非数组类型");
                     }
-                    final ArrayTypeSignature arrayType = (ArrayTypeSignature) paramTypeSignature;
+                    final ArrayType arrayType = (ArrayType) paramTypeSignature;
                     if (arrayType.getNumDimensions() == 0) {
                         throw new IllegalArgumentException(
                                 "可变参数方法 " + name + " 的最后一个参数获得了零维数组类型");

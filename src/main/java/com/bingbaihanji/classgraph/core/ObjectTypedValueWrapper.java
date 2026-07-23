@@ -303,24 +303,24 @@ class ObjectTypedValueWrapper extends ScanResultObject {
             final TypeSignature annotationMethodResultTypeSig = annotationMethodList.get(0)
                     .getTypeSignatureOrTypeDescriptor().getResultType();
             // 结果类型必须是数组类型
-            if (!(annotationMethodResultTypeSig instanceof ArrayTypeSignature)) {
+            if (!(annotationMethodResultTypeSig instanceof ArrayType)) {
                 throw new IllegalArgumentException("注解类 " + annotationClassInfo.getName()
                         + " 中的注解参数 " + paramName
                         + " 包含数组，但没有数组类型签名");
             }
-            final ArrayTypeSignature arrayTypeSig = (ArrayTypeSignature) annotationMethodResultTypeSig;
+            final ArrayType arrayTypeSig = (ArrayType) annotationMethodResultTypeSig;
             if (arrayTypeSig.getNumDimensions() != 1) {
                 throw new IllegalArgumentException("注解仅支持一维数组");
             }
             final TypeSignature elementTypeSig = arrayTypeSig.getElementTypeSignature();
-            if (elementTypeSig instanceof ClassRefTypeSignature) {
+            if (elementTypeSig instanceof ClassRef) {
                 // 为非基本类型数组查找元素类型名称
-                final ClassRefTypeSignature classRefTypeSignature = (ClassRefTypeSignature) elementTypeSig;
-                return getClass ? classRefTypeSignature.loadClass() : classRefTypeSignature.getClassName();
-            } else if (elementTypeSig instanceof BaseTypeSignature) {
+                final ClassRef ClassRef = (ClassRef) elementTypeSig;
+                return getClass ? ClassRef.loadClass() : ClassRef.getClassName();
+            } else if (elementTypeSig instanceof BaseType) {
                 // 为基本类型数组查找基本类型类名称
-                final BaseTypeSignature baseTypeSignature = (BaseTypeSignature) elementTypeSig;
-                return getClass ? baseTypeSignature.getType() : baseTypeSignature.getTypeStr();
+                final BaseType BaseType = (BaseType) elementTypeSig;
+                return getClass ? BaseType.getType() : BaseType.getTypeStr();
             }
         } else {
             // 无法找到此名称的方法 —— 这是一个外部类

@@ -213,7 +213,7 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
      *
      * @return 类成员解析后的类型描述符字符串
      */
-    public abstract HierarchicalTypeSignature getTypeDescriptor();
+    public abstract HierarchicalType getTypeDescriptor();
 
     /**
      * 返回类成员的类型描述符字符串，不包含类型参数如果需要泛型类型参数，请改用 {@link #getTypeSignatureStr()}
@@ -233,7 +233,7 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
      *             如果类成员的类型签名无法解析(仅当 class 文件损坏或编译器 bug 导致向 class 文件
      *             写入了无效的类型签名时才会抛出此异常)
      */
-    public abstract HierarchicalTypeSignature getTypeSignature();
+    public abstract HierarchicalType getTypeSignature();
 
     /**
      * 返回类成员的类型签名字符串，可能包含类型参数如果返回 null，表示此类成员没有可用的类型签名信息，
@@ -251,7 +251,7 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
      *
      * @return 类成员解析后的类型签名；如果不可用，则返回类成员解析后的类型描述符
      */
-    public abstract HierarchicalTypeSignature getTypeSignatureOrTypeDescriptor();
+    public abstract HierarchicalType getTypeSignatureOrTypeDescriptor();
 
     /**
      * 返回类成员的类型签名字符串，可能包含类型参数如果类型签名字符串为 null(表示此类成员没有可用的类型签名信息)，

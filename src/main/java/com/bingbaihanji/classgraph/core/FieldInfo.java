@@ -30,9 +30,9 @@ package com.bingbaihanji.classgraph.core;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.core.ClassInfo.RelType;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.TypeUtils;
-import com.bingbaihanji.classgraph.types.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.lang.annotation.Repeatable;

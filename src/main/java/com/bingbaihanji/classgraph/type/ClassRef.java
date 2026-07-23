@@ -26,28 +26,28 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
-import com.bingbaihanji.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.type.TypeUtils;
 
 import java.util.*;
 
-/** 类引用类型签名(在 classfile 文档中称为"ClassTypeSignature") */
-public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature {
+/** 类引用类型签名(在 classfile 文档中称为"ClassType") */
+public final class ClassRef extends ClassRefOrTypeVar {
     /** 类名 */
     final String className;
 
     /** 类类型参数 */
-    private final List<TypeArgument> typeArguments;
+    private final List<TypeArg> TypeArgs;
 
     /** 类型后缀 */
     private final List<String> suffixes;
 
     /** 后缀类型参数 */
-    private final List<List<TypeArgument>> suffixTypeArguments;
+    private final List<List<TypeArg>> suffixTypeArgs;
 
     /** 后缀类型注解 */
     private List<AnnotationInfoList> suffixTypeAnnotations;
@@ -59,34 +59,34 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
      *
      * @param className
      *            类名
-     * @param typeArguments
+     * @param TypeArgs
      *            类类型参数
      * @param suffixes
      *            类后缀(用于内部类)
-     * @param suffixTypeArguments
+     * @param suffixTypeArgs
      *            后缀类型参数
      */
-    private ClassRefTypeSignature(final String className, final List<TypeArgument> typeArguments,
-                                  final List<String> suffixes, final List<List<TypeArgument>> suffixTypeArguments) {
+    private ClassRef(final String className, final List<TypeArg> TypeArgs,
+                                  final List<String> suffixes, final List<List<TypeArg>> suffixTypeArgs) {
         super();
         this.className = className;
-        this.typeArguments = typeArguments;
+        this.TypeArgs = TypeArgs;
         this.suffixes = suffixes;
-        this.suffixTypeArguments = suffixTypeArguments;
+        this.suffixTypeArgs = suffixTypeArgs;
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
-    private static boolean suffixesMatch(final ClassRefTypeSignature a, final ClassRefTypeSignature b) {
+    private static boolean suffixesMatch(final ClassRef a, final ClassRef b) {
         return a.suffixes.equals(b.suffixes) //
-                && a.suffixTypeArguments.equals(b.suffixTypeArguments) //
+                && a.suffixTypeArgs.equals(b.suffixTypeArgs) //
                 && Objects.equals(a.suffixTypeAnnotations, b.suffixTypeAnnotations);
     }
 
     /**
      * 解析类类型签名
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            定义类的名称(用于解析类型变量)
@@ -94,47 +94,47 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static ClassRefTypeSignature parse(final Parser parser, final String definingClassName) throws ParseException {
-        if (parser.peek() == 'L') {
-            parser.next();
-            final int startParserPosition = parser.getPosition();
-            if (!TypeUtils.getIdentifierToken(parser, /* stopAtDollarSign = */ true, /* stopAtDot = */ true)) {
-                throw new ParseException(parser, "Could not parse identifier token");
+    static ClassRef parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
+        if (TypeParser.peek() == 'L') {
+            TypeParser.next();
+            final int startParserPosition = TypeParser.getPosition();
+            if (!TypeUtils.getIdentifierToken(TypeParser, /* stopAtDollarSign = */ true, /* stopAtDot = */ true)) {
+                throw new ParseException(TypeParser, "Could not parse identifier token");
             }
-            String className = parser.currToken();
-            final List<TypeArgument> typeArguments = TypeArgument.parseList(parser, definingClassName);
+            String className = TypeParser.currToken();
+            final List<TypeArg> TypeArgs = TypeArg.parseList(TypeParser, definingClassName);
             List<String> suffixes;
-            List<List<TypeArgument>> suffixTypeArguments;
+            List<List<TypeArg>> suffixTypeArgs;
             boolean dropSuffixes = false;
-            if (parser.peek() == '.' || parser.peek() == '$') {
+            if (TypeParser.peek() == '.' || TypeParser.peek() == '$') {
                 suffixes = new ArrayList<>();
-                suffixTypeArguments = new ArrayList<>();
-                while (parser.peek() == '.' || parser.peek() == '$') {
-                    parser.advance(1);
-                    if (!TypeUtils.getIdentifierToken(parser, /* stopAtDollarSign = */ true,
+                suffixTypeArgs = new ArrayList<>();
+                while (TypeParser.peek() == '.' || TypeParser.peek() == '$') {
+                    TypeParser.advance(1);
+                    if (!TypeUtils.getIdentifierToken(TypeParser, /* stopAtDollarSign = */ true,
                             /* stopAtDot = */ true)) {
                         // 获取到了 '$' 之后的下一个 token 为空字符串，即找到了一个空后缀
                         suffixes.add("");
-                        suffixTypeArguments.add(Collections.<TypeArgument>emptyList());
+                        suffixTypeArgs.add(Collections.<TypeArg>emptyList());
                         dropSuffixes = true;
                     } else {
-                        suffixes.add(parser.currToken());
-                        suffixTypeArguments.add(TypeArgument.parseList(parser, definingClassName));
+                        suffixes.add(TypeParser.currToken());
+                        suffixTypeArgs.add(TypeArg.parseList(TypeParser, definingClassName));
                     }
                 }
                 if (dropSuffixes) {
                     // 获取到了空后缀 -- 要么是 "$$"，要么是类名以 '$' 结尾(Scala 会这样用)
                     // 在这种情况下，将整个类引用作为不带后缀的单个类名处理
-                    className = parser.getSubstring(startParserPosition, parser.getPosition()).replace('/', '.');
+                    className = TypeParser.getSubstring(startParserPosition, TypeParser.getPosition()).replace('/', '.');
                     suffixes = Collections.emptyList();
-                    suffixTypeArguments = Collections.emptyList();
+                    suffixTypeArgs = Collections.emptyList();
                 }
             } else {
                 suffixes = Collections.emptyList();
-                suffixTypeArguments = Collections.emptyList();
+                suffixTypeArgs = Collections.emptyList();
             }
-            parser.expect(';');
-            return new ClassRefTypeSignature(className, typeArguments, suffixes, suffixTypeArguments);
+            TypeParser.expect(';');
+            return new ClassRef(className, TypeArgs, suffixes, suffixTypeArgs);
         } else {
             return null;
         }
@@ -179,8 +179,8 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
      *
      * @return 基类的类型参数
      */
-    public List<TypeArgument> getTypeArguments() {
-        return typeArguments;
+    public List<TypeArg> getTypeArgs() {
+        return TypeArgs;
     }
 
     /**
@@ -197,8 +197,8 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
      *
      * @return 后缀(嵌套内部类)的类型参数列表，每个后缀一个列表，如果无则返回空列表
      */
-    public List<List<TypeArgument>> getSuffixTypeArguments() {
-        return suffixTypeArguments;
+    public List<List<TypeArg>> getSuffixTypeArgs() {
+        return suffixTypeArgs;
     }
 
     /**
@@ -235,7 +235,7 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
             } else if (typePathNode.typePathKind == 3) {
                 // 注解在参数化类型的类型参数上
                 // (需要递归处理)
-                nextTypeArgIdx = typePathNode.typeArgumentIdx;
+                nextTypeArgIdx = typePathNode.TypeArgIdx;
                 break;
             } else {
                 // 这里无效：
@@ -287,16 +287,16 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
                 addSuffixTypeAnnotation(suffixIdx, annotationInfo);
             }
         } else {
-            final List<TypeArgument> typeArgumentList = suffixIdx == -1 ? typeArguments
-                    : suffixTypeArguments.get(suffixIdx);
-            // 对于类型描述符(而非类型签名)，typeArguments 是空列表，因此需要对 nextTypeArgIdx 进行边界检查
-            if (nextTypeArgIdx < typeArgumentList.size()) {
+            final List<TypeArg> TypeArgList = suffixIdx == -1 ? TypeArgs
+                    : suffixTypeArgs.get(suffixIdx);
+            // 对于类型描述符(而非类型签名)，TypeArgs 是空列表，因此需要对 nextTypeArgIdx 进行边界检查
+            if (nextTypeArgIdx < TypeArgList.size()) {
                 // type_path_kind == 3 可以被 type_path_kind == 2 跟随，用于嵌套类型边界上的注解，
                 // 这需要对类型路径的剩余部分进行递归处理
                 final List<TypePathNode> remainingTypePath = typePath.subList(numDeeperNestedLevels + 1,
                         typePath.size());
                 // 将类型注解添加到类型参数
-                typeArgumentList.get(nextTypeArgIdx).addTypeAnnotation(remainingTypePath, annotationInfo);
+                TypeArgList.get(nextTypeArgIdx).addTypeAnnotation(remainingTypePath, annotationInfo);
             }
         }
     }
@@ -356,12 +356,12 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
     @Override
     void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
-        for (final TypeArgument typeArgument : typeArguments) {
-            typeArgument.setScanResult(scanResult);
+        for (final TypeArg TypeArg : TypeArgs) {
+            TypeArg.setScanResult(scanResult);
         }
-        for (final List<TypeArgument> typeArgumentList : suffixTypeArguments) {
-            for (final TypeArgument typeArgument : typeArgumentList) {
-                typeArgument.setScanResult(scanResult);
+        for (final List<TypeArg> TypeArgList : suffixTypeArgs) {
+            for (final TypeArg TypeArg : TypeArgList) {
+                TypeArg.setScanResult(scanResult);
             }
         }
     }
@@ -375,12 +375,12 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
     @Override
     protected void findReferencedClassNames(final Set<String> refdClassNames) {
         refdClassNames.add(getFullyQualifiedClassName());
-        for (final TypeArgument typeArgument : typeArguments) {
-            typeArgument.findReferencedClassNames(refdClassNames);
+        for (final TypeArg TypeArg : TypeArgs) {
+            TypeArg.findReferencedClassNames(refdClassNames);
         }
-        for (final List<TypeArgument> typeArgumentList : suffixTypeArguments) {
-            for (final TypeArgument typeArgument : typeArgumentList) {
-                typeArgument.findReferencedClassNames(refdClassNames);
+        for (final List<TypeArg> TypeArgList : suffixTypeArgs) {
+            for (final TypeArg TypeArg : TypeArgList) {
+                TypeArg.findReferencedClassNames(refdClassNames);
             }
         }
     }
@@ -390,7 +390,7 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
      */
     @Override
     public int hashCode() {
-        return className.hashCode() + 7 * typeArguments.hashCode() + 15 * suffixTypeArguments.hashCode()
+        return className.hashCode() + 7 * TypeArgs.hashCode() + 15 * suffixTypeArgs.hashCode()
                 + 31 * (typeAnnotationInfo == null ? 0 : typeAnnotationInfo.hashCode())
                 + 64 * (suffixTypeAnnotations == null ? 0 : suffixTypeAnnotations.hashCode());
     }
@@ -402,11 +402,11 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof ClassRefTypeSignature)) {
+        } else if (!(obj instanceof ClassRef)) {
             return false;
         }
-        final ClassRefTypeSignature o = (ClassRefTypeSignature) obj;
-        return o.className.equals(this.className) && o.typeArguments.equals(this.typeArguments)
+        final ClassRef o = (ClassRef) obj;
+        return o.className.equals(this.className) && o.TypeArgs.equals(this.TypeArgs)
                 && Objects.equals(this.typeAnnotationInfo, o.typeAnnotationInfo) && suffixesMatch(o, this);
     }
 
@@ -417,14 +417,14 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
      */
     @Override
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
-        if (other instanceof TypeVariableSignature) {
-            // 将类类型签名与类型变量进行比较 -- 此逻辑在 TypeVariableSignature 中实现，此处不重复
+        if (other instanceof TypeVar) {
+            // 将类类型签名与类型变量进行比较 -- 此逻辑在 TypeVar 中实现，此处不重复
             return other.equalsIgnoringTypeParams(this);
         }
-        if (!(other instanceof ClassRefTypeSignature)) {
+        if (!(other instanceof ClassRef)) {
             return false;
         }
-        final ClassRefTypeSignature o = (ClassRefTypeSignature) other;
+        final ClassRef o = (ClassRef) other;
         return o.className.equals(this.className) && Objects.equals(this.typeAnnotationInfo, o.typeAnnotationInfo)
                 && suffixesMatch(o, this);
     }
@@ -448,13 +448,13 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
             // 追加基类名
             buf.append(useSimpleNames ? ClassInfo.getSimpleName(className) : className);
             // 追加基类类型参数
-            if (!typeArguments.isEmpty()) {
+            if (!TypeArgs.isEmpty()) {
                 buf.append('<');
-                for (int i = 0; i < typeArguments.size(); i++) {
+                for (int i = 0; i < TypeArgs.size(); i++) {
                     if (i > 0) {
                         buf.append(", ");
                     }
-                    typeArguments.get(i).toString(useSimpleNames, buf);
+                    TypeArgs.get(i).toString(useSimpleNames, buf);
                 }
                 buf.append('>');
             }
@@ -479,14 +479,14 @@ public final class ClassRefTypeSignature extends ClassRefOrTypeVariableSignature
                 // 追加后缀名
                 buf.append(suffixes.get(i));
                 // 追加后缀类型参数
-                final List<TypeArgument> suffixTypeArgumentsList = suffixTypeArguments.get(i);
-                if (!suffixTypeArgumentsList.isEmpty()) {
+                final List<TypeArg> suffixTypeArgsList = suffixTypeArgs.get(i);
+                if (!suffixTypeArgsList.isEmpty()) {
                     buf.append('<');
-                    for (int j = 0; j < suffixTypeArgumentsList.size(); j++) {
+                    for (int j = 0; j < suffixTypeArgsList.size(); j++) {
                         if (j > 0) {
                             buf.append(", ");
                         }
-                        suffixTypeArgumentsList.get(j).toString(useSimpleNames, buf);
+                        suffixTypeArgsList.get(j).toString(useSimpleNames, buf);
                     }
                     buf.append('>');
                 }

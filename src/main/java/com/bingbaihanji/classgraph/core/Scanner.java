@@ -707,7 +707,7 @@ class Scanner implements Callable<ScanResult> {
 
         // 如果 scanSpec.enableClassInfo 为 true，则扫描类文件
         // (classNameToClassInfo 是一个 ConcurrentHashMap，因为在扫描完成后
-        // ArrayTypeSignature.getArrayClassInfo() 可能会修改它)
+        // ArrayType.getArrayClassInfo() 可能会修改它)
         final Map<String, ClassInfo> classNameToClassInfo = new ConcurrentHashMap<>();
         final Map<String, PackageInfo> packageNameToPackageInfo = new HashMap<>();
         final Map<String, ModuleInfo> moduleNameToModuleInfo = new HashMap<>();
@@ -754,7 +754,7 @@ class Scanner implements Callable<ScanResult> {
             // 取消注释以下代码，为类型描述符或类型签名中引用的任何类创建占位外部类，
             // 以便可以为这些类引用获取 ClassInfo 对象这将导致所有类型描述符和类型
             // 签名被解析，并从中提取类名这将增加扫描时间的一些开销，唯一的好处是
-            // ClassRefTypeSignature.getClassInfo() 和 AnnotationClassRef.getClassInfo()
+            // ClassRef.getClassInfo() 和 AnnotationClassRef.getClassInfo()
             // 永远不会返回 null，因为注解类引用中找到的所有外部类都将为其创建一个占位
             // ClassInfo 对象这个功能足够晦涩，可能不值得为了强制解析所有类型描述符
             // 和类型签名(在返回 ScanResult 之前)而减慢所有其他用例的扫描速度

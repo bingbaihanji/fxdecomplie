@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.core;
 
-import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.type.ParseException;
 
 /**
  * 存储在注解参数值中找到的 {@code Class<?>} 类型描述符
@@ -75,13 +75,13 @@ public class AnnotationClassRef extends ScanResultObject {
     /**
      * 获取类型签名
      *
-     * @return {@code Class<?>} 引用的类型签名可能是 {@link ClassRefTypeSignature}、
-     *         {@link BaseTypeSignature} 或 {@link ArrayTypeSignature}
+     * @return {@code Class<?>} 引用的类型签名可能是 {@link ClassRef}、
+     *         {@link BaseType} 或 {@link ArrayType}
      */
     private TypeSignature getTypeSignature() {
         if (typeSignature == null) {
             try {
-                // ClassRefTypeSignature、BaseTypeSignature 或 ArrayTypeSignature 中不可能有待解析的类型变量，
+                // ClassRef、BaseType 或 ArrayType 中不可能有待解析的类型变量，
                 // 所以直接将 definingClassName 设为 null
                 typeSignature = TypeSignature.parse(typeDescriptorStr, /* definingClassName = */ null);
                 typeSignature.setScanResult(scanResult);
@@ -104,11 +104,11 @@ public class AnnotationClassRef extends ScanResultObject {
     @Override
     public Class<?> loadClass(final boolean ignoreExceptions) {
         getTypeSignature();
-        if (typeSignature instanceof BaseTypeSignature) {
-            return ((BaseTypeSignature) typeSignature).getType();
-        } else if (typeSignature instanceof ClassRefTypeSignature) {
+        if (typeSignature instanceof BaseType) {
+            return ((BaseType) typeSignature).getType();
+        } else if (typeSignature instanceof ClassRef) {
             return typeSignature.loadClass(ignoreExceptions);
-        } else if (typeSignature instanceof ArrayTypeSignature) {
+        } else if (typeSignature instanceof ArrayType) {
             return typeSignature.loadClass(ignoreExceptions);
         } else {
             throw new IllegalArgumentException("Got unexpected type " + typeSignature.getClass().getName()
@@ -137,11 +137,11 @@ public class AnnotationClassRef extends ScanResultObject {
     protected String getClassName() {
         if (className == null) {
             getTypeSignature();
-            if (typeSignature instanceof BaseTypeSignature) {
-                className = ((BaseTypeSignature) typeSignature).getTypeStr();
-            } else if (typeSignature instanceof ClassRefTypeSignature) {
-                className = ((ClassRefTypeSignature) typeSignature).getFullyQualifiedClassName();
-            } else if (typeSignature instanceof ArrayTypeSignature) {
+            if (typeSignature instanceof BaseType) {
+                className = ((BaseType) typeSignature).getTypeStr();
+            } else if (typeSignature instanceof ClassRef) {
+                className = ((ClassRef) typeSignature).getFullyQualifiedClassName();
+            } else if (typeSignature instanceof ArrayType) {
                 className = typeSignature.getClassName();
             } else {
                 throw new IllegalArgumentException("Got unexpected type " + typeSignature.getClass().getName()

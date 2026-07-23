@@ -26,15 +26,15 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.types;
+package com.bingbaihanji.classgraph.type;
 
 
-import com.bingbaihanji.utils.json.JSONUtils;
+import com.bingbaihanji.classgraph.util.Strings;
 
 /**
  * 通用 PEG 解析器
  */
-public class Parser {
+public class TypeParser {
     /** 当前位置之前显示的上下文字符数 */
     private static final int SHOW_BEFORE = 80;
     /** 当前位置之后显示的上下文字符数 */
@@ -56,7 +56,7 @@ public class Parser {
      * @throws ParseException
      *             如果字符串为 null
      */
-    public Parser(final String string) throws ParseException {
+    public TypeParser(final String string) throws ParseException {
         if (string == null) {
             throw new ParseException(null, "Cannot parse null string");
         }
@@ -71,8 +71,8 @@ public class Parser {
     public String getPositionInfo() {
         final int showStart = Math.max(0, position - SHOW_BEFORE);
         final int showEnd = Math.min(string.length(), position + SHOW_AFTER);
-        return "before: \"" + JSONUtils.escapeJSONString(string.substring(showStart, position)) + "\"; after: \""
-                + JSONUtils.escapeJSONString(string.substring(position, showEnd)) + "\"; position: " + position
+        return "before: \"" + Strings.escapeJson(string.substring(showStart, position)) + "\"; after: \""
+                + Strings.escapeJson(string.substring(position, showEnd)) + "\"; position: " + position
                 + "; token: \"" + token + "\"";
     }
 

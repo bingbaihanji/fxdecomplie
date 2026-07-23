@@ -26,20 +26,20 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
 
 import java.util.*;
 
 /** 一个类型参数 */
-public final class TypeArgument extends HierarchicalTypeSignature {
+public final class TypeArg extends HierarchicalType {
     /** 通配符类型 */
     private final Wildcard wildcard;
     /** 类型签名(如果 wildcard == ANY，则为 null) */
-    private final ReferenceTypeSignature typeSignature;
+    private final ReferenceType typeSignature;
 
     /**
      * 构造函数
@@ -49,7 +49,7 @@ public final class TypeArgument extends HierarchicalTypeSignature {
      * @param typeSignature
      *            类型签名
      */
-    private TypeArgument(final Wildcard wildcard, final ReferenceTypeSignature typeSignature) {
+    private TypeArg(final Wildcard wildcard, final ReferenceType typeSignature) {
         super();
         this.wildcard = wildcard;
         this.typeSignature = typeSignature;
@@ -60,7 +60,7 @@ public final class TypeArgument extends HierarchicalTypeSignature {
     /**
      * 解析一个类型参数
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            定义类的名称(用于解析类型变量)
@@ -68,34 +68,34 @@ public final class TypeArgument extends HierarchicalTypeSignature {
      * @throws ParseException
      *             如果方法类型签名无法解析
      */
-    private static TypeArgument parse(final Parser parser, final String definingClassName) throws ParseException {
-        final char peek = parser.peek();
+    private static TypeArg parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
+        final char peek = TypeParser.peek();
         if (peek == '*') {
-            parser.expect('*');
-            return new TypeArgument(Wildcard.ANY, null);
+            TypeParser.expect('*');
+            return new TypeArg(Wildcard.ANY, null);
         } else if (peek == '+') {
-            parser.expect('+');
-            final ReferenceTypeSignature typeSignature = ReferenceTypeSignature.parseReferenceTypeSignature(parser,
+            TypeParser.expect('+');
+            final ReferenceType typeSignature = ReferenceType.parseReferenceType(TypeParser,
                     definingClassName);
             if (typeSignature == null) {
-                throw new ParseException(parser, "Missing '+' type bound");
+                throw new ParseException(TypeParser, "Missing '+' type bound");
             }
-            return new TypeArgument(Wildcard.EXTENDS, typeSignature);
+            return new TypeArg(Wildcard.EXTENDS, typeSignature);
         } else if (peek == '-') {
-            parser.expect('-');
-            final ReferenceTypeSignature typeSignature = ReferenceTypeSignature.parseReferenceTypeSignature(parser,
+            TypeParser.expect('-');
+            final ReferenceType typeSignature = ReferenceType.parseReferenceType(TypeParser,
                     definingClassName);
             if (typeSignature == null) {
-                throw new ParseException(parser, "Missing '-' type bound");
+                throw new ParseException(TypeParser, "Missing '-' type bound");
             }
-            return new TypeArgument(Wildcard.SUPER, typeSignature);
+            return new TypeArg(Wildcard.SUPER, typeSignature);
         } else {
-            final ReferenceTypeSignature typeSignature = ReferenceTypeSignature.parseReferenceTypeSignature(parser,
+            final ReferenceType typeSignature = ReferenceType.parseReferenceType(TypeParser,
                     definingClassName);
             if (typeSignature == null) {
-                throw new ParseException(parser, "Missing type bound");
+                throw new ParseException(TypeParser, "Missing type bound");
             }
-            return new TypeArgument(Wildcard.NONE, typeSignature);
+            return new TypeArg(Wildcard.NONE, typeSignature);
         }
     }
 
@@ -104,7 +104,7 @@ public final class TypeArgument extends HierarchicalTypeSignature {
     /**
      * 解析一个类型参数列表
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            定义类的名称(用于解析类型变量)
@@ -112,18 +112,18 @@ public final class TypeArgument extends HierarchicalTypeSignature {
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static List<TypeArgument> parseList(final Parser parser, final String definingClassName) throws ParseException {
-        if (parser.peek() == '<') {
-            parser.expect('<');
-            final List<TypeArgument> typeArguments = new ArrayList<>(2);
-            while (parser.peek() != '>') {
-                if (!parser.hasMore()) {
-                    throw new ParseException(parser, "Missing '>'");
+    static List<TypeArg> parseList(final TypeParser TypeParser, final String definingClassName) throws ParseException {
+        if (TypeParser.peek() == '<') {
+            TypeParser.expect('<');
+            final List<TypeArg> TypeArgs = new ArrayList<>(2);
+            while (TypeParser.peek() != '>') {
+                if (!TypeParser.hasMore()) {
+                    throw new ParseException(TypeParser, "Missing '>'");
                 }
-                typeArguments.add(parse(parser, definingClassName));
+                TypeArgs.add(parse(TypeParser, definingClassName));
             }
-            parser.expect('>');
-            return typeArguments;
+            TypeParser.expect('>');
+            return TypeArgs;
         } else {
             return Collections.emptyList();
         }
@@ -143,7 +143,7 @@ public final class TypeArgument extends HierarchicalTypeSignature {
      *
      * @return 类型签名
      */
-    public ReferenceTypeSignature getTypeSignature() {
+    public ReferenceType getTypeSignature() {
         return typeSignature;
     }
 
@@ -228,10 +228,10 @@ public final class TypeArgument extends HierarchicalTypeSignature {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof TypeArgument)) {
+        } else if (!(obj instanceof TypeArg)) {
             return false;
         }
-        final TypeArgument other = (TypeArgument) obj;
+        final TypeArg other = (TypeArg) obj;
         return Objects.equals(this.typeAnnotationInfo, other.typeAnnotationInfo)
                 && (Objects.equals(this.typeSignature, other.typeSignature)
                 && other.wildcard.equals(this.wildcard));

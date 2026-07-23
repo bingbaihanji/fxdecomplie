@@ -32,7 +32,7 @@ import com.bingbaihanji.classgraph.concurrency.WorkQueue;
 import com.bingbaihanji.classgraph.core.Scanner.ClassfileScanWorkUnit;
 import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
 import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.types.ParseException;
+import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.utils.CollectionUtils;
 import com.bingbaihanji.classgraph.utils.JarUtils;
 import com.bingbaihanji.classgraph.utils.LogNode;
@@ -116,7 +116,7 @@ class ClassFile {
     private String typeSignatureStr;
     /** 源文件，如 Classfile.java */
     private String sourceFile;
-    /** {@link ClassTypeSignature} 实例的类型注解装饰器 */
+    /** {@link ClassType} 实例的类型注解装饰器 */
     private List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators;
 
     // -------------------------------------------------------------------------------------------------------------
@@ -1007,8 +1007,8 @@ class ClassFile {
             final List<TypePathNode> list = new ArrayList<>(typePathLength);
             for (int i = 0; i < typePathLength; i++) {
                 final int typePathKind = reader.readUnsignedByte();
-                final int typeArgumentIdx = reader.readUnsignedByte();
-                list.add(new TypePathNode(typePathKind, typeArgumentIdx));
+                final int TypeArgIdx = reader.readUnsignedByte();
+                list.add(new TypePathNode(typePathKind, TypeArgIdx));
             }
             return list;
         }
@@ -1170,7 +1170,7 @@ class ClassFile {
                             typeSig.findReferencedClassNames(refdClassNames);
                         } else if (typeSigStr.indexOf('(') >= 0 || "<init>".equals(typeSigStr)) {
                             // 解析类型签名
-                            final MethodTypeSignature typeSig = MethodTypeSignature.parse(typeSigStr,
+                            final MethodType typeSig = MethodType.parse(typeSigStr,
                                     /* definingClassName = */ null);
                             // 从类型签名中提取类名
                             typeSig.findReferencedClassNames(refdClassNames);
@@ -1404,7 +1404,7 @@ class ClassFile {
             List<MethodTypeAnnotationDecorator> methodTypeAnnotationDecorators = null;
             String methodName = null;
             String methodTypeDescriptor = null;
-            String methodTypeSignatureStr = null;
+            String MethodTypeStr = null;
             // 始终为注解启用 MethodInfo(这是注解常量定义的方式)
             final boolean enableMethodInfo = scanSpec.enableMethodInfo || isAnnotation;
             if (enableMethodInfo || isAnnotation) { // 注解在 method_info 中存储默认值
@@ -1492,13 +1492,13 @@ class ClassFile {
                             methodTypeAnnotationDecorators = new ArrayList<>(annotationCount);
                             for (int m = 0; m < annotationCount; m++) {
                                 final int targetType = reader.readUnsignedByte();
-                                final int typeParameterIndex;
+                                final int TypeParamIndex;
                                 final int boundIndex;
                                 final int formalParameterIndex;
                                 final int throwsTypeIndex;
                                 if (targetType == 0x01) {
                                     // 泛型方法或构造函数的类型参数声明
-                                    typeParameterIndex = reader.readUnsignedByte();
+                                    TypeParamIndex = reader.readUnsignedByte();
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
@@ -1507,13 +1507,13 @@ class ClassFile {
                                     // 但 Google 的 Java 编译器出于某种原因将此类注解添加到 guava 的方法中
                                     // 直接忽略这些注解(#861)
                                     reader.readUnsignedShort();
-                                    typeParameterIndex = -1;
+                                    TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x12) {
                                     // 泛型方法或构造函数类型参数声明的边界中的类型
-                                    typeParameterIndex = reader.readUnsignedByte();
+                                    TypeParamIndex = reader.readUnsignedByte();
                                     boundIndex = reader.readUnsignedByte();
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
@@ -1523,33 +1523,33 @@ class ClassFile {
                                     // 此 target_type 不应添加到方法中，但似乎 JDK 17 编译器有 bug，
                                     // 仍然将此 target_type 添加到记录的方法中(#797)因此接受它，
                                     // 但忽略它(相同的 target_type 也应该添加到记录的字段中)
-                                    typeParameterIndex = -1;
+                                    TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x14) {
                                     // 方法的返回类型，或新构造对象的类型
                                     // (空目标)
-                                    typeParameterIndex = -1;
+                                    TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x15) {
                                     // 方法或构造函数的接收者类型
                                     // (空目标)
-                                    typeParameterIndex = -1;
+                                    TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x16) {
                                     // 方法、构造函数或 Lambda 表达式的形式参数声明中的类型
-                                    typeParameterIndex = -1;
+                                    TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = reader.readUnsignedByte();
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x17) {
                                     // 方法或构造函数 throws 子句中的类型
-                                    typeParameterIndex = -1;
+                                    TypeParamIndex = -1;
                                     boundIndex = -1;
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = reader.readUnsignedShort();
@@ -1565,35 +1565,35 @@ class ClassFile {
                                 final AnnotationInfo annotationInfo = readAnnotation();
                                 methodTypeAnnotationDecorators.add(new MethodTypeAnnotationDecorator() {
                                     @Override
-                                    public void decorate(final MethodTypeSignature methodTypeSignature) {
+                                    public void decorate(final MethodType MethodType) {
                                         if (targetType == 0x01) {
                                             // 泛型方法或构造函数的类型参数声明
-                                            final List<TypeParameter> typeParameters = methodTypeSignature
-                                                    .getTypeParameters();
-                                            if (typeParameters != null
-                                                    && typeParameterIndex < typeParameters.size()) {
-                                                typeParameters.get(typeParameterIndex).addTypeAnnotation(typePath,
+                                            final List<TypeParam> TypeParams = MethodType
+                                                    .getTypeParams();
+                                            if (TypeParams != null
+                                                    && TypeParamIndex < TypeParams.size()) {
+                                                TypeParams.get(TypeParamIndex).addTypeAnnotation(typePath,
                                                         annotationInfo);
                                             }
                                             // 否则这是方法类型描述符，而不是方法类型签名，因此没有类型参数
                                         } else if (targetType == 0x12) {
                                             // 泛型方法或构造函数类型参数声明的边界中的类型
-                                            final List<TypeParameter> typeParameters = methodTypeSignature
-                                                    .getTypeParameters();
-                                            if (typeParameters != null
-                                                    && typeParameterIndex < typeParameters.size()) {
-                                                final TypeParameter typeParameter = typeParameters
-                                                        .get(typeParameterIndex);
+                                            final List<TypeParam> TypeParams = MethodType
+                                                    .getTypeParams();
+                                            if (TypeParams != null
+                                                    && TypeParamIndex < TypeParams.size()) {
+                                                final TypeParam TypeParam = TypeParams
+                                                        .get(TypeParamIndex);
                                                 // boundIndex == 0 => 类边界；boundIndex > 0 => 接口边界
                                                 if (boundIndex == 0) {
-                                                    final ReferenceTypeSignature classBound = typeParameter
+                                                    final ReferenceType classBound = TypeParam
                                                             .getClassBound();
                                                     if (classBound != null) {
                                                         classBound.addTypeAnnotation(typePath, annotationInfo);
                                                     }
                                                 } else {
-                                                    final List<ReferenceTypeSignature> interfaceBounds = //
-                                                            typeParameter.getInterfaceBounds();
+                                                    final List<ReferenceType> interfaceBounds = //
+                                                            TypeParam.getInterfaceBounds();
                                                     if (interfaceBounds != null
                                                             && boundIndex - 1 < interfaceBounds.size()) {
                                                         interfaceBounds.get(boundIndex - 1)
@@ -1604,11 +1604,11 @@ class ClassFile {
                                             // 否则这是方法类型描述符，而不是方法类型签名，因此没有类型参数
                                         } else if (targetType == 0x14) {
                                             // 方法的返回类型，或新构造对象的类型
-                                            methodTypeSignature.getResultType().addTypeAnnotation(typePath,
+                                            MethodType.getResultType().addTypeAnnotation(typePath,
                                                     annotationInfo);
                                         } else if (targetType == 0x15) {
                                             // 方法或构造函数的接收者类型(显式接收者参数)
-                                            methodTypeSignature.addRecieverTypeAnnotation(annotationInfo);
+                                            MethodType.addRecieverTypeAnnotation(annotationInfo);
                                         } else if (targetType == 0x16) {
                                             // 方法、构造函数或 Lambda 表达式的形式参数声明中的类型
                                             // 注意：形式参数索引不可靠，因为并非所有编译器以相同方式索引参数 --
@@ -1622,7 +1622,7 @@ class ClassFile {
                                             // formal_parameter_index value of 0 does not always indicate the
                                             // first parameter descriptor in the method descriptor."
                                             // 真是够了，伙计们
-                                            final List<TypeSignature> parameterTypeSignatures = methodTypeSignature
+                                            final List<TypeSignature> parameterTypeSignatures = MethodType
                                                     .getParameterTypeSignatures();
                                             if (formalParameterIndex < parameterTypeSignatures.size()) {
                                                 parameterTypeSignatures.get(formalParameterIndex)
@@ -1630,8 +1630,8 @@ class ClassFile {
                                             }
                                         } else if (targetType == 0x17) {
                                             // 方法或构造函数 throws 子句中的类型
-                                            final List<ClassRefOrTypeVariableSignature> throwsSignatures = //
-                                                    methodTypeSignature.getThrowsSignatures();
+                                            final List<TypeRef> throwsSignatures = //
+                                                    MethodType.getThrowsSignatures();
                                             if (throwsSignatures != null
                                                     && throwsTypeIndex < throwsSignatures.size()) {
                                                 throwsSignatures.get(throwsTypeIndex).addTypeAnnotation(typePath,
@@ -1656,7 +1656,7 @@ class ClassFile {
                         }
                     } else if (constantPoolStringEquals(attributeNameCpIdx, "Signature")) {
                         // 将类型参数添加到方法类型签名
-                        methodTypeSignatureStr = getConstantPoolString(reader.readUnsignedShort());
+                        MethodTypeStr = getConstantPoolString(reader.readUnsignedShort());
                     } else if (constantPoolStringEquals(attributeNameCpIdx, "AnnotationDefault")) {
                         if (annotationParamDefaultValues == null) {
                             annotationParamDefaultValues = new AnnotationParameterValueList();
@@ -1704,7 +1704,7 @@ class ClassFile {
                         methodInfoList = new MethodInfoList();
                     }
                     methodInfoList.add(new MethodInfo(className, methodName, methodAnnotationInfo,
-                            methodModifierFlags, methodTypeDescriptor, methodTypeSignatureStr, methodParameterNames,
+                            methodModifierFlags, methodTypeDescriptor, MethodTypeStr, methodParameterNames,
                             methodParameterModifiers, methodParameterAnnotations, methodHasBody, minLineNum,
                             maxLineNum, methodTypeAnnotationDecorators, thrownExceptionNames));
                 }
@@ -1748,23 +1748,23 @@ class ClassFile {
                     classTypeAnnotationDecorators = new ArrayList<>(annotationCount);
                     for (int m = 0; m < annotationCount; m++) {
                         final int targetType = reader.readUnsignedByte();
-                        final int typeParameterIndex;
+                        final int TypeParamIndex;
                         final int supertypeIndex;
                         final int boundIndex;
                         if (targetType == 0x00) {
                             // 泛型类或接口的类型参数声明
-                            typeParameterIndex = reader.readUnsignedByte();
+                            TypeParamIndex = reader.readUnsignedByte();
                             supertypeIndex = -1;
                             boundIndex = -1;
                         } else if (targetType == 0x10) {
                             // 类声明的 extends 或 implements 子句中的类型(包括匿名类声明的
                             // 直接超类或直接超接口)，或接口声明的 extends 子句中的类型
                             supertypeIndex = reader.readUnsignedShort();
-                            typeParameterIndex = -1;
+                            TypeParamIndex = -1;
                             boundIndex = -1;
                         } else if (targetType == 0x11) {
                             // 泛型类或接口类型参数声明的边界中的类型
-                            typeParameterIndex = reader.readUnsignedByte();
+                            TypeParamIndex = reader.readUnsignedByte();
                             boundIndex = reader.readUnsignedByte();
                             supertypeIndex = -1;
                         } else {
@@ -1778,13 +1778,13 @@ class ClassFile {
                         final AnnotationInfo annotationInfo = readAnnotation();
                         classTypeAnnotationDecorators.add(new ClassTypeAnnotationDecorator() {
                             @Override
-                            public void decorate(final ClassTypeSignature classTypeSignature) {
+                            public void decorate(final ClassType ClassType) {
                                 if (targetType == 0x00) {
                                     // 泛型类或接口的类型参数声明
-                                    final List<TypeParameter> typeParameters = classTypeSignature
-                                            .getTypeParameters();
-                                    if (typeParameters != null && typeParameterIndex < typeParameters.size()) {
-                                        typeParameters.get(typeParameterIndex).addTypeAnnotation(typePath,
+                                    final List<TypeParam> TypeParams = ClassType
+                                            .getTypeParams();
+                                    if (TypeParams != null && TypeParamIndex < TypeParams.size()) {
+                                        TypeParams.get(TypeParamIndex).addTypeAnnotation(typePath,
                                                 annotationInfo);
                                     }
                                 } else if (targetType == 0x10) {
@@ -1792,31 +1792,31 @@ class ClassFile {
                                     // 直接超类或直接超接口)，或接口声明的 extends 子句中的类型
                                     if (supertypeIndex == 65535) {
                                         // 类声明的 extends 子句中的类型
-                                        classTypeSignature.getSuperclassSignature().addTypeAnnotation(typePath,
+                                        ClassType.getSuperclassSignature().addTypeAnnotation(typePath,
                                                 annotationInfo);
                                     } else {
                                         // 接口声明的 implements 子句中的类型
-                                        classTypeSignature.getSuperinterfaceSignatures().get(supertypeIndex)
+                                        ClassType.getSuperinterfaceSignatures().get(supertypeIndex)
                                                 .addTypeAnnotation(typePath, annotationInfo);
                                     }
                                 } else if (targetType == 0x11) {
                                     // 泛型类或接口类型参数声明的边界中的类型
-                                    final List<TypeParameter> typeParameters = classTypeSignature
-                                            .getTypeParameters();
-                                    if (typeParameters != null && typeParameterIndex < typeParameters.size()) {
-                                        final TypeParameter typeParameter = typeParameters.get(typeParameterIndex);
+                                    final List<TypeParam> TypeParams = ClassType
+                                            .getTypeParams();
+                                    if (TypeParams != null && TypeParamIndex < TypeParams.size()) {
+                                        final TypeParam TypeParam = TypeParams.get(TypeParamIndex);
                                         // boundIndex == 0 => 类边界；boundIndex > 0 => 接口边界
                                         if (boundIndex == 0) {
-                                            final ReferenceTypeSignature classBound = typeParameter.getClassBound();
+                                            final ReferenceType classBound = TypeParam.getClassBound();
                                             if (classBound != null) {
                                                 classBound.addTypeAnnotation(typePath, annotationInfo);
                                             }
                                         } else {
-                                            final List<ReferenceTypeSignature> interfaceBounds = typeParameter
+                                            final List<ReferenceType> interfaceBounds = TypeParam
                                                     .getInterfaceBounds();
                                             if (interfaceBounds != null
                                                     && boundIndex - 1 < interfaceBounds.size()) {
-                                                typeParameter.getInterfaceBounds().get(boundIndex - 1)
+                                                TypeParam.getInterfaceBounds().get(boundIndex - 1)
                                                         .addTypeAnnotation(typePath, annotationInfo);
                                             }
                                         }
@@ -1900,13 +1900,13 @@ class ClassFile {
     // -------------------------------------------------------------------------------------------------------------
 
     interface ClassTypeAnnotationDecorator {
-        void decorate(ClassTypeSignature classTypeSignature);
+        void decorate(ClassType ClassType);
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     interface MethodTypeAnnotationDecorator {
-        void decorate(MethodTypeSignature methodTypeSignature);
+        void decorate(MethodType MethodType);
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -2020,16 +2020,16 @@ class ClassFile {
 
     static class TypePathNode {
         short typePathKind;
-        short typeArgumentIdx;
+        short TypeArgIdx;
 
-        public TypePathNode(final int typePathKind, final int typeArgumentIdx) {
+        public TypePathNode(final int typePathKind, final int TypeArgIdx) {
             this.typePathKind = (short) typePathKind;
-            this.typeArgumentIdx = (short) typeArgumentIdx;
+            this.TypeArgIdx = (short) TypeArgIdx;
         }
 
         @Override
         public String toString() {
-            return "(" + typePathKind + "," + typeArgumentIdx + ")";
+            return "(" + typePathKind + "," + TypeArgIdx + ")";
         }
     }
 }

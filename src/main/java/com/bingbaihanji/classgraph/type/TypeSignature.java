@@ -26,11 +26,11 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.util.HashSet;
@@ -39,11 +39,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 引用类型或基本类型的类型签名子类包括 {@link ReferenceTypeSignature}
- * (其子类为 {@link ClassRefTypeSignature}、{@link TypeVariableSignature} 和 {@link ArrayTypeSignature})和
- * {@link BaseTypeSignature}
+ * 引用类型或基本类型的类型签名子类包括 {@link ReferenceType}
+ * (其子类为 {@link ClassRef}、{@link TypeVar} 和 {@link ArrayType})和
+ * {@link BaseType}
  */
-public abstract class TypeSignature extends HierarchicalTypeSignature {
+public abstract class TypeSignature extends HierarchicalType {
     /** 构造函数 */
     protected TypeSignature() {
         // 空
@@ -52,7 +52,7 @@ public abstract class TypeSignature extends HierarchicalTypeSignature {
     /**
      * 解析一个类型签名
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClass
      *            包含该类型描述符的类
@@ -60,15 +60,15 @@ public abstract class TypeSignature extends HierarchicalTypeSignature {
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static TypeSignature parse(final Parser parser, final String definingClass) throws ParseException {
-        final ReferenceTypeSignature referenceTypeSignature = ReferenceTypeSignature
-                .parseReferenceTypeSignature(parser, definingClass);
-        if (referenceTypeSignature != null) {
-            return referenceTypeSignature;
+    static TypeSignature parse(final TypeParser TypeParser, final String definingClass) throws ParseException {
+        final ReferenceType ReferenceType = ReferenceType
+                .parseReferenceType(TypeParser, definingClass);
+        if (ReferenceType != null) {
+            return ReferenceType;
         }
-        final BaseTypeSignature baseTypeSignature = BaseTypeSignature.parse(parser);
-        if (baseTypeSignature != null) {
-            return baseTypeSignature;
+        final BaseType BaseType = BaseType.parse(TypeParser);
+        if (BaseType != null) {
+            return BaseType;
         }
         return null;
     }
@@ -85,14 +85,14 @@ public abstract class TypeSignature extends HierarchicalTypeSignature {
      *             如果类型签名无法解析
      */
     static TypeSignature parse(final String typeDescriptor, final String definingClass) throws ParseException {
-        final Parser parser = new Parser(typeDescriptor);
+        final TypeParser TypeParser = new TypeParser(typeDescriptor);
         TypeSignature typeSignature;
-        typeSignature = parse(parser, definingClass);
+        typeSignature = parse(TypeParser, definingClass);
         if (typeSignature == null) {
-            throw new ParseException(parser, "Could not parse type signature");
+            throw new ParseException(TypeParser, "Could not parse type signature");
         }
-        if (parser.hasMore()) {
-            throw new ParseException(parser, "Extra characters at end of type descriptor");
+        if (TypeParser.hasMore()) {
+            throw new ParseException(TypeParser, "Extra characters at end of type descriptor");
         }
         return typeSignature;
     }

@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.types;
+package com.bingbaihanji.classgraph.type;
 
 import java.lang.reflect.Modifier;
 
@@ -47,7 +47,7 @@ public final class TypeUtils {
     /**
      * 解析 Java 标识符，将 '/' 替换为 '.'将标识符追加到解析器的 token 缓冲区中
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param stopAtDollarSign
      *            如果为 true，遇到第一个 '$' 时停止解析
@@ -55,19 +55,19 @@ public final class TypeUtils {
      *            如果为 true，遇到第一个 '.' 时停止解析
      * @return 如果至少解析了一个标识符字符则返回 true
      */
-    public static boolean getIdentifierToken(final Parser parser, final boolean stopAtDollarSign,
+    public static boolean getIdentifierToken(final TypeParser TypeParser, final boolean stopAtDollarSign,
                                              final boolean stopAtDot) {
         boolean consumedChar = false;
-        while (parser.hasMore()) {
-            final char c = parser.peek();
+        while (TypeParser.hasMore()) {
+            final char c = TypeParser.peek();
             if (c == '/') {
-                parser.appendToToken('.');
-                parser.next();
+                TypeParser.appendToToken('.');
+                TypeParser.next();
                 consumedChar = true;
             } else if (c != ';' && c != '[' && c != '<' && c != '>' && c != ':' && (!stopAtDollarSign || c != '$')
                     && (!stopAtDot || c != '.')) {
-                parser.appendToToken(c);
-                parser.next();
+                TypeParser.appendToToken(c);
+                TypeParser.next();
                 consumedChar = true;
             } else {
                 break;

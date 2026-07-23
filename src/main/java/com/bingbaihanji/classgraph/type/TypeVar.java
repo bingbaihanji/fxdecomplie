@@ -26,17 +26,17 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
-import com.bingbaihanji.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.type.TypeUtils;
 
 import java.util.*;
 
 /** 一个类型变量签名 */
-public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature {
+public final class TypeVar extends ClassRefOrTypeVar {
     /** 类型变量名称 */
     private final String name;
 
@@ -44,10 +44,10 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     private final String definingClassName;
 
     /** 此类型变量所属的方法签名 */
-    MethodTypeSignature containingMethodSignature;
+    MethodType containingMethodSignature;
 
     /** 解析后的类型形参(如果有) */
-    private TypeParameter typeParameterCached;
+    private TypeParam TypeParamCached;
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -59,7 +59,7 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
      * @param definingClassName
      *            定义类名
      */
-    private TypeVariableSignature(final String typeVariableName, final String definingClassName) {
+    private TypeVar(final String typeVariableName, final String definingClassName) {
         super();
         this.name = typeVariableName;
         this.definingClassName = definingClassName;
@@ -68,9 +68,9 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 解析一个 TypeVariableSignature
+     * 解析一个 TypeVar
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            定义类名
@@ -78,27 +78,27 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
      * @throws ParseException
      *             如果解析失败
      */
-    static TypeVariableSignature parse(final Parser parser, final String definingClassName) throws ParseException {
-        final char peek = parser.peek();
+    static TypeVar parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
+        final char peek = TypeParser.peek();
         if (peek == 'T') {
-            parser.next();
+            TypeParser.next();
             // Scala 的类型变量名称中可能包含 '$' (#495)
-            if (!TypeUtils.getIdentifierToken(parser, /* stopAtDollarSign = */ false, /* stopAtDot = */ true)) {
-                throw new ParseException(parser, "Could not parse type variable signature");
+            if (!TypeUtils.getIdentifierToken(TypeParser, /* stopAtDollarSign = */ false, /* stopAtDot = */ true)) {
+                throw new ParseException(TypeParser, "Could not parse type variable signature");
             }
-            parser.expect(';');
-            final TypeVariableSignature typeVariableSignature = new TypeVariableSignature(parser.currToken(),
+            TypeParser.expect(';');
+            final TypeVar TypeVar = new TypeVar(TypeParser.currToken(),
                     definingClassName);
 
             // 将类型变量签名保存在解析器状态中，以便方法和类类型签名可以链接到类型签名
             @SuppressWarnings("unchecked")
-            List<TypeVariableSignature> typeVariableSignatures = (List<TypeVariableSignature>) parser.getState();
-            if (typeVariableSignatures == null) {
-                parser.setState(typeVariableSignatures = new ArrayList<>());
+            List<TypeVar> TypeVars = (List<TypeVar>) TypeParser.getState();
+            if (TypeVars == null) {
+                TypeParser.setState(TypeVars = new ArrayList<>());
             }
-            typeVariableSignatures.add(typeVariableSignature);
+            TypeVars.add(TypeVar);
 
-            return typeVariableSignature;
+            return TypeVar;
         } else {
             return null;
         }
@@ -123,17 +123,17 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
      * @throws IllegalArgumentException
      *             如果在定义方法或封闭类中找不到与类型变量同名的类型形参
      */
-    public TypeParameter resolve() {
-        if (typeParameterCached != null) {
-            return typeParameterCached;
+    public TypeParam resolve() {
+        if (TypeParamCached != null) {
+            return TypeParamCached;
         }
         // 尝试根据包含方法解析类型变量
-        if (containingMethodSignature != null && containingMethodSignature.typeParameters != null
-                && !containingMethodSignature.typeParameters.isEmpty()) {
-            for (final TypeParameter typeParameter : containingMethodSignature.typeParameters) {
-                if (typeParameter.name.equals(this.name)) {
-                    typeParameterCached = typeParameter;
-                    return typeParameter;
+        if (containingMethodSignature != null && containingMethodSignature.TypeParams != null
+                && !containingMethodSignature.TypeParams.isEmpty()) {
+            for (final TypeParam TypeParam : containingMethodSignature.TypeParams) {
+                if (TypeParam.name.equals(this.name)) {
+                    TypeParamCached = TypeParam;
+                    return TypeParam;
                 }
             }
         }
@@ -143,29 +143,29 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
             if (containingClassInfo == null) {
                 throw new IllegalArgumentException("Could not find ClassInfo object for " + definingClassName);
             }
-            ClassTypeSignature containingClassSignature = null;
+            ClassType containingClassSignature = null;
             try {
                 containingClassSignature = containingClassInfo.getTypeSignature();
             } catch (final Exception e) {
                 // 忽略
             }
-            if (containingClassSignature != null && containingClassSignature.typeParameters != null
-                    && !containingClassSignature.typeParameters.isEmpty()) {
-                for (final TypeParameter typeParameter : containingClassSignature.typeParameters) {
-                    if (typeParameter.name.equals(this.name)) {
-                        typeParameterCached = typeParameter;
-                        return typeParameter;
+            if (containingClassSignature != null && containingClassSignature.TypeParams != null
+                    && !containingClassSignature.TypeParams.isEmpty()) {
+                for (final TypeParam TypeParam : containingClassSignature.TypeParams) {
+                    if (TypeParam.name.equals(this.name)) {
+                        TypeParamCached = TypeParam;
+                        return TypeParam;
                     }
                 }
             }
         }
         // 如果失败，则这是一个无法解析的类型变量
-        // 返回一个仅设置了名称的新的 TypeParameter，没有类或接口边界(#706)
-        final TypeParameter typeParameter = new TypeParameter(name, null,
-                Collections.<ReferenceTypeSignature>emptyList());
-        typeParameter.setScanResult(scanResult);
-        typeParameterCached = typeParameter;
-        return typeParameter;
+        // 返回一个仅设置了名称的新的 TypeParam，没有类或接口边界(#706)
+        final TypeParam TypeParam = new TypeParam(name, null,
+                Collections.<ReferenceType>emptyList());
+        TypeParam.setScanResult(scanResult);
+        TypeParamCached = TypeParam;
+        return TypeParam;
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -206,8 +206,8 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     @Override
     void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
-        if (typeParameterCached != null) {
-            typeParameterCached.setScanResult(scanResult);
+        if (TypeParamCached != null) {
+            TypeParamCached.setScanResult(scanResult);
         }
     }
 
@@ -228,10 +228,10 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof TypeVariableSignature)) {
+        } else if (!(obj instanceof TypeVar)) {
             return false;
         }
-        final TypeVariableSignature other = (TypeVariableSignature) obj;
+        final TypeVar other = (TypeVar) obj;
         return other.name.equals(this.name) && Objects.equals(other.typeAnnotationInfo, this.typeAnnotationInfo);
     }
 
@@ -240,49 +240,49 @@ public final class TypeVariableSignature extends ClassRefOrTypeVariableSignature
      */
     @Override
     public boolean equalsIgnoringTypeParams(final TypeSignature other) {
-        if (other instanceof ClassRefTypeSignature) {
-            if ("java.lang.Object".equals(((ClassRefTypeSignature) other).className)) {
+        if (other instanceof ClassRef) {
+            if ("java.lang.Object".equals(((ClassRef) other).className)) {
                 // java.lang.Object 可以与任何类型协调，因此它可以与任何类型变量协调
                 return true;
             }
             // 根据包含类的类型形参解析类型变量
-            TypeParameter typeParameter;
+            TypeParam TypeParam;
             try {
-                typeParameter = resolve();
+                TypeParam = resolve();
             } catch (final IllegalArgumentException e) {
                 // 如果无法解析对应的类型形参：
                 // 未知类型变量始终可以与具体类协调
                 return true;
             }
-            if (typeParameter.classBound == null
-                    && (typeParameter.interfaceBounds == null || typeParameter.interfaceBounds.isEmpty())) {
+            if (TypeParam.classBound == null
+                    && (TypeParam.interfaceBounds == null || TypeParam.interfaceBounds.isEmpty())) {
                 // 如果类型形参没有边界，则仅假定类型变量可以通过类型推断与类协调
                 return true;
             }
-            if (typeParameter.classBound != null) {
-                if (typeParameter.classBound instanceof ClassRefTypeSignature) {
-                    if (typeParameter.classBound.equals(other)) {
+            if (TypeParam.classBound != null) {
+                if (TypeParam.classBound instanceof ClassRef) {
+                    if (TypeParam.classBound.equals(other)) {
                         // T extends X，且 X == other
                         return true;
                     }
-                } else if (typeParameter.classBound instanceof TypeVariableSignature) {
+                } else if (TypeParam.classBound instanceof TypeVar) {
                     // "X" 可以与 "Y extends X" 协调
-                    return this.equalsIgnoringTypeParams(typeParameter.classBound);
-                } else /* if (typeParameter.classBound instanceof ArrayTypeSignature) */ {
+                    return this.equalsIgnoringTypeParams(TypeParam.classBound);
+                } else /* if (TypeParam.classBound instanceof ArrayType) */ {
                     return false;
                 }
             }
-            if (typeParameter.interfaceBounds != null) {
-                for (final ReferenceTypeSignature interfaceBound : typeParameter.interfaceBounds) {
-                    if (interfaceBound instanceof ClassRefTypeSignature) {
+            if (TypeParam.interfaceBounds != null) {
+                for (final ReferenceType interfaceBound : TypeParam.interfaceBounds) {
+                    if (interfaceBound instanceof ClassRef) {
                         if (interfaceBound.equals(other)) {
                             // T implements X，且 X == other
                             return true;
                         }
-                    } else if (interfaceBound instanceof TypeVariableSignature) {
+                    } else if (interfaceBound instanceof TypeVar) {
                         // "X" 可以与 "Y implements X" 协调
                         return this.equalsIgnoringTypeParams(interfaceBound);
-                    } else /* if (interfaceBound instanceof ArrayTypeSignature) */ {
+                    } else /* if (interfaceBound instanceof ArrayType) */ {
                         return false;
                     }
                 }

@@ -26,25 +26,25 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
-import com.bingbaihanji.classgraph.types.ParseException;
-import com.bingbaihanji.classgraph.types.Parser;
-import com.bingbaihanji.classgraph.types.TypeUtils;
+import com.bingbaihanji.classgraph.type.ParseException;
+import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.type.TypeUtils;
 
 import java.util.*;
 
 /** 一个类型形参 */
-public final class TypeParameter extends HierarchicalTypeSignature {
+public final class TypeParam extends HierarchicalType {
     /** 类型形参标识符 */
     final String name;
 
     /** 类边界 -- 可能为 null */
-    final ReferenceTypeSignature classBound;
+    final ReferenceType classBound;
 
     /** 接口边界 -- 可能为空 */
-    final List<ReferenceTypeSignature> interfaceBounds;
+    final List<ReferenceType> interfaceBounds;
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -58,8 +58,8 @@ public final class TypeParameter extends HierarchicalTypeSignature {
      * @param interfaceBounds
      *            类型形参接口边界
      */
-    protected TypeParameter(final String identifier, final ReferenceTypeSignature classBound,
-                            final List<ReferenceTypeSignature> interfaceBounds) {
+    protected TypeParam(final String identifier, final ReferenceType classBound,
+                            final List<ReferenceType> interfaceBounds) {
         super();
         this.name = identifier;
         this.classBound = classBound;
@@ -67,53 +67,53 @@ public final class TypeParameter extends HierarchicalTypeSignature {
     }
 
     /**
-     * 将类型形参列表解析为 {@link TypeParameter} 对象
+     * 将类型形参列表解析为 {@link TypeParam} 对象
      *
-     * @param parser
+     * @param TypeParser
      *            解析器
      * @param definingClassName
      *            定义类名
-     * @return {@link TypeParameter} 对象的列表
+     * @return {@link TypeParam} 对象的列表
      * @throws ParseException
      *             如果解析失败
      */
-    static List<TypeParameter> parseList(final Parser parser, final String definingClassName)
+    static List<TypeParam> parseList(final TypeParser TypeParser, final String definingClassName)
             throws ParseException {
-        if (parser.peek() != '<') {
+        if (TypeParser.peek() != '<') {
             return Collections.emptyList();
         }
-        parser.expect('<');
-        final List<TypeParameter> typeParams = new ArrayList<>(1);
-        while (parser.peek() != '>') {
-            if (!parser.hasMore()) {
-                throw new ParseException(parser, "Missing '>'");
+        TypeParser.expect('<');
+        final List<TypeParam> typeParams = new ArrayList<>(1);
+        while (TypeParser.peek() != '>') {
+            if (!TypeParser.hasMore()) {
+                throw new ParseException(TypeParser, "Missing '>'");
             }
             // Scala 的类型形参名称中可能包含 '$' (#495)
-            if (!TypeUtils.getIdentifierToken(parser, /* stopAtDollarSign = */ false, /* stopAtDot = */ true)) {
-                throw new ParseException(parser, "Could not parse identifier token");
+            if (!TypeUtils.getIdentifierToken(TypeParser, /* stopAtDollarSign = */ false, /* stopAtDot = */ true)) {
+                throw new ParseException(TypeParser, "Could not parse identifier token");
             }
-            final String identifier = parser.currToken();
+            final String identifier = TypeParser.currToken();
             // classBound 可能为 null
-            final ReferenceTypeSignature classBound = ReferenceTypeSignature.parseClassBound(parser,
+            final ReferenceType classBound = ReferenceType.parseClassBound(TypeParser,
                     definingClassName);
-            List<ReferenceTypeSignature> interfaceBounds;
-            if (parser.peek() == ':') {
+            List<ReferenceType> interfaceBounds;
+            if (TypeParser.peek() == ':') {
                 interfaceBounds = new ArrayList<>();
-                while (parser.peek() == ':') {
-                    parser.expect(':');
-                    final ReferenceTypeSignature interfaceTypeSignature = ReferenceTypeSignature
-                            .parseReferenceTypeSignature(parser, definingClassName);
+                while (TypeParser.peek() == ':') {
+                    TypeParser.expect(':');
+                    final ReferenceType interfaceTypeSignature = ReferenceType
+                            .parseReferenceType(TypeParser, definingClassName);
                     if (interfaceTypeSignature == null) {
-                        throw new ParseException(parser, "Missing interface type signature");
+                        throw new ParseException(TypeParser, "Missing interface type signature");
                     }
                     interfaceBounds.add(interfaceTypeSignature);
                 }
             } else {
                 interfaceBounds = Collections.emptyList();
             }
-            typeParams.add(new TypeParameter(identifier, classBound, interfaceBounds));
+            typeParams.add(new TypeParam(identifier, classBound, interfaceBounds));
         }
-        parser.expect('>');
+        TypeParser.expect('>');
         return typeParams;
     }
 
@@ -131,7 +131,7 @@ public final class TypeParameter extends HierarchicalTypeSignature {
      *
      * @return 类型形参类边界可能为 null
      */
-    public ReferenceTypeSignature getClassBound() {
+    public ReferenceType getClassBound() {
         return classBound;
     }
 
@@ -140,7 +140,7 @@ public final class TypeParameter extends HierarchicalTypeSignature {
      *
      * @return 获取类型形参接口边界，可能为空列表
      */
-    public List<ReferenceTypeSignature> getInterfaceBounds() {
+    public List<ReferenceType> getInterfaceBounds() {
         return interfaceBounds;
     }
 
@@ -184,8 +184,8 @@ public final class TypeParameter extends HierarchicalTypeSignature {
             this.classBound.setScanResult(scanResult);
         }
         if (interfaceBounds != null) {
-            for (final ReferenceTypeSignature referenceTypeSignature : interfaceBounds) {
-                referenceTypeSignature.setScanResult(scanResult);
+            for (final ReferenceType ReferenceType : interfaceBounds) {
+                ReferenceType.setScanResult(scanResult);
             }
         }
     }
@@ -200,7 +200,7 @@ public final class TypeParameter extends HierarchicalTypeSignature {
         if (classBound != null) {
             classBound.findReferencedClassNames(refdClassNames);
         }
-        for (final ReferenceTypeSignature typeSignature : interfaceBounds) {
+        for (final ReferenceType typeSignature : interfaceBounds) {
             typeSignature.findReferencedClassNames(refdClassNames);
         }
     }
@@ -223,10 +223,10 @@ public final class TypeParameter extends HierarchicalTypeSignature {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof TypeParameter)) {
+        } else if (!(obj instanceof TypeParam)) {
             return false;
         }
-        final TypeParameter other = (TypeParameter) obj;
+        final TypeParam other = (TypeParam) obj;
         return other.name.equals(this.name) && Objects.equals(other.typeAnnotationInfo, this.typeAnnotationInfo)
                 && ((other.classBound == null && this.classBound == null)
                 || (other.classBound != null && other.classBound.equals(this.classBound)))
@@ -253,7 +253,7 @@ public final class TypeParameter extends HierarchicalTypeSignature {
         } else {
             classBoundStr = classBound.toString(useSimpleNames);
             if ("java.lang.Object".equals(classBoundStr) || ("Object".equals(classBoundStr)
-                    && "java.lang.Object".equals(((ClassRefTypeSignature) classBound).className))) {
+                    && "java.lang.Object".equals(((ClassRef) classBound).className))) {
                 // 不添加 "extends java.lang.Object"
                 classBoundStr = null;
             }

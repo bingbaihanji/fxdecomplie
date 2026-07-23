@@ -35,7 +35,7 @@ import java.util.Set;
 
 /**
  * 保存数组类的元数据此类扩展了 {@link ClassInfo}，添加了与数组类相关的额外方法，特别是
- * {@link #getArrayTypeSignature()}、{@link #getTypeSignatureStr()}、
+ * {@link #getArrayType()}、{@link #getTypeSignatureStr()}、
  * {@link #getElementTypeSignature()}、{@link #getElementClassInfo()}、{@link #loadElementClass()} 和
  * {@link #getNumDimensions()}
  *
@@ -45,7 +45,7 @@ import java.util.Set;
  */
 public class ArrayClassInfo extends ClassInfo {
     /** 数组类型签名 */
-    private ArrayTypeSignature arrayTypeSignature;
+    private ArrayType ArrayType;
 
     /** 元素类信息 */
     private ClassInfo elementClassInfo;
@@ -58,12 +58,12 @@ public class ArrayClassInfo extends ClassInfo {
     /**
      * 构造函数
      *
-     * @param arrayTypeSignature
+     * @param ArrayType
      *            数组类型签名
      */
-    ArrayClassInfo(final ArrayTypeSignature arrayTypeSignature) {
-        super(arrayTypeSignature.getClassName(), /* modifiers = */ 0, /* resource = */ null);
-        this.arrayTypeSignature = arrayTypeSignature;
+    ArrayClassInfo(final ArrayType ArrayType) {
+        super(ArrayType.getClassName(), /* modifiers = */ 0, /* resource = */ null);
+        this.ArrayType = ArrayType;
         // 预加载元素类型的字段
         getElementClassInfo();
     }
@@ -85,16 +85,16 @@ public class ArrayClassInfo extends ClassInfo {
      */
     @Override
     public String getTypeSignatureStr() {
-        return arrayTypeSignature.getTypeSignatureStr();
+        return ArrayType.getTypeSignatureStr();
     }
 
     /**
-     * 返回 null，因为数组类没有 ClassTypeSignature请改用 {@link #getArrayTypeSignature()}
+     * 返回 null，因为数组类没有 ClassType请改用 {@link #getArrayType()}
      *
      * @return null(始终)
      */
     @Override
-    public ClassTypeSignature getTypeSignature() {
+    public ClassType getTypeSignature() {
         return null;
     }
 
@@ -103,8 +103,8 @@ public class ArrayClassInfo extends ClassInfo {
      *
      * @return 类的类型签名(如果可用)，否则返回 null
      */
-    public ArrayTypeSignature getArrayTypeSignature() {
-        return arrayTypeSignature;
+    public ArrayType getArrayType() {
+        return ArrayType;
     }
 
     /**
@@ -113,7 +113,7 @@ public class ArrayClassInfo extends ClassInfo {
      * @return 数组元素的类型签名
      */
     public TypeSignature getElementTypeSignature() {
-        return arrayTypeSignature.getElementTypeSignature();
+        return ArrayType.getElementTypeSignature();
     }
 
     /**
@@ -122,7 +122,7 @@ public class ArrayClassInfo extends ClassInfo {
      * @return 数组的维度数
      */
     public int getNumDimensions() {
-        return arrayTypeSignature.getNumDimensions();
+        return ArrayType.getNumDimensions();
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -135,9 +135,9 @@ public class ArrayClassInfo extends ClassInfo {
      */
     public ClassInfo getElementClassInfo() {
         if (elementClassInfo == null) {
-            final TypeSignature elementTypeSignature = arrayTypeSignature.getElementTypeSignature();
-            if (!(elementTypeSignature instanceof BaseTypeSignature)) {
-                elementClassInfo = arrayTypeSignature.getElementTypeSignature().getClassInfo();
+            final TypeSignature elementTypeSignature = ArrayType.getElementTypeSignature();
+            if (!(elementTypeSignature instanceof BaseType)) {
+                elementClassInfo = ArrayType.getElementTypeSignature().getClassInfo();
                 if (elementClassInfo != null) {
                     // 从数组元素 ClassInfo 复制相关字段
                     this.classpathElement = elementClassInfo.classpathElement;
@@ -163,7 +163,7 @@ public class ArrayClassInfo extends ClassInfo {
      * @return 数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
     public Class<?> loadElementClass(final boolean ignoreExceptions) {
-        return arrayTypeSignature.loadElementClass(ignoreExceptions);
+        return ArrayType.loadElementClass(ignoreExceptions);
     }
 
     /**
@@ -172,7 +172,7 @@ public class ArrayClassInfo extends ClassInfo {
      * @return 数组元素类型的 {@code Class<?>} 引用对于基本类型元素的数组同样有效
      */
     public Class<?> loadElementClass() {
-        return arrayTypeSignature.loadElementClass();
+        return ArrayType.loadElementClass();
     }
 
     /**
@@ -188,7 +188,7 @@ public class ArrayClassInfo extends ClassInfo {
     @Override
     public Class<?> loadClass(final boolean ignoreExceptions) {
         if (classRef == null) {
-            classRef = arrayTypeSignature.loadClass(ignoreExceptions);
+            classRef = ArrayType.loadClass(ignoreExceptions);
         }
         return classRef;
     }
@@ -204,7 +204,7 @@ public class ArrayClassInfo extends ClassInfo {
     @Override
     public Class<?> loadClass() {
         if (classRef == null) {
-            classRef = arrayTypeSignature.loadClass();
+            classRef = ArrayType.loadClass();
         }
         return classRef;
     }

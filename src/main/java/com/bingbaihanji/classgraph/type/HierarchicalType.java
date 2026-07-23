@@ -26,20 +26,20 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
 
 import java.util.List;
 
 /**
- * Java 类型签名子类包括 ClassTypeSignature、MethodTypeSignature 和 TypeSignature
+ * Java 类型签名子类包括 ClassType、MethodType 和 TypeSignature
  */
-public abstract class HierarchicalTypeSignature extends ScanResultObject {
+public abstract class HierarchicalType extends ScanResultObject {
     protected AnnotationInfoList typeAnnotationInfo;
 
     /** 一个层次化的类型签名 */
-    public HierarchicalTypeSignature() {
+    public HierarchicalType() {
         super();
     }
 
