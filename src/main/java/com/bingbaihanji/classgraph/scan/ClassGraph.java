@@ -105,6 +105,15 @@ public class ClassGraph {
         ScanResult.init(reflectionUtils);
     }
 
+    /**
+     * Create a new ClassGraph scanner with default settings.
+     *
+     * @return a new ClassGraph instance
+     */
+    public static ClassGraph create() {
+        return new ClassGraph();
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
     /**
@@ -145,262 +154,365 @@ public class ClassGraph {
     }
 
     /**
-     * 启用对所有类、字段、方法、注解以及静态 final 字段常量初始化值的扫描，
-     * 并忽略所有可见性修饰符，使得公共和非公共的类、字段和方法均被扫描
+     * Enable scanning of all classes, fields, methods, annotations, and static final field constant
+     * initializer values, ignoring all visibility modifiers.
      *
      * <p>
-     * 调用 {@link #enableClassInfo()}、{@link #enableFieldInfo()}、{@link #enableMethodInfo()}、
-     * {@link #enableAnnotationInfo()}、{@link #enableStaticFinalFieldConstantInitializerValues()}、
-     * {@link #ignoreClassVisibility()}、{@link #ignoreFieldVisibility()} 和 {@link #ignoreMethodVisibility()}
+     * Calls {@link #withClassInfo()}, {@link #withFieldInfo()}, {@link #withMethodInfo()},
+     * {@link #withAnnotationInfo()}, {@link #withConstantFieldValues()},
+     * {@link #withoutClassVisibilityFilter()}, {@link #withoutFieldVisibilityFilter()},
+     * and {@link #withoutMethodVisibilityFilter()}.
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableAllInfo() {
-        enableClassInfo();
-        enableFieldInfo();
-        enableMethodInfo();
-        enableAnnotationInfo();
-        enableStaticFinalFieldConstantInitializerValues();
-        ignoreClassVisibility();
-        ignoreFieldVisibility();
-        ignoreMethodVisibility();
+    public ClassGraph withAllInfo() {
+        withClassInfo();
+        withFieldInfo();
+        withMethodInfo();
+        withAnnotationInfo();
+        withConstantFieldValues();
+        withoutClassVisibilityFilter();
+        withoutFieldVisibilityFilter();
+        withoutMethodVisibilityFilter();
         return this;
+    }
+
+    /** @deprecated Use {@link #withAllInfo()} instead. */
+    @Deprecated
+    public ClassGraph enableAllInfo() {
+        return withAllInfo();
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 启用对 ClassParser 的扫描，在 {@link ScanResult} 中生成 {@link ClassInfo} 对象
-     * 隐式禁用 {@link #enableMultiReleaseVersions()}
+     * Enable scanning of classes, producing {@link ClassInfo} objects in the {@link ScanResult}.
+     * Implicitly disables {@link #enableMultiReleaseVersions()}.
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableClassInfo() {
+    public ClassGraph withClassInfo() {
         ScanConfig.enableClassInfo = true;
         ScanConfig.enableMultiReleaseVersions = false;
         return this;
     }
 
+    /** @deprecated Use {@link #withClassInfo()} instead. */
+    @Deprecated
+    public ClassGraph enableClassInfo() {
+        return withClassInfo();
+    }
+
     /**
-     * 忽略类可见性，允许扫描 private、package-private 和 protected 类
-     * 默认情况下仅扫描 public 类(自动调用 {@link #enableClassInfo()})
+     * Ignore class visibility, allowing scanning of private, package-private, and protected classes.
+     * By default, only public classes are scanned (automatically calls {@link #withClassInfo()}).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph ignoreClassVisibility() {
-        enableClassInfo();
+    public ClassGraph withoutClassVisibilityFilter() {
+        withClassInfo();
         ScanConfig.ignoreClassVisibility = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutClassVisibilityFilter()} instead. */
+    @Deprecated
+    public ClassGraph ignoreClassVisibility() {
+        return withoutClassVisibilityFilter();
+    }
+
     /**
-     * 启用在扫描期间保存方法信息此信息可通过 {@link ClassInfo#getMethodInfo()} 等获取
-     * 默认情况下不扫描方法信息(自动调用 {@link #enableClassInfo()})
+     * Enable saving of method info during scanning. This info can be obtained via
+     * {@link ClassInfo#getMethodInfo()} etc. By default, method info is not scanned
+     * (automatically calls {@link #withClassInfo()}).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableMethodInfo() {
-        enableClassInfo();
+    public ClassGraph withMethodInfo() {
+        withClassInfo();
         ScanConfig.enableMethodInfo = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withMethodInfo()} instead. */
+    @Deprecated
+    public ClassGraph enableMethodInfo() {
+        return withMethodInfo();
+    }
+
     /**
-     * 忽略方法可见性，允许扫描 private、package-private 和 protected 方法
-     * 默认情况下仅扫描 public 方法(自动调用 {@link #enableClassInfo()} 和
-     * {@link #enableMethodInfo()})
+     * Ignore method visibility, allowing scanning of private, package-private, and protected methods.
+     * By default, only public methods are scanned (automatically calls {@link #withClassInfo()} and
+     * {@link #withMethodInfo()}).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph ignoreMethodVisibility() {
-        enableClassInfo();
-        enableMethodInfo();
+    public ClassGraph withoutMethodVisibilityFilter() {
+        withClassInfo();
+        withMethodInfo();
         ScanConfig.ignoreMethodVisibility = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutMethodVisibilityFilter()} instead. */
+    @Deprecated
+    public ClassGraph ignoreMethodVisibility() {
+        return withoutMethodVisibilityFilter();
+    }
+
     /**
-     * 启用在扫描期间保存字段信息此信息可通过 {@link ClassInfo#getFieldInfo()} 获取
-     * 默认情况下不扫描字段信息(自动调用 {@link #enableClassInfo()})
+     * Enable saving of field info during scanning. This info can be obtained via
+     * {@link ClassInfo#getFieldInfo()}. By default, field info is not scanned
+     * (automatically calls {@link #withClassInfo()}).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableFieldInfo() {
-        enableClassInfo();
+    public ClassGraph withFieldInfo() {
+        withClassInfo();
         ScanConfig.enableFieldInfo = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withFieldInfo()} instead. */
+    @Deprecated
+    public ClassGraph enableFieldInfo() {
+        return withFieldInfo();
+    }
+
     /**
-     * 忽略字段可见性，允许扫描 private、package-private 和 protected 字段
-     * 默认情况下仅扫描 public 字段(自动调用 {@link #enableClassInfo()} 和
-     * {@link #enableFieldInfo()})
+     * Ignore field visibility, allowing scanning of private, package-private, and protected fields.
+     * By default, only public fields are scanned (automatically calls {@link #withClassInfo()} and
+     * {@link #withFieldInfo()}).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph ignoreFieldVisibility() {
-        enableClassInfo();
-        enableFieldInfo();
+    public ClassGraph withoutFieldVisibilityFilter() {
+        withClassInfo();
+        withFieldInfo();
         ScanConfig.ignoreFieldVisibility = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutFieldVisibilityFilter()} instead. */
+    @Deprecated
+    public ClassGraph ignoreFieldVisibility() {
+        return withoutFieldVisibilityFilter();
+    }
+
     /**
-     * 启用在扫描期间保存静态 final 字段常量初始化值默认情况下不扫描常量初始化值
-     * 如果启用，可以通过 {@link FieldInfo#getConstantInitializerValue()} 获取常量字段初始化值
+     * Enable saving of static final field constant initializer values during scanning.
+     * By default, constant initializer values are not scanned. If enabled, constant field
+     * initializer values can be obtained via {@link FieldInfo#getConstantInitializerValue()}.
      *
      * <p>
-     * 请注意，常量初始化值通常仅是基本类型或 String 常量(或者可以在编译时计算并归约为这些类型的值)
+     * Automatically calls {@link #withClassInfo()} and {@link #withFieldInfo()}.
      *
-     * <p>
-     * 还请注意，常量值字段是作为常量在字段定义本身中赋值，还是在静态类初始化块中手动赋值，
-     * 取决于编译器——因此，能否提取常量初始化值可能因情况而异
-     *
-     * <p>
-     * 事实上，在 Kotlin 中，即使是非静态/非 final 字段的常量初始化值也会存储在 ClassParser
-     * 的字段属性中(因此通过调用此方法，ClassGraph 可能会获取到这些值)，
-     * 尽管根据 ClassParser 规范，JVM 应该忽略任何非静态字段的字段初始化值，
-     * 因此 Kotlin 编译器将来可能会更改以停止生成这些值，并且您可能不应依赖能够获取 Kotlin 中
-     * 非静态字段的初始化值(至于非 final 字段，javac 不会为非 final 字段添加常量初始化值到
-     * 字段属性列表，即使它们是 static 的，但规范并未说明 JVM 是否应忽略非 final 字段的常量初始化值)
-     *
-     * <p>
-     * 自动调用 {@link #enableClassInfo()} 和 {@link #enableFieldInfo()}
-     *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableStaticFinalFieldConstantInitializerValues() {
-        enableClassInfo();
-        enableFieldInfo();
+    public ClassGraph withConstantFieldValues() {
+        withClassInfo();
+        withFieldInfo();
         ScanConfig.enableStaticFinalFieldConstantInitializerValues = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withConstantFieldValues()} instead. */
+    @Deprecated
+    public ClassGraph enableStaticFinalFieldConstantInitializerValues() {
+        return withConstantFieldValues();
+    }
+
     /**
-     * 启用在扫描期间保存注解信息(包括类、字段、方法和方法参数注解)
-     * 此信息可通过 {@link ClassInfo#getAnnotationInfo()}、
-     * {@link FieldInfo#getAnnotationInfo()} 和 {@link MethodParam#getAnnotationInfo()} 获取
-     * 默认情况下不扫描注解信息(自动调用 {@link #enableClassInfo()})
+     * Enable saving of annotation info during scanning (including class, field, method, and
+     * method parameter annotations). This info can be obtained via
+     * {@link ClassInfo#getAnnotationInfo()}, {@link FieldInfo#getAnnotationInfo()},
+     * and {@link MethodParam#getAnnotationInfo()}. By default, annotation info is not scanned
+     * (automatically calls {@link #withClassInfo()}).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableAnnotationInfo() {
-        enableClassInfo();
+    public ClassGraph withAnnotationInfo() {
+        withClassInfo();
         ScanConfig.enableAnnotationInfo = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withAnnotationInfo()} instead. */
+    @Deprecated
+    public ClassGraph enableAnnotationInfo() {
+        return withAnnotationInfo();
+    }
+
     /**
-     * 启用类间依赖关系的确定，可通过调用 {@link ClassInfo#getClassDependencies()}、
-     * {@link ScanResult#getClassDependencyMap()} 或 {@link ScanResult#getReverseClassDependencyMap()} 读取
-     * (自动调用 {@link #enableClassInfo()}、{@link #enableFieldInfo()}、{@link #enableMethodInfo()}、
-     * {@link #enableAnnotationInfo()}、{@link #ignoreClassVisibility()}、{@link #ignoreFieldVisibility()}
-     * 和 {@link #ignoreMethodVisibility()})
+     * Enable determination of inter-class dependencies, which can be read by calling
+     * {@link ClassInfo#getClassDependencies()}, {@link ScanResult#getClassDependencyMap()},
+     * or {@link ScanResult#getReverseClassDependencyMap()}
+     * (automatically calls {@link #withClassInfo()}, {@link #withFieldInfo()},
+     * {@link #withMethodInfo()}, {@link #withAnnotationInfo()},
+     * {@link #withoutClassVisibilityFilter()}, {@link #withoutFieldVisibilityFilter()},
+     * and {@link #withoutMethodVisibilityFilter()}).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableInterClassDependencies() {
-        enableClassInfo();
-        enableFieldInfo();
-        enableMethodInfo();
-        enableAnnotationInfo();
-        ignoreClassVisibility();
-        ignoreFieldVisibility();
-        ignoreMethodVisibility();
+    public ClassGraph withInterClassDependencies() {
+        withClassInfo();
+        withFieldInfo();
+        withMethodInfo();
+        withAnnotationInfo();
+        withoutClassVisibilityFilter();
+        withoutFieldVisibilityFilter();
+        withoutMethodVisibilityFilter();
         ScanConfig.enableInterClassDependencies = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withInterClassDependencies()} instead. */
+    @Deprecated
+    public ClassGraph enableInterClassDependencies() {
+        return withInterClassDependencies();
+    }
+
     /**
-     * 仅扫描运行时可见的注解(忽略运行时不可见的注解)
-     * (自动调用 {@link #enableClassInfo()})
+     * Only scan runtime-visible annotations (ignore runtime-invisible annotations).
+     * (Automatically calls {@link #withClassInfo()}.)
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph disableRuntimeInvisibleAnnotations() {
-        enableClassInfo();
+    public ClassGraph withoutRuntimeInvisibleAnnotations() {
+        withClassInfo();
         ScanConfig.disableRuntimeInvisibleAnnotations = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutRuntimeInvisibleAnnotations()} instead. */
+    @Deprecated
+    public ClassGraph disableRuntimeInvisibleAnnotations() {
+        return withoutRuntimeInvisibleAnnotations();
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 禁用对 jar 文件的扫描
+     * Disable scanning of jar files.
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph disableJarScanning() {
+    public ClassGraph withoutJarScanning() {
         ScanConfig.scanJars = false;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutJarScanning()} instead. */
+    @Deprecated
+    public ClassGraph disableJarScanning() {
+        return withoutJarScanning();
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 禁用对嵌套 jar 文件(jar 文件内的 jar 文件)的扫描
+     * Disable scanning of nested jar files (jar files within jar files).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph disableNestedJarScanning() {
+    public ClassGraph withoutNestedJarScanning() {
         ScanConfig.scanNestedJars = false;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutNestedJarScanning()} instead. */
+    @Deprecated
+    public ClassGraph disableNestedJarScanning() {
+        return withoutNestedJarScanning();
+    }
+
     /**
-     * 禁用对目录的扫描
+     * Disable scanning of directories.
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph disableDirScanning() {
+    public ClassGraph withoutDirScanning() {
         ScanConfig.scanDirs = false;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutDirScanning()} instead. */
+    @Deprecated
+    public ClassGraph disableDirScanning() {
+        return withoutDirScanning();
+    }
+
     /**
-     * 禁用对模块的扫描
+     * Disable scanning of modules.
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph disableModuleScanning() {
+    public ClassGraph withoutModuleScanning() {
         ScanConfig.scanModules = false;
         return this;
     }
 
+    /** @deprecated Use {@link #withoutModuleScanning()} instead. */
+    @Deprecated
+    public ClassGraph disableModuleScanning() {
+        return withoutModuleScanning();
+    }
+
     /**
-     * 使 ClassGraph 返回不在接受包中，但被接受包中的类直接引用作为超类、实现接口或注解的类
-     * (自动调用 {@link #enableClassInfo()})
+     * Cause ClassGraph to return classes that are not in accepted packages but are directly
+     * referenced by classes in accepted packages as superclasses, implemented interfaces, or
+     * annotations. (Automatically calls {@link #withClassInfo()}.)
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableExternalClasses() {
-        enableClassInfo();
+    public ClassGraph withExternalClasses() {
+        withClassInfo();
         ScanConfig.enableExternalClasses = true;
         return this;
+    }
+
+    /** @deprecated Use {@link #withExternalClasses()} instead. */
+    @Deprecated
+    public ClassGraph enableExternalClasses() {
+        return withExternalClasses();
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 使通过 {@link ClassInfo#loadClass()} 加载的类在类加载后进行初始化
-     * (默认是不初始化类)
+     * Cause classes loaded via {@link ClassInfo#loadClass()} to be initialized after class loading.
+     * (The default is not to initialize classes.)
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph initializeLoadedClasses() {
+    public ClassGraph withLoadedClassInitialization() {
         ScanConfig.initializeLoadedClasses = true;
         return this;
     }
 
+    /** @deprecated Use {@link #withLoadedClassInitialization()} instead. */
+    @Deprecated
+    public ClassGraph initializeLoadedClasses() {
+        return withLoadedClassInitialization();
+    }
+
     /**
-     * 在扫描完成后立即从临时目录中删除临时文件，包括嵌套 jar 文件(jar 文件内的 jar 文件，
-     * 必须在扫描期间解压才能读取)默认情况下，临时文件由 {@link ScanResult} 终结器或 JVM 退出时删除
+     * Remove temporary files from the temporary directory immediately after scanning completes,
+     * including nested jar files (jar files within jar files that must be extracted during
+     * scanning in order to be read). By default, temporary files are removed by the
+     * {@link ScanResult} finalizer or on JVM exit.
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph removeTemporaryFilesAfterScan() {
+    public ClassGraph withTempFileCleanup() {
         ScanConfig.removeTemporaryFilesAfterScan = true;
         return this;
+    }
+
+    /** @deprecated Use {@link #withTempFileCleanup()} instead. */
+    @Deprecated
+    public ClassGraph removeTemporaryFilesAfterScan() {
+        return withTempFileCleanup();
     }
 
     /**
@@ -529,13 +641,20 @@ public class ClassGraph {
     }
 
     /**
-     * 忽略父类加载器(即仅从非其他类加载器的父类加载器中获取扫描路径)
+     * Ignore parent class loaders (i.e., only get scan paths from class loaders that are not
+     * the parent of another class loader).
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph ignoreParentClassLoaders() {
+    public ClassGraph withoutParentClassLoaders() {
         ScanConfig.ignoreParentClassLoaders = true;
         return this;
+    }
+
+    /** @deprecated Use {@link #withoutParentClassLoaders()} instead. */
+    @Deprecated
+    public ClassGraph ignoreParentClassLoaders() {
+        return withoutParentClassLoaders();
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -587,21 +706,21 @@ public class ClassGraph {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 扫描一个或多个特定包及其子包
+     * Scan one or more specific packages and their sub-packages.
      *
      * <p>
-     * 注意：自动调用 {@link #enableClassInfo()}——如果您只需要扫描资源，
-     * 请改用 {@link #acceptPaths(String...)}
+     * Note: Automatically calls {@link #withClassInfo()} -- if you only need to scan resources,
+     * use {@link #filterPaths(String...)} instead.
      *
      * @param packageNames
-     *            要扫描的包的全限定名称(使用 '.' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
+     *            The fully-qualified names of packages to scan (using '.' as separator).
+     *            Can include glob wildcards ({@code '*'}).
+     * @return this (for method chaining)
      */
-    public ClassGraph acceptPackages(final String... packageNames) {
-        enableClassInfo();
+    public ClassGraph filterPackages(final String... packageNames) {
+        withClassInfo();
         for (final String packageName : packageNames) {
             final String packageNameNormalized = Filter.normalizePackageOrClassName(packageName);
-            // 接受包
             ScanConfig.packageAcceptReject.addToAccept(packageNameNormalized);
             final String path = Filter.packageNameToPath(packageNameNormalized);
             ScanConfig.pathAcceptReject.addToAccept(path + "/");
@@ -609,7 +728,6 @@ public class ClassGraph {
                 ScanConfig.pathAcceptReject.addToAccept("");
             }
             if (!packageNameNormalized.contains("*")) {
-                // 接受子包
                 if (packageNameNormalized.isEmpty()) {
                     ScanConfig.packagePrefixAcceptReject.addToAccept("");
                     ScanConfig.pathPrefixAcceptReject.addToAccept("");
@@ -622,30 +740,33 @@ public class ClassGraph {
         return this;
     }
 
-    /**
-     * 请改用 {@link #acceptPackages(String...)}
-     *
-     * @param packageNames
-     *            要扫描的包的全限定名称(使用 '.' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptPackages(String...)}
-     */
+    /** @deprecated Use {@link #filterPackages(String...)} instead. */
     @Deprecated
-    public ClassGraph whitelistPackages(final String... packageNames) {
-        return acceptPackages(packageNames);
+    public ClassGraph acceptPackages(final String... packageNames) {
+        return filterPackages(packageNames);
     }
 
     /**
-     * 扫描一个或多个特定路径及其子目录或嵌套路径
+     * Please use {@link #filterPackages(String...)} instead.
+     *
+     * @deprecated Please use {@link #filterPackages(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph whitelistPackages(final String... packageNames) {
+        return filterPackages(packageNames);
+    }
+
+    /**
+     * Scan one or more specific paths and their subdirectories or nested paths.
      *
      * @param paths
-     *            要扫描的路径，相对于类路径元素的包根(使用 '/' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
+     *            The paths to scan, relative to the package root of the classpath element
+     *            (using '/' as separator). Can include glob wildcards ({@code '*'}).
+     * @return this (for method chaining)
      */
-    public ClassGraph acceptPaths(final String... paths) {
+    public ClassGraph filterPaths(final String... paths) {
         for (final String path : paths) {
             final String pathNormalized = Filter.normalizePath(path);
-            // 接受路径
             final String packageName = Filter.pathToPackageName(pathNormalized);
             ScanConfig.packageAcceptReject.addToAccept(packageName);
             ScanConfig.pathAcceptReject.addToAccept(pathNormalized + "/");
@@ -653,7 +774,6 @@ public class ClassGraph {
                 ScanConfig.pathAcceptReject.addToAccept("");
             }
             if (!pathNormalized.contains("*")) {
-                // 接受子目录/嵌套路径
                 if (pathNormalized.isEmpty()) {
                     ScanConfig.packagePrefixAcceptReject.addToAccept("");
                     ScanConfig.pathPrefixAcceptReject.addToAccept("");
@@ -666,19 +786,22 @@ public class ClassGraph {
         return this;
     }
 
+    /** @deprecated Use {@link #filterPaths(String...)} instead. */
+    @Deprecated
+    public ClassGraph acceptPaths(final String... paths) {
+        return filterPaths(paths);
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 请改用 {@link #acceptPaths(String...)}
+     * Please use {@link #filterPaths(String...)} instead.
      *
-     * @param paths
-     *            要扫描的路径，相对于类路径元素的包根(使用 '/' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptPaths(String...)}
+     * @deprecated Please use {@link #filterPaths(String...)} instead.
      */
     @Deprecated
     public ClassGraph whitelistPaths(final String... paths) {
-        return acceptPaths(paths);
+        return filterPaths(paths);
     }
 
     /**
@@ -697,7 +820,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph acceptPackagesNonRecursive(final String... packageNames) {
-        enableClassInfo();
+        withClassInfo();
         for (final String packageName : packageNames) {
             final String packageNameNormalized = Filter.normalizePackageOrClassName(packageName);
             if (packageNameNormalized.contains("*")) {
@@ -766,30 +889,29 @@ public class ClassGraph {
     }
 
     /**
-     * 阻止扫描一个或多个特定包及其子包
+     * Prevent scanning of one or more specific packages and their sub-packages.
      *
      * <p>
-     * 注意：自动调用 {@link #enableClassInfo()}——如果您只需要扫描资源，
-     * 请改用 {@link #rejectPaths(String...)}
+     * Note: Automatically calls {@link #withClassInfo()} -- if you only need to scan resources,
+     * use {@link #excludePaths(String...)} instead.
      *
      * @param packageNames
-     *            要拒绝的包的全限定名称(使用 '.' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
+     *            The fully-qualified names of packages to reject (using '.' as separator).
+     *            Can include glob wildcards ({@code '*'}).
+     * @return this (for method chaining)
      */
-    public ClassGraph rejectPackages(final String... packageNames) {
-        enableClassInfo();
+    public ClassGraph excludePackages(final String... packageNames) {
+        withClassInfo();
         for (final String packageName : packageNames) {
             final String packageNameNormalized = Filter.normalizePackageOrClassName(packageName);
             if (packageNameNormalized.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Rejecting the root package (\"\") will cause nothing to be scanned");
             }
-            // 拒绝始终阻止进一步的递归，无需拒绝子包
             ScanConfig.packageAcceptReject.addToReject(packageNameNormalized);
             final String path = Filter.packageNameToPath(packageNameNormalized);
             ScanConfig.pathAcceptReject.addToReject(path + "/");
             if (!packageNameNormalized.contains("*")) {
-                // 拒绝子包(zipfile 条目可以按任意顺序出现)
                 ScanConfig.packagePrefixAcceptReject.addToReject(packageNameNormalized + ".");
                 ScanConfig.pathPrefixAcceptReject.addToReject(path + "/");
             }
@@ -797,39 +919,40 @@ public class ClassGraph {
         return this;
     }
 
-    /**
-     * 请改用 {@link #rejectPackages(String...)}
-     *
-     * @param packageNames
-     *            要拒绝的包的全限定名称(使用 '.' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectPackages(String...)}
-     */
+    /** @deprecated Use {@link #excludePackages(String...)} instead. */
     @Deprecated
-    public ClassGraph blacklistPackages(final String... packageNames) {
-        return rejectPackages(packageNames);
+    public ClassGraph rejectPackages(final String... packageNames) {
+        return excludePackages(packageNames);
     }
 
     /**
-     * 阻止扫描一个或多个特定路径及其子目录/嵌套路径
+     * Please use {@link #excludePackages(String...)} instead.
+     *
+     * @deprecated Please use {@link #excludePackages(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph blacklistPackages(final String... packageNames) {
+        return excludePackages(packageNames);
+    }
+
+    /**
+     * Prevent scanning of one or more specific paths and their subdirectories/nested paths.
      *
      * @param paths
-     *            要拒绝的路径(使用 '/' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
+     *            The paths to reject (using '/' as separator). Can include glob wildcards ({@code '*'}).
+     * @return this (for method chaining)
      */
-    public ClassGraph rejectPaths(final String... paths) {
+    public ClassGraph excludePaths(final String... paths) {
         for (final String path : paths) {
             final String pathNormalized = Filter.normalizePath(path);
             if (pathNormalized.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Rejecting the root package (\"\") will cause nothing to be scanned");
             }
-            // 拒绝始终阻止进一步的递归，无需拒绝子目录/嵌套路径
             final String packageName = Filter.pathToPackageName(pathNormalized);
             ScanConfig.packageAcceptReject.addToReject(packageName);
             ScanConfig.pathAcceptReject.addToReject(pathNormalized + "/");
             if (!pathNormalized.contains("*")) {
-                // 拒绝子目录/嵌套路径
                 ScanConfig.packagePrefixAcceptReject.addToReject(packageName + ".");
                 ScanConfig.pathPrefixAcceptReject.addToReject(pathNormalized + "/");
             }
@@ -837,73 +960,76 @@ public class ClassGraph {
         return this;
     }
 
-    /**
-     * 请改用 {@link #rejectPaths(String...)}
-     *
-     * @param paths
-     *            要拒绝的路径(使用 '/' 作为分隔符)可以包含 glob 通配符({@code '*'})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectPaths(String...)}
-     */
+    /** @deprecated Use {@link #excludePaths(String...)} instead. */
     @Deprecated
-    public ClassGraph blacklistPaths(final String... paths) {
-        return rejectPaths(paths);
+    public ClassGraph rejectPaths(final String... paths) {
+        return excludePaths(paths);
     }
 
     /**
-     * 扫描一个或多个特定类，除非包本身被接受，否则不扫描同一包中的其他类
+     * Please use {@link #excludePaths(String...)} instead.
+     *
+     * @deprecated Please use {@link #excludePaths(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph blacklistPaths(final String... paths) {
+        return excludePaths(paths);
+    }
+
+    /**
+     * Scan one or more specific classes; other classes in the same package are not scanned
+     * unless the package itself is also accepted.
      *
      * <p>
-     * 注意：自动调用 {@link #enableClassInfo()}
-     *
+     * Note: Automatically calls {@link #withClassInfo()}.
      *
      * @param classNames
-     *            要扫描的类的全限定名称(使用 '.' 作为分隔符)要按 glob 匹配任意包中的类名，
-     *            必须同时包含包 glob，例如 {@code "*.*Suffix"}
-     * @return this(用于方法链式调用)
+     *            The fully-qualified names of classes to scan (using '.' as separator).
+     * @return this (for method chaining)
      */
-    public ClassGraph acceptClasses(final String... classNames) {
-        enableClassInfo();
+    public ClassGraph filterClasses(final String... classNames) {
+        withClassInfo();
         for (final String className : classNames) {
             final String classNameNormalized = Filter.normalizePackageOrClassName(className);
-            // 接受类本身
             ScanConfig.classAcceptReject.addToAccept(classNameNormalized);
             ScanConfig.classfilePathAcceptReject
                     .addToAccept(Filter.classNameToClassfilePath(classNameNormalized));
             final String packageName = PackageInfo.getParentPackageName(classNameNormalized);
-            // 记录包含该类的包，以便即使包本身未被接受，我们也可以递归到此点
             ScanConfig.classPackageAcceptReject.addToAccept(packageName);
             ScanConfig.classPackagePathAcceptReject.addToAccept(Filter.packageNameToPath(packageName) + "/");
         }
         return this;
     }
 
-    /**
-     * 请改用 {@link #acceptClasses(String...)}
-     *
-     * @param classNames
-     *            要扫描的类的全限定名称(使用 '.' 作为分隔符)
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptClasses(String...)}
-     */
+    /** @deprecated Use {@link #filterClasses(String...)} instead. */
     @Deprecated
-    public ClassGraph whitelistClasses(final String... classNames) {
-        return acceptClasses(classNames);
+    public ClassGraph acceptClasses(final String... classNames) {
+        return filterClasses(classNames);
     }
 
     /**
-     * 明确拒绝一个或多个特定类，阻止其被扫描，即使它们在已接受的包中
+     * Please use {@link #filterClasses(String...)} instead.
+     *
+     * @deprecated Please use {@link #filterClasses(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph whitelistClasses(final String... classNames) {
+        return filterClasses(classNames);
+    }
+
+    /**
+     * Explicitly reject one or more specific classes, preventing them from being scanned,
+     * even if they are in an accepted package.
      *
      * <p>
-     * 注意：自动调用 {@link #enableClassInfo()}
+     * Note: Automatically calls {@link #withClassInfo()}.
      *
      * @param classNames
-     *            要拒绝的类的全限定名称(使用 '.' 作为分隔符)要按 glob 匹配任意包中的类名，
-     *            必须同时包含包 glob，例如 {@code "*.*Suffix"}
-     * @return this(用于方法链式调用)
+     *            The fully-qualified names of classes to reject (using '.' as separator).
+     * @return this (for method chaining)
      */
-    public ClassGraph rejectClasses(final String... classNames) {
-        enableClassInfo();
+    public ClassGraph excludeClasses(final String... classNames) {
+        withClassInfo();
         for (final String className : classNames) {
             final String classNameNormalized = Filter.normalizePackageOrClassName(className);
             ScanConfig.classAcceptReject.addToReject(classNameNormalized);
@@ -913,28 +1039,31 @@ public class ClassGraph {
         return this;
     }
 
-    /**
-     * 请改用 {@link #rejectClasses(String...)}
-     *
-     * @param classNames
-     *            要拒绝的类的全限定名称(使用 '.' 作为分隔符)
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectClasses(String...)}
-     */
+    /** @deprecated Use {@link #excludeClasses(String...)} instead. */
     @Deprecated
-    public ClassGraph blacklistClasses(final String... classNames) {
-        return rejectClasses(classNames);
+    public ClassGraph rejectClasses(final String... classNames) {
+        return excludeClasses(classNames);
     }
 
     /**
-     * 接受一个或多个 jar 文件这将导致仅扫描被接受的 jar 文件
+     * Please use {@link #excludeClasses(String...)} instead.
+     *
+     * @deprecated Please use {@link #excludeClasses(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph blacklistClasses(final String... classNames) {
+        return excludeClasses(classNames);
+    }
+
+    /**
+     * Accept one or more jar files; this will cause only accepted jar files to be scanned.
      *
      * @param jarLeafNames
-     *            应扫描的 jar 文件的叶子名称(例如 {@code "mylib.jar"})可以包含通配符 glob
-     *            ({@code "mylib-*.jar"})
-     * @return this(用于方法链式调用)
+     *            The leaf names of jar files that should be scanned (e.g., {@code "mylib.jar"}).
+     *            Can include glob wildcards ({@code "mylib-*.jar"}).
+     * @return this (for method chaining)
      */
-    public ClassGraph acceptJars(final String... jarLeafNames) {
+    public ClassGraph filterJars(final String... jarLeafNames) {
         for (final String jarLeafName : jarLeafNames) {
             final String leafName = JarUtils.leafName(jarLeafName);
             if (!leafName.equals(jarLeafName)) {
@@ -945,29 +1074,31 @@ public class ClassGraph {
         return this;
     }
 
-    /**
-     * 请改用 {@link #acceptJars(String...)}
-     *
-     * @param jarLeafNames
-     *            应扫描的 jar 文件的叶子名称(例如 {@code "mylib.jar"})可以包含通配符 glob
-     *            ({@code "mylib-*.jar"})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptJars(String...)}
-     */
+    /** @deprecated Use {@link #filterJars(String...)} instead. */
     @Deprecated
-    public ClassGraph whitelistJars(final String... jarLeafNames) {
-        return acceptJars(jarLeafNames);
+    public ClassGraph acceptJars(final String... jarLeafNames) {
+        return filterJars(jarLeafNames);
     }
 
     /**
-     * 拒绝一个或多个 jar 文件，阻止其被扫描
+     * Please use {@link #filterJars(String...)} instead.
+     *
+     * @deprecated Please use {@link #filterJars(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph whitelistJars(final String... jarLeafNames) {
+        return filterJars(jarLeafNames);
+    }
+
+    /**
+     * Reject one or more jar files, preventing them from being scanned.
      *
      * @param jarLeafNames
-     *            应扫描的 jar 文件的叶子名称(例如 {@code "badlib.jar"})可以包含通配符 glob
-     *            ({@code "badlib-*.jar"})
-     * @return this(用于方法链式调用)
+     *            The leaf names of jar files that should be rejected (e.g., {@code "badlib.jar"}).
+     *            Can include glob wildcards ({@code "badlib-*.jar"}).
+     * @return this (for method chaining)
      */
-    public ClassGraph rejectJars(final String... jarLeafNames) {
+    public ClassGraph excludeJars(final String... jarLeafNames) {
         for (final String jarLeafName : jarLeafNames) {
             final String leafName = JarUtils.leafName(jarLeafName);
             if (!leafName.equals(jarLeafName)) {
@@ -978,18 +1109,20 @@ public class ClassGraph {
         return this;
     }
 
+    /** @deprecated Use {@link #excludeJars(String...)} instead. */
+    @Deprecated
+    public ClassGraph rejectJars(final String... jarLeafNames) {
+        return excludeJars(jarLeafNames);
+    }
+
     /**
-     * 请改用 {@link #rejectJars(String...)}
+     * Please use {@link #excludeJars(String...)} instead.
      *
-     * @param jarLeafNames
-     *            应扫描的 jar 文件的叶子名称(例如 {@code "badlib.jar"})可以包含通配符 glob
-     *            ({@code "badlib-*.jar"})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectJars(String...)}
+     * @deprecated Please use {@link #excludeJars(String...)} instead.
      */
     @Deprecated
     public ClassGraph blacklistJars(final String... jarLeafNames) {
-        return rejectJars(jarLeafNames);
+        return excludeJars(jarLeafNames);
     }
 
     /**
@@ -1058,114 +1191,127 @@ public class ClassGraph {
     }
 
     /**
-     * 接受 JRE/JDK "lib/" 或 "ext/" 目录中的一个或多个 jar 文件
-     * (默认情况下不扫描这些目录，除非调用了 {@link #enableSystemJarsAndModules()}，以与 JRE/JDK 的关联方式)
+     * Accept one or more jar files in the JRE/JDK "lib/" or "ext/" directory.
+     * (By default, these directories are not scanned unless {@link #withSystemJarsAndModules()}
+     * is called, in conjunction with the JRE/JDK.)
      *
      * @param jarLeafNames
-     *            应扫描的 lib/ext jar 文件的叶子名称(例如 {@code "mylib.jar"})可以包含通配符 glob
-     *            ({@code '*'})请注意，如果不带参数调用此方法，则将接受所有 JRE/JDK "lib/" 或 "ext/" jar 文件
-     * @return this(用于方法链式调用)
+     *            The leaf names of lib/ext jar files that should be scanned (e.g., {@code "mylib.jar"}).
+     *            Can include glob wildcards ({@code '*'}). Note that if this method is called with no
+     *            arguments, all JRE/JDK "lib/" or "ext/" jar files will be accepted.
+     * @return this (for method chaining)
      */
-    public ClassGraph acceptLibOrExtJars(final String... jarLeafNames) {
+    public ClassGraph filterLibOrExtJars(final String... jarLeafNames) {
         acceptOrRejectLibOrExtJars(/* accept = */ true, jarLeafNames);
         return this;
     }
 
-    /**
-     * 请改用 {@link #acceptLibOrExtJars(String...)}
-     *
-     * @param jarLeafNames
-     *            应扫描的 lib/ext jar 文件的叶子名称(例如 {@code "mylib.jar"})可以包含通配符 glob
-     *            ({@code '*'})请注意，如果不带参数调用此方法，则将接受所有 JRE/JDK "lib/" 或 "ext/" jar 文件
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptLibOrExtJars(String...)}
-     */
+    /** @deprecated Use {@link #filterLibOrExtJars(String...)} instead. */
     @Deprecated
-    public ClassGraph whitelistLibOrExtJars(final String... jarLeafNames) {
-        return acceptLibOrExtJars(jarLeafNames);
+    public ClassGraph acceptLibOrExtJars(final String... jarLeafNames) {
+        return filterLibOrExtJars(jarLeafNames);
     }
 
     /**
-     * 拒绝 JRE/JDK "lib/" 或 "ext/" 目录中的一个或多个 jar 文件，阻止其被扫描
+     * Please use {@link #filterLibOrExtJars(String...)} instead.
+     *
+     * @deprecated Please use {@link #filterLibOrExtJars(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph whitelistLibOrExtJars(final String... jarLeafNames) {
+        return filterLibOrExtJars(jarLeafNames);
+    }
+
+    /**
+     * Reject one or more jar files in the JRE/JDK "lib/" or "ext/" directory,
+     * preventing them from being scanned.
      *
      * @param jarLeafNames
-     *            不应扫描的 lib/ext jar 文件的叶子名称(例如 {@code "jre/lib/badlib.jar"})
-     *            可以包含通配符 glob({@code '*'})如果不带参数调用此方法，
-     *            则将拒绝所有 JRE/JDK {@code "lib/"} 或 {@code "ext/"} jar 文件
-     * @return this(用于方法链式调用)
+     *            The leaf names of lib/ext jar files that should not be scanned
+     *            (e.g., {@code "jre/lib/badlib.jar"}). Can include glob wildcards ({@code '*'}).
+     *            If called with no arguments, all JRE/JDK {@code "lib/"} or {@code "ext/"}
+     *            jar files will be rejected.
+     * @return this (for method chaining)
      */
-    public ClassGraph rejectLibOrExtJars(final String... jarLeafNames) {
+    public ClassGraph excludeLibOrExtJars(final String... jarLeafNames) {
         acceptOrRejectLibOrExtJars(/* accept = */ false, jarLeafNames);
         return this;
     }
 
-    /**
-     * 请改用 {@link #rejectLibOrExtJars(String...)}
-     *
-     * @param jarLeafNames
-     *            不应扫描的 lib/ext jar 文件的叶子名称(例如 {@code "jre/lib/badlib.jar"})
-     *            可以包含通配符 glob({@code '*'})如果不带参数调用此方法，
-     *            则将拒绝所有 JRE/JDK {@code "lib/"} 或 {@code "ext/"} jar 文件
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectLibOrExtJars(String...)}
-     */
+    /** @deprecated Use {@link #excludeLibOrExtJars(String...)} instead. */
     @Deprecated
-    public ClassGraph blacklistLibOrExtJars(final String... jarLeafNames) {
-        return rejectLibOrExtJars(jarLeafNames);
+    public ClassGraph rejectLibOrExtJars(final String... jarLeafNames) {
+        return excludeLibOrExtJars(jarLeafNames);
     }
 
     /**
-     * 接受一个或多个模块进行扫描
+     * Please use {@link #excludeLibOrExtJars(String...)} instead.
+     *
+     * @deprecated Please use {@link #excludeLibOrExtJars(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph blacklistLibOrExtJars(final String... jarLeafNames) {
+        return excludeLibOrExtJars(jarLeafNames);
+    }
+
+    /**
+     * Accept one or more modules for scanning.
      *
      * @param moduleNames
-     *            应扫描的模块名称可以包含通配符 glob({@code '*'})
-     * @return this(用于方法链式调用)
+     *            The names of modules that should be scanned. Can include glob wildcards ({@code '*'}).
+     * @return this (for method chaining)
      */
-    public ClassGraph acceptModules(final String... moduleNames) {
+    public ClassGraph filterModules(final String... moduleNames) {
         for (final String moduleName : moduleNames) {
             ScanConfig.moduleAcceptReject.addToAccept(Filter.normalizePackageOrClassName(moduleName));
         }
         return this;
     }
 
-    /**
-     * 请改用 {@link #acceptModules(String...)}
-     *
-     * @param moduleNames
-     *            应扫描的模块名称可以包含通配符 glob({@code '*'})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptModules(String...)}
-     */
+    /** @deprecated Use {@link #filterModules(String...)} instead. */
     @Deprecated
-    public ClassGraph whitelistModules(final String... moduleNames) {
-        return acceptModules(moduleNames);
+    public ClassGraph acceptModules(final String... moduleNames) {
+        return filterModules(moduleNames);
     }
 
     /**
-     * 拒绝一个或多个模块，阻止其被扫描
+     * Please use {@link #filterModules(String...)} instead.
+     *
+     * @deprecated Please use {@link #filterModules(String...)} instead.
+     */
+    @Deprecated
+    public ClassGraph whitelistModules(final String... moduleNames) {
+        return filterModules(moduleNames);
+    }
+
+    /**
+     * Reject one or more modules, preventing them from being scanned.
      *
      * @param moduleNames
-     *            不应扫描的模块名称可以包含通配符 glob({@code '*'})
-     * @return this(用于方法链式调用)
+     *            The names of modules that should not be scanned. Can include glob wildcards ({@code '*'}).
+     * @return this (for method chaining)
      */
-    public ClassGraph rejectModules(final String... moduleNames) {
+    public ClassGraph excludeModules(final String... moduleNames) {
         for (final String moduleName : moduleNames) {
             ScanConfig.moduleAcceptReject.addToReject(Filter.normalizePackageOrClassName(moduleName));
         }
         return this;
     }
 
+    /** @deprecated Use {@link #excludeModules(String...)} instead. */
+    @Deprecated
+    public ClassGraph rejectModules(final String... moduleNames) {
+        return excludeModules(moduleNames);
+    }
+
     /**
-     * 请改用 {@link #rejectModules(String...)}
+     * Please use {@link #excludeModules(String...)} instead.
      *
-     * @param moduleNames
-     *            不应扫描的模块名称可以包含通配符 glob({@code '*'})
-     * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectModules(String...)}
+     * @deprecated Please use {@link #excludeModules(String...)} instead.
      */
     @Deprecated
     public ClassGraph blacklistModules(final String... moduleNames) {
-        return rejectModules(moduleNames);
+        return excludeModules(moduleNames);
     }
 
     /**
@@ -1261,19 +1407,25 @@ public class ClassGraph {
     }
 
     /**
-     * 启用对系统包({@code "java.*"}、{@code "javax.*"}、{@code "javafx.*"}、
-     * {@code "jdk.*"}、{@code "oracle.*"}、{@code "sun.*"})的扫描
-     * —— 为了速度，默认情况下不扫描这些包
+     * Enable scanning of system packages ({@code "java.*"}, {@code "javax.*"},
+     * {@code "javafx.*"}, {@code "jdk.*"}, {@code "oracle.*"}, {@code "sun.*"})
+     * -- by default these packages are not scanned for speed.
      *
      * <p>
-     * 注意：自动调用 {@link #enableClassInfo()}
+     * Note: Automatically calls {@link #withClassInfo()}.
      *
-     * @return this(用于方法链式调用)
+     * @return this (for method chaining)
      */
-    public ClassGraph enableSystemJarsAndModules() {
-        enableClassInfo();
+    public ClassGraph withSystemJarsAndModules() {
+        withClassInfo();
         ScanConfig.enableSystemJarsAndModules = true;
         return this;
+    }
+
+    /** @deprecated Use {@link #withSystemJarsAndModules()} instead. */
+    @Deprecated
+    public ClassGraph enableSystemJarsAndModules() {
+        return withSystemJarsAndModules();
     }
 
     /**
