@@ -28,10 +28,10 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.VersionFinder;
-import com.bingbaihanji.classgraph.utils.VersionFinder.OperatingSystem;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.VersionFinder;
+import com.bingbaihanji.classgraph.util.VersionFinder.OperatingSystem;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,15 +68,15 @@ public class ScanClassLoader extends ClassLoader {
         registerAsParallelCapable();
 
         this.scanResult = scanResult;
-        final ScanSpec scanSpec = scanResult.scanSpec;
-        initializeLoadedClasses = scanSpec.initializeLoadedClasses;
+        final ScanConfig ScanConfig = scanResult.ScanConfig;
+        initializeLoadedClasses = ScanConfig.initializeLoadedClasses;
 
-        final boolean classpathOverridden = scanSpec.overrideClasspath != null
-                && !scanSpec.overrideClasspath.isEmpty();
-        final boolean classloadersOverridden = scanSpec.overrideClassLoaders != null
-                && !scanSpec.overrideClassLoaders.isEmpty();
-        final boolean clasloadersAdded = scanSpec.addedClassLoaders != null
-                && !scanSpec.addedClassLoaders.isEmpty();
+        final boolean classpathOverridden = ScanConfig.overrideClasspath != null
+                && !ScanConfig.overrideClasspath.isEmpty();
+        final boolean classloadersOverridden = ScanConfig.overrideClassLoaders != null
+                && !ScanConfig.overrideClassLoaders.isEmpty();
+        final boolean clasloadersAdded = ScanConfig.addedClassLoaders != null
+                && !ScanConfig.addedClassLoaders.isEmpty();
 
         // 仅当类路径和/或类加载器未被覆盖时才尝试环境类加载器
         if (!classpathOverridden && !classloadersOverridden) {
@@ -98,7 +98,7 @@ public class ScanClassLoader extends ClassLoader {
                 : new URLClassLoader(classpathURLs.toArray(new URL[0]));
 
         // 如果类加载器被覆盖，仅使用覆盖类加载器，如果找不到类则失败
-        overrideClassLoaders = classloadersOverridden ? scanSpec.overrideClassLoaders : null;
+        overrideClassLoaders = classloadersOverridden ? ScanConfig.overrideClassLoaders : null;
 
         // 如果类路径被覆盖但类加载器未被覆盖，则尝试从类路径 URL 加载类作为覆盖类加载器，
         // 如果找不到类则失败
@@ -112,7 +112,7 @@ public class ScanClassLoader extends ClassLoader {
         // 如果添加了类加载器，尝试通过这些类加载器加载
         if (clasloadersAdded) {
             addedClassLoaderDelegationOrder = new LinkedHashSet<>();
-            addedClassLoaderDelegationOrder.addAll(scanSpec.addedClassLoaders);
+            addedClassLoaderDelegationOrder.addAll(ScanConfig.addedClassLoaders);
             // 移除重复项
             if (environmentClassLoaderDelegationOrder != null) {
                 addedClassLoaderDelegationOrder.removeAll(environmentClassLoaderDelegationOrder);
@@ -199,8 +199,8 @@ public class ScanClassLoader extends ClassLoader {
             // ClassGraph 是通过在直接读取导出包中的资源时忽略类可见性来发现它的
             // 强制 ClassGraph 遵守 JPMS 封装规则，拒绝加载上下文/系统类加载器
             // 无法加载的模块类(正常情况下上面应该抛出 SecurityException，但这里是为了完整性)
-            if (classInfo.classpathElement instanceof ClasspathElementModule && !classInfo.isPublic()) {
-                throw new ClassNotFoundException("Classfile for class " + className + " was found in a module, "
+            if (classInfo.Classpath instanceof ModuleClasspath && !classInfo.isPublic()) {
+                throw new ClassNotFoundException("ClassParser for class " + className + " was found in a module, "
                         + "but the context and system classloaders could not load the class, probably because "
                         + "the class is not public.");
             }
@@ -255,7 +255,7 @@ public class ScanClassLoader extends ClassLoader {
                     // 参见：https://bugs.openjdk.java.net/browse/JDK-8202999
                     return defineClass(className, resourceToClose.read(), (ProtectionDomain) null);
                 } catch (final IOException e) {
-                    throw new ClassNotFoundException("Could not load classfile for class " + className + " : " + e);
+                    throw new ClassNotFoundException("Could not load ClassParser for class " + className + " : " + e);
                 } catch (final LinkageError e) {
                     if (linkageError == null) {
                         linkageError = e;
@@ -288,7 +288,7 @@ public class ScanClassLoader extends ClassLoader {
             throw linkageError;
         }
 
-        throw new ClassNotFoundException("Could not find or load classfile for class " + className);
+        throw new ClassNotFoundException("Could not find or load ClassParser for class " + className);
     }
 
     /**

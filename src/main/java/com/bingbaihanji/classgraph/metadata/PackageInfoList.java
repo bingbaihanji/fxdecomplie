@@ -31,7 +31,7 @@ package com.bingbaihanji.classgraph.metadata;
 import java.util.Collection;
 
 /** 一个 {@link PackageInfo} 对象的列表 */
-public class PackageInfoList extends MappableInfoList<PackageInfo> {
+public class PackageInfoList extends InfoList<PackageInfo> {
     /** 一个不可修改的 {@link PackageInfoList} */
     static final PackageInfoList EMPTY_LIST = new PackageInfoList() {
         /** 序列化版本UID */

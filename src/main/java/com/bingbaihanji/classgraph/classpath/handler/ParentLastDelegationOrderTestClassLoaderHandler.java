@@ -31,8 +31,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 /** 用于测试 PARENT_LAST 委托顺序的 ClassLoaderHandler */
 class ParentLastDelegationOrderTestClassLoaderHandler implements ClassLoaderHandler {
@@ -80,16 +80,16 @@ class ParentLastDelegationOrderTestClassLoaderHandler implements ClassLoaderHand
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         final String classpath = (String) classpathOrder.reflectionUtils.invokeMethod(/* throwException = */ true,
                 classLoader, "getClasspath");
-        classpathOrder.addClasspathEntry(classpath, classLoader, scanSpec, log);
+        classpathOrder.addClasspathEntry(classpath, classLoader, ScanConfig, log);
     }
 }

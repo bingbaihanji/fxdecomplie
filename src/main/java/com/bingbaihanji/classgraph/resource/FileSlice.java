@@ -28,13 +28,13 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.core.ClassGraph;
-import com.bingbaihanji.classgraph.resource.NestedJarHandler;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessByteBufferReader;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessFileChannelReader;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessReader;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessByteBufferReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessFileChannelReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessReader;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,13 +77,13 @@ public class FileSlice extends Slice {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      */
     private FileSlice(final FileSlice parentSlice, final long offset, final long length,
                       final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                      final NestedJarHandler nestedJarHandler) {
-        super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+                      final JarReader JarReader) {
+        super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
         this.file = parentSlice.file;
         this.raf = parentSlice.raf;
         this.fileChannel = parentSlice.fileChannel;
@@ -110,7 +110,7 @@ public class FileSlice extends Slice {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      * @param log
      *            日志
@@ -118,8 +118,8 @@ public class FileSlice extends Slice {
      *             如果文件无法打开
      */
     public FileSlice(final File file, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                     final NestedJarHandler nestedJarHandler, final LogNode log) throws IOException {
-        super(file.length(), isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+                     final JarReader JarReader, final LogNode log) throws IOException {
+        super(file.length(), isDeflatedZipEntry, inflatedLengthHint, JarReader);
         // 确保文件可读且是普通文件
         FileUtils.checkCanReadAndIsFile(file);
         this.file = file;
@@ -128,7 +128,7 @@ public class FileSlice extends Slice {
         this.fileLength = file.length();
         this.isTopLevelFileSlice = true;
 
-        if (nestedJarHandler.scanSpec.enableMemoryMapping) {
+        if (JarReader.ScanConfig.enableMemoryMapping) {
             // TODO: for JDK 24+, use the new Arena API to memory-map the file to a MemorySegment:
             // https://docs.oracle.com/en/java/javase/22/docs//api/java.base/java/nio/channels/FileChannel.html#map(java.nio.channels.FileChannel.MapMode,long,long,java.lang.foreign.Arena)
             try {
@@ -138,7 +138,7 @@ public class FileSlice extends Slice {
             } catch (IOException | OutOfMemoryError e) {
                 // 尝试运行垃圾回收，然后再次尝试映射文件
                 System.gc();
-                nestedJarHandler.runFinalizationMethod();
+                JarReader.runFinalizationMethod();
                 try {
                     backingByteBuffer = fileChannel.map(MapMode.READ_ONLY, 0L, fileLength);
                 } catch (IOException | OutOfMemoryError e2) {
@@ -152,7 +152,7 @@ public class FileSlice extends Slice {
         }
 
         // 将顶级切片标记为打开状态
-        nestedJarHandler.markSliceAsOpen(this);
+        JarReader.markSliceAsOpen(this);
     }
 
     /**
@@ -160,16 +160,16 @@ public class FileSlice extends Slice {
      *
      * @param file
      *            文件
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      * @param log
      *            日志
      * @throws IOException
      *             如果文件无法打开
      */
-    public FileSlice(final File file, final NestedJarHandler nestedJarHandler, final LogNode log)
+    public FileSlice(final File file, final JarReader JarReader, final LogNode log)
             throws IOException {
-        this(file, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L, nestedJarHandler, log);
+        this(file, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L, JarReader, log);
     }
 
     /**
@@ -191,7 +191,7 @@ public class FileSlice extends Slice {
         if (this.isDeflatedZipEntry) {
             throw new IllegalArgumentException("Cannot slice a deflated zip entry");
         }
-        return new FileSlice(this, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+        return new FileSlice(this, offset, length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
     }
 
     /**
@@ -225,7 +225,7 @@ public class FileSlice extends Slice {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
             try (InputStream inputStream = open()) {
-                return NestedJarHandler.readAllBytesAsArray(inputStream, inflatedLengthHint);
+                return JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else {
             // 从 RandomAccessFile 或 MappedByteBuffer 复制到字节数组
@@ -288,7 +288,7 @@ public class FileSlice extends Slice {
             if (isTopLevelFileSlice && backingByteBuffer != null) {
                 // 仅在顶级文件切片中关闭 ByteBuffer，这样 ByteBuffer 只关闭一次
                 // (此外，MappedByteBuffer 的副本无法通过 cleaner API 关闭)
-                nestedJarHandler.closeDirectByteBuffer(backingByteBuffer);
+                JarReader.closeDirectByteBuffer(backingByteBuffer);
             }
             backingByteBuffer = null;
             fileChannel = null;
@@ -303,7 +303,7 @@ public class FileSlice extends Slice {
                 }
             }
             raf = null;
-            nestedJarHandler.markSliceAsClosed(this);
+            JarReader.markSliceAsClosed(this);
         }
     }
 }

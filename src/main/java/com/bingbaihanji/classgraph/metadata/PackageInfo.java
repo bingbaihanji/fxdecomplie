@@ -28,15 +28,15 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.Assert;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.Assert;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.*;
 
 /** 保存扫描过程中遇到的包的元数据 */
-public class PackageInfo implements Comparable<PackageInfo>, HasName {
+public class PackageInfo implements Comparable<PackageInfo>, Named {
     /** 包名称 */
     private String name;
 
@@ -99,12 +99,12 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
      *            包名称
      * @param packageNameToPackageInfo
      *            从包名到包信息的映射
-     * @param scanSpec
-     *            ScanSpec 配置
+     * @param ScanConfig
+     *            ScanConfig 配置
      * @return 指定名称包的 {@link PackageInfo}
      */
     static PackageInfo getOrCreatePackage(final String packageName,
-                                          final Map<String, PackageInfo> packageNameToPackageInfo, final ScanSpec scanSpec) {
+                                          final Map<String, PackageInfo> packageNameToPackageInfo, final ScanConfig ScanConfig) {
         // 获取或创建此包的 PackageInfo 对象
         PackageInfo packageInfo = packageNameToPackageInfo.get(packageName);
         if (packageInfo != null) {
@@ -120,10 +120,10 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
             // 递归为父包创建 PackageInfo 对象(直到到达已存在或不被接受的父包)，
             // 并将每个祖先包连接到其父包
             final String parentPackageName = getParentPackageName(packageInfo.name);
-            if (scanSpec.packageAcceptReject.isAcceptedAndNotRejected(parentPackageName)
-                    || scanSpec.packagePrefixAcceptReject.isAcceptedAndNotRejected(parentPackageName)) {
+            if (ScanConfig.packageAcceptReject.isAcceptedAndNotRejected(parentPackageName)
+                    || ScanConfig.packagePrefixAcceptReject.isAcceptedAndNotRejected(parentPackageName)) {
                 final PackageInfo parentPackageInfo = getOrCreatePackage(parentPackageName,
-                        packageNameToPackageInfo, scanSpec);
+                        packageNameToPackageInfo, ScanConfig);
                 if (parentPackageInfo != null) {
                     // 将包链接到父包
                     if (parentPackageInfo.children == null) {
@@ -152,7 +152,7 @@ public class PackageInfo implements Comparable<PackageInfo>, HasName {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 添加在包描述符 classfile 中找到的注解
+     * 添加在包描述符 ClassParser 中找到的注解
      *
      * @param packageAnnotations
      *            包注解

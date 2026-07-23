@@ -29,16 +29,16 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
-import com.bingbaihanji.classgraph.utils.Assert;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.Assert;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
 import java.util.*;
 
 /** {@link AnnotationInfo} 对象的列表 */
-public class AnnotationInfoList extends MappableInfoList<AnnotationInfo> {
+public class AnnotationInfoList extends InfoList<AnnotationInfo> {
     /** 一个不可修改的空 {@link AnnotationInfoList} */
     static final AnnotationInfoList EMPTY_LIST = new AnnotationInfoList();
     /** serialVersionUID */

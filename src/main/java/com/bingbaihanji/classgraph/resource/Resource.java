@@ -27,10 +27,11 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.resource;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
-import com.bingbaihanji.classgraph.resource.reader.ClassfileReader;
-import com.bingbaihanji.classgraph.utils.LogNode;
-import com.bingbaihanji.classgraph.utils.URLPathEncoder;
+import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.URLPathEncoder;
 
 import java.io.Closeable;
 import java.io.File;
@@ -51,7 +52,7 @@ import java.util.zip.ZipEntry;
  */
 public abstract class Resource implements Closeable, Comparable<Resource> {
     /** 此资源所来自的类路径元素 */
-    private final ClasspathElement classpathElement;
+    private final Classpath Classpath;
 
     /** 输入流，或为 null */
     protected InputStream inputStream;
@@ -74,13 +75,13 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     /**
      * 构造函数
      *
-     * @param classpathElement
+     * @param Classpath
      *            此资源所来自的类路径元素
      * @param length
      *            资源的长度
      */
-    public Resource(final ClasspathElement classpathElement, final long length) {
-        this.classpathElement = classpathElement;
+    public Resource(final Classpath Classpath, final long length) {
+        this.Classpath = Classpath;
         this.length = length;
     }
 
@@ -118,9 +119,9 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      *             如果资源来自模块且该模块的位置 URI 为 null
      */
     public URI getURI() {
-        final URI locationURI = getClasspathElementURI();
+        final URI locationURI = getClasspathURI();
         final String locationURIStr = locationURI.toString();
-        final String resourcePath = getPathRelativeToClasspathElement();
+        final String resourcePath = getPathRelativeToClasspath();
         // 检查这是否是一个基于目录的模块(位置 URI 将以 "/" 结尾)
         final boolean isDir = locationURIStr.endsWith("/");
         try {
@@ -155,13 +156,13 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      * @throws IllegalArgumentException
      *             如果类路径元素没有有效的 URI(例如对于位置 URI 为 null 的模块)
      */
-    public URI getClasspathElementURI() {
-        return classpathElement.getURI();
+    public URI getClasspathURI() {
+        return Classpath.getURI();
     }
 
     /**
      * 获取此资源所来自的类路径元素或模块的 {@link URL}如果资源可能来自系统模块，或者这是一个 jlink 运行时镜像，
-     * 请改用 {@link #getClasspathElementURI()}，因为系统模块和 jlink 运行时镜像使用的 "jrt:" URI 协议不被
+     * 请改用 {@link #getClasspathURI()}，因为系统模块和 jlink 运行时镜像使用的 "jrt:" URI 协议不被
      * {@link URL} 支持，这将导致抛出 {@link IllegalArgumentException}
      *
      * @return 此资源所在类路径元素或模块的 {@link URL}
@@ -169,8 +170,8 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      *             如果资源来自具有 "jrt:" 位置 URI 的系统模块或 jlink 运行时镜像，
      *             或者资源来自模块且该模块的位置 URI 为 null
      */
-    public URL getClasspathElementURL() {
-        return uriToURL(getClasspathElementURI());
+    public URL getClasspathURL() {
+        return uriToURL(getClasspathURI());
     }
 
     /**
@@ -181,8 +182,8 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      *         如果类路径元素是 http/https URL，并且 jar 直接下载到 RAM 中而非磁盘上的临时文件
      *         (例如临时目录不可写)，也可能返回 null
      */
-    public File getClasspathElementFile() {
-        return classpathElement.getFile();
+    public File getClasspathFile() {
+        return Classpath.getFile();
     }
 
     /**
@@ -192,8 +193,8 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      *         如果此 {@link Resource} 位于类路径中的目录或 jar 中，则返回 null
      */
     public ModuleRef getModuleRef() {
-        return classpathElement instanceof ClasspathElementModule
-                ? ((ClasspathElementModule) classpathElement).moduleRef
+        return Classpath instanceof ModuleClasspath
+                ? ((ModuleClasspath) Classpath).moduleRef
                 : null;
     }
 
@@ -231,7 +232,7 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      *         {@code "META-INF/versions/11/com/xyz/resource.xml"} 的完整路径，
      *         而不是 {@code "com/xyz/resource.xml"}
      */
-    public String getPathRelativeToClasspathElement() {
+    public String getPathRelativeToClasspath() {
         // 仅对 jar 重写
         return getPath();
     }
@@ -290,13 +291,13 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     public abstract byte[] load() throws IOException;
 
     /**
-     * 在资源上打开一个 {@link ClassfileReader}(用于读取类文件)
+     * 在资源上打开一个 {@link ClassFileReader}(用于读取类文件)
      *
-     * @return {@link ClassfileReader}
+     * @return {@link ClassFileReader}
      * @throws IOException
      *             如果发生 I/O 异常
      */
-    abstract ClassfileReader openClassfile() throws IOException;
+    abstract ClassFileReader openClassfile() throws IOException;
 
     /**
      * 获取资源的长度

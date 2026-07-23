@@ -28,8 +28,8 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.IncompleteAnnotationException;
@@ -44,7 +44,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /** 保存类、方法、方法参数或字段上特定注解实例的元数据 */
-public class AnnotationInfo extends ScanResultObject implements Comparable<AnnotationInfo>, HasName {
+public class AnnotationInfo extends MetadataNode implements Comparable<AnnotationInfo>, Named {
     /** 名称 */
     private String name;
 
@@ -194,7 +194,7 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
 
         // 将注解值按与注解方法相同的顺序排列(每个注解常量对应一个方法)
         if (classInfo.methodInfo == null) {
-            // 不应发生(读取 class 文件时，无论 scanSpec.enableMethodInfo 是否为 true，方法总是会被读取)
+            // 不应发生(读取 class 文件时，无论 ScanConfig.enableMethodInfo 是否为 true，方法总是会被读取)
             throw new IllegalArgumentException("Could not find methods for annotation " + classInfo.getName());
         }
         final AnnotationParameterValueList result = new AnnotationParameterValueList();
@@ -246,7 +246,7 @@ public class AnnotationInfo extends ScanResultObject implements Comparable<Annot
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

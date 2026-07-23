@@ -1,7 +1,7 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.classgraph.core.ClassInfo;
-import com.bingbaihanji.classgraph.core.ScanResult;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;

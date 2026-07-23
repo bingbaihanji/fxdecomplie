@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.TypeParser;
 
 import java.util.List;
@@ -243,7 +243,7 @@ public class BaseType extends TypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#loadClass()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#loadClass()
      */
     @Override
     Class<?> loadClass() {
@@ -253,7 +253,7 @@ public class BaseType extends TypeSignature {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#loadClass(java.lang.Class)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#loadClass(java.lang.Class)
      */
     @Override
     <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
@@ -269,7 +269,7 @@ public class BaseType extends TypeSignature {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -277,7 +277,7 @@ public class BaseType extends TypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -296,7 +296,7 @@ public class BaseType extends TypeSignature {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

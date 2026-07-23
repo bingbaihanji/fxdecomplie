@@ -1,6 +1,6 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.classgraph.core.ScanResult;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import com.bingbaihanji.fxdecomplie.service.WorkspaceIndexService;

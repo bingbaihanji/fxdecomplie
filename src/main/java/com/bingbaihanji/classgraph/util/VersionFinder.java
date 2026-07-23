@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.util;
 
-import com.bingbaihanji.classgraph.core.ClassGraph;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
 import org.w3c.dom.Document;
 
 import javax.xml.XMLConstants;

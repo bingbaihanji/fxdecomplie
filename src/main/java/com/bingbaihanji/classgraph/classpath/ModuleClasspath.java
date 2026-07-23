@@ -27,22 +27,24 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.classpath;
+import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
-import com.bingbaihanji.classgraph.concurrency.SingletonMap;
-import com.bingbaihanji.classgraph.concurrency.SingletonMap.NewInstanceException;
-import com.bingbaihanji.classgraph.concurrency.SingletonMap.NullSingletonException;
-import com.bingbaihanji.classgraph.concurrency.WorkQueue;
-import com.bingbaihanji.classgraph.core.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.fastzipfilereader.LogicalZipFile;
-import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
-import com.bingbaihanji.classgraph.recycler.RecycleOnClose;
-import com.bingbaihanji.classgraph.recycler.Recycler;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
-import com.bingbaihanji.classgraph.utils.ProxyingInputStream;
-import com.bingbaihanji.classgraph.utils.VersionFinder;
+import com.bingbaihanji.classgraph.util.SingletonMap;
+import com.bingbaihanji.classgraph.util.SingletonMap.NewInstanceException;
+import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
+import com.bingbaihanji.classgraph.util.WorkQueue;
+import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.resource.LogicalZipFile;
+import com.bingbaihanji.classgraph.resource.ClassFileReader;
+import com.bingbaihanji.classgraph.resource.RecycleOnClose;
+import com.bingbaihanji.classgraph.resource.Pool;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.scan.ScanConfig.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.ProxyingInputStream;
+import com.bingbaihanji.classgraph.util.VersionFinder;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,17 +63,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author luke
  */
-class ModuleClasspath extends ClasspathElement {
+class ModuleClasspath extends Classpath {
 
     /** 模块引用 */
     final ModuleRef moduleRef;
     /** 所有资源路径 */
     private final Set<String> allResourcePaths = new HashSet<>();
     /** 从 {@link ModuleRef} 到模块的 {@link ModuleReaderProxy} 回收器的单例映射 */
-    SingletonMap<ModuleRef, Recycler<ModuleReaderProxy, IOException>, IOException> //
+    SingletonMap<ModuleRef, Pool<ModuleReaderProxy, IOException>, IOException> //
             moduleRefToModuleReaderProxyRecyclerMap;
     /** 模块读取器代理回收器 */
-    private Recycler<ModuleReaderProxy, IOException> moduleReaderProxyRecycler;
+    private Pool<ModuleReaderProxy, IOException> moduleReaderProxyRecycler;
 
     /**
      * 一个 zip/jar 文件类路径元素
@@ -82,31 +84,31 @@ class ModuleClasspath extends ClasspathElement {
      *            工作单元
      * @param moduleRefToModuleReaderProxyRecyclerMap
      *            从模块引用到模块读取器代理回收器的映射
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      */
     ModuleClasspath(final ModuleRef moduleRef,
-                           final SingletonMap<ModuleRef, Recycler<ModuleReaderProxy, IOException>, IOException> //
+                           final SingletonMap<ModuleRef, Pool<ModuleReaderProxy, IOException>, IOException> //
                                    moduleRefToModuleReaderProxyRecyclerMap, final ClasspathEntryWorkUnit workUnit,
-                           final ScanSpec scanSpec) {
-        super(workUnit, scanSpec);
+                           final ScanConfig ScanConfig) {
+        super(workUnit, ScanConfig);
         this.moduleRefToModuleReaderProxyRecyclerMap = moduleRefToModuleReaderProxyRecyclerMap;
         this.moduleRef = moduleRef;
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ClasspathElement#open(
+     * @see com.bingbaihanji.classgraph.core.Classpath#open(
      * com.bingbaihanji.classgraph.concurrency.WorkQueue, com.bingbaihanji.classgraph.utils.LogNode)
      */
     @Override
     void open(final WorkQueue<ClasspathEntryWorkUnit> workQueueIgnored, final LogNode log)
             throws InterruptedException {
-        if (!scanSpec.scanModules) {
+        if (!ScanConfig.scanModules) {
             if (log != null) {
                 log(classpathElementIdx, "Skipping module, since module scanning is disabled: " + getModuleName(),
                         log);
             }
-            skipClasspathElement = true;
+            skipClasspath = true;
             return;
         }
         try {
@@ -116,7 +118,7 @@ class ModuleClasspath extends ClasspathElement {
                 log(classpathElementIdx, "Skipping invalid module " + getModuleName() + " : "
                         + (e.getCause() == null ? e : e.getCause()), log);
             }
-            skipClasspathElement = true;
+            skipClasspath = true;
             return;
         }
     }
@@ -151,7 +153,7 @@ class ModuleClasspath extends ClasspathElement {
             }
 
             protected void checkCanOpen() {
-                if (skipClasspathElement) {
+                if (skipClasspath) {
                     // 不应该发生
                     throw new IllegalStateException("Classpath element could not be opened");
                 }
@@ -182,8 +184,8 @@ class ModuleClasspath extends ClasspathElement {
             }
 
             @Override
-            ClassfileReader openClassfile() throws IOException {
-                return new ClassfileReader(open(), this);
+            ClassFileReader openClassfile() throws IOException {
+                return new ClassFileReader(open(), this);
             }
 
             @Override
@@ -291,7 +293,7 @@ class ModuleClasspath extends ClasspathElement {
      */
     @Override
     void scanPaths(final LogNode log) {
-        if (skipClasspathElement) {
+        if (skipClasspath) {
             return;
         }
         if (scanned.getAndSet(true)) {
@@ -337,7 +339,7 @@ class ModuleClasspath extends ClasspathElement {
                 // 必须包含类似 "META-INF/versions/{version}/META-INF/versions/{version}/" 的路径，这不可能
                 // 有效(META-INF 应仅存在于模块根中)，嵌套的版本化部分
                 // 应该被忽略
-                if (!scanSpec.enableMultiReleaseVersions
+                if (!ScanConfig.enableMultiReleaseVersions
                         && relativePath.startsWith(LogicalZipFile.MULTI_RELEASE_PATH_PREFIX)) {
                     if (subLog != null) {
                         subLog.log(
@@ -366,7 +368,7 @@ class ModuleClasspath extends ClasspathElement {
                 final boolean parentRelativePathChanged = !parentRelativePath.equals(prevParentRelativePath);
                 final ScanSpecPathMatch parentMatchStatus = //
                         prevParentRelativePath == null || parentRelativePathChanged
-                                ? scanSpec.dirAcceptMatchStatus(parentRelativePath)
+                                ? ScanConfig.dirAcceptMatchStatus(parentRelativePath)
                                 : prevParentMatchStatus;
                 prevParentRelativePath = parentRelativePath;
                 prevParentMatchStatus = parentMatchStatus;
@@ -385,11 +387,11 @@ class ModuleClasspath extends ClasspathElement {
                     if (parentMatchStatus == ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX
                             || parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_PATH
                             || (parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_CLASS_PACKAGE
-                            && scanSpec.classfileIsSpecificallyAccepted(relativePath))) {
+                            && ScanConfig.classfileIsSpecificallyAccepted(relativePath))) {
                         // 添加被接受的资源
                         addAcceptedResource(newResource(relativePath), parentMatchStatus,
                                 /* isClassfileOnly = */ false, subLog);
-                    } else if (scanSpec.enableClassInfo && "module-info.class".equals(relativePath)) {
+                    } else if (ScanConfig.enableClassInfo && "module-info.class".equals(relativePath)) {
                         // 将模块描述符添加为被接受的 class 文件资源，以便对其进行扫描，
                         // 但不要将其添加到 ScanResult 的资源列表中，因为它不在
                         // 被接受的包中 (#352)
@@ -409,7 +411,7 @@ class ModuleClasspath extends ClasspathElement {
             if (subLog != null) {
                 subLog.log("Exception opening module " + moduleRef.getName(), e);
             }
-            skipClasspathElement = true;
+            skipClasspath = true;
         }
 
         finishScanPaths(subLog);
@@ -449,7 +451,7 @@ class ModuleClasspath extends ClasspathElement {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ClasspathElement#getURI()
+     * @see com.bingbaihanji.classgraph.core.Classpath#getURI()
      */
     @Override
     URI getURI() {
@@ -467,7 +469,7 @@ class ModuleClasspath extends ClasspathElement {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ClasspathElement#getFile()
+     * @see com.bingbaihanji.classgraph.core.Classpath#getFile()
      */
     @Override
     File getFile() {

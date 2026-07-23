@@ -29,8 +29,8 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +47,7 @@ import java.util.*;
  * ClassGraph 返回的大多数 {@link ClassInfoList} 对象按 {@link ClassInfo#getName()} 的值进行字典序排序
  * 一个例外是由 {@link ClassInfo#getSuperclasses()} 返回的类，它们按类层次结构的升序排列
  */
-public class ClassInfoList extends MappableInfoList<ClassInfo> {
+public class ClassInfoList extends InfoList<ClassInfo> {
     /** 一个不可修改的空 {@link ClassInfoList} */
     static final ClassInfoList EMPTY_LIST = new ClassInfoList();
     /** serialVersionUID */
@@ -536,8 +536,8 @@ public class ClassInfoList extends MappableInfoList<ClassInfo> {
         if (isEmpty()) {
             throw new IllegalArgumentException("List is empty");
         }
-        final ScanSpec scanSpec = get(0).scanResult.scanSpec;
-        if (!scanSpec.enableInterClassDependencies) {
+        final ScanConfig ScanConfig = get(0).scanResult.ScanConfig;
+        if (!ScanConfig.enableInterClassDependencies) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableInterClassDependencies() before #scan()");
         }
@@ -553,9 +553,9 @@ public class ClassInfoList extends MappableInfoList<ClassInfo> {
      * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#enableInterClassDependencies()}
      *
      * <p>
-     * 等效于以 (10.5f, 8f, scanSpec.enableExternalClasses) 参数调用
+     * 等效于以 (10.5f, 8f, ScanConfig.enableExternalClasses) 参数调用
      * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)}，
-     * 其中 scanSpec.enableExternalClasses 在扫描前调用了
+     * 其中 ScanConfig.enableExternalClasses 在扫描前调用了
      * {@link ClassGraph#enableExternalClasses()} 时为 true
      *
      * @param sizeX
@@ -571,13 +571,13 @@ public class ClassInfoList extends MappableInfoList<ClassInfo> {
         if (isEmpty()) {
             throw new IllegalArgumentException("List is empty");
         }
-        final ScanSpec scanSpec = get(0).scanResult.scanSpec;
-        if (!scanSpec.enableInterClassDependencies) {
+        final ScanConfig ScanConfig = get(0).scanResult.ScanConfig;
+        if (!ScanConfig.enableInterClassDependencies) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableInterClassDependencies() before #scan()");
         }
         return GraphvizDotfileGenerator.generateGraphVizDotFileFromInterClassDependencies(this, sizeX, sizeY,
-                scanSpec.enableExternalClasses);
+                ScanConfig.enableExternalClasses);
     }
 
     /**
@@ -586,9 +586,9 @@ public class ClassInfoList extends MappableInfoList<ClassInfo> {
      * 在使用此方法之前，必须在扫描前调用 {@link ClassGraph#enableInterClassDependencies()}
      *
      * <p>
-     * 等效于以 (10.5f, 8f, scanSpec.enableExternalClasses) 参数调用
+     * 等效于以 (10.5f, 8f, ScanConfig.enableExternalClasses) 参数调用
      * {@link #generateGraphVizDotFileFromInterClassDependencies(float, float, boolean)}，
-     * 其中 scanSpec.enableExternalClasses 在扫描前调用了
+     * 其中 ScanConfig.enableExternalClasses 在扫描前调用了
      * {@link ClassGraph#enableExternalClasses()} 时为 true
      *
      * @return GraphViz 文件内容
@@ -600,13 +600,13 @@ public class ClassInfoList extends MappableInfoList<ClassInfo> {
         if (isEmpty()) {
             throw new IllegalArgumentException("List is empty");
         }
-        final ScanSpec scanSpec = get(0).scanResult.scanSpec;
-        if (!scanSpec.enableInterClassDependencies) {
+        final ScanConfig ScanConfig = get(0).scanResult.ScanConfig;
+        if (!ScanConfig.enableInterClassDependencies) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableInterClassDependencies() before #scan()");
         }
         return GraphvizDotfileGenerator.generateGraphVizDotFileFromInterClassDependencies(this, 10.5f, 8.0f,
-                scanSpec.enableExternalClasses);
+                ScanConfig.enableExternalClasses);
     }
 
     /**
@@ -671,13 +671,13 @@ public class ClassInfoList extends MappableInfoList<ClassInfo> {
         if (isEmpty()) {
             throw new IllegalArgumentException("List is empty");
         }
-        final ScanSpec scanSpec = get(0).scanResult.scanSpec;
-        if (!scanSpec.enableClassInfo) {
+        final ScanConfig ScanConfig = get(0).scanResult.ScanConfig;
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         return GraphvizDotfileGenerator.generateGraphVizDotFile(this, sizeX, sizeY, showFields,
                 showFieldTypeDependencyEdges, showMethods, showMethodTypeDependencyEdges, showAnnotations,
-                useSimpleNames, scanSpec);
+                useSimpleNames, ScanConfig);
     }
 
     // -------------------------------------------------------------------------------------------------------------

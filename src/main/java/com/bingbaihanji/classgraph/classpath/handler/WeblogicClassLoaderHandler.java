@@ -31,8 +31,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 /** 从 Weblogic ClassLoaders 提取类路径条目 */
 class WeblogicClassLoaderHandler implements ClassLoaderHandler {
@@ -88,19 +88,19 @@ class WeblogicClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         classpathOrder.addClasspathPathStr( //
                 (String) classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getFinderClassPath"),
-                classLoader, scanSpec, log);
+                classLoader, ScanConfig, log);
         classpathOrder.addClasspathPathStr( //
                 (String) classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getClassPath"),
-                classLoader, scanSpec, log);
+                classLoader, ScanConfig, log);
     }
 }

@@ -28,8 +28,8 @@
  */
 package com.bingbaihanji.classgraph.reflect;
 
-import com.bingbaihanji.classgraph.core.ClassGraph;
-import com.bingbaihanji.classgraph.core.ClassGraph.CircumventEncapsulationMethod;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
+import com.bingbaihanji.classgraph.scan.ClassGraph.CircumventEncapsulationMethod;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;

@@ -28,22 +28,22 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.concurrency.InterruptionChecker;
-import com.bingbaihanji.classgraph.concurrency.SingletonMap;
+import com.bingbaihanji.classgraph.util.InterruptionChecker;
+import com.bingbaihanji.classgraph.util.SingletonMap;
 import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
-import com.bingbaihanji.classgraph.core.ModuleRef;
-import com.bingbaihanji.classgraph.core.ScanResult;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
+import com.bingbaihanji.classgraph.scan.ScanResult;
 import com.bingbaihanji.classgraph.resource.ArraySlice;
 import com.bingbaihanji.classgraph.resource.FileSlice;
 import com.bingbaihanji.classgraph.resource.Slice;
-import com.bingbaihanji.classgraph.resource.Recycler;
+import com.bingbaihanji.classgraph.resource.Pool;
 import com.bingbaihanji.classgraph.resource.Resettable;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.FastPathResolver;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.*;
 import java.lang.reflect.Method;
@@ -79,8 +79,8 @@ public class JarReader {
      * System.runFinalization() -- 在 JDK 18 中已被弃用，因此通过反射访问
      */
     private static Method runFinalizationMethod;
-    /** {@link ScanSpec} 扫描规范 */
-    public final ScanSpec scanSpec;
+    /** {@link ScanConfig} 扫描规范 */
+    public final ScanConfig ScanConfig;
     /** 如果 {@link #close(LogNode)} 已被调用则为 true */
     private final AtomicBoolean closed = new AtomicBoolean(false);
     public ReflectionUtils reflectionUtils;
@@ -106,8 +106,8 @@ public class JarReader {
                         PhysicalZipFile physicalZipFile;
                         if (isURL) {
                             final String scheme = nestedJarPath.substring(0, nestedJarPath.indexOf(':'));
-                            if (scanSpec.allowedURLSchemes == null
-                                    || !scanSpec.allowedURLSchemes.contains(scheme)) {
+                            if (ScanConfig.allowedURLSchemes == null
+                                    || !ScanConfig.allowedURLSchemes.contains(scheme)) {
                                 // 不允许 "file:"(带可选的 "jar:" 前缀)以外的 URL 方案
                                 // (这些方案已由 FastPathResolver.resolve(nestedJarPathRaw) 去除)
                                 throw new IOException("Scanning of URL scheme \"" + scheme
@@ -231,7 +231,7 @@ public class JarReader {
                         }
 
                         // 如果嵌套 JAR 扫描被禁用，则不提取嵌套 JAR
-                        if (!scanSpec.scanNestedJars) {
+                        if (!ScanConfig.scanNestedJars) {
                             throw new IOException(
                                     "Nested jar scanning is disabled -- skipping nested jar " + nestedJarPath);
                         }
@@ -278,13 +278,13 @@ public class JarReader {
     /**
      * 从 {@link ModuleRef} 到该模块的 {@link ModuleReaderProxy} 回收器的单例映射
      */
-    public SingletonMap<ModuleRef, Recycler<ModuleReaderProxy, IOException>, IOException> //
+    public SingletonMap<ModuleRef, Pool<ModuleReaderProxy, IOException>, IOException> //
             moduleRefToModuleReaderProxyRecyclerMap = //
-            new SingletonMap<ModuleRef, Recycler<ModuleReaderProxy, IOException>, IOException>() {
+            new SingletonMap<ModuleRef, Pool<ModuleReaderProxy, IOException>, IOException>() {
                 @Override
-                public Recycler<ModuleReaderProxy, IOException> newInstance(final ModuleRef moduleRef,
+                public Pool<ModuleReaderProxy, IOException> newInstance(final ModuleRef moduleRef,
                                                                             final LogNode ignored) {
-                    return new Recycler<ModuleReaderProxy, IOException>() {
+                    return new Pool<ModuleReaderProxy, IOException>() {
                         @Override
                         public ModuleReaderProxy newInstance() throws IOException {
                             return moduleRef.open();
@@ -355,12 +355,12 @@ public class JarReader {
                 throws IOException, InterruptedException {
             // 读取 ZIP 文件的中央目录
             return new LogicalZipFile(zipFileSlice, JarReader.this, log,
-                    scanSpec.enableMultiReleaseVersions);
+                    ScanConfig.enableMultiReleaseVersions);
         }
     };
     /** {@link Inflater} 实例的回收器 */
-    private Recycler<RecyclableInflater, RuntimeException> //
-            inflaterRecycler = new Recycler<RecyclableInflater, RuntimeException>() {
+    private Pool<RecyclableInflater, RuntimeException> //
+            inflaterRecycler = new Pool<RecyclableInflater, RuntimeException>() {
         @Override
         public RecyclableInflater newInstance() throws RuntimeException {
             return new RecyclableInflater();
@@ -378,14 +378,14 @@ public class JarReader {
     /**
      * 嵌套 JAR 的处理器
      *
-     * @param scanSpec
-     *            {@link ScanSpec} 扫描规范
+     * @param ScanConfig
+     *            {@link ScanConfig} 扫描规范
      * @param interruptionChecker
      *            中断检查器
      */
-    public JarReader(final ScanSpec scanSpec, final InterruptionChecker interruptionChecker,
+    public JarReader(final ScanConfig ScanConfig, final InterruptionChecker interruptionChecker,
                             final ReflectionUtils reflectionUtils) {
-        this.scanSpec = scanSpec;
+        this.ScanConfig = ScanConfig;
         this.interruptionChecker = interruptionChecker;
         this.reflectionUtils = reflectionUtils;
     }
@@ -797,15 +797,15 @@ public class JarReader {
                                                  final long inputStreamLengthHint, final LogNode log) throws IOException {
         // 在切片上打开 InflaterInputStream
         try (InputStream inptStream = inputStream) {
-            if (inputStreamLengthHint <= scanSpec.maxBufferedJarRAMSize) {
-                // inputStreamLengthHint 未知 (-1) 或小于 scanSpec.maxBufferedJarRAMSize，
-                // 因此尝试从 InputStream 读取到大小为 scanSpec.maxBufferedJarRAMSize
+            if (inputStreamLengthHint <= ScanConfig.maxBufferedJarRAMSize) {
+                // inputStreamLengthHint 未知 (-1) 或小于 ScanConfig.maxBufferedJarRAMSize，
+                // 因此尝试从 InputStream 读取到大小为 ScanConfig.maxBufferedJarRAMSize
                 // 或 inputStreamLengthHint 的数组中此外，如果 inputStreamLengthHint == 0
                 // (可能有效也可能无效)，使用 16kB 的缓冲区大小，以防此值有误但文件仍然较小，
                 // 从而避免溢出到磁盘
-                final int bufSize = inputStreamLengthHint == -1L ? scanSpec.maxBufferedJarRAMSize
+                final int bufSize = inputStreamLengthHint == -1L ? ScanConfig.maxBufferedJarRAMSize
                         : inputStreamLengthHint == 0L ? 16384
-                        : Math.min((int) inputStreamLengthHint, scanSpec.maxBufferedJarRAMSize);
+                        : Math.min((int) inputStreamLengthHint, ScanConfig.maxBufferedJarRAMSize);
                 byte[] buf = new byte[bufSize];
                 final int bufLength = buf.length;
 
@@ -838,7 +838,7 @@ public class JarReader {
                         0L, this);
 
             }
-            // inputStreamLengthHint 大于 scanSpec.maxJarRamSize，因此立即溢出到磁盘
+            // inputStreamLengthHint 大于 ScanConfig.maxJarRamSize，因此立即溢出到磁盘
             return spillToDisk(inptStream, tempFileBaseName, /* buf = */ null, /* overflowBuf = */ null, log);
         }
     }
@@ -905,9 +905,9 @@ public class JarReader {
                 boolean completedWithoutInterruption = false;
                 while (!completedWithoutInterruption) {
                     try {
-                        for (final Recycler<ModuleReaderProxy, IOException> recycler : //
+                        for (final Pool<ModuleReaderProxy, IOException> Pool : //
                                 moduleRefToModuleReaderProxyRecyclerMap.values()) {
-                            recycler.forceClose();
+                            Pool.forceClose();
                         }
                         completedWithoutInterruption = true;
                     } catch (final InterruptedException e) {
@@ -1012,7 +1012,7 @@ public class JarReader {
     }
 
     /**
-     * 包装类，允许 {@link Inflater} 实例被重置以供复用，然后由 {@link Recycler} 回收
+     * 包装类，允许 {@link Inflater} 实例被重置以供复用，然后由 {@link Pool} 回收
      */
     private static class RecyclableInflater implements Resettable, AutoCloseable {
         /**
@@ -1038,7 +1038,7 @@ public class JarReader {
         }
 
         /**
-         * 当 {@link Recycler} 实例关闭时调用，用于销毁 {@link Inflater} 实例
+         * 当 {@link Pool} 实例关闭时调用，用于销毁 {@link Inflater} 实例
          */
         @Override
         public void close() {

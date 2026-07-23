@@ -145,7 +145,7 @@ public interface RandomAccessReader {
     long readLong(final long offset) throws IOException;
 
     /**
-     * 读取 Java classfile 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
+     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
      * 并可选择去除前缀 "L" 和后缀 ";"
      *
      * @param offset
@@ -164,7 +164,7 @@ public interface RandomAccessReader {
                       final boolean stripLSemicolon) throws IOException;
 
     /**
-     * 读取 Java classfile 规范中定义的"modified UTF8"格式
+     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式
      *
      * @param offset
      *            字符串的起始偏移量

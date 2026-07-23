@@ -28,10 +28,10 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.utils.FastPathResolver;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.VersionFinder;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.VersionFinder;
 
 import java.io.File;
 import java.io.IOException;
@@ -78,7 +78,7 @@ public final class SystemJarFinder {
         }
         final String javaExtDirs = VersionFinder.getProperty("java.ext.dirs");
         if (javaExtDirs != null && !javaExtDirs.isEmpty()) {
-            for (final String javaExtDir : JarUtils.smartPathSplit(javaExtDirs, /* scanSpec = */ null)) {
+            for (final String javaExtDir : JarUtils.smartPathSplit(javaExtDirs, /* ScanConfig = */ null)) {
                 if (!javaExtDir.isEmpty()) {
                     addJREPath(new File(javaExtDir));
                 }

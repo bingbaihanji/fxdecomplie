@@ -28,8 +28,8 @@
  */
 package com.bingbaihanji.classgraph.util;
 
-import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -107,12 +107,12 @@ public final class JarUtils {
      *
      * @param pathStr
      *            要拆分的路径
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @return 路径元素子字符串数组
      */
-    public static String[] smartPathSplit(final String pathStr, final ScanSpec scanSpec) {
-        return smartPathSplit(pathStr, File.pathSeparatorChar, scanSpec);
+    public static String[] smartPathSplit(final String pathStr, final ScanConfig ScanConfig) {
+        return smartPathSplit(pathStr, File.pathSeparatorChar, ScanConfig);
     }
 
     /**
@@ -123,11 +123,11 @@ public final class JarUtils {
      *            要拆分的路径
      * @param separatorChar
      *            要使用的分隔符字符
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @return 路径元素子字符串数组
      */
-    public static String[] smartPathSplit(final String pathStr, final char separatorChar, final ScanSpec scanSpec) {
+    public static String[] smartPathSplit(final String pathStr, final char separatorChar, final ScanConfig ScanConfig) {
         if (pathStr == null || pathStr.isEmpty()) {
             return new String[0];
         }
@@ -159,10 +159,10 @@ public final class JarUtils {
                         break;
                     }
                 }
-                if (!foundNonPathSeparator && scanSpec != null && scanSpec.allowedURLSchemes != null
-                        && !scanSpec.allowedURLSchemes.isEmpty()) {
+                if (!foundNonPathSeparator && ScanConfig != null && ScanConfig.allowedURLSchemes != null
+                        && !ScanConfig.allowedURLSchemes.isEmpty()) {
                     // 如果注册了自定义 URL 方案，也将其用作分隔符
-                    for (final String scheme : scanSpec.allowedURLSchemes) {
+                    for (final String scheme : ScanConfig.allowedURLSchemes) {
                         // 跳过上方更快匹配代码中已处理的方案
                         if (!"http".equals(scheme) && !"https".equals(scheme) && !"jar".equals(scheme)
                                 && !"file".equals(scheme)) {
@@ -274,10 +274,10 @@ public final class JarUtils {
         int leafStartIdx = 1 + (File.separatorChar == '/' ? path.lastIndexOf('/', endIdx)
                 : Math.max(path.lastIndexOf('/', endIdx), path.lastIndexOf(File.separatorChar, endIdx)));
         // 对于临时文件(从 JAR 中提取的 JAR)，移除临时文件名前缀 -- 参见
-        // NestedJarHandler.unzipToTempFile()
-        int sepIdx = path.indexOf(NestedJarHandler.TEMP_FILENAME_LEAF_SEPARATOR);
+        // JarReader.unzipToTempFile()
+        int sepIdx = path.indexOf(JarReader.TEMP_FILENAME_LEAF_SEPARATOR);
         if (sepIdx >= 0) {
-            sepIdx += NestedJarHandler.TEMP_FILENAME_LEAF_SEPARATOR.length();
+            sepIdx += JarReader.TEMP_FILENAME_LEAF_SEPARATOR.length();
         }
         leafStartIdx = Math.max(leafStartIdx, sepIdx);
         leafStartIdx = Math.min(leafStartIdx, endIdx);
@@ -295,7 +295,7 @@ public final class JarUtils {
      */
     public static String classfilePathToClassName(final String classfilePath) {
         if (!classfilePath.endsWith(".class")) {
-            throw new IllegalArgumentException("Classfile path does not end with \".class\": " + classfilePath);
+            throw new IllegalArgumentException("ClassParser path does not end with \".class\": " + classfilePath);
         }
         return classfilePath.substring(0, classfilePath.length() - 6).replace('/', '.');
     }

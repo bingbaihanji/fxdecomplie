@@ -28,9 +28,9 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.StringUtils;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.StringUtils;
 
 import java.io.File;
 import java.util.Arrays;
@@ -154,7 +154,7 @@ public class ModulePathInfo {
                             } else {
                                 // 将参数值拆分为多个部分
                                 argField.addAll(Arrays
-                                        .asList(JarUtils.smartPathSplit(argParam, sepChar, /* scanSpec = */ null)));
+                                        .asList(JarUtils.smartPathSplit(argParam, sepChar, /* ScanConfig = */ null)));
                             }
                         }
                     }

@@ -28,14 +28,14 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 /** {@link AnnotationParameterValue} 对象的列表 */
-public class AnnotationParameterValueList extends MappableInfoList<AnnotationParameterValue> {
+public class AnnotationParameterValueList extends InfoList<AnnotationParameterValue> {
     /** 不可修改的空 {@link AnnotationParameterValueList} */
     static final AnnotationParameterValueList EMPTY_LIST = new AnnotationParameterValueList();
     /** 序列化版本号 */

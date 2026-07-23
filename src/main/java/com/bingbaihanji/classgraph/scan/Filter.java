@@ -28,10 +28,10 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
-import com.bingbaihanji.classgraph.utils.FastPathResolver;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
 
 import java.util.*;
 import java.util.regex.Pattern;

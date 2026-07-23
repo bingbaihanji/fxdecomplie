@@ -27,8 +27,10 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.resource;
+import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 
 import java.io.Closeable;
 import java.io.IOException;

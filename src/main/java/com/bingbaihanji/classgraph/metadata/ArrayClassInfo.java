@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.Map;
 import java.util.Set;
@@ -140,7 +140,7 @@ public class ArrayClassInfo extends ClassInfo {
                 elementClassInfo = ArrayType.getElementTypeSignature().getClassInfo();
                 if (elementClassInfo != null) {
                     // 从数组元素 ClassInfo 复制相关字段
-                    this.classpathElement = elementClassInfo.classpathElement;
+                    this.Classpath = elementClassInfo.Classpath;
                     this.classfileResource = elementClassInfo.classfileResource;
                     this.classLoader = elementClassInfo.classLoader;
                     this.isScannedClass = elementClassInfo.isScannedClass;

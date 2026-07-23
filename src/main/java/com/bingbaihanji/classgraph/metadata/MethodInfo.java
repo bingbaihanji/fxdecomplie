@@ -28,13 +28,13 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.core.ClassFile.MethodTypeAnnotationDecorator;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.MethodTypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
-import com.bingbaihanji.classgraph.utils.Assert;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.Assert;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -44,7 +44,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
- * 保存扫描过程中遇到的类的方法元数据所有值均直接取自类的 classfile
+ * 保存扫描过程中遇到的类的方法元数据所有值均直接取自类的 ClassParser
  */
 public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo> {
     /** 未对齐的参数注解 */
@@ -62,7 +62,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      */
     private int[] parameterModifiers;
     /** 对齐后的方法参数信息 */
-    private transient MethodParameterInfo[] parameterInfo;
+    private transient MethodParam[] parameterInfo;
 
     /** 如果此方法有方法体则为 true */
     private boolean hasBody;
@@ -195,7 +195,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                             // 因此从结构上确定隐式前缀参数的数量
                             numImplicitPrefixParams = getNumImplicitPrefixParams();
                         }
-                        // 限制在合理范围内，以防编译器错误或格式错误的 classfile
+                        // 限制在合理范围内，以防编译器错误或格式错误的 ClassParser
                         if (numImplicitPrefixParams < 0) {
                             numImplicitPrefixParams = 0;
                         } else if (numImplicitPrefixParams > descNumParam) {
@@ -277,8 +277,8 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      *
      * @return 方法的解析后类型签名，如果不可用则为 null
      * @throws IllegalArgumentException
-     *             如果方法类型签名无法解析(这应仅在 classfile 损坏或编译器错误导致无效的类型签名
-     *             被写入 classfile 时抛出)
+     *             如果方法类型签名无法解析(这应仅在 ClassParser 损坏或编译器错误导致无效的类型签名
+     *             被写入 ClassParser 时抛出)
      */
     @Override
     public MethodType getTypeSignature() {
@@ -296,7 +296,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     throw new IllegalArgumentException(
                             "方法 " + getClassName() + "." + getName() + " 的类型签名无效"
                                     + (getClassInfo() != null
-                                    ? "，位于类路径元素 " + getClassInfo().getClasspathElementURI()
+                                    ? "，位于类路径元素 " + getClassInfo().getClasspathURI()
                                     : "")
                                     + " : " + typeSignatureStr,
                             e);
@@ -464,9 +464,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     /**
      * 获取方法参数的可用信息
      *
-     * @return 方法参数的 {@link MethodParameterInfo} 对象，每个参数一个
+     * @return 方法参数的 {@link MethodParam} 对象，每个参数一个
      */
-    public MethodParameterInfo[] getParameterInfo() {
+    public MethodParam[] getParameterInfo() {
         // Kotlin 对各种参数元数据类型的元数处理非常不一致，参见：
         // https://github.com/classgraph/classgraph/issues/175#issuecomment-363031510
         // 作为变通方案，我们假设任何合成/强制参数必须在参数列表的开头出现(当元数不匹配时)，
@@ -596,10 +596,10 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                     }
                 }
 
-                // 生成 MethodParameterInfo 条目
-                parameterInfo = new MethodParameterInfo[numParams];
+                // 生成 MethodParam 条目
+                parameterInfo = new MethodParam[numParams];
                 for (int i = 0; i < numParams; i++) {
-                    parameterInfo[i] = new MethodParameterInfo(this,
+                    parameterInfo[i] = new MethodParam(this,
                             paramAnnotationInfoAligned == null ? null : paramAnnotationInfoAligned[i],
                             paramModifiersAligned == null ? 0 : paramModifiersAligned[i],
                             paramTypeDescriptorsAligned == null ? null : paramTypeDescriptorsAligned.get(i),
@@ -634,8 +634,8 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @return 如果此方法有带该命名注解的参数则返回 true
      */
     public boolean hasParameterAnnotation(final String annotationName) {
-        for (final MethodParameterInfo methodParameterInfo : getParameterInfo()) {
-            if (methodParameterInfo.hasAnnotation(annotationName)) {
+        for (final MethodParam MethodParam : getParameterInfo()) {
+            if (MethodParam.hasAnnotation(annotationName)) {
                 return true;
             }
         }
@@ -650,9 +650,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @return 每个方法参数的 {@link Class} 引用数组
      */
     private Class<?>[] loadParameterClasses() {
-        final MethodParameterInfo[] allParameterInfo = getParameterInfo();
+        final MethodParam[] allParameterInfo = getParameterInfo();
         final List<Class<?>> parameterClasses = new ArrayList<>(allParameterInfo.length);
-        for (final MethodParameterInfo mpi : allParameterInfo) {
+        for (final MethodParam mpi : allParameterInfo) {
             final TypeSignature parameterType = mpi.getTypeSignatureOrTypeDescriptor();
             TypeSignature actualParameterType;
             if (parameterType instanceof TypeVar) {
@@ -787,7 +787,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -813,7 +813,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             }
         }
         if (this.parameterInfo != null) {
-            for (final MethodParameterInfo mpi : parameterInfo) {
+            for (final MethodParam mpi : parameterInfo) {
                 mpi.setScanResult(scanResult);
             }
         }
@@ -864,7 +864,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                 ai.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
             }
         }
-        for (final MethodParameterInfo mpi : getParameterInfo()) {
+        for (final MethodParam mpi : getParameterInfo()) {
             final AnnotationInfo[] aiArr = mpi.annotationInfo;
             if (aiArr != null) {
                 for (final AnnotationInfo ai : aiArr) {
@@ -996,9 +996,9 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
 
         // 如果至少有一个参数被命名，则为未命名的参数使用占位符名称，
         // 否则不为任何参数显示名称
-        final MethodParameterInfo[] allParamInfo = getParameterInfo();
+        final MethodParam[] allParamInfo = getParameterInfo();
         boolean hasParamNames = false;
-        for (final MethodParameterInfo methodParamInfo : allParamInfo) {
+        for (final MethodParam methodParamInfo : allParamInfo) {
             if (methodParamInfo.getName() != null) {
                 hasParamNames = true;
                 break;
@@ -1024,7 +1024,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
 
         buf.append('(');
         for (int i = 0, numParams = allParamInfo.length; i < numParams; i++) {
-            final MethodParameterInfo paramInfo = allParamInfo[i];
+            final MethodParam paramInfo = allParamInfo[i];
             if (i > 0) {
                 buf.append(", ");
             }
@@ -1036,7 +1036,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
                 }
             }
 
-            MethodParameterInfo.modifiersToString(paramInfo.getModifiers(), buf);
+            MethodParam.modifiersToString(paramInfo.getModifiers(), buf);
 
             final TypeSignature paramTypeSignature = paramInfo.getTypeSignatureOrTypeDescriptor();
             // 在隐式添加到非泛型方法的 `synthetic`、`bridge` 或 `mandated` 参数的情况下，

@@ -28,11 +28,11 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.core.ModuleRef;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
 
@@ -53,7 +53,7 @@ public class ModuleFinder {
      *
      * @param callStack
      *            调用栈
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param scanNonSystemModules
      *            是否扫描未命名和非系统模块
@@ -62,25 +62,25 @@ public class ModuleFinder {
      * @param log
      *            日志
      */
-    public ModuleFinder(final Class<?>[] callStack, final ScanSpec scanSpec, final boolean scanNonSystemModules,
+    public ModuleFinder(final Class<?>[] callStack, final ScanConfig ScanConfig, final boolean scanNonSystemModules,
                         final boolean scanSystemModules, final ReflectionUtils reflectionUtils, final LogNode log) {
         this.reflectionUtils = reflectionUtils;
 
         // 获取模块解析顺序
         List<ModuleRef> allModuleRefsList = null;
-        if (scanSpec.overrideModuleLayers == null) {
+        if (ScanConfig.overrideModuleLayers == null) {
             // 从调用栈上的类和系统(JDK9+)查找模块引用
             if (callStack != null && callStack.length > 0) {
-                allModuleRefsList = findModuleRefsFromCallstack(callStack, scanSpec, scanNonSystemModules, log);
+                allModuleRefsList = findModuleRefsFromCallstack(callStack, ScanConfig, scanNonSystemModules, log);
             }
         } else {
             if (log != null) {
                 final LogNode subLog = log.log("Overriding module layers");
-                for (final Object moduleLayer : scanSpec.overrideModuleLayers) {
+                for (final Object moduleLayer : ScanConfig.overrideModuleLayers) {
                     subLog.log(moduleLayer.toString());
                 }
             }
-            allModuleRefsList = findModuleRefs(new LinkedHashSet<>(scanSpec.overrideModuleLayers), scanSpec, log);
+            allModuleRefsList = findModuleRefs(new LinkedHashSet<>(ScanConfig.overrideModuleLayers), ScanConfig, log);
         }
         if (allModuleRefsList != null) {
             // 将模块拆分为系统模块和非系统模块
@@ -194,13 +194,13 @@ public class ModuleFinder {
      *
      * @param layers
      *            层列表
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param log
      *            日志
      * @return 模块引用列表
      */
-    private List<ModuleRef> findModuleRefs(final LinkedHashSet<Object> layers, final ScanSpec scanSpec,
+    private List<ModuleRef> findModuleRefs(final LinkedHashSet<Object> layers, final ScanConfig ScanConfig,
                                            final LogNode log) {
         if (layers.isEmpty()) {
             return Collections.emptyList();
@@ -214,17 +214,17 @@ public class ModuleFinder {
                 findLayerOrder(layer, /* layerVisited = */ new HashSet<>(), parentLayers, layerOrder);
             }
         }
-        if (scanSpec.addedModuleLayers != null) {
-            for (final Object layer : scanSpec.addedModuleLayers) {
+        if (ScanConfig.addedModuleLayers != null) {
+            for (final Object layer : ScanConfig.addedModuleLayers) {
                 if (layer != null) {
                     findLayerOrder(layer, /* layerVisited = */ new HashSet<>(), parentLayers, layerOrder);
                 }
             }
         }
 
-        // 如果 scanSpec.ignoreParentModuleLayers 为 true，则从层顺序中移除父层
+        // 如果 ScanConfig.ignoreParentModuleLayers 为 true，则从层顺序中移除父层
         List<Object> /* List<ModuleLayer> */ layerOrderFinal;
-        if (scanSpec.ignoreParentModuleLayers) {
+        if (ScanConfig.ignoreParentModuleLayers) {
             layerOrderFinal = new ArrayList<>();
             for (final Object layer : layerOrder) {
                 if (!parentLayers.contains(layer)) {
@@ -276,7 +276,7 @@ public class ModuleFinder {
      *
      * @param callStack
      *            调用栈
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param scanNonSystemModules
      *            是否包含未命名和非系统模块
@@ -284,7 +284,7 @@ public class ModuleFinder {
      *            日志
      * @return 模块引用列表
      */
-    private List<ModuleRef> findModuleRefsFromCallstack(final Class<?>[] callStack, final ScanSpec scanSpec,
+    private List<ModuleRef> findModuleRefsFromCallstack(final Class<?>[] callStack, final ScanConfig ScanConfig,
                                                         final boolean scanNonSystemModules, final LogNode log) {
         final LinkedHashSet<Object> layers = new LinkedHashSet<>();
         if (callStack != null) {
@@ -323,6 +323,6 @@ public class ModuleFinder {
                 forceScanJavaClassPath = true;
             }
         }
-        return findModuleRefs(layers, scanSpec, log);
+        return findModuleRefs(layers, ScanConfig, log);
     }
 }

@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -107,7 +107,7 @@ public class MethodInfoList extends InfoList<MethodInfo> {
      * @return 此 {@link MethodInfoList} 作为从方法名称到具有该名称的方法的 {@link MethodInfoList} 的映射
      */
     public Map<String, MethodInfoList> asMap() {
-        // 注意：MethodInfoList 继承自 InfoList 而非 MappableInfoList，因为一个名称可能被多个
+        // 注意：MethodInfoList 继承自 InfoList 而非 InfoList，因为一个名称可能被多个
         // MethodInfo 对象共享(因此 asMap() 需要返回 Map<String, MethodInfoList> 而非 Map<String, MethodInfo>)
         final Map<String, MethodInfoList> methodNameToMethodInfoList = new HashMap<>();
         for (final MethodInfo methodInfo : this) {

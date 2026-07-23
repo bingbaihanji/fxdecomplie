@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.util;
 
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 import com.bingbaihanji.classgraph.util.VersionFinder.OperatingSystem;
 
 import java.io.File;

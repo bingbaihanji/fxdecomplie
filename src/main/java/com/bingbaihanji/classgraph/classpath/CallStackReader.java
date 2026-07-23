@@ -28,9 +28,9 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
-import com.bingbaihanji.classgraph.utils.VersionFinder;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.VersionFinder;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;

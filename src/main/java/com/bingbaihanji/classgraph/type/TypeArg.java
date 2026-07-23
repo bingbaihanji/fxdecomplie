@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 
@@ -170,7 +170,7 @@ public final class TypeArg extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -181,7 +181,7 @@ public final class TypeArg extends HierarchicalType {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -189,7 +189,7 @@ public final class TypeArg extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

@@ -33,8 +33,10 @@ import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.resource.ArraySlice;
 import com.bingbaihanji.classgraph.resource.FileSlice;
 import com.bingbaihanji.classgraph.resource.Slice;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.StringUtils;
+import com.bingbaihanji.classgraph.resource.RandomAccessReader;
+import com.bingbaihanji.classgraph.resource.SequentialReader;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.StringUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -47,11 +49,11 @@ import java.util.Arrays;
 
 /**
  * 一种 {@link Slice} 读取器，既可作为 {@link RandomAccessReader} 也可作为 {@link SequentialReader} 使用
- * 文件缓冲到目前已读取的位置按 classfile 格式所需的<b>大端序</b>读取
+ * 文件缓冲到目前已读取的位置按 ClassParser 格式所需的<b>大端序</b>读取
  */
 public class ClassFileReader implements RandomAccessReader, SequentialReader, Closeable {
     /**
-     * 初始缓冲区大小对于大多数 classfile，只需要读取前 16-64kb(我们不读取字节码)
+     * 初始缓冲区大小对于大多数 ClassParser，只需要读取前 16-64kb(我们不读取字节码)
      */
     private static final int INITIAL_BUF_SIZE = 16384;
     /**
@@ -77,7 +79,7 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
     /** 切片内的当前读取索引 */
     private int currIdx;
     /**
-     * 如果已知 classfile 长度(因为未压缩)则为该长度，如果未知(因为已压缩)则为 -1
+     * 如果已知 ClassParser 长度(因为未压缩)则为该长度，如果未知(因为已压缩)则为 -1
      */
     private int classfileLengthHint = -1;
 
@@ -169,7 +171,7 @@ public class ClassFileReader implements RandomAccessReader, SequentialReader, Cl
      */
     private void readTo(final int targetArrUsed) throws IOException {
         // 数组不需要增长到超过长度提示的大小(如果 zip 条目的未压缩大小被低估，
-        // classfile 将被截断)如果为 -1，则假定 2GB 为最大大小
+        // ClassParser 将被截断)如果为 -1，则假定 2GB 为最大大小
         final int maxArrLen = classfileLengthHint == -1 ? FileUtils.MAX_BUFFER_SIZE : classfileLengthHint;
         if (inflaterInputStream == null && randomAccessReader == null) {
             // 如果 inflaterInputStream 和 randomAccessReader 都未设置，则切片是 ArraySlice，

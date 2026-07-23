@@ -27,13 +27,14 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.scan;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
 import com.bingbaihanji.classgraph.classpath.ClasspathFinder;
-import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.AcceptReject;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.*;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.Filter;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.*;
 
 import java.io.Closeable;
 import java.io.File;
@@ -80,7 +81,7 @@ public final class ScanResult implements Closeable {
     /** {@link ClasspathFinder} */
     ClasspathFinder classpathFinder;
     /** 扫描规格 */
-    ScanSpec scanSpec;
+    ScanConfig ScanConfig;
     /** 扫描期间跳过的文件数(读取或解析失败的 class 文件) */
     int skippedFileCount;
     /** 原始类路径元素的顺序 */
@@ -88,7 +89,7 @@ public final class ScanResult implements Closeable {
     /**
      * 类路径元素的顺序，在内层 jar 被提取到临时文件等操作之后
      */
-    private List<ClasspathElement> classpathOrder;
+    private List<Classpath> classpathOrder;
     /** 在被接受的包中找到的所有文件的列表 */
     private ResourceList allAcceptedResourcesCached;
     /**
@@ -104,20 +105,20 @@ public final class ScanResult implements Closeable {
     /**
      * 扫描期间记录时间戳的文件、目录和 jar 文件资源，以及它们在扫描时的时间戳
      * 对于 jar 文件，时间戳表示 jar 中所有文件的时间戳如果此 ScanResult 对象是调用
-     * ClassGraph#getUniqueClasspathElementsAsync() 的结果，则可能为 null
+     * ClassGraph#getUniqueClasspathsAsync() 的结果，则可能为 null
      */
     private Map<File, Long> fileToLastModified;
 
     // -------------------------------------------------------------------------------------------------------------
     /** 一个自定义的 ClassLoader，可以加载扫描期间找到的类 */
-    private ClassGraphClassLoader classGraphClassLoader;
+    private ScanClassLoader ScanClassLoader;
     /** 嵌套 jar 处理器实例 */
-    private NestedJarHandler nestedJarHandler;
+    private JarReader JarReader;
 
     /**
      * 扫描的结果确保在调用构造函数后调用 complete()
      *
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param classpathOrder
      *            类路径顺序
@@ -133,18 +134,18 @@ public final class ScanResult implements Closeable {
      *            从模块名到模块信息的映射
      * @param fileToLastModified
      *            从文件到最后修改时间的映射
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      * @param topLevelLog
      *            顶层日志
      */
-    public ScanResult(final ScanSpec scanSpec, final List<ClasspathElement> classpathOrder,
+    public ScanResult(final ScanConfig ScanConfig, final List<Classpath> classpathOrder,
                       final List<String> rawClasspathEltOrderStrs, final ClasspathFinder classpathFinder,
                       final Map<String, ClassInfo> classNameToClassInfo,
                       final Map<String, PackageInfo> packageNameToPackageInfo,
                       final Map<String, ModuleInfo> moduleNameToModuleInfo, final Map<File, Long> fileToLastModified,
-                      final NestedJarHandler nestedJarHandler, final LogNode topLevelLog) {
-        this.scanSpec = scanSpec;
+                      final JarReader JarReader, final LogNode topLevelLog) {
+        this.ScanConfig = ScanConfig;
         this.rawClasspathEltOrderStrs = rawClasspathEltOrderStrs;
         this.classpathOrder = classpathOrder;
         this.classpathFinder = classpathFinder;
@@ -152,8 +153,8 @@ public final class ScanResult implements Closeable {
         this.classNameToClassInfo = classNameToClassInfo;
         this.packageNameToPackageInfo = packageNameToPackageInfo;
         this.moduleNameToModuleInfo = moduleNameToModuleInfo;
-        this.nestedJarHandler = nestedJarHandler;
-        this.reflectionUtils = nestedJarHandler.reflectionUtils;
+        this.JarReader = JarReader;
+        this.reflectionUtils = JarReader.reflectionUtils;
         this.topLevelLog = topLevelLog;
         this.skippedFileCount = 0;
 
@@ -191,7 +192,7 @@ public final class ScanResult implements Closeable {
         }
 
         // 定义一个新的 ClassLoader，可以加载扫描期间找到的类
-        this.classGraphClassLoader = new ClassGraphClassLoader(this);
+        this.ScanClassLoader = new ScanClassLoader(this);
 
         // 为关机钩子提供此 ScanResult 的弱引用
         this.weakReference = new WeakReference<>(this);
@@ -209,12 +210,12 @@ public final class ScanResult implements Closeable {
      *            从类名到 ClassInfo 的映射
      */
     public ScanResult(final Map<String, ClassInfo> classNameToClassInfo) {
-        this.scanSpec = new ScanSpec();
+        this.ScanConfig = new ScanConfig();
         // 启用简化扫描所需的类信息功能
-        this.scanSpec.enableClassInfo = true;
-        this.scanSpec.enableFieldInfo = true;
-        this.scanSpec.enableMethodInfo = true;
-        this.scanSpec.enableAnnotationInfo = true;
+        this.ScanConfig.enableClassInfo = true;
+        this.ScanConfig.enableFieldInfo = true;
+        this.ScanConfig.enableMethodInfo = true;
+        this.ScanConfig.enableAnnotationInfo = true;
         this.rawClasspathEltOrderStrs = Collections.emptyList();
         this.classpathOrder = Collections.emptyList();
         this.classpathFinder = null;
@@ -223,7 +224,7 @@ public final class ScanResult implements Closeable {
         this.packageNameToPackageInfo = Collections.emptyMap();
         this.moduleNameToModuleInfo = Collections.emptyMap();
         this.fileToLastModified = Collections.emptyMap();
-        this.nestedJarHandler = null;
+        this.JarReader = null;
         this.skippedFileCount = 0;
         this.reflectionUtils = null;
         this.topLevelLog = null;
@@ -281,7 +282,7 @@ public final class ScanResult implements Closeable {
         }
 
         // 如果启用了类间依赖，则为任何未被扫描的引用类创建占位 ClassInfo 对象
-        if (scanSpec.enableInterClassDependencies) {
+        if (ScanConfig.enableInterClassDependencies) {
             for (final ClassInfo ci : new ArrayList<>(classNameToClassInfo.values())) {
                 final Set<ClassInfo> refdClassesFiltered = new HashSet<>();
                 for (final ClassInfo refdClassInfo : ci.findReferencedClassInfo(log)) {
@@ -289,7 +290,7 @@ public final class ScanResult implements Closeable {
                     if (refdClassInfo != null && !ci.equals(refdClassInfo)
                             && !"java.lang.Object".equals(refdClassInfo.getName())
                             // 仅当类被接受或启用了外部类时才将类添加到结果中
-                            && (!refdClassInfo.isExternalClass() || scanSpec.enableExternalClasses)) {
+                            && (!refdClassInfo.isExternalClass() || ScanConfig.enableExternalClasses)) {
                         refdClassInfo.setScanResult(this);
                         refdClassesFiltered.add(refdClassInfo);
                     }
@@ -298,7 +299,7 @@ public final class ScanResult implements Closeable {
             }
         }
 
-        if (scanSpec.enableClassInfo) {
+        if (ScanConfig.enableClassInfo) {
             for (final PackageInfo pkgInfo : packageNameToPackageInfo.values()) {
                 pkgInfo.setScanResult(this);
             }
@@ -322,8 +323,8 @@ public final class ScanResult implements Closeable {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
         final List<File> classpathElementOrderFiles = new ArrayList<>();
-        for (final ClasspathElement classpathElement : classpathOrder) {
-            final File file = classpathElement.getFile();
+        for (final Classpath Classpath : classpathOrder) {
+            final File file = Classpath.getFile();
             if (file != null) {
                 classpathElementOrderFiles.add(file);
             }
@@ -354,9 +355,9 @@ public final class ScanResult implements Closeable {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
         final List<URI> classpathElementOrderURIs = new ArrayList<>();
-        for (final ClasspathElement classpathElement : classpathOrder) {
+        for (final Classpath Classpath : classpathOrder) {
             try {
-                for (final URI uri : classpathElement.getAllURIs()) {
+                for (final URI uri : Classpath.getAllURIs()) {
                     if (uri != null) {
                         classpathElementOrderURIs.add(uri);
                     }
@@ -399,9 +400,9 @@ public final class ScanResult implements Closeable {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
         final List<ModuleRef> moduleRefs = new ArrayList<>();
-        for (final ClasspathElement classpathElement : classpathOrder) {
-            if (classpathElement instanceof ClasspathElementModule) {
-                moduleRefs.add(((ClasspathElementModule) classpathElement).getModuleRef());
+        for (final Classpath Classpath : classpathOrder) {
+            if (Classpath instanceof ModuleClasspath) {
+                moduleRefs.add(((ModuleClasspath) Classpath).getModuleRef());
             }
         }
         return moduleRefs;
@@ -422,8 +423,8 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        scanSpec.modulePathInfo.getRuntimeInfo(reflectionUtils);
-        return scanSpec.modulePathInfo;
+        ScanConfig.modulePathInfo.getRuntimeInfo(reflectionUtils);
+        return ScanConfig.modulePathInfo;
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -442,7 +443,7 @@ public final class ScanResult implements Closeable {
             if (allAcceptedResourcesCached == null) {
                 // 按路径索引 Resource 对象
                 final ResourceList acceptedResourcesList = new ResourceList();
-                for (final ClasspathElement classpathElt : classpathOrder) {
+                for (final Classpath classpathElt : classpathOrder) {
                     acceptedResourcesList.addAll(classpathElt.acceptedResources);
                 }
                 // 原子性设置以确保线程安全
@@ -499,7 +500,7 @@ public final class ScanResult implements Closeable {
             matchingResources = getAllResourcesAsMap().get(path);
         } else {
             // 如果只进行了少量调用，则直接搜索具有请求路径的资源
-            for (final ClasspathElement classpathElt : classpathOrder) {
+            for (final Classpath classpathElt : classpathOrder) {
                 for (final Resource res : classpathElt.acceptedResources) {
                     if (res.getPath().equals(path)) {
                         if (matchingResources == null) {
@@ -533,7 +534,7 @@ public final class ScanResult implements Closeable {
         final String path = FileUtils.sanitizeEntryPath(resourcePath, /* removeInitialSlash = */ true,
                 /* removeFinalSlash = */ true);
         final ResourceList matchingResources = new ResourceList();
-        for (final ClasspathElement classpathElt : classpathOrder) {
+        for (final Classpath classpathElt : classpathOrder) {
             final Resource matchingResource = classpathElt.getResource(path);
             if (matchingResource != null) {
                 matchingResources.add(matchingResource);
@@ -669,7 +670,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        return getResourcesMatchingPattern(AcceptReject.globToPattern(wildcardString, /* simpleGlob = */ false));
+        return getResourcesMatchingPattern(Filter.globToPattern(wildcardString, /* simpleGlob = */ false));
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -686,7 +687,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         return moduleNameToModuleInfo.get(moduleName);
@@ -701,7 +702,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         return new ModuleInfoList(moduleNameToModuleInfo.values());
@@ -721,7 +722,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         return packageNameToPackageInfo.get(packageName);
@@ -736,7 +737,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         return new PackageInfoList(packageNameToPackageInfo.values());
@@ -808,7 +809,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         return classNameToClassInfo.get(className);
@@ -841,10 +842,10 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
-        return ClassInfo.getAllClasses(classNameToClassInfo.values(), scanSpec);
+        return ClassInfo.getAllClasses(classNameToClassInfo.values(), ScanConfig);
     }
 
     /**
@@ -856,10 +857,10 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
-        return ClassInfo.getAllEnums(classNameToClassInfo.values(), scanSpec);
+        return ClassInfo.getAllEnums(classNameToClassInfo.values(), ScanConfig);
     }
 
     /**
@@ -871,10 +872,10 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
-        return ClassInfo.getAllRecords(classNameToClassInfo.values(), scanSpec);
+        return ClassInfo.getAllRecords(classNameToClassInfo.values(), ScanConfig);
     }
 
     /**
@@ -886,7 +887,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         return classNameToClassInfo;
@@ -901,10 +902,10 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
-        return ClassInfo.getAllStandardClasses(classNameToClassInfo.values(), scanSpec);
+        return ClassInfo.getAllStandardClasses(classNameToClassInfo.values(), ScanConfig);
     }
 
     /**
@@ -929,7 +930,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         if ("java.lang.Object".equals(superclassName)) {
@@ -952,7 +953,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         final ClassInfo subclass = classNameToClassInfo.get(subclassName);
@@ -993,7 +994,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo || !scanSpec.enableMethodInfo || !scanSpec.enableAnnotationInfo) {
+        if (!ScanConfig.enableClassInfo || !ScanConfig.enableMethodInfo || !ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo(), #enableMethodInfo(), "
                     + "and #enableAnnotationInfo() before #scan()");
         }
@@ -1025,7 +1026,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo || !scanSpec.enableMethodInfo || !scanSpec.enableAnnotationInfo) {
+        if (!ScanConfig.enableClassInfo || !ScanConfig.enableMethodInfo || !ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo(), #enableMethodInfo(), "
                     + "and #enableAnnotationInfo() before #scan()");
         }
@@ -1056,7 +1057,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo || !scanSpec.enableFieldInfo || !scanSpec.enableAnnotationInfo) {
+        if (!ScanConfig.enableClassInfo || !ScanConfig.enableFieldInfo || !ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo(), #enableFieldInfo(), "
                     + "and #enableAnnotationInfo() before #scan()");
         }
@@ -1077,10 +1078,10 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
-        return ClassInfo.getAllImplementedInterfaceClasses(classNameToClassInfo.values(), scanSpec);
+        return ClassInfo.getAllImplementedInterfaceClasses(classNameToClassInfo.values(), ScanConfig);
     }
 
     /**
@@ -1095,7 +1096,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         final ClassInfo classInfo = classNameToClassInfo.get(className);
@@ -1137,7 +1138,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo) {
+        if (!ScanConfig.enableClassInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableClassInfo() before #scan()");
         }
         final ClassInfo classInfo = classNameToClassInfo.get(interfaceName);
@@ -1156,11 +1157,11 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo || !scanSpec.enableAnnotationInfo) {
+        if (!ScanConfig.enableClassInfo || !ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableClassInfo() and #enableAnnotationInfo() before #scan()");
         }
-        return ClassInfo.getAllAnnotationClasses(classNameToClassInfo.values(), scanSpec);
+        return ClassInfo.getAllAnnotationClasses(classNameToClassInfo.values(), ScanConfig);
     }
 
     /**
@@ -1172,11 +1173,11 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo || !scanSpec.enableAnnotationInfo) {
+        if (!ScanConfig.enableClassInfo || !ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableClassInfo() and #enableAnnotationInfo() before #scan()");
         }
-        return ClassInfo.getAllInterfacesOrAnnotationClasses(classNameToClassInfo.values(), scanSpec);
+        return ClassInfo.getAllInterfacesOrAnnotationClasses(classNameToClassInfo.values(), ScanConfig);
     }
 
     /**
@@ -1236,7 +1237,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo || !scanSpec.enableAnnotationInfo) {
+        if (!ScanConfig.enableClassInfo || !ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableClassInfo() and #enableAnnotationInfo() before #scan()");
         }
@@ -1299,7 +1300,7 @@ public final class ScanResult implements Closeable {
         if (closed.get()) {
             throw new IllegalArgumentException("Cannot use a ScanResult after it has been closed");
         }
-        if (!scanSpec.enableClassInfo || !scanSpec.enableAnnotationInfo) {
+        if (!ScanConfig.enableClassInfo || !ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableClassInfo() and #enableAnnotationInfo() before #scan()");
         }
@@ -1401,7 +1402,7 @@ public final class ScanResult implements Closeable {
             throw new NullPointerException("className cannot be null or empty");
         }
         try {
-            return Class.forName(className, scanSpec.initializeLoadedClasses, classGraphClassLoader);
+            return Class.forName(className, ScanConfig.initializeLoadedClasses, ScanClassLoader);
         } catch (final ClassNotFoundException | LinkageError e) {
             if (returnNullIfClassNotFound) {
                 return null;
@@ -1448,7 +1449,7 @@ public final class ScanResult implements Closeable {
         }
         final Class<?> loadedClass;
         try {
-            loadedClass = Class.forName(className, scanSpec.initializeLoadedClasses, classGraphClassLoader);
+            loadedClass = Class.forName(className, ScanConfig.initializeLoadedClasses, ScanClassLoader);
         } catch (final ClassNotFoundException | LinkageError e) {
             if (returnNullIfClassNotFound) {
                 return null;
@@ -1494,9 +1495,9 @@ public final class ScanResult implements Closeable {
                 pathToAcceptedResourcesCached.clear();
                 pathToAcceptedResourcesCached = null;
             }
-            classGraphClassLoader = null;
+            ScanClassLoader = null;
             if (classNameToClassInfo != null) {
-                // 不清除 classNameToClassInfo，因为它可能被 ClassGraphClassLoader 使用 (#399)
+                // 不清除 classNameToClassInfo，因为它可能被 ScanClassLoader 使用 (#399)
                 // 仅依赖垃圾回收器在 ScanResult 超出作用域后收集这些对象
                 // classNameToClassInfo.clear();
                 // classNameToClassInfo = null;
@@ -1513,13 +1514,13 @@ public final class ScanResult implements Closeable {
                 fileToLastModified.clear();
                 fileToLastModified = null;
             }
-            // nestedJarHandler 应该最后关闭，因为它需要在尝试删除写入磁盘的
+            // JarReader 应该最后关闭，因为它需要在尝试删除写入磁盘的
             // 任何临时文件之前释放所有 MappedByteBuffer 引用
-            if (nestedJarHandler != null) {
-                nestedJarHandler.close(topLevelLog);
-                nestedJarHandler = null;
+            if (JarReader != null) {
+                JarReader.close(topLevelLog);
+                JarReader = null;
             }
-            classGraphClassLoader = null;
+            ScanClassLoader = null;
             classpathFinder = null;
             reflectionUtils = null;
             // 在退出时刷新日志，以防在 scan() 完成后生成了额外的日志条目
@@ -1538,14 +1539,14 @@ public final class ScanResult implements Closeable {
     }
 
     /**
-     * 用于保存序列化后的 ScanResult 以及用于扫描的 ScanSpec 的类
+     * 用于保存序列化后的 ScanResult 以及用于扫描的 ScanConfig 的类
      */
     private static class SerializationFormat {
         /** 序列化格式 */
         public String format;
 
         /** 扫描规格 */
-        public ScanSpec scanSpec;
+        public ScanConfig ScanConfig;
 
         /** 类路径，作为 URL 字符串列表 */
         public List<String> classpath;
@@ -1572,7 +1573,7 @@ public final class ScanResult implements Closeable {
          *
          * @param serializationFormatStr
          *            序列化格式字符串
-         * @param scanSpec
+         * @param ScanConfig
          *            扫描规格
          * @param classInfo
          *            所有 {@link ClassInfo} 对象的列表
@@ -1583,11 +1584,11 @@ public final class ScanResult implements Closeable {
          * @param classpath
          *            作为 URL 字符串列表的类路径
          */
-        public SerializationFormat(final String serializationFormatStr, final ScanSpec scanSpec,
+        public SerializationFormat(final String serializationFormatStr, final ScanConfig ScanConfig,
                                    final List<ClassInfo> classInfo, final List<PackageInfo> packageInfo,
                                    final List<ModuleInfo> moduleInfo, final List<String> classpath) {
             this.format = serializationFormatStr;
-            this.scanSpec = scanSpec;
+            this.ScanConfig = ScanConfig;
             this.classpath = classpath;
             this.classInfo = classInfo;
             this.packageInfo = packageInfo;

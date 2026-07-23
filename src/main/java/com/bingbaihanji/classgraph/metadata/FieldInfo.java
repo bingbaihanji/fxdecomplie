@@ -28,12 +28,12 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypeAnnotationDecorator;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.annotation.Repeatable;
 import java.lang.reflect.Field;
@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 保存扫描过程中遇到的类的字段元数据所有值均直接从类的 classfile 中获取
+ * 保存扫描过程中遇到的类的字段元数据所有值均直接从类的 ClassParser 中获取
  */
 public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> {
     /** 已解析的类型签名 */
@@ -54,7 +54,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
 
     /** 字段的常量初始值(如果有的话) */
     // 这是 transient 的，因为常量初始值是 final 的，因此该值不需要序列化
-    private ObjectTypedValueWrapper constantInitializerValue;
+    private TypedValue constantInitializerValue;
 
     /** 此字段的 {@link TypeSignature} 实例的类型注解装饰器 */
     private transient List<TypeAnnotationDecorator> typeAnnotationDecorators;
@@ -92,7 +92,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
             throw new IllegalArgumentException("fieldName must not be null");
         }
         this.constantInitializerValue = constantInitializerValue == null ? null
-                : new ObjectTypedValueWrapper(constantInitializerValue);
+                : new TypedValue(constantInitializerValue);
         this.typeAnnotationDecorators = typeAnnotationDecorators;
     }
 
@@ -190,7 +190,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
      *
      * @return 字段的已解析类型签名，如果不可用则返回 null
      * @throws IllegalArgumentException
-     *             如果字段类型签名无法解析(这应该只在 classfile 损坏或编译器错误导致向 classfile
+     *             如果字段类型签名无法解析(这应该只在 ClassParser 损坏或编译器错误导致向 ClassParser
      *             写入了无效的类型签名时抛出)
      */
     @Override
@@ -208,7 +208,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
                     throw new IllegalArgumentException(
                             "Invalid type signature for field " + getClassName() + "." + getName()
                                     + (getClassInfo() != null
-                                    ? " in classpath element " + getClassInfo().getClasspathElementURI()
+                                    ? " in classpath element " + getClassInfo().getClasspathURI()
                                     : "")
                                     + " : " + typeSignatureStr,
                             e);
@@ -247,7 +247,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
      * @return 如果此字段具有常量初始值，则返回初始值，否则返回 null
      */
     public Object getConstantInitializerValue() {
-        if (!scanResult.scanSpec.enableStaticFinalFieldConstantInitializerValues) {
+        if (!scanResult.ScanConfig.enableStaticFinalFieldConstantInitializerValues) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableStaticFinalFieldConstantInitializerValues() " + "before #scan()");
         }
@@ -294,7 +294,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

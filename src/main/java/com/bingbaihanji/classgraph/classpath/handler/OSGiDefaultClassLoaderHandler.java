@@ -31,8 +31,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 
@@ -85,14 +85,14 @@ class OSGiDefaultClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         final Object classpathManager = classpathOrder.reflectionUtils.invokeMethod(false, classLoader,
                 "getClasspathManager");
         final Object[] entries = (Object[]) classpathOrder.reflectionUtils.getFieldVal(false, classpathManager,
@@ -104,7 +104,7 @@ class OSGiDefaultClassLoaderHandler implements ClassLoaderHandler {
                 final File baseFile = (File) classpathOrder.reflectionUtils.invokeMethod(false, bundleFile,
                         "getBaseFile");
                 if (baseFile != null) {
-                    classpathOrder.addClasspathEntry(baseFile.getPath(), classLoader, scanSpec, log);
+                    classpathOrder.addClasspathEntry(baseFile.getPath(), classLoader, ScanConfig, log);
                 }
             }
         }

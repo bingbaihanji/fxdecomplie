@@ -39,7 +39,7 @@ import java.util.List;
  * @param <T>
  *            元素类型
  */
-public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> {
+public class InfoList<T extends Named> extends LazyList<T> {
     /** 序列化版本 UID */
     static final long serialVersionUID = 1L;
 
@@ -123,8 +123,8 @@ public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> 
     /**
      * 获取此列表中所有项的字符串表示，仅使用命名类的<a href=
      * "https://docs.oracle.com/en/java/javase/15/docs/api/java.base/java/lang/Class.html#getSimpleName()">简单
-     * 名称</a>如果对象是 {@code ScanResultObject} 的子类(例如 {@link ClassInfo}、{@link MethodInfo} 或
-     * {@link FieldInfo} 对象)，则调用 {@code ScanResultObject#toStringWithSimpleNames()}；否则对列表中的每一项
+     * 名称</a>如果对象是 {@code MetadataNode} 的子类(例如 {@link ClassInfo}、{@link MethodInfo} 或
+     * {@link FieldInfo} 对象)，则调用 {@code MetadataNode#toStringWithSimpleNames()}；否则对列表中的每一项
      * 调用 {@code toString()}
      *
      * @return 此列表中所有项的字符串表示，仅使用命名类的<a href=
@@ -138,7 +138,7 @@ public class InfoList<T extends HasName> extends PotentiallyUnmodifiableList<T> 
             final List<String> toStringVals = new ArrayList<>(this.size());
             for (final T i : this) {
                 toStringVals.add(i == null ? "null"
-                        : i instanceof ScanResultObject ? ((ScanResultObject) i).toStringWithSimpleNames()
+                        : i instanceof MetadataNode ? ((MetadataNode) i).toStringWithSimpleNames()
                         : i.toString());
             }
             return toStringVals;

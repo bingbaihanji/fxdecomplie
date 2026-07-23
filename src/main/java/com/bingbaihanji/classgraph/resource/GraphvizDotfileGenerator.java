@@ -28,8 +28,8 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.util.BitSet;
 import java.util.HashSet;
@@ -224,14 +224,14 @@ final class GraphvizDotfileGenerator {
      *            是否显示方法
      * @param useSimpleNames
      *            是否对类型签名中的类使用简单名称
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param buf
      *            字符串构建器
      */
     private static void labelClassNodeHTML(final ClassInfo ci, final String shape, final String boxBgColor,
                                            final boolean showFields, final boolean showMethods, final boolean useSimpleNames,
-                                           final ScanSpec scanSpec, final StringBuilder buf) {
+                                           final ScanConfig ScanConfig, final StringBuilder buf) {
         buf.append("[shape=").append(shape).append(",style=filled,fillcolor=\"#").append(boxBgColor)
                 .append("\",label=");
         buf.append('<');
@@ -295,7 +295,7 @@ final class GraphvizDotfileGenerator {
             if (!fieldInfoSorted.isEmpty()) {
                 buf.append("<tr><td colspan='3' bgcolor='").append(darkerColor)
                         .append("'><font point-size='12'><b>")
-                        .append(scanSpec.ignoreFieldVisibility ? "" : "PUBLIC ")
+                        .append(ScanConfig.ignoreFieldVisibility ? "" : "PUBLIC ")
                         .append("FIELDS</b></font></td></tr>");
                 buf.append("<tr><td cellpadding='0'>");
                 buf.append("<table border='0' cellborder='0'>");
@@ -315,7 +315,7 @@ final class GraphvizDotfileGenerator {
                     }
 
                     // 字段修饰符
-                    if (scanSpec.ignoreFieldVisibility) {
+                    if (ScanConfig.ignoreFieldVisibility) {
                         if (buf.charAt(buf.length() - 1) != ' ') {
                             buf.append(' ');
                         }
@@ -362,7 +362,7 @@ final class GraphvizDotfileGenerator {
                 buf.append("<table border='0' cellborder='0'>");
                 buf.append("<tr><td colspan='3' bgcolor='").append(darkerColor)
                         .append("'><font point-size='12'><b>")
-                        .append(scanSpec.ignoreMethodVisibility ? "" : "PUBLIC ")
+                        .append(ScanConfig.ignoreMethodVisibility ? "" : "PUBLIC ")
                         .append("METHODS</b></font></td></tr>");
                 for (final MethodInfo mi : methodInfoSorted) {
                     buf.append("<tr>");
@@ -381,7 +381,7 @@ final class GraphvizDotfileGenerator {
                     }
 
                     // 方法修饰符
-                    if (scanSpec.ignoreMethodVisibility) {
+                    if (ScanConfig.ignoreMethodVisibility) {
                         if (buf.charAt(buf.length() - 1) != ' ') {
                             buf.append(' ');
                         }
@@ -418,7 +418,7 @@ final class GraphvizDotfileGenerator {
                     // 方法参数
                     buf.append("<td align='left' valign='top'>");
                     buf.append('(');
-                    final MethodParameterInfo[] paramInfo = mi.getParameterInfo();
+                    final MethodParam[] paramInfo = mi.getParameterInfo();
                     if (paramInfo.length != 0) {
                         for (int i = 0, wrapPos = 0; i < paramInfo.length; i++) {
                             if (i > 0) {
@@ -500,14 +500,14 @@ final class GraphvizDotfileGenerator {
      *            是否显示注解
      * @param useSimpleNames
      *            是否对类使用简单名称
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @return GraphViz dot 文件内容字符串
      */
     static String generateGraphVizDotFile(final ClassInfoList classInfoList, final float sizeX, final float sizeY,
                                           final boolean showFields, final boolean showFieldTypeDependencyEdges, final boolean showMethods,
                                           final boolean showMethodTypeDependencyEdges, final boolean showAnnotations,
-                                          final boolean useSimpleNames, final ScanSpec scanSpec) {
+                                          final boolean useSimpleNames, final ScanConfig ScanConfig) {
         final StringBuilder buf = new StringBuilder(1024 * 1024);
         buf.append("digraph {\n");
         buf.append("size=\"").append(sizeX).append(',').append(sizeY).append("\";\n");
@@ -526,21 +526,21 @@ final class GraphvizDotfileGenerator {
 
         for (final ClassInfo node : standardClassNodes) {
             buf.append('"').append(node.getName()).append('"');
-            labelClassNodeHTML(node, "box", STANDARD_CLASS_COLOR, showFields, showMethods, useSimpleNames, scanSpec,
+            labelClassNodeHTML(node, "box", STANDARD_CLASS_COLOR, showFields, showMethods, useSimpleNames, ScanConfig,
                     buf);
             buf.append(";\n");
         }
 
         for (final ClassInfo node : interfaceNodes) {
             buf.append('"').append(node.getName()).append('"');
-            labelClassNodeHTML(node, "diamond", INTERFACE_COLOR, showFields, showMethods, useSimpleNames, scanSpec,
+            labelClassNodeHTML(node, "diamond", INTERFACE_COLOR, showFields, showMethods, useSimpleNames, ScanConfig,
                     buf);
             buf.append(";\n");
         }
 
         for (final ClassInfo node : annotationNodes) {
             buf.append('"').append(node.getName()).append('"');
-            labelClassNodeHTML(node, "oval", ANNOTATION_COLOR, showFields, showMethods, useSimpleNames, scanSpec,
+            labelClassNodeHTML(node, "oval", ANNOTATION_COLOR, showFields, showMethods, useSimpleNames, ScanConfig,
                     buf);
             buf.append(";\n");
         }

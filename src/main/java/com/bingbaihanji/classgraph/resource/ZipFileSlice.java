@@ -29,7 +29,7 @@
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.resource.Slice;
-import com.bingbaihanji.classgraph.scanspec.AcceptReject.AcceptRejectLeafname;
+import com.bingbaihanji.classgraph.scan.Filter.FilterLeafname;
 
 import java.io.File;
 import java.io.IOException;
@@ -112,7 +112,7 @@ public class ZipFileSlice {
      *            JAR 文件接受/拒绝条件
      * @return 如果此 ZIP 文件切片及其所有父切片在 JAR 文件接受/拒绝条件中被接受且未被拒绝，则返回 true
      */
-    public boolean isAcceptedAndNotRejected(final AcceptRejectLeafname jarAcceptReject) {
+    public boolean isAcceptedAndNotRejected(final FilterLeafname jarAcceptReject) {
         return jarAcceptReject.isAcceptedAndNotRejected(pathWithinParentZipFileSlice) //
                 && (parentZipFileSlice == null || parentZipFileSlice.isAcceptedAndNotRejected(jarAcceptReject));
     }

@@ -28,10 +28,10 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.HashSet;
 import java.util.List;

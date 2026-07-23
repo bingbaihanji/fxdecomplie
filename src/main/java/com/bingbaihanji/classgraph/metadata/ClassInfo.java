@@ -27,19 +27,20 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.metadata;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
-import com.bingbaihanji.classgraph.core.ClassFile.ClassContainment;
-import com.bingbaihanji.classgraph.core.ClassFile.ClassTypeAnnotationDecorator;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.ClassContainment;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.ClassTypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.metadata.FieldInfoList.FieldInfoFilter;
 
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
-import com.bingbaihanji.classgraph.utils.Assert;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.Assert;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -54,7 +55,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 /** 保存在扫描过程中遇到的类的元数据 */
-public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>, HasName {
+public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Named {
     /** 注解的修饰符位 */
     private static final int ANNOTATION_CLASS_MODIFIER = 0x2000;
     /** 当没有任何类可达时返回的空常量值 */
@@ -86,7 +87,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      */
     boolean isInherited;
     /** 发现该类的类路径元素 */
-    transient ClasspathElement classpathElement;
+    transient Classpath Classpath;
     /** 获取该类的类加载器 */
     transient ClassLoader classLoader;
     /** 类模块的信息 */
@@ -305,7 +306,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *            如果是外部类则为 true
      * @param classNameToClassInfo
      *            从类名到 ClassInfo 的映射
-     * @param classpathElement
+     * @param Classpath
      *            类路径元素
      * @param classfileResource
      *            类文件资源
@@ -313,7 +314,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      */
     static ClassInfo addScannedClass(final String className, final int classModifiers,
                                      final boolean isExternalClass, final Map<String, ClassInfo> classNameToClassInfo,
-                                     final ClasspathElement classpathElement, final Resource classfileResource) {
+                                     final Classpath Classpath, final Resource classfileResource) {
         ClassInfo classInfo = classNameToClassInfo.get(className);
         if (classInfo == null) {
             // 这是第一次遇到该类，添加它
@@ -343,10 +344,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         classInfo.isExternalClass = isExternalClass;
 
         // 记住该类是在哪个类路径元素(zip 文件 / 类路径根目录 / 模块)中发现的
-        classInfo.classpathElement = classpathElement;
+        classInfo.Classpath = Classpath;
 
         // 记住用于加载该类的类加载器
-        classInfo.classLoader = classpathElement.getClassLoader();
+        classInfo.classLoader = Classpath.getClassLoader();
 
         return classInfo;
     }
@@ -356,7 +357,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @param strictAccept
      *            如果为 true，则当外部类未启用时排除外部类
@@ -364,7 +365,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *            类类型数组
      * @return 过滤后的类集合
      */
-    private static Set<ClassInfo> filterClassInfo(final Collection<ClassInfo> classes, final ScanSpec scanSpec,
+    private static Set<ClassInfo> filterClassInfo(final Collection<ClassInfo> classes, final ScanConfig ScanConfig,
                                                   final boolean strictAccept, final ClassType... classTypes) {
         if (classes == null) {
             return Collections.emptySet();
@@ -415,10 +416,10 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                     || includeEnums && classInfo.isEnum() //
                     || includeRecords && classInfo.isRecord();
             // 如果查看类层次结构"向上"，则返回外部(非接受的)类
-            final boolean acceptClass = !classInfo.isExternalClass || scanSpec.enableExternalClasses
+            final boolean acceptClass = !classInfo.isExternalClass || ScanConfig.enableExternalClasses
                     || !strictAccept;
             // 如果类是正确的类型，且类被接受，且类/包未被显式拒绝
-            if (includeType && acceptClass && !scanSpec.classOrPackageIsRejected(classInfo.name)) {
+            if (includeType && acceptClass && !ScanConfig.classOrPackageIsRejected(classInfo.name)) {
                 // 类通过了接受条件
                 classInfoSetFiltered.add(classInfo);
             }
@@ -431,13 +432,13 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @return 扫描过程中发现的所有类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+    static ClassInfoList getAllClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ALL),
+                ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.ALL),
                 /* sortByName = */ true);
     }
 
@@ -446,13 +447,13 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @return 扫描过程中发现的所有 {@link Enum} 枚举类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllEnums(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+    static ClassInfoList getAllEnums(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ENUM),
+                ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.ENUM),
                 /* sortByName = */ true);
     }
 
@@ -461,13 +462,13 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @return 扫描过程中发现的所有 {@code record} 记录类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllRecords(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+    static ClassInfoList getAllRecords(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.RECORD),
+                ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.RECORD),
                 /* sortByName = */ true);
     }
 
@@ -476,13 +477,13 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @return 扫描过程中发现的所有标准类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllStandardClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+    static ClassInfoList getAllStandardClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.STANDARD_CLASS),
+                ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.STANDARD_CLASS),
                 /* sortByName = */ true);
     }
 
@@ -491,13 +492,13 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @return 扫描过程中发现的所有注解类的列表，如果没有则返回空列表
      */
     static ClassInfoList getAllImplementedInterfaceClasses(final Collection<ClassInfo> classes,
-                                                           final ScanSpec scanSpec) {
-        return new ClassInfoList(ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true,
+                                                           final ScanConfig ScanConfig) {
+        return new ClassInfoList(ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true,
                 ClassType.IMPLEMENTED_INTERFACE), /* sortByName = */ true);
     }
 
@@ -505,17 +506,17 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
 
     /**
      * 获取扫描过程中发现的所有注解类另请参见
-     * {@link #getAllInterfacesOrAnnotationClasses(Collection, ScanSpec, ScanResult)}
+     * {@link #getAllInterfacesOrAnnotationClasses(Collection, ScanConfig, ScanResult)}
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @return 扫描过程中发现的所有注解类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllAnnotationClasses(final Collection<ClassInfo> classes, final ScanSpec scanSpec) {
+    static ClassInfoList getAllAnnotationClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
-                ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true, ClassType.ANNOTATION),
+                ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.ANNOTATION),
                 /* sortByName = */ true);
     }
 
@@ -524,13 +525,13 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *
      * @param classes
      *            类集合
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @return 扫描过程中发现的所有已接受接口的列表，如果没有则返回空列表
      */
     static ClassInfoList getAllInterfacesOrAnnotationClasses(final Collection<ClassInfo> classes,
-                                                             final ScanSpec scanSpec) {
-        return new ClassInfoList(ClassInfo.filterClassInfo(classes, scanSpec, /* strictAccept = */ true,
+                                                             final ScanConfig ScanConfig) {
+        return new ClassInfoList(ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true,
                 ClassType.INTERFACE_OR_ANNOTATION), /* sortByName = */ true);
     }
 
@@ -898,8 +899,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
         }
 
         return new ReachableAndDirectlyRelatedClasses(
-                filterClassInfo(reachableClasses, scanResult.scanSpec, strictAccept, classTypes),
-                filterClassInfo(directlyRelatedClasses, scanResult.scanSpec, strictAccept, classTypes));
+                filterClassInfo(reachableClasses, scanResult.ScanConfig, strictAccept, classTypes),
+                filterClassInfo(directlyRelatedClasses, scanResult.ScanConfig, strictAccept, classTypes));
 
     }
 
@@ -1848,7 +1849,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 return annotationsRef;
             }
 
-            if (!scanResult.scanSpec.enableAnnotationInfo) {
+            if (!scanResult.ScanConfig.enableAnnotationInfo) {
                 throw new IllegalArgumentException("Please call ClassGraph#enableAnnotationInfo() before #scan()");
             }
 
@@ -1897,8 +1898,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      */
     private ClassInfoList getFieldOrMethodAnnotations(final RelType relType) {
         final boolean isField = relType == RelType.FIELD_ANNOTATIONS;
-        if (!(isField ? scanResult.scanSpec.enableFieldInfo : scanResult.scanSpec.enableMethodInfo)
-                || !scanResult.scanSpec.enableAnnotationInfo) {
+        if (!(isField ? scanResult.ScanConfig.enableFieldInfo : scanResult.ScanConfig.enableMethodInfo)
+                || !scanResult.ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enable" + (isField ? "Field" : "Method")
                     + "Info() and " + "#enableAnnotationInfo() before #scan()");
         }
@@ -1925,8 +1926,8 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     private ClassInfoList getClassesWithFieldOrMethodAnnotation(final RelType relType) {
         final boolean isField = relType == RelType.CLASSES_WITH_FIELD_ANNOTATION
                 || relType == RelType.CLASSES_WITH_NONPRIVATE_FIELD_ANNOTATION;
-        if (!(isField ? scanResult.scanSpec.enableFieldInfo : scanResult.scanSpec.enableMethodInfo)
-                || !scanResult.scanSpec.enableAnnotationInfo) {
+        if (!(isField ? scanResult.ScanConfig.enableFieldInfo : scanResult.ScanConfig.enableMethodInfo)
+                || !scanResult.ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enable" + (isField ? "Field" : "Method")
                     + "Info() and " + "#enableAnnotationInfo() before #scan()");
         }
@@ -1966,7 +1967,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                 return annotationInfoRef;
             }
 
-            if (!scanResult.scanSpec.enableAnnotationInfo) {
+            if (!scanResult.ScanConfig.enableAnnotationInfo) {
                 throw new IllegalArgumentException("Please call ClassGraph#enableAnnotationInfo() before #scan()");
             }
 
@@ -2082,7 +2083,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *         如果这是具有默认参数值的注解类的话；否则返回空列表
      */
     public AnnotationParameterValueList getAnnotationDefaultParameterValues() {
-        if (!scanResult.scanSpec.enableAnnotationInfo) {
+        if (!scanResult.ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableAnnotationInfo() before #scan()");
         }
         if (!isAnnotation()) {
@@ -2107,7 +2108,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *         还处理 {@link Inherited} 元注解，该元注解使得类上的注解可以被其所有子类继承
      */
     public ClassInfoList getClassesWithAnnotation() {
-        if (!scanResult.scanSpec.enableAnnotationInfo) {
+        if (!scanResult.ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableAnnotationInfo() before #scan()");
         }
 
@@ -2156,7 +2157,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      */
     private MethodInfoList getDeclaredMethodInfo(final String methodName, final boolean getNormalMethods,
                                                  final boolean getConstructorMethods, final boolean getStaticInitializerMethods) {
-        if (!scanResult.scanSpec.enableMethodInfo) {
+        if (!scanResult.ScanConfig.enableMethodInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableMethodInfo() before #scan()");
         }
         if (methodInfo == null) {
@@ -2213,7 +2214,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      */
     private MethodInfoList getMethodInfo(final String methodName, final boolean getNormalMethods,
                                          final boolean getConstructorMethods, final boolean getStaticInitializerMethods) {
-        if (!scanResult.scanSpec.enableMethodInfo) {
+        if (!scanResult.ScanConfig.enableMethodInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableMethodInfo() before #scan()");
         }
         // 实现方法/构造函数覆盖
@@ -2609,7 +2610,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}
      */
     public FieldInfoList getDeclaredFieldInfo() {
-        if (!scanResult.scanSpec.enableFieldInfo) {
+        if (!scanResult.ScanConfig.enableFieldInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableFieldInfo() before #scan()");
         }
         return fieldInfo == null ? FieldInfoList.EMPTY_LIST : fieldInfo;
@@ -2636,7 +2637,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}
      */
     public FieldInfoList getFieldInfo() {
-        if (!scanResult.scanSpec.enableFieldInfo) {
+        if (!scanResult.ScanConfig.enableFieldInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableFieldInfo() before #scan()");
         }
         // 实现字段覆盖
@@ -2718,7 +2719,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}
      */
     public FieldInfo getDeclaredFieldInfo(final String fieldName) {
-        if (!scanResult.scanSpec.enableFieldInfo) {
+        if (!scanResult.ScanConfig.enableFieldInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableFieldInfo() before #scan()");
         }
         if (fieldInfo == null) {
@@ -2758,7 +2759,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *             如果在启动扫描前未调用 {@link ClassGraph#enableFieldInfo()}
      */
     public FieldInfo getFieldInfo(final String fieldName) {
-        if (!scanResult.scanSpec.enableFieldInfo) {
+        if (!scanResult.ScanConfig.enableFieldInfo) {
             throw new IllegalArgumentException("Please call ClassGraph#enableFieldInfo() before #scan()");
         }
         // 实现字段覆盖
@@ -2837,7 +2838,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
                     }
                 } catch (final ParseException e) {
                     throw new IllegalArgumentException("Invalid type signature for class " + getName()
-                            + " in classpath element " + getClasspathElementURI() + " : " + typeSignatureStr, e);
+                            + " in classpath element " + getClasspathURI() + " : " + typeSignatureStr, e);
                 }
             }
         }
@@ -2936,18 +2937,18 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      * @throws IllegalArgumentException
      *             如果类路径元素没有有效的 URI(例如对于位置 URI 为 null 的模块)
      */
-    public URI getClasspathElementURI() {
-        // 调用 classfileResource.getClasspathElementURI() 而非 classpathElement.getURI()
+    public URI getClasspathURI() {
+        // 调用 classfileResource.getClasspathURI() 而非 Classpath.getURI()
         // 将自动追加任何被自动剥离的包根前缀
         if (classfileResource == null) {
-            throw new IllegalArgumentException("Classfile resource is null for " + getName());
+            throw new IllegalArgumentException("ClassParser resource is null for " + getName());
         }
-        return classfileResource.getClasspathElementURI();
+        return classfileResource.getClasspathURI();
     }
 
     /**
      * 获取发现该类的类路径元素或模块的 {@link URL}如果资源可能来自系统模块或
-     * jlink 运行时镜像，请改用 {@link #getClasspathElementURI()}，因为系统模块和
+     * jlink 运行时镜像，请改用 {@link #getClasspathURI()}，因为系统模块和
      * jlink 运行时镜像使用的 "jrt:" URI 方案不被 {@link URL} 支持，会导致抛出
      * {@link IllegalArgumentException}
      *
@@ -2956,9 +2957,9 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *             如果类路径元素 URI 无法转换为 {@link URL}
      *             (特别是当 URI 具有 {@code jrt:/} 方案时)
      */
-    public URL getClasspathElementURL() {
+    public URL getClasspathURL() {
         try {
-            return getClasspathElementURI().toURL();
+            return getClasspathURI().toURL();
         } catch (final IllegalArgumentException | MalformedURLException e) {
             throw new IllegalArgumentException("Could not get classpath element URL", e);
         }
@@ -2973,28 +2974,28 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *         如果类路径元素是 http/https URL 且 jar 直接下载到 RAM 而非磁盘上的临时文件
      *         (例如临时目录不可写)，也可能返回 null
      */
-    public File getClasspathElementFile() {
-        if (classpathElement == null) {
+    public File getClasspathFile() {
+        if (Classpath == null) {
             throw new IllegalArgumentException("Classpath element is not known for this classpath element");
         }
-        return classpathElement.getFile();
+        return Classpath.getFile();
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
      * 获取发现该类的模块，作为 {@link ModuleRef}，如果该类在类路径中的目录或 jar 中发现则返回 null
-     * (另请参见 {@link #getClasspathElementFile()})
+     * (另请参见 {@link #getClasspathFile()})
      *
      * @return 发现该类的模块，作为 {@link ModuleRef}，如果该类在类路径中的目录或 jar 中发现则返回 null
-     *         (另请参见 {@link #getClasspathElementFile()})
+     *         (另请参见 {@link #getClasspathFile()})
      */
     public ModuleRef getModuleRef() {
-        if (classpathElement == null) {
+        if (Classpath == null) {
             throw new IllegalArgumentException("Classpath element is not known for this classpath element");
         }
-        return classpathElement instanceof ClasspathElementModule
-                ? ((ClasspathElementModule) classpathElement).getModuleRef()
+        return Classpath instanceof ModuleClasspath
+                ? ((ModuleClasspath) Classpath).getModuleRef()
                 : null;
     }
 
@@ -3088,7 +3089,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -3096,7 +3097,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -3104,7 +3105,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {
@@ -3236,7 +3237,7 @@ public class ClassInfo extends ScanResultObject implements Comparable<ClassInfo>
      *         {@link ClassGraph#enableExternalClasses()}
      */
     public ClassInfoList getClassDependencies() {
-        if (!scanResult.scanSpec.enableInterClassDependencies) {
+        if (!scanResult.ScanConfig.enableInterClassDependencies) {
             throw new IllegalArgumentException(
                     "Please call ClassGraph#enableInterClassDependencies() before #scan()");
         }

@@ -31,7 +31,7 @@ package com.bingbaihanji.classgraph.metadata;
 import java.util.Collection;
 
 /** {@link ModuleInfo} 对象列表 */
-public class ModuleInfoList extends MappableInfoList<ModuleInfo> {
+public class ModuleInfoList extends InfoList<ModuleInfo> {
     /** 序列化版本 UID */
     private static final long serialVersionUID = 1L;
 

@@ -30,8 +30,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 /**
  * ClassLoader 处理器
@@ -75,12 +75,12 @@ public interface ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     default void findClasspathOrder(ClassLoader classLoader, ClasspathOrder classpathOrder,
-                                    ScanSpec scanSpec, LogNode log) {
+                                    ScanConfig ScanConfig, LogNode log) {
     }
 }

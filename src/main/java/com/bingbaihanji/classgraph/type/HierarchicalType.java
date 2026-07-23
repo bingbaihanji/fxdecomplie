@@ -28,14 +28,14 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 
 import java.util.List;
 
 /**
  * Java 类型签名子类包括 ClassType、MethodType 和 TypeSignature
  */
-public abstract class HierarchicalType extends ScanResultObject {
+public abstract class HierarchicalType extends MetadataNode {
     protected AnnotationInfoList typeAnnotationInfo;
 
     /** 一个层次化的类型签名 */

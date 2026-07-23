@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.reflect.Array;
 import java.util.Map;
@@ -36,13 +36,13 @@ import java.util.Objects;
 import java.util.Set;
 
 /** 用于将注解参数名与注解参数值配对包装的包装器 */
-public class AnnotationParameterValue extends ScanResultObject
-        implements HasName, Comparable<AnnotationParameterValue> {
+public class AnnotationParameterValue extends MetadataNode
+        implements Named, Comparable<AnnotationParameterValue> {
     /** 参数名 */
     private String name;
 
     /** 参数值 */
-    private ObjectTypedValueWrapper value;
+    private TypedValue value;
 
     /** 用于反序列化的默认构造函数 */
     AnnotationParameterValue() {
@@ -60,7 +60,7 @@ public class AnnotationParameterValue extends ScanResultObject
     AnnotationParameterValue(final String name, final Object value) {
         super();
         this.name = name;
-        this.value = new ObjectTypedValueWrapper(value);
+        this.value = new TypedValue(value);
     }
 
     /**
@@ -76,8 +76,8 @@ public class AnnotationParameterValue extends ScanResultObject
     private static void toString(final Object val, final boolean useSimpleNames, final StringBuilder buf) {
         if (val == null) {
             buf.append("null");
-        } else if (val instanceof ScanResultObject) {
-            ((ScanResultObject) val).toString(useSimpleNames, buf);
+        } else if (val instanceof MetadataNode) {
+            ((MetadataNode) val).toString(useSimpleNames, buf);
         } else {
             buf.append(val);
         }
@@ -122,11 +122,11 @@ public class AnnotationParameterValue extends ScanResultObject
      *            新的值
      */
     void setValue(final Object newValue) {
-        this.value = new ObjectTypedValueWrapper(newValue);
+        this.value = new TypedValue(newValue);
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -135,7 +135,7 @@ public class AnnotationParameterValue extends ScanResultObject
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -143,7 +143,7 @@ public class AnnotationParameterValue extends ScanResultObject
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

@@ -31,8 +31,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.reflect.Array;
 import java.util.HashSet;
@@ -64,13 +64,13 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
      *            类加载器
      * @param classpathOrderOut
      *            类路径顺序
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @param log
      *            日志
      */
     private static void addBundleFile(final Object bundlefile, final Set<Object> path,
-                                      final ClassLoader classLoader, final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec,
+                                      final ClassLoader classLoader, final ClasspathOrder classpathOrderOut, final ScanConfig ScanConfig,
                                       final LogNode log) {
         // 避免陷入无限循环
         if (bundlefile != null && path.add(bundlefile)) {
@@ -98,20 +98,20 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                             }
                         }
                         final String pathElement = base + sep + fieldVal;
-                        classpathOrderOut.addClasspathEntry(pathElement, classLoader, scanSpec, log);
+                        classpathOrderOut.addClasspathEntry(pathElement, classLoader, ScanConfig, log);
                         break;
                     }
                 }
                 if (!foundClassPathElement) {
                     // 未找到类路径元素，直接使用基文件
-                    classpathOrderOut.addClasspathEntry(baseFile.toString(), classLoader, scanSpec, log);
+                    classpathOrderOut.addClasspathEntry(baseFile.toString(), classLoader, ScanConfig, log);
                 }
 
             }
             addBundleFile(classpathOrderOut.reflectionUtils.getFieldVal(false, bundlefile, "wrapped"), path,
-                    classLoader, classpathOrderOut, scanSpec, log);
+                    classLoader, classpathOrderOut, ScanConfig, log);
             addBundleFile(classpathOrderOut.reflectionUtils.getFieldVal(false, bundlefile, "next"), path,
-                    classLoader, classpathOrderOut, scanSpec, log);
+                    classLoader, classpathOrderOut, ScanConfig, log);
         }
     }
 
@@ -124,13 +124,13 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
      *            类加载器
      * @param classpathOrderOut
      *            类路径顺序输出
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @param log
      *            日志
      */
     private static void addClasspathEntries(final Object owner, final ClassLoader classLoader,
-                                            final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec, final LogNode log) {
+                                            final ClasspathOrder classpathOrderOut, final ScanConfig ScanConfig, final LogNode log) {
         // 类型 ClasspathEntry[]
         final Object entries = classpathOrderOut.reflectionUtils.getFieldVal(false, owner, "entries");
         if (entries != null) {
@@ -139,7 +139,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                 final Object entry = Array.get(entries, i);
                 // 类型 BundleFile
                 final Object bundlefile = classpathOrderOut.reflectionUtils.getFieldVal(false, entry, "bundlefile");
-                addBundleFile(bundlefile, new HashSet<>(), classLoader, classpathOrderOut, scanSpec, log);
+                addBundleFile(bundlefile, new HashSet<>(), classLoader, classpathOrderOut, ScanConfig, log);
             }
         }
     }
@@ -183,17 +183,17 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         // 类型 ClasspathManager
         final Object manager = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "manager");
-        addClasspathEntries(manager, classLoader, classpathOrder, scanSpec, log);
+        addClasspathEntries(manager, classLoader, classpathOrder, ScanConfig, log);
 
         // 类型 FragmentClasspath[]
         final Object fragments = classpathOrder.reflectionUtils.getFieldVal(false, manager, "fragments");
@@ -201,7 +201,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
             for (int f = 0, fragLength = Array.getLength(fragments); f < fragLength; f++) {
                 // 类型 FragmentClasspath
                 final Object fragment = Array.get(fragments, f);
-                addClasspathEntries(fragment, classLoader, classpathOrder, scanSpec, log);
+                addClasspathEntries(fragment, classLoader, classpathOrder, ScanConfig, log);
             }
         }
         // 仅读取系统包一次(所有包对此应给出相同结果)
@@ -245,7 +245,7 @@ class EquinoxClassLoaderHandler implements ClassLoaderHandler {
                         final int fileIdx = location.indexOf("file:");
                         if (fileIdx >= 0) {
                             location = location.substring(fileIdx);
-                            classpathOrder.addClasspathEntry(location, classLoader, scanSpec, log);
+                            classpathOrder.addClasspathEntry(location, classLoader, ScanConfig, log);
                         }
                     }
                 }

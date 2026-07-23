@@ -28,14 +28,14 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
 
-/** 方法类型签名(在 classfile 文档中称为 "MethodSignature") */
+/** 方法类型签名(在 ClassParser 文档中称为 "MethodSignature") */
 public final class MethodType extends HierarchicalType {
     /** 方法类型参数 */
     final List<TypeParam> TypeParams;
@@ -165,7 +165,7 @@ public final class MethodType extends HierarchicalType {
 
     /**
      * 获取方法参数的类型签名注意：此方法不公开，因为类型需要与其他参数元数据对齐
-     * 参数的类型可以在对齐后从参数的 {@link MethodParameterInfo} 对象中获取
+     * 参数的类型可以在对齐后从参数的 {@link MethodParam} 对象中获取
      *
      * @return 方法的参数类型，作为 {@link TypeSignature} 解析类型对象
      */
@@ -223,7 +223,7 @@ public final class MethodType extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -232,7 +232,7 @@ public final class MethodType extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -240,7 +240,7 @@ public final class MethodType extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

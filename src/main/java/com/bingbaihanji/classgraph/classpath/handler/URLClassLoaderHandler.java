@@ -31,8 +31,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -81,19 +81,19 @@ class URLClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         final URL[] urls = ((URLClassLoader) classLoader).getURLs();
         if (urls != null) {
             for (final URL url : urls) {
                 if (url != null) {
-                    classpathOrder.addClasspathEntry(url, classLoader, scanSpec, log);
+                    classpathOrder.addClasspathEntry(url, classLoader, ScanConfig, log);
                 }
             }
         }

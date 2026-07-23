@@ -1,6 +1,12 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.classgraph.core.*;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.bytecode.*;
+import com.bingbaihanji.classgraph.classpath.*;
+import com.bingbaihanji.classgraph.util.*;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;

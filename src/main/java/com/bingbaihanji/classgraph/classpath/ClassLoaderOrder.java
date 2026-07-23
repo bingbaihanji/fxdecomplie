@@ -28,11 +28,11 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
-import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry.ClassLoaderHandlerRegistryEntry;
-import com.bingbaihanji.classgraph.core.ClassGraph;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
+import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.ClassLoaderHandlerRegistryEntry;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -71,7 +71,7 @@ public class ClassLoaderOrder {
             final ClassLoader classLoader, final LogNode log) {
         List<ClassLoaderHandlerRegistryEntry> ents = new ArrayList<>();
         boolean matched = false;
-        for (final ClassLoaderHandlerRegistryEntry ent : ClassLoaderHandlerRegistry.CLASS_LOADER_HANDLERS) {
+        for (final ClassLoaderHandlerRegistryEntry ent : HandlerRegistry.CLASS_LOADER_HANDLERS) {
             if (ent.canHandle(classLoader.getClass(), log)) {
                 // 此 ClassLoaderHandler 可以处理该 ClassLoader 类或其某个父类
                 ents.add(ent);
@@ -79,7 +79,7 @@ public class ClassLoaderOrder {
             }
         }
         if (!matched) {
-            ents.add(ClassLoaderHandlerRegistry.FALLBACK_HANDLER);
+            ents.add(HandlerRegistry.FALLBACK_HANDLER);
         }
         return ents;
     }

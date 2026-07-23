@@ -30,8 +30,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,7 +70,7 @@ public class HandlerRegistry {
                     // Java 7/8 URLClassLoader 支持(应位于倒数第二位，以便 URLClassLoader 的子类由上面更具体的处理器处理)
                     new HandlerRegistryEntry(new URLClassLoaderHandler()),
 
-                    // 用于从外部嵌套扫描委托给 ClassGraphClassLoader 实例的占位符
+                    // 用于从外部嵌套扫描委托给 ScanClassLoader 实例的占位符
                     new HandlerRegistryEntry(new ClassGraphClassLoaderHandler())
 
                     // FallbackClassLoaderHandler.class 在下面单独注册
@@ -168,12 +168,12 @@ public class HandlerRegistry {
          *
          * @param classLoader  {@link ClassLoader}
          * @param classpathOrder  {@link ClasspathOrder} 对象
-         * @param scanSpec {@link ScanSpec}
+         * @param ScanConfig {@link ScanConfig}
          * @param log 日志
          */
         public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                       final ScanSpec scanSpec, final LogNode log) {
-            classLoaderHandler.findClasspathOrder(classLoader, classpathOrder, scanSpec, log);
+                                       final ScanConfig ScanConfig, final LogNode log) {
+            classLoaderHandler.findClasspathOrder(classLoader, classpathOrder, ScanConfig, log);
         }
     }
 }

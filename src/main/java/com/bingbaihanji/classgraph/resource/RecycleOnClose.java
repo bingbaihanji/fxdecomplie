@@ -30,7 +30,7 @@ package com.bingbaihanji.classgraph.resource;
 
 /**
  * 一个可回收对象实例的 AutoCloseable 包装器通过在 try-with-resources 语句中调用
- * {@link Recycler#acquireRecycleOnClose()} 获取，使得当 try 块退出时，获取的实例被回收
+ * {@link Pool#acquireRecycleOnClose()} 获取，使得当 try 块退出时，获取的实例被回收
  *
  * @param <T>
  *            要回收的类型
@@ -39,7 +39,7 @@ package com.bingbaihanji.classgraph.resource;
  */
 public class RecycleOnClose<T, E extends Exception> implements AutoCloseable {
     /** 回收器 */
-    private final Recycler<T, E> recycler;
+    private final Pool<T, E> Pool;
 
     /** 实例 */
     private final T instance;
@@ -47,15 +47,15 @@ public class RecycleOnClose<T, E extends Exception> implements AutoCloseable {
     /**
      * 获取或分配一个实例
      *
-     * @param recycler
-     *            {@link Recycler}
+     * @param Pool
+     *            {@link Pool}
      * @param instance
-     *            通过调用回收器的 {@link Recycler#acquire()} 获取的对象实例
+     *            通过调用回收器的 {@link Pool#acquire()} 获取的对象实例
      * @throws IllegalArgumentException
-     *             如果 {@link Recycler#newInstance()} 返回了 null
+     *             如果 {@link Pool#newInstance()} 返回了 null
      */
-    RecycleOnClose(final Recycler<T, E> recycler, final T instance) {
-        this.recycler = recycler;
+    RecycleOnClose(final Pool<T, E> Pool, final T instance) {
+        this.Pool = Pool;
         this.instance = instance;
     }
 
@@ -71,6 +71,6 @@ public class RecycleOnClose<T, E extends Exception> implements AutoCloseable {
     /** 回收一个实例如果该实例实现了 {@link Resettable}，则调用 {@link Resettable#reset()} */
     @Override
     public void close() {
-        recycler.recycle(instance);
+        Pool.recycle(instance);
     }
 }

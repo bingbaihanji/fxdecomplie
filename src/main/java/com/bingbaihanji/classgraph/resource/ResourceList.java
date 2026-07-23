@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +40,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 /** 一个可自动关闭的 {@link Resource} 对象的可自动关闭列表 */
-public class ResourceList extends PotentiallyUnmodifiableList<Resource> implements AutoCloseable {
+public class ResourceList extends LazyList<Resource> implements AutoCloseable {
     /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 
@@ -143,12 +143,12 @@ public class ResourceList extends PotentiallyUnmodifiableList<Resource> implemen
      * 获取此列表中所有资源相对于类路径元素根目录的路径
      *
      * @return 此列表中所有资源相对于类路径元素根目录的路径，
-     *         通过对列表中的每个项调用 {@link Resource#getPathRelativeToClasspathElement()} 获得
+     *         通过对列表中的每个项调用 {@link Resource#getPathRelativeToClasspath()} 获得
      */
-    public List<String> getPathsRelativeToClasspathElement() {
+    public List<String> getPathsRelativeToClasspath() {
         final List<String> resourcePaths = new ArrayList<>(this.size());
         for (final Resource resource : this) {
-            resourcePaths.add(resource.getPathRelativeToClasspathElement());
+            resourcePaths.add(resource.getPathRelativeToClasspath());
         }
         return resourcePaths;
     }

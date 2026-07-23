@@ -28,15 +28,15 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
-import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry.ClassLoaderHandlerRegistryEntry;
-import com.bingbaihanji.classgraph.core.ClassGraphClassLoader;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.FastPathResolver;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
+import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.ClassLoaderHandlerRegistryEntry;
+import com.bingbaihanji.classgraph.scan.ScanClassLoader;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,22 +57,22 @@ public class ClasspathFinder {
     private ClassLoader[] classLoaderOrderRespectingParentDelegation;
 
     /**
-     * 如果找到的某个类加载器是现有的 {@link ClassGraphClassLoader} 实例，则首先委托到该类加载器，
-     * 而不是尝试从当前扫描的 {@link ClassGraphClassLoader} 加载，这样嵌套扫描之间的类才能兼容(#485)
+     * 如果找到的某个类加载器是现有的 {@link ScanClassLoader} 实例，则首先委托到该类加载器，
+     * 而不是尝试从当前扫描的 {@link ScanClassLoader} 加载，这样嵌套扫描之间的类才能兼容(#485)
      */
-    private ClassGraphClassLoader delegateClassGraphClassLoader;
+    private ScanClassLoader delegateClassGraphClassLoader;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
      * 用于查找唯一有序类路径元素的类
      *
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
-    public ClasspathFinder(final ScanSpec scanSpec, final ReflectionUtils reflectionUtils, final LogNode log) {
+    public ClasspathFinder(final ScanConfig ScanConfig, final ReflectionUtils reflectionUtils, final LogNode log) {
         final LogNode classpathFinderLog = log == null ? null : log.log("Finding classpath and modules");
 
         // 如果覆盖的类加载器是 AppClassLoader，则需要扫描传统类路径(#639)
@@ -81,26 +81,26 @@ public class ClasspathFinder {
         // 如果覆盖了类加载器，检查覆盖的类加载器是否为 JPMS 类加载器
         // 如果是，则需要启用非系统模块扫描
         boolean scanNonSystemModules;
-        if (scanSpec.overrideClasspath != null) {
+        if (ScanConfig.overrideClasspath != null) {
             // 如果类路径被覆盖，则不扫描非系统模块
             scanNonSystemModules = false;
-        } else if (scanSpec.overrideClassLoaders != null) {
+        } else if (ScanConfig.overrideClassLoaders != null) {
             // 如果覆盖了类加载器，仅当覆盖的类加载器是 JPMS
             // AppClassLoader 或 PlatformClassLoader 时才扫描非系统模块
             scanNonSystemModules = false;
-            for (final ClassLoader classLoader : scanSpec.overrideClassLoaders) {
+            for (final ClassLoader classLoader : ScanConfig.overrideClassLoaders) {
                 final String classLoaderClassName = classLoader.getClass().getName();
                 // 无法直接实例化 AppClassLoader 或 PlatformClassLoader，因此如果这些作为
                 // 覆盖类加载器传入，它们必定是通过
                 // Thread.currentThread().getContextClassLoader() [.getParent()] 或类似方式获取的
-                if (!scanSpec.enableSystemJarsAndModules
+                if (!ScanConfig.enableSystemJarsAndModules
                         && "jdk.internal.loader.ClassLoaders$PlatformClassLoader".equals(classLoaderClassName)) {
                     if (classpathFinderLog != null) {
                         classpathFinderLog
                                 .log("overrideClassLoaders() was called with an instance of " + classLoaderClassName
                                         + ", so enableSystemJarsAndModules() was called automatically");
                     }
-                    scanSpec.enableSystemJarsAndModules = true;
+                    ScanConfig.enableSystemJarsAndModules = true;
                 }
                 if ("jdk.internal.loader.ClassLoaders$AppClassLoader".equals(classLoaderClassName)
                         || "jdk.internal.loader.ClassLoaders$PlatformClassLoader".equals(classLoaderClassName)) {
@@ -114,40 +114,40 @@ public class ClasspathFinder {
             }
         } else {
             // 如果类加载器和类路径都未被覆盖，则仅在启用了模块扫描时才扫描非系统模块
-            scanNonSystemModules = scanSpec.scanModules;
+            scanNonSystemModules = ScanConfig.scanModules;
         }
 
         // 仅在请求时才实例化模块查找器
-        moduleFinder = scanNonSystemModules || scanSpec.enableSystemJarsAndModules
+        moduleFinder = scanNonSystemModules || ScanConfig.enableSystemJarsAndModules
                 ? new ModuleFinder(new CallStackReader(reflectionUtils).getClassContext(classpathFinderLog),
-                scanSpec, scanNonSystemModules,
-                /* scanSystemModules = */ scanSpec.enableSystemJarsAndModules, reflectionUtils,
+                ScanConfig, scanNonSystemModules,
+                /* scanSystemModules = */ ScanConfig.enableSystemJarsAndModules, reflectionUtils,
                 classpathFinderLog)
                 : null;
 
-        classpathOrder = new ClasspathOrder(scanSpec, reflectionUtils);
+        classpathOrder = new ClasspathOrder(ScanConfig, reflectionUtils);
 
         // 仅在类路径和类加载器都未被覆盖时才查找环境类加载器
-        final ClassLoaderFinder classLoaderFinder = scanSpec.overrideClasspath == null
-                && scanSpec.overrideClassLoaders == null
-                ? new ClassLoaderFinder(scanSpec, reflectionUtils, classpathFinderLog)
+        final ClassLoaderFinder classLoaderFinder = ScanConfig.overrideClasspath == null
+                && ScanConfig.overrideClassLoaders == null
+                ? new ClassLoaderFinder(ScanConfig, reflectionUtils, classpathFinderLog)
                 : null;
         final ClassLoader[] contextClassLoaders = classLoaderFinder == null ? new ClassLoader[0]
                 : classLoaderFinder.getContextClassLoaders();
         final ClassLoader defaultClassLoader = contextClassLoaders.length > 0 ? contextClassLoaders[0] : null;
-        if (scanSpec.overrideClasspath != null) {
+        if (ScanConfig.overrideClasspath != null) {
             // 手动覆盖类路径
-            if (scanSpec.overrideClassLoaders != null && classpathFinderLog != null) {
+            if (ScanConfig.overrideClassLoaders != null && classpathFinderLog != null) {
                 classpathFinderLog.log("It is not possible to override both the classpath and the ClassLoaders -- "
                         + "ignoring the ClassLoader override");
             }
             final LogNode overrideLog = classpathFinderLog == null ? null
-                    : classpathFinderLog.log("Overriding classpath with: " + scanSpec.overrideClasspath);
-            classpathOrder.addClasspathEntries(scanSpec.overrideClasspath,
-                    // 如果覆盖了类路径，则 ClassGraphClassLoader 中用于加载类的类加载器
+                    : classpathFinderLog.log("Overriding classpath with: " + ScanConfig.overrideClasspath);
+            classpathOrder.addClasspathEntries(ScanConfig.overrideClasspath,
+                    // 如果覆盖了类路径，则 ScanClassLoader 中用于加载类的类加载器
                     // 会被一个从覆盖类路径加载的自定义 URLClassLoader 覆盖
                     // 这里仅使用 defaultClassLoader 作为占位符
-                    defaultClassLoader, scanSpec, overrideLog);
+                    defaultClassLoader, ScanConfig, overrideLog);
             if (overrideLog != null) {
                 overrideLog.log("WARNING: when the classpath is overridden, there is no guarantee that the classes "
                         + "found by classpath scanning will be the same as the classes loaded by the "
@@ -157,27 +157,27 @@ public class ClasspathFinder {
         }
 
         // 如果启用了系统 JAR 和模块，将 JRE rt.jar 添加到类路径开头
-        if (scanSpec.enableSystemJarsAndModules) {
+        if (ScanConfig.enableSystemJarsAndModules) {
             final String jreRtJar = SystemJarFinder.getJreRtJarPath();
 
             // 将 rt.jar 和/或 lib/ext JAR 添加到类路径开头(如果启用)
             final LogNode systemJarsLog = classpathFinderLog == null ? null
                     : classpathFinderLog.log("System jars:");
             if (jreRtJar != null) {
-                if (scanSpec.enableSystemJarsAndModules) {
+                if (ScanConfig.enableSystemJarsAndModules) {
                     classpathOrder.addSystemClasspathEntry(jreRtJar, defaultClassLoader);
                     if (systemJarsLog != null) {
                         systemJarsLog.log("Found rt.jar: " + jreRtJar);
                     }
                 } else if (systemJarsLog != null) {
-                    systemJarsLog.log((scanSpec.enableSystemJarsAndModules ? "" : "Scanning disabled for rt.jar: ")
+                    systemJarsLog.log((ScanConfig.enableSystemJarsAndModules ? "" : "Scanning disabled for rt.jar: ")
                             + jreRtJar);
                 }
             }
-            final boolean scanAllLibOrExtJars = !scanSpec.libOrExtJarAcceptReject.acceptAndRejectAreEmpty();
+            final boolean scanAllLibOrExtJars = !ScanConfig.libOrExtJarAcceptReject.acceptAndRejectAreEmpty();
             for (final String libOrExtJarPath : SystemJarFinder.getJreLibOrExtJars()) {
                 if (scanAllLibOrExtJars
-                        || scanSpec.libOrExtJarAcceptReject.isSpecificallyAcceptedAndNotRejected(libOrExtJarPath)) {
+                        || ScanConfig.libOrExtJarAcceptReject.isSpecificallyAcceptedAndNotRejected(libOrExtJarPath)) {
                     classpathOrder.addSystemClasspathEntry(libOrExtJarPath, defaultClassLoader);
                     if (systemJarsLog != null) {
                         systemJarsLog.log("Found lib or ext jar: " + libOrExtJarPath);
@@ -188,12 +188,12 @@ public class ClasspathFinder {
             }
         }
 
-        if (scanSpec.overrideClasspath == null) {
+        if (ScanConfig.overrideClasspath == null) {
             // 列出 ClassLoaderHandler
             if (classpathFinderLog != null) {
                 final LogNode classLoaderHandlerLog = classpathFinderLog.log("ClassLoaderHandlers:");
                 for (final ClassLoaderHandlerRegistryEntry classLoaderHandlerEntry : //
-                        ClassLoaderHandlerRegistry.CLASS_LOADER_HANDLERS) {
+                        HandlerRegistry.CLASS_LOADER_HANDLERS) {
                     classLoaderHandlerLog.log(classLoaderHandlerEntry.classLoaderHandler.getClass().getName());
                 }
             }
@@ -202,8 +202,8 @@ public class ClasspathFinder {
             final LogNode classloaderOrderLog = classpathFinderLog == null ? null
                     : classpathFinderLog.log("Finding unique classloaders in delegation order");
             final ClassLoaderOrder classLoaderOrder = new ClassLoaderOrder(reflectionUtils);
-            final ClassLoader[] origClassLoaderOrder = scanSpec.overrideClassLoaders != null
-                    ? scanSpec.overrideClassLoaders.toArray(new ClassLoader[0])
+            final ClassLoader[] origClassLoaderOrder = ScanConfig.overrideClassLoaders != null
+                    ? ScanConfig.overrideClassLoaders.toArray(new ClassLoader[0])
                     : contextClassLoaders;
             if (origClassLoaderOrder != null) {
                 for (final ClassLoader classLoader : origClassLoaderOrder) {
@@ -223,14 +223,14 @@ public class ClasspathFinder {
                 final ClassLoader classLoader = ent.getKey();
                 for (final ClassLoaderHandlerRegistryEntry classLoaderHandlerRegistryEntry : ent.getValue()) {
                     // 将类路径条目添加到 ignoredClasspathOrder 或 classpathOrder
-                    if (!scanSpec.ignoreParentClassLoaders || !allParentClassLoaders.contains(classLoader)) {
+                    if (!ScanConfig.ignoreParentClassLoaders || !allParentClassLoaders.contains(classLoader)) {
                         // 否则将类路径条目添加到 classpathOrder，并将类加载器添加到
                         // 最终的类加载器顺序中
                         final LogNode classloaderHandlerLog = classloaderURLLog == null ? null
                                 : classloaderURLLog.log("Classloader " + classLoader.getClass().getName()
                                 + " is handled by "
                                 + classLoaderHandlerRegistryEntry.classLoaderHandler.getClass().getName());
-                        classLoaderHandlerRegistryEntry.findClasspathOrder(classLoader, classpathOrder, scanSpec,
+                        classLoaderHandlerRegistryEntry.findClasspathOrder(classLoader, classpathOrder, ScanConfig,
                                 classloaderHandlerLog);
                         finalClassLoaderOrder.add(classLoader);
                     } else if (classloaderURLLog != null) {
@@ -238,9 +238,9 @@ public class ClasspathFinder {
                                 .log("Ignoring parent classloader " + classLoader + ", normally handled by "
                                         + classLoaderHandlerRegistryEntry.classLoaderHandler.getClass().getName());
                     }
-                    // 检查是否应首先委托到先前扫描的 ClassGraphClassLoader
-                    if (classLoader instanceof ClassGraphClassLoader) {
-                        delegateClassGraphClassLoader = (ClassGraphClassLoader) classLoader;
+                    // 检查是否应首先委托到先前扫描的 ScanClassLoader
+                    if (classLoader instanceof ScanClassLoader) {
+                        delegateClassGraphClassLoader = (ScanClassLoader) classLoader;
                     }
                 }
             }
@@ -254,10 +254,10 @@ public class ClasspathFinder {
         // 除非仅启用了模块扫描且遇到了未命名模块层 -- 在这种情况下，必须强制扫描 java.class.path，
         // 因为 ModuleLayer API 不允许打开未命名模块
         if (forceScanJavaClassPath
-                || (!scanSpec.ignoreParentClassLoaders && scanSpec.overrideClassLoaders == null
-                && scanSpec.overrideClasspath == null)
+                || (!ScanConfig.ignoreParentClassLoaders && ScanConfig.overrideClassLoaders == null
+                && ScanConfig.overrideClasspath == null)
                 || (moduleFinder != null && moduleFinder.forceScanJavaClassPath())) {
-            final String[] pathElements = JarUtils.smartPathSplit(System.getProperty("java.class.path"), scanSpec);
+            final String[] pathElements = JarUtils.smartPathSplit(System.getProperty("java.class.path"), ScanConfig);
             if (pathElements.length > 0) {
                 final LogNode sysPropLog = classpathFinderLog == null ? null
                         : classpathFinderLog.log("Getting classpath entries from java.class.path");
@@ -265,7 +265,7 @@ public class ClasspathFinder {
                     // pathElement 也未在忽略的父级类加载器中列出
                     final String pathElementResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
                             pathElement);
-                    classpathOrder.addClasspathEntry(pathElementResolved, defaultClassLoader, scanSpec, sysPropLog);
+                    classpathOrder.addClasspathEntry(pathElementResolved, defaultClassLoader, ScanConfig, sysPropLog);
                 }
             }
         }
@@ -301,13 +301,13 @@ public class ClasspathFinder {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 如果找到的某个类加载器是现有的 {@link ClassGraphClassLoader} 实例，则首先委托到该类加载器，
-     * 而不是尝试从当前扫描的 {@link ClassGraphClassLoader} 加载，这样嵌套扫描之间的类才能兼容(#485)
+     * 如果找到的某个类加载器是现有的 {@link ScanClassLoader} 实例，则首先委托到该类加载器，
+     * 而不是尝试从当前扫描的 {@link ScanClassLoader} 加载，这样嵌套扫描之间的类才能兼容(#485)
      *
-     * @return 在使用此扫描自身的 {@link ClassGraphClassLoader} 加载类之前要委托的
-     *         {@link ClassGraphClassLoader}(如果没有则返回 null)
+     * @return 在使用此扫描自身的 {@link ScanClassLoader} 加载类之前要委托的
+     *         {@link ScanClassLoader}(如果没有则返回 null)
      */
-    public ClassGraphClassLoader getDelegateClassGraphClassLoader() {
+    public ScanClassLoader getDelegateClassGraphClassLoader() {
         return delegateClassGraphClassLoader;
     }
 }

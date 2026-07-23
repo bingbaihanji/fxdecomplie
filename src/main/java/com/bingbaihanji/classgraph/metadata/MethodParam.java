@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.Assert;
+import com.bingbaihanji.classgraph.util.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -185,7 +185,7 @@ public class MethodParam {
      * @return 此方法参数上注解的 {@link AnnotationInfo}
      */
     public AnnotationInfoList getAnnotationInfo() {
-        if (!scanResult.scanSpec.enableAnnotationInfo) {
+        if (!scanResult.ScanConfig.enableAnnotationInfo) {
             throw new IllegalArgumentException("请在调用 #scan() 之前调用 ClassGraph#enableAnnotationInfo()");
         }
         if (annotationInfo == null || annotationInfo.length == 0) {

@@ -27,9 +27,10 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.metadata;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
-import com.bingbaihanji.classgraph.utils.Assert;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
+import com.bingbaihanji.classgraph.util.Assert;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.net.URI;
@@ -38,12 +39,12 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /** 保存扫描过程中遇到的包的元数据 */
-public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
+public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     /** 模块名称 */
     private String name;
 
     /** 类路径元素 */
-    private transient ClasspathElement classpathElement;
+    private transient Classpath Classpath;
 
     /** {@link ModuleRef} 引用 */
     private transient ModuleRef moduleRef;
@@ -77,13 +78,13 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
      *
      * @param moduleRef
      *            模块引用
-     * @param classpathElement
+     * @param Classpath
      *            类路径元素
      */
-    ModuleInfo(final ModuleRef moduleRef, final ClasspathElement classpathElement) {
+    ModuleInfo(final ModuleRef moduleRef, final Classpath Classpath) {
         this.moduleRef = moduleRef;
-        this.classpathElement = classpathElement;
-        this.name = classpathElement.getModuleName();
+        this.Classpath = Classpath;
+        this.name = Classpath.getModuleName();
     }
 
     /**
@@ -105,7 +106,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
         if (locationURI == null) {
             locationURI = moduleRef != null ? moduleRef.getLocation() : null;
             if (locationURI == null) {
-                locationURI = classpathElement.getURI();
+                locationURI = Classpath.getURI();
             }
         }
         return locationURI;
@@ -221,7 +222,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, HasName {
     }
 
     /**
-     * 添加在模块描述符 classfile 中找到的注解
+     * 添加在模块描述符 ClassParser 中找到的注解
      *
      * @param moduleAnnotations
      *            模块注解

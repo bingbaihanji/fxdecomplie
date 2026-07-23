@@ -30,9 +30,9 @@
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.resource.Resource;
-import com.bingbaihanji.classgraph.resource.NestedJarHandler;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessReader;
-import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessReader;
+import com.bingbaihanji.classgraph.util.FileUtils;
 
 import java.io.Closeable;
 import java.io.File;
@@ -53,8 +53,8 @@ public abstract class Slice implements Closeable {
     public final boolean isDeflatedZipEntry;
     /** 如果切片是压缩的 zip 条目，则这是预期的未压缩长度，未知则为 -1L */
     public final long inflatedLengthHint;
-    /** {@link NestedJarHandler} */
-    protected final NestedJarHandler nestedJarHandler;
+    /** {@link JarReader} */
+    protected final JarReader JarReader;
     /** 父切片 */
     protected final Slice parentSlice;
     /** 切片的长度，如果未知(对于 {@link InputStream})则为 -1L */
@@ -75,18 +75,18 @@ public abstract class Slice implements Closeable {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      */
     protected Slice(final Slice parentSlice, final long offset, final long length, final boolean isDeflatedZipEntry,
-                    final long inflatedLengthHint, final NestedJarHandler nestedJarHandler) {
+                    final long inflatedLengthHint, final JarReader JarReader) {
         this.parentSlice = parentSlice;
         final long parentSliceStartPos = parentSlice == null ? 0L : parentSlice.sliceStartPos;
         this.sliceStartPos = parentSliceStartPos + offset;
         this.sliceLength = length;
         this.isDeflatedZipEntry = isDeflatedZipEntry;
         this.inflatedLengthHint = inflatedLengthHint;
-        this.nestedJarHandler = nestedJarHandler;
+        this.JarReader = JarReader;
 
         if (sliceStartPos < 0L) {
             throw new IllegalArgumentException("Invalid startPos");
@@ -109,12 +109,12 @@ public abstract class Slice implements Closeable {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      */
     protected Slice(final long length, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                    final NestedJarHandler nestedJarHandler) {
-        this(/* parentSlice = */ null, 0L, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+                    final JarReader JarReader) {
+        this(/* parentSlice = */ null, 0L, length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
     }
 
     /**
@@ -234,7 +234,7 @@ public abstract class Slice implements Closeable {
                 closed.getAndSet(true);
             }
         };
-        return isDeflatedZipEntry ? nestedJarHandler.openInflaterInputStream(rawInputStream) : rawInputStream;
+        return isDeflatedZipEntry ? JarReader.openInflaterInputStream(rawInputStream) : rawInputStream;
     }
 
     /**

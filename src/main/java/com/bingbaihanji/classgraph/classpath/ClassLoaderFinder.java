@@ -28,9 +28,9 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.LinkedHashSet;
 
@@ -44,13 +44,13 @@ public class ClassLoaderFinder {
     /**
      * 用于查找唯一有序类路径元素的类
      *
-     * @param scanSpec  扫描规格，如果没有则可以为 null
+     * @param ScanConfig  扫描规格，如果没有则可以为 null
      * @param log  日志
      */
-    ClassLoaderFinder(final ScanSpec scanSpec, final ReflectionUtils reflectionUtils, final LogNode log) {
+    ClassLoaderFinder(final ScanConfig ScanConfig, final ReflectionUtils reflectionUtils, final LogNode log) {
         LinkedHashSet<ClassLoader> classLoadersUnique;
         LogNode classLoadersFoundLog;
-        if (scanSpec.overrideClassLoaders == null) {
+        if (ScanConfig.overrideClassLoaders == null) {
             // 未覆盖 ClassLoader
 
             // 这里有一些关于选择最佳或正确类加载器的建议，但不完整
@@ -102,14 +102,14 @@ public class ClassLoaderFinder {
             }
 
             // 将自定义添加的类加载器放在系统/上下文/模块类加载器之后
-            if (scanSpec.addedClassLoaders != null) {
-                classLoadersUnique.addAll(scanSpec.addedClassLoaders);
+            if (ScanConfig.addedClassLoaders != null) {
+                classLoadersUnique.addAll(ScanConfig.addedClassLoaders);
             }
             classLoadersFoundLog = log == null ? null : log.log("Found ClassLoaders:");
 
         } else {
             // ClassLoader 已被覆盖
-            classLoadersUnique = new LinkedHashSet<>(scanSpec.overrideClassLoaders);
+            classLoadersUnique = new LinkedHashSet<>(ScanConfig.overrideClassLoaders);
             classLoadersFoundLog = log == null ? null : log.log("Override ClassLoaders:");
         }
 

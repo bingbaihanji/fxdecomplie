@@ -106,7 +106,7 @@ public interface SequentialReader {
     void skip(final int bytesToSkip) throws IOException;
 
     /**
-     * 读取 Java classfile 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
+     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式，可选地将 '/' 替换为 '.'，
      * 并可选择去除前缀 "L" 和后缀 ";"
      *
      * @param numBytes
@@ -123,7 +123,7 @@ public interface SequentialReader {
             throws IOException;
 
     /**
-     * 读取 Java classfile 规范中定义的"modified UTF8"格式
+     * 读取 Java ClassParser 规范中定义的"modified UTF8"格式
      *
      * @param numBytes
      *            字符串 UTF8 编码的字节数

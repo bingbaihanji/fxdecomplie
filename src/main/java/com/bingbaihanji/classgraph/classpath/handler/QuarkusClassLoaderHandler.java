@@ -31,8 +31,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.IOError;
 import java.net.URI;
@@ -69,7 +69,7 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
     }
 
     private static void findClasspathOrderForQuarkusClassloader(final ClassLoader classLoader,
-                                                                final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
+                                                                final ClasspathOrder classpathOrder, final ScanConfig ScanConfig, final LogNode log) {
 
         final Collection<Object> elements = findQuarkusClassLoaderElements(classLoader, classpathOrder);
 
@@ -79,11 +79,11 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
             if (fieldName != null) {
                 classpathOrder.addClasspathEntry(
                         classpathOrder.reflectionUtils.getFieldVal(false, element, fieldName), classLoader,
-                        scanSpec, log);
+                        ScanConfig, log);
             } else {
                 final Object rootPath = classpathOrder.reflectionUtils.invokeMethod(false, element, "getRoot");
                 if (rootPath instanceof Path) {
-                    classpathOrder.addClasspathEntry(rootPath, classLoader, scanSpec, log);
+                    classpathOrder.addClasspathEntry(rootPath, classLoader, ScanConfig, log);
                 }
             }
         }
@@ -111,14 +111,14 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
 
     @SuppressWarnings("unchecked")
     private static void findClasspathOrderForRuntimeClassloader(final ClassLoader classLoader,
-                                                                final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
+                                                                final ClasspathOrder classpathOrder, final ScanConfig ScanConfig, final LogNode log) {
         final Collection<Path> applicationClassDirectories = (Collection<Path>) classpathOrder.reflectionUtils
                 .getFieldVal(false, classLoader, "applicationClassDirectories");
         if (applicationClassDirectories != null) {
             for (final Path path : applicationClassDirectories) {
                 try {
                     final URI uri = path.toUri();
-                    classpathOrder.addClasspathEntryObject(uri, classLoader, scanSpec, log);
+                    classpathOrder.addClasspathEntryObject(uri, classLoader, ScanConfig, log);
                 } catch (IOError | SecurityException e) {
                     if (log != null) {
                         log.log("Could not convert path to URI: " + path);
@@ -130,7 +130,7 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
 
     @SuppressWarnings("unchecked")
     private static void findClasspathOrderForRunnerClassloader(final ClassLoader classLoader,
-                                                               final ClasspathOrder classpathOrder, final ScanSpec scanSpec, final LogNode log) {
+                                                               final ClasspathOrder classpathOrder, final ScanConfig ScanConfig, final LogNode log) {
         for (final Object[] elementArray : ((Map<String, Object[]>) classpathOrder.reflectionUtils
                 .getFieldVal(false, classLoader, "resourceDirectoryMap")).values()) {
             for (final Object element : elementArray) {
@@ -138,7 +138,7 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
                 if ("io.quarkus.bootstrap.runner.JarResource".equals(elementClassName)) {
                     classpathOrder.addClasspathEntry(
                             classpathOrder.reflectionUtils.getFieldVal(false, element, "jarPath"), classLoader,
-                            scanSpec, log);
+                            ScanConfig, log);
                 }
             }
         }
@@ -184,22 +184,22 @@ class QuarkusClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
 
         final String classLoaderName = classLoader.getClass().getName();
         if (RUNTIME_CLASSLOADER.equals(classLoaderName)) {
-            findClasspathOrderForRuntimeClassloader(classLoader, classpathOrder, scanSpec, log);
+            findClasspathOrderForRuntimeClassloader(classLoader, classpathOrder, ScanConfig, log);
         } else if (QUARKUS_CLASSLOADER.equals(classLoaderName)) {
-            findClasspathOrderForQuarkusClassloader(classLoader, classpathOrder, scanSpec, log);
+            findClasspathOrderForQuarkusClassloader(classLoader, classpathOrder, ScanConfig, log);
         } else if (RUNNER_CLASSLOADER.equals(classLoaderName)) {
-            findClasspathOrderForRunnerClassloader(classLoader, classpathOrder, scanSpec, log);
+            findClasspathOrderForRunnerClassloader(classLoader, classpathOrder, ScanConfig, log);
         }
     }
 }

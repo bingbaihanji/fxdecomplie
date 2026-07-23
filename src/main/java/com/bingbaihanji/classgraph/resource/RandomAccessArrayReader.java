@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.utils.StringUtils;
+import com.bingbaihanji.classgraph.util.StringUtils;
 
 import java.io.IOException;
 import java.nio.Buffer;

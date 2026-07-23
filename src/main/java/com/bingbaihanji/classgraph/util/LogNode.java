@@ -29,7 +29,7 @@
 package com.bingbaihanji.classgraph.util;
 
 import com.bingbaihanji.classgraph.classpath.SystemJarFinder;
-import com.bingbaihanji.classgraph.core.ClassGraph;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

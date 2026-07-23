@@ -28,15 +28,15 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.classloaderhandler.ClassLoaderHandlerRegistry;
-import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementFilter;
-import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementURLFilter;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.FastPathResolver;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
+import com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathFilter;
+import com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathURLFilter;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.io.IOError;
@@ -60,13 +60,13 @@ public class ClasspathOrder {
     private static final Pattern schemeMatcher = Pattern.compile("^[a-zA-Z][a-zA-Z+\\-.]+:");
 
     static {
-        for (final String prefix : ClassLoaderHandlerRegistry.AUTOMATIC_PACKAGE_ROOT_PREFIXES) {
+        for (final String prefix : HandlerRegistry.AUTOMATIC_PACKAGE_ROOT_PREFIXES) {
             AUTOMATIC_PACKAGE_ROOT_SUFFIXES.add("!/" + prefix.substring(0, prefix.length() - 1));
         }
     }
 
     /** 扫描规格 */
-    private final ScanSpec scanSpec;
+    private final ScanConfig ScanConfig;
     /** 唯一的类路径条目 */
     private final Set<String> classpathEntryUniqueResolvedPaths = new HashSet<>();
     /** 类路径顺序键是 {@link String} 或 {@link URL} 的实例 */
@@ -76,11 +76,11 @@ public class ClasspathOrder {
     /**
      * 构造函数
      *
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      */
-    ClasspathOrder(final ScanSpec scanSpec, final ReflectionUtils reflectionUtils) {
-        this.scanSpec = scanSpec;
+    ClasspathOrder(final ScanConfig ScanConfig, final ReflectionUtils reflectionUtils) {
+        this.ScanConfig = ScanConfig;
         this.reflectionUtils = reflectionUtils;
     }
 
@@ -112,13 +112,13 @@ public class ClasspathOrder {
      * @return 如果未被过滤掉则返回 true
      */
     private boolean filter(final URL classpathElementURL, final String classpathElementPath) {
-        if (scanSpec.classpathElementFilters != null) {
-            for (final Object filterObj : scanSpec.classpathElementFilters) {
-                if ((classpathElementURL != null && filterObj instanceof ClasspathElementURLFilter
-                        && !((ClasspathElementURLFilter) filterObj).includeClasspathElement(classpathElementURL))
-                        || (classpathElementPath != null && filterObj instanceof ClasspathElementFilter
-                        && !((ClasspathElementFilter) filterObj)
-                        .includeClasspathElement(classpathElementPath))) {
+        if (ScanConfig.classpathElementFilters != null) {
+            for (final Object filterObj : ScanConfig.classpathElementFilters) {
+                if ((classpathElementURL != null && filterObj instanceof ClasspathURLFilter
+                        && !((ClasspathURLFilter) filterObj).includeClasspath(classpathElementURL))
+                        || (classpathElementPath != null && filterObj instanceof ClasspathFilter
+                        && !((ClasspathFilter) filterObj)
+                        .includeClasspath(classpathElementPath))) {
                     return false;
                 }
             }
@@ -153,12 +153,12 @@ public class ClasspathOrder {
      *            字符串格式的路径元素
      * @param classLoader
      *            类加载器
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @return 如果添加成功且唯一则返回 true
      */
     private boolean addClasspathEntry(final Object pathElement, final String pathElementStr,
-                                      final ClassLoader classLoader, final ScanSpec scanSpec) {
+                                      final ClassLoader classLoader, final ScanConfig ScanConfig) {
         // 检查类路径元素路径是否以自动包根结尾如果是，则将其剥离以
         // 消除重复，因为自动包根会被自动检测到(#435)
         String pathElementStrWithoutSuffix = pathElementStr;
@@ -202,7 +202,7 @@ public class ClasspathOrder {
         } else {
             final String pathElementStrResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
                     pathElementStrWithoutSuffix);
-            if (scanSpec.overrideClasspath == null //
+            if (ScanConfig.overrideClasspath == null //
                     && (SystemJarFinder.getJreLibOrExtJars().contains(pathElementStrResolved)
                     || pathElementStrResolved.equals(SystemJarFinder.getJreRtJarPath()))) {
                 // JRE lib 和 ext JAR 会单独处理，因此如果它们由系统类加载器返回，
@@ -226,7 +226,7 @@ public class ClasspathOrder {
      *            {@link Object#toString()} 方法来获取类路径元素的对象
      * @param classLoader
      *            获取此 classpath 元素的 ClassLoader
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
@@ -234,7 +234,7 @@ public class ClasspathOrder {
      *         (并添加类路径元素)，否则返回 false
      */
     public boolean addClasspathEntry(final Object pathElement, final ClassLoader classLoader,
-                                     final ScanSpec scanSpec, final LogNode log) {
+                                     final ScanConfig ScanConfig, final LogNode log) {
         if (pathElement == null) {
             return false;
         }
@@ -322,7 +322,7 @@ public class ClasspathOrder {
             final Object classpathElementObj;
             classpathElementObj = pathElement instanceof File ? pathElementStr
                     : pathElementURL != null ? pathElementURL : pathElement;
-            if (addClasspathEntry(classpathElementObj, pathElementStr, classLoader, scanSpec)) {
+            if (addClasspathEntry(classpathElementObj, pathElementStr, classLoader, ScanConfig)) {
                 if (log != null) {
                     log.log("Found classpath element: " + pathElementStr);
                 }
@@ -381,7 +381,7 @@ public class ClasspathOrder {
                         final String fileInDirPathResolved = FastPathResolver.resolve(FileUtils.currDirPath(),
                                 fileInDirPath);
                         if (addClasspathEntry(fileInDirPathResolved, fileInDirPathResolved, classLoader,
-                                scanSpec)) {
+                                ScanConfig)) {
                             if (dirLog != null) {
                                 dirLog.log("Found classpath element: " + fileInDirPath
                                         + (fileInDirPath.equals(fileInDirPathResolved) ? ""
@@ -424,7 +424,7 @@ public class ClasspathOrder {
                 // https://wiki.eclipse.org/Eclipse/UNC_Paths#Programming_with_UNC_paths
                 try {
                     final File file = new File(pathElementResolved);
-                    if (addClasspathEntry(file, pathElementResolved, classLoader, scanSpec)) {
+                    if (addClasspathEntry(file, pathElementResolved, classLoader, ScanConfig)) {
                         if (log != null) {
                             log.log("Found classpath element: " + file
                                     + (pathElementStr.equals(pathElementResolved) ? ""
@@ -443,7 +443,7 @@ public class ClasspathOrder {
                     // 穿透处理
                 }
             }
-            if (addClasspathEntry(pathElementResolved, pathElementResolved, classLoader, scanSpec)) {
+            if (addClasspathEntry(pathElementResolved, pathElementResolved, classLoader, ScanConfig)) {
                 if (log != null) {
                     log.log("Found classpath element: " + pathElementStr
                             + (pathElementStr.equals(pathElementResolved) ? "" : " -> " + pathElementResolved));
@@ -466,19 +466,19 @@ public class ClasspathOrder {
      *            一个由 {@link String}、{@link URL}、{@link URI} 或 {@link File} 对象组成的路径列表
      * @param classLoader
      *            获取此 classpath 的 ClassLoader
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
      * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
      */
     public boolean addClasspathEntries(final List<Object> overrideClasspath, final ClassLoader classLoader,
-                                       final ScanSpec scanSpec, final LogNode log) {
+                                       final ScanConfig ScanConfig, final LogNode log) {
         if (overrideClasspath == null || overrideClasspath.isEmpty()) {
             return false;
         } else {
             for (final Object pathElement : overrideClasspath) {
-                addClasspathEntry(pathElement, classLoader, scanSpec, log);
+                addClasspathEntry(pathElement, classLoader, ScanConfig, log);
             }
             return true;
         }
@@ -491,23 +491,23 @@ public class ClasspathOrder {
      *            包含 URL 或路径的分隔字符串形式的类路径
      * @param classLoader
      *            获取此 classpath 的 ClassLoader
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
      * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
      */
-    public boolean addClasspathPathStr(final String pathStr, final ClassLoader classLoader, final ScanSpec scanSpec,
+    public boolean addClasspathPathStr(final String pathStr, final ClassLoader classLoader, final ScanConfig ScanConfig,
                                        final LogNode log) {
         if (pathStr == null || pathStr.isEmpty()) {
             return false;
         } else {
-            final String[] parts = JarUtils.smartPathSplit(pathStr, scanSpec);
+            final String[] parts = JarUtils.smartPathSplit(pathStr, ScanConfig);
             if (parts.length == 0) {
                 return false;
             } else {
                 for (final String pathElement : parts) {
-                    addClasspathEntry(pathElement, classLoader, scanSpec, log);
+                    addClasspathEntry(pathElement, classLoader, ScanConfig, log);
                 }
                 return true;
             }
@@ -525,34 +525,34 @@ public class ClasspathOrder {
      *            包含一个或多个类路径字符串的对象
      * @param classLoader
      *            获取此 classpath 的 ClassLoader
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      * @param log
      *            在详细模式下记录日志时使用的 LogNode 实例
      * @return 如果 pathElement 不为 null 或空，则返回 true(并添加类路径元素)，否则返回 false
      */
     public boolean addClasspathEntryObject(final Object pathObject, final ClassLoader classLoader,
-                                           final ScanSpec scanSpec, final LogNode log) {
+                                           final ScanConfig ScanConfig, final LogNode log) {
         boolean valid = false;
         if (pathObject != null) {
             if (pathObject instanceof URL || pathObject instanceof URI || pathObject instanceof Path
                     || pathObject instanceof File) {
-                valid |= addClasspathEntry(pathObject, classLoader, scanSpec, log);
+                valid |= addClasspathEntry(pathObject, classLoader, ScanConfig, log);
             } else if (pathObject instanceof Iterable) {
                 for (final Object elt : (Iterable<?>) pathObject) {
-                    valid |= addClasspathEntryObject(elt, classLoader, scanSpec, log);
+                    valid |= addClasspathEntryObject(elt, classLoader, ScanConfig, log);
                 }
             } else {
                 final Class<?> valClass = pathObject.getClass();
                 if (valClass.isArray()) {
                     for (int j = 0, n = Array.getLength(pathObject); j < n; j++) {
                         final Object elt = Array.get(pathObject, j);
-                        valid |= addClasspathEntryObject(elt, classLoader, scanSpec, log);
+                        valid |= addClasspathEntryObject(elt, classLoader, ScanConfig, log);
                     }
                 } else {
                     // 作为最终回退方案，简单地调用 toString() 来处理 String 对象，
                     // 或尝试处理其他任何类型
-                    valid |= addClasspathPathStr(pathObject.toString(), classLoader, scanSpec, log);
+                    valid |= addClasspathPathStr(pathObject.toString(), classLoader, ScanConfig, log);
                 }
             }
         }

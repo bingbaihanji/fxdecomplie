@@ -31,9 +31,9 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.util.List;
@@ -117,19 +117,19 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         // 类型 StandardRoot(实现 WebResourceRoot)
         final Object resources = classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getResources");
         // 类型 List<URL>
         final Object baseURLs = classpathOrder.reflectionUtils.invokeMethod(false, resources, "getBaseUrls");
-        classpathOrder.addClasspathEntryObject(baseURLs, classLoader, scanSpec, log);
+        classpathOrder.addClasspathEntryObject(baseURLs, classLoader, ScanConfig, log);
         // 类型 List<List<WebResourceSet>>
         // 成员：preResources、mainResources、classResources、jarResources、
         // postResources
@@ -177,9 +177,9 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
                             if (internalPath != null && !internalPath.isEmpty() && !"/".equals(internalPath)) {
                                 classpathOrder.addClasspathEntryObject(base + (isJar ? "!" : "")
                                                 + (internalPath.startsWith("/") ? internalPath : "/" + internalPath),
-                                        classLoader, scanSpec, log);
+                                        classLoader, ScanConfig, log);
                             } else {
-                                classpathOrder.addClasspathEntryObject(base, classLoader, scanSpec, log);
+                                classpathOrder.addClasspathEntryObject(base, classLoader, ScanConfig, log);
                             }
                         }
                     }
@@ -188,6 +188,6 @@ class TomcatWebappClassLoaderBaseHandler implements ClassLoaderHandler {
         }
         // 这可能与上述内容重复，也可能不重复
         final Object urls = classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getURLs");
-        classpathOrder.addClasspathEntryObject(urls, classLoader, scanSpec, log);
+        classpathOrder.addClasspathEntryObject(urls, classLoader, ScanConfig, log);
     }
 }

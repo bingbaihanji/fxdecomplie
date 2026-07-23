@@ -28,16 +28,16 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
 
-/** 类类型签名(在 classfile 文档中称为"ClassSignature") */
+/** 类类型签名(在 ClassParser 文档中称为"ClassSignature") */
 public final class ClassType extends HierarchicalType {
 
     /** 类类型参数 */
@@ -52,7 +52,7 @@ public final class ClassType extends HierarchicalType {
 
     /**
      * throws 签名(通常为 null)这些仅出现在 Scala 类中，当类标记了 {@code @throws} 时出现，
-     * 它们违反了 classfile 规范(#495)，但我们仍然解析它们
+     * 它们违反了 ClassParser 规范(#495)，但我们仍然解析它们
      */
     private final List<ClassRefOrTypeVar> throwsSignatures;
 
@@ -228,7 +228,7 @@ public final class ClassType extends HierarchicalType {
     }
 
     /**
-     * 获取 throws 签名根据 classfile 规范，这些是无效的(因此此方法目前是非公开的)，
+     * 获取 throws 签名根据 ClassParser 规范，这些是无效的(因此此方法目前是非公开的)，
      * 但可能由 Scala 编译器添加(参见 bug #495)
      *
      * @return throws 签名
@@ -247,7 +247,7 @@ public final class ClassType extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -255,7 +255,7 @@ public final class ClassType extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -263,7 +263,7 @@ public final class ClassType extends HierarchicalType {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

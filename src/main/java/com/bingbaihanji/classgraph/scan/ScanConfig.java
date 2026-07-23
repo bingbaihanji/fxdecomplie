@@ -28,15 +28,15 @@
  */
 package com.bingbaihanji.classgraph.scan;
 
-import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementFilter;
-import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementURLFilter;
-import com.bingbaihanji.classgraph.core.ClassInfo;
-import com.bingbaihanji.classgraph.core.ModulePathInfo;
-import com.bingbaihanji.classgraph.core.ScanResult;
-import com.bingbaihanji.classgraph.ScanConfig.AcceptReject.AcceptRejectLeafname;
-import com.bingbaihanji.classgraph.ScanConfig.AcceptReject.AcceptRejectPrefix;
-import com.bingbaihanji.classgraph.ScanConfig.AcceptReject.AcceptRejectWholeString;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathFilter;
+import com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathURLFilter;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.classpath.ModulePathInfo;
+import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.classgraph.scan.Filter.FilterLeafname;
+import com.bingbaihanji.classgraph.scan.Filter.FilterPrefix;
+import com.bingbaihanji.classgraph.scan.Filter.FilterWholeString;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -52,41 +52,41 @@ import java.util.*;
  */
 public class ScanConfig {
     /** 包接受/拒绝条件(分隔符 '.') */
-    public AcceptRejectWholeString packageAcceptReject = new AcceptRejectWholeString('.');
+    public FilterWholeString packageAcceptReject = new FilterWholeString('.');
 
     /** 包前缀接受/拒绝条件，用于递归扫描(分隔符 '.'，以 '.' 结尾) */
-    public AcceptRejectPrefix packagePrefixAcceptReject = new AcceptRejectPrefix('.');
+    public FilterPrefix packagePrefixAcceptReject = new FilterPrefix('.');
 
     /** 路径接受/拒绝条件(分隔符 '/') */
-    public AcceptRejectWholeString pathAcceptReject = new AcceptRejectWholeString('/');
+    public FilterWholeString pathAcceptReject = new FilterWholeString('/');
 
     /** 路径前缀接受/拒绝条件，用于递归扫描(分隔符 '/'，以 '/' 结尾) */
-    public AcceptRejectPrefix pathPrefixAcceptReject = new AcceptRejectPrefix('/');
+    public FilterPrefix pathPrefixAcceptReject = new FilterPrefix('/');
 
     /** 类接受/拒绝条件(完全限定类名，分隔符 '.') */
-    public AcceptRejectWholeString classAcceptReject = new AcceptRejectWholeString('.');
+    public FilterWholeString classAcceptReject = new FilterWholeString('.');
 
     /** 类文件接受/拒绝条件(类文件路径，分隔符 '/'，以 ".class" 结尾) */
-    public AcceptRejectWholeString classfilePathAcceptReject = new AcceptRejectWholeString('/');
+    public FilterWholeString classfilePathAcceptReject = new FilterWholeString('/');
 
     /** 包含受条件限制的类的包(分隔符 '.') */
-    public AcceptRejectWholeString classPackageAcceptReject = new AcceptRejectWholeString('.');
+    public FilterWholeString classPackageAcceptReject = new FilterWholeString('.');
 
     /** 包含受条件限制的类的路径(分隔符 '/') */
-    public AcceptRejectWholeString classPackagePathAcceptReject = new AcceptRejectWholeString('/');
+    public FilterWholeString classPackagePathAcceptReject = new FilterWholeString('/');
 
     /** 模块接受/拒绝条件(分隔符 '.') */
-    public AcceptRejectWholeString moduleAcceptReject = new AcceptRejectWholeString('.');
+    public FilterWholeString moduleAcceptReject = new FilterWholeString('.');
 
     /** Jar 接受/拒绝条件(仅叶子名称，以 ".jar" 结尾) */
-    public AcceptRejectLeafname jarAcceptReject = new AcceptRejectLeafname('/');
+    public FilterLeafname jarAcceptReject = new FilterLeafname('/');
 
     /** 类路径元素资源路径接受/拒绝条件 */
-    public AcceptRejectWholeString classpathElementResourcePathAcceptReject = //
-            new AcceptRejectWholeString('/');
+    public FilterWholeString classpathElementResourcePathAcceptReject = //
+            new FilterWholeString('/');
 
     /** lib/ext jar 接受/拒绝条件(仅叶子名称，以 ".jar" 结尾) */
-    public AcceptRejectLeafname libOrExtJarAcceptReject = new AcceptRejectLeafname('/');
+    public FilterLeafname libOrExtJarAcceptReject = new FilterLeafname('/');
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -288,9 +288,9 @@ public class ScanConfig {
     /** 对前缀进行排序以确保正确的接受/拒绝评估(参见 Issue #167) */
     public void sortPrefixes() {
         for (final Field field : ScanConfig.class.getDeclaredFields()) {
-            if (AcceptReject.class.isAssignableFrom(field.getType())) {
+            if (Filter.class.isAssignableFrom(field.getType())) {
                 try {
-                    ((AcceptReject) field.get(this)).sortPrefixes();
+                    ((Filter) field.get(this)).sortPrefixes();
                 } catch (final ReflectiveOperationException e) {
                     throw new RuntimeException("Field is not accessible: " + field, e);
                 }
@@ -303,34 +303,34 @@ public class ScanConfig {
      * 并且即使只调用此方法一次，默认类路径也将被覆盖，从而仅扫描提供的类路径，
      * 即导致 ClassLoader 以及 java.class.path 系统属性被忽略
      *
-     * @param overrideClasspathElement
+     * @param overrideClasspath
      *            要作为覆盖添加到默认类路径的类路径元素
      */
-    public void addClasspathOverride(final Object overrideClasspathElement) {
+    public void addClasspathOverride(final Object overrideClasspath) {
         if (this.overrideClasspath == null) {
             this.overrideClasspath = new ArrayList<>();
         }
-        if (overrideClasspathElement instanceof ClassLoader) {
+        if (overrideClasspath instanceof ClassLoader) {
             throw new IllegalArgumentException(
                     "Need to pass ClassLoader instances to overrideClassLoaders, not overrideClasspath");
         }
         this.overrideClasspath
-                .add(overrideClasspathElement instanceof String || overrideClasspathElement instanceof URL
-                        || overrideClasspathElement instanceof URI ? overrideClasspathElement
-                        : overrideClasspathElement.toString());
+                .add(overrideClasspath instanceof String || overrideClasspath instanceof URL
+                        || overrideClasspath instanceof URI ? overrideClasspath
+                        : overrideClasspath.toString());
     }
 
     /**
-     * 添加一个类路径元素过滤器提供的 {@link ClasspathElementFilter} 或
-     * {@link ClasspathElementURLFilter} 应在传入的路径字符串或 {@link URL} 是应扫描的路径时
+     * 添加一个类路径元素过滤器提供的 {@link ClasspathFilter} 或
+     * {@link ClasspathURLFilter} 应在传入的路径字符串或 {@link URL} 是应扫描的路径时
      * 返回 true
      *
      * @param filterLambda
      *            要应用于所有发现的类路径元素的类路径元素过滤器，以决定哪些应被扫描
      */
-    public void filterClasspathElements(final Object filterLambda) {
-        if (!(filterLambda instanceof ClasspathElementFilter
-                || filterLambda instanceof ClasspathElementURLFilter)) {
+    public void filterClasspaths(final Object filterLambda) {
+        if (!(filterLambda instanceof ClasspathFilter
+                || filterLambda instanceof ClasspathURLFilter)) {
             throw new IllegalArgumentException();
         }
         if (this.classpathElementFilters == null) {

@@ -32,9 +32,9 @@ import com.bingbaihanji.classgraph.resource.ArraySlice;
 import com.bingbaihanji.classgraph.resource.FileSlice;
 import com.bingbaihanji.classgraph.resource.PathSlice;
 import com.bingbaihanji.classgraph.resource.Slice;
-import com.bingbaihanji.classgraph.utils.FastPathResolver;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.FastPathResolver;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +49,7 @@ class PhysicalZipFile {
     /** 该 ZIP 文件的 {@link Slice} */
     Slice slice;
     /** 嵌套 JAR 处理器 */
-    NestedJarHandler nestedJarHandler;
+    JarReader JarReader;
     /** 支撑此 {@link PhysicalZipFile} 的 {@link Path}(如果有) */
     private Path path;
     /** 支撑此 {@link PhysicalZipFile} 的 {@link File}(如果有) */
@@ -62,19 +62,19 @@ class PhysicalZipFile {
      *
      * @param file
      *            文件
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 JAR 处理器
      * @param log
      *            日志
      * @throws IOException
      *            如果发生 I/O 异常
      */
-    PhysicalZipFile(final File file, final NestedJarHandler nestedJarHandler, final LogNode log)
+    PhysicalZipFile(final File file, final JarReader JarReader, final LogNode log)
             throws IOException {
-        this.nestedJarHandler = nestedJarHandler;
+        this.JarReader = JarReader;
         this.file = file;
         this.pathStr = FastPathResolver.resolve(FileUtils.currDirPath(), file.getPath());
-        this.slice = new FileSlice(file, nestedJarHandler, log);
+        this.slice = new FileSlice(file, JarReader, log);
     }
 
     /**
@@ -82,19 +82,19 @@ class PhysicalZipFile {
      *
      * @param path
      *            路径
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 JAR 处理器
      * @param log
      *            日志
      * @throws IOException
      *            如果发生 I/O 异常
      */
-    PhysicalZipFile(final Path path, final NestedJarHandler nestedJarHandler, final LogNode log)
+    PhysicalZipFile(final Path path, final JarReader JarReader, final LogNode log)
             throws IOException {
-        this.nestedJarHandler = nestedJarHandler;
+        this.JarReader = JarReader;
         this.path = path;
         this.pathStr = FastPathResolver.resolve(FileUtils.currDirPath(), path.toString());
-        this.slice = new PathSlice(path, nestedJarHandler);
+        this.slice = new PathSlice(path, JarReader);
     }
 
     /**
@@ -106,18 +106,18 @@ class PhysicalZipFile {
      *            最外层的文件
      * @param pathStr
      *            路径
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 JAR 处理器
      * @throws IOException
      *            如果发生 I/O 异常
      */
     PhysicalZipFile(final byte[] arr, final File outermostFile, final String pathStr,
-                    final NestedJarHandler nestedJarHandler) throws IOException {
-        this.nestedJarHandler = nestedJarHandler;
+                    final JarReader JarReader) throws IOException {
+        this.JarReader = JarReader;
         this.file = outermostFile;
         this.pathStr = pathStr;
         this.slice = new ArraySlice(arr, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L,
-                nestedJarHandler);
+                JarReader);
     }
 
     /**
@@ -130,7 +130,7 @@ class PhysicalZipFile {
      *            要从 inputStream 读取的字节数，如果未知则为 -1
      * @param pathStr
      *            InputStream 打开的源 URL，或此项在父 ZIP 文件中的 ZIP 条目路径
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 JAR 处理器
      * @param log
      *            日志
@@ -138,12 +138,12 @@ class PhysicalZipFile {
      *            如果发生 I/O 异常
      */
     PhysicalZipFile(final InputStream inputStream, final long inputStreamLengthHint, final String pathStr,
-                    final NestedJarHandler nestedJarHandler, final LogNode log) throws IOException {
-        this.nestedJarHandler = nestedJarHandler;
+                    final JarReader JarReader, final LogNode log) throws IOException {
+        this.JarReader = JarReader;
         this.pathStr = pathStr;
         // 尝试将 InputStream 下载到字节数组如果成功，将产生一个 ArraySlice
         // 如果失败，InputStream 将溢出到磁盘，产生一个 FileSlice
-        this.slice = nestedJarHandler.readAllBytesWithSpilloverToDisk(inputStream, /* tempFileBaseName = */ pathStr,
+        this.slice = JarReader.readAllBytesWithSpilloverToDisk(inputStream, /* tempFileBaseName = */ pathStr,
                 inputStreamLengthHint, log);
         this.file = this.slice instanceof FileSlice ? ((FileSlice) this.slice).file : null;
     }

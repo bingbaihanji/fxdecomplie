@@ -33,7 +33,7 @@ import java.lang.reflect.Field;
 /**
  * 用于包装枚举常量值(拆分为类名和常量名)的类，作为注解参数值使用
  */
-public class AnnotationEnumValue extends ScanResultObject implements Comparable<AnnotationEnumValue> {
+public class AnnotationEnumValue extends MetadataNode implements Comparable<AnnotationEnumValue> {
     /** 类名 */
     private String className;
 

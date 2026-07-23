@@ -31,8 +31,8 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.net.URL;
 
@@ -85,21 +85,21 @@ class JPMSClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         // JDK9 类加载器有一个字段 URLClassPath ucp，其中包含未命名模块的 URL，但它不可见因此模块必须使用 JPMS API 进行扫描
         // 然而，Java 代理可以通过直接添加到 ucp 字段来扩展 UCP(#537)，并且无法读取此字段
         // 因此，我们需要使用 Narcissus 打破 Java 的封装来读取它，以应对这种小型边界情况
         final Object ucpVal = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "ucp");
         if (ucpVal != null) {
             final URL[] urls = (URL[]) classpathOrder.reflectionUtils.invokeMethod(false, ucpVal, "getURLs");
-            classpathOrder.addClasspathEntryObject(urls, classLoader, scanSpec, log);
+            classpathOrder.addClasspathEntryObject(urls, classLoader, ScanConfig, log);
         }
     }
 }

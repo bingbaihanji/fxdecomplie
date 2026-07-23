@@ -33,9 +33,9 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.net.URL;
@@ -211,14 +211,14 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         Object smartClassPath;
         final Object appLoader = classpathOrder.reflectionUtils.getFieldVal(false, classLoader, "appLoader");
         if (appLoader != null) {
@@ -233,18 +233,18 @@ class WebsphereLibertyClassLoaderHandler implements ClassLoaderHandler {
                     classpathOrder.reflectionUtils);
             if (!paths.isEmpty()) {
                 for (final Object path : paths) {
-                    classpathOrder.addClasspathEntry(path, classLoader, scanSpec, log);
+                    classpathOrder.addClasspathEntry(path, classLoader, ScanConfig, log);
                 }
             } else {
                 // "getClassPath" 不起作用……回退到遍历 "classPath" 元素
                 @SuppressWarnings("unchecked") final List<Object> classPathElements = (List<Object>) classpathOrder.reflectionUtils
                         .getFieldVal(false, smartClassPath, "classPath");
                 if (classPathElements != null && !classPathElements.isEmpty()) {
-                    for (final Object classPathElement : classPathElements) {
-                        final Collection<Object> subPaths = getPaths(classPathElement,
+                    for (final Object Classpath : classPathElements) {
+                        final Collection<Object> subPaths = getPaths(Classpath,
                                 classpathOrder.reflectionUtils);
                         for (final Object path : subPaths) {
-                            classpathOrder.addClasspathEntry(path, classLoader, scanSpec, log);
+                            classpathOrder.addClasspathEntry(path, classLoader, ScanConfig, log);
                         }
                     }
                 }

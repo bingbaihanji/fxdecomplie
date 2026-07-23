@@ -29,8 +29,8 @@
 package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.resource.ArraySlice;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessReader;
-import com.bingbaihanji.classgraph.utils.*;
+import com.bingbaihanji.classgraph.resource.RandomAccessReader;
+import com.bingbaihanji.classgraph.util.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
@@ -111,7 +111,7 @@ public class LogicalZipFile extends ZipFileSlice {
      *
      * @param zipFileSlice
      *            ZIP 文件切片
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 JAR 处理器
      * @param log
      *            日志
@@ -120,11 +120,11 @@ public class LogicalZipFile extends ZipFileSlice {
      * @throws InterruptedException
      *             如果线程被中断
      */
-    LogicalZipFile(final ZipFileSlice zipFileSlice, final NestedJarHandler nestedJarHandler, final LogNode log,
+    LogicalZipFile(final ZipFileSlice zipFileSlice, final JarReader JarReader, final LogNode log,
                    final boolean enableMultiReleaseVersions) throws IOException, InterruptedException {
         super(zipFileSlice);
         this.enableMultiReleaseVersions = enableMultiReleaseVersions;
-        readCentralDirectory(nestedJarHandler, log);
+        readCentralDirectory(JarReader, log);
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -396,7 +396,7 @@ public class LogicalZipFile extends ZipFileSlice {
     /**
      * 读取 ZIP 文件的中央目录
      *
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 JAR 处理器
      * @param log
      *            日志
@@ -406,7 +406,7 @@ public class LogicalZipFile extends ZipFileSlice {
      *             如果线程被中断
      */
     @SuppressWarnings("resource")
-    private void readCentralDirectory(final NestedJarHandler nestedJarHandler, final LogNode log)
+    private void readCentralDirectory(final JarReader JarReader, final LogNode log)
             throws IOException, InterruptedException {
         if (slice.sliceLength < 22) {
             throw new IOException("Zipfile too short to have a central directory");
@@ -435,7 +435,7 @@ public class LogicalZipFile extends ZipFileSlice {
                 throw new IOException("Zipfile is truncated");
             }
             try (final ArraySlice arraySlice = new ArraySlice(eocdBytes, /* isDeflatedZipEntry = */ false,
-                    /* inflatedLengthHint = */ 0L, nestedJarHandler)) {
+                    /* inflatedLengthHint = */ 0L, JarReader)) {
                 final RandomAccessReader eocdReader = arraySlice.randomAccessReader();
                 for (long i = eocdBytes.length - 22L; i >= 0L; --i) {
                     if (eocdReader.readUnsignedInt(i) == 0x06054b50L) {
@@ -529,7 +529,7 @@ public class LogicalZipFile extends ZipFileSlice {
                 throw new IOException("Zipfile is truncated");
             }
             cenReader = new ArraySlice(entryBytes, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L,
-                    nestedJarHandler).randomAccessReader();
+                    JarReader).randomAccessReader();
         }
 
         if (numEnt == -1L) {

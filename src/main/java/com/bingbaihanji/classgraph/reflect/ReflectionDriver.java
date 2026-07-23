@@ -28,8 +28,8 @@
  */
 package com.bingbaihanji.classgraph.reflect;
 
-import com.bingbaihanji.classgraph.concurrency.SingletonMap;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.SingletonMap;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;

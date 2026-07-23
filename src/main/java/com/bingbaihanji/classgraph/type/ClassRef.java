@@ -28,14 +28,14 @@
  */
 package com.bingbaihanji.classgraph.type;
 
-import com.bingbaihanji.classgraph.core.ClassFile.TypePathNode;
+import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 
 import java.util.*;
 
-/** 类引用类型签名(在 classfile 文档中称为"ClassType") */
+/** 类引用类型签名(在 ClassParser 文档中称为"ClassType") */
 public final class ClassRef extends ClassRefOrTypeVar {
     /** 类名 */
     final String className;
@@ -153,7 +153,7 @@ public final class ClassRef extends ClassRefOrTypeVar {
     /**
      * 获取类名，由基名和后缀组成(后缀用于内部类嵌套，以 '$' 分隔)，但不包含任何类型参数
      * 例如，{@code "xyz.Cls<String>.InnerCls<Integer>"} 返回 {@code "xyz.Cls$InnerCls"}
-     * 此方法的意图是：如果将 '.' 替换为 '/'，然后加上后缀 ".class"，就能得到相对于包根目录的 classfile 路径
+     * 此方法的意图是：如果将 '.' 替换为 '/'，然后加上后缀 ".class"，就能得到相对于包根目录的 ClassParser 路径
      *
      * <p>
      * 对比而言，{@link #toString()} 使用 '.' 分隔后缀，并包含类型参数；而此方法使用 '$' 分隔后缀，不包含类型参数
@@ -351,7 +351,7 @@ public final class ClassRef extends ClassRefOrTypeVar {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

@@ -28,13 +28,13 @@
  */
 package com.bingbaihanji.classgraph.classpath;
 
-import com.bingbaihanji.classgraph.concurrency.WorkQueue;
-import com.bingbaihanji.classgraph.core.Scanner.ClasspathEntryWorkUnit;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec.ScanSpecPathMatch;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.WorkQueue;
+import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.scan.ScanConfig.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.net.URI;
@@ -59,7 +59,7 @@ abstract class Classpath implements Comparable<Classpath> {
      */
     final int classpathElementIdxWithinParent;
     /** 扫描规格 */
-    final ScanSpec scanSpec;
+    final ScanConfig ScanConfig;
     /**
      * 在此类路径元素中找到的所有被接受且未被拒绝的 class 文件列表(仅由一个线程写入，因此不需要使用并发列表)
      */
@@ -102,14 +102,14 @@ abstract class Classpath implements Comparable<Classpath> {
      *
      * @param workUnit
      *            工作单元
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规格
      */
-    Classpath(final ClasspathEntryWorkUnit workUnit, final ScanSpec scanSpec) {
+    Classpath(final ClasspathEntryWorkUnit workUnit, final ScanConfig ScanConfig) {
         this.packageRootPrefix = workUnit.packageRootPrefix;
         this.classpathElementIdxWithinParent = workUnit.classpathElementIdxWithinParent;
         this.classLoader = workUnit.classLoader;
-        this.scanSpec = scanSpec;
+        this.ScanConfig = ScanConfig;
     }
 
     // -------------------------------------------------------------------------------------------------------------
@@ -160,14 +160,14 @@ abstract class Classpath implements Comparable<Classpath> {
      */
     protected boolean checkResourcePathAcceptReject(final String relativePath, final LogNode log) {
         // 根据文件资源路径接受/拒绝类路径元素
-        if (!scanSpec.classpathElementResourcePathAcceptReject.acceptAndRejectAreEmpty()) {
-            if (scanSpec.classpathElementResourcePathAcceptReject.isRejected(relativePath)) {
+        if (!ScanConfig.classpathElementResourcePathAcceptReject.acceptAndRejectAreEmpty()) {
+            if (ScanConfig.classpathElementResourcePathAcceptReject.isRejected(relativePath)) {
                 if (log != null) {
                     log.log("Reached rejected classpath element resource path, stopping scanning: " + relativePath);
                 }
                 return false;
             }
-            if (scanSpec.classpathElementResourcePathAcceptReject.isSpecificallyAccepted(relativePath)) {
+            if (ScanConfig.classpathElementResourcePathAcceptReject.isSpecificallyAccepted(relativePath)) {
                 if (log != null) {
                     log.log("Reached specifically accepted classpath element resource path: " + relativePath);
                 }
@@ -249,7 +249,7 @@ abstract class Classpath implements Comparable<Classpath> {
         boolean isAccepted = false;
         if (isClassFile) {
             // 检查 class 文件扫描是否已启用，且该 class 文件未被明确拒绝
-            if (scanSpec.enableClassInfo && !scanSpec.classfilePathAcceptReject.isRejected(path)) {
+            if (ScanConfig.enableClassInfo && !ScanConfig.classfilePathAcceptReject.isRejected(path)) {
                 // ClassInfo 已启用，且发现了一个被接受的 class 文件
                 acceptedClassfileResources.add(resource);
                 isAccepted = true;
@@ -267,7 +267,7 @@ abstract class Classpath implements Comparable<Classpath> {
         // 如果启用了日志记录，且只要 class 文件扫描未被禁用，且这不是
         // 被拒绝的 class 文件
         if (log != null && isAccepted) {
-            final String type = isClassFile ? "classfile" : "resource";
+            final String type = isClassFile ? "ClassParser" : "resource";
             String logStr;
             switch (parentMatchStatus) {
                 case HAS_ACCEPTED_PATH_PREFIX:
@@ -284,7 +284,7 @@ abstract class Classpath implements Comparable<Classpath> {
                     break;
             }
             // 在日志条目的排序键前加上 "0:file:"，使文件条目在目录条目之前出现(针对
-            // ClasspathElementDir 类路径元素)
+            // DirClasspath 类路径元素)
             resource.scanLog = log.log("0:" + path,
                     logStr + path + (path.equals(resource.getPathRelativeToClasspath()) ? ""
                             : " ; full path: " + resource.getPathRelativeToClasspath()));
@@ -302,13 +302,13 @@ abstract class Classpath implements Comparable<Classpath> {
     protected void finishScanPaths(final LogNode log) {
         if (log != null) {
             if (acceptedResources.isEmpty() && acceptedClassfileResources.isEmpty()) {
-                log.log(scanSpec.enableClassInfo ? "No accepted classfiles or resources found"
-                        : "Classfile scanning is disabled, and no accepted resources found");
+                log.log(ScanConfig.enableClassInfo ? "No accepted classfiles or resources found"
+                        : "ClassParser scanning is disabled, and no accepted resources found");
             } else if (acceptedResources.isEmpty()) {
                 log.log("No accepted resources found");
             } else if (acceptedClassfileResources.isEmpty()) {
-                log.log(scanSpec.enableClassInfo ? "No accepted classfiles found"
-                        : "Classfile scanning is disabled");
+                log.log(ScanConfig.enableClassInfo ? "No accepted classfiles found"
+                        : "ClassParser scanning is disabled");
             }
         }
         if (log != null) {
@@ -353,7 +353,7 @@ abstract class Classpath implements Comparable<Classpath> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 判断此类路径元素是否有效如果无效，则设置 skipClasspath对于 {@link ClasspathElementZip}，
+     * 判断此类路径元素是否有效如果无效，则设置 skipClasspath对于 {@link JarClasspath}，
      * 可能还会打开或提取内部 jar，并读取 jar 文件清单以查找 Class-Path 条目如果发现嵌套 jar 或 Class-Path 条目，
      * 它们将被添加到工作队列中此方法每个类路径元素仅运行一次，且由单个线程执行
      *

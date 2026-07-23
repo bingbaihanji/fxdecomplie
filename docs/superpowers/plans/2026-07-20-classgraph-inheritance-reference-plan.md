@@ -73,6 +73,8 @@ public interface HasName {
 ```java
 package com.bingbaihanji.fxdecomplie.core.classgraph;
 
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ScanResult;
+
 public abstract class ScanResultObject {
     protected ScanResult scanResult;
 
@@ -138,6 +140,8 @@ git commit -m "feat(core/classgraph): add base exception, interfaces, placeholde
 ```java
 package com.bingbaihanji.fxdecomplie.core.classgraph;
 
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.HasName;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -180,12 +184,15 @@ public final class AnnotationInfo implements Comparable<AnnotationInfo>, HasName
 ```java
 package com.bingbaihanji.fxdecomplie.core.classgraph;
 
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.AnnotationInfo;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Predicate;
 
 public final class AnnotationInfoList extends ArrayList<AnnotationInfo> {
-    public AnnotationInfoList() {}
+    public AnnotationInfoList() {
+    }
 
     public AnnotationInfoList(Collection<? extends AnnotationInfo> c) {
         super(c);
@@ -228,6 +235,8 @@ git commit -m "feat(core/classgraph): add AnnotationInfo and AnnotationInfoList"
 
 ```java
 package com.bingbaihanji.fxdecomplie.core.classgraph;
+
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -407,12 +416,15 @@ public final class ClassInfo extends ScanResultObject implements Comparable<Clas
 ```java
 package com.bingbaihanji.fxdecomplie.core.classgraph;
 
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Predicate;
 
 public final class ClassInfoList extends ArrayList<ClassInfo> {
-    public ClassInfoList() {}
+    public ClassInfoList() {
+    }
 
     public ClassInfoList(Collection<? extends ClassInfo> c) {
         super(c);
@@ -464,6 +476,8 @@ git commit -m "feat(core/classgraph): add ClassInfo and ClassInfoList"
 ```java
 package com.bingbaihanji.fxdecomplie.core.classgraph;
 
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ScanResult;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -507,6 +521,10 @@ public final class ClassGraph {
 
 ```java
 package com.bingbaihanji.fxdecomplie.core.classgraph;
+
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.AnnotationInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfoList;
 
 import java.io.Closeable;
 import java.util.Collections;
@@ -674,10 +692,13 @@ git commit -m "feat(model/reference): add inheritance reference UI models"
 package com.bingbaihanji.fxdecomplie.service.reference;
 
 import com.bingbaihanji.fxdecomplie.core.classgraph.AnnotationInfo;
-import com.bingbaihanji.fxdecomplie.core.classgraph.AnnotationInfoList;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.AnnotationInfoList;
 import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfoList;
-import com.bingbaihanji.fxdecomplie.core.classgraph.ScanResult;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.*;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.AnnotationInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfoList;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.FileTreeNode;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
@@ -711,14 +732,14 @@ public final class ClassGraphWorkspaceAdapter {
 
     public static ScanResult scan(Workspace workspace, Predicate<String> classFilter) {
         if (workspace == null) {
-            return new ScanResult(Map.of());
+            return new com.bingbaihanji.fxdecomplie.core.classgraph.core.ScanResult(Map.of());
         }
         WorkspaceIndex index = workspace.getIndex();
         if (index == null || index == WorkspaceIndex.EMPTY) {
             return new ScanResult(Map.of());
         }
 
-        Map<String, ClassInfo> classInfoByName = new LinkedHashMap<>();
+        Map<String, com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo> classInfoByName = new LinkedHashMap<>();
         Map<String, String> fullPathByName = new LinkedHashMap<>();
         List<ClassMetadata> metadatas = new ArrayList<>();
 
@@ -741,7 +762,7 @@ public final class ClassGraphWorkspaceAdapter {
         }
 
         for (ClassMetadata metadata : metadatas) {
-            ClassInfo ci = toClassInfo(metadata, classInfoByName);
+            com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo ci = toClassInfo(metadata, classInfoByName);
             ci.setScannedClass(true);
             ci.setExternalClass(false);
             ci.setFullPath(metadata.fullPath);
@@ -777,25 +798,25 @@ public final class ClassGraphWorkspaceAdapter {
         }
     }
 
-    private static ClassInfo toClassInfo(ClassMetadata metadata,
-                                         Map<String, ClassInfo> classInfoByName) {
+    private static com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo toClassInfo(ClassMetadata metadata,
+                                                                                           Map<String, com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo> classInfoByName) {
         return classInfoByName.computeIfAbsent(metadata.name,
-                name -> new ClassInfo(name, metadata.access));
+                name -> new com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo(name, metadata.access));
     }
 
     private static void linkRelations(Map<String, ClassInfo> classInfoByName,
                                       List<ClassMetadata> metadatas) {
         for (ClassMetadata metadata : metadatas) {
-            ClassInfo ci = classInfoByName.get(metadata.name);
+            com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo ci = classInfoByName.get(metadata.name);
             if (ci == null) {
                 continue;
             }
 
             // superclass
             if (metadata.superName != null) {
-                ClassInfo superClass = classInfoByName.get(metadata.superName);
+                com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo superClass = classInfoByName.get(metadata.superName);
                 if (superClass == null) {
-                    superClass = new ClassInfo(metadata.superName, 0);
+                    superClass = new com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo(metadata.superName, 0);
                     superClass.setExternalClass(true);
                     classInfoByName.put(metadata.superName, superClass);
                 }
@@ -804,11 +825,11 @@ public final class ClassGraphWorkspaceAdapter {
             }
 
             // interfaces
-            ClassInfoList interfaces = new ClassInfoList();
+            ClassInfoList interfaces = new com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfoList();
             for (String itf : metadata.interfaces) {
-                ClassInfo itfInfo = classInfoByName.get(itf);
+                com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo itfInfo = classInfoByName.get(itf);
                 if (itfInfo == null) {
-                    itfInfo = new ClassInfo(itf, Opcodes.ACC_INTERFACE);
+                    itfInfo = new com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo(itf, Opcodes.ACC_INTERFACE);
                     itfInfo.setExternalClass(true);
                     classInfoByName.put(itf, itfInfo);
                 }
@@ -818,9 +839,9 @@ public final class ClassGraphWorkspaceAdapter {
             ci.setInterfaces(interfaces);
 
             // annotations
-            AnnotationInfoList annotations = new AnnotationInfoList();
+            com.bingbaihanji.fxdecomplie.core.classgraph.core.AnnotationInfoList annotations = new AnnotationInfoList();
             for (String ann : metadata.annotations) {
-                annotations.add(new AnnotationInfo(ann));
+                annotations.add(new com.bingbaihanji.fxdecomplie.core.classgraph.core.AnnotationInfo(ann));
                 ClassInfo annInfo = classInfoByName.get(ann);
                 if (annInfo == null) {
                     annInfo = new ClassInfo(ann, Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | 0x00002000);
@@ -867,7 +888,8 @@ public final class ClassGraphWorkspaceAdapter {
 
     private record ClassMetadata(String name, int access, String superName,
                                  List<String> interfaces, List<String> annotations,
-                                 String fullPath) {}
+                                 String fullPath) {
+    }
 }
 ```
 
@@ -990,8 +1012,10 @@ git commit -m "feat(service/reference): add ClassGraphWorkspaceAdapter and Class
 ```java
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo;
 import com.bingbaihanji.fxdecomplie.core.classgraph.ScanResult;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ScanResult;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1001,14 +1025,14 @@ import java.util.Map;
 
 public final class InheritanceReferenceIndex {
 
-    private final ScanResult scanResult;
+    private final com.bingbaihanji.fxdecomplie.core.classgraph.core.ScanResult scanResult;
     private final Map<String, String> internalNameToFullPath;
     private final Map<String, List<String>> interfaceToImplementations;
     private final Map<String, List<String>> superclassToSubclasses;
     private final Map<String, List<String>> annotationToAnnotatedClasses;
 
     public InheritanceReferenceIndex(ScanResult scanResult,
-                                      Map<String, String> internalNameToFullPath) {
+                                     Map<String, String> internalNameToFullPath) {
         this.scanResult = scanResult != null ? scanResult : new ScanResult(Map.of());
         this.internalNameToFullPath = internalNameToFullPath != null
                 ? Map.copyOf(internalNameToFullPath) : Map.of();
@@ -1022,7 +1046,7 @@ public final class InheritanceReferenceIndex {
             for (ClassInfo itf : ci.getInterfaces()) {
                 implMap.computeIfAbsent(itf.getName(), k -> new ArrayList<>()).add(name);
             }
-            ClassInfo sup = ci.getSuperclass();
+            com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo sup = ci.getSuperclass();
             if (sup != null) {
                 subMap.computeIfAbsent(sup.getName(), k -> new ArrayList<>()).add(name);
             }
@@ -1098,7 +1122,7 @@ git commit -m "feat(service/reference): add InheritanceReferenceIndex"
 ```java
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.fxdecomplie.core.classgraph.ScanResult;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ScanResult;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.service.BackgroundTasks;
 import org.slf4j.Logger;
@@ -1214,6 +1238,7 @@ package com.bingbaihanji.fxdecomplie.service.reference;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileMetadata;
 import com.bingbaihanji.fxdecomplie.bytecode.ClassFileParser;
 import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceGroup;
@@ -1332,7 +1357,7 @@ public final class InheritanceReferenceService {
 
     private static void addImplementationGroup(Workspace workspace, InheritanceReferenceIndex index,
                                                String internalName, List<InheritanceReferenceGroup> groups) {
-        ClassInfo ci = index.classInfo(internalName);
+        com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo ci = index.classInfo(internalName);
         if (ci == null || !ci.isInterface()) {
             return;
         }
@@ -1347,7 +1372,7 @@ public final class InheritanceReferenceService {
 
     private static void addSubclassGroup(Workspace workspace, InheritanceReferenceIndex index,
                                          String internalName, List<InheritanceReferenceGroup> groups) {
-        ClassInfo ci = index.classInfo(internalName);
+        com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo ci = index.classInfo(internalName);
         if (ci != null && ci.isInterface()) {
             return; // subclasses shown via implementations for interfaces
         }
@@ -2026,8 +2051,8 @@ git commit -m "test(reference): add test compiler and workspace builder helper"
 ```java
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.fxdecomplie.core.classgraph.ClassInfo;
-import com.bingbaihanji.fxdecomplie.core.classgraph.ScanResult;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ClassInfo;
+import com.bingbaihanji.fxdecomplie.core.classgraph.core.ScanResult;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -2071,7 +2096,7 @@ class ClassGraphWorkspaceAdapterTest {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("com/example/Service.java",
                 "package com.example; import java.lang.annotation.*; " +
-                "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
+                        "@Retention(RetentionPolicy.RUNTIME) @interface Service {}");
         sources.put("com/example/UserService.java",
                 "package com.example; @Service public class UserService {}");
 

@@ -33,7 +33,7 @@ import com.bingbaihanji.classgraph.type.ParseException;
 /**
  * 存储在注解参数值中找到的 {@code Class<?>} 类型描述符
  */
-public class AnnotationClassRef extends ScanResultObject {
+public class AnnotationClassRef extends MetadataNode {
     /** 类型描述符字符串 */
     private String typeDescriptorStr;
 
@@ -131,7 +131,7 @@ public class AnnotationClassRef extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -165,7 +165,7 @@ public class AnnotationClassRef extends ScanResultObject {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

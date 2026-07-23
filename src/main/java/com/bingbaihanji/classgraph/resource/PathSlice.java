@@ -28,11 +28,11 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.core.ClassGraph;
-import com.bingbaihanji.classgraph.resource.NestedJarHandler;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessFileChannelReader;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessReader;
-import com.bingbaihanji.classgraph.utils.FileUtils;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessFileChannelReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessReader;
+import com.bingbaihanji.classgraph.util.FileUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,13 +70,13 @@ public class PathSlice extends Slice {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      */
     private PathSlice(final PathSlice parentSlice, final long offset, final long length,
                       final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                      final NestedJarHandler nestedJarHandler) {
-        super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+                      final JarReader JarReader) {
+        super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
 
         this.path = parentSlice.path;
         this.fileChannel = parentSlice.fileChannel;
@@ -96,14 +96,14 @@ public class PathSlice extends Slice {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      * @throws IOException
      *             如果文件无法打开
      */
     public PathSlice(final Path path, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                     final NestedJarHandler nestedJarHandler) throws IOException {
-        this(path, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler, true);
+                     final JarReader JarReader) throws IOException {
+        this(path, isDeflatedZipEntry, inflatedLengthHint, JarReader, true);
     }
 
     /**
@@ -115,7 +115,7 @@ public class PathSlice extends Slice {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      * @param checkAccess
      *            是否需要检查读取权限以及是否为文件
@@ -123,8 +123,8 @@ public class PathSlice extends Slice {
      *             如果文件无法打开
      */
     public PathSlice(final Path path, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                     final NestedJarHandler nestedJarHandler, final boolean checkAccess) throws IOException {
-        super(0L, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+                     final JarReader JarReader, final boolean checkAccess) throws IOException {
+        super(0L, isDeflatedZipEntry, inflatedLengthHint, JarReader);
 
         if (checkAccess) {
             // 确保文件可读且是普通文件
@@ -141,7 +141,7 @@ public class PathSlice extends Slice {
         this.sliceLength = fileLength;
 
         // 将顶级切片标记为打开状态
-        nestedJarHandler.markSliceAsOpen(this);
+        JarReader.markSliceAsOpen(this);
     }
 
     /**
@@ -149,13 +149,13 @@ public class PathSlice extends Slice {
      *
      * @param path
      *            路径
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      * @throws IOException
      *             如果文件无法打开
      */
-    public PathSlice(final Path path, final NestedJarHandler nestedJarHandler) throws IOException {
-        this(path, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L, nestedJarHandler);
+    public PathSlice(final Path path, final JarReader JarReader) throws IOException {
+        this(path, /* isDeflatedZipEntry = */ false, /* inflatedSizeHint = */ 0L, JarReader);
     }
 
     /**
@@ -177,7 +177,7 @@ public class PathSlice extends Slice {
         if (this.isDeflatedZipEntry) {
             throw new IllegalArgumentException("Cannot slice a deflated zip entry");
         }
-        return new PathSlice(this, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+        return new PathSlice(this, offset, length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
     }
 
     /**
@@ -206,7 +206,7 @@ public class PathSlice extends Slice {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
             try (InputStream inputStream = open()) {
-                return NestedJarHandler.readAllBytesAsArray(inputStream, inflatedLengthHint);
+                return JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else {
             // 从 FileChannel 复制到字节数组
@@ -273,7 +273,7 @@ public class PathSlice extends Slice {
                 fileChannel = null;
             }
             fileChannel = null;
-            nestedJarHandler.markSliceAsClosed(this);
+            JarReader.markSliceAsClosed(this);
         }
     }
 }

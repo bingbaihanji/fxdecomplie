@@ -27,16 +27,17 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.scan;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
 import com.bingbaihanji.classgraph.classpath.SystemJarFinder;
-import com.bingbaihanji.classgraph.concurrency.AutoCloseableExecutorService;
-import com.bingbaihanji.classgraph.concurrency.InterruptionChecker;
-import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.scanspec.AcceptReject;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
-import com.bingbaihanji.classgraph.utils.VersionFinder;
+import com.bingbaihanji.classgraph.util.AutoCloseableExecutorService;
+import com.bingbaihanji.classgraph.util.InterruptionChecker;
+import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
+import com.bingbaihanji.classgraph.scan.Filter;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.VersionFinder;
 
 import java.io.File;
 import java.io.InputStream;
@@ -51,7 +52,7 @@ import java.util.concurrent.*;
 import java.util.regex.Pattern;
 
 /**
- * 超快速、超轻量级的 Java 类路径和模块路径扫描器通过直接解析 classfile 二进制格式(而非反射)来扫描类路径和/或模块路径中的 classfile
+ * 超快速、超轻量级的 Java 类路径和模块路径扫描器通过直接解析 ClassParser 二进制格式(而非反射)来扫描类路径和/或模块路径中的 ClassParser
  *
  * <p>
  * 文档：<a href= "https://github.com/classgraph/classgraph/wiki">
@@ -86,7 +87,7 @@ public class ClassGraph {
     public static CircumventEncapsulationMethod CIRCUMVENT_ENCAPSULATION = CircumventEncapsulationMethod.NONE;
     private final ReflectionUtils reflectionUtils;
     /** 扫描规范 */
-    ScanSpec scanSpec = new ScanSpec();
+    ScanConfig ScanConfig = new ScanConfig();
     /**
      * 如果非 null，则在扫描时记录日志
      */
@@ -164,14 +165,14 @@ public class ClassGraph {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 启用对 classfile 的扫描，在 {@link ScanResult} 中生成 {@link ClassInfo} 对象
+     * 启用对 ClassParser 的扫描，在 {@link ScanResult} 中生成 {@link ClassInfo} 对象
      * 隐式禁用 {@link #enableMultiReleaseVersions()}
      *
      * @return this(用于方法链式调用)
      */
     public ClassGraph enableClassInfo() {
-        scanSpec.enableClassInfo = true;
-        scanSpec.enableMultiReleaseVersions = false;
+        ScanConfig.enableClassInfo = true;
+        ScanConfig.enableMultiReleaseVersions = false;
         return this;
     }
 
@@ -183,7 +184,7 @@ public class ClassGraph {
      */
     public ClassGraph ignoreClassVisibility() {
         enableClassInfo();
-        scanSpec.ignoreClassVisibility = true;
+        ScanConfig.ignoreClassVisibility = true;
         return this;
     }
 
@@ -195,7 +196,7 @@ public class ClassGraph {
      */
     public ClassGraph enableMethodInfo() {
         enableClassInfo();
-        scanSpec.enableMethodInfo = true;
+        ScanConfig.enableMethodInfo = true;
         return this;
     }
 
@@ -209,7 +210,7 @@ public class ClassGraph {
     public ClassGraph ignoreMethodVisibility() {
         enableClassInfo();
         enableMethodInfo();
-        scanSpec.ignoreMethodVisibility = true;
+        ScanConfig.ignoreMethodVisibility = true;
         return this;
     }
 
@@ -221,7 +222,7 @@ public class ClassGraph {
      */
     public ClassGraph enableFieldInfo() {
         enableClassInfo();
-        scanSpec.enableFieldInfo = true;
+        ScanConfig.enableFieldInfo = true;
         return this;
     }
 
@@ -235,7 +236,7 @@ public class ClassGraph {
     public ClassGraph ignoreFieldVisibility() {
         enableClassInfo();
         enableFieldInfo();
-        scanSpec.ignoreFieldVisibility = true;
+        ScanConfig.ignoreFieldVisibility = true;
         return this;
     }
 
@@ -251,9 +252,9 @@ public class ClassGraph {
      * 取决于编译器——因此，能否提取常量初始化值可能因情况而异
      *
      * <p>
-     * 事实上，在 Kotlin 中，即使是非静态/非 final 字段的常量初始化值也会存储在 classfile
+     * 事实上，在 Kotlin 中，即使是非静态/非 final 字段的常量初始化值也会存储在 ClassParser
      * 的字段属性中(因此通过调用此方法，ClassGraph 可能会获取到这些值)，
-     * 尽管根据 classfile 规范，JVM 应该忽略任何非静态字段的字段初始化值，
+     * 尽管根据 ClassParser 规范，JVM 应该忽略任何非静态字段的字段初始化值，
      * 因此 Kotlin 编译器将来可能会更改以停止生成这些值，并且您可能不应依赖能够获取 Kotlin 中
      * 非静态字段的初始化值(至于非 final 字段，javac 不会为非 final 字段添加常量初始化值到
      * 字段属性列表，即使它们是 static 的，但规范并未说明 JVM 是否应忽略非 final 字段的常量初始化值)
@@ -266,21 +267,21 @@ public class ClassGraph {
     public ClassGraph enableStaticFinalFieldConstantInitializerValues() {
         enableClassInfo();
         enableFieldInfo();
-        scanSpec.enableStaticFinalFieldConstantInitializerValues = true;
+        ScanConfig.enableStaticFinalFieldConstantInitializerValues = true;
         return this;
     }
 
     /**
      * 启用在扫描期间保存注解信息(包括类、字段、方法和方法参数注解)
      * 此信息可通过 {@link ClassInfo#getAnnotationInfo()}、
-     * {@link FieldInfo#getAnnotationInfo()} 和 {@link MethodParameterInfo#getAnnotationInfo()} 获取
+     * {@link FieldInfo#getAnnotationInfo()} 和 {@link MethodParam#getAnnotationInfo()} 获取
      * 默认情况下不扫描注解信息(自动调用 {@link #enableClassInfo()})
      *
      * @return this(用于方法链式调用)
      */
     public ClassGraph enableAnnotationInfo() {
         enableClassInfo();
-        scanSpec.enableAnnotationInfo = true;
+        ScanConfig.enableAnnotationInfo = true;
         return this;
     }
 
@@ -301,7 +302,7 @@ public class ClassGraph {
         ignoreClassVisibility();
         ignoreFieldVisibility();
         ignoreMethodVisibility();
-        scanSpec.enableInterClassDependencies = true;
+        ScanConfig.enableInterClassDependencies = true;
         return this;
     }
 
@@ -313,7 +314,7 @@ public class ClassGraph {
      */
     public ClassGraph disableRuntimeInvisibleAnnotations() {
         enableClassInfo();
-        scanSpec.disableRuntimeInvisibleAnnotations = true;
+        ScanConfig.disableRuntimeInvisibleAnnotations = true;
         return this;
     }
 
@@ -325,7 +326,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph disableJarScanning() {
-        scanSpec.scanJars = false;
+        ScanConfig.scanJars = false;
         return this;
     }
 
@@ -337,7 +338,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph disableNestedJarScanning() {
-        scanSpec.scanNestedJars = false;
+        ScanConfig.scanNestedJars = false;
         return this;
     }
 
@@ -347,7 +348,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph disableDirScanning() {
-        scanSpec.scanDirs = false;
+        ScanConfig.scanDirs = false;
         return this;
     }
 
@@ -357,7 +358,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph disableModuleScanning() {
-        scanSpec.scanModules = false;
+        ScanConfig.scanModules = false;
         return this;
     }
 
@@ -369,7 +370,7 @@ public class ClassGraph {
      */
     public ClassGraph enableExternalClasses() {
         enableClassInfo();
-        scanSpec.enableExternalClasses = true;
+        ScanConfig.enableExternalClasses = true;
         return this;
     }
 
@@ -382,7 +383,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph initializeLoadedClasses() {
-        scanSpec.initializeLoadedClasses = true;
+        ScanConfig.initializeLoadedClasses = true;
         return this;
     }
 
@@ -393,7 +394,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph removeTemporaryFilesAfterScan() {
-        scanSpec.removeTemporaryFilesAfterScan = true;
+        ScanConfig.removeTemporaryFilesAfterScan = true;
         return this;
     }
 
@@ -413,8 +414,8 @@ public class ClassGraph {
         if (overrideClasspath.isEmpty()) {
             throw new IllegalArgumentException("Can't override classpath with an empty path");
         }
-        for (final String classpathElement : JarUtils.smartPathSplit(overrideClasspath, scanSpec)) {
-            scanSpec.addClasspathOverride(classpathElement);
+        for (final String Classpath : JarUtils.smartPathSplit(overrideClasspath, ScanConfig)) {
+            ScanConfig.addClasspathOverride(Classpath);
         }
         return this;
     }
@@ -428,16 +429,16 @@ public class ClassGraph {
      * <p>
      * 适用于任何类型的 Iterable，其 toString() 方法解析为类路径元素字符串，例如 String、File 或 Path
      *
-     * @param overrideClasspathElements
+     * @param overrideClasspaths
      *            用于扫描的自定义类路径，路径元素由 File.pathSeparatorChar 分隔
      * @return this(用于方法链式调用)
      */
-    public ClassGraph overrideClasspath(final Iterable<?> overrideClasspathElements) {
-        if (!overrideClasspathElements.iterator().hasNext()) {
+    public ClassGraph overrideClasspath(final Iterable<?> overrideClasspaths) {
+        if (!overrideClasspaths.iterator().hasNext()) {
             throw new IllegalArgumentException("Can't override classpath with an empty path");
         }
-        for (final Object classpathElement : overrideClasspathElements) {
-            scanSpec.addClasspathOverride(classpathElement);
+        for (final Object Classpath : overrideClasspaths) {
+            ScanConfig.addClasspathOverride(Classpath);
         }
         return this;
     }
@@ -449,43 +450,43 @@ public class ClassGraph {
      * <p>
      * 适用于任何成员类型的数组，其 toString() 方法解析为类路径元素字符串，例如 String、File 或 Path
      *
-     * @param overrideClasspathElements
+     * @param overrideClasspaths
      *            用于扫描的自定义类路径，路径元素由 File.pathSeparatorChar 分隔
      * @return this(用于方法链式调用)
      */
-    public ClassGraph overrideClasspath(final Object... overrideClasspathElements) {
-        if (overrideClasspathElements.length == 0) {
+    public ClassGraph overrideClasspath(final Object... overrideClasspaths) {
+        if (overrideClasspaths.length == 0) {
             throw new IllegalArgumentException("Can't override classpath with an empty path");
         }
-        for (final Object classpathElement : overrideClasspathElements) {
-            scanSpec.addClasspathOverride(classpathElement);
+        for (final Object Classpath : overrideClasspaths) {
+            ScanConfig.addClasspathOverride(Classpath);
         }
         return this;
     }
 
     /**
-     * 添加类路径元素过滤器提供的 ClasspathElementFilter 在传入的路径字符串是您想要扫描的路径时应返回 true
+     * 添加类路径元素过滤器提供的 ClasspathFilter 在传入的路径字符串是您想要扫描的路径时应返回 true
      *
      * @param classpathElementFilter
      *            要使用的过滤器函数如果应扫描该类路径元素路径，此函数应返回 true；否则返回 false
      * @return this(用于方法链式调用)
      */
-    public ClassGraph filterClasspathElements(final ClasspathElementFilter classpathElementFilter) {
-        scanSpec.filterClasspathElements(classpathElementFilter);
+    public ClassGraph filterClasspaths(final ClasspathFilter classpathElementFilter) {
+        FilterClasspaths(classpathElementFilter);
         return this;
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 添加类路径元素过滤器提供的 ClasspathElementFilter 在传入的 {@link URL} 是您想要扫描的 URL 时应返回 true
+     * 添加类路径元素过滤器提供的 ClasspathFilter 在传入的 {@link URL} 是您想要扫描的 URL 时应返回 true
      *
      * @param classpathElementURLFilter
      *            要使用的过滤器函数如果应扫描该类路径元素 {@link URL}，此函数应返回 true；否则返回 false
      * @return this(用于方法链式调用)
      */
-    public ClassGraph filterClasspathElementsByURL(final ClasspathElementURLFilter classpathElementURLFilter) {
-        scanSpec.filterClasspathElements(classpathElementURLFilter);
+    public ClassGraph filterClasspathsByURL(final ClasspathURLFilter classpathElementURLFilter) {
+        FilterClasspaths(classpathElementURLFilter);
         return this;
     }
 
@@ -501,7 +502,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph addClassLoader(final ClassLoader classLoader) {
-        scanSpec.addClassLoader(classLoader);
+        ScanConfig.addClassLoader(classLoader);
         return this;
     }
 
@@ -518,7 +519,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph overrideClassLoaders(final ClassLoader... overrideClassLoaders) {
-        scanSpec.overrideClassLoaders(overrideClassLoaders);
+        ScanConfig.overrideClassLoaders(overrideClassLoaders);
         return this;
     }
 
@@ -528,7 +529,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph ignoreParentClassLoaders() {
-        scanSpec.ignoreParentClassLoaders = true;
+        ScanConfig.ignoreParentClassLoaders = true;
         return this;
     }
 
@@ -547,7 +548,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph addModuleLayer(final Object moduleLayer) {
-        scanSpec.addModuleLayer(moduleLayer);
+        ScanConfig.addModuleLayer(moduleLayer);
         return this;
     }
 
@@ -564,7 +565,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph overrideModuleLayers(final Object... overrideModuleLayers) {
-        scanSpec.overrideModuleLayers(overrideModuleLayers);
+        ScanConfig.overrideModuleLayers(overrideModuleLayers);
         return this;
     }
 
@@ -574,7 +575,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph ignoreParentModuleLayers() {
-        scanSpec.ignoreParentModuleLayers = true;
+        ScanConfig.ignoreParentModuleLayers = true;
         return this;
     }
 
@@ -594,22 +595,22 @@ public class ClassGraph {
     public ClassGraph acceptPackages(final String... packageNames) {
         enableClassInfo();
         for (final String packageName : packageNames) {
-            final String packageNameNormalized = AcceptReject.normalizePackageOrClassName(packageName);
+            final String packageNameNormalized = Filter.normalizePackageOrClassName(packageName);
             // 接受包
-            scanSpec.packageAcceptReject.addToAccept(packageNameNormalized);
-            final String path = AcceptReject.packageNameToPath(packageNameNormalized);
-            scanSpec.pathAcceptReject.addToAccept(path + "/");
+            ScanConfig.packageAcceptReject.addToAccept(packageNameNormalized);
+            final String path = Filter.packageNameToPath(packageNameNormalized);
+            ScanConfig.pathAcceptReject.addToAccept(path + "/");
             if (packageNameNormalized.isEmpty()) {
-                scanSpec.pathAcceptReject.addToAccept("");
+                ScanConfig.pathAcceptReject.addToAccept("");
             }
             if (!packageNameNormalized.contains("*")) {
                 // 接受子包
                 if (packageNameNormalized.isEmpty()) {
-                    scanSpec.packagePrefixAcceptReject.addToAccept("");
-                    scanSpec.pathPrefixAcceptReject.addToAccept("");
+                    ScanConfig.packagePrefixAcceptReject.addToAccept("");
+                    ScanConfig.pathPrefixAcceptReject.addToAccept("");
                 } else {
-                    scanSpec.packagePrefixAcceptReject.addToAccept(packageNameNormalized + ".");
-                    scanSpec.pathPrefixAcceptReject.addToAccept(path + "/");
+                    ScanConfig.packagePrefixAcceptReject.addToAccept(packageNameNormalized + ".");
+                    ScanConfig.pathPrefixAcceptReject.addToAccept(path + "/");
                 }
             }
         }
@@ -638,22 +639,22 @@ public class ClassGraph {
      */
     public ClassGraph acceptPaths(final String... paths) {
         for (final String path : paths) {
-            final String pathNormalized = AcceptReject.normalizePath(path);
+            final String pathNormalized = Filter.normalizePath(path);
             // 接受路径
-            final String packageName = AcceptReject.pathToPackageName(pathNormalized);
-            scanSpec.packageAcceptReject.addToAccept(packageName);
-            scanSpec.pathAcceptReject.addToAccept(pathNormalized + "/");
+            final String packageName = Filter.pathToPackageName(pathNormalized);
+            ScanConfig.packageAcceptReject.addToAccept(packageName);
+            ScanConfig.pathAcceptReject.addToAccept(pathNormalized + "/");
             if (pathNormalized.isEmpty()) {
-                scanSpec.pathAcceptReject.addToAccept("");
+                ScanConfig.pathAcceptReject.addToAccept("");
             }
             if (!pathNormalized.contains("*")) {
                 // 接受子目录/嵌套路径
                 if (pathNormalized.isEmpty()) {
-                    scanSpec.packagePrefixAcceptReject.addToAccept("");
-                    scanSpec.pathPrefixAcceptReject.addToAccept("");
+                    ScanConfig.packagePrefixAcceptReject.addToAccept("");
+                    ScanConfig.pathPrefixAcceptReject.addToAccept("");
                 } else {
-                    scanSpec.packagePrefixAcceptReject.addToAccept(packageName + ".");
-                    scanSpec.pathPrefixAcceptReject.addToAccept(pathNormalized + "/");
+                    ScanConfig.packagePrefixAcceptReject.addToAccept(packageName + ".");
+                    ScanConfig.pathPrefixAcceptReject.addToAccept(pathNormalized + "/");
                 }
             }
         }
@@ -693,15 +694,15 @@ public class ClassGraph {
     public ClassGraph acceptPackagesNonRecursive(final String... packageNames) {
         enableClassInfo();
         for (final String packageName : packageNames) {
-            final String packageNameNormalized = AcceptReject.normalizePackageOrClassName(packageName);
+            final String packageNameNormalized = Filter.normalizePackageOrClassName(packageName);
             if (packageNameNormalized.contains("*")) {
                 throw new IllegalArgumentException("Cannot use a glob wildcard here: " + packageNameNormalized);
             }
             // 接受包，但不接受子包
-            scanSpec.packageAcceptReject.addToAccept(packageNameNormalized);
-            scanSpec.pathAcceptReject.addToAccept(AcceptReject.packageNameToPath(packageNameNormalized) + "/");
+            ScanConfig.packageAcceptReject.addToAccept(packageNameNormalized);
+            ScanConfig.pathAcceptReject.addToAccept(Filter.packageNameToPath(packageNameNormalized) + "/");
             if (packageNameNormalized.isEmpty()) {
-                scanSpec.pathAcceptReject.addToAccept("");
+                ScanConfig.pathAcceptReject.addToAccept("");
             }
         }
         return this;
@@ -735,12 +736,12 @@ public class ClassGraph {
             if (path.contains("*")) {
                 throw new IllegalArgumentException("Cannot use a glob wildcard here: " + path);
             }
-            final String pathNormalized = AcceptReject.normalizePath(path);
+            final String pathNormalized = Filter.normalizePath(path);
             // 接受路径，但不接受子目录/嵌套路径
-            scanSpec.packageAcceptReject.addToAccept(AcceptReject.pathToPackageName(pathNormalized));
-            scanSpec.pathAcceptReject.addToAccept(pathNormalized + "/");
+            ScanConfig.packageAcceptReject.addToAccept(Filter.pathToPackageName(pathNormalized));
+            ScanConfig.pathAcceptReject.addToAccept(pathNormalized + "/");
             if (pathNormalized.isEmpty()) {
-                scanSpec.pathAcceptReject.addToAccept("");
+                ScanConfig.pathAcceptReject.addToAccept("");
             }
         }
         return this;
@@ -773,19 +774,19 @@ public class ClassGraph {
     public ClassGraph rejectPackages(final String... packageNames) {
         enableClassInfo();
         for (final String packageName : packageNames) {
-            final String packageNameNormalized = AcceptReject.normalizePackageOrClassName(packageName);
+            final String packageNameNormalized = Filter.normalizePackageOrClassName(packageName);
             if (packageNameNormalized.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Rejecting the root package (\"\") will cause nothing to be scanned");
             }
             // 拒绝始终阻止进一步的递归，无需拒绝子包
-            scanSpec.packageAcceptReject.addToReject(packageNameNormalized);
-            final String path = AcceptReject.packageNameToPath(packageNameNormalized);
-            scanSpec.pathAcceptReject.addToReject(path + "/");
+            ScanConfig.packageAcceptReject.addToReject(packageNameNormalized);
+            final String path = Filter.packageNameToPath(packageNameNormalized);
+            ScanConfig.pathAcceptReject.addToReject(path + "/");
             if (!packageNameNormalized.contains("*")) {
                 // 拒绝子包(zipfile 条目可以按任意顺序出现)
-                scanSpec.packagePrefixAcceptReject.addToReject(packageNameNormalized + ".");
-                scanSpec.pathPrefixAcceptReject.addToReject(path + "/");
+                ScanConfig.packagePrefixAcceptReject.addToReject(packageNameNormalized + ".");
+                ScanConfig.pathPrefixAcceptReject.addToReject(path + "/");
             }
         }
         return this;
@@ -813,19 +814,19 @@ public class ClassGraph {
      */
     public ClassGraph rejectPaths(final String... paths) {
         for (final String path : paths) {
-            final String pathNormalized = AcceptReject.normalizePath(path);
+            final String pathNormalized = Filter.normalizePath(path);
             if (pathNormalized.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Rejecting the root package (\"\") will cause nothing to be scanned");
             }
             // 拒绝始终阻止进一步的递归，无需拒绝子目录/嵌套路径
-            final String packageName = AcceptReject.pathToPackageName(pathNormalized);
-            scanSpec.packageAcceptReject.addToReject(packageName);
-            scanSpec.pathAcceptReject.addToReject(pathNormalized + "/");
+            final String packageName = Filter.pathToPackageName(pathNormalized);
+            ScanConfig.packageAcceptReject.addToReject(packageName);
+            ScanConfig.pathAcceptReject.addToReject(pathNormalized + "/");
             if (!pathNormalized.contains("*")) {
                 // 拒绝子目录/嵌套路径
-                scanSpec.packagePrefixAcceptReject.addToReject(packageName + ".");
-                scanSpec.pathPrefixAcceptReject.addToReject(pathNormalized + "/");
+                ScanConfig.packagePrefixAcceptReject.addToReject(packageName + ".");
+                ScanConfig.pathPrefixAcceptReject.addToReject(pathNormalized + "/");
             }
         }
         return this;
@@ -859,15 +860,15 @@ public class ClassGraph {
     public ClassGraph acceptClasses(final String... classNames) {
         enableClassInfo();
         for (final String className : classNames) {
-            final String classNameNormalized = AcceptReject.normalizePackageOrClassName(className);
+            final String classNameNormalized = Filter.normalizePackageOrClassName(className);
             // 接受类本身
-            scanSpec.classAcceptReject.addToAccept(classNameNormalized);
-            scanSpec.classfilePathAcceptReject
-                    .addToAccept(AcceptReject.classNameToClassfilePath(classNameNormalized));
+            ScanConfig.classAcceptReject.addToAccept(classNameNormalized);
+            ScanConfig.classfilePathAcceptReject
+                    .addToAccept(Filter.classNameToClassfilePath(classNameNormalized));
             final String packageName = PackageInfo.getParentPackageName(classNameNormalized);
             // 记录包含该类的包，以便即使包本身未被接受，我们也可以递归到此点
-            scanSpec.classPackageAcceptReject.addToAccept(packageName);
-            scanSpec.classPackagePathAcceptReject.addToAccept(AcceptReject.packageNameToPath(packageName) + "/");
+            ScanConfig.classPackageAcceptReject.addToAccept(packageName);
+            ScanConfig.classPackagePathAcceptReject.addToAccept(Filter.packageNameToPath(packageName) + "/");
         }
         return this;
     }
@@ -899,10 +900,10 @@ public class ClassGraph {
     public ClassGraph rejectClasses(final String... classNames) {
         enableClassInfo();
         for (final String className : classNames) {
-            final String classNameNormalized = AcceptReject.normalizePackageOrClassName(className);
-            scanSpec.classAcceptReject.addToReject(classNameNormalized);
-            scanSpec.classfilePathAcceptReject
-                    .addToReject(AcceptReject.classNameToClassfilePath(classNameNormalized));
+            final String classNameNormalized = Filter.normalizePackageOrClassName(className);
+            ScanConfig.classAcceptReject.addToReject(classNameNormalized);
+            ScanConfig.classfilePathAcceptReject
+                    .addToReject(Filter.classNameToClassfilePath(classNameNormalized));
         }
         return this;
     }
@@ -934,7 +935,7 @@ public class ClassGraph {
             if (!leafName.equals(jarLeafName)) {
                 throw new IllegalArgumentException("Can only accept jars by leafname: " + jarLeafName);
             }
-            scanSpec.jarAcceptReject.addToAccept(leafName);
+            ScanConfig.jarAcceptReject.addToAccept(leafName);
         }
         return this;
     }
@@ -967,7 +968,7 @@ public class ClassGraph {
             if (!leafName.equals(jarLeafName)) {
                 throw new IllegalArgumentException("Can only reject jars by leafname: " + jarLeafName);
             }
-            scanSpec.jarAcceptReject.addToReject(leafName);
+            ScanConfig.jarAcceptReject.addToReject(leafName);
         }
         return this;
     }
@@ -1009,7 +1010,7 @@ public class ClassGraph {
                 }
                 if (jarLeafName.contains("*")) {
                     // 将通配符模式与 lib 和 ext 目录中的所有 jar 进行比较
-                    final Pattern pattern = AcceptReject.globToPattern(jarLeafName, /* simpleGlob = */ true);
+                    final Pattern pattern = Filter.globToPattern(jarLeafName, /* simpleGlob = */ true);
                     boolean found = false;
                     for (final String libOrExtJarPath : SystemJarFinder.getJreLibOrExtJars()) {
                         final String libOrExtJarLeafName = JarUtils.leafName(libOrExtJarPath);
@@ -1031,9 +1032,9 @@ public class ClassGraph {
                         final String libOrExtJarLeafName = JarUtils.leafName(libOrExtJarPath);
                         if (jarLeafName.equals(libOrExtJarLeafName)) {
                             if (accept) {
-                                scanSpec.libOrExtJarAcceptReject.addToAccept(jarLeafName);
+                                ScanConfig.libOrExtJarAcceptReject.addToAccept(jarLeafName);
                             } else {
-                                scanSpec.libOrExtJarAcceptReject.addToReject(jarLeafName);
+                                ScanConfig.libOrExtJarAcceptReject.addToReject(jarLeafName);
                             }
                             if (topLevelLog != null) {
                                 topLevelLog.log((accept ? "Accepting" : "Rejecting") + " lib or ext jar: "
@@ -1117,7 +1118,7 @@ public class ClassGraph {
      */
     public ClassGraph acceptModules(final String... moduleNames) {
         for (final String moduleName : moduleNames) {
-            scanSpec.moduleAcceptReject.addToAccept(AcceptReject.normalizePackageOrClassName(moduleName));
+            ScanConfig.moduleAcceptReject.addToAccept(Filter.normalizePackageOrClassName(moduleName));
         }
         return this;
     }
@@ -1144,7 +1145,7 @@ public class ClassGraph {
      */
     public ClassGraph rejectModules(final String... moduleNames) {
         for (final String moduleName : moduleNames) {
-            scanSpec.moduleAcceptReject.addToReject(AcceptReject.normalizePackageOrClassName(moduleName));
+            ScanConfig.moduleAcceptReject.addToReject(Filter.normalizePackageOrClassName(moduleName));
         }
         return this;
     }
@@ -1170,26 +1171,26 @@ public class ClassGraph {
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
      */
-    public ClassGraph acceptClasspathElementsContainingResourcePath(final String... resourcePaths) {
+    public ClassGraph acceptClasspathsContainingResourcePath(final String... resourcePaths) {
         for (final String resourcePath : resourcePaths) {
-            final String resourcePathNormalized = AcceptReject.normalizePath(resourcePath);
-            scanSpec.classpathElementResourcePathAcceptReject.addToAccept(resourcePathNormalized);
+            final String resourcePathNormalized = Filter.normalizePath(resourcePath);
+            ScanConfig.classpathElementResourcePathAcceptReject.addToAccept(resourcePathNormalized);
         }
         return this;
     }
 
     /**
-     * 请改用 {@link #acceptClasspathElementsContainingResourcePath(String...)}
+     * 请改用 {@link #acceptClasspathsContainingResourcePath(String...)}
      *
      * @param resourcePaths
      *            资源路径，其中任何一个必须存在于类路径元素中才能使该类路径元素被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #acceptClasspathElementsContainingResourcePath(String...)}
+     * @deprecated 请改用 {@link #acceptClasspathsContainingResourcePath(String...)}
      */
     @Deprecated
-    public ClassGraph whitelistClasspathElementsContainingResourcePath(final String... resourcePaths) {
-        return acceptClasspathElementsContainingResourcePath(resourcePaths);
+    public ClassGraph whitelistClasspathsContainingResourcePath(final String... resourcePaths) {
+        return acceptClasspathsContainingResourcePath(resourcePaths);
     }
 
     /**
@@ -1200,26 +1201,26 @@ public class ClassGraph {
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
      */
-    public ClassGraph rejectClasspathElementsContainingResourcePath(final String... resourcePaths) {
+    public ClassGraph rejectClasspathsContainingResourcePath(final String... resourcePaths) {
         for (final String resourcePath : resourcePaths) {
-            final String resourcePathNormalized = AcceptReject.normalizePath(resourcePath);
-            scanSpec.classpathElementResourcePathAcceptReject.addToReject(resourcePathNormalized);
+            final String resourcePathNormalized = Filter.normalizePath(resourcePath);
+            ScanConfig.classpathElementResourcePathAcceptReject.addToReject(resourcePathNormalized);
         }
         return this;
     }
 
     /**
-     * 请改用 {@link #rejectClasspathElementsContainingResourcePath(String...)}
+     * 请改用 {@link #rejectClasspathsContainingResourcePath(String...)}
      *
      * @param resourcePaths
      *            资源路径，如果其中任何一个存在于类路径元素中，则该类路径元素将不会被扫描
      *            可以包含通配符 glob({@code '*'})
      * @return this(用于方法链式调用)
-     * @deprecated 请改用 {@link #rejectClasspathElementsContainingResourcePath(String...)}
+     * @deprecated 请改用 {@link #rejectClasspathsContainingResourcePath(String...)}
      */
     @Deprecated
-    public ClassGraph blacklistClasspathElementsContainingResourcePath(final String... resourcePaths) {
-        return rejectClasspathElementsContainingResourcePath(resourcePaths);
+    public ClassGraph blacklistClasspathsContainingResourcePath(final String... resourcePaths) {
+        return rejectClasspathsContainingResourcePath(resourcePaths);
     }
 
     /**
@@ -1236,8 +1237,8 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph enableRemoteJarScanning() {
-        scanSpec.enableURLScheme("http");
-        scanSpec.enableURLScheme("https");
+        ScanConfig.enableURLScheme("http");
+        ScanConfig.enableURLScheme("https");
         return this;
     }
 
@@ -1250,7 +1251,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph enableURLScheme(final String scheme) {
-        scanSpec.enableURLScheme(scheme);
+        ScanConfig.enableURLScheme(scheme);
         return this;
     }
 
@@ -1266,7 +1267,7 @@ public class ClassGraph {
      */
     public ClassGraph enableSystemJarsAndModules() {
         enableClassInfo();
-        scanSpec.enableSystemJarsAndModules = true;
+        ScanConfig.enableSystemJarsAndModules = true;
         return this;
     }
 
@@ -1293,7 +1294,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph setMaxBufferedJarRAMSize(final int maxBufferedJarRAMSize) {
-        scanSpec.maxBufferedJarRAMSize = maxBufferedJarRAMSize;
+        ScanConfig.maxBufferedJarRAMSize = maxBufferedJarRAMSize;
         return this;
     }
 
@@ -1309,7 +1310,7 @@ public class ClassGraph {
             // 参见 FileUtils.java
             throw new IllegalArgumentException("enableMemoryMapping() is not supported on Java 24+");
         }
-        scanSpec.enableMemoryMapping = true;
+        ScanConfig.enableMemoryMapping = true;
         return this;
     }
 
@@ -1320,20 +1321,20 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph enableMultiReleaseVersions() {
-        scanSpec.enableMultiReleaseVersions = true;
+        ScanConfig.enableMultiReleaseVersions = true;
 
-        scanSpec.enableClassInfo = false;
-        scanSpec.ignoreClassVisibility = false;
-        scanSpec.enableMethodInfo = false;
-        scanSpec.ignoreMethodVisibility = false;
-        scanSpec.enableFieldInfo = false;
-        scanSpec.ignoreFieldVisibility = false;
-        scanSpec.enableStaticFinalFieldConstantInitializerValues = false;
-        scanSpec.enableAnnotationInfo = false;
-        scanSpec.enableInterClassDependencies = false;
-        scanSpec.disableRuntimeInvisibleAnnotations = false;
-        scanSpec.enableExternalClasses = false;
-        scanSpec.enableSystemJarsAndModules = false;
+        ScanConfig.enableClassInfo = false;
+        ScanConfig.ignoreClassVisibility = false;
+        ScanConfig.enableMethodInfo = false;
+        ScanConfig.ignoreMethodVisibility = false;
+        ScanConfig.enableFieldInfo = false;
+        ScanConfig.ignoreFieldVisibility = false;
+        ScanConfig.enableStaticFinalFieldConstantInitializerValues = false;
+        ScanConfig.enableAnnotationInfo = false;
+        ScanConfig.enableInterClassDependencies = false;
+        ScanConfig.disableRuntimeInvisibleAnnotations = false;
+        ScanConfig.enableExternalClasses = false;
+        ScanConfig.enableSystemJarsAndModules = false;
         return this;
     }
 
@@ -1383,7 +1384,7 @@ public class ClassGraph {
             public void run() {
                 try {
                     // 调用扫描器，但忽略返回的 ScanResult
-                    new Scanner(/* performScan = */ true, scanSpec, executorService, numParallelTasks,
+                    new Scanner(/* performScan = */ true, ScanConfig, executorService, numParallelTasks,
                             scanResultProcessor, failureHandler, reflectionUtils, topLevelLog).call();
                 } catch (final InterruptedException | CancellationException | ExecutionException e) {
                     // 调用失败处理器
@@ -1410,7 +1411,7 @@ public class ClassGraph {
     private Future<ScanResult> scanAsync(final boolean performScan, final ExecutorService executorService,
                                          final int numParallelTasks) {
         try {
-            return executorService.submit(new Scanner(performScan, scanSpec, executorService, numParallelTasks,
+            return executorService.submit(new Scanner(performScan, ScanConfig, executorService, numParallelTasks,
                     /* scanResultProcessor = */ null, /* failureHandler = */ null, reflectionUtils, topLevelLog));
         } catch (final InterruptedException e) {
             // 在 Scanner 构造函数执行期间被中断(具体来说是被 getModuleOrder() 中断，
@@ -1458,7 +1459,7 @@ public class ClassGraph {
      *            在类路径扫描最密集的 CPU 阶段将工作分解为的并行任务数
      *            理想情况下，ExecutorService 至少应具有这么多可用线程
      * @return 表示扫描结果的 {@link ScanResult} 对象
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public ScanResult scan(final ExecutorService executorService, final int numParallelTasks) {
@@ -1469,7 +1470,7 @@ public class ClassGraph {
             final ScanResult scanResult = scanAsync(executorService, numParallelTasks).get();
 
             //    // 通过序列化然后反序列化 ScanResult 来测试序列化/反序列化
-            //    if (scanSpec.enableClassInfo && scanSpec.performScan) {
+            //    if (ScanConfig.enableClassInfo && ScanConfig.performScan) {
             //        final String scanResultJson = scanResult.toJSON(2);
             //        final ScanResult scanResultFromJson = ScanResult.fromJSON(scanResultJson);
             //        final String scanResultJson2 = scanResult.toJSON(2);
@@ -1486,9 +1487,9 @@ public class ClassGraph {
             return scanResult;
 
         } catch (final InterruptedException | CancellationException e) {
-            throw new ClassGraphException("Scan interrupted", e);
+            throw new ScanException("Scan interrupted", e);
         } catch (final ExecutionException e) {
-            throw new ClassGraphException("Uncaught exception during scan", InterruptionChecker.getCause(e));
+            throw new ScanException("Uncaught exception during scan", InterruptionChecker.getCause(e));
         }
     }
 
@@ -1499,7 +1500,7 @@ public class ClassGraph {
      * @param numThreads
      *            要启动的工作线程数
      * @return 表示扫描结果的 {@link ScanResult} 对象
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public ScanResult scan(final int numThreads) {
@@ -1513,7 +1514,7 @@ public class ClassGraph {
      * {@link ScanResult}，或在使用完毕后手动关闭它
      *
      * @return 表示扫描结果的 {@link ScanResult} 对象
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public ScanResult scan() {
@@ -1526,7 +1527,7 @@ public class ClassGraph {
      * @param executorService
      *            执行器服务
      * @return 表示扫描结果的 {@link ScanResult} 对象(仅可用于确定类路径)
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     ScanResult getClasspathScanResult(final AutoCloseableExecutorService executorService) {
@@ -1541,9 +1542,9 @@ public class ClassGraph {
             return scanResult;
 
         } catch (final InterruptedException | CancellationException e) {
-            throw new ClassGraphException("Scan interrupted", e);
+            throw new ScanException("Scan interrupted", e);
         } catch (final ExecutionException e) {
-            throw new ClassGraphException("Uncaught exception during scan", InterruptionChecker.getCause(e));
+            throw new ScanException("Uncaught exception during scan", InterruptionChecker.getCause(e));
         }
     }
 
@@ -1552,7 +1553,7 @@ public class ClassGraph {
      * 按类加载器解析顺序排列不存在为文件或目录的类路径元素不会包含在返回的列表中
      *
      * @return 一个 {@code List<File>}，包含类路径上唯一的目录和 jarfile，按类路径解析顺序排列
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public List<File> getClasspathFiles() {
@@ -1570,7 +1571,7 @@ public class ClassGraph {
      * 调用 {@link #getClasspathURIs()} 以获取类路径元素和模块的完整 URI
      *
      * @return 一个类路径字符串，包含类路径上唯一的目录和 jarfile，按类路径解析顺序排列
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public String getClasspath() {
@@ -1582,7 +1583,7 @@ public class ClassGraph {
      * 表示不存在 jarfile 或目录的类路径元素不会包含在返回的列表中
      *
      * @return 唯一的类路径元素和模块，作为 {@link URI} 对象列表
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public List<URI> getClasspathURIs() {
@@ -1598,7 +1599,7 @@ public class ClassGraph {
      * 不会包含在返回的列表中
      *
      * @return 唯一的类路径元素和模块，作为 {@link URL} 对象列表
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public List<URL> getClasspathURLs() {
@@ -1614,7 +1615,7 @@ public class ClassGraph {
      * 返回所有可见模块的 {@link ModuleRef} 引用
      *
      * @return 所有可见模块的 {@link ModuleRef} 引用列表
-     * @throws ClassGraphException
+     * @throws ScanException
      *             如果任何工作线程抛出未捕获的异常，或扫描被中断
      */
     public List<ModuleRef> getModules() {
@@ -1642,8 +1643,8 @@ public class ClassGraph {
      * @return {@link ModulePathInfo}
      */
     public ModulePathInfo getModulePathInfo() {
-        scanSpec.modulePathInfo.getRuntimeInfo(reflectionUtils);
-        return scanSpec.modulePathInfo;
+        ScanConfig.modulePathInfo.getRuntimeInfo(reflectionUtils);
+        return ScanConfig.modulePathInfo;
     }
 
     /**
@@ -1664,10 +1665,10 @@ public class ClassGraph {
     }
 
     /**
-     * 添加类路径元素过滤器includeClasspathElement 方法在传入的路径字符串是您想要扫描的路径时应返回 true
+     * 添加类路径元素过滤器includeClasspath 方法在传入的路径字符串是您想要扫描的路径时应返回 true
      */
     @FunctionalInterface
-    public interface ClasspathElementFilter {
+    public interface ClasspathFilter {
         /**
          * 是否将给定的类路径元素包含在扫描中
          *
@@ -1678,15 +1679,15 @@ public class ClassGraph {
          *            则这些前缀将已从开头剥离
          * @return 如果传入的路径字符串是您想要扫描的路径，则返回 true
          */
-        boolean includeClasspathElement(String classpathElementPathStr);
+        boolean includeClasspath(String classpathElementPathStr);
     }
 
     /**
-     * 添加类路径元素 URL 过滤器includeClasspathElement 方法在传入的 {@link URL}
+     * 添加类路径元素 URL 过滤器includeClasspath 方法在传入的 {@link URL}
      * 对应于您想要扫描的类路径元素时应返回 true
      */
     @FunctionalInterface
-    public interface ClasspathElementURLFilter {
+    public interface ClasspathURLFilter {
         /**
          * 是否将给定的类路径元素包含在扫描中
          *
@@ -1694,7 +1695,7 @@ public class ClassGraph {
          *            类路径元素的 {@link URL}
          * @return 如果您想要扫描该 {@link URL}，则返回 true
          */
-        boolean includeClasspathElement(URL classpathElementURL);
+        boolean includeClasspath(URL classpathElementURL);
     }
 
     /** 用于处理成功异步扫描结果的回调 */

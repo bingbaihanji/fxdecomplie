@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.Assert;
+import com.bingbaihanji.classgraph.util.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -37,7 +37,7 @@ import java.lang.reflect.Modifier;
 /**
  * 保存扫描过程中遇到的类成员的元数据所有值均直接从类的 class 文件中提取
  */
-public abstract class ClassMemberInfo extends ScanResultObject implements HasName {
+public abstract class ClassMemberInfo extends MetadataNode implements Named {
     /** 定义该成员的类名 */
     protected String declaringClassName;
 
@@ -279,7 +279,7 @@ public abstract class ClassMemberInfo extends ScanResultObject implements HasNam
                 return annotationInfoRef;
             }
 
-            if (!scanResult.scanSpec.enableAnnotationInfo) {
+            if (!scanResult.ScanConfig.enableAnnotationInfo) {
                 throw new IllegalArgumentException("请在调用 scan() 之前先调用 ClassGraph#enableAnnotationInfo()");
             }
 

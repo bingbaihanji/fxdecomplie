@@ -28,15 +28,16 @@
  */
 package com.bingbaihanji.classgraph.bytecode;
 
-import com.bingbaihanji.classgraph.concurrency.WorkQueue;
-import com.bingbaihanji.classgraph.core.Scanner.ClassfileScanWorkUnit;
-import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
+import com.bingbaihanji.classgraph.metadata.ModuleRef;
+import com.bingbaihanji.classgraph.util.WorkQueue;
+import com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit;
+import com.bingbaihanji.classgraph.resource.ClassFileReader;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.type.ParseException;
-import com.bingbaihanji.classgraph.utils.CollectionUtils;
-import com.bingbaihanji.classgraph.utils.JarUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
-import com.bingbaihanji.classgraph.utils.StringUtils;
+import com.bingbaihanji.classgraph.util.CollectionUtils;
+import com.bingbaihanji.classgraph.util.JarUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
+import com.bingbaihanji.classgraph.util.StringUtils;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -51,14 +52,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * 参见 <a href="https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html">class 文件格式规范</a>
  */
-class ClassParser {
+public class ClassParser {
     /** 当没有注解时使用的空数组 */
     private static final AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
     /** 包含此 ClassParser 的类路径元素 */
-    private final ClasspathElement classpathElement;
+    private final Classpath Classpath;
 
     /** 类路径顺序 */
-    private final List<ClasspathElement> classpathOrder;
+    private final List<Classpath> classpathOrder;
 
     /** ClassParser 的相对路径(应对应于 className) */
     private final String relativePath;
@@ -77,9 +78,9 @@ class ClassParser {
      */
     private final Set<String> classNamesScheduledForExtendedScanning;
     /** 扫描规格 */
-    private final ScanSpec scanSpec;
-    /** 当前 ClassParser 的 {@link ClassfileReader} */
-    private ClassfileReader reader;
+    private final ScanConfig ScanConfig;
+    /** 当前 ClassParser 的 {@link ClassFileReader} */
+    private ClassFileReader reader;
     /** 类名 */
     private String className;
     /** ClassParser 格式的次版本号 */
@@ -140,7 +141,7 @@ class ClassParser {
      * 创建一个新的 ClassInfo 对象，并将其添加到 classNameToClassInfoOut 中
      * 假设类路径掩码已执行，因此只会添加一个给定名称的类
      *
-     * @param classpathElement 类路径元素
+     * @param Classpath 类路径元素
      * @param classpathOrder  类路径顺序
      * @param acceptedClassNamesFound 在类路径元素内扫描路径时发现的已接受类名集合
      * @param classNamesScheduledForExtendedScanning 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类、接口和注解)
@@ -149,19 +150,19 @@ class ClassParser {
      * @param isExternalClass  此是否为外部类
      * @param stringInternMap 字符串内部化映射
      * @param workQueue 工作队列
-     * @param scanSpec 扫描规格
+     * @param ScanConfig 扫描规格
      * @param log 日志
      * @throws IOException  如果发生 I/O 异常
      * @throws ClassfileFormatException 如果解析 ClassParser 时发生问题
      * @throws SkipClassException 如果 ClassParser 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
      */
-    ClassParser(final ClasspathElement classpathElement, final List<ClasspathElement> classpathOrder,
+    ClassParser(final Classpath Classpath, final List<Classpath> classpathOrder,
               final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
               final String relativePath, final Resource classfileResource, final boolean isExternalClass,
               final ConcurrentHashMap<String, String> stringInternMap,
-              final WorkQueue<ClassfileScanWorkUnit> workQueue, final ScanSpec scanSpec, final LogNode log)
+              final WorkQueue<ClassfileScanWorkUnit> workQueue, final ScanConfig ScanConfig, final LogNode log)
             throws IOException, ClassfileFormatException, SkipClassException {
-        this.classpathElement = classpathElement;
+        this.Classpath = Classpath;
         this.classpathOrder = classpathOrder;
         this.relativePath = relativePath;
         this.acceptedClassNamesFound = acceptedClassNamesFound;
@@ -169,11 +170,11 @@ class ClassParser {
         this.classfileResource = classfileResource;
         this.isExternalClass = isExternalClass;
         this.stringInternMap = stringInternMap;
-        this.scanSpec = scanSpec;
+        this.ScanConfig = ScanConfig;
 
         // 为 ClassParser 打开一个 BufferedSequentialReader
-        try (ClassfileReader classfileReader = classfileResource.openClassfile()) {
-            reader = classfileReader;
+        try (ClassFileReader ClassFileReader = classfileResource.openClassfile()) {
+            reader = ClassFileReader;
 
             // 检查魔数
             if (reader.readInt() != 0xCAFEBABE) {
@@ -251,7 +252,7 @@ class ClassParser {
 
         // 检查是否有任何超类、接口或注解是外部(非接受)类，需要安排扫描，
         // 以便为任何接受类扫描类图的整个"向上"方向，即使超类/接口/注解本身不是接受类
-        if (scanSpec.extendScanningUpwardsToExternalClasses) {
+        if (ScanConfig.extendScanningUpwardsToExternalClasses) {
             extendScanningUpwards(subLog);
             // 如果发现任何外部类，安排它们进行扫描
             if (additionalWorkUnits != null) {
@@ -280,7 +281,7 @@ class ClassParser {
                 && !acceptedClassNamesFound.contains(className)
                 // 在所有线程中，每个外部类只安排一次扫描
                 && classNamesScheduledForExtendedScanning.add(className)) {
-            if (scanSpec.classAcceptReject.isRejected(className)) {
+            if (ScanConfig.classAcceptReject.isRejected(className)) {
                 if (log != null) {
                     log.log("Cannot extend scanning upwards to external " + relationship + " " + className
                             + ", since it is rejected");
@@ -290,15 +291,15 @@ class ClassParser {
                 // 但向上扩展扫描的情况不应太多)
                 final String classfilePath = JarUtils.classNameToClassfilePath(className);
                 // 首先检查当前类路径元素，避免遍历其他类路径元素
-                Resource classResource = classpathElement.getResource(classfilePath);
-                ClasspathElement foundInClasspathElt = null;
+                Resource classResource = Classpath.getResource(classfilePath);
+                Classpath foundInClasspathElt = null;
                 if (classResource != null) {
                     // 在当前类路径元素中找到了 ClassParser
-                    foundInClasspathElt = classpathElement;
+                    foundInClasspathElt = Classpath;
                 } else {
                     // 在当前类路径元素中未找到 ClassParser -- 遍历其他元素
-                    for (final ClasspathElement classpathOrderElt : classpathOrder) {
-                        if (classpathOrderElt != classpathElement) {
+                    for (final Classpath classpathOrderElt : classpathOrder) {
+                        if (classpathOrderElt != Classpath) {
                             classResource = classpathOrderElt.getResource(classfilePath);
                             if (classResource != null) {
                                 foundInClasspathElt = classpathOrderElt;
@@ -314,7 +315,7 @@ class ClassParser {
                         // 类路径元素层次结构遍历中的常规位置扫描的
                         classResource.scanLog = log
                                 .log("Extending scanning to external " + relationship
-                                        + (foundInClasspathElt == classpathElement ? " in same classpath element"
+                                        + (foundInClasspathElt == Classpath ? " in same classpath element"
                                         : " in classpath element " + foundInClasspathElt)
                                         + ": " + className);
                     }
@@ -473,7 +474,7 @@ class ClassParser {
         } else {
             // 处理常规 ClassParser
             classInfo = ClassInfo.addScannedClass(className, classModifiers, isExternalClass, classNameToClassInfo,
-                    classpathElement, classfileResource);
+                    Classpath, classfileResource);
             classInfo.setClassfileVersion(minorVersion, majorVersion);
             classInfo.setModifiers(classModifiers);
             classInfo.setIsInterface(isInterface);
@@ -524,7 +525,7 @@ class ClassParser {
         if (!isModuleDescriptor) {
             // 获取此类或包描述符的包
             final String packageName = PackageInfo.getParentPackageName(className);
-            packageInfo = PackageInfo.getOrCreatePackage(packageName, packageNameToPackageInfo, scanSpec);
+            packageInfo = PackageInfo.getOrCreatePackage(packageName, packageNameToPackageInfo, ScanConfig);
             if (isPackageDescriptor) {
                 // 将 package-info.class 文件上的任何类注解添加到 ModuleInfo
                 packageInfo.addAnnotations(classAnnotations);
@@ -536,13 +537,13 @@ class ClassParser {
         }
 
         // 获取或创建 ModuleInfo，如果有模块名
-        final String moduleName = classpathElement.getModuleName();
+        final String moduleName = Classpath.getModuleName();
         if (moduleName != null) {
             // 获取或创建此模块的 ModuleInfo 对象
             ModuleInfo moduleInfo = moduleNameToModuleInfo.get(moduleName);
             if (moduleInfo == null) {
                 moduleNameToModuleInfo.put(moduleName,
-                        moduleInfo = new ModuleInfo(classfileResource.getModuleRef(), classpathElement));
+                        moduleInfo = new ModuleInfo(classfileResource.getModuleRef(), Classpath));
             }
             if (isModuleDescriptor) {
                 // 将 module-info.class 文件上的任何类注解添加到 ModuleInfo
@@ -1026,7 +1027,7 @@ class ClassParser {
         // 仅在启用了类间依赖时才记录类依赖信息
         List<Integer> classNameCpIdxs = null;
         List<Integer> typeSignatureIdxs = null;
-        if (scanSpec.enableInterClassDependencies) {
+        if (ScanConfig.enableInterClassDependencies) {
             classNameCpIdxs = new ArrayList<>();
             typeSignatureIdxs = new ArrayList<>();
         }
@@ -1226,7 +1227,7 @@ class ClassParser {
         final boolean isModule = (classModifiers & 0x8000) != 0; // 等同于文件名为 "module-info.class"
         final boolean isPackage = relativePath.regionMatches(relativePath.lastIndexOf('/') + 1,
                 "package-info.class", 0, 18);
-        if (!scanSpec.ignoreClassVisibility && !Modifier.isPublic(classModifiers) && !isModule && !isPackage) {
+        if (!ScanConfig.ignoreClassVisibility && !Modifier.isPublic(classModifiers) && !isModule && !isPackage) {
             throw new SkipClassException("Class is not public, and ignoreClassVisibility() was not called");
         }
 
@@ -1281,11 +1282,11 @@ class ClassParser {
             // 修饰符标志信息：http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.5
             final int fieldModifierFlags = reader.readUnsignedShort();
             final boolean isPublicField = ((fieldModifierFlags & 0x0001) == 0x0001);
-            final boolean fieldIsVisible = isPublicField || scanSpec.ignoreFieldVisibility;
-            final boolean getStaticFinalFieldConstValue = scanSpec.enableStaticFinalFieldConstantInitializerValues
+            final boolean fieldIsVisible = isPublicField || ScanConfig.ignoreFieldVisibility;
+            final boolean getStaticFinalFieldConstValue = ScanConfig.enableStaticFinalFieldConstantInitializerValues
                     && fieldIsVisible;
             List<TypeAnnotationDecorator> fieldTypeAnnotationDecorators = null;
-            if (!fieldIsVisible || (!scanSpec.enableFieldInfo && !getStaticFinalFieldConstValue)) {
+            if (!fieldIsVisible || (!ScanConfig.enableFieldInfo && !getStaticFinalFieldConstValue)) {
                 // 跳过字段
                 reader.readUnsignedShort(); // fieldNameCpIdx
                 reader.readUnsignedShort(); // fieldTypeDescriptorCpIdx
@@ -1326,9 +1327,9 @@ class ClassParser {
                                 cpIdx);
                     } else if (fieldIsVisible && constantPoolStringEquals(attributeNameCpIdx, "Signature")) {
                         fieldTypeSignatureStr = getConstantPoolString(reader.readUnsignedShort());
-                    } else if (scanSpec.enableAnnotationInfo //
+                    } else if (ScanConfig.enableAnnotationInfo //
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleAnnotations")
-                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                             attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
                         // 读取注解名称
                         final int fieldAnnotationCount = reader.readUnsignedShort();
@@ -1341,9 +1342,9 @@ class ClassParser {
                                 fieldAnnotationInfo.add(fieldAnnotation);
                             }
                         }
-                    } else if (scanSpec.enableAnnotationInfo //
+                    } else if (ScanConfig.enableAnnotationInfo //
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleTypeAnnotations")
-                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                             attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
                         final int annotationCount = reader.readUnsignedShort();
                         if (annotationCount > 0) {
@@ -1373,7 +1374,7 @@ class ClassParser {
                         reader.skip(attributeLength);
                     }
                 }
-                if (scanSpec.enableFieldInfo && fieldIsVisible) {
+                if (ScanConfig.enableFieldInfo && fieldIsVisible) {
                     if (fieldInfoList == null) {
                         fieldInfoList = new FieldInfoList();
                     }
@@ -1400,13 +1401,13 @@ class ClassParser {
             // 修饰符标志信息：http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.6
             final int methodModifierFlags = reader.readUnsignedShort();
             final boolean isPublicMethod = ((methodModifierFlags & 0x0001) == 0x0001);
-            final boolean methodIsVisible = isPublicMethod || scanSpec.ignoreMethodVisibility;
+            final boolean methodIsVisible = isPublicMethod || ScanConfig.ignoreMethodVisibility;
             List<MethodTypeAnnotationDecorator> methodTypeAnnotationDecorators = null;
             String methodName = null;
             String methodTypeDescriptor = null;
             String MethodTypeStr = null;
             // 始终为注解启用 MethodInfo(这是注解常量定义的方式)
-            final boolean enableMethodInfo = scanSpec.enableMethodInfo || isAnnotation;
+            final boolean enableMethodInfo = ScanConfig.enableMethodInfo || isAnnotation;
             if (enableMethodInfo || isAnnotation) { // 注解在 method_info 中存储默认值
                 final int methodNameCpIdx = reader.readUnsignedShort();
                 methodName = getConstantPoolString(methodNameCpIdx);
@@ -1436,9 +1437,9 @@ class ClassParser {
                 for (int j = 0; j < attributesCount; j++) {
                     final int attributeNameCpIdx = reader.readUnsignedShort();
                     final int attributeLength = reader.readInt();
-                    if (scanSpec.enableAnnotationInfo
+                    if (ScanConfig.enableAnnotationInfo
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleAnnotations")
-                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                             attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
                         final int methodAnnotationCount = reader.readUnsignedShort();
                         if (methodAnnotationCount > 0) {
@@ -1450,9 +1451,9 @@ class ClassParser {
                                 methodAnnotationInfo.add(annotationInfo);
                             }
                         }
-                    } else if (scanSpec.enableAnnotationInfo
+                    } else if (ScanConfig.enableAnnotationInfo
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleParameterAnnotations")
-                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                             attributeNameCpIdx, "RuntimeInvisibleParameterAnnotations")))) {
                         // 将运行时可见和运行时不可见注解合并到每个方法参数的单个注解数组中
                         // (运行时可见和运行时不可见注解在单独的属性中给出，因此如果两个属性都存在，
@@ -1483,9 +1484,9 @@ class ClassParser {
                                 methodParameterAnnotations[paramIdx] = NO_ANNOTATIONS;
                             }
                         }
-                    } else if (scanSpec.enableAnnotationInfo //
+                    } else if (ScanConfig.enableAnnotationInfo //
                             && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleTypeAnnotations")
-                            || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                            || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                             attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
                         final int annotationCount = reader.readUnsignedShort();
                         if (annotationCount > 0) {
@@ -1726,9 +1727,9 @@ class ClassParser {
         for (int i = 0; i < attributesCount; i++) {
             final int attributeNameCpIdx = reader.readUnsignedShort();
             final int attributeLength = reader.readInt();
-            if (scanSpec.enableAnnotationInfo //
+            if (ScanConfig.enableAnnotationInfo //
                     && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleAnnotations")
-                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                    || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                     attributeNameCpIdx, "RuntimeInvisibleAnnotations")))) {
                 final int annotationCount = reader.readUnsignedShort();
                 if (annotationCount > 0) {
@@ -1739,9 +1740,9 @@ class ClassParser {
                         classAnnotations.add(readAnnotation());
                     }
                 }
-            } else if (scanSpec.enableAnnotationInfo //
+            } else if (ScanConfig.enableAnnotationInfo //
                     && (constantPoolStringEquals(attributeNameCpIdx, "RuntimeVisibleTypeAnnotations")
-                    || (!scanSpec.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
+                    || (!ScanConfig.disableRuntimeInvisibleAnnotations && constantPoolStringEquals(
                     attributeNameCpIdx, "RuntimeInvisibleTypeAnnotations")))) {
                 final int annotationCount = reader.readUnsignedShort();
                 if (annotationCount > 0) {
@@ -1887,7 +1888,7 @@ class ClassParser {
                 this.fullyQualifiedDefiningMethodName = innermostEnclosingClassName + "." + definingMethodName;
             } else if (constantPoolStringEquals(attributeNameCpIdx, "Module")) {
                 final int moduleNameCpIdx = reader.readUnsignedShort();
-                classpathElement.moduleNameFromModuleDescriptor = getConstantPoolString(moduleNameCpIdx);
+                Classpath.moduleNameFromModuleDescriptor = getConstantPoolString(moduleNameCpIdx);
                 // (未来工作)：解析模块描述符字段的其余部分，并添加到 ModuleInfo：
                 // https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-4.html#jvms-4.7.25
                 reader.skip(attributeLength - 2);
@@ -1899,19 +1900,19 @@ class ClassParser {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    interface ClassTypeAnnotationDecorator {
+    public interface ClassTypeAnnotationDecorator {
         void decorate(ClassType ClassType);
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
-    interface MethodTypeAnnotationDecorator {
+    public interface MethodTypeAnnotationDecorator {
         void decorate(MethodType MethodType);
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
-    interface TypeAnnotationDecorator {
+    public interface TypeAnnotationDecorator {
         void decorate(TypeSignature typeSignature);
     }
 
@@ -1920,7 +1921,7 @@ class ClassParser {
     /**
      * 类包含关系
      */
-    static class ClassContainment {
+    public static class ClassContainment {
         /** 内部类名 */
         public final String innerClassName;
 
@@ -1951,7 +1952,7 @@ class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     /** 当 ClassParser 的内容格式不正确时抛出 */
-    static class ClassfileFormatException extends IOException {
+    public static class ClassfileFormatException extends IOException {
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
 
@@ -1991,7 +1992,7 @@ class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     /** 当 ClassParser 需要被跳过时抛出 */
-    static class SkipClassException extends IOException {
+    public static class SkipClassException extends IOException {
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
 
@@ -2018,7 +2019,7 @@ class ClassParser {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    static class TypePathNode {
+    public static class TypePathNode {
         short typePathKind;
         short TypeArgIdx;
 

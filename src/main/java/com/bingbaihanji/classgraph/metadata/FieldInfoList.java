@@ -28,14 +28,14 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
 /** {@link FieldInfo} 对象的列表 */
-public class FieldInfoList extends MappableInfoList<FieldInfo> {
+public class FieldInfoList extends InfoList<FieldInfo> {
     /** 不可修改的空 {@link FieldInfoList} */
     static final FieldInfoList EMPTY_LIST = new FieldInfoList();
     /** serialVersionUID */

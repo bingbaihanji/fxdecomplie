@@ -31,9 +31,9 @@ package com.bingbaihanji.classgraph.classpath.handler;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderFinder;
 import com.bingbaihanji.classgraph.classpath.ClassLoaderOrder;
 import com.bingbaihanji.classgraph.classpath.ClasspathOrder;
-import com.bingbaihanji.classgraph.scanspec.ScanSpec;
-import com.bingbaihanji.classgraph.utils.FileUtils;
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.util.FileUtils;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.io.File;
 import java.lang.reflect.Array;
@@ -61,13 +61,13 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
      *            类加载器
      * @param classpathOrderOut
      *            类路径顺序
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @param log
      *            日志
      */
     private static void handleResourceLoader(final Object resourceLoader, final ClassLoader classLoader,
-                                             final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec, final LogNode log) {
+                                             final ClasspathOrder classpathOrderOut, final ScanConfig ScanConfig, final LogNode log) {
         if (resourceLoader == null) {
             return;
         }
@@ -75,12 +75,12 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
         final Object root = classpathOrderOut.reflectionUtils.getFieldVal(false, resourceLoader, "root");
 
         classpathOrderOut.addClasspathEntry(loadJarPathFromClassicVFS(root, classpathOrderOut), classLoader,
-                scanSpec, log);
-        classpathOrderOut.addClasspathEntry(loadJarPathFromNewVFS(root, classpathOrderOut), classLoader, scanSpec,
+                ScanConfig, log);
+        classpathOrderOut.addClasspathEntry(loadJarPathFromNewVFS(root, classpathOrderOut), classLoader, ScanConfig,
                 log);
         classpathOrderOut.addClasspathEntry(
                 classpathOrderOut.reflectionUtils.getFieldVal(false, resourceLoader, "fileOfJar"), classLoader,
-                scanSpec, log);
+                ScanConfig, log);
     }
 
     /**
@@ -217,13 +217,13 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
      *            类加载器
      * @param classpathOrderOut
      *            类路径顺序
-     * @param scanSpec
+     * @param ScanConfig
      *            扫描规范
      * @param log
      *            日志
      */
     private static void handleRealModule(final Object module, final Set<Object> visitedModules,
-                                         final ClassLoader classLoader, final ClasspathOrder classpathOrderOut, final ScanSpec scanSpec,
+                                         final ClassLoader classLoader, final ClasspathOrder classpathOrderOut, final ScanConfig ScanConfig,
                                          final LogNode log) {
         if (!visitedModules.add(module)) {
             // 避免多次从同一模块提取路径
@@ -245,7 +245,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
                 final Object resourceLoader = Array.get(vfsResourceLoaders, i);
                 // 可以完全跳过 NativeLibraryResourceLoader 实例，但测试它们的存在似乎只增加了约 3% 的总扫描时间
                 // if (!resourceLoader.getClass().getSimpleName().equals("NativeLibraryResourceLoader")) {
-                handleResourceLoader(resourceLoader, moduleLoader, classpathOrderOut, scanSpec, log);
+                handleResourceLoader(resourceLoader, moduleLoader, classpathOrderOut, ScanConfig, log);
                 //}
             }
         }
@@ -290,14 +290,14 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
      *            要查找类路径条目顺序的 {@link ClassLoader}
      * @param classpathOrder
      *            要更新的 {@link ClasspathOrder} 对象
-     * @param scanSpec
-     *            {@link ScanSpec}
+     * @param ScanConfig
+     *            {@link ScanConfig}
      * @param log
      *            日志
      */
     @Override
     public void findClasspathOrder(final ClassLoader classLoader, final ClasspathOrder classpathOrder,
-                                   final ScanSpec scanSpec, final LogNode log) {
+                                   final ScanConfig ScanConfig, final LogNode log) {
         final Object module = classpathOrder.reflectionUtils.invokeMethod(false, classLoader, "getModule");
         final Object callerModuleLoader = classpathOrder.reflectionUtils.invokeMethod(false, module,
                 "getCallerModuleLoader");
@@ -311,7 +311,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
             final Object val = ent.getValue();
             // 类型 Module
             final Object realModule = classpathOrder.reflectionUtils.invokeMethod(false, val, "getModule");
-            handleRealModule(realModule, visitedModules, classLoader, classpathOrder, scanSpec, log);
+            handleRealModule(realModule, visitedModules, classLoader, classpathOrder, ScanConfig, log);
         }
         // 类型 Map<String, List<LocalLoader>>
         @SuppressWarnings("unchecked") final Map<String, List<?>> pathsMap = (Map<String, List<?>>) classpathOrder.reflectionUtils
@@ -324,7 +324,7 @@ class JBossClassLoaderHandler implements ClassLoaderHandler {
                 // 类型 Module
                 final Object realModule = classpathOrder.reflectionUtils.getFieldVal(false, moduleClassLoader,
                         "module");
-                handleRealModule(realModule, visitedModules, classLoader, classpathOrder, scanSpec, log);
+                handleRealModule(realModule, visitedModules, classLoader, classpathOrder, ScanConfig, log);
             }
         }
     }

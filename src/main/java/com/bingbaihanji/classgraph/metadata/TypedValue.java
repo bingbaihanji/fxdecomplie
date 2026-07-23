@@ -28,7 +28,7 @@
  */
 package com.bingbaihanji.classgraph.metadata;
 
-import com.bingbaihanji.classgraph.utils.LogNode;
+import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -37,7 +37,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /** 联合类型，用于类型安全的 JSON 序列化/反序列化任何时候仅设置一个字段 */
-class TypedValue extends ScanResultObject {
+class TypedValue extends MetadataNode {
     // 参数值按类型拆分到不同的字段中，以便序列化和反序列化正常工作
     // (无法正确序列化 Object 类型的字段，因为具体类型未
     // TODO: 移除 JSON 序列化后删除此类
@@ -519,7 +519,7 @@ class TypedValue extends ScanResultObject {
     // -------------------------------------------------------------------------------------------------------------
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassName()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
     protected String getClassName() {
@@ -528,7 +528,7 @@ class TypedValue extends ScanResultObject {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#getClassInfo()
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
     protected ClassInfo getClassInfo() {
@@ -536,7 +536,7 @@ class TypedValue extends ScanResultObject {
     }
 
     /* (non-Javadoc)
-     * @see com.bingbaihanji.classgraph.core.ScanResultObject#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
+     * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
     void setScanResult(final ScanResult scanResult) {

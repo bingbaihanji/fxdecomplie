@@ -28,9 +28,9 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.resource.NestedJarHandler;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessArrayReader;
-import com.bingbaihanji.classgraph.resource.reader.RandomAccessReader;
+import com.bingbaihanji.classgraph.resource.JarReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessArrayReader;
+import com.bingbaihanji.classgraph.resource.RandomAccessReader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,13 +54,13 @@ public class ArraySlice extends Slice {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      */
     private ArraySlice(final ArraySlice parentSlice, final long offset, final long length,
                        final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                       final NestedJarHandler nestedJarHandler) {
-        super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+                       final JarReader JarReader) {
+        super(parentSlice, offset, length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
         this.arr = parentSlice.arr;
     }
 
@@ -73,12 +73,12 @@ public class ArraySlice extends Slice {
      *            如果这是压缩的 zip 条目则为 true
      * @param inflatedLengthHint
      *            压缩 zip 条目的未压缩大小，未知为 -1，如果是非压缩 zip 条目则为 0
-     * @param nestedJarHandler
+     * @param JarReader
      *            嵌套 jar 处理器
      */
     public ArraySlice(final byte[] arr, final boolean isDeflatedZipEntry, final long inflatedLengthHint,
-                      final NestedJarHandler nestedJarHandler) {
-        super(arr.length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+                      final JarReader JarReader) {
+        super(arr.length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
         this.arr = arr;
     }
 
@@ -101,7 +101,7 @@ public class ArraySlice extends Slice {
         if (this.isDeflatedZipEntry) {
             throw new IllegalArgumentException("Cannot slice a deflated zip entry");
         }
-        return new ArraySlice(this, offset, length, isDeflatedZipEntry, inflatedLengthHint, nestedJarHandler);
+        return new ArraySlice(this, offset, length, isDeflatedZipEntry, inflatedLengthHint, JarReader);
     }
 
     /**
@@ -116,7 +116,7 @@ public class ArraySlice extends Slice {
         if (isDeflatedZipEntry) {
             // 如有必要，解压到内存中
             try (InputStream inputStream = open()) {
-                return NestedJarHandler.readAllBytesAsArray(inputStream, inflatedLengthHint);
+                return JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else if (sliceStartPos == 0L && sliceLength == arr.length) {
             // 快速路径 —— 如果数组是整个切片且未压缩，则直接返回整个数组
