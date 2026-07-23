@@ -31,7 +31,7 @@ package com.bingbaihanji.classgraph.metadata;
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
 
-import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
+import com.bingbaihanji.classgraph.metadata.ClassHierarchy.RelType;
 import com.bingbaihanji.classgraph.util.Assert;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -322,13 +322,13 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
                                             && (reverseRelType0 != null || reverseRelType1 != null)) {
                                         final ClassInfo annotationClass = ai.getClassInfo();
                                         if (annotationClass != null) {
-                                            containingClassInfo.addRelatedClass(forwardRelType, annotationClass);
+                                            containingClassInfo.hierarchy().addRelation(forwardRelType, annotationClass);
                                             if (reverseRelType0 != null) {
-                                                annotationClass.addRelatedClass(reverseRelType0,
+                                                annotationClass.hierarchy().addRelation(reverseRelType0,
                                                         containingClassInfo);
                                             }
                                             if (reverseRelType1 != null) {
-                                                annotationClass.addRelatedClass(reverseRelType1,
+                                                annotationClass.hierarchy().addRelation(reverseRelType1,
                                                         containingClassInfo);
                                             }
                                         }

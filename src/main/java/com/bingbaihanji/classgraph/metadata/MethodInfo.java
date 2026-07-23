@@ -34,7 +34,7 @@ import com.bingbaihanji.classgraph.type.*;
 import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.MethodTypeAnnotationDecorator;
-import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
+import com.bingbaihanji.classgraph.metadata.ClassHierarchy.RelType;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
