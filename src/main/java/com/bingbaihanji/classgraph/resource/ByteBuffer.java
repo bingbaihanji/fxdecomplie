@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.resource;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -36,7 +36,7 @@ import java.nio.ByteBuffer;
  * {@link ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
  * {@link ByteBuffer}
  */
-public class CloseableByteBuffer implements Closeable {
+public class ByteBuffer implements Closeable {
     private ByteBuffer byteBuffer;
     private Runnable onClose;
 
@@ -49,7 +49,7 @@ public class CloseableByteBuffer implements Closeable {
      * @param onClose
      *            当 {@link #close()} 被调用时要执行的方法
      */
-    CloseableByteBuffer(final ByteBuffer byteBuffer, final Runnable onClose) {
+    ByteBuffer(final ByteBuffer byteBuffer, final Runnable onClose) {
         this.byteBuffer = byteBuffer;
         this.onClose = onClose;
     }

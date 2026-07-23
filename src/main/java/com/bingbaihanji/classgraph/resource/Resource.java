@@ -26,9 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.resource;
 
-import com.bingbaihanji.classgraph.fileslice.reader.ClassfileReader;
+import com.bingbaihanji.classgraph.resource.reader.ClassfileReader;
 import com.bingbaihanji.classgraph.utils.LogNode;
 import com.bingbaihanji.classgraph.utils.URLPathEncoder;
 
@@ -259,19 +259,19 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     public abstract ByteBuffer read() throws IOException;
 
     /**
-     * 为类路径资源打开一个 {@link ByteBuffer}，并将其包装在一个 {@link CloseableByteBuffer} 实例中，
-     * 该实例实现了 {@link Closeable#close()} 方法，在调用 {@link CloseableByteBuffer#close()} 时
+     * 为类路径资源打开一个 {@link ByteBuffer}，并将其包装在一个 {@link ByteBuffer} 实例中，
+     * 该实例实现了 {@link Closeable#close()} 方法，在调用 {@link ByteBuffer#close()} 时
      * 通过自动调用 {@link Resource#close()} 来释放底层的 {@link ByteBuffer}
      *
      * <p>
-     * 调用返回实例的 {@link CloseableByteBuffer#getByteBuffer()} 方法来访问底层的 {@link ByteBuffer}
+     * 调用返回实例的 {@link ByteBuffer#getByteBuffer()} 方法来访问底层的 {@link ByteBuffer}
      *
      * @return 为资源文件内容分配或映射的 {@link ByteBuffer}
      * @throws IOException
      *             如果资源无法读取
      */
-    public CloseableByteBuffer readCloseable() throws IOException {
-        return new CloseableByteBuffer(read(), new Runnable() {
+    public ByteBuffer readCloseable() throws IOException {
+        return new ByteBuffer(read(), new Runnable() {
             @Override
             public void run() {
                 close();
