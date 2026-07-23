@@ -252,7 +252,7 @@ public class ScanClassLoader extends ClassLoader {
         // 然后关闭 ScanResult，再尝试访问 ScanResult 中类型尚未加载的字段，
         // 可能会触发 ScanResult 在关闭后被访问的异常(#399)
         final ResourceList classfileResources = scanResult
-                .getResourcesWithPath(JarUtils.classNameToClassfilePath(className));
+                .resources().getResourcesWithPath(JarUtils.classNameToClassfilePath(className));
         if (classfileResources != null) {
             for (final Resource resource : classfileResources) {
                 // 遍历资源(仅尝试加载列表中的第一个资源)
@@ -337,7 +337,7 @@ public class ScanClassLoader extends ClassLoader {
 
         // 如果上述尝试均失败，则尝试从 ScanResult 获取资源
         // 如果 ScanResult 已关闭，这将抛出异常(#399)
-        final ResourceList resourceList = scanResult.getResourcesWithPath(path);
+        final ResourceList resourceList = scanResult.resources().getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return super.getResource(path);
         } else {
@@ -374,7 +374,7 @@ public class ScanClassLoader extends ClassLoader {
 
         // 如果上述尝试均失败，则尝试从 ScanResult 获取资源
         // 如果 ScanResult 已关闭，这将抛出异常(#399)
-        final ResourceList resourceList = scanResult.getResourcesWithPath(path);
+        final ResourceList resourceList = scanResult.resources().getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return Collections.emptyEnumeration();
         } else {
@@ -424,7 +424,7 @@ public class ScanClassLoader extends ClassLoader {
 
         // 如果上述尝试均失败，则尝试从 ScanResult 打开资源
         // 如果 ScanResult 已关闭，这将抛出异常(#399)
-        final ResourceList resourceList = scanResult.getResourcesWithPath(path);
+        final ResourceList resourceList = scanResult.resources().getResourcesWithPath(path);
         if (resourceList == null || resourceList.isEmpty()) {
             return super.getResourceAsStream(path);
         } else {

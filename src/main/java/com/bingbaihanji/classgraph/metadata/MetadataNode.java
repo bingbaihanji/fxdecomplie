@@ -118,7 +118,7 @@ public abstract class MetadataNode {
             if (className == null) {
                 throw new IllegalArgumentException("Class name is not set");
             }
-            classInfo = scanResult.getClassInfo(className);
+            classInfo = scanResult.classes().getClassInfo(className);
         }
         return classInfo;
     }

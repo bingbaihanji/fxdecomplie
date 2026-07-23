@@ -189,7 +189,7 @@ public class ClassHierarchy {
     public ClassInfoList getSubclasses() {
         if ("java.lang.Object".equals(owner.getName())) {
             // 对查询 java.lang.Object 的所有子类做特殊处理
-            return owner.scanResult.getAllStandardClasses();
+            return owner.scanResult.classes().getAllStandardClasses();
         } else {
             return new ClassInfoList(
                     this.filterClassInfo(RelType.SUBCLASSES, /* strictAccept = */ !owner.isExternalClass()),

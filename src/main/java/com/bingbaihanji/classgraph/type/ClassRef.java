@@ -260,9 +260,9 @@ public final class ClassRef extends TypeRef {
                 skipSuffix = false;
             } else {
                 // 对于后缀路径 X.Y，如果 Y 是静态的，则类不是嵌套的
-                final ClassInfo outerClassInfo = scanResult.getClassInfo(typePrefix);
+                final ClassInfo outerClassInfo = scanResult.classes().getClassInfo(typePrefix);
                 typePrefix = typePrefix + '$' + suffixes.get(suffixIdx + 1);
-                final ClassInfo innerClassInfo = scanResult.getClassInfo(typePrefix);
+                final ClassInfo innerClassInfo = scanResult.classes().getClassInfo(typePrefix);
                 skipSuffix = outerClassInfo == null || innerClassInfo == null
                         || outerClassInfo.isInterfaceOrAnnotation() //
                         || innerClassInfo.isInterfaceOrAnnotation() //

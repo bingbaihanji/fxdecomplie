@@ -341,7 +341,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
             if (thrownExceptions == null && thrownExceptionNames != null) {
                 thrownExceptions = new ClassInfoList(thrownExceptionNames.length);
                 for (final String thrownExceptionName : thrownExceptionNames) {
-                    final ClassInfo classInfo = scanResult.getClassInfo(thrownExceptionName);
+                    final ClassInfo classInfo = scanResult.classes().getClassInfo(thrownExceptionName);
                     if (classInfo != null) {
                         thrownExceptions.add(classInfo);
                         classInfo.setScanResult(scanResult);
