@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.classpath.ClasspathFinder;
 import com.bingbaihanji.classgraph.fastzipfilereader.NestedJarHandler;

@@ -26,16 +26,16 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.scanspec;
+package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementFilter;
 import com.bingbaihanji.classgraph.core.ClassGraph.ClasspathElementURLFilter;
 import com.bingbaihanji.classgraph.core.ClassInfo;
 import com.bingbaihanji.classgraph.core.ModulePathInfo;
 import com.bingbaihanji.classgraph.core.ScanResult;
-import com.bingbaihanji.classgraph.scanspec.AcceptReject.AcceptRejectLeafname;
-import com.bingbaihanji.classgraph.scanspec.AcceptReject.AcceptRejectPrefix;
-import com.bingbaihanji.classgraph.scanspec.AcceptReject.AcceptRejectWholeString;
+import com.bingbaihanji.classgraph.ScanConfig.AcceptReject.AcceptRejectLeafname;
+import com.bingbaihanji.classgraph.ScanConfig.AcceptReject.AcceptRejectPrefix;
+import com.bingbaihanji.classgraph.ScanConfig.AcceptReject.AcceptRejectWholeString;
 import com.bingbaihanji.classgraph.utils.LogNode;
 
 import java.io.InputStream;
@@ -50,7 +50,7 @@ import java.util.*;
 /**
  * 扫描规范
  */
-public class ScanSpec {
+public class ScanConfig {
     /** 包接受/拒绝条件(分隔符 '.') */
     public AcceptRejectWholeString packageAcceptReject = new AcceptRejectWholeString('.');
 
@@ -257,7 +257,7 @@ public class ScanSpec {
     // -------------------------------------------------------------------------------------------------------------
 
     /** 反序列化构造函数 */
-    public ScanSpec() {
+    public ScanConfig() {
         // 有意留空
     }
 
@@ -287,7 +287,7 @@ public class ScanSpec {
 
     /** 对前缀进行排序以确保正确的接受/拒绝评估(参见 Issue #167) */
     public void sortPrefixes() {
-        for (final Field field : ScanSpec.class.getDeclaredFields()) {
+        for (final Field field : ScanConfig.class.getDeclaredFields()) {
             if (AcceptReject.class.isAssignableFrom(field.getType())) {
                 try {
                     ((AcceptReject) field.get(this)).sortPrefixes();
@@ -447,35 +447,35 @@ public class ScanSpec {
      *
      * @param relativePath
      *            相对路径
-     * @return {@link ScanSpecPathMatch}
+     * @return {@link ScanConfigPathMatch}
      */
-    public ScanSpecPathMatch dirAcceptMatchStatus(final String relativePath) {
+    public ScanConfigPathMatch dirAcceptMatchStatus(final String relativePath) {
         // 在被拒绝的路径中
         if (pathAcceptReject.isRejected(relativePath) || pathPrefixAcceptReject.isRejected(relativePath)) {
             // 此路径的某个前缀被拒绝
-            return ScanSpecPathMatch.HAS_REJECTED_PATH_PREFIX;
+            return ScanConfigPathMatch.HAS_REJECTED_PATH_PREFIX;
         }
 
         if (pathAcceptReject.acceptIsEmpty() && classPackagePathAcceptReject.acceptIsEmpty()) {
             // 如果没有已接受的包，则根包被接受
-            return relativePath.isEmpty() || "/".equals(relativePath) ? ScanSpecPathMatch.AT_ACCEPTED_PATH
-                    : ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX;
+            return relativePath.isEmpty() || "/".equals(relativePath) ? ScanConfigPathMatch.AT_ACCEPTED_PATH
+                    : ScanConfigPathMatch.HAS_ACCEPTED_PATH_PREFIX;
         }
 
         // 位于已接受的路径
         if (pathAcceptReject.isSpecificallyAcceptedAndNotRejected(relativePath)) {
             // 到达一个已接受的路径
-            return ScanSpecPathMatch.AT_ACCEPTED_PATH;
+            return ScanConfigPathMatch.AT_ACCEPTED_PATH;
         }
         if (classPackagePathAcceptReject.isSpecificallyAcceptedAndNotRejected(relativePath)) {
             // 到达一个包含明确接受的类的包
-            return ScanSpecPathMatch.AT_ACCEPTED_CLASS_PACKAGE;
+            return ScanConfigPathMatch.AT_ACCEPTED_CLASS_PACKAGE;
         }
 
         // 已接受路径的后代
         if (pathPrefixAcceptReject.isSpecificallyAccepted(relativePath)) {
             // 路径前缀匹配接受列表中的某一项
-            return ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX;
+            return ScanConfigPathMatch.HAS_ACCEPTED_PATH_PREFIX;
         }
 
         // 已接受路径的祖先
@@ -486,11 +486,11 @@ public class ScanSpec {
                         || pathAcceptReject.acceptHasPrefix(relativePath)
                         // relativePath 是某个已接受类的父目录的祖先(前缀)
                         || classfilePathAcceptReject.acceptHasPrefix(relativePath)) {
-            return ScanSpecPathMatch.ANCESTOR_OF_ACCEPTED_PATH;
+            return ScanConfigPathMatch.ANCESTOR_OF_ACCEPTED_PATH;
         }
 
         // 不在已接受的路径中
-        return ScanSpecPathMatch.NOT_WITHIN_ACCEPTED_PATH;
+        return ScanConfigPathMatch.NOT_WITHIN_ACCEPTED_PATH;
     }
 
     /**
@@ -525,10 +525,10 @@ public class ScanSpec {
      */
     public void log(final LogNode log) {
         if (log != null) {
-            final LogNode scanSpecLog = log.log("ScanSpec:");
-            for (final Field field : ScanSpec.class.getDeclaredFields()) {
+            final LogNode ScanConfigLog = log.log("ScanConfig:");
+            for (final Field field : ScanConfig.class.getDeclaredFields()) {
                 try {
-                    scanSpecLog.log(field.getName() + ": " + field.get(this));
+                    ScanConfigLog.log(field.getName() + ": " + field.get(this));
                 } catch (final ReflectiveOperationException e) {
                     // 忽略
                 }
@@ -541,7 +541,7 @@ public class ScanSpec {
     /**
      * 表示路径是被拒绝路径的后代，还是已接受路径的祖先或后代
      */
-    public enum ScanSpecPathMatch {
+    public enum ScanConfigPathMatch {
         /** 路径以被拒绝路径前缀开头(或就是该前缀) */
         HAS_REJECTED_PATH_PREFIX,
         /** 路径以已接受路径前缀开头 */

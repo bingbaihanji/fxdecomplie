@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.scanspec.ScanSpec;
 import com.bingbaihanji.classgraph.utils.JarUtils;
@@ -41,7 +41,7 @@ import java.security.ProtectionDomain;
 import java.util.*;
 
 /** 扫描过程中 ClassGraph 所发现类的 {@link ClassLoader} */
-public class ClassGraphClassLoader extends ClassLoader {
+public class ScanClassLoader extends ClassLoader {
 
     /** 扫描结果 */
     private final ScanResult scanResult;
@@ -63,7 +63,7 @@ public class ClassGraphClassLoader extends ClassLoader {
      * @param scanResult
      *            扫描结果
      */
-    ClassGraphClassLoader(final ScanResult scanResult) {
+    ScanClassLoader(final ScanResult scanResult) {
         super(null);
         registerAsParallelCapable();
 
@@ -126,13 +126,13 @@ public class ClassGraphClassLoader extends ClassLoader {
     @Override
     protected Class<?> findClass(final String className)
             throws ClassNotFoundException, LinkageError, SecurityException {
-        // 首先委托给外部嵌套的 ClassGraphClassLoader(如果存在)(#485)
-        final ClassGraphClassLoader delegateClassGraphClassLoader = scanResult.classpathFinder
-                .getDelegateClassGraphClassLoader();
+        // 首先委托给外部嵌套的 ScanClassLoader(如果存在)(#485)
+        final ScanClassLoader delegateScanClassLoader = scanResult.classpathFinder
+                .getDelegateScanClassLoader();
         LinkageError linkageError = null;
-        if (delegateClassGraphClassLoader != null) {
+        if (delegateScanClassLoader != null) {
             try {
-                return Class.forName(className, initializeLoadedClasses, delegateClassGraphClassLoader);
+                return Class.forName(className, initializeLoadedClasses, delegateScanClassLoader);
             } catch (final ClassNotFoundException e) {
                 // 忽略
             } catch (final LinkageError e) {

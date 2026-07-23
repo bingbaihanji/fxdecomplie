@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.scanspec;
+package com.bingbaihanji.classgraph.scan;
 
 import com.bingbaihanji.classgraph.utils.CollectionUtils;
 import com.bingbaihanji.classgraph.utils.FastPathResolver;
@@ -37,7 +37,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /** 存储接受或拒绝条件的类 */
-public abstract class AcceptReject {
+public abstract class Filter {
     /** 已接受的项(全字符串匹配) */
     protected Set<String> accept;
     /** 已拒绝的项(全字符串匹配) */
@@ -60,7 +60,7 @@ public abstract class AcceptReject {
     protected char separatorChar;
 
     /** 反序列化构造函数 */
-    public AcceptReject() {
+    public Filter() {
     }
 
     /**
@@ -69,7 +69,7 @@ public abstract class AcceptReject {
      * @param separatorChar
      *            分隔符字符
      */
-    public AcceptReject(final char separatorChar) {
+    public Filter(final char separatorChar) {
         this.separatorChar = separatorChar;
     }
 
@@ -375,9 +375,9 @@ public abstract class AcceptReject {
     }
 
     /** 用于前缀字符串的接受/拒绝 */
-    public static class AcceptRejectPrefix extends AcceptReject {
+    public static class FilterPrefix extends Filter {
         /** 反序列化构造函数 */
-        public AcceptRejectPrefix() {
+        public FilterPrefix() {
             super();
         }
 
@@ -387,7 +387,7 @@ public abstract class AcceptReject {
          * @param separatorChar
          *            分隔符字符
          */
-        public AcceptRejectPrefix(final char separatorChar) {
+        public FilterPrefix(final char separatorChar) {
             super(separatorChar);
         }
 
@@ -512,9 +512,9 @@ public abstract class AcceptReject {
     }
 
     /** 用于全字符串匹配的接受/拒绝 */
-    public static class AcceptRejectWholeString extends AcceptReject {
+    public static class FilterWholeString extends Filter {
         /** 反序列化构造函数 */
-        public AcceptRejectWholeString() {
+        public FilterWholeString() {
             super();
         }
 
@@ -524,7 +524,7 @@ public abstract class AcceptReject {
          * @param separatorChar
          *            分隔符字符
          */
-        public AcceptRejectWholeString(final char separatorChar) {
+        public FilterWholeString(final char separatorChar) {
             super(separatorChar);
         }
 
@@ -550,7 +550,7 @@ public abstract class AcceptReject {
                 this.accept.add(str);
             }
 
-            // 对于不执行前缀匹配的 AcceptRejectWholeString(不同于 AcceptRejectPrefix)，
+            // 对于不执行前缀匹配的 FilterWholeString(不同于 FilterPrefix)，
             // 使用 acceptPrefixes 存储已接受路径的所有父级前缀，以便
             // acceptHasPrefix() 能够在非常大的接受列表上高效运行(#338)，
             // 特别是当接受列表的大小远大于最大路径深度时
@@ -660,9 +660,9 @@ public abstract class AcceptReject {
     }
 
     /** 用于叶子名称匹配的接受/拒绝 */
-    public static class AcceptRejectLeafname extends AcceptRejectWholeString {
+    public static class FilterLeafname extends FilterWholeString {
         /** 反序列化构造函数 */
-        public AcceptRejectLeafname() {
+        public FilterLeafname() {
             super();
         }
 
@@ -672,7 +672,7 @@ public abstract class AcceptReject {
          * @param separatorChar
          *            分隔符字符
          */
-        public AcceptRejectLeafname(final char separatorChar) {
+        public FilterLeafname(final char separatorChar) {
             super(separatorChar);
         }
 
