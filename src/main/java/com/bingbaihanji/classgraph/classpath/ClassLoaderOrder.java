@@ -29,7 +29,7 @@
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
-import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.ClassLoaderHandlerRegistryEntry;
+import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.HandlerRegistryEntry;
 import com.bingbaihanji.classgraph.scan.ClassGraph;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -40,7 +40,7 @@ import java.util.Map.Entry;
 /** 用于查找所有唯一类加载器的类 */
 public class ClassLoaderOrder {
     /** {@link ClassLoader} 顺序 */
-    private final Map<ClassLoader, List<ClassLoaderHandlerRegistryEntry>> classLoaderOrder = new LinkedHashMap<>();
+    private final Map<ClassLoader, List<HandlerRegistryEntry>> classLoaderOrder = new LinkedHashMap<>();
     /**
      * 已添加到顺序中的所有 {@link ClassLoader} 实例集合，用于防止类加载器被重复添加
      */
@@ -67,11 +67,11 @@ public class ClassLoaderOrder {
     }
 
     /** 获取能够处理给定 ClassLoader 的 ClassLoaderHandler */
-    private static List<ClassLoaderHandlerRegistryEntry> getClassLoaderHandlerRegistryEntries(
+    private static List<HandlerRegistryEntry> getClassLoaderHandlerRegistryEntries(
             final ClassLoader classLoader, final LogNode log) {
-        List<ClassLoaderHandlerRegistryEntry> ents = new ArrayList<>();
+        List<HandlerRegistryEntry> ents = new ArrayList<>();
         boolean matched = false;
-        for (final ClassLoaderHandlerRegistryEntry ent : HandlerRegistry.CLASS_LOADER_HANDLERS) {
+        for (final HandlerRegistryEntry ent : HandlerRegistry.CLASS_LOADER_HANDLERS) {
             if (ent.canHandle(classLoader.getClass(), log)) {
                 // 此 ClassLoaderHandler 可以处理该 ClassLoader 类或其某个父类
                 ents.add(ent);
@@ -88,9 +88,9 @@ public class ClassLoaderOrder {
      * 获取 {@link ClassLoader} 顺序
      *
      * @return {@link ClassLoader} 顺序，以键值对形式返回：{@link ClassLoader}、
-     *         {@link ClassLoaderHandlerRegistryEntry}
+     *         {@link HandlerRegistryEntry}
      */
-    public List<Entry<ClassLoader, List<ClassLoaderHandlerRegistryEntry>>> getClassLoaderOrder() {
+    public List<Entry<ClassLoader, List<HandlerRegistryEntry>>> getClassLoaderOrder() {
         return new ArrayList<>(classLoaderOrder.entrySet());
     }
 
@@ -145,7 +145,7 @@ public class ClassLoaderOrder {
             add(classLoader, log);
             // 递归获取委托顺序
             // (注意：如果有多个 ClassLoaderHandler 可以处理此 classloader，结果可能不正确)
-            for (final ClassLoaderHandlerRegistryEntry entry : getClassLoaderHandlerRegistryEntries(classLoader,
+            for (final HandlerRegistryEntry entry : getClassLoaderHandlerRegistryEntries(classLoader,
                     /* 不重复记录日志 -- 上面的 add 方法也会记录 */ null)) {
                 entry.findClassLoaderOrder(classLoader, this, log);
             }

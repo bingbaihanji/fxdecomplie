@@ -29,7 +29,7 @@
 package com.bingbaihanji.classgraph.classpath;
 
 import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry;
-import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.ClassLoaderHandlerRegistryEntry;
+import com.bingbaihanji.classgraph.classpath.handler.HandlerRegistry.HandlerRegistryEntry;
 import com.bingbaihanji.classgraph.scan.ScanClassLoader;
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
@@ -192,7 +192,7 @@ public class ClasspathFinder {
             // 列出 ClassLoaderHandler
             if (classpathFinderLog != null) {
                 final LogNode classLoaderHandlerLog = classpathFinderLog.log("ClassLoaderHandlers:");
-                for (final ClassLoaderHandlerRegistryEntry classLoaderHandlerEntry : //
+                for (final HandlerRegistryEntry classLoaderHandlerEntry : //
                         HandlerRegistry.CLASS_LOADER_HANDLERS) {
                     classLoaderHandlerLog.log(classLoaderHandlerEntry.classLoaderHandler.getClass().getName());
                 }
@@ -218,10 +218,10 @@ public class ClasspathFinder {
             final LogNode classloaderURLLog = classpathFinderLog == null ? null
                     : classpathFinderLog.log("Obtaining URLs from classloaders in delegation order");
             final List<ClassLoader> finalClassLoaderOrder = new ArrayList<>();
-            for (final Entry<ClassLoader, List<ClassLoaderHandlerRegistryEntry>> ent : classLoaderOrder
+            for (final Entry<ClassLoader, List<HandlerRegistryEntry>> ent : classLoaderOrder
                     .getClassLoaderOrder()) {
                 final ClassLoader classLoader = ent.getKey();
-                for (final ClassLoaderHandlerRegistryEntry classLoaderHandlerRegistryEntry : ent.getValue()) {
+                for (final HandlerRegistryEntry classLoaderHandlerRegistryEntry : ent.getValue()) {
                     // 将类路径条目添加到 ignoredClasspathOrder 或 classpathOrder
                     if (!ScanConfig.ignoreParentClassLoaders || !allParentClassLoaders.contains(classLoader)) {
                         // 否则将类路径条目添加到 classpathOrder，并将类加载器添加到

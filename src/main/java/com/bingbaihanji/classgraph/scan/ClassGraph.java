@@ -27,6 +27,11 @@
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
 package com.bingbaihanji.classgraph.scan;
+
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.classpath.*;
+import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.reflect.*;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
 import com.bingbaihanji.classgraph.classpath.SystemJarFinder;
