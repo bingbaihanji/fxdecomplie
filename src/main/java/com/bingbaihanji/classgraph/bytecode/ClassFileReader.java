@@ -27,7 +27,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.resource;
+package com.bingbaihanji.classgraph.bytecode;
 
 import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.resource.ArraySlice;
@@ -49,7 +49,7 @@ import java.util.Arrays;
  * 一种 {@link Slice} 读取器，既可作为 {@link RandomAccessReader} 也可作为 {@link SequentialReader} 使用
  * 文件缓冲到目前已读取的位置按 classfile 格式所需的<b>大端序</b>读取
  */
-public class ClassfileReader implements RandomAccessReader, SequentialReader, Closeable {
+public class ClassFileReader implements RandomAccessReader, SequentialReader, Closeable {
     /**
      * 初始缓冲区大小对于大多数 classfile，只需要读取前 16-64kb(我们不读取字节码)
      */
@@ -61,7 +61,7 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
      * 8kb 到 16kb 之间，则我们就不必要地多复制了一次缓冲区内容
      */
     private static final int BUF_CHUNK_SIZE = 8192 - 8;
-    /** 调用 {@link ClassfileReader#close()} 时要关闭的底层资源 */
+    /** 调用 {@link ClassFileReader#close()} 时要关闭的底层资源 */
     private Resource resourceToClose;
     /** 如果切片是压缩的，则是 {@link InflateInputStream} 的包装器 */
     private InputStream inflaterInputStream;
@@ -87,11 +87,11 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
      * @param slice
      *            要读取的 {@link Slice}
      * @param resourceToClose
-     *            调用 {@link ClassfileReader#close()} 时要关闭的资源，或 null
+     *            调用 {@link ClassFileReader#close()} 时要关闭的资源，或 null
      * @throws IOException
      *             如果无法在 {@link Slice} 上打开解压器
      */
-    public ClassfileReader(final Slice slice, final Resource resourceToClose) throws IOException {
+    public ClassFileReader(final Slice slice, final Resource resourceToClose) throws IOException {
         this.classfileLengthHint = (int) slice.sliceLength;
         this.resourceToClose = resourceToClose;
         if (slice.isDeflatedZipEntry) {
@@ -130,11 +130,11 @@ public class ClassfileReader implements RandomAccessReader, SequentialReader, Cl
      * @param inputStream
      *            要读取的 {@link InputStream}
      * @param resourceToClose
-     *            调用 {@link ClassfileReader#close()} 时要关闭的底层资源，或 null
+     *            调用 {@link ClassFileReader#close()} 时要关闭的底层资源，或 null
      * @throws IOException
      *             如果无法在 {@link Slice} 上打开解压器
      */
-    public ClassfileReader(final InputStream inputStream, final Resource resourceToClose) throws IOException {
+    public ClassFileReader(final InputStream inputStream, final Resource resourceToClose) throws IOException {
         inflaterInputStream = inputStream;
         arr = new byte[INITIAL_BUF_SIZE];
         this.resourceToClose = resourceToClose;

@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.bytecode;
 
 import com.bingbaihanji.classgraph.concurrency.WorkQueue;
 import com.bingbaihanji.classgraph.core.Scanner.ClassfileScanWorkUnit;
@@ -45,25 +45,25 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * classfile 二进制格式解析器实现了自己的缓冲机制以避免使用 DataInputStream 的开销
- * 此类在同一时间仅应由单线程使用，但可以重复用于按顺序扫描多个 classfile，以避免重新分配缓冲区内存
+ * ClassParser 二进制格式解析器实现了自己的缓冲机制以避免使用 DataInputStream 的开销
+ * 此类在同一时间仅应由单线程使用，但可以重复用于按顺序扫描多个 ClassParser，以避免重新分配缓冲区内存
  *
  * <p>
  * 参见 <a href="https://docs.oracle.com/javase/specs/jvms/se16/html/jvms-4.html">class 文件格式规范</a>
  */
-class ClassFile {
+class ClassParser {
     /** 当没有注解时使用的空数组 */
     private static final AnnotationInfo[] NO_ANNOTATIONS = new AnnotationInfo[0];
-    /** 包含此 classfile 的类路径元素 */
+    /** 包含此 ClassParser 的类路径元素 */
     private final ClasspathElement classpathElement;
 
     /** 类路径顺序 */
     private final List<ClasspathElement> classpathOrder;
 
-    /** classfile 的相对路径(应对应于 className) */
+    /** ClassParser 的相对路径(应对应于 className) */
     private final String relativePath;
 
-    /** classfile 资源 */
+    /** ClassParser 资源 */
     private final Resource classfileResource;
 
     /** 字符串内部化映射 */
@@ -78,13 +78,13 @@ class ClassFile {
     private final Set<String> classNamesScheduledForExtendedScanning;
     /** 扫描规格 */
     private final ScanSpec scanSpec;
-    /** 当前 classfile 的 {@link ClassfileReader} */
+    /** 当前 ClassParser 的 {@link ClassfileReader} */
     private ClassfileReader reader;
     /** 类名 */
     private String className;
-    /** classfile 格式的次版本号 */
+    /** ClassParser 格式的次版本号 */
     private int minorVersion;
-    /** classfile 格式的主版本号 */
+    /** ClassParser 格式的主版本号 */
     private int majorVersion;
     /** 类修饰符 */
     private int classModifiers;
@@ -114,7 +114,7 @@ class ClassFile {
     private MethodInfoList methodInfoList;
     /** 类型签名 */
     private String typeSignatureStr;
-    /** 源文件，如 Classfile.java */
+    /** 源文件，如 ClassParser.java */
     private String sourceFile;
     /** {@link ClassType} 实例的类型注解装饰器 */
     private List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators;
@@ -136,7 +136,7 @@ class ClassFile {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 直接检查 classfile 二进制头内容以确定注解、实现的接口、超类等
+     * 直接检查 ClassParser 二进制头内容以确定注解、实现的接口、超类等
      * 创建一个新的 ClassInfo 对象，并将其添加到 classNameToClassInfoOut 中
      * 假设类路径掩码已执行，因此只会添加一个给定名称的类
      *
@@ -145,17 +145,17 @@ class ClassFile {
      * @param acceptedClassNamesFound 在类路径元素内扫描路径时发现的已接受类名集合
      * @param classNamesScheduledForExtendedScanning 已安排进行扩展扫描的外部(非接受)类名集合(扫描向上扩展到超类、接口和注解)
      * @param relativePath 相对路径
-     * @param classfileResource  classfile 资源
+     * @param classfileResource  ClassParser 资源
      * @param isExternalClass  此是否为外部类
      * @param stringInternMap 字符串内部化映射
      * @param workQueue 工作队列
      * @param scanSpec 扫描规格
      * @param log 日志
      * @throws IOException  如果发生 I/O 异常
-     * @throws ClassfileFormatException 如果解析 classfile 时发生问题
-     * @throws SkipClassException 如果 classfile 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
+     * @throws ClassfileFormatException 如果解析 ClassParser 时发生问题
+     * @throws SkipClassException 如果 ClassParser 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
      */
-    ClassFile(final ClasspathElement classpathElement, final List<ClasspathElement> classpathOrder,
+    ClassParser(final ClasspathElement classpathElement, final List<ClasspathElement> classpathOrder,
               final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
               final String relativePath, final Resource classfileResource, final boolean isExternalClass,
               final ConcurrentHashMap<String, String> stringInternMap,
@@ -171,16 +171,16 @@ class ClassFile {
         this.stringInternMap = stringInternMap;
         this.scanSpec = scanSpec;
 
-        // 为 classfile 打开一个 BufferedSequentialReader
+        // 为 ClassParser 打开一个 BufferedSequentialReader
         try (ClassfileReader classfileReader = classfileResource.openClassfile()) {
             reader = classfileReader;
 
             // 检查魔数
             if (reader.readInt() != 0xCAFEBABE) {
-                throw new ClassfileFormatException("Classfile does not have correct magic number");
+                throw new ClassfileFormatException("ClassParser does not have correct magic number");
             }
 
-            // 读取 classfile 次版本号和主版本号
+            // 读取 ClassParser 次版本号和主版本号
             minorVersion = reader.readUnsignedShort();
             majorVersion = reader.readUnsignedShort();
 
@@ -286,17 +286,17 @@ class ClassFile {
                             + ", since it is rejected");
                 }
             } else {
-                // 在类路径元素中按类路径顺序搜索指定类的 classfile(这对每个类是 O(N)，
+                // 在类路径元素中按类路径顺序搜索指定类的 ClassParser(这对每个类是 O(N)，
                 // 但向上扩展扫描的情况不应太多)
                 final String classfilePath = JarUtils.classNameToClassfilePath(className);
                 // 首先检查当前类路径元素，避免遍历其他类路径元素
                 Resource classResource = classpathElement.getResource(classfilePath);
                 ClasspathElement foundInClasspathElt = null;
                 if (classResource != null) {
-                    // 在当前类路径元素中找到了 classfile
+                    // 在当前类路径元素中找到了 ClassParser
                     foundInClasspathElt = classpathElement;
                 } else {
-                    // 在当前类路径元素中未找到 classfile -- 遍历其他元素
+                    // 在当前类路径元素中未找到 ClassParser -- 遍历其他元素
                     for (final ClasspathElement classpathOrderElt : classpathOrder) {
                         if (classpathOrderElt != classpathElement) {
                             classResource = classpathOrderElt.getResource(classfilePath);
@@ -471,7 +471,7 @@ class ClassFile {
             isPackageDescriptor = true;
 
         } else {
-            // 处理常规 classfile
+            // 处理常规 ClassParser
             classInfo = ClassInfo.addScannedClass(className, classModifiers, isExternalClass, classNameToClassInfo,
                     classpathElement, classfileResource);
             classInfo.setClassfileVersion(minorVersion, majorVersion);
@@ -916,7 +916,7 @@ class ClassFile {
     }
 
     /**
-     * 从 classfile 读取注解条目
+     * 从 ClassParser 读取注解条目
      *
      * @return 注解，作为 {@link AnnotationInfo} 对象
      * @throws IOException
@@ -941,7 +941,7 @@ class ClassFile {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
-     * 从 classfile 读取注解元素值
+     * 从 ClassParser 读取注解元素值
      *
      * @return 注解元素值
      * @throws IOException
@@ -1051,7 +1051,7 @@ class ClassFile {
             entryOffset[i] = reader.currPos();
             switch (entryTag[i]) {
                 case 0: // 不可能，可能是缓冲区欠载
-                    throw new ClassfileFormatException("Invalid constant pool tag 0 in classfile " + relativePath
+                    throw new ClassfileFormatException("Invalid constant pool tag 0 in ClassParser " + relativePath
                             + " (possible buffer underflow issue). Please report this at "
                             + "https://github.com/classgraph/classgraph/issues");
                 case 1: // Modified UTF8
@@ -1199,9 +1199,9 @@ class ClassFile {
      * @throws IOException
      *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             如果 classfile 格式不正确
+     *             如果 ClassParser 格式不正确
      * @throws SkipClassException
-     *             如果 classfile 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
+     *             如果 ClassParser 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
      */
     private void readBasicClassInfo() throws IOException, ClassfileFormatException, SkipClassException {
         // 修饰符标志
@@ -1233,7 +1233,7 @@ class ClassFile {
         // 确保类名与相对路径匹配
         if (!relativePath.endsWith(".class")) {
             // 不应发生
-            throw new SkipClassException("Classfile filename " + relativePath + " does not end in \".class\"");
+            throw new SkipClassException("ClassParser filename " + relativePath + " does not end in \".class\"");
         }
         final int len = classNamePath.length();
         if (relativePath.length() != len + 6 || !classNamePath.regionMatches(0, relativePath, 0, len)) {
@@ -1272,7 +1272,7 @@ class ClassFile {
      * @throws IOException
      *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             如果 classfile 格式不正确
+     *             如果 ClassParser 格式不正确
      */
     private void readFields() throws IOException, ClassfileFormatException {
         // 字段
@@ -1391,7 +1391,7 @@ class ClassFile {
      * @throws IOException
      *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             如果 classfile 格式不正确
+     *             如果 ClassParser 格式不正确
      */
     private void readMethods() throws IOException, ClassfileFormatException {
         // 方法
@@ -1503,7 +1503,7 @@ class ClassFile {
                                     formalParameterIndex = -1;
                                     throwsTypeIndex = -1;
                                 } else if (targetType == 0x10) {
-                                    // 此 target_type 不应添加方法，它用于 ClassFile 注解，
+                                    // 此 target_type 不应添加方法，它用于 ClassParser 注解，
                                     // 但 Google 的 Java 编译器出于某种原因将此类注解添加到 guava 的方法中
                                     // 直接忽略这些注解(#861)
                                     reader.readUnsignedShort();
@@ -1613,7 +1613,7 @@ class ClassFile {
                                             // 方法、构造函数或 Lambda 表达式的形式参数声明中的类型
                                             // 注意：形式参数索引不可靠，因为并非所有编译器以相同方式索引参数 --
                                             // 所以这里需要健壮处理
-                                            // classfile 规范说："A formal_parameter_index value of i may,
+                                            // ClassParser 规范说："A formal_parameter_index value of i may,
                                             // but is not required to, correspond to the i'th parameter descriptor
                                             // in the method descriptor"还有：
                                             // "The formal_parameter_target item records that a formal parameter's
@@ -1718,7 +1718,7 @@ class ClassFile {
      * @throws IOException
      *             如果发生 I/O 异常
      * @throws ClassfileFormatException
-     *             如果 classfile 格式不正确
+     *             如果 ClassParser 格式不正确
      */
     private void readClassAttributes() throws IOException, ClassfileFormatException {
         // 类属性(包括类注解、类类型变量、模块信息等)
@@ -1950,7 +1950,7 @@ class ClassFile {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** 当 classfile 的内容格式不正确时抛出 */
+    /** 当 ClassParser 的内容格式不正确时抛出 */
     static class ClassfileFormatException extends IOException {
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
@@ -1990,7 +1990,7 @@ class ClassFile {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    /** 当 classfile 需要被跳过时抛出 */
+    /** 当 ClassParser 需要被跳过时抛出 */
     static class SkipClassException extends IOException {
         /** serialVersionUID */
         static final long serialVersionUID = 1L;
