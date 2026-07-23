@@ -32,6 +32,8 @@ import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import java.util.*;
 
@@ -41,10 +43,10 @@ public final class TypeParam extends HierarchicalType {
     final String name;
 
     /** 类边界 -- 可能为 null */
-    final ReferenceType classBound;
+    public final ReferenceType classBound;
 
     /** 接口边界 -- 可能为空 */
-    final List<ReferenceType> interfaceBounds;
+    public final List<ReferenceType> interfaceBounds;
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -147,7 +149,7 @@ public final class TypeParam extends HierarchicalType {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         if (typePath.isEmpty()) {
             addTypeAnnotation(annotationInfo);
         } else {
@@ -161,7 +163,7 @@ public final class TypeParam extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
@@ -170,7 +172,7 @@ public final class TypeParam extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         throw new IllegalArgumentException("getClassInfo() cannot be called here");
     }
 
@@ -178,7 +180,7 @@ public final class TypeParam extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (this.classBound != null) {
             this.classBound.setScanResult(scanResult);
@@ -196,7 +198,7 @@ public final class TypeParam extends HierarchicalType {
      * @param refdClassNames
      *            引用的类名
      */
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         if (classBound != null) {
             classBound.findReferencedClassNames(refdClassNames);
         }
@@ -236,8 +238,8 @@ public final class TypeParam extends HierarchicalType {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-                                    final StringBuilder buf) {
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+                                 final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
                 if (annotationsToExclude == null || !annotationsToExclude.contains(annotationInfo)) {
@@ -251,7 +253,9 @@ public final class TypeParam extends HierarchicalType {
         if (classBound == null) {
             classBoundStr = null;
         } else {
-            classBoundStr = classBound.toString(useSimpleNames);
+            final StringBuilder sb2 = new StringBuilder();
+            classBound.toString(useSimpleNames, sb2);
+            classBoundStr = sb2.toString();
             if ("java.lang.Object".equals(classBoundStr) || ("Object".equals(classBoundStr)
                     && "java.lang.Object".equals(((ClassRef) classBound).className))) {
                 // 不添加 "extends java.lang.Object"

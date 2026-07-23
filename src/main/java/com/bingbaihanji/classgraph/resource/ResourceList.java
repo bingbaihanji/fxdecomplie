@@ -48,7 +48,7 @@ public class ResourceList extends LazyList<Resource> implements AutoCloseable {
     static final long serialVersionUID = 1L;
 
     /** 一个不可修改的空的 {@link ResourceList} */
-    static final ResourceList EMPTY_LIST = new ResourceList();
+    public static final ResourceList EMPTY_LIST = new ResourceList();
     /** 如果 Resource 的路径以 ".class" 结尾，则返回 true */
     private static final ResourceFilter CLASSFILE_FILTER = new ResourceFilter() {
         @Override

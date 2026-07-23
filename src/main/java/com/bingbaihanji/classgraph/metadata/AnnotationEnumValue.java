@@ -56,7 +56,7 @@ public class AnnotationEnumValue extends MetadataNode implements Comparable<Anno
      * @param constValueName
      *            枚举常量值名称
      */
-    AnnotationEnumValue(final String className, final String constValueName) {
+    public AnnotationEnumValue(final String className, final String constValueName) {
         super();
         this.className = className;
         this.valueName = constValueName;

@@ -29,6 +29,9 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.ClassGraph;
+import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.classgraph.type.TypeSignature;
 import com.bingbaihanji.classgraph.util.*;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypeAnnotationDecorator;
@@ -87,7 +90,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
      * @param annotationInfo
      *            字段上任何注解的 {@link AnnotationInfo}
      */
-    FieldInfo(final String definingClassName, final String fieldName, final int modifiers,
+    public FieldInfo(final String definingClassName, final String fieldName, final int modifiers,
               final String typeDescriptorStr, final String typeSignatureStr, final Object constantInitializerValue,
               final AnnotationInfoList annotationInfo, final List<TypeAnnotationDecorator> typeAnnotationDecorators) {
         super(definingClassName, fieldName, modifiers, typeDescriptorStr, typeSignatureStr, annotationInfo);
@@ -300,7 +303,7 @@ public class FieldInfo extends ClassMemberInfo implements Comparable<FieldInfo> 
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (this.typeSignature != null) {
             this.typeSignature.setScanResult(scanResult);

@@ -61,7 +61,7 @@ public class ModuleInfoList extends InfoList<ModuleInfo> {
      * @param moduleInfoCollection
      *            模块信息集合
      */
-    ModuleInfoList(final Collection<ModuleInfo> moduleInfoCollection) {
+    public ModuleInfoList(final Collection<ModuleInfo> moduleInfoCollection) {
         super(moduleInfoCollection);
     }
 

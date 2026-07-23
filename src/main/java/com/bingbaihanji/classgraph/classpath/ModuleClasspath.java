@@ -40,11 +40,11 @@ import com.bingbaihanji.classgraph.util.SingletonMap.NullSingletonException;
 import com.bingbaihanji.classgraph.util.WorkQueue;
 import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
 import com.bingbaihanji.classgraph.resource.LogicalZipFile;
-import com.bingbaihanji.classgraph.resource.ClassFileReader;
 import com.bingbaihanji.classgraph.resource.RecycleOnClose;
 import com.bingbaihanji.classgraph.resource.Pool;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
-import com.bingbaihanji.classgraph.scan.ScanConfig.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
+import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
 import com.bingbaihanji.classgraph.util.ProxyingInputStream;
@@ -67,10 +67,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author luke
  */
-class ModuleClasspath extends Classpath {
+public class ModuleClasspath extends Classpath {
 
     /** 模块引用 */
-    final ModuleRef moduleRef;
+    public final ModuleRef moduleRef;
     /** 所有资源路径 */
     private final Set<String> allResourcePaths = new HashSet<>();
     /** 从 {@link ModuleRef} 到模块的 {@link ModuleReaderProxy} 回收器的单例映射 */
@@ -91,7 +91,7 @@ class ModuleClasspath extends Classpath {
      * @param ScanConfig
      *            扫描规格
      */
-    ModuleClasspath(final ModuleRef moduleRef,
+    public ModuleClasspath(final ModuleRef moduleRef,
                            final SingletonMap<ModuleRef, Pool<ModuleReaderProxy, IOException>, IOException> //
                                    moduleRefToModuleReaderProxyRecyclerMap, final ClasspathEntryWorkUnit workUnit,
                            final ScanConfig ScanConfig) {
@@ -105,7 +105,7 @@ class ModuleClasspath extends Classpath {
      * com.bingbaihanji.classgraph.concurrency.WorkQueue, com.bingbaihanji.classgraph.utils.LogNode)
      */
     @Override
-    void open(final WorkQueue<ClasspathEntryWorkUnit> workQueueIgnored, final LogNode log)
+    public void open(final WorkQueue<ClasspathEntryWorkUnit> workQueueIgnored, final LogNode log)
             throws InterruptedException {
         if (!ScanConfig.scanModules) {
             if (log != null) {
@@ -188,7 +188,7 @@ class ModuleClasspath extends Classpath {
             }
 
             @Override
-            ClassFileReader openClassfile() throws IOException {
+            public ClassFileReader openClassfile() throws IOException {
                 return new ClassFileReader(open(), this);
             }
 
@@ -285,7 +285,7 @@ class ModuleClasspath extends Classpath {
      * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
-    Resource getResource(final String relativePath) {
+    public Resource getResource(final String relativePath) {
         return allResourcePaths.contains(relativePath) ? newResource(relativePath) : null;
     }
 
@@ -296,7 +296,7 @@ class ModuleClasspath extends Classpath {
      *            日志
      */
     @Override
-    void scanPaths(final LogNode log) {
+    public void scanPaths(final LogNode log) {
         if (skipClasspath) {
             return;
         }
@@ -326,7 +326,7 @@ class ModuleClasspath extends Classpath {
             CollectionUtils.sortIfNotEmpty(resourceRelativePaths);
 
             String prevParentRelativePath = null;
-            ScanSpecPathMatch prevParentMatchStatus = null;
+            ScanConfigPathMatch prevParentMatchStatus = null;
             for (final String relativePath : resourceRelativePaths) {
                 // 来自 ModuleReader#find()："如果模块读取器可以确定该名称定位到一个目录，
                 // 则结果 URI 将以斜杠('/')结尾"但根据 ModuleReader#list() 的文档：
@@ -370,14 +370,14 @@ class ModuleClasspath extends Classpath {
                 final String parentRelativePath = lastSlashIdx < 0 ? "/"
                         : relativePath.substring(0, lastSlashIdx + 1);
                 final boolean parentRelativePathChanged = !parentRelativePath.equals(prevParentRelativePath);
-                final ScanSpecPathMatch parentMatchStatus = //
+                final ScanConfigPathMatch parentMatchStatus = //
                         prevParentRelativePath == null || parentRelativePathChanged
                                 ? ScanConfig.dirAcceptMatchStatus(parentRelativePath)
                                 : prevParentMatchStatus;
                 prevParentRelativePath = parentRelativePath;
                 prevParentMatchStatus = parentMatchStatus;
 
-                if (parentMatchStatus == ScanSpecPathMatch.HAS_REJECTED_PATH_PREFIX) {
+                if (parentMatchStatus == ScanConfigPathMatch.HAS_REJECTED_PATH_PREFIX) {
                     // 父目录或其某个祖先目录被拒绝
                     if (subLog != null) {
                         subLog.log("Skipping rejected path: " + relativePath);
@@ -388,9 +388,9 @@ class ModuleClasspath extends Classpath {
                 // 找到未被拒绝的相对路径
                 if (allResourcePaths.add(relativePath)) {
                     // 如果资源被接受
-                    if (parentMatchStatus == ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX
-                            || parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_PATH
-                            || (parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_CLASS_PACKAGE
+                    if (parentMatchStatus == ScanConfigPathMatch.HAS_ACCEPTED_PATH_PREFIX
+                            || parentMatchStatus == ScanConfigPathMatch.AT_ACCEPTED_PATH
+                            || (parentMatchStatus == ScanConfigPathMatch.AT_ACCEPTED_CLASS_PACKAGE
                             && ScanConfig.classfileIsSpecificallyAccepted(relativePath))) {
                         // 添加被接受的资源
                         addAcceptedResource(newResource(relativePath), parentMatchStatus,
@@ -426,7 +426,7 @@ class ModuleClasspath extends Classpath {
      *
      * @return 模块引用
      */
-    ModuleRef getModuleRef() {
+    public ModuleRef getModuleRef() {
         return moduleRef;
     }
 
@@ -458,7 +458,7 @@ class ModuleClasspath extends Classpath {
      * @see com.bingbaihanji.classgraph.core.Classpath#getURI()
      */
     @Override
-    URI getURI() {
+    public URI getURI() {
         final URI uri = moduleRef.getLocation();
         if (uri == null) {
             // 某些模块没有已知的模块位置(ModuleReference#location() 可以返回 null)
@@ -468,7 +468,7 @@ class ModuleClasspath extends Classpath {
     }
 
     @Override
-    List<URI> getAllURIs() {
+    public List<URI> getAllURIs() {
         return Collections.singletonList(getURI());
     }
 
@@ -476,7 +476,7 @@ class ModuleClasspath extends Classpath {
      * @see com.bingbaihanji.classgraph.core.Classpath#getFile()
      */
     @Override
-    File getFile() {
+    public File getFile() {
         try {
             final URI uri = moduleRef.getLocation();
             if (uri != null && !"jrt".equals(uri.getScheme())) {

@@ -1,0 +1,565 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.bingbaihanji:fxdecomplie >--------------------
+[INFO] Building fxdecomplie 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- antrun:3.1.0:run (create-bin-directory) @ fxdecomplie ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ fxdecomplie ---
+[INFO] Copying 34 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ fxdecomplie ---
+[INFO] Recompiling the module because of changed source code.
+[WARNING] I/O error deleting the annotation processing generated files: D:\bingbaihanji\fxdecomplie\fxdecomplie\target\generated-sources\annotations
+[INFO] Compiling 1158 source files with javac [debug target 25] to target\classes
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/JarReader.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/JarReader.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassTabOpener.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassTabOpener.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 某些消息已经过简化; 请使用 -Xdiags:verbose 重新编译以获得完整输出
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/util/reflect/ReflectUtils.java:[6,19] sun.reflect.ReflectionFactory是内部专用 API, 可能会在未来发行版中删除
+[WARNING] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/util/reflect/ReflectUtils.java:[821,35] sun.reflect.ReflectionFactory是内部专用 API, 可能会在未来发行版中删除
+[INFO] 2 warnings 
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[42,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/InfoList.java:[45,48] 找不到符号
+  符号: 类 LazyList
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/Classpath.java:[36,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[92,18] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ResourceList.java:[46,35] 找不到符号
+  符号: 类 LazyList
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[142,63] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleInfo.java:[52,23] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.metadata.ModuleInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleInfo.java:[89,49] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.metadata.ModuleInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/HierarchicalType.java:[40,48] 找不到符号
+  符号: 类 MetadataNode
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1018,15] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1041,45] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassInfo.java:[96,15] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.metadata.ClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassInfo.java:[323,44] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.metadata.ClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[67,19] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[70,24] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[167,23] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[167,55] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1057,23] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1075,37] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/ModuleClasspath.java:[41,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[89,24] 找不到符号
+  符号:   类 ModuleClasspath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[94,40] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[243,53] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[244,57] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[244,101] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[394,58] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[394,18] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[449,23] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[449,65] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[551,70] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[613,56] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[671,44] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[699,47] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassMemberInfo.java:[219,21] 找不到符号
+  符号:   类 HierarchicalType
+  位置: 类 com.bingbaihanji.classgraph.metadata.ClassMemberInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassMemberInfo.java:[239,21] 找不到符号
+  符号:   类 HierarchicalType
+  位置: 类 com.bingbaihanji.classgraph.metadata.ClassMemberInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassMemberInfo.java:[257,21] 找不到符号
+  符号:   类 HierarchicalType
+  位置: 类 com.bingbaihanji.classgraph.metadata.ClassMemberInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[58,19] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[86,27] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/DirClasspath.java:[33,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/DirClasspath.java:[162,13] 找不到符号
+  符号:   类 Resource
+  位置: 类 com.bingbaihanji.classgraph.classpath.DirClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/DirClasspath.java:[302,5] 找不到符号
+  符号:   类 Resource
+  位置: 类 com.bingbaihanji.classgraph.classpath.DirClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[35,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[67,45] 找不到符号
+  符号:   类 Resource
+  位置: 类 com.bingbaihanji.classgraph.classpath.JarClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[296,13] 找不到符号
+  符号:   类 Resource
+  位置: 类 com.bingbaihanji.classgraph.classpath.JarClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[442,5] 找不到符号
+  符号:   类 Resource
+  位置: 类 com.bingbaihanji.classgraph.classpath.JarClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[51,13] 找不到符号
+  符号:   类 ArrayType
+  位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[67,26] 找不到符号
+  符号:   类 ArrayType
+  位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[78,30] 找不到符号
+  符号:   类 ScanResult
+  位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[100,12] com.bingbaihanji.classgraph.metadata.ClassInfo.ClassType 在 com.bingbaihanji.classgraph.metadata.ClassInfo 中是 private 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[109,12] 找不到符号
+  符号:   类 ArrayType
+  位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[118,12] 找不到符号
+  符号:   类 TypeSignature
+  位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ByteBuffer.java:[33,1] 已在该编译单元中定义com.bingbaihanji.classgraph.resource.ByteBuffer
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/GraphvizDotfileGenerator.java:[232,50] 找不到符号
+  符号:   类 ClassInfo
+  位置: 类 com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/GraphvizDotfileGenerator.java:[507,49] 找不到符号
+  符号:   类 ClassInfoList
+  位置: 类 com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/GraphvizDotfileGenerator.java:[658,75] 找不到符号
+  符号:   类 ClassInfoList
+  位置: 类 com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1091,28] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1105,29] 找不到符号
+  符号:   类 ClassParser
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1123,61] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1124,62] 找不到符号
+  符号:   类 ClassParser
+  位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[49,13] 找不到符号
+  符号:   类 ArrayClassInfo
+  位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[159,79] 找不到符号
+  符号:   类 AnnotationInfo
+  位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[180,12] 找不到符号
+  符号:   类 AnnotationInfoList
+  位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[199,15] 找不到符号
+  符号:   类 ClassInfo
+  位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[208,12] 找不到符号
+  符号:   类 ArrayClassInfo
+  位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[230,30] 找不到符号
+  符号:   类 ScanResult
+  位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[387,73] 找不到符号
+  符号:   类 AnnotationInfoList
+  位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[241,79] 找不到符号
+  符号:   类 AnnotationInfo
+  位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[283,15] 找不到符号
+  符号:   类 ClassInfo
+  位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[302,30] 找不到符号
+  符号:   类 ScanResult
+  位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[350,73] 找不到符号
+  符号:   类 AnnotationInfoList
+  位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/TypeVar.java:[174,79] 找不到符号
+  符号:   类 AnnotationInfo
+  位置: 类 com.bingbaihanji.classgraph.type.TypeVar
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/TypeVar.java:[207,30] 找不到符号
+  符号:   类 ScanResult
+  位置: 类 com.bingbaihanji.classgraph.type.TypeVar
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/TypeVar.java:[318,73] 找不到符号
+  符号:   类 AnnotationInfoList
+  位置: 类 com.bingbaihanji.classgraph.type.TypeVar
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[199,37] 找不到符号
+  符号:   类 ModuleClasspath
+  位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[200,21] 找不到符号
+  符号:   类 ModuleClasspath
+  位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[278,16] java.nio.ByteBuffer是抽象的; 无法实例化
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[480,9] 找不到符号
+  符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathFilter)
+  位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[494,9] 找不到符号
+  符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathURLFilter)
+  位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[873,51] getParentPackageName(java.lang.String)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[1651,34] getRuntimeInfo(com.bingbaihanji.classgraph.reflect.ReflectionUtils)在com.bingbaihanji.classgraph.classpath.ModulePathInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleRef.java:[310,16] ModuleReaderProxy(com.bingbaihanji.classgraph.metadata.ModuleRef)在com.bingbaihanji.classgraph.resource.ModuleReaderProxy中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ModuleReaderProxy.java:[62,40] reflectionUtils在com.bingbaihanji.classgraph.metadata.ModuleRef中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/FileSlice.java:[209,53] 不兼容的类型: java.nio.ByteBuffer无法转换为com.bingbaihanji.classgraph.resource.ByteBuffer
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[169,58] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[170,78] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[171,29] 找不到符号
+  符号:   方法 get(java.lang.String)
+  位置: 类型为com.bingbaihanji.classgraph.metadata.AnnotationInfoList的变量 annotationInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[174,34] 找不到符号
+  符号:   方法 isEmpty()
+  位置: 类型为com.bingbaihanji.classgraph.metadata.AnnotationParameterValueList的变量 vals
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[189,30] handleRepeatableAnnotations(java.util.Set<java.lang.String>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[234,15] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[281,22] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[288,56] 无法将类 com.bingbaihanji.classgraph.metadata.MetadataNode中的方法 findReferencedClassInfo应用到给定类型;
+  需要: com.bingbaihanji.classgraph.util.LogNode
+  找到:    com.bingbaihanji.classgraph.util.LogNode
+  原因: findReferencedClassInfo(com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.metadata.MetadataNode中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[294,38] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[298,41] 对于ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean), 找不到合适的构造器
+    构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses,boolean)不适用
+      (参数不匹配; java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>无法转换为com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses)
+    构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)不适用
+      (ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[304,24] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[308,27] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ModuleInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[326,20] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[358,20] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[403,20] 找不到符号
+  符号:   类 Classpath
+  位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[404,38] 找不到符号
+  符号:   类 ModuleClasspath
+  位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[405,34] 找不到符号
+  符号:   类 ModuleClasspath
+  位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[INFO] 100 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.546 s
+[INFO] Finished at: 2026-07-23T10:02:45+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project fxdecomplie: Compilation failure: Compilation failure: 
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[42,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/InfoList.java:[45,48] 找不到符号
+[ERROR]   符号: 类 LazyList
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/Classpath.java:[36,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[92,18] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ResourceList.java:[46,35] 找不到符号
+[ERROR]   符号: 类 LazyList
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[142,63] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleInfo.java:[52,23] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ModuleInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleInfo.java:[89,49] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ModuleInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/HierarchicalType.java:[40,48] 找不到符号
+[ERROR]   符号: 类 MetadataNode
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1018,15] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1041,45] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassInfo.java:[96,15] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassInfo.java:[323,44] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[67,19] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[70,24] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[167,23] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[167,55] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.bytecode.ClassParser
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1057,23] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1075,37] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/ModuleClasspath.java:[41,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[89,24] 找不到符号
+[ERROR]   符号:   类 ModuleClasspath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[94,40] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[243,53] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[244,57] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[244,101] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[394,58] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[394,18] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[449,23] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[449,65] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[551,70] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[613,56] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[671,44] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[699,47] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassMemberInfo.java:[219,21] 找不到符号
+[ERROR]   符号:   类 HierarchicalType
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ClassMemberInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassMemberInfo.java:[239,21] 找不到符号
+[ERROR]   符号:   类 HierarchicalType
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ClassMemberInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ClassMemberInfo.java:[257,21] 找不到符号
+[ERROR]   符号:   类 HierarchicalType
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ClassMemberInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[58,19] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[86,27] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/DirClasspath.java:[33,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/DirClasspath.java:[162,13] 找不到符号
+[ERROR]   符号:   类 Resource
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.classpath.DirClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/DirClasspath.java:[302,5] 找不到符号
+[ERROR]   符号:   类 Resource
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.classpath.DirClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[35,48] com.bingbaihanji.classgraph.scan.Scanner.com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit 是在不可访问的类或接口中定义的
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[67,45] 找不到符号
+[ERROR]   符号:   类 Resource
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.classpath.JarClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[296,13] 找不到符号
+[ERROR]   符号:   类 Resource
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.classpath.JarClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/classpath/JarClasspath.java:[442,5] 找不到符号
+[ERROR]   符号:   类 Resource
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.classpath.JarClasspath
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[51,13] 找不到符号
+[ERROR]   符号:   类 ArrayType
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[67,26] 找不到符号
+[ERROR]   符号:   类 ArrayType
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[78,30] 找不到符号
+[ERROR]   符号:   类 ScanResult
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[100,12] com.bingbaihanji.classgraph.metadata.ClassInfo.ClassType 在 com.bingbaihanji.classgraph.metadata.ClassInfo 中是 private 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[109,12] 找不到符号
+[ERROR]   符号:   类 ArrayType
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ArrayClassInfo.java:[118,12] 找不到符号
+[ERROR]   符号:   类 TypeSignature
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.metadata.ArrayClassInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ByteBuffer.java:[33,1] 已在该编译单元中定义com.bingbaihanji.classgraph.resource.ByteBuffer
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/GraphvizDotfileGenerator.java:[232,50] 找不到符号
+[ERROR]   符号:   类 ClassInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/GraphvizDotfileGenerator.java:[507,49] 找不到符号
+[ERROR]   符号:   类 ClassInfoList
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/GraphvizDotfileGenerator.java:[658,75] 找不到符号
+[ERROR]   符号:   类 ClassInfoList
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1091,28] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1105,29] 找不到符号
+[ERROR]   符号:   类 ClassParser
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1123,61] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1124,62] 找不到符号
+[ERROR]   符号:   类 ClassParser
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.Scanner.ClassfileScannerWorkUnitProcessor
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[49,13] 找不到符号
+[ERROR]   符号:   类 ArrayClassInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[159,79] 找不到符号
+[ERROR]   符号:   类 AnnotationInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[180,12] 找不到符号
+[ERROR]   符号:   类 AnnotationInfoList
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[199,15] 找不到符号
+[ERROR]   符号:   类 ClassInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[208,12] 找不到符号
+[ERROR]   符号:   类 ArrayClassInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[230,30] 找不到符号
+[ERROR]   符号:   类 ScanResult
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/ArrayType.java:[387,73] 找不到符号
+[ERROR]   符号:   类 AnnotationInfoList
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.ArrayType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[241,79] 找不到符号
+[ERROR]   符号:   类 AnnotationInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[283,15] 找不到符号
+[ERROR]   符号:   类 ClassInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[302,30] 找不到符号
+[ERROR]   符号:   类 ScanResult
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/BaseType.java:[350,73] 找不到符号
+[ERROR]   符号:   类 AnnotationInfoList
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.BaseType
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/TypeVar.java:[174,79] 找不到符号
+[ERROR]   符号:   类 AnnotationInfo
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.TypeVar
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/TypeVar.java:[207,30] 找不到符号
+[ERROR]   符号:   类 ScanResult
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.TypeVar
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/TypeVar.java:[318,73] 找不到符号
+[ERROR]   符号:   类 AnnotationInfoList
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.type.TypeVar
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[199,37] 找不到符号
+[ERROR]   符号:   类 ModuleClasspath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[200,21] 找不到符号
+[ERROR]   符号:   类 ModuleClasspath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.resource.Resource
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[278,16] java.nio.ByteBuffer是抽象的; 无法实例化
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[480,9] 找不到符号
+[ERROR]   符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathFilter)
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[494,9] 找不到符号
+[ERROR]   符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathURLFilter)
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[873,51] getParentPackageName(java.lang.String)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[1651,34] getRuntimeInfo(com.bingbaihanji.classgraph.reflect.ReflectionUtils)在com.bingbaihanji.classgraph.classpath.ModulePathInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleRef.java:[310,16] ModuleReaderProxy(com.bingbaihanji.classgraph.metadata.ModuleRef)在com.bingbaihanji.classgraph.resource.ModuleReaderProxy中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ModuleReaderProxy.java:[62,40] reflectionUtils在com.bingbaihanji.classgraph.metadata.ModuleRef中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/FileSlice.java:[209,53] 不兼容的类型: java.nio.ByteBuffer无法转换为com.bingbaihanji.classgraph.resource.ByteBuffer
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[169,58] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[170,78] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[171,29] 找不到符号
+[ERROR]   符号:   方法 get(java.lang.String)
+[ERROR]   位置: 类型为com.bingbaihanji.classgraph.metadata.AnnotationInfoList的变量 annotationInfo
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[174,34] 找不到符号
+[ERROR]   符号:   方法 isEmpty()
+[ERROR]   位置: 类型为com.bingbaihanji.classgraph.metadata.AnnotationParameterValueList的变量 vals
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[189,30] handleRepeatableAnnotations(java.util.Set<java.lang.String>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[234,15] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[281,22] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[288,56] 无法将类 com.bingbaihanji.classgraph.metadata.MetadataNode中的方法 findReferencedClassInfo应用到给定类型;
+[ERROR]   需要: com.bingbaihanji.classgraph.util.LogNode
+[ERROR]   找到:    com.bingbaihanji.classgraph.util.LogNode
+[ERROR]   原因: findReferencedClassInfo(com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.metadata.MetadataNode中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[294,38] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[298,41] 对于ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean), 找不到合适的构造器
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses,boolean)不适用
+[ERROR]       (参数不匹配; java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>无法转换为com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses)
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)不适用
+[ERROR]       (ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[304,24] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[308,27] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ModuleInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[326,20] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[358,20] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[403,20] 找不到符号
+[ERROR]   符号:   类 Classpath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[404,38] 找不到符号
+[ERROR]   符号:   类 ModuleClasspath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[405,34] 找不到符号
+[ERROR]   符号:   类 ModuleClasspath
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ScanResult
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

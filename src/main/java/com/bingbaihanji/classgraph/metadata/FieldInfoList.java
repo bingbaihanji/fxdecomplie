@@ -106,6 +106,22 @@ public class FieldInfoList extends InfoList<FieldInfo> {
     // -------------------------------------------------------------------------------------------------------------
 
     /**
+     * 检查此列表中是否包含具有给定名称的 {@link FieldInfo} 对象
+     *
+     * @param fieldName
+     *            字段名称
+     * @return 如果此列表包含具有给定名称的 {@link FieldInfo} 对象，则返回 true
+     */
+    public boolean containsName(final String fieldName) {
+        for (final FieldInfo fi : this) {
+            if (fi.getName().equals(fieldName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 查找此列表中满足给定过滤谓词条件的 {@link FieldInfo} 对象子集
      *
      * @param filter

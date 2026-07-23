@@ -477,7 +477,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph filterClasspaths(final ClasspathFilter classpathElementFilter) {
-        FilterClasspaths(classpathElementFilter);
+        ScanConfig.filterClasspaths(classpathElementFilter);
         return this;
     }
 
@@ -491,7 +491,7 @@ public class ClassGraph {
      * @return this(用于方法链式调用)
      */
     public ClassGraph filterClasspathsByURL(final ClasspathURLFilter classpathElementURLFilter) {
-        FilterClasspaths(classpathElementURLFilter);
+        ScanConfig.filterClasspaths(classpathElementURLFilter);
         return this;
     }
 

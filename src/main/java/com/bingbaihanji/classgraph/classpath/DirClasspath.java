@@ -34,9 +34,10 @@ import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
 import com.bingbaihanji.classgraph.resource.LogicalZipFile;
 import com.bingbaihanji.classgraph.resource.JarReader;
 import com.bingbaihanji.classgraph.resource.PathSlice;
-import com.bingbaihanji.classgraph.resource.ClassFileReader;
+import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
-import com.bingbaihanji.classgraph.scan.ScanConfig.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
+import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.util.FastPathResolver;
 import com.bingbaihanji.classgraph.util.FileUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -58,7 +59,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 目录类路径元素，使用 {@link Path} API */
-class DirClasspath extends Classpath {
+public class DirClasspath extends Classpath {
     /** 类路径元素根目录 */
     private final Path classpathEltPath;
 
@@ -78,7 +79,7 @@ class DirClasspath extends Classpath {
      * @param ScanConfig
      *            扫描规格
      */
-    DirClasspath(final ClasspathEntryWorkUnit workUnit, final JarReader JarReader,
+    public DirClasspath(final ClasspathEntryWorkUnit workUnit, final JarReader JarReader,
                         final ScanConfig ScanConfig) {
         super(workUnit, ScanConfig);
         this.classpathEltPath = (Path) workUnit.classpathEntryObj;
@@ -90,7 +91,7 @@ class DirClasspath extends Classpath {
      * com.bingbaihanji.classgraph.concurrency.WorkQueue, com.bingbaihanji.classgraph.utils.LogNode)
      */
     @Override
-    void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log) {
+    public void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log) {
         if (!ScanConfig.scanDirs) {
             if (log != null) {
                 log(classpathElementIdx,
@@ -242,7 +243,7 @@ class DirClasspath extends Classpath {
             }
 
             @Override
-            ClassFileReader openClassfile() throws IOException {
+            public ClassFileReader openClassfile() throws IOException {
                 // class 文件不会被压缩，因此将其包装在新的 PathSlice 中然后打开
                 openAndCreateSlice();
                 return new ClassFileReader(pathSlice, this);
@@ -299,7 +300,7 @@ class DirClasspath extends Classpath {
      * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
-    Resource getResource(final String relativePath) {
+    public Resource getResource(final String relativePath) {
         final Path resourcePath = classpathEltPath.resolve(relativePath);
         return FileUtils.canReadAndIsFile(resourcePath) ? newResource(resourcePath, null) : null;
     }
@@ -365,15 +366,15 @@ class DirClasspath extends Classpath {
             return;
         }
 
-        final ScanSpecPathMatch parentMatchStatus = ScanConfig.dirAcceptMatchStatus(dirRelativePathStr);
-        if (parentMatchStatus == ScanSpecPathMatch.HAS_REJECTED_PATH_PREFIX) {
+        final ScanConfigPathMatch parentMatchStatus = ScanConfig.dirAcceptMatchStatus(dirRelativePathStr);
+        if (parentMatchStatus == ScanConfigPathMatch.HAS_REJECTED_PATH_PREFIX) {
             // 到达未被接受或已被拒绝的路径 -- 停止递归扫描
             if (log != null) {
                 log.log("Reached rejected directory, stopping recursive scan: " + dirRelativePathStr);
             }
             return;
         }
-        if (parentMatchStatus == ScanSpecPathMatch.NOT_WITHIN_ACCEPTED_PATH) {
+        if (parentMatchStatus == ScanConfigPathMatch.NOT_WITHIN_ACCEPTED_PATH) {
             // 到达既未被接受也未被拒绝的路径 -- 停止递归扫描
             return;
         }
@@ -403,7 +404,7 @@ class DirClasspath extends Classpath {
         final boolean isModularJar = VersionFinder.JAVA_MAJOR_VERSION >= 9 && getModuleName() != null;
 
         // 仅当目录不仅仅是已接受路径的祖先时才扫描目录中的文件
-        if (parentMatchStatus != ScanSpecPathMatch.ANCESTOR_OF_ACCEPTED_PATH) {
+        if (parentMatchStatus != ScanConfigPathMatch.ANCESTOR_OF_ACCEPTED_PATH) {
             // 执行先序遍历(先处理目录中的文件，再处理子目录)，以减少文件系统缓存未命中
             final Iterator<Path> pathsIterator = pathsInDir.iterator();
             while (pathsIterator.hasNext()) {
@@ -427,9 +428,9 @@ class DirClasspath extends Classpath {
                     }
 
                     // 如果相对路径被接受
-                    if (parentMatchStatus == ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX
-                            || parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_PATH
-                            || (parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_CLASS_PACKAGE
+                    if (parentMatchStatus == ScanConfigPathMatch.HAS_ACCEPTED_PATH_PREFIX
+                            || parentMatchStatus == ScanConfigPathMatch.AT_ACCEPTED_PATH
+                            || (parentMatchStatus == ScanConfigPathMatch.AT_ACCEPTED_CLASS_PACKAGE
                             && ScanConfig.classfileIsSpecificallyAccepted(subPathRelativeStr))) {
                         // 资源被接受
                         final Resource resource = newResource(subPath, fileAttributes);
@@ -502,7 +503,7 @@ class DirClasspath extends Classpath {
      *            日志
      */
     @Override
-    void scanPaths(final LogNode log) {
+    public void scanPaths(final LogNode log) {
         if (!checkResourcePathAcceptReject(classpathEltPath.toString(), log)) {
             skipClasspath = true;
         }
@@ -551,7 +552,7 @@ class DirClasspath extends Classpath {
      * @see com.bingbaihanji.classgraph.core.Classpath#getURI()
      */
     @Override
-    URI getURI() {
+    public URI getURI() {
         try {
             return classpathEltPath.toUri();
         } catch (IOError | SecurityException e) {
@@ -560,7 +561,7 @@ class DirClasspath extends Classpath {
     }
 
     @Override
-    List<URI> getAllURIs() {
+    public List<URI> getAllURIs() {
         return Collections.singletonList(getURI());
     }
 

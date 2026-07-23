@@ -29,6 +29,7 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.resource.GraphvizDotfileGenerator;
 import com.bingbaihanji.classgraph.util.*;
 
 import com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses;
@@ -52,7 +53,7 @@ import java.util.*;
  */
 public class ClassInfoList extends InfoList<ClassInfo> {
     /** 一个不可修改的空 {@link ClassInfoList} */
-    static final ClassInfoList EMPTY_LIST = new ClassInfoList();
+    public static final ClassInfoList EMPTY_LIST = new ClassInfoList();
     /** serialVersionUID */
     private static final long serialVersionUID = 1L;
 
@@ -114,7 +115,7 @@ public class ClassInfoList extends InfoList<ClassInfo> {
      * @param sortByName
      *            是否按名称排序
      */
-    ClassInfoList(final Set<ClassInfo> reachableClasses, final boolean sortByName) {
+    public ClassInfoList(final Set<ClassInfo> reachableClasses, final boolean sortByName) {
         this(reachableClasses, /* directlyRelatedClasses = */ null, sortByName);
     }
 
@@ -361,6 +362,22 @@ public class ClassInfoList extends InfoList<ClassInfo> {
     }
 
     // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 检查此列表中是否包含具有给定名称的 {@link ClassInfo} 对象
+     *
+     * @param className
+     *            类名
+     * @return 如果此列表包含具有给定名称的 {@link ClassInfo} 对象，则返回 true
+     */
+    public boolean containsName(final String className) {
+        for (final ClassInfo ci : this) {
+            if (ci.getName().equals(className)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * 找出此 {@link ClassInfoList} 中给定过滤谓词为 true 的子集

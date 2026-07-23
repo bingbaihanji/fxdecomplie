@@ -31,6 +31,7 @@ package com.bingbaihanji.classgraph.scan;
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.classpath.*;
 import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.bytecode.*;
 import com.bingbaihanji.classgraph.resource.ModuleReaderProxy;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
@@ -45,6 +46,7 @@ import com.bingbaihanji.classgraph.util.WorkQueue;
 import com.bingbaihanji.classgraph.util.WorkQueue.WorkUnitProcessor;
 import com.bingbaihanji.classgraph.bytecode.ClassParser.ClassfileFormatException;
 import com.bingbaihanji.classgraph.bytecode.ClassParser.SkipClassException;
+import com.bingbaihanji.classgraph.bytecode.ClassParser;
 import com.bingbaihanji.classgraph.scan.ClassGraph.FailureHandler;
 import com.bingbaihanji.classgraph.scan.ClassGraph.ScanResultProcessor;
 import com.bingbaihanji.classgraph.resource.JarReader;
@@ -65,7 +67,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /** 类路径扫描器 */
-class Scanner implements Callable<ScanResult> {
+public class Scanner implements Callable<ScanResult> {
 
     /** 扫描规格 */
     private final ScanConfig ScanConfig;
@@ -1013,15 +1015,15 @@ class Scanner implements Callable<ScanResult> {
     /** 用于将类路径元素加入队列以进行打开 */
     static public class ClasspathEntryWorkUnit {
         /** 类路径条目对象所来自的类加载器 */
-        final ClassLoader classLoader;
+        public final ClassLoader classLoader;
         /** 父类路径元素 */
         final Classpath parentClasspath;
         /** 在父类路径元素中的顺序 */
-        final int classpathElementIdxWithinParent;
+        public final int classpathElementIdxWithinParent;
         /** 包根前缀(例如 "BOOT-INF/classes/") */
-        final String packageRootPrefix;
+        public final String packageRootPrefix;
         /** 类路径条目对象({@link String} 路径、{@link Path}、{@link URL} 或 {@link URI}) */
-        Object classpathEntryObj;
+        public Object classpathEntryObj;
 
         /**
          * 构造函数
@@ -1072,7 +1074,7 @@ class Scanner implements Callable<ScanResult> {
          * @param isExternalClass
          *            是否为外部类
          */
-        ClassfileScanWorkUnit(final Classpath Classpath, final Resource classfileResource,
+        public ClassfileScanWorkUnit(final Classpath Classpath, final Resource classfileResource,
                               final boolean isExternalClass) {
             this.Classpath = Classpath;
             this.classfileResource = classfileResource;

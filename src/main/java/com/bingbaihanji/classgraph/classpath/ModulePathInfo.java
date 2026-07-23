@@ -124,7 +124,7 @@ public class ModulePathInfo {
     }
 
     /** 从 VM 命令行参数填充模块信息 */
-    void getRuntimeInfo(final ReflectionUtils reflectionUtils) {
+    public void getRuntimeInfo(final ReflectionUtils reflectionUtils) {
         // 仅在明确请求 ModulePathInfo 时才调用此反射方法，以避免在某些 JRE 上出现非法访问警告，
         // 例如 Adopt JDK 11 (#605)
         if (!gotRuntimeInfo.getAndSet(true)) {

@@ -30,6 +30,8 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.classpath.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
 import com.bingbaihanji.classgraph.util.Assert;
@@ -72,7 +74,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
     // -------------------------------------------------------------------------------------------------------------
 
     /** 反序列化构造函数 */
-    ModuleInfo() {
+    public ModuleInfo() {
         // 空
     }
 
@@ -84,7 +86,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
      * @param Classpath
      *            类路径元素
      */
-    ModuleInfo(final ModuleRef moduleRef, final Classpath Classpath) {
+    public ModuleInfo(final ModuleRef moduleRef, final Classpath Classpath) {
         this.moduleRef = moduleRef;
         this.Classpath = Classpath;
         this.name = Classpath.getModuleName();
@@ -134,7 +136,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
      * @param classInfo
      *            要添加的 {@link ClassInfo} 对象
      */
-    void addClassInfo(final ClassInfo classInfo) {
+    public void addClassInfo(final ClassInfo classInfo) {
         if (classInfoSet == null) {
             classInfoSet = new HashSet<>();
         }
@@ -174,7 +176,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
      * @param packageInfo
      *            要添加的 {@link PackageInfo} 对象
      */
-    void addPackageInfo(final PackageInfo packageInfo) {
+    public void addPackageInfo(final PackageInfo packageInfo) {
         if (packageInfoSet == null) {
             packageInfoSet = new HashSet<>();
         }
@@ -216,7 +218,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
 
     // -------------------------------------------------------------------------------------------------------------
 
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         if (annotationInfoSet != null) {
             for (final AnnotationInfo ai : annotationInfoSet) {
                 ai.setScanResult(scanResult);
@@ -230,7 +232,7 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
      * @param moduleAnnotations
      *            模块注解
      */
-    void addAnnotations(final AnnotationInfoList moduleAnnotations) {
+    public void addAnnotations(final AnnotationInfoList moduleAnnotations) {
         // 目前 module-info.class 文件中仅使用类注解
         if (moduleAnnotations != null && !moduleAnnotations.isEmpty()) {
             if (annotationInfoSet == null) {
@@ -260,7 +262,12 @@ public class ModuleInfo implements Comparable<ModuleInfo>, Named {
      * @return 表示此模块上该命名注解的 {@link AnnotationInfo} 对象，如果模块没有该命名注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
-        return getAnnotationInfo().get(annotationName);
+        for (final AnnotationInfo ai : getAnnotationInfo()) {
+            if (ai.getName().equals(annotationName)) {
+                return ai;
+            }
+        }
+        return null;
     }
 
     /**

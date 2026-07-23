@@ -64,7 +64,7 @@ public class ModuleRef implements Comparable<ModuleRef> {
     private final URI location;
     /** 加载模块中类的 ClassLoader可能为 null，表示引导类加载器 */
     private final ClassLoader classLoader;
-    ReflectionUtils reflectionUtils;
+    public ReflectionUtils reflectionUtils;
     /** 模块的位置 URI，作为缓存的字符串(可能为 null) */
     private String locationStr;
     /** 由位置 URI 形成的文件如果位置 URI 是 "jrt:" URI，则该文件不存在 */

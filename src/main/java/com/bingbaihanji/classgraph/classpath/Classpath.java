@@ -35,7 +35,7 @@ import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.util.WorkQueue;
 import com.bingbaihanji.classgraph.scan.Scanner.ClasspathEntryWorkUnit;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
-import com.bingbaihanji.classgraph.scan.ScanConfig.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
 import com.bingbaihanji.classgraph.util.FileUtils;
 import com.bingbaihanji.classgraph.util.JarUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -48,13 +48,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 类路径元素(类路径上的目录或 jar 文件) */
-abstract class Classpath implements Comparable<Classpath> {
+public abstract class Classpath implements Comparable<Classpath> {
     /**
      * 在此类路径元素中找到的被接受且未被拒绝的资源(仅由一个线程写入，因此不需要使用并发列表)
      */
-    protected final List<Resource> acceptedResources = new ArrayList<>();
+    public final List<Resource> acceptedResources = new ArrayList<>();
     /** 如果 scanFiles 为 true，则从 File 到上次修改时间戳的映射 */
-    protected final Map<File, Long> fileToLastModified = new ConcurrentHashMap<>();
+    public final Map<File, Long> fileToLastModified = new ConcurrentHashMap<>();
     /** 确保类路径元素只被扫描一次的标志 */
     protected final AtomicBoolean scanned = new AtomicBoolean(false);
     /**
@@ -67,7 +67,7 @@ abstract class Classpath implements Comparable<Classpath> {
     /**
      * 在此类路径元素中找到的所有被接受且未被拒绝的 class 文件列表(仅由一个线程写入，因此不需要使用并发列表)
      */
-    protected List<Resource> acceptedClassfileResources = new ArrayList<>();
+    public List<Resource> acceptedClassfileResources = new ArrayList<>();
     /** 获取此类路径元素的类加载器 */
     protected ClassLoader classLoader;
     /** jar 文件或 Path 中的包根路径 */
@@ -75,29 +75,29 @@ abstract class Classpath implements Comparable<Classpath> {
     /** 此类路径元素所属的 ScanResult */
     protected ScanResult scanResult;
     /** 类路径元素在类路径或模块路径中的索引 */
-    int classpathElementIdx;
+    public int classpathElementIdx;
     /**
      * 如果非空，包含嵌套在此类路径元素内部的任何类路径元素根的已解析路径列表(扫描应在嵌套类路径元素根处停止，
      * 否则该子树将被多次扫描)注意：仅包含已解析路径的嵌套部分(已移除公共前缀)还包括尾部 '/'，
      * 因为只需要捕获嵌套的目录类路径元素(嵌套 jar 不需要捕获，因为我们不会扫描 jar 内嵌 jar，
      * 除非内部 jar 被显式列在类路径上)
      */
-    List<String> nestedClasspathRootPrefixes;
+    public List<String> nestedClasspathRootPrefixes;
     /**
      * 如果尝试打开此类路径元素时发生异常(例如损坏的 ZipFile)，则为 true
      */
-    boolean skipClasspath;
+    public boolean skipClasspath;
     /** 如果类路径元素包含一个被明确接受的资源路径，则为 true */
-    boolean containsSpecificallyAcceptedClasspathResourcePath;
+    public boolean containsSpecificallyAcceptedClasspathResourcePath;
     /**
      * 子类路径元素，按子类路径元素在其所在清单文件的 Class-Path 条目中的顺序(或文件在排序后的 lib 目录条目中的位置)
      * 作为键
      */
-    Collection<Classpath> childClasspaths = new ConcurrentLinkedQueue<>();
+    public Collection<Classpath> childClasspaths = new ConcurrentLinkedQueue<>();
     /**
      * 从 {@code module-info.class} 模块描述符中获取的模块名称(如果类路径元素根中存在该描述符)
      */
-    String moduleNameFromModuleDescriptor;
+    public String moduleNameFromModuleDescriptor;
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -119,7 +119,7 @@ abstract class Classpath implements Comparable<Classpath> {
     // -------------------------------------------------------------------------------------------------------------
 
     /** 用于在扫描完成后设置 ScanResult */
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         this.scanResult = scanResult;
     }
 
@@ -138,7 +138,7 @@ abstract class Classpath implements Comparable<Classpath> {
      *
      * @return 类加载器
      */
-    ClassLoader getClassLoader() {
+    public ClassLoader getClassLoader() {
         return classLoader;
     }
 
@@ -193,7 +193,7 @@ abstract class Classpath implements Comparable<Classpath> {
      * @param log
      *            日志
      */
-    void maskClassfiles(final int classpathIdx, final Set<String> classpathRelativePathsFound, final LogNode log) {
+    public void maskClassfiles(final int classpathIdx, final Set<String> classpathRelativePathsFound, final LogNode log) {
         // 查找在类路径/模块路径中出现多次的相对路径
         // 通常重复的相对路径仅出现在类路径/模块路径元素之间，而非内部，
         // 但实际上 zip 文件中的路径并没有唯一性限制，事实上
@@ -246,7 +246,7 @@ abstract class Classpath implements Comparable<Classpath> {
      * @param log
      *            日志
      */
-    protected void addAcceptedResource(final Resource resource, final ScanSpecPathMatch parentMatchStatus,
+    protected void addAcceptedResource(final Resource resource, final ScanConfigPathMatch parentMatchStatus,
                                        final boolean isClassfileOnly, final LogNode log) {
         final String path = resource.getPath();
         final boolean isClassFile = FileUtils.isClassfile(path);
@@ -368,7 +368,7 @@ abstract class Classpath implements Comparable<Classpath> {
      * @throws InterruptedException
      *             如果线程在尝试打开类路径元素时被中断
      */
-    abstract void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log)
+    public abstract void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log)
             throws InterruptedException;
 
     /**
@@ -377,7 +377,7 @@ abstract class Classpath implements Comparable<Classpath> {
      * @param log
      *            日志
      */
-    abstract void scanPaths(final LogNode log);
+    public abstract void scanPaths(final LogNode log);
 
     /**
      * 获取给定相对路径的 {@link Resource}
@@ -388,33 +388,33 @@ abstract class Classpath implements Comparable<Classpath> {
      *            (即不以 "/" 开头或结尾，不包含 "/../" 或 "/./" 等)
      * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
      */
-    abstract Resource getResource(final String relativePath);
+    public abstract Resource getResource(final String relativePath);
 
     /**
      * 获取此类路径元素的 URI
      *
      * @return 类路径元素的 URI
      */
-    abstract URI getURI();
+    public abstract URI getURI();
 
     /**
      * 获取此类路径元素的 URI，以及此 jar 文件内任何自动嵌套包前缀(例如 "spring-boot.jar/BOOT-INF/classes")的 URI
      *
      * @return 类路径元素的 URI
      */
-    abstract List<URI> getAllURIs();
+    public abstract List<URI> getAllURIs();
 
     /**
      * 获取此类路径元素的文件，如果这是一个带有 "jrt:" URI 的模块，则返回 null
      *
      * @return 类路径元素的文件
      */
-    abstract File getFile();
+    public abstract File getFile();
 
     /**
      * 获取此类路径元素的模块名称，如果没有模块名称则返回 null
      *
      * @return 模块名称
      */
-    abstract String getModuleName();
+    public abstract String getModuleName();
 }

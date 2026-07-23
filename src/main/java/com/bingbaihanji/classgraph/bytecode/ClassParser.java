@@ -34,19 +34,12 @@ import com.bingbaihanji.classgraph.resource.*;
 import com.bingbaihanji.classgraph.classpath.*;
 import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.util.*;
-
-import com.bingbaihanji.classgraph.metadata.*;
-import com.bingbaihanji.classgraph.type.*;
-import com.bingbaihanji.classgraph.resource.*;
-import com.bingbaihanji.classgraph.classpath.*;
-import com.bingbaihanji.classgraph.util.*;
 import com.bingbaihanji.classgraph.reflect.*;
 import com.bingbaihanji.classgraph.bytecode.*;
 
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 import com.bingbaihanji.classgraph.util.WorkQueue;
 import com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit;
-import com.bingbaihanji.classgraph.resource.ClassFileReader;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
@@ -171,7 +164,7 @@ public class ClassParser {
      * @throws ClassfileFormatException 如果解析 ClassParser 时发生问题
      * @throws SkipClassException 如果 ClassParser 需要被跳过(例如类为非公开的，且 ignoreClassVisibility 为 false)
      */
-    ClassParser(final Classpath Classpath, final List<Classpath> classpathOrder,
+    public ClassParser(final Classpath Classpath, final List<Classpath> classpathOrder,
               final Set<String> acceptedClassNamesFound, final Set<String> classNamesScheduledForExtendedScanning,
               final String relativePath, final Resource classfileResource, final boolean isExternalClass,
               final ConcurrentHashMap<String, String> stringInternMap,
@@ -474,7 +467,7 @@ public class ClassParser {
      * @param moduleNameToModuleInfo
      *            模块名到模块信息的映射
      */
-    void link(final Map<String, ClassInfo> classNameToClassInfo,
+    public void link(final Map<String, ClassInfo> classNameToClassInfo,
               final Map<String, PackageInfo> packageNameToPackageInfo,
               final Map<String, ModuleInfo> moduleNameToModuleInfo) {
         boolean isModuleDescriptor = false;
@@ -2035,8 +2028,8 @@ public class ClassParser {
     // -------------------------------------------------------------------------------------------------------------
 
     public static class TypePathNode {
-        short typePathKind;
-        short TypeArgIdx;
+        public short typePathKind;
+        public short TypeArgIdx;
 
         public TypePathNode(final int typePathKind, final int TypeArgIdx) {
             this.typePathKind = (short) typePathKind;

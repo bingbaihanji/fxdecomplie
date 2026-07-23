@@ -32,11 +32,13 @@ import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import java.util.*;
 
 /** 类引用类型签名(在 ClassParser 文档中称为"ClassType") */
-public final class ClassRef extends ClassRefOrTypeVar {
+public final class ClassRef extends TypeRef {
     /** 类名 */
     final String className;
 
@@ -94,7 +96,7 @@ public final class ClassRef extends ClassRefOrTypeVar {
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static ClassRef parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
+    public static ClassRef parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
         if (TypeParser.peek() == 'L') {
             TypeParser.next();
             final int startParserPosition = TypeParser.getPosition();
@@ -223,7 +225,7 @@ public final class ClassRef extends ClassRefOrTypeVar {
     }
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         // 计算需要向下下降多少层嵌套
         int numDeeperNestedLevels = 0;
         int nextTypeArgIdx = -1;
@@ -333,7 +335,7 @@ public final class ClassRef extends ClassRefOrTypeVar {
 
     /** @return 用于类加载的完全限定类名 */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         return getFullyQualifiedClassName();
     }
 
@@ -354,7 +356,7 @@ public final class ClassRef extends ClassRefOrTypeVar {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         for (final TypeArg TypeArg : TypeArgs) {
             TypeArg.setScanResult(scanResult);
@@ -373,7 +375,7 @@ public final class ClassRef extends ClassRefOrTypeVar {
      *            被引用的类名集合
      */
     @Override
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         refdClassNames.add(getFullyQualifiedClassName());
         for (final TypeArg TypeArg : TypeArgs) {
             TypeArg.findReferencedClassNames(refdClassNames);
@@ -432,8 +434,8 @@ public final class ClassRef extends ClassRefOrTypeVar {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-                                    final StringBuilder buf) {
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+                                 final StringBuilder buf) {
         // 仅在不使用简单名称或没有后缀时渲染基类
         if (!useSimpleNames || suffixes.isEmpty()) {
             // 追加类型注解

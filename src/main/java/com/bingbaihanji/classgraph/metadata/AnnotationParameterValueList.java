@@ -123,6 +123,22 @@ public class AnnotationParameterValueList extends InfoList<AnnotationParameterVa
     // -------------------------------------------------------------------------------------------------------------
 
     /**
+     * 通过参数名称获取 {@link AnnotationParameterValue}
+     *
+     * @param parameterName
+     *            注解参数名
+     * @return 注解参数值，若不存在则返回 null
+     */
+    public AnnotationParameterValue get(final String parameterName) {
+        for (final AnnotationParameterValue apv : this) {
+            if (apv.getName() != null && apv.getName().equals(parameterName)) {
+                return apv;
+            }
+        }
+        return null;
+    }
+
+    /**
      * 获取注解参数值，通过对 {@link #get(String)} 的结果(如果非空)调用
      * {@link AnnotationParameterValue#getValue()} 来实现
      *

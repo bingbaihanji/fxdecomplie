@@ -30,26 +30,25 @@ package com.bingbaihanji.classgraph.resource;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
- * {@link ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
- * {@link ByteBuffer}
+ * {@link java.nio.ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
+ * {@link java.nio.ByteBuffer}
  */
 public class ByteBuffer implements Closeable {
-    private ByteBuffer byteBuffer;
+    private java.nio.ByteBuffer byteBuffer;
     private Runnable onClose;
 
     /**
-     * {@link ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
-     * {@link ByteBuffer}
+     * {@link java.nio.ByteBuffer} 的包装类，实现了 {@link Closeable} 接口，在不再需要时释放
+     * {@link java.nio.ByteBuffer}
      *
      * @param byteBuffer
-     *            要包装的 {@link ByteBuffer}
+     *            要包装的 {@link java.nio.ByteBuffer}
      * @param onClose
      *            当 {@link #close()} 被调用时要执行的方法
      */
-    ByteBuffer(final ByteBuffer byteBuffer, final Runnable onClose) {
+    ByteBuffer(final java.nio.ByteBuffer byteBuffer, final Runnable onClose) {
         this.byteBuffer = byteBuffer;
         this.onClose = onClose;
     }
@@ -57,13 +56,13 @@ public class ByteBuffer implements Closeable {
     /**
      * 获取被包装的 ByteBuffer
      *
-     * @return 被包装的 {@link ByteBuffer}
+     * @return 被包装的 {@link java.nio.ByteBuffer}
      */
-    public ByteBuffer getByteBuffer() {
+    public java.nio.ByteBuffer getByteBuffer() {
         return byteBuffer;
     }
 
-    /** 释放被包装的 {@link ByteBuffer} */
+    /** 释放被包装的 {@link java.nio.ByteBuffer} */
     @Override
     public void close() throws IOException {
         if (onClose != null) {

@@ -30,6 +30,7 @@ package com.bingbaihanji.classgraph.resource;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.bytecode.*;
+import com.bingbaihanji.classgraph.classpath.*;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
 import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
@@ -44,7 +45,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
@@ -61,15 +61,15 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
     protected InputStream inputStream;
 
     /** 字节缓冲区，或为 null */
-    protected ByteBuffer byteBuffer;
+    public java.nio.ByteBuffer byteBuffer;
 
     /** 长度，未知时为 -1L */
-    protected long length;
+    public long length;
     /**
      * 用于记录在扫描类路径元素路径时发现资源的 {@link LogNode}对于被接受的类文件资源，
      * 在扫描类文件内容时会添加子日志条目
      */
-    LogNode scanLog;
+    public LogNode scanLog;
     /** toString() 的缓存结果 */
     private String toString;
 
@@ -260,7 +260,7 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      * @throws IOException
      *             如果资源无法读取
      */
-    public abstract ByteBuffer read() throws IOException;
+    public abstract java.nio.ByteBuffer read() throws IOException;
 
     /**
      * 为类路径资源打开一个 {@link ByteBuffer}，并将其包装在一个 {@link ByteBuffer} 实例中，
@@ -300,7 +300,7 @@ public abstract class Resource implements Closeable, Comparable<Resource> {
      * @throws IOException
      *             如果发生 I/O 异常
      */
-    abstract ClassFileReader openClassfile() throws IOException;
+    public abstract ClassFileReader openClassfile() throws IOException;
 
     /**
      * 获取资源的长度

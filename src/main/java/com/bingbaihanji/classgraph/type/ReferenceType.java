@@ -32,7 +32,7 @@ import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 
 /**
- * 引用类型的类型签名子类包括 {@link ClassRefOrTypeVar}
+ * 引用类型的类型签名子类包括 {@link TypeRef}
  * ({@link ClassRef} 或 {@link TypeVar})，以及 {@link ArrayType}
  */
 public abstract class ReferenceType extends TypeSignature {
@@ -54,17 +54,17 @@ public abstract class ReferenceType extends TypeSignature {
      */
     static ReferenceType parseReferenceType(final TypeParser TypeParser, final String definingClassName)
             throws ParseException {
-        final ClassRef ClassType = ClassRef.parse(TypeParser, definingClassName);
-        if (ClassType != null) {
-            return ClassType;
+        final ClassRef classRef = ClassRef.parse(TypeParser, definingClassName);
+        if (classRef != null) {
+            return classRef;
         }
-        final TypeVar TypeVar = TypeVar.parse(TypeParser, definingClassName);
-        if (TypeVar != null) {
-            return TypeVar;
+        final TypeVar typeVar = (TypeVar) TypeVar.parse(TypeParser, definingClassName);
+        if (typeVar != null) {
+            return typeVar;
         }
-        final ArrayType ArrayType = ArrayType.parse(TypeParser, definingClassName);
-        if (ArrayType != null) {
-            return ArrayType;
+        final ArrayType arrayType = (ArrayType) ArrayType.parse(TypeParser, definingClassName);
+        if (arrayType != null) {
+            return arrayType;
         }
         return null;
     }

@@ -1,0 +1,299 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.bingbaihanji:fxdecomplie >--------------------
+[INFO] Building fxdecomplie 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.2.0:clean (default-clean) @ fxdecomplie ---
+[INFO] Deleting D:\bingbaihanji\fxdecomplie\fxdecomplie\target
+[INFO] 
+[INFO] --- antrun:3.1.0:run (create-bin-directory) @ fxdecomplie ---
+[INFO] Executing tasks
+[INFO] Executed tasks
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ fxdecomplie ---
+[INFO] Copying 34 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ fxdecomplie ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 1158 source files with javac [debug target 25] to target\classes
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/JarReader.java: 某些输入文件使用或覆盖了已过时的 API。
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/JarReader.java: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassTabOpener.java: 某些输入文件使用了未经检查或不安全的操作。
+[INFO] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/ui/code/ClassTabOpener.java: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+[INFO] 某些消息已经过简化; 请使用 -Xdiags:verbose 重新编译以获得完整输出
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/util/reflect/ReflectUtils.java:[6,19] sun.reflect.ReflectionFactory是内部专用 API, 可能会在未来发行版中删除
+[WARNING] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/fxdecomplie/util/reflect/ReflectUtils.java:[821,35] sun.reflect.ReflectionFactory是内部专用 API, 可能会在未来发行版中删除
+[INFO] 2 warnings 
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/HierarchicalType.java:[40,48] 找不到符号
+  符号: 类 MetadataNode
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[279,16] java.nio.ByteBuffer是抽象的; 无法实例化
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[480,9] 找不到符号
+  符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathFilter)
+  位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[494,9] 找不到符号
+  符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathURLFilter)
+  位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[873,51] getParentPackageName(java.lang.String)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[1651,34] getRuntimeInfo(com.bingbaihanji.classgraph.reflect.ReflectionUtils)在com.bingbaihanji.classgraph.classpath.ModulePathInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleRef.java:[310,16] ModuleReaderProxy(com.bingbaihanji.classgraph.metadata.ModuleRef)在com.bingbaihanji.classgraph.resource.ModuleReaderProxy中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ModuleReaderProxy.java:[62,40] reflectionUtils在com.bingbaihanji.classgraph.metadata.ModuleRef中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/FileSlice.java:[208,53] 不兼容的类型: java.nio.ByteBuffer无法转换为com.bingbaihanji.classgraph.resource.ByteBuffer
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[169,58] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[170,78] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[171,34] 不兼容的类型: java.lang.String无法转换为int
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[189,30] handleRepeatableAnnotations(java.util.Set<java.lang.String>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[234,15] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[281,22] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[288,56] 无法将类 com.bingbaihanji.classgraph.metadata.MetadataNode中的方法 findReferencedClassInfo应用到给定类型;
+  需要: com.bingbaihanji.classgraph.util.LogNode
+  找到:    com.bingbaihanji.classgraph.util.LogNode
+  原因: findReferencedClassInfo(com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.metadata.MetadataNode中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[294,38] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[298,41] 对于ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean), 找不到合适的构造器
+    构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses,boolean)不适用
+      (参数不匹配; java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>无法转换为com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses)
+    构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)不适用
+      (ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[304,24] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[308,27] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ModuleInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[426,34] getRuntimeInfo(com.bingbaihanji.classgraph.reflect.ReflectionUtils)在com.bingbaihanji.classgraph.classpath.ModulePathInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[708,16] 对于ModuleInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>), 找不到合适的构造器
+    构造器 com.bingbaihanji.classgraph.metadata.ModuleInfoList.ModuleInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>)不适用
+      (ModuleInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>)在com.bingbaihanji.classgraph.metadata.ModuleInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+    构造器 com.bingbaihanji.classgraph.metadata.ModuleInfoList.ModuleInfoList(int)不适用
+      (参数不匹配; java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>无法转换为int)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[743,16] 对于PackageInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>), 找不到合适的构造器
+    构造器 com.bingbaihanji.classgraph.metadata.PackageInfoList.PackageInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>)不适用
+      (PackageInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>)在com.bingbaihanji.classgraph.metadata.PackageInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+    构造器 com.bingbaihanji.classgraph.metadata.PackageInfoList.PackageInfoList(int)不适用
+      (参数不匹配; java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>无法转换为int)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[793,42] 对于ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean), 找不到合适的构造器
+    构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses,boolean)不适用
+      (参数不匹配; java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>无法转换为com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses)
+    构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)不适用
+      (ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[848,25] getAllClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[863,25] getAllEnums(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[878,25] getAllRecords(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[908,25] getAllStandardClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[941,54] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[960,48] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1002,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1034,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1065,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1084,25] getAllImplementedInterfaceClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1103,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1145,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1164,25] getAllAnnotationClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1180,25] getAllInterfacesOrAnnotationClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1245,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1266,54] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1287,54] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1308,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[587,44] nestedClasspathRootPrefixes在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[588,44] nestedClasspathRootPrefixes在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[590,40] nestedClasspathRootPrefixes在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[629,71] getZipFilePath()在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[632,36] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[638,40] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[640,48] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[644,40] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[646,48] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[651,40] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[652,40] moduleNameFromManifestFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[653,48] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[677,22] maskClassfiles(int,java.util.Set<java.lang.String>,com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[713,48] fileToLastModified 在 com.bingbaihanji.classgraph.classpath.Classpath 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[728,57] acceptedClassfileResources 在 com.bingbaihanji.classgraph.classpath.Classpath 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[759,18] link(java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.PackageInfo>,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ModuleInfo>)在com.bingbaihanji.classgraph.bytecode.ClassParser中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[796,22] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[854,25] classpathElementIdx在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[863,25] classpathElementIdx在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[880,34] scanPaths(com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[889,30] containsSpecificallyAcceptedClasspathResourcePath在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1156,62] scanLog在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1157,49] scanLog在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1162,49] ClassParser(com.bingbaihanji.classgraph.classpath.Classpath,java.util.List<com.bingbaihanji.classgraph.classpath.Classpath>,java.util.Set<java.lang.String>,java.util.Set<java.lang.String>,java.lang.String,com.bingbaihanji.classgraph.resource.Resource,boolean,java.util.concurrent.ConcurrentHashMap<java.lang.String,java.lang.String>,com.bingbaihanji.classgraph.util.WorkQueue<com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit>,com.bingbaihanji.classgraph.scan.ScanConfig,com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.bytecode.ClassParser中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[184,65] openClassfile()在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[324,38] scanLog在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[334,45] ClassfileScanWorkUnit(com.bingbaihanji.classgraph.classpath.Classpath,com.bingbaihanji.classgraph.resource.Resource,boolean)在com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[360,59] getClassName() 在 com.bingbaihanji.classgraph.metadata.AnnotationInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[368,86] getClassName() 在 com.bingbaihanji.classgraph.metadata.AnnotationClassRef 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[414,31] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[415,80] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[419,35] parameterAnnotationInfo在com.bingbaihanji.classgraph.metadata.MethodInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[420,42] parameterAnnotationInfo在com.bingbaihanji.classgraph.metadata.MethodInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[421,81] parameterAnnotationInfo在com.bingbaihanji.classgraph.metadata.MethodInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[442,30] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[443,78] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[484,34] addScannedClass(java.lang.String,int,boolean,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.classpath.Classpath,com.bingbaihanji.classgraph.resource.Resource)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[486,22] setClassfileVersion(int,int)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[487,22] setModifiers(int)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[488,22] setIsInterface(boolean)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[489,22] setIsAnnotation(boolean)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[490,22] setIsRecord(boolean)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[493,26] addSuperclass(java.lang.String,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[497,30] addImplementedInterface(java.lang.String,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[502,30] addClassAnnotation(com.bingbaihanji.classgraph.metadata.AnnotationInfo,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[506,26] addClassContainment(java.util.List<com.bingbaihanji.classgraph.bytecode.ClassParser.ClassContainment>,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[509,26] addAnnotationParamDefaultValues(com.bingbaihanji.classgraph.metadata.AnnotationParameterValueList)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[512,26] addFullyQualifiedDefiningMethodName(java.lang.String)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[515,26] addFieldInfo(com.bingbaihanji.classgraph.metadata.FieldInfoList,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[518,26] addMethodInfo(com.bingbaihanji.classgraph.metadata.MethodInfoList,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[521,26] setTypeSignature(java.lang.String)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[524,26] addReferencedClassNames(java.util.Set<java.lang.String>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[527,26] addTypeDecorators(java.util.List<com.bingbaihanji.classgraph.bytecode.ClassParser.ClassTypeAnnotationDecorator>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[535,51] getParentPackageName(java.lang.String)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[536,38] getOrCreatePackage(java.lang.String,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.PackageInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[539,28] addAnnotations(com.bingbaihanji.classgraph.metadata.AnnotationInfoList)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[542,28] addClassInfo(com.bingbaihanji.classgraph.metadata.ClassInfo)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[543,26] packageInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[INFO] 100 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  10.978 s
+[INFO] Finished at: 2026-07-23T10:09:37+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project fxdecomplie: Compilation failure: Compilation failure: 
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/type/HierarchicalType.java:[40,48] 找不到符号
+[ERROR]   符号: 类 MetadataNode
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/Resource.java:[279,16] java.nio.ByteBuffer是抽象的; 无法实例化
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[480,9] 找不到符号
+[ERROR]   符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathFilter)
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[494,9] 找不到符号
+[ERROR]   符号:   方法 FilterClasspaths(com.bingbaihanji.classgraph.scan.ClassGraph.ClasspathURLFilter)
+[ERROR]   位置: 类 com.bingbaihanji.classgraph.scan.ClassGraph
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[873,51] getParentPackageName(java.lang.String)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ClassGraph.java:[1651,34] getRuntimeInfo(com.bingbaihanji.classgraph.reflect.ReflectionUtils)在com.bingbaihanji.classgraph.classpath.ModulePathInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/metadata/ModuleRef.java:[310,16] ModuleReaderProxy(com.bingbaihanji.classgraph.metadata.ModuleRef)在com.bingbaihanji.classgraph.resource.ModuleReaderProxy中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/ModuleReaderProxy.java:[62,40] reflectionUtils在com.bingbaihanji.classgraph.metadata.ModuleRef中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/resource/FileSlice.java:[208,53] 不兼容的类型: java.nio.ByteBuffer无法转换为com.bingbaihanji.classgraph.resource.ByteBuffer
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[169,58] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[170,78] annotationInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[171,34] 不兼容的类型: java.lang.String无法转换为int
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[189,30] handleRepeatableAnnotations(java.util.Set<java.lang.String>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[234,15] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[281,22] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[288,56] 无法将类 com.bingbaihanji.classgraph.metadata.MetadataNode中的方法 findReferencedClassInfo应用到给定类型;
+[ERROR]   需要: com.bingbaihanji.classgraph.util.LogNode
+[ERROR]   找到:    com.bingbaihanji.classgraph.util.LogNode
+[ERROR]   原因: findReferencedClassInfo(com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.metadata.MetadataNode中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[294,38] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[298,41] 对于ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean), 找不到合适的构造器
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses,boolean)不适用
+[ERROR]       (参数不匹配; java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>无法转换为com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses)
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)不适用
+[ERROR]       (ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[304,24] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[308,27] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.metadata.ModuleInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[426,34] getRuntimeInfo(com.bingbaihanji.classgraph.reflect.ReflectionUtils)在com.bingbaihanji.classgraph.classpath.ModulePathInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[708,16] 对于ModuleInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>), 找不到合适的构造器
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ModuleInfoList.ModuleInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>)不适用
+[ERROR]       (ModuleInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>)在com.bingbaihanji.classgraph.metadata.ModuleInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ModuleInfoList.ModuleInfoList(int)不适用
+[ERROR]       (参数不匹配; java.util.Collection<com.bingbaihanji.classgraph.metadata.ModuleInfo>无法转换为int)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[743,16] 对于PackageInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>), 找不到合适的构造器
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.PackageInfoList.PackageInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>)不适用
+[ERROR]       (PackageInfoList(java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>)在com.bingbaihanji.classgraph.metadata.PackageInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.PackageInfoList.PackageInfoList(int)不适用
+[ERROR]       (参数不匹配; java.util.Collection<com.bingbaihanji.classgraph.metadata.PackageInfo>无法转换为int)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[793,42] 对于ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean), 找不到合适的构造器
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses,boolean)不适用
+[ERROR]       (参数不匹配; java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>无法转换为com.bingbaihanji.classgraph.metadata.ClassInfo.ReachableAndDirectlyRelatedClasses)
+[ERROR]     构造器 com.bingbaihanji.classgraph.metadata.ClassInfoList.ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)不适用
+[ERROR]       (ClassInfoList(java.util.Set<com.bingbaihanji.classgraph.metadata.ClassInfo>,boolean)在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问)
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[848,25] getAllClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[863,25] getAllEnums(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[878,25] getAllRecords(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[908,25] getAllStandardClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[941,54] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[960,48] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1002,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1034,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1065,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1084,25] getAllImplementedInterfaceClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1103,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1145,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1164,25] getAllAnnotationClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1180,25] getAllInterfacesOrAnnotationClasses(java.util.Collection<com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1245,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1266,54] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1287,54] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/ScanResult.java:[1308,49] EMPTY_LIST在com.bingbaihanji.classgraph.metadata.ClassInfoList中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[587,44] nestedClasspathRootPrefixes在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[588,44] nestedClasspathRootPrefixes在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[590,40] nestedClasspathRootPrefixes在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[629,71] getZipFilePath()在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[632,36] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[638,40] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[640,48] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[644,40] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[646,48] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[651,40] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[652,40] moduleNameFromManifestFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[653,48] logicalZipFile在com.bingbaihanji.classgraph.classpath.JarClasspath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[677,22] maskClassfiles(int,java.util.Set<java.lang.String>,com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[713,48] fileToLastModified 在 com.bingbaihanji.classgraph.classpath.Classpath 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[728,57] acceptedClassfileResources 在 com.bingbaihanji.classgraph.classpath.Classpath 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[759,18] link(java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.PackageInfo>,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ModuleInfo>)在com.bingbaihanji.classgraph.bytecode.ClassParser中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[796,22] setScanResult(com.bingbaihanji.classgraph.scan.ScanResult)在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[854,25] classpathElementIdx在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[863,25] classpathElementIdx在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[880,34] scanPaths(com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[889,30] containsSpecificallyAcceptedClasspathResourcePath在com.bingbaihanji.classgraph.classpath.Classpath中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1156,62] scanLog在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1157,49] scanLog在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/scan/Scanner.java:[1162,49] ClassParser(com.bingbaihanji.classgraph.classpath.Classpath,java.util.List<com.bingbaihanji.classgraph.classpath.Classpath>,java.util.Set<java.lang.String>,java.util.Set<java.lang.String>,java.lang.String,com.bingbaihanji.classgraph.resource.Resource,boolean,java.util.concurrent.ConcurrentHashMap<java.lang.String,java.lang.String>,com.bingbaihanji.classgraph.util.WorkQueue<com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit>,com.bingbaihanji.classgraph.scan.ScanConfig,com.bingbaihanji.classgraph.util.LogNode)在com.bingbaihanji.classgraph.bytecode.ClassParser中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[184,65] openClassfile()在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[324,38] scanLog在com.bingbaihanji.classgraph.resource.Resource中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[334,45] ClassfileScanWorkUnit(com.bingbaihanji.classgraph.classpath.Classpath,com.bingbaihanji.classgraph.resource.Resource,boolean)在com.bingbaihanji.classgraph.scan.Scanner.ClassfileScanWorkUnit中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[360,59] getClassName() 在 com.bingbaihanji.classgraph.metadata.AnnotationInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[368,86] getClassName() 在 com.bingbaihanji.classgraph.metadata.AnnotationClassRef 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[414,31] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[415,80] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[419,35] parameterAnnotationInfo在com.bingbaihanji.classgraph.metadata.MethodInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[420,42] parameterAnnotationInfo在com.bingbaihanji.classgraph.metadata.MethodInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[421,81] parameterAnnotationInfo在com.bingbaihanji.classgraph.metadata.MethodInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[442,30] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[443,78] annotationInfo 在 com.bingbaihanji.classgraph.metadata.ClassMemberInfo 中是 protected 访问控制
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[484,34] addScannedClass(java.lang.String,int,boolean,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>,com.bingbaihanji.classgraph.classpath.Classpath,com.bingbaihanji.classgraph.resource.Resource)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[486,22] setClassfileVersion(int,int)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[487,22] setModifiers(int)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[488,22] setIsInterface(boolean)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[489,22] setIsAnnotation(boolean)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[490,22] setIsRecord(boolean)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[493,26] addSuperclass(java.lang.String,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[497,30] addImplementedInterface(java.lang.String,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[502,30] addClassAnnotation(com.bingbaihanji.classgraph.metadata.AnnotationInfo,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[506,26] addClassContainment(java.util.List<com.bingbaihanji.classgraph.bytecode.ClassParser.ClassContainment>,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[509,26] addAnnotationParamDefaultValues(com.bingbaihanji.classgraph.metadata.AnnotationParameterValueList)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[512,26] addFullyQualifiedDefiningMethodName(java.lang.String)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[515,26] addFieldInfo(com.bingbaihanji.classgraph.metadata.FieldInfoList,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[518,26] addMethodInfo(com.bingbaihanji.classgraph.metadata.MethodInfoList,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.ClassInfo>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[521,26] setTypeSignature(java.lang.String)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[524,26] addReferencedClassNames(java.util.Set<java.lang.String>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[527,26] addTypeDecorators(java.util.List<com.bingbaihanji.classgraph.bytecode.ClassParser.ClassTypeAnnotationDecorator>)在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[535,51] getParentPackageName(java.lang.String)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[536,38] getOrCreatePackage(java.lang.String,java.util.Map<java.lang.String,com.bingbaihanji.classgraph.metadata.PackageInfo>,com.bingbaihanji.classgraph.scan.ScanConfig)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[539,28] addAnnotations(com.bingbaihanji.classgraph.metadata.AnnotationInfoList)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[542,28] addClassInfo(com.bingbaihanji.classgraph.metadata.ClassInfo)在com.bingbaihanji.classgraph.metadata.PackageInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] /D:/bingbaihanji/fxdecomplie/fxdecomplie/src/main/java/com/bingbaihanji/classgraph/bytecode/ClassParser.java:[543,26] packageInfo在com.bingbaihanji.classgraph.metadata.ClassInfo中不是公共的; 无法从外部程序包中对其进行访问
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

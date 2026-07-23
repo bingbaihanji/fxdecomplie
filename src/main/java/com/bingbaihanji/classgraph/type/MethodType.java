@@ -31,6 +31,8 @@ package com.bingbaihanji.classgraph.type;
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
@@ -47,7 +49,7 @@ public final class MethodType extends HierarchicalType {
     private final TypeSignature resultType;
 
     /** throws 类型签名 */
-    private final List<ClassRefOrTypeVar> throwsSignatures;
+    private final List<TypeRef> throwsSignatures;
 
     /** 显式接收器参数上的任何类型注解 */
     private AnnotationInfoList receiverTypeAnnotationInfo;
@@ -67,7 +69,7 @@ public final class MethodType extends HierarchicalType {
      *            方法的 throws 签名
      */
     private MethodType(final List<TypeParam> TypeParams, final List<TypeSignature> paramTypes,
-                                final TypeSignature resultType, final List<ClassRefOrTypeVar> throwsSignatures) {
+                                final TypeSignature resultType, final List<TypeRef> throwsSignatures) {
         super();
         this.TypeParams = TypeParams;
         this.parameterTypeSignatures = paramTypes;
@@ -88,14 +90,14 @@ public final class MethodType extends HierarchicalType {
      * @throws ParseException
      *             如果方法类型签名无法解析
      */
-    static MethodType parse(final String typeDescriptor, final String definingClassName)
+    public static MethodType parse(final String typeDescriptor, final String definingClassName)
             throws ParseException {
         if ("<init>".equals(typeDescriptor)) {
             // 特殊情况：CONSTANT_NameAndType_info 结构中的实例初始化方法签名：
             // https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-4.html#jvms-4.4.2
             return new MethodType(Collections.<TypeParam>emptyList(),
                     Collections.<TypeSignature>emptyList(), /* void */ new BaseType('V'),
-                    Collections.<ClassRefOrTypeVar>emptyList());
+                    Collections.<TypeRef>emptyList());
         }
         final TypeParser TypeParser = new TypeParser(typeDescriptor);
         final List<TypeParam> TypeParams = TypeParam.parseList(TypeParser, definingClassName);
@@ -116,20 +118,20 @@ public final class MethodType extends HierarchicalType {
         if (resultType == null) {
             throw new ParseException(TypeParser, "缺少方法结果类型签名");
         }
-        List<ClassRefOrTypeVar> throwsSignatures;
+        List<TypeRef> throwsSignatures;
         if (TypeParser.peek() == '^') {
             throwsSignatures = new ArrayList<>();
             while (TypeParser.peek() == '^') {
                 TypeParser.expect('^');
-                final ClassRef ClassType = ClassRef.parse(TypeParser,
+                final ClassRef classRef = ClassRef.parse(TypeParser,
                         definingClassName);
-                if (ClassType != null) {
-                    throwsSignatures.add(ClassType);
+                if (classRef != null) {
+                    throwsSignatures.add(classRef);
                 } else {
-                    final TypeVar TypeVar = TypeVar.parse(TypeParser,
+                    final TypeVar tv = (TypeVar) com.bingbaihanji.classgraph.type.TypeVar.parse(TypeParser,
                             definingClassName);
-                    if (TypeVar != null) {
-                        throwsSignatures.add(TypeVar);
+                    if (tv != null) {
+                        throwsSignatures.add(tv);
                     } else {
                         throw new ParseException(TypeParser, "缺少类型变量签名");
                     }
@@ -169,7 +171,7 @@ public final class MethodType extends HierarchicalType {
      *
      * @return 方法的参数类型，作为 {@link TypeSignature} 解析类型对象
      */
-    List<TypeSignature> getParameterTypeSignatures() {
+    public List<TypeSignature> getParameterTypeSignatures() {
         return parameterTypeSignatures;
     }
 
@@ -187,12 +189,12 @@ public final class MethodType extends HierarchicalType {
      *
      * @return 方法的 throws 类型，作为 {@link TypeSignature} 解析类型对象
      */
-    public List<ClassRefOrTypeVar> getThrowsSignatures() {
+    public List<TypeRef> getThrowsSignatures() {
         return throwsSignatures;
     }
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         // 类的各个类型部分各自有其自己的 addTypeAnnotation 方法
         throw new IllegalArgumentException(
                 "不能对 " + MethodType.class.getSimpleName() + " 调用此方法");
@@ -204,7 +206,7 @@ public final class MethodType extends HierarchicalType {
      * @param annotationInfo
      *            接收器类型注解
      */
-    void addRecieverTypeAnnotation(final AnnotationInfo annotationInfo) {
+    public void addRecieverTypeAnnotation(final AnnotationInfo annotationInfo) {
         if (receiverTypeAnnotationInfo == null) {
             receiverTypeAnnotationInfo = new AnnotationInfoList(1);
         }
@@ -226,7 +228,7 @@ public final class MethodType extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() 不能在此处调用");
     }
@@ -235,7 +237,7 @@ public final class MethodType extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         throw new IllegalArgumentException("getClassInfo() 不能在此处调用");
     }
 
@@ -243,7 +245,7 @@ public final class MethodType extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (TypeParams != null) {
             for (final TypeParam TypeParam : TypeParams) {
@@ -259,7 +261,7 @@ public final class MethodType extends HierarchicalType {
             this.resultType.setScanResult(scanResult);
         }
         if (throwsSignatures != null) {
-            for (final ClassRefOrTypeVar throwsSignature : throwsSignatures) {
+            for (final TypeRef throwsSignature : throwsSignatures) {
                 throwsSignature.setScanResult(scanResult);
             }
         }
@@ -271,7 +273,7 @@ public final class MethodType extends HierarchicalType {
      * @param refdClassNames
      *            引用的类名集合
      */
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         for (final TypeParam TypeParam : TypeParams) {
             if (TypeParam != null) {
                 TypeParam.findReferencedClassNames(refdClassNames);
@@ -283,7 +285,7 @@ public final class MethodType extends HierarchicalType {
             }
         }
         resultType.findReferencedClassNames(refdClassNames);
-        for (final ClassRefOrTypeVar typeSignature : throwsSignatures) {
+        for (final TypeRef typeSignature : throwsSignatures) {
             if (typeSignature != null) {
                 typeSignature.findReferencedClassNames(refdClassNames);
             }
@@ -301,7 +303,7 @@ public final class MethodType extends HierarchicalType {
      *            引用的类信息集合
      */
     @Override
-    protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
+    public void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
                                            final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final Set<String> refdClassNames = new HashSet<>();
         findReferencedClassNames(refdClassNames);
@@ -342,8 +344,8 @@ public final class MethodType extends HierarchicalType {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-                                    final StringBuilder buf) {
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+                                 final StringBuilder buf) {
         if (!TypeParams.isEmpty()) {
             buf.append('<');
             for (int i = 0; i < TypeParams.size(); i++) {

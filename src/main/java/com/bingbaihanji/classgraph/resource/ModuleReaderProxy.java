@@ -57,7 +57,7 @@ public class ModuleReaderProxy implements Closeable {
      * @throws IOException
      *             如果发生 I/O 异常
      */
-    ModuleReaderProxy(final ModuleRef moduleRef) throws IOException {
+    public ModuleReaderProxy(final ModuleRef moduleRef) throws IOException {
         try {
             reflectionUtils = moduleRef.reflectionUtils;
             if (collectorClass == null || collectorsToList == null) {

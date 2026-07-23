@@ -37,9 +37,10 @@ import com.bingbaihanji.classgraph.resource.FastZipEntry;
 import com.bingbaihanji.classgraph.resource.LogicalZipFile;
 import com.bingbaihanji.classgraph.resource.JarReader;
 import com.bingbaihanji.classgraph.resource.ZipFileSlice;
-import com.bingbaihanji.classgraph.resource.ClassFileReader;
+import com.bingbaihanji.classgraph.resource.Resource;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
-import com.bingbaihanji.classgraph.scan.ScanConfig.ScanSpecPathMatch;
+import com.bingbaihanji.classgraph.scan.ScanConfig.ScanConfigPathMatch;
+import com.bingbaihanji.classgraph.bytecode.ClassFileReader;
 import com.bingbaihanji.classgraph.util.*;
 
 import java.io.File;
@@ -58,7 +59,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** 一个 zip/jar 文件类路径元素 */
-class JarClasspath extends Classpath {
+public class JarClasspath extends Classpath {
     /**
      * 此 zip 文件的路径字符串、{@link URL}、{@link URI} 或 {@link Path} 的 {@link String} 表示形式
      */
@@ -70,11 +71,11 @@ class JarClasspath extends Classpath {
     /** 嵌套 jar 处理器 */
     private final JarReader JarReader;
     /** 此类路径元素的逻辑 zip 文件 */
-    LogicalZipFile logicalZipFile;
+    public LogicalZipFile logicalZipFile;
     /**
      * 从 {@code Automatic-Module-Name} 清单属性中获取的模块名称(如果类路径元素根中存在该属性)
      */
-    String moduleNameFromManifestFile;
+    public String moduleNameFromManifestFile;
     /** jar 文件的规范化路径，如果嵌套则以 "!/" 分隔，不包含任何包根路径 */
     private String zipFilePath;
     /** 从 jar 文件名派生的自动模块名称 */
@@ -90,7 +91,7 @@ class JarClasspath extends Classpath {
      * @param ScanConfig
      *            扫描规格
      */
-    JarClasspath(final ClasspathEntryWorkUnit workUnit, final JarReader JarReader,
+    public JarClasspath(final ClasspathEntryWorkUnit workUnit, final JarReader JarReader,
                         final ScanConfig ScanConfig) {
         super(workUnit, ScanConfig);
         final Object rawPathObj = workUnit.classpathEntryObj;
@@ -119,7 +120,7 @@ class JarClasspath extends Classpath {
      * com.bingbaihanji.classgraph.concurrency.WorkQueue, com.bingbaihanji.classgraph.utils.LogNode)
      */
     @Override
-    void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log) throws InterruptedException {
+    public void open(final WorkQueue<ClasspathEntryWorkUnit> workQueue, final LogNode log) throws InterruptedException {
         if (!ScanConfig.scanJars) {
             if (log != null) {
                 log(classpathElementIdx, "Skipping classpath element, since jar scanning is disabled: " + rawPath,
@@ -374,7 +375,7 @@ class JarClasspath extends Classpath {
             }
 
             @Override
-            ClassFileReader openClassfile() throws IOException {
+            public ClassFileReader openClassfile() throws IOException {
                 return new ClassFileReader(open(), this);
             }
 
@@ -439,7 +440,7 @@ class JarClasspath extends Classpath {
      * @return 给定相对路径的 {@link Resource}，如果 relativePath 在此类路径元素中不存在则返回 null
      */
     @Override
-    Resource getResource(final String relativePath) {
+    public Resource getResource(final String relativePath) {
         return relativePathToResource.get(relativePath);
     }
 
@@ -450,7 +451,7 @@ class JarClasspath extends Classpath {
      *            日志
      */
     @Override
-    void scanPaths(final LogNode log) {
+    public void scanPaths(final LogNode log) {
         if (logicalZipFile == null) {
             skipClasspath = true;
         }
@@ -485,7 +486,7 @@ class JarClasspath extends Classpath {
 
         Set<String> loggedNestedClasspathRootPrefixes = null;
         String prevParentRelativePath = null;
-        ScanSpecPathMatch prevParentMatchStatus = null;
+        ScanConfigPathMatch prevParentMatchStatus = null;
         for (final FastZipEntry zipEntry : logicalZipFile.entries) {
             String relativePath = zipEntry.entryNameUnversioned;
 
@@ -575,13 +576,13 @@ class JarClasspath extends Classpath {
             final int lastSlashIdx = relativePath.lastIndexOf('/');
             final String parentRelativePath = lastSlashIdx < 0 ? "/" : relativePath.substring(0, lastSlashIdx + 1);
             final boolean parentRelativePathChanged = !parentRelativePath.equals(prevParentRelativePath);
-            final ScanSpecPathMatch parentMatchStatus = //
+            final ScanConfigPathMatch parentMatchStatus = //
                     parentRelativePathChanged ? ScanConfig.dirAcceptMatchStatus(parentRelativePath)
                             : prevParentMatchStatus;
             prevParentRelativePath = parentRelativePath;
             prevParentMatchStatus = parentMatchStatus;
 
-            if (parentMatchStatus == ScanSpecPathMatch.HAS_REJECTED_PATH_PREFIX) {
+            if (parentMatchStatus == ScanConfigPathMatch.HAS_REJECTED_PATH_PREFIX) {
                 // 父目录或其某个祖先目录被拒绝
                 if (subLog != null) {
                     subLog.log("Skipping rejected path: " + relativePath);
@@ -593,9 +594,9 @@ class JarClasspath extends Classpath {
             final Resource resource = newResource(zipEntry, relativePath);
             if (relativePathToResource.putIfAbsent(relativePath, resource) == null) {
                 // 如果资源被接受
-                if (parentMatchStatus == ScanSpecPathMatch.HAS_ACCEPTED_PATH_PREFIX
-                        || parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_PATH
-                        || (parentMatchStatus == ScanSpecPathMatch.AT_ACCEPTED_CLASS_PACKAGE
+                if (parentMatchStatus == ScanConfigPathMatch.HAS_ACCEPTED_PATH_PREFIX
+                        || parentMatchStatus == ScanConfigPathMatch.AT_ACCEPTED_PATH
+                        || (parentMatchStatus == ScanConfigPathMatch.AT_ACCEPTED_CLASS_PACKAGE
                         && ScanConfig.classfileIsSpecificallyAccepted(relativePath))) {
                     // 资源被接受
                     addAcceptedResource(resource, parentMatchStatus, /* isClassfileOnly = */ false, subLog);
@@ -642,7 +643,7 @@ class JarClasspath extends Classpath {
      *
      * @return zip 文件的路径，包含任何包根路径
      */
-    String getZipFilePath() {
+    public String getZipFilePath() {
         return packageRootPrefix.isEmpty() ? zipFilePath
                 : zipFilePath + "!/" + packageRootPrefix.substring(0, packageRootPrefix.length() - 1);
     }
@@ -651,7 +652,7 @@ class JarClasspath extends Classpath {
      * @see com.bingbaihanji.classgraph.core.Classpath#getURI()
      */
     @Override
-    URI getURI() {
+    public URI getURI() {
         try {
             return new URI(URLPathEncoder.normalizeURLPath(getZipFilePath()));
         } catch (final URISyntaxException e) {
@@ -663,7 +664,7 @@ class JarClasspath extends Classpath {
      * 返回类路径元素的 URI，以及任何已去除的嵌套自动包根前缀的 URI，例如 "!/BOOT-INF/classes"
      */
     @Override
-    List<URI> getAllURIs() {
+    public List<URI> getAllURIs() {
         if (strippedAutomaticPackageRootPrefixes.isEmpty()) {
             return Collections.singletonList(getURI());
         } else {
@@ -690,7 +691,7 @@ class JarClasspath extends Classpath {
      *         则返回 null
      */
     @Override
-    File getFile() {
+    public File getFile() {
         if (logicalZipFile != null) {
             return logicalZipFile.getPhysicalFile();
         } else {

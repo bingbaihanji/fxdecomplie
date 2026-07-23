@@ -33,6 +33,8 @@ import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.*;
@@ -54,7 +56,7 @@ public final class ClassType extends HierarchicalType {
      * throws 签名(通常为 null)这些仅出现在 Scala 类中，当类标记了 {@code @throws} 时出现，
      * 它们违反了 ClassParser 规范(#495)，但我们仍然解析它们
      */
-    private final List<ClassRefOrTypeVar> throwsSignatures;
+    private final List<TypeRef> throwsSignatures;
 
     // -------------------------------------------------------------------------------------------------------------
 
@@ -72,10 +74,10 @@ public final class ClassType extends HierarchicalType {
      * @param throwsSignatures
      *            throws 签名(这些实际上是无效的，但可能由 Scala 添加：#495)通常为 null
      */
-    private ClassType(final ClassInfo classInfo, final List<TypeParam> TypeParams,
+    public ClassType(final ClassInfo classInfo, final List<TypeParam> TypeParams,
                                final ClassRef superclassSignature,
                                final List<ClassRef> superinterfaceSignatures,
-                               final List<ClassRefOrTypeVar> throwsSignatures) {
+                               final List<TypeRef> throwsSignatures) {
         super();
         this.classInfo = classInfo;
         this.TypeParams = TypeParams;
@@ -94,7 +96,7 @@ public final class ClassType extends HierarchicalType {
      * @param interfaces
      *            实现的接口
      */
-    ClassType(final ClassInfo classInfo, final ClassInfo superclass, final ClassInfoList interfaces) {
+    public ClassType(final ClassInfo classInfo, final ClassInfo superclass, final ClassInfoList interfaces) {
         super();
         this.classInfo = classInfo;
         this.TypeParams = Collections.emptyList();
@@ -137,7 +139,7 @@ public final class ClassType extends HierarchicalType {
      * @throws ParseException
      *             如果类类型签名无法解析
      */
-    static ClassType parse(final String typeDescriptor, final ClassInfo classInfo) throws ParseException {
+    public static ClassType parse(final String typeDescriptor, final ClassInfo classInfo) throws ParseException {
         final TypeParser TypeParser = new TypeParser(typeDescriptor);
         // 定义类名用于使用定义类的类型描述符解析类型变量
         // 但这里我们正在解析定义类的类型描述符，所以它不可能包含指向自身的变量 => 直接使用 null 作为定义类名
@@ -163,7 +165,7 @@ public final class ClassType extends HierarchicalType {
         } else {
             superinterfaceSignatures = Collections.emptyList();
         }
-        List<ClassRefOrTypeVar> throwsSignatures;
+        List<TypeRef> throwsSignatures;
         if (TypeParser.peek() == '^') {
             // 此类型签名的末尾存在非法的 "throws" 后缀
             // Scala 在将某个类标记为 "@throws" 时会添加这些后缀(#495)
@@ -181,10 +183,10 @@ public final class ClassType extends HierarchicalType {
                 if (ClassType != null) {
                     throwsSignatures.add(ClassType);
                 } else {
-                    final TypeVar TypeVar = TypeVar.parse(TypeParser,
+                    final TypeVar typeVar = (TypeVar) TypeVar.parse(TypeParser,
                             classInfo.getName());
-                    if (TypeVar != null) {
-                        throwsSignatures.add(TypeVar);
+                    if (typeVar != null) {
+                        throwsSignatures.add(typeVar);
                     } else {
                         throw new ParseException(TypeParser, "Missing type variable signature");
                     }
@@ -233,14 +235,14 @@ public final class ClassType extends HierarchicalType {
      *
      * @return throws 签名
      */
-    List<ClassRefOrTypeVar> getThrowsSignatures() {
+    List<TypeRef> getThrowsSignatures() {
         return throwsSignatures;
     }
 
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         // 类类型的各个部分各自具有其自己的 addTypeAnnotation 方法
         throw new IllegalArgumentException(
                 "Cannot call this method on " + ClassType.class.getSimpleName());
@@ -250,7 +252,7 @@ public final class ClassType extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         return classInfo != null ? classInfo.getName() : null;
     }
 
@@ -258,7 +260,7 @@ public final class ClassType extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         return classInfo;
     }
 
@@ -266,7 +268,7 @@ public final class ClassType extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (TypeParams != null) {
             for (final TypeParam TypeParam : TypeParams) {
@@ -289,7 +291,7 @@ public final class ClassType extends HierarchicalType {
      * @param refdClassNames
      *            被引用的类名集合
      */
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         for (final TypeParam TypeParam : TypeParams) {
             TypeParam.findReferencedClassNames(refdClassNames);
         }
@@ -302,7 +304,7 @@ public final class ClassType extends HierarchicalType {
             }
         }
         if (throwsSignatures != null) {
-            for (final ClassRefOrTypeVar typeSignature : throwsSignatures) {
+            for (final TypeRef typeSignature : throwsSignatures) {
                 typeSignature.findReferencedClassNames(refdClassNames);
             }
         }
@@ -319,8 +321,8 @@ public final class ClassType extends HierarchicalType {
      *            被引用的类信息集合
      */
     @Override
-    protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
-                                           final Set<ClassInfo> refdClassInfo, final LogNode log) {
+    public void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
+                                        final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final Set<String> refdClassNames = new HashSet<>();
         findReferencedClassNames(refdClassNames);
         for (final String refdClassName : refdClassNames) {
@@ -375,11 +377,11 @@ public final class ClassType extends HierarchicalType {
      * @param buf
      *            字符串构建器
      */
-    void toStringInternal(final String className, final boolean useSimpleNames, final int modifiers,
+    public void toStringInternal(final String className, final boolean useSimpleNames, final int modifiers,
                           final boolean isAnnotation, final boolean isInterface, final AnnotationInfoList annotationsToExclude,
                           final StringBuilder buf) {
         if (throwsSignatures != null) {
-            for (final ClassRefOrTypeVar throwsSignature : throwsSignatures) {
+            for (final TypeRef throwsSignature : throwsSignatures) {
                 if (buf.length() > 0) {
                     buf.append(' ');
                 }
@@ -412,7 +414,9 @@ public final class ClassType extends HierarchicalType {
             buf.append('>');
         }
         if (superclassSignature != null) {
-            final String superSig = superclassSignature.toString(useSimpleNames);
+            final StringBuilder sb = new StringBuilder();
+            superclassSignature.toString(useSimpleNames, sb);
+            final String superSig = sb.toString();
             // 即使超类是 Object，superSig 也可能带有类类型注解
             if (!"java.lang.Object".equals(superSig)
                     && !("Object".equals(superSig) && "java.lang.Object".equals(superclassSignature.className))) {
@@ -444,8 +448,8 @@ public final class ClassType extends HierarchicalType {
      *            字符串构建器
      */
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
-                                    final StringBuilder buf) {
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+                                 final StringBuilder buf) {
         toStringInternal(classInfo.getName(), useSimpleNames, classInfo.getModifiers(), classInfo.isAnnotation(),
                 classInfo.isInterface(), annotationsToExclude, buf);
     }

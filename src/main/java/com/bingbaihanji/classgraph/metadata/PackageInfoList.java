@@ -116,7 +116,7 @@ public class PackageInfoList extends InfoList<PackageInfo> {
      * @param packageInfoCollection
      *            包信息集合
      */
-    PackageInfoList(final Collection<PackageInfo> packageInfoCollection) {
+    public PackageInfoList(final Collection<PackageInfo> packageInfoCollection) {
         super(packageInfoCollection);
     }
 

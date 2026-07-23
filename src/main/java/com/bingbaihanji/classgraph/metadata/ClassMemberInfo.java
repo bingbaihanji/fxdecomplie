@@ -29,6 +29,8 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.util.*;
 
 import com.bingbaihanji.classgraph.util.Assert;
@@ -63,7 +65,7 @@ public abstract class ClassMemberInfo extends MetadataNode implements Named {
     protected String typeSignatureStr;
 
     /** 类成员上的注解(如果有) */
-    protected AnnotationInfoList annotationInfo;
+    public AnnotationInfoList annotationInfo;
 
     /** 注解信息，在加载后缓存 */
     private AnnotationInfoList annotationInfoRef;
@@ -314,7 +316,12 @@ public abstract class ClassMemberInfo extends MetadataNode implements Named {
      * @return 表示此类成员上指定名称注解的 {@link AnnotationInfo} 对象，如果类成员没有该名称的注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
-        return getAnnotationInfo().get(annotationName);
+        for (final AnnotationInfo ai : getAnnotationInfo()) {
+            if (ai.getName().equals(annotationName)) {
+                return ai;
+            }
+        }
+        return null;
     }
 
     /**

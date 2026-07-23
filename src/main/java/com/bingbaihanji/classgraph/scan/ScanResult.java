@@ -75,13 +75,13 @@ public final class ScanResult implements Closeable {
     private final LogNode topLevelLog;
     /** 此 ScanResult 的 {@link WeakReference} */
     private final WeakReference<ScanResult> weakReference;
-    protected ReflectionUtils reflectionUtils;
+    public ReflectionUtils reflectionUtils;
     /** 从类名到 {@link ClassInfo} 的映射 */
-    Map<String, ClassInfo> classNameToClassInfo;
+    public Map<String, ClassInfo> classNameToClassInfo;
     /** {@link ClasspathFinder} */
     ClasspathFinder classpathFinder;
     /** 扫描规格 */
-    ScanConfig ScanConfig;
+    public ScanConfig ScanConfig;
     /** 扫描期间跳过的文件数(读取或解析失败的 class 文件) */
     int skippedFileCount;
     /** 原始类路径元素的顺序 */
@@ -167,8 +167,13 @@ public final class ScanResult implements Closeable {
             final Set<String> allRepeatableAnnotationNames = new HashSet<>();
             for (final ClassInfo classInfo : classNameToClassInfo.values()) {
                 if (classInfo.isAnnotation() && classInfo.annotationInfo != null) {
-                    final AnnotationInfo repeatableMetaAnnotation = classInfo.annotationInfo
-                            .get("java.lang.annotation.Repeatable");
+                    AnnotationInfo repeatableMetaAnnotation = null;
+                    for (final AnnotationInfo ai : classInfo.annotationInfo) {
+                        if ("java.lang.annotation.Repeatable".equals(ai.getName())) {
+                            repeatableMetaAnnotation = ai;
+                            break;
+                        }
+                    }
                     if (repeatableMetaAnnotation != null) {
                         final AnnotationParameterValueList vals = repeatableMetaAnnotation.getParameterValues();
                         if (!vals.isEmpty()) {

@@ -31,6 +31,7 @@ package com.bingbaihanji.classgraph.type;
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.LogNode;
 
 import java.util.HashSet;
@@ -60,15 +61,15 @@ public abstract class TypeSignature extends HierarchicalType {
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static TypeSignature parse(final TypeParser TypeParser, final String definingClass) throws ParseException {
-        final ReferenceType ReferenceType = ReferenceType
+    public static TypeSignature parse(final TypeParser TypeParser, final String definingClass) throws ParseException {
+        final ReferenceType refType = ReferenceType
                 .parseReferenceType(TypeParser, definingClass);
-        if (ReferenceType != null) {
-            return ReferenceType;
+        if (refType != null) {
+            return refType;
         }
-        final BaseType BaseType = BaseType.parse(TypeParser);
-        if (BaseType != null) {
-            return BaseType;
+        final BaseType baseType = BaseType.parse(TypeParser);
+        if (baseType != null) {
+            return baseType;
         }
         return null;
     }
@@ -84,7 +85,7 @@ public abstract class TypeSignature extends HierarchicalType {
      * @throws ParseException
      *             如果类型签名无法解析
      */
-    static TypeSignature parse(final String typeDescriptor, final String definingClass) throws ParseException {
+    public static TypeSignature parse(final String typeDescriptor, final String definingClass) throws ParseException {
         final TypeParser TypeParser = new TypeParser(typeDescriptor);
         TypeSignature typeSignature;
         typeSignature = parse(TypeParser, definingClass);
@@ -103,7 +104,7 @@ public abstract class TypeSignature extends HierarchicalType {
      * @param refdClassNames
      *            引用的类名
      */
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         final String className = getClassName();
         if (className != null && !className.isEmpty()) {
             refdClassNames.add(getClassName());
@@ -119,7 +120,7 @@ public abstract class TypeSignature extends HierarchicalType {
      *            引用的类信息
      */
     @Override
-    final protected void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
+    public final void findReferencedClassInfo(final Map<String, ClassInfo> classNameToClassInfo,
                                                  final Set<ClassInfo> refdClassInfo, final LogNode log) {
         final Set<String> refdClassNames = new HashSet<>();
         findReferencedClassNames(refdClassNames);
@@ -158,5 +159,5 @@ public abstract class TypeSignature extends HierarchicalType {
      *            要添加的注解
      */
     @Override
-    protected abstract void addTypeAnnotation(List<TypePathNode> typePath, AnnotationInfo annotationInfo);
+    public abstract void addTypeAnnotation(List<TypePathNode> typePath, AnnotationInfo annotationInfo);
 }

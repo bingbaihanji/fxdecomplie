@@ -32,6 +32,7 @@ import com.bingbaihanji.classgraph.util.StringUtils;
 
 import java.io.IOException;
 import java.nio.*;
+import java.nio.ByteBuffer;
 
 /**
  * 用于 {@link ByteBuffer} 的 {@link RandomAccessReader}按 zipfile 格式所需的<b>小端序</b>读取

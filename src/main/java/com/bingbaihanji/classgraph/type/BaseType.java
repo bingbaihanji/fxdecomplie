@@ -29,6 +29,8 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.type.TypeParser;
 
 import java.util.List;
@@ -45,7 +47,7 @@ public class BaseType extends TypeSignature {
     /**
      * 构造函数
      */
-    BaseType(final char typeSignatureChar) {
+    public BaseType(final char typeSignatureChar) {
         super();
         switch (typeSignatureChar) {
             case 'B':
@@ -106,7 +108,7 @@ public class BaseType extends TypeSignature {
      *            类型字符，例如 "int"
      * @return 类型字符，例如 'I'，如果没有匹配则返回 '\0'
      */
-    static char getTypeChar(final String typeStr) {
+    public static char getTypeChar(final String typeStr) {
         switch (typeStr) {
             case "byte":
                 return 'B';
@@ -238,7 +240,7 @@ public class BaseType extends TypeSignature {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         addTypeAnnotation(annotationInfo);
     }
 
@@ -246,7 +248,7 @@ public class BaseType extends TypeSignature {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#loadClass()
      */
     @Override
-    Class<?> loadClass() {
+    public Class<?> loadClass() {
         return getType();
     }
 
@@ -256,7 +258,7 @@ public class BaseType extends TypeSignature {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#loadClass(java.lang.Class)
      */
     @Override
-    <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
+    public <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
         final Class<?> type = getType();
         if (!superclassOrInterfaceType.isAssignableFrom(type)) {
             throw new IllegalArgumentException("Primitive class " + getTypeStr() + " cannot be cast to "
@@ -272,7 +274,7 @@ public class BaseType extends TypeSignature {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         return getTypeStr();
     }
 
@@ -280,7 +282,7 @@ public class BaseType extends TypeSignature {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         return null;
     }
 
@@ -291,7 +293,7 @@ public class BaseType extends TypeSignature {
      *            被引用的类名称集合
      */
     @Override
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         // 不添加 byte.class、int.class 等
     }
 
@@ -299,7 +301,7 @@ public class BaseType extends TypeSignature {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         // 不为 BaseType 对象设置 ScanResult(#419)
         // 不需要 ScanResult，因为此类不通过 ScanResult 进行类加载
         // 此外，每个基本类型的 BaseType 特定实例被赋值给此类中的静态字段，
@@ -347,7 +349,7 @@ public class BaseType extends TypeSignature {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
                                     final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {

@@ -32,11 +32,13 @@ import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 import com.bingbaihanji.classgraph.type.TypeUtils;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import java.util.*;
 
 /** 一个类型变量签名 */
-public final class TypeVar extends ClassRefOrTypeVar {
+public final class TypeVar extends TypeRef {
     /** 类型变量名称 */
     private final String name;
 
@@ -78,7 +80,7 @@ public final class TypeVar extends ClassRefOrTypeVar {
      * @throws ParseException
      *             如果解析失败
      */
-    static TypeVar parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
+    public static TypeSignature parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
         final char peek = TypeParser.peek();
         if (peek == 'T') {
             TypeParser.next();
@@ -171,7 +173,7 @@ public final class TypeVar extends ClassRefOrTypeVar {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         if (typePath.isEmpty()) {
             addTypeAnnotation(annotationInfo);
         } else {
@@ -187,7 +189,7 @@ public final class TypeVar extends ClassRefOrTypeVar {
      * @return 定义类名
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         return definingClassName;
     }
 
@@ -198,13 +200,13 @@ public final class TypeVar extends ClassRefOrTypeVar {
      *            引用的类名
      */
     @Override
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         // 解析后的类型变量中存在的所有类名都必须存在于封闭方法或类中，
         // 因此不需要在解析后的类型变量中查找类引用
     }
 
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (TypeParamCached != null) {
             TypeParamCached.setScanResult(scanResult);
@@ -315,7 +317,7 @@ public final class TypeVar extends ClassRefOrTypeVar {
     }
 
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
                                     final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {

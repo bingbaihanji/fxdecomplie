@@ -310,4 +310,14 @@ public class ClasspathFinder {
     public ScanClassLoader getDelegateClassGraphClassLoader() {
         return delegateClassGraphClassLoader;
     }
+
+    /**
+     * 返回要委托到的 ScanClassLoader(如果存在)
+     *
+     * @return 在使用此扫描自身的 {@link ScanClassLoader} 加载类之前要委托的
+     *         {@link ScanClassLoader}(如果没有则返回 null)
+     */
+    public ScanClassLoader getDelegateScanClassLoader() {
+        return delegateClassGraphClassLoader;
+    }
 }

@@ -39,7 +39,7 @@ import java.util.ListIterator;
  * @param <T>
  *            元素类型
  */
-class LazyList<T> extends ArrayList<T> {
+public class LazyList<T> extends ArrayList<T> {
     /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 
@@ -49,7 +49,7 @@ class LazyList<T> extends ArrayList<T> {
     /**
      * 构造函数
      */
-    LazyList() {
+    public LazyList() {
         super();
     }
 
@@ -59,7 +59,7 @@ class LazyList<T> extends ArrayList<T> {
      * @param sizeHint
      *            大小提示
      */
-    LazyList(final int sizeHint) {
+    public LazyList(final int sizeHint) {
         super(sizeHint);
     }
 
@@ -69,7 +69,7 @@ class LazyList<T> extends ArrayList<T> {
      * @param collection
      *            初始元素
      */
-    LazyList(final Collection<T> collection) {
+    public LazyList(final Collection<T> collection) {
         super(collection);
     }
 
@@ -86,7 +86,7 @@ class LazyList<T> extends ArrayList<T> {
     }
 
     /** 将此列表设置为不可修改 */
-    void makeUnmodifiable() {
+    public void makeUnmodifiable() {
         modifiable = false;
     }
 

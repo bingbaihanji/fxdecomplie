@@ -29,7 +29,9 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.type.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.util.LogNode;
 
@@ -525,7 +527,7 @@ class TypedValue extends MetadataNode {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() 不能在此处调用");
     }
@@ -534,7 +536,7 @@ class TypedValue extends MetadataNode {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         throw new IllegalArgumentException("getClassInfo() 不能在此处调用");
     }
 
@@ -542,7 +544,7 @@ class TypedValue extends MetadataNode {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (annotationEnumValue != null) {
             annotationEnumValue.setScanResult(scanResult);

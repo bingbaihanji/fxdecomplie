@@ -108,6 +108,21 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
         return EMPTY_LIST;
     }
 
+    /**
+     * 通过注解名称获取 {@link AnnotationInfo}
+     *
+     * @param annotationName 注解名称
+     * @return 注解信息，若不存在则返回 null
+     */
+    public AnnotationInfo get(final String annotationName) {
+        for (final AnnotationInfo ai : this) {
+            if (ai.getName().equals(annotationName)) {
+                return ai;
+            }
+        }
+        return null;
+    }
+
     // -------------------------------------------------------------------------------------------------------------
 
     /**
@@ -218,6 +233,24 @@ public class AnnotationInfoList extends InfoList<AnnotationInfo> {
             }
         }
         return annotationInfoFiltered;
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+
+    /**
+     * 检查此列表中是否包含具有给定名称的 {@link AnnotationInfo} 对象
+     *
+     * @param annotationName
+     *            注解名称
+     * @return 如果此列表包含具有给定名称的 {@link AnnotationInfo} 对象，则返回 true
+     */
+    public boolean containsName(final String annotationName) {
+        for (final AnnotationInfo ai : this) {
+            if (ai.getName().equals(annotationName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // -------------------------------------------------------------------------------------------------------------

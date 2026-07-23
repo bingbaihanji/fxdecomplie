@@ -30,6 +30,8 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.type.ParseException;
 
@@ -59,7 +61,7 @@ public class AnnotationClassRef extends MetadataNode {
      * @param typeDescriptorStr
      *            类型描述符字符串
      */
-    AnnotationClassRef(final String typeDescriptorStr) {
+    public AnnotationClassRef(final String typeDescriptorStr) {
         super();
         this.typeDescriptorStr = typeDescriptorStr;
     }
@@ -110,9 +112,9 @@ public class AnnotationClassRef extends MetadataNode {
         if (typeSignature instanceof BaseType) {
             return ((BaseType) typeSignature).getType();
         } else if (typeSignature instanceof ClassRef) {
-            return typeSignature.loadClass(ignoreExceptions);
+            return ((ClassRef) typeSignature).loadClass(ignoreExceptions);
         } else if (typeSignature instanceof ArrayType) {
-            return typeSignature.loadClass(ignoreExceptions);
+            return ((ArrayType) typeSignature).loadClass(ignoreExceptions);
         } else {
             throw new IllegalArgumentException("Got unexpected type " + typeSignature.getClass().getName()
                     + " for ref type signature: " + typeDescriptorStr);
@@ -137,7 +139,7 @@ public class AnnotationClassRef extends MetadataNode {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         if (className == null) {
             getTypeSignature();
             if (typeSignature instanceof BaseType) {
@@ -171,7 +173,7 @@ public class AnnotationClassRef extends MetadataNode {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (typeSignature != null) {
             typeSignature.setScanResult(scanResult);
@@ -216,6 +218,7 @@ public class AnnotationClassRef extends MetadataNode {
         //        }
 
         /* prefix + */
-        buf.append(getTypeSignature().toString(useSimpleNames)).append(".class");
+        getTypeSignature().toString(useSimpleNames, buf);
+        buf.append(".class");
     }
 }

@@ -30,6 +30,8 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.MethodTypeAnnotationDecorator;
 import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
@@ -51,7 +53,7 @@ import java.util.*;
  */
 public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo> {
     /** 未对齐的参数注解 */
-    AnnotationInfo[][] parameterAnnotationInfo;
+    public AnnotationInfo[][] parameterAnnotationInfo;
     /** 解析后的类型描述符 */
     private transient MethodType typeDescriptor;
     /** 解析后的类型签名(如果没有则为 null)方法参数类型未对齐 */
@@ -122,7 +124,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @param thrownExceptionNames
      *            此方法抛出的异常
      */
-    MethodInfo(final String definingClassName, final String methodName,
+    public MethodInfo(final String definingClassName, final String methodName,
                final AnnotationInfoList methodAnnotationInfo, final int modifiers, final String typeDescriptorStr,
                final String typeSignatureStr, final String[] parameterNames, final int[] parameterModifiers,
                final AnnotationInfo[][] parameterAnnotationInfo, final boolean hasBody, final int minLineNum,
@@ -793,7 +795,7 @@ public class MethodInfo extends ClassMemberInfo implements Comparable<MethodInfo
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (this.typeDescriptor != null) {
             this.typeDescriptor.setScanResult(scanResult);

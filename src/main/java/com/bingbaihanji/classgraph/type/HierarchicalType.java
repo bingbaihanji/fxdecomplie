@@ -29,6 +29,9 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.metadata.MetadataNode;
+import com.bingbaihanji.classgraph.scan.*;
 
 import java.util.List;
 
@@ -57,7 +60,7 @@ public abstract class HierarchicalType extends MetadataNode {
     }
 
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
@@ -95,7 +98,7 @@ public abstract class HierarchicalType extends MetadataNode {
      * @param buf
      *            要写入的 {@link StringBuilder}
      */
-    protected abstract void toStringInternal(final boolean useSimpleNames, AnnotationInfoList annotationsToExclude,
+    public abstract void toStringInternal(final boolean useSimpleNames, AnnotationInfoList annotationsToExclude,
                                              StringBuilder buf);
 
     /**
@@ -107,7 +110,7 @@ public abstract class HierarchicalType extends MetadataNode {
      *            要写入的 {@link StringBuilder}
      */
     @Override
-    protected void toString(final boolean useSimpleNames, final StringBuilder buf) {
+    public void toString(final boolean useSimpleNames, final StringBuilder buf) {
         toStringInternal(useSimpleNames, /* annotationsToExclude = */ null, buf);
     }
 }

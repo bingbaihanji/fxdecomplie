@@ -30,6 +30,7 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -63,7 +64,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     private transient volatile AnnotationParameterValueList annotationParamValuesWithDefaults;
 
     /** 用于反序列化的默认构造函数 */
-    AnnotationInfo() {
+    public AnnotationInfo() {
         super();
     }
 
@@ -89,7 +90,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
      * @param annotationParamValues
      *            注解参数值，如果没有则为 null
      */
-    AnnotationInfo(final String name, final AnnotationParameterValueList annotationParamValues) {
+    public AnnotationInfo(final String name, final AnnotationParameterValueList annotationParamValues) {
         super();
         this.name = name;
         this.annotationParamValues = annotationParamValues;
@@ -244,7 +245,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
      * @return 类名
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         return name;
     }
 
@@ -252,7 +253,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (annotationParamValues != null) {
             for (final AnnotationParameterValue a : annotationParamValues) {
@@ -390,7 +391,7 @@ public class AnnotationInfo extends MetadataNode implements Comparable<Annotatio
     }
 
     @Override
-    protected void toString(final boolean useSimpleNames, final StringBuilder buf) {
+    public void toString(final boolean useSimpleNames, final StringBuilder buf) {
         buf.append('@').append(useSimpleNames ? ClassInfo.getSimpleName(name) : name);
         final AnnotationParameterValueList paramVals = getParameterValues();
         if (!paramVals.isEmpty()) {

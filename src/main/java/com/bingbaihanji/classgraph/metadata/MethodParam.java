@@ -30,6 +30,8 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.util.Assert;
 
@@ -47,7 +49,7 @@ import java.util.Objects;
  */
 public class MethodParam {
     /** 注解信息 */
-    final AnnotationInfo[] annotationInfo;
+    public final AnnotationInfo[] annotationInfo;
     /** 包含此参数的方法 */
     private final MethodInfo methodInfo;
     /** 修饰符 */
@@ -279,7 +281,7 @@ public class MethodParam {
      * @param scanResult
      *            新的扫描结果
      */
-    protected void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         this.scanResult = scanResult;
         if (this.annotationInfo != null) {
             for (final AnnotationInfo ai : annotationInfo) {

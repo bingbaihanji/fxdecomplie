@@ -30,6 +30,7 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.scan.ScanConfig;
 import com.bingbaihanji.classgraph.util.Assert;
@@ -84,7 +85,7 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
      *            包名或类名
      * @return 父包名称，或命名类所属包的名称，如果 packageOrClassName 是根包("")则返回 null
      */
-    static String getParentPackageName(final String packageOrClassName) {
+    public static String getParentPackageName(final String packageOrClassName) {
         if (packageOrClassName.isEmpty()) {
             return null;
         }
@@ -106,7 +107,7 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
      *            ScanConfig 配置
      * @return 指定名称包的 {@link PackageInfo}
      */
-    static PackageInfo getOrCreatePackage(final String packageName,
+    public static PackageInfo getOrCreatePackage(final String packageName,
                                           final Map<String, PackageInfo> packageNameToPackageInfo, final ScanConfig ScanConfig) {
         // 获取或创建此包的 PackageInfo 对象
         PackageInfo packageInfo = packageNameToPackageInfo.get(packageName);
@@ -160,7 +161,7 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
      * @param packageAnnotations
      *            包注解
      */
-    void addAnnotations(final AnnotationInfoList packageAnnotations) {
+    public void addAnnotations(final AnnotationInfoList packageAnnotations) {
         // 添加来自 package-info.class 文件的类注解
         if (packageAnnotations != null && !packageAnnotations.isEmpty()) {
             if (annotationInfoSet == null) {
@@ -177,14 +178,14 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
      * @param classInfo
      *            要添加到包中的 {@link ClassInfo} 对象
      */
-    void addClassInfo(final ClassInfo classInfo) {
+    public void addClassInfo(final ClassInfo classInfo) {
         if (memberClassNameToClassInfo == null) {
             memberClassNameToClassInfo = new HashMap<>();
         }
         memberClassNameToClassInfo.put(classInfo.getName(), classInfo);
     }
 
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         if (annotationInfoSet != null) {
             for (final AnnotationInfo ai : annotationInfoSet) {
                 ai.setScanResult(scanResult);
@@ -212,7 +213,12 @@ public class PackageInfo implements Comparable<PackageInfo>, Named {
      * @return 表示此包上该命名注解的 {@link AnnotationInfo} 对象，如果包没有该命名注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
-        return getAnnotationInfo().get(annotationName);
+        for (final AnnotationInfo ai : getAnnotationInfo()) {
+            if (ai.getName().equals(annotationName)) {
+                return ai;
+            }
+        }
+        return null;
     }
 
     /**

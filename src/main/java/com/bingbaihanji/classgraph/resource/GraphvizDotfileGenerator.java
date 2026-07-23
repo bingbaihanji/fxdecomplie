@@ -28,7 +28,11 @@
  */
 package com.bingbaihanji.classgraph.resource;
 
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.metadata.ClassInfo;
+import com.bingbaihanji.classgraph.metadata.ClassInfoList;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.type.TypeSignature;
 import com.bingbaihanji.classgraph.util.CollectionUtils;
 
 import java.util.BitSet;
@@ -36,7 +40,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /** 以 Graphviz .dot 文件格式构建类图可视化 */
-final class GraphvizDotfileGenerator {
+public final class GraphvizDotfileGenerator {
     /** 标准类的颜色 */
     private static final String STANDARD_CLASS_COLOR = "fff2b6";
 
@@ -504,7 +508,7 @@ final class GraphvizDotfileGenerator {
      *            扫描规格
      * @return GraphViz dot 文件内容字符串
      */
-    static String generateGraphVizDotFile(final ClassInfoList classInfoList, final float sizeX, final float sizeY,
+    public static String generateGraphVizDotFile(final ClassInfoList classInfoList, final float sizeX, final float sizeY,
                                           final boolean showFields, final boolean showFieldTypeDependencyEdges, final boolean showMethods,
                                           final boolean showMethodTypeDependencyEdges, final boolean showAnnotations,
                                           final boolean useSimpleNames, final ScanConfig ScanConfig) {
@@ -655,7 +659,7 @@ final class GraphvizDotfileGenerator {
      *             如果此 {@link ClassInfoList} 为空，或者在扫描前未调用
      *             {@link ClassGraph#enableInterClassDependencies()}(因为将没有可绘制的内容)
      */
-    static String generateGraphVizDotFileFromInterClassDependencies(final ClassInfoList classInfoList,
+    public static String generateGraphVizDotFileFromInterClassDependencies(final ClassInfoList classInfoList,
                                                                     final float sizeX, final float sizeY, final boolean includeExternalClasses) {
 
         final StringBuilder buf = new StringBuilder(1024 * 1024);

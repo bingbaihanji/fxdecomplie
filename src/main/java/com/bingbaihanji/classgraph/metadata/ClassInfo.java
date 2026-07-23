@@ -29,7 +29,11 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.type.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.resource.*;
+import com.bingbaihanji.classgraph.classpath.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.metadata.ModuleRef;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.ClassContainment;
@@ -38,8 +42,13 @@ import com.bingbaihanji.classgraph.metadata.FieldInfoList.FieldInfoFilter;
 
 import com.bingbaihanji.classgraph.reflect.ReflectionUtils;
 import com.bingbaihanji.classgraph.scan.ScanConfig;
+import com.bingbaihanji.classgraph.type.ArrayType;
+import com.bingbaihanji.classgraph.type.BaseType;
+import com.bingbaihanji.classgraph.type.ClassRef;
+import com.bingbaihanji.classgraph.type.ClassType;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.type.TypeSignature;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
 import com.bingbaihanji.classgraph.util.Assert;
@@ -90,19 +99,19 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      */
     boolean isInherited;
     /** 发现该类的类路径元素 */
-    transient Classpath Classpath;
+    public transient Classpath Classpath;
     /** 获取该类的类加载器 */
-    transient ClassLoader classLoader;
+    public transient ClassLoader classLoader;
     /** 类模块的信息 */
-    ModuleInfo moduleInfo;
+    public ModuleInfo moduleInfo;
     /** 包含该类的包的信息 */
-    PackageInfo packageInfo;
+    public PackageInfo packageInfo;
     /** 类注解信息，包括可选的注解参数值 */
-    AnnotationInfoList annotationInfo;
+    public AnnotationInfoList annotationInfo;
     /** 字段信息 */
-    FieldInfoList fieldInfo;
+    public FieldInfoList fieldInfo;
     /** 字段信息 */
-    MethodInfoList methodInfo;
+    public MethodInfoList methodInfo;
     /** 对于注解类，参数的默认值 */
     AnnotationParameterValueList annotationDefaultParamValues;
     /** {@link ClassType} 实例的类型注解装饰器 */
@@ -120,9 +129,9 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     /** 该类 class 文件的 class 文件格式主版本号 */
     private int classfileMajorVersion;
     /** 已解析的类类型签名 */
-    private transient ClassType typeSignature;
+    private transient com.bingbaihanji.classgraph.type.ClassType typeSignature;
     /** 合成的类类型描述符 */
-    private transient ClassType typeDescriptor;
+    private transient com.bingbaihanji.classgraph.type.ClassType typeDescriptor;
     /** 编译该类的源文件名 */
     private String sourceFile;
     /** 匿名内部类的完全限定定义方法名 */
@@ -215,7 +224,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            从类名到 ClassInfo 的映射
      * @return {@link ClassInfo} 对象
      */
-    static ClassInfo getOrCreateClassInfo(final String className,
+    public static ClassInfo getOrCreateClassInfo(final String className,
                                           final Map<String, ClassInfo> classNameToClassInfo) {
         // 查找数组类名
         int numArrayDims = 0;
@@ -284,7 +293,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param classNameToClassInfo
      *            从类名到 ClassInfo 的映射
      */
-    static void addClassContainment(final List<ClassContainment> classContainmentEntries,
+    public static void addClassContainment(final List<ClassContainment> classContainmentEntries,
                                     final Map<String, ClassInfo> classNameToClassInfo) {
         for (final ClassContainment classContainment : classContainmentEntries) {
             final ClassInfo innerClassInfo = ClassInfo.getOrCreateClassInfo(classContainment.innerClassName,
@@ -315,7 +324,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            类文件资源
      * @return ClassInfo 对象
      */
-    static ClassInfo addScannedClass(final String className, final int classModifiers,
+    public static ClassInfo addScannedClass(final String className, final int classModifiers,
                                      final boolean isExternalClass, final Map<String, ClassInfo> classNameToClassInfo,
                                      final Classpath Classpath, final Resource classfileResource) {
         ClassInfo classInfo = classNameToClassInfo.get(className);
@@ -439,7 +448,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            扫描规范
      * @return 扫描过程中发现的所有类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
+    public static ClassInfoList getAllClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
                 ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.ALL),
                 /* sortByName = */ true);
@@ -454,7 +463,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            扫描规范
      * @return 扫描过程中发现的所有 {@link Enum} 枚举类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllEnums(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
+    public static ClassInfoList getAllEnums(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
                 ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.ENUM),
                 /* sortByName = */ true);
@@ -469,7 +478,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            扫描规范
      * @return 扫描过程中发现的所有 {@code record} 记录类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllRecords(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
+    public static ClassInfoList getAllRecords(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
                 ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.RECORD),
                 /* sortByName = */ true);
@@ -484,7 +493,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            扫描规范
      * @return 扫描过程中发现的所有标准类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllStandardClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
+    public static ClassInfoList getAllStandardClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
                 ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.STANDARD_CLASS),
                 /* sortByName = */ true);
@@ -499,7 +508,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            扫描规范
      * @return 扫描过程中发现的所有注解类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllImplementedInterfaceClasses(final Collection<ClassInfo> classes,
+    public static ClassInfoList getAllImplementedInterfaceClasses(final Collection<ClassInfo> classes,
                                                            final ScanConfig ScanConfig) {
         return new ClassInfoList(ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true,
                 ClassType.IMPLEMENTED_INTERFACE), /* sortByName = */ true);
@@ -517,7 +526,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            扫描规范
      * @return 扫描过程中发现的所有注解类的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllAnnotationClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
+    public static ClassInfoList getAllAnnotationClasses(final Collection<ClassInfo> classes, final ScanConfig ScanConfig) {
         return new ClassInfoList(
                 ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true, ClassType.ANNOTATION),
                 /* sortByName = */ true);
@@ -532,7 +541,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            扫描规范
      * @return 扫描过程中发现的所有已接受接口的列表，如果没有则返回空列表
      */
-    static ClassInfoList getAllInterfacesOrAnnotationClasses(final Collection<ClassInfo> classes,
+    public static ClassInfoList getAllInterfacesOrAnnotationClasses(final Collection<ClassInfo> classes,
                                                              final ScanConfig ScanConfig) {
         return new ClassInfoList(ClassInfo.filterClassInfo(classes, ScanConfig, /* strictAccept = */ true,
                 ClassType.INTERFACE_OR_ANNOTATION), /* sortByName = */ true);
@@ -547,7 +556,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *            类名
      * @return 类的简单名称
      */
-    static String getSimpleName(final String className) {
+    public static String getSimpleName(final String className) {
         return className.substring(Math.max(className.lastIndexOf('.'), className.lastIndexOf('$')) + 1);
     }
 
@@ -576,7 +585,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param majorVersion
      *            该类 class 文件的 class 文件格式主版本号
      */
-    void setClassfileVersion(final int minorVersion, final int majorVersion) {
+    public void setClassfileVersion(final int minorVersion, final int majorVersion) {
         this.classfileMinorVersion = minorVersion;
         this.classfileMajorVersion = majorVersion;
     }
@@ -587,7 +596,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param isInterface
      *            如果为 true 则表示这是接口
      */
-    void setIsInterface(final boolean isInterface) {
+    public void setIsInterface(final boolean isInterface) {
         if (isInterface) {
             this.modifiers |= Modifier.INTERFACE;
         }
@@ -599,7 +608,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param isAnnotation
      *            如果为 true 则表示这是注解
      */
-    void setIsAnnotation(final boolean isAnnotation) {
+    public void setIsAnnotation(final boolean isAnnotation) {
         if (isAnnotation) {
             this.modifiers |= ANNOTATION_CLASS_MODIFIER;
         }
@@ -611,7 +620,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param isRecord
      *            如果为 true 则表示这是记录类
      */
-    void setIsRecord(final boolean isRecord) {
+    public void setIsRecord(final boolean isRecord) {
         if (isRecord) {
             this.isRecord = isRecord;
         }
@@ -623,7 +632,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param classTypeAnnotationDecorators
      *            {@link ClassTypeAnnotationDecorator} 实例列表
      */
-    void addTypeDecorators(final List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators) {
+    public void addTypeDecorators(final List<ClassTypeAnnotationDecorator> classTypeAnnotationDecorators) {
         if (typeAnnotationDecorators == null) {
             typeAnnotationDecorators = new ArrayList<>();
         }
@@ -638,7 +647,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param classNameToClassInfo
      *            从类名到 ClassInfo 的映射
      */
-    void addSuperclass(final String superclassName, final Map<String, ClassInfo> classNameToClassInfo) {
+    public void addSuperclass(final String superclassName, final Map<String, ClassInfo> classNameToClassInfo) {
         if (superclassName != null && !"java.lang.Object".equals(superclassName)) {
             final ClassInfo superclassClassInfo = getOrCreateClassInfo(superclassName, classNameToClassInfo);
             this.addRelatedClass(RelType.SUPERCLASSES, superclassClassInfo);
@@ -656,7 +665,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param classNameToClassInfo
      *            从类名到 ClassInfo 的映射
      */
-    void addImplementedInterface(final String interfaceName, final Map<String, ClassInfo> classNameToClassInfo) {
+    public void addImplementedInterface(final String interfaceName, final Map<String, ClassInfo> classNameToClassInfo) {
         final ClassInfo interfaceClassInfo = getOrCreateClassInfo(interfaceName, classNameToClassInfo);
         interfaceClassInfo.setIsInterface(true);
         this.addRelatedClass(RelType.IMPLEMENTED_INTERFACES, interfaceClassInfo);
@@ -671,7 +680,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param fullyQualifiedDefiningMethodName
      *            完全限定定义方法名
      */
-    void addFullyQualifiedDefiningMethodName(final String fullyQualifiedDefiningMethodName) {
+    public void addFullyQualifiedDefiningMethodName(final String fullyQualifiedDefiningMethodName) {
         this.fullyQualifiedDefiningMethodName = fullyQualifiedDefiningMethodName;
     }
 
@@ -683,7 +692,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param classNameToClassInfo
      *            从类名到 ClassInfo 的映射
      */
-    void addClassAnnotation(final AnnotationInfo classAnnotationInfo,
+    public void addClassAnnotation(final AnnotationInfo classAnnotationInfo,
                             final Map<String, ClassInfo> classNameToClassInfo) {
         final ClassInfo annotationClassInfo = getOrCreateClassInfo(classAnnotationInfo.getName(),
                 classNameToClassInfo);
@@ -744,7 +753,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param classNameToClassInfo
      *            从类名到 ClassInfo 的映射
      */
-    void addFieldInfo(final FieldInfoList fieldInfoList, final Map<String, ClassInfo> classNameToClassInfo) {
+    public void addFieldInfo(final FieldInfoList fieldInfoList, final Map<String, ClassInfo> classNameToClassInfo) {
         for (final FieldInfo fi : fieldInfoList) {
             // 索引字段注解
             addFieldOrMethodAnnotationInfo(fi.annotationInfo, /* isField = */ true, fi.getModifiers(),
@@ -767,7 +776,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param classNameToClassInfo
      *            从类名到 ClassInfo 的映射
      */
-    void addMethodInfo(final MethodInfoList methodInfoList, final Map<String, ClassInfo> classNameToClassInfo) {
+    public void addMethodInfo(final MethodInfoList methodInfoList, final Map<String, ClassInfo> classNameToClassInfo) {
         for (final MethodInfo mi : methodInfoList) {
             // 索引方法注解
             addFieldOrMethodAnnotationInfo(mi.annotationInfo, /* isField = */ false, mi.getModifiers(),
@@ -808,7 +817,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param paramNamesAndValues
      *            默认参数名和值，如果这是注解的话
      */
-    void addAnnotationParamDefaultValues(final AnnotationParameterValueList paramNamesAndValues) {
+    public void addAnnotationParamDefaultValues(final AnnotationParameterValueList paramNamesAndValues) {
         setIsAnnotation(true);
         if (this.annotationDefaultParamValues == null) {
             this.annotationDefaultParamValues = paramNamesAndValues;
@@ -1070,7 +1079,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param modifiers
      *            类修饰符
      */
-    void setModifiers(final int modifiers) {
+    public void setModifiers(final int modifiers) {
         this.modifiers |= modifiers;
     }
 
@@ -2039,7 +2048,12 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @return 表示此类上指定名称注解的 {@link AnnotationInfo} 对象，如果类没有指定名称的注解则返回 null
      */
     public AnnotationInfo getAnnotationInfo(final String annotationName) {
-        return getAnnotationInfo().get(annotationName);
+        for (final AnnotationInfo ai : getAnnotationInfo()) {
+            if (ai.getName().equals(annotationName)) {
+                return ai;
+            }
+        }
+        return null;
     }
 
     /**
@@ -2139,7 +2153,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *
      * @return 被请求的注解直接标注(即非元注解标注)的类的列表，如果没有则返回空列表
      */
-    ClassInfoList getClassesWithAnnotationDirectOnly() {
+    public ClassInfoList getClassesWithAnnotationDirectOnly() {
         return new ClassInfoList(
                 this.filterClassInfo(RelType.CLASSES_WITH_ANNOTATION, /* strictAccept = */ !isExternalClass),
                 /* sortByName = */ true);
@@ -2576,7 +2590,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *
      * @return 声明了被请求的方法注解直接标注(即非元注解标注)的方法的类的列表，如果没有则返回空列表
      */
-    ClassInfoList getClassesWithMethodAnnotationDirectOnly() {
+    public ClassInfoList getClassesWithMethodAnnotationDirectOnly() {
         return new ClassInfoList(
                 this.filterClassInfo(RelType.CLASSES_WITH_METHOD_ANNOTATION, /* strictAccept = */ !isExternalClass),
                 /* sortByName = */ true);
@@ -2810,7 +2824,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *
      * @return 声明了被请求的方法注解直接标注(即非元注解标注)的字段的类的列表，如果没有则返回空列表
      */
-    ClassInfoList getClassesWithFieldAnnotationDirectOnly() {
+    public ClassInfoList getClassesWithFieldAnnotationDirectOnly() {
         return new ClassInfoList(
                 this.filterClassInfo(RelType.CLASSES_WITH_FIELD_ANNOTATION, /* strictAccept = */ !isExternalClass),
                 /* sortByName = */ true);
@@ -2825,14 +2839,14 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *             如果类类型签名无法解析(这通常只在 class 文件损坏或编译器 bug
      *             导致无效的类型签名被写入 class 文件时才应抛出)
      */
-    public ClassType getTypeSignature() {
+    public com.bingbaihanji.classgraph.type.ClassType getTypeSignature() {
         synchronized (this) {
             if (typeSignatureStr == null) {
                 return null;
             }
             if (typeSignature == null) {
                 try {
-                    typeSignature = ClassType.parse(typeSignatureStr, this);
+                    typeSignature = com.bingbaihanji.classgraph.type.ClassType.parse(typeSignatureStr, this);
                     typeSignature.setScanResult(scanResult);
                     if (typeAnnotationDecorators != null) {
                         for (final ClassTypeAnnotationDecorator decorator : typeAnnotationDecorators) {
@@ -2854,7 +2868,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param typeSignatureStr
      *            类型签名字符串
      */
-    void setTypeSignature(final String typeSignatureStr) {
+    public void setTypeSignature(final String typeSignatureStr) {
         this.typeSignatureStr = typeSignatureStr;
     }
 
@@ -2875,8 +2889,8 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *
      * @return 该类的已解析泛型类型签名，如果不可用则返回该类的合成类型描述符
      */
-    public ClassType getTypeSignatureOrTypeDescriptor() {
-        ClassType typeSig = null;
+    public com.bingbaihanji.classgraph.type.ClassType getTypeSignatureOrTypeDescriptor() {
+        com.bingbaihanji.classgraph.type.ClassType typeSig = null;
         try {
             typeSig = getTypeSignature();
             if (typeSig != null) {
@@ -2894,10 +2908,10 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      *
      * @return 该类的合成类型描述符
      */
-    public ClassType getTypeDescriptor() {
+    public com.bingbaihanji.classgraph.type.ClassType getTypeDescriptor() {
         synchronized (this) {
             if (typeDescriptor == null) {
-                typeDescriptor = new ClassType(this, getSuperclass(), getInterfaces());
+                typeDescriptor = new com.bingbaihanji.classgraph.type.ClassType(this, getSuperclass(), getInterfaces());
                 typeDescriptor.setScanResult(scanResult);
                 if (typeAnnotationDecorators != null) {
                     for (final ClassTypeAnnotationDecorator decorator : typeAnnotationDecorators) {
@@ -3095,7 +3109,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         return name;
     }
 
@@ -3103,7 +3117,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         return this;
     }
 
@@ -3111,7 +3125,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (this.typeSignature != null) {
             this.typeSignature.setScanResult(scanResult);
@@ -3146,7 +3160,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param allRepeatableAnnotationNames
      *            所有可重复注解的名称集合
      */
-    void handleRepeatableAnnotations(final Set<String> allRepeatableAnnotationNames) {
+    public void handleRepeatableAnnotations(final Set<String> allRepeatableAnnotationNames) {
         if (annotationInfo != null) {
             annotationInfo.handleRepeatableAnnotations(allRepeatableAnnotationNames, this,
                     RelType.CLASS_ANNOTATIONS, RelType.CLASSES_WITH_ANNOTATION, null);
@@ -3169,7 +3183,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param refdClassNames
      *            引用的类名集合
      */
-    void addReferencedClassNames(final Set<String> refdClassNames) {
+    public void addReferencedClassNames(final Set<String> refdClassNames) {
         if (this.referencedClassNames == null) {
             this.referencedClassNames = refdClassNames;
         } else {
@@ -3206,7 +3220,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
             annotationDefaultParamValues.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         }
         try {
-            final ClassType classSig = getTypeSignature();
+            final com.bingbaihanji.classgraph.type.ClassType classSig = getTypeSignature();
             if (classSig != null) {
                 classSig.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
             }
@@ -3225,7 +3239,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
      * @param refdClasses
      *            引用的类列表
      */
-    void setReferencedClasses(final ClassInfoList refdClasses) {
+    public void setReferencedClasses(final ClassInfoList refdClasses) {
         this.referencedClasses = refdClasses;
     }
 
@@ -3311,7 +3325,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
                 annotation.toString(useSimpleNames, buf);
             }
         }
-        ClassType typeSig = null;
+        com.bingbaihanji.classgraph.type.ClassType typeSig = null;
         try {
             typeSig = getTypeSignature();
         } catch (final Exception e) {
@@ -3466,7 +3480,7 @@ public class ClassInfo extends MetadataNode implements Comparable<ClassInfo>, Na
     }
 
     /** 要返回的类类型 */
-    private enum ClassType {
+    public enum ClassType {
         /** 获取所有类类型 */
         ALL,
         /** 标准类(非接口或注解) */

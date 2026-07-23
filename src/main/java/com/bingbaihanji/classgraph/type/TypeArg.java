@@ -31,6 +31,8 @@ package com.bingbaihanji.classgraph.type;
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import java.util.*;
 
@@ -150,7 +152,7 @@ public final class TypeArg extends HierarchicalType {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         if (typePath.size() == 0 && wildcard != Wildcard.NONE) {
             // 通配符之前的注解
             addTypeAnnotation(annotationInfo);
@@ -173,7 +175,7 @@ public final class TypeArg extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         // getClassInfo() 对此类型无效，因此 getClassName() 不需要实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
@@ -184,7 +186,7 @@ public final class TypeArg extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         throw new IllegalArgumentException("getClassInfo() cannot be called here");
     }
 
@@ -192,7 +194,7 @@ public final class TypeArg extends HierarchicalType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (this.typeSignature != null) {
             this.typeSignature.setScanResult(scanResult);
@@ -238,7 +240,7 @@ public final class TypeArg extends HierarchicalType {
     }
 
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
                                     final StringBuilder buf) {
         if (typeAnnotationInfo != null) {
             for (final AnnotationInfo annotationInfo : typeAnnotationInfo) {
@@ -253,7 +255,9 @@ public final class TypeArg extends HierarchicalType {
                 buf.append('?');
                 break;
             case EXTENDS:
-                final String typeSigStr = typeSignature.toString(useSimpleNames);
+                final StringBuilder sb = new StringBuilder();
+                typeSignature.toString(useSimpleNames, sb);
+                final String typeSigStr = sb.toString();
                 buf.append("java.lang.Object".equals(typeSigStr) ? "?" : "? extends " + typeSigStr);
                 break;
             case SUPER:

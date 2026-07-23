@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.Buffer;
-import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
@@ -62,7 +61,7 @@ public class FileSlice extends Slice {
     /** 文件通道 */
     private FileChannel fileChannel;
     /** 后备字节缓冲区(如果有) */
-    private ByteBuffer backingByteBuffer;
+    private java.nio.ByteBuffer backingByteBuffer;
 
     /**
      * 用于将文件的一个范围视为切片的构造函数
@@ -251,20 +250,20 @@ public class FileSlice extends Slice {
      *             如果发生 I/O 异常
      */
     @Override
-    public ByteBuffer read() throws IOException {
+    public java.nio.ByteBuffer read() throws IOException {
         if (isDeflatedZipEntry) {
             // 如果已压缩，则解压到内存中(遗憾的是，没有可以按需解压部分流的懒加载
             // ByteBuffer，因此我们不得不解压整个 zip 条目)
             if (inflatedLengthHint > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
-            return ByteBuffer.wrap(load());
+            return java.nio.ByteBuffer.wrap(load());
         } else if (backingByteBuffer == null) {
             // 从 RandomAccessFile 复制到字节数组，然后包装成 ByteBuffer
             if (sliceLength > FileUtils.MAX_BUFFER_SIZE) {
                 throw new IOException("File is larger than 2GB");
             }
-            return ByteBuffer.wrap(load());
+            return java.nio.ByteBuffer.wrap(load());
         } else {
             // FileSlice 由 MappedByteBuffer 支持 —— 复制并返回(低成本操作)
             return backingByteBuffer.duplicate();

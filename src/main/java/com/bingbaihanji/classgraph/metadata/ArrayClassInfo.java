@@ -29,6 +29,8 @@
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.type.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.util.*;
 
 import com.bingbaihanji.classgraph.util.LogNode;
@@ -54,7 +56,7 @@ public class ArrayClassInfo extends ClassInfo {
     private ClassInfo elementClassInfo;
 
     /** 用于反序列化的默认构造函数 */
-    ArrayClassInfo() {
+    public ArrayClassInfo() {
         super();
     }
 
@@ -64,7 +66,7 @@ public class ArrayClassInfo extends ClassInfo {
      * @param ArrayType
      *            数组类型签名
      */
-    ArrayClassInfo(final ArrayType ArrayType) {
+    public ArrayClassInfo(final ArrayType ArrayType) {
         super(ArrayType.getClassName(), /* modifiers = */ 0, /* resource = */ null);
         this.ArrayType = ArrayType;
         // 预加载元素类型的字段
@@ -75,7 +77,7 @@ public class ArrayClassInfo extends ClassInfo {
      * @see com.bingbaihanji.classgraph.core.ClassInfo#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
     }
 
@@ -97,7 +99,7 @@ public class ArrayClassInfo extends ClassInfo {
      * @return null(始终)
      */
     @Override
-    public ClassType getTypeSignature() {
+    public com.bingbaihanji.classgraph.type.ClassType getTypeSignature() {
         return null;
     }
 

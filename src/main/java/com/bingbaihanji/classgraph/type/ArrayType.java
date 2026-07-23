@@ -29,6 +29,8 @@
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;
+import com.bingbaihanji.classgraph.metadata.*;
+import com.bingbaihanji.classgraph.scan.*;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeParser;
 
@@ -62,7 +64,7 @@ public class ArrayType extends ReferenceType {
      * @param typeSignatureStr
      *            原始数组类型签名字符串(例如 "[[I")
      */
-    ArrayType(final TypeSignature elementTypeSignature, final int numDims, final String typeSignatureStr) {
+    public ArrayType(final TypeSignature elementTypeSignature, final int numDims, final String typeSignatureStr) {
         super();
         final boolean typeSigHasTwoOrMoreDims = typeSignatureStr.startsWith("[[");
         if (numDims < 1) {
@@ -89,7 +91,7 @@ public class ArrayType extends ReferenceType {
      * @throws ParseException
      *             如果解析失败
      */
-    static ArrayType parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
+    public static ArrayType parse(final TypeParser TypeParser, final String definingClassName) throws ParseException {
         int numArrayDims = 0;
         final int begin = TypeParser.getPosition();
         while (TypeParser.peek() == '[') {
@@ -156,7 +158,7 @@ public class ArrayType extends ReferenceType {
     }
 
     @Override
-    protected void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
+    public void addTypeAnnotation(final List<TypePathNode> typePath, final AnnotationInfo annotationInfo) {
         if (typePath.isEmpty()) {
             addTypeAnnotation(annotationInfo);
         } else {
@@ -185,7 +187,7 @@ public class ArrayType extends ReferenceType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         if (className == null) {
             className = toString();
         }
@@ -196,7 +198,7 @@ public class ArrayType extends ReferenceType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         return getArrayClassInfo();
     }
 
@@ -227,7 +229,7 @@ public class ArrayType extends ReferenceType {
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         nestedType.setScanResult(scanResult);
         if (arrayClassInfo != null) {
@@ -244,7 +246,7 @@ public class ArrayType extends ReferenceType {
      *            被引用的类名
      */
     @Override
-    protected void findReferencedClassNames(final Set<String> refdClassNames) {
+    public void findReferencedClassNames(final Set<String> refdClassNames) {
         nestedType.findReferencedClassNames(refdClassNames);
     }
 
@@ -384,7 +386,7 @@ public class ArrayType extends ReferenceType {
     // -------------------------------------------------------------------------------------------------------------
 
     @Override
-    protected void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
+    public void toStringInternal(final boolean useSimpleNames, final AnnotationInfoList annotationsToExclude,
                                     final StringBuilder buf) {
         // 从最内层数组元素类型开始
         getElementTypeSignature().toStringInternal(useSimpleNames, annotationsToExclude, buf);

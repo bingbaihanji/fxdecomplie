@@ -30,6 +30,7 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.util.LogNode;
 
@@ -40,9 +41,9 @@ import java.util.Set;
 /**
  * 可从 {@link ScanResult} 中访问且与一个 {@link ClassInfo} 对象相关联的对象的超类
  */
-abstract class MetadataNode {
+public abstract class MetadataNode {
     /** 扫描结果 */
-    transient protected ScanResult scanResult;
+    transient public ScanResult scanResult;
     /** 类引用，在类被加载后设置 */
     protected transient Class<?> classRef;
     /** 关联的 {@link ClassInfo} 对象 */
@@ -56,7 +57,7 @@ abstract class MetadataNode {
      * @param scanResult
      *            扫描结果
      */
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         this.scanResult = scanResult;
     }
 
@@ -67,7 +68,7 @@ abstract class MetadataNode {
      *            日志
      * @return 引用的类信息
      */
-    final Set<ClassInfo> findReferencedClassInfo(final LogNode log) {
+    public final Set<ClassInfo> findReferencedClassInfo(final LogNode log) {
         final Set<ClassInfo> refdClassInfo = new LinkedHashSet<>();
         if (scanResult != null) {
             findReferencedClassInfo(scanResult.classNameToClassInfo, refdClassInfo, log);
@@ -100,7 +101,7 @@ abstract class MetadataNode {
      *
      * @return 类名
      */
-    protected abstract String getClassName();
+    public abstract String getClassName();
 
     /**
      * 获取被引用类的 {@link ClassInfo} 对象，如果在扫描期间未遇到被引用的类(即在扫描期间未为该类创建
@@ -108,7 +109,7 @@ abstract class MetadataNode {
      *
      * @return 被引用类的 {@link ClassInfo} 对象
      */
-    ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         if (classInfo == null) {
             if (scanResult == null) {
                 return null;
@@ -167,7 +168,7 @@ abstract class MetadataNode {
      * @throws IllegalArgumentException
      *             如果类无法加载或转换，且 ignoreExceptions 为 false
      */
-    <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType, final boolean ignoreExceptions) {
+    public <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType, final boolean ignoreExceptions) {
         synchronized (this) {
             // 如果类尚未加载，尝试加载类
             if (classRef == null) {
@@ -203,7 +204,7 @@ abstract class MetadataNode {
      * @throws IllegalArgumentException
      *             如果类无法加载或转换，且 ignoreExceptions 为 false
      */
-    <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
+    public <T> Class<T> loadClass(final Class<T> superclassOrInterfaceType) {
         return loadClass(superclassOrInterfaceType, /* ignoreExceptions = */ false);
     }
 
@@ -217,7 +218,7 @@ abstract class MetadataNode {
      * @throws IllegalArgumentException
      *             如果类无法加载且 ignoreExceptions 为 false
      */
-    Class<?> loadClass(final boolean ignoreExceptions) {
+    public Class<?> loadClass(final boolean ignoreExceptions) {
         if (classRef == null) {
             final String className = getClassInfoNameOrClassName();
             if (scanResult != null) {
@@ -244,7 +245,7 @@ abstract class MetadataNode {
      * @throws IllegalArgumentException
      *             如果类无法加载
      */
-    Class<?> loadClass() {
+    public Class<?> loadClass() {
         return loadClass(/* ignoreExceptions = */ false);
     }
 
@@ -267,7 +268,7 @@ abstract class MetadataNode {
      *            如果为 true，则仅使用每个类的简单名称
      * @return 字符串表示
      */
-    String toString(final boolean useSimpleNames) {
+    public String toString(final boolean useSimpleNames) {
         final StringBuilder buf = new StringBuilder();
         toString(useSimpleNames, buf);
         return buf.toString();

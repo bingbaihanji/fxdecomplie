@@ -30,6 +30,7 @@ package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.*;
 import com.bingbaihanji.classgraph.util.*;
+import com.bingbaihanji.classgraph.scan.*;
 
 import com.bingbaihanji.classgraph.util.LogNode;
 
@@ -60,7 +61,7 @@ public class AnnotationParameterValue extends MetadataNode
      * @param value
      *            注解参数值
      */
-    AnnotationParameterValue(final String name, final Object value) {
+    public AnnotationParameterValue(final String name, final Object value) {
         super();
         this.name = name;
         this.value = new TypedValue(value);
@@ -132,7 +133,7 @@ public class AnnotationParameterValue extends MetadataNode
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassName()
      */
     @Override
-    protected String getClassName() {
+    public String getClassName() {
         // getClassInfo() 对此类型无效，因此 getClassName() 无需实现
         throw new IllegalArgumentException("getClassName() cannot be called here");
     }
@@ -141,7 +142,7 @@ public class AnnotationParameterValue extends MetadataNode
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#getClassInfo()
      */
     @Override
-    protected ClassInfo getClassInfo() {
+    public ClassInfo getClassInfo() {
         throw new IllegalArgumentException("getClassInfo() cannot be called here");
     }
 
@@ -149,7 +150,7 @@ public class AnnotationParameterValue extends MetadataNode
      * @see com.bingbaihanji.classgraph.metadata.MetadataNode#setScanResult(com.bingbaihanji.classgraph.core.ScanResult)
      */
     @Override
-    void setScanResult(final ScanResult scanResult) {
+    public void setScanResult(final ScanResult scanResult) {
         super.setScanResult(scanResult);
         if (value != null) {
             value.setScanResult(scanResult);
