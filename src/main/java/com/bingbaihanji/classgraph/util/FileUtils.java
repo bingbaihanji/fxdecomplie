@@ -26,10 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.utils;
+package com.bingbaihanji.classgraph.util;
 
 import com.bingbaihanji.classgraph.reflection.ReflectionUtils;
-import com.bingbaihanji.classgraph.utils.VersionFinder.OperatingSystem;
+import com.bingbaihanji.classgraph.util.VersionFinder.OperatingSystem;
 
 import java.io.File;
 import java.io.FileNotFoundException;

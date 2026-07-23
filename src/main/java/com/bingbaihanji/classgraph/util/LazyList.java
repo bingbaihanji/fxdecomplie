@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,7 +39,7 @@ import java.util.ListIterator;
  * @param <T>
  *            元素类型
  */
-class PotentiallyUnmodifiableList<T> extends ArrayList<T> {
+class LazyList<T> extends ArrayList<T> {
     /** 序列化版本UID */
     static final long serialVersionUID = 1L;
 
@@ -49,7 +49,7 @@ class PotentiallyUnmodifiableList<T> extends ArrayList<T> {
     /**
      * 构造函数
      */
-    PotentiallyUnmodifiableList() {
+    LazyList() {
         super();
     }
 
@@ -59,7 +59,7 @@ class PotentiallyUnmodifiableList<T> extends ArrayList<T> {
      * @param sizeHint
      *            大小提示
      */
-    PotentiallyUnmodifiableList(final int sizeHint) {
+    LazyList(final int sizeHint) {
         super(sizeHint);
     }
 
@@ -69,7 +69,7 @@ class PotentiallyUnmodifiableList<T> extends ArrayList<T> {
      * @param collection
      *            初始元素
      */
-    PotentiallyUnmodifiableList(final Collection<T> collection) {
+    LazyList(final Collection<T> collection) {
         super(collection);
     }
 

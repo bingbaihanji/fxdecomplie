@@ -26,9 +26,9 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.utils;
+package com.bingbaihanji.classgraph.util;
 
-import com.bingbaihanji.classgraph.utils.VersionFinder.OperatingSystem;
+import com.bingbaihanji.classgraph.util.VersionFinder.OperatingSystem;
 
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  */
 public final class FastPathResolver {
     /** 匹配 URL 中的百分号编码字符 */
-    private static final Pattern percentMatcher = Pattern.compile("([%][0-9a-fA-F][0-9a-fA-F])+");
+    private static final Pattern percentMatcher = Pattern.compile("(%[0-9a-fA-F][0-9a-fA-F])+");
 
     /** 匹配后跟一个或两个斜杠的自定义 URL */
     private static final Pattern schemeOneOrTwoSlashMatcher = Pattern.compile("^[a-zA-Z+\\-.]+:/{1,2}");

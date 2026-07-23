@@ -1,4 +1,4 @@
-package com.bingbaihanji.classgraph.utils;
+package com.bingbaihanji.classgraph.util;
 
 /** 断言工具 */
 public final class Assert {
