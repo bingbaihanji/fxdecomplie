@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.utils.LogNode;
 
@@ -37,7 +37,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /** 联合类型，用于类型安全的 JSON 序列化/反序列化任何时候仅设置一个字段 */
-class ObjectTypedValueWrapper extends ScanResultObject {
+class TypedValue extends ScanResultObject {
     // 参数值按类型拆分到不同的字段中，以便序列化和反序列化正常工作
     // (无法正确序列化 Object 类型的字段，因为具体类型未
     // TODO: 移除 JSON 序列化后删除此类
@@ -106,12 +106,12 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     private byte[] byteArrayValue;
 
     /** Object 数组值 */
-    private ObjectTypedValueWrapper[] objectArrayValue;
+    private TypedValue[] objectArrayValue;
 
     // -------------------------------------------------------------------------------------------------------------
 
     /** 反序列化的默认构造函数 */
-    public ObjectTypedValueWrapper() {
+    public TypedValue() {
         super();
     }
 
@@ -123,7 +123,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
      * @param annotationParamValue
      *            注解参数值
      */
-    public ObjectTypedValueWrapper(final Object annotationParamValue) {
+    public TypedValue(final Object annotationParamValue) {
         super();
         if (annotationParamValue != null) {
             final Class<?> annotationParameterValueClass = annotationParamValue.getClass();
@@ -150,9 +150,9 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 } else {
                     // 对象数组类型 —— 包装每个单独的元素
                     final int n = Array.getLength(annotationParamValue);
-                    objectArrayValue = new ObjectTypedValueWrapper[n];
+                    objectArrayValue = new TypedValue[n];
                     for (int i = 0; i < n; i++) {
-                        objectArrayValue[i] = new ObjectTypedValueWrapper(Array.get(annotationParamValue, i));
+                        objectArrayValue[i] = new TypedValue(Array.get(annotationParamValue, i));
                     }
                 }
             } else if (annotationParamValue instanceof AnnotationEnumValue) {
@@ -325,7 +325,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
         } else {
             // 无法找到此名称的方法 —— 这是一个外部类
             // 在数组中查找第一个非 null 对象，并将其类型用作数组的元素类型
-            for (final ObjectTypedValueWrapper elt : objectArrayValue) {
+            for (final TypedValue elt : objectArrayValue) {
                 if (elt != null) {
                     // 基本类型数组将被转换为包装类型的数组
                     return elt.integerValue != null ? (getClass ? Integer.class : "int")
@@ -363,7 +363,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
             // 递归转换嵌套注解中的基本类型数组
             annotationInfo.convertWrapperArraysToPrimitiveArrays();
         } else if (objectArrayValue != null) {
-            for (final ObjectTypedValueWrapper elt : objectArrayValue) {
+            for (final TypedValue elt : objectArrayValue) {
                 if (elt.annotationInfo != null) {
                     // 递归
                     elt.annotationInfo.convertWrapperArraysToPrimitiveArrays();
@@ -392,7 +392,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "int":
                     intArrayValue = new int[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -407,7 +407,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "long":
                     longArrayValue = new long[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -422,7 +422,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "short":
                     shortArrayValue = new short[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -437,7 +437,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "char":
                     charArrayValue = new char[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -452,7 +452,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "float":
                     floatArrayValue = new float[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -467,7 +467,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "double":
                     doubleArrayValue = new double[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -482,7 +482,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "boolean":
                     booleanArrayValue = new boolean[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -497,7 +497,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
                 case "byte":
                     byteArrayValue = new byte[objectArrayValue.length];
                     for (int j = 0; j < objectArrayValue.length; j++) {
-                        final ObjectTypedValueWrapper elt = objectArrayValue[j];
+                        final TypedValue elt = objectArrayValue[j];
                         if (elt == null) {
                             throw new IllegalArgumentException("元素类型为 " + targetElementTypeName
                                     + " 的数组中存在非法 null 值，位于注解类 "
@@ -548,7 +548,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
         } else if (annotationInfo != null) {
             annotationInfo.setScanResult(scanResult);
         } else if (objectArrayValue != null) {
-            for (final ObjectTypedValueWrapper anObjectArrayValue : objectArrayValue) {
+            for (final TypedValue anObjectArrayValue : objectArrayValue) {
                 if (anObjectArrayValue != null) {
                     anObjectArrayValue.setScanResult(scanResult);
                 }
@@ -577,7 +577,7 @@ class ObjectTypedValueWrapper extends ScanResultObject {
         } else if (annotationInfo != null) {
             annotationInfo.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
         } else if (objectArrayValue != null) {
-            for (final ObjectTypedValueWrapper item : objectArrayValue) {
+            for (final TypedValue item : objectArrayValue) {
                 item.findReferencedClassInfo(classNameToClassInfo, refdClassInfo, log);
             }
         }
@@ -606,10 +606,10 @@ class ObjectTypedValueWrapper extends ScanResultObject {
     public boolean equals(final Object other) {
         if (other == this) {
             return true;
-        } else if (!(other instanceof ObjectTypedValueWrapper)) {
+        } else if (!(other instanceof TypedValue)) {
             return false;
         }
-        final ObjectTypedValueWrapper o = (ObjectTypedValueWrapper) other;
+        final TypedValue o = (TypedValue) other;
         return Objects.equals(annotationEnumValue, o.annotationEnumValue)
                 && Objects.equals(annotationClassRef, o.annotationClassRef)
                 && Objects.equals(annotationInfo, o.annotationInfo) && Objects.equals(stringValue, o.stringValue)

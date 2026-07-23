@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.utils.Assert;
 
@@ -42,7 +42,7 @@ import java.util.Objects;
  *
  * @author lukehutch
  */
-public class MethodParameterInfo {
+public class MethodParam {
     /** 注解信息 */
     final AnnotationInfo[] annotationInfo;
     /** 包含此参数的方法 */
@@ -80,7 +80,7 @@ public class MethodParameterInfo {
      * @param name
      *            方法参数名称
      */
-    MethodParameterInfo(final MethodInfo methodInfo, final AnnotationInfo[] annotationInfo, final int modifiers,
+    MethodParam(final MethodInfo methodInfo, final AnnotationInfo[] annotationInfo, final int modifiers,
                         final TypeSignature typeDescriptor, final TypeSignature typeSignature, final String name) {
         this.methodInfo = methodInfo;
         this.name = name;
@@ -327,10 +327,10 @@ public class MethodParameterInfo {
     public boolean equals(final Object obj) {
         if (obj == this) {
             return true;
-        } else if (!(obj instanceof MethodParameterInfo)) {
+        } else if (!(obj instanceof MethodParam)) {
             return false;
         }
-        final MethodParameterInfo other = (MethodParameterInfo) obj;
+        final MethodParam other = (MethodParam) obj;
         return Objects.equals(methodInfo, other.methodInfo)
                 && Objects.deepEquals(annotationInfo, other.annotationInfo) && modifiers == other.modifiers
                 && Objects.equals(typeDescriptor, other.typeDescriptor)

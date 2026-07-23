@@ -26,7 +26,7 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.utils.LogNode;
 
@@ -37,7 +37,7 @@ import java.util.Set;
 /**
  * 可从 {@link ScanResult} 中访问且与一个 {@link ClassInfo} 对象相关联的对象的超类
  */
-abstract class ScanResultObject {
+abstract class MetadataNode {
     /** 扫描结果 */
     transient protected ScanResult scanResult;
     /** 类引用，在类被加载后设置 */

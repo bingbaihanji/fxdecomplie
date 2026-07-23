@@ -26,10 +26,10 @@
  * AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
  * OR OTHER DEALINGS IN THE SOFTWARE.
  */
-package com.bingbaihanji.classgraph.core;
+package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.core.ClassFile.TypeAnnotationDecorator;
-import com.bingbaihanji.classgraph.core.ClassInfo.RelType;
+import com.bingbaihanji.classgraph.metadata.ClassInfo.RelType;
 import com.bingbaihanji.classgraph.type.ParseException;
 import com.bingbaihanji.classgraph.type.TypeUtils;
 import com.bingbaihanji.classgraph.type.TypeUtils.ModifierType;
