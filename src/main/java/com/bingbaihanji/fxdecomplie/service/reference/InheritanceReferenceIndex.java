@@ -1,21 +1,21 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.classgraph.metadata.ClassInfo;
-import com.bingbaihanji.classgraph.scan.ScanResult;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassMetadata;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanResult;
 
 import java.util.*;
 
 public final class InheritanceReferenceIndex {
 
-    private final ScanResult scanResult;
+    private final ClassScanResult scanResult;
     private final Map<String, String> internalNameToFullPath;
     private final Map<String, List<String>> interfaceToImplementations;
     private final Map<String, List<String>> superclassToSubclasses;
     private final Map<String, List<String>> annotationToAnnotatedClasses;
 
-    public InheritanceReferenceIndex(ScanResult scanResult,
+    public InheritanceReferenceIndex(ClassScanResult scanResult,
                                      Map<String, String> internalNameToFullPath) {
-        this.scanResult = scanResult != null ? scanResult : new ScanResult(Map.of());
+        this.scanResult = scanResult != null ? scanResult : new ClassScanResult(Map.of());
         this.internalNameToFullPath = internalNameToFullPath != null
                 ? Map.copyOf(internalNameToFullPath) : Map.of();
 
@@ -23,17 +23,17 @@ public final class InheritanceReferenceIndex {
         Map<String, List<String>> subMap = new LinkedHashMap<>();
         Map<String, List<String>> annMap = new LinkedHashMap<>();
 
-        for (ClassInfo ci : this.scanResult.getAllClasses()) {
-            String name = ci.getName();
-            for (ClassInfo itf : ci.getInterfaces()) {
-                implMap.computeIfAbsent(itf.getName(), k -> new ArrayList<>()).add(name);
+        for (ClassMetadata cm : this.scanResult.getAllClasses()) {
+            String name = cm.name();
+            for (String itf : cm.interfaceNames()) {
+                implMap.computeIfAbsent(itf, k -> new ArrayList<>()).add(name);
             }
-            ClassInfo sup = ci.getSuperclass();
-            if (sup != null) {
-                subMap.computeIfAbsent(sup.getName(), k -> new ArrayList<>()).add(name);
+            String superName = cm.superclassName();
+            if (superName != null) {
+                subMap.computeIfAbsent(superName, k -> new ArrayList<>()).add(name);
             }
-            for (var ai : ci.getAnnotationInfo()) {
-                annMap.computeIfAbsent(ai.getName(), k -> new ArrayList<>()).add(name);
+            for (var ann : cm.annotations()) {
+                annMap.computeIfAbsent(ann.className(), k -> new ArrayList<>()).add(name);
             }
         }
 
@@ -50,8 +50,8 @@ public final class InheritanceReferenceIndex {
         return Collections.unmodifiableMap(result);
     }
 
-    public ClassInfo classInfo(String internalName) {
-        return scanResult.getClassInfo(internalName);
+    public ClassMetadata classInfo(String internalName) {
+        return scanResult.getClass(internalName).orElse(null);
     }
 
     public List<String> implementationsOf(String interfaceName) {
@@ -71,10 +71,10 @@ public final class InheritanceReferenceIndex {
     }
 
     public boolean containsClass(String internalName) {
-        return scanResult.getClassInfo(internalName) != null;
+        return scanResult.containsClass(internalName);
     }
 
-    public ScanResult scanResult() {
+    public ClassScanResult scanResult() {
         return scanResult;
     }
 }

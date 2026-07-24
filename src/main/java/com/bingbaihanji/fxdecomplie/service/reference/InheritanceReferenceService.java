@@ -1,8 +1,8 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
-import com.bingbaihanji.classgraph.metadata.ClassInfo;
 import com.bingbaihanji.fxdecomplie.model.ClassIndexEntry;
 import com.bingbaihanji.fxdecomplie.model.MemberIndexEntry;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassMetadata;
 import com.bingbaihanji.fxdecomplie.model.Workspace;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import com.bingbaihanji.fxdecomplie.model.reference.InheritanceReferenceGroup;
@@ -92,10 +92,11 @@ public final class InheritanceReferenceService {
         // 注解：优先从 ClassGraph 全局索引获取，回退到本地 ASM 解析
         List<InheritanceReferenceNode> annotationNodes = new ArrayList<>();
         if (index != null) {
-            ClassInfo ci = index.classInfo(meta.name);
-            if (ci != null) {
-                for (var ai : ci.getAnnotationInfo()) {
-                    annotationNodes.add(nodeFor(workspace, ai.getName(), Kind.ANNOTATION, 1, index));
+            ClassMetadata cm = index.classInfo(meta.name);
+            if (cm != null) {
+                for (var ann : cm.annotations()) {
+                    annotationNodes.add(
+                        nodeFor(workspace, ann.className(), Kind.ANNOTATION, 1, index));
                 }
             }
         }
@@ -412,8 +413,8 @@ public final class InheritanceReferenceService {
 
     private static void addImplementationGroup(Workspace workspace, InheritanceReferenceIndex index,
                                                String internalName, List<InheritanceReferenceGroup> groups) {
-        ClassInfo ci = index.classInfo(internalName);
-        if (ci == null || !ci.isInterface()) {
+        ClassMetadata cm = index.classInfo(internalName);
+        if (cm == null || !cm.isInterface()) {
             return;
         }
         List<String> impls = collectImplementations(index, internalName);
@@ -427,8 +428,8 @@ public final class InheritanceReferenceService {
 
     private static void addSubclassGroup(Workspace workspace, InheritanceReferenceIndex index,
                                          String internalName, List<InheritanceReferenceGroup> groups) {
-        ClassInfo ci = index.classInfo(internalName);
-        if (ci != null && ci.isInterface()) {
+        ClassMetadata cm = index.classInfo(internalName);
+        if (cm != null && cm.isInterface()) {
             return;
         }
         List<String> subs = index.subclassesOf(internalName);
@@ -487,7 +488,7 @@ public final class InheritanceReferenceService {
                 continue;
             }
             for (String impl : index.implementationsOf(current)) {
-                ClassInfo info = index.classInfo(impl);
+                ClassMetadata info = index.classInfo(impl);
                 if (info != null && info.isInterface()) {
                     queue.addLast(impl);
                 } else {
@@ -495,7 +496,7 @@ public final class InheritanceReferenceService {
                 }
             }
             for (String subInterface : index.subclassesOf(current)) {
-                ClassInfo info = index.classInfo(subInterface);
+                ClassMetadata info = index.classInfo(subInterface);
                 if (info != null && info.isInterface()) {
                     queue.addLast(subInterface);
                 }

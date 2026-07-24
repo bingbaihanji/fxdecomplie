@@ -32,6 +32,7 @@ import java.util.function.Predicate;
  * @author bingbaihanji
  * @date 2026-07-20
  */
+@Deprecated(forRemoval = true)
 public final class ClassGraphWorkspaceAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(ClassGraphWorkspaceAdapter.class);
