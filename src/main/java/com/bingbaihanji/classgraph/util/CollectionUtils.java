@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.util;
 
 import java.util.*;

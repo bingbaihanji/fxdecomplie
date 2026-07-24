@@ -112,7 +112,7 @@ public class ArraySlice extends Slice {
         if (isDeflatedZipEntry) {
             // 如有必要，解压到内存中
             try (InputStream inputStream = open()) {
-                return JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
+                return com.bingbaihanji.classgraph.resource.JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else if (sliceStartPos == 0L && sliceLength == arr.length) {
             // 快速路径 —— 如果数组是整个切片且未压缩，则直接返回整个数组

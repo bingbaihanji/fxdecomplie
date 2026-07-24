@@ -220,7 +220,7 @@ public class FileSlice extends Slice {
                 throw new IOException("Uncompressed size is larger than 2GB");
             }
             try (InputStream inputStream = open()) {
-                return JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
+                return com.bingbaihanji.classgraph.resource.JarReader.readAllBytesAsArray(inputStream, inflatedLengthHint);
             }
         } else {
             // 从 RandomAccessFile 或 MappedByteBuffer 复制到字节数组

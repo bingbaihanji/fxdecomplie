@@ -14,7 +14,9 @@ public final class Strings {
      * @return the escaped string, or null if input was null
      */
     public static String escapeJson(String s) {
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
         var buf = new StringBuilder(s.length() * 2);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -27,8 +29,11 @@ public final class Strings {
                 case '\r' -> buf.append("\\r");
                 case '\t' -> buf.append("\\t");
                 default -> {
-                    if (c < 0x20) buf.append("\\u").append(String.format("%04x", (int) c));
-                    else buf.append(c);
+                    if (c < 0x20) {
+                        buf.append("\\u").append(String.format("%04x", (int) c));
+                    } else {
+                        buf.append(c);
+                    }
                 }
             }
         }

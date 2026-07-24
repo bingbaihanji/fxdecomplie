@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.util;
 
 import com.bingbaihanji.classgraph.classpath.SystemJarFinder;

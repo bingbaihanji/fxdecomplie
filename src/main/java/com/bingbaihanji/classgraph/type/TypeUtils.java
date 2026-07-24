@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.type;
 
 import java.lang.reflect.Modifier;

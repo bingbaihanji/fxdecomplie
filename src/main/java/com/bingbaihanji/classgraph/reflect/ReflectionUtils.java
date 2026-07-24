@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.reflect;
 
 import com.bingbaihanji.classgraph.scan.ClassGraph;

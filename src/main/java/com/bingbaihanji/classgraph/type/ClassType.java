@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.type;
 
 import com.bingbaihanji.classgraph.bytecode.ClassParser.TypePathNode;

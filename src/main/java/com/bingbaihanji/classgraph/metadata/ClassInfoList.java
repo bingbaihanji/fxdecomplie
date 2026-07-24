@@ -1,4 +1,3 @@
- 
 package com.bingbaihanji.classgraph.metadata;
 
 import com.bingbaihanji.classgraph.metadata.ClassHierarchy.ReachableAndDirectlyRelatedClasses;
