@@ -247,27 +247,24 @@ public class ClassGraphClassScanService implements ClassScanService {
             annotations = List.copyOf(annotations);
         }
 
-        // 从 ClassInfo 关系图获取接口列表
-        List<String> interfaceNames = new ArrayList<>();
-        ClassInfoList interfaces = ci.getInterfaces();
-        if (interfaces != null) {
-            for (ClassInfo iface : interfaces) {
-                interfaceNames.add(iface.getName());
-            }
-        }
+        // 使用 raw metadata 获取接口和父类关系（避免 ClassInfo.getInterfaces()/getSuperclass()
+        // 内部依赖 ScanResult 导致 NPE）
+        List<String> interfaceNames = raw.interfaces != null
+            ? raw.interfaces : List.of();
 
         return new ClassMetadata(
             ci.getName(), ci.getModifiers(),
-            ci.getSuperclass() != null ? ci.getSuperclass().getName() : null,
-            List.copyOf(interfaceNames), fields, methods, annotations,
+            raw.superName, // 直接使用 raw metadata 中的父类名
+            interfaceNames, fields, methods, annotations,
             ci.getFullPath(), ci.isExternalClass()
         );
     }
 
     private static ClassMetadata convertExternalToMetadata(ClassInfo ci) {
+        // 外部类只有基本信息，没有字段/方法/注解/关系细节
         return new ClassMetadata(
             ci.getName(), ci.getModifiers(),
-            ci.getSuperclass() != null ? ci.getSuperclass().getName() : null,
+            null, // 外部类的父类名无法从 ClassInfo 获取（需要 ScanResult）
             List.of(), List.of(), List.of(), List.of(),
             ci.getFullPath(), true
         );

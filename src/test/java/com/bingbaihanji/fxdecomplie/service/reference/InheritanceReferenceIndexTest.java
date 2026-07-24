@@ -1,6 +1,10 @@
 package com.bingbaihanji.fxdecomplie.service.reference;
 
 import com.bingbaihanji.fxdecomplie.model.Workspace;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassGraphClassScanService;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanRequest;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanResult;
+import com.bingbaihanji.fxdecomplie.service.classscan.ClassScanService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -15,18 +19,22 @@ class InheritanceReferenceIndexTest {
     @TempDir
     Path tempDir;
 
+    private static final ClassScanService classScanService = new ClassGraphClassScanService();
+
     @Test
     void indexProvidesImplementations() throws Exception {
         Workspace workspace = sampleWorkspace();
         InheritanceReferenceIndex index = buildIndex(workspace);
-        assertTrue(index.implementationsOf("com/example/FileService").contains("com/example/FileServiceImpl"));
+        assertTrue(index.implementationsOf("com/example/FileService")
+                .contains("com/example/FileServiceImpl"));
     }
 
     @Test
     void indexProvidesAnnotatedClasses() throws Exception {
         Workspace workspace = sampleWorkspace();
         InheritanceReferenceIndex index = buildIndex(workspace);
-        assertTrue(index.annotatedBy("com/example/Service").contains("com/example/UserService"));
+        assertTrue(index.annotatedBy("com/example/Service")
+                .contains("com/example/UserService"));
     }
 
     @Test
@@ -68,11 +76,11 @@ class InheritanceReferenceIndexTest {
     }
 
     private InheritanceReferenceIndex buildIndex(Workspace workspace) {
-        var scanResult = ClassGraphWorkspaceAdapter.scan(workspace);
-        java.util.LinkedHashMap<String, String> pathMap = new java.util.LinkedHashMap<>();
-        for (var ci : scanResult.getAllClasses()) {
-            if (ci.getFullPath() != null) {
-                pathMap.put(ci.getName(), ci.getFullPath());
+        ClassScanResult scanResult = classScanService.scan(ClassScanRequest.of(workspace));
+        LinkedHashMap<String, String> pathMap = new LinkedHashMap<>();
+        for (var cm : scanResult.getAllClasses()) {
+            if (cm.fullPath() != null) {
+                pathMap.put(cm.name(), cm.fullPath());
             }
         }
         return new InheritanceReferenceIndex(scanResult, pathMap);
