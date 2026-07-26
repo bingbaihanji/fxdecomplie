@@ -1,17 +1,21 @@
 package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheStore;
 import com.bingbaihanji.fxdecomplie.util.cache.LruCache;
 
+import java.util.Optional;
+
 /**
- * L2 反编译源码内存缓存，按字节大小限制(50MB 上限)，加权 LRU 淘汰
- * 缓存键 = workspaceKey + internalName + engine + optionsHash
- * 引擎切换或反编译选项变更时自动失效
+ * L2 反编译源码内存缓存，按字节大小限制(50MB 上限)，加权 LRU 淘汰。
+ * 实现 {@link CodeCacheStore} 以支持注入和测试替换。
  *
  * @author bingbaihanji
  * @date 2026-06-18
  */
-public class DecompileCache {
+public class DecompileCache implements CodeCacheStore {
 
     private static final int MAX_CACHE_BYTES = 50_000_000; // 50 MB
     /** 缓存键分隔符(null 字符不可能出现在 JVM 内部名称中),用于各组件之间的精确匹配,避免前缀碰撞 */
@@ -19,10 +23,42 @@ public class DecompileCache {
     private final LruCache<String, String> cache = new LruCache<String, String>(MAX_CACHE_BYTES) {
         @Override
         protected int sizeOf(String key, String value) {
-            // 近似按 char 计数 (Latin-1 或 UTF-16, 最坏情况 2 bytes/char)
             return value.length() * 2;
         }
     };
+
+    // ─── CodeCacheStore 实现 ───
+
+    @Override
+    public Optional<String> load(CodeCacheKey key) {
+        return Optional.ofNullable(cache.get(key.compositeKey()));
+    }
+
+    @Override
+    public void save(CodeCacheKey key, String source) {
+        cache.put(key.compositeKey(), source);
+    }
+
+    @Override
+    public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
+        switch (scope) {
+            case CLASS -> {
+                String prefix = key.invalidationPrefix();
+                cache.snapshot().keySet().stream()
+                        .filter(k -> k.startsWith(prefix))
+                        .forEach(cache::remove);
+            }
+            case WORKSPACE -> {
+                String prefix = key.workspacePrefix();
+                cache.snapshot().keySet().stream()
+                        .filter(k -> k.startsWith(prefix))
+                        .forEach(cache::remove);
+            }
+            case ALL -> cache.evictAll();
+        }
+    }
+
+    // ─── 向后兼容方法 ───
 
     /** 构建缓存键,组合工作区标识 类内部名 引擎类型和选项哈希 */
     private static String cacheKey(String workspaceKey, String internalName,
@@ -43,10 +79,7 @@ public class DecompileCache {
         cache.put(cacheKey(workspaceKey, internalName, engine, optionsHash), sourceCode);
     }
 
-    /**
-     * 失效指定类的所有缓存条目
-     * 使用双分隔符避免前缀碰撞(如 "com/Fo" 误匹配 "com/Foo")
-     */
+    /** 失效指定类的所有缓存条目 */
     public void invalidate(String workspaceKey, String internalName) {
         String prefix = workspaceKey + KEY_SEP + internalName + KEY_SEP + KEY_SEP;
         cache.snapshot().keySet().stream()

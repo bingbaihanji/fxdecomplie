@@ -2,6 +2,9 @@ package com.bingbaihanji.fxdecomplie.service;
 
 import com.bingbaihanji.fxdecomplie.constants.AppPaths;
 import com.bingbaihanji.fxdecomplie.decompiler.DecompilerTypeEnum;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheKey;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheScope;
+import com.bingbaihanji.fxdecomplie.service.decompile.CodeCacheStore;
 import com.bingbaihanji.fxdecomplie.util.io.AtomicFile;
 import com.bingbaihanji.fxdecomplie.util.io.ByteUtils;
 import org.slf4j.Logger;
@@ -13,45 +16,105 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * L3 磁盘持久化缓存将反编译结果序列化到 {@code <appDir>/cache/} 下
- * 超量时自动清理旧缓存
+ * L3 磁盘持久化缓存将反编译结果序列化到 {@code <appDir>/cache/} 下。
+ * 实现 {@link CodeCacheStore} 以支持注入和测试替换。
  *
  * @author bingbaihanji
  * @date 2026-06-18
  */
-public final class DiskCodeCache {
+public final class DiskCodeCache implements CodeCacheStore {
 
     private static final Logger log = LoggerFactory.getLogger(DiskCodeCache.class);
 
-    private static final Path CACHE_ROOT = AppPaths.cacheDir();
-
-    private static final long MAX_CACHE_SIZE_BYTES = 500L * 1024 * 1024; // 500 MB
+    private final Path cacheRoot;
+    private static final long MAX_CACHE_SIZE_BYTES = 500L * 1024 * 1024;
     private static final int CACHE_SCHEMA_VERSION = 2;
-    private static volatile boolean cleanupInProgress;
 
-    private DiskCodeCache() {
-        throw new AssertionError("utility class");
+    private static volatile DiskCodeCache defaultInstance;
+    private volatile boolean cleanupInProgress;
+
+    public DiskCodeCache(Path cacheRoot) {
+        this.cacheRoot = cacheRoot;
     }
 
+    /** 获取默认实例（使用 AppPaths.cacheDir() 作为根目录） */
+    public static DiskCodeCache getDefault() {
+        if (defaultInstance == null) {
+            synchronized (DiskCodeCache.class) {
+                if (defaultInstance == null) {
+                    defaultInstance = new DiskCodeCache(AppPaths.cacheDir());
+                }
+            }
+        }
+        return defaultInstance;
+    }
+
+    public Path root() {
+        return cacheRoot;
+    }
+
+    // ─── CodeCacheStore 实现 ───
+
+    @Override
+    public Optional<String> load(CodeCacheKey key) {
+        return Optional.ofNullable(load(key.workspaceKey(), key.internalName(),
+                key.engine(), key.optionsHash()));
+    }
+
+    @Override
+    public void save(CodeCacheKey key, String source) {
+        save(key.workspaceKey(), key.internalName(),
+                key.engine(), key.optionsHash(), source);
+    }
+
+    @Override
+    public void invalidate(CodeCacheKey key, CodeCacheScope scope) {
+        switch (scope) {
+            case CLASS -> invalidate(key.workspaceKey(), key.internalName());
+            case WORKSPACE -> {
+                // 清理该工作区下的所有缓存文件
+                String safeWs = sanitizePathPart(key.workspaceKey());
+                Path wsDir = cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWs);
+                try {
+                    if (Files.exists(wsDir)) {
+                        try (var files = Files.walk(wsDir).sorted(Comparator.reverseOrder())) {
+                            files.forEach(p -> {
+                                try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                            });
+                        }
+                    }
+                } catch (IOException ignored) {}
+            }
+            case ALL -> cleanAll();
+        }
+    }
+
+    // ─── 向后兼容: 静态方法 ───
+
+    /** @deprecated 使用 {@link #getDefault()} 获取实例后调用 {@link #load(CodeCacheKey)} */
+    @Deprecated
     public static Path cacheRoot() {
-        return CACHE_ROOT;
+        return getDefault().cacheRoot;
     }
 
     public static String load(String workspaceHash, String internalName, DecompilerTypeEnum engine) {
-        return load(workspaceHash, internalName, engine, "default");
+        return getDefault().loadInternal(workspaceHash, internalName, engine, "default");
     }
 
     public static String load(String workspaceHash, String internalName,
                               DecompilerTypeEnum engine, String optionsHash) {
+        return getDefault().loadInternal(workspaceHash, internalName, engine, optionsHash);
+    }
+
+    private String loadInternal(String workspaceHash, String internalName,
+                                 DecompilerTypeEnum engine, String optionsHash) {
         Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
         try {
-            if (!Files.exists(file)) {
-                return null;
-            }
+            if (!Files.exists(file)) return null;
             String content = Files.readString(file, StandardCharsets.UTF_8);
-            // 零字节文件(写入时崩溃/断电残留)视为缓存未命中,触发重新反编译
             return content.isEmpty() ? null : content;
         } catch (IOException e) {
             log.debug("加载磁盘代码缓存失败: {}", file, e);
@@ -61,20 +124,20 @@ public final class DiskCodeCache {
 
     public static void save(String workspaceHash, String internalName,
                             DecompilerTypeEnum engine, String sourceCode) {
-        save(workspaceHash, internalName, engine, "default", sourceCode);
+        getDefault().saveInternal(workspaceHash, internalName, engine, "default", sourceCode);
     }
 
     public static void save(String workspaceHash, String internalName,
-                            DecompilerTypeEnum engine, String optionsHash,
-                            String sourceCode) {
-        // 跳过 null/blank 源码,避免写入空文件后被 load() 当作缓存未命中
-        if (sourceCode == null || sourceCode.isBlank()) {
-            return;
-        }
+                            DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
+        getDefault().saveInternal(workspaceHash, internalName, engine, optionsHash, sourceCode);
+    }
+
+    private void saveInternal(String workspaceHash, String internalName,
+                               DecompilerTypeEnum engine, String optionsHash, String sourceCode) {
+        if (sourceCode == null || sourceCode.isBlank()) return;
         try {
             Path file = cachePath(workspaceHash, internalName, engine, optionsHash);
             Files.createDirectories(file.getParent());
-            // 惰性检查：写入前检查缓存大小，超限时触发后台清理
             checkAndCleanLazy();
             AtomicFile af = new AtomicFile(file.toFile());
             af.write(os -> {
@@ -89,43 +152,25 @@ public final class DiskCodeCache {
         }
     }
 
-    private static void checkAndCleanLazy() {
-        if (cleanupInProgress) {
-            return;
-        }
+    private void checkAndCleanLazy() {
+        if (cleanupInProgress) return;
         try {
-            if (!Files.exists(CACHE_ROOT)) {
-                return;
-            }
+            if (!Files.exists(cacheRoot)) return;
             long totalSize;
-            try (var stream = Files.walk(CACHE_ROOT)) {
+            try (var stream = Files.walk(cacheRoot)) {
                 totalSize = stream.filter(Files::isRegularFile)
                         .mapToLong(p -> {
-                            try {
-                                return Files.size(p);
-                            } catch (IOException e) {
-                                return 0L;
-                            }
+                            try { return Files.size(p); } catch (IOException e) { return 0L; }
                         }).sum();
             }
             if (totalSize > MAX_CACHE_SIZE_BYTES) {
                 cleanupInProgress = true;
-                // 异步执行清理,避免阻塞当前保存任务
                 var cleanupTask = BackgroundTasks.run(BackgroundTasks.PoolType.IO,
                         "DiskCache-Cleanup", () -> {
-                            try {
-                                cleanIfNeeded();
-                            } finally {
-                                cleanupInProgress = false;
-                            }
+                            try { cleanIfNeeded(); } finally { cleanupInProgress = false; }
                         });
-                // 若任务提交即失败(如队列满/已关闭),立即释放标志,避免永久跳过清理
                 if (cleanupTask.isDone()) {
-                    try {
-                        cleanupTask.get();
-                    } catch (Exception e) {
-                        cleanupInProgress = false;
-                    }
+                    try { cleanupTask.get(); } catch (Exception e) { cleanupInProgress = false; }
                 }
             }
         } catch (IOException e) {
@@ -133,17 +178,16 @@ public final class DiskCodeCache {
         }
     }
 
-    /** 删除指定工作区和内部名称的所有引擎/选项缓存文件 */
     public static void invalidate(String workspaceHash, String internalName) {
-        if (workspaceHash == null || internalName == null) {
-            return;
-        }
+        getDefault().invalidateInternal(workspaceHash, internalName);
+    }
+
+    private void invalidateInternal(String workspaceHash, String internalName) {
+        if (workspaceHash == null || internalName == null) return;
         String safeWorkspace = sanitizePathPart(workspaceHash);
         String safeName = sanitizePathPart(internalName);
-        Path dir = CACHE_ROOT.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWorkspace);
-        if (!Files.exists(dir)) {
-            return;
-        }
+        Path dir = cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION).resolve(safeWorkspace);
+        if (!Files.exists(dir)) return;
         try (var engineDirs = Files.list(dir)) {
             engineDirs.filter(Files::isDirectory).forEach(engineDir -> {
                 try (var files = Files.list(engineDir)) {
@@ -151,53 +195,41 @@ public final class DiskCodeCache {
                         String fname = f.getFileName().toString();
                         return fname.startsWith(safeName + ".");
                     }).forEach(f -> {
-                        try {
-                            Files.deleteIfExists(f);
-                        } catch (IOException ignored) {
-                            // 删除单个缓存文件失败不阻塞其余操作
-                        }
+                        try { Files.deleteIfExists(f); } catch (IOException ignored) {}
                     });
-                } catch (IOException ignored) {
-                    // 目录不可读时跳过
-                }
+                } catch (IOException ignored) {}
             });
-        } catch (IOException ignored) {
-            // 工作区目录不可读时跳过
-        }
+        } catch (IOException ignored) {}
     }
 
     public static void cleanAll() {
+        getDefault().cleanAllInternal();
+    }
+
+    private void cleanAllInternal() {
         try {
-            if (Files.exists(CACHE_ROOT)) {
-                try (var files = Files.walk(CACHE_ROOT).sorted(Comparator.reverseOrder())) {
+            if (Files.exists(cacheRoot)) {
+                try (var files = Files.walk(cacheRoot).sorted(Comparator.reverseOrder())) {
                     files.forEach(p -> {
-                        try {
-                            Files.deleteIfExists(p);
-                        } catch (IOException ignored) {
-                        }
+                        try { Files.deleteIfExists(p); } catch (IOException ignored) {}
                     });
                 }
             }
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
     }
 
-    /** 检查并在缓存超过 500MB 时清理最早的条目(应在启动时调用),使用两遍扫描避免收集所有路径到内存 */
     public static void cleanIfNeeded() {
+        getDefault().cleanIfNeededInternal();
+    }
+
+    private void cleanIfNeededInternal() {
         try {
-            if (!Files.exists(CACHE_ROOT)) {
-                return;
-            }
-            // 第一遍扫描:计算总大小,不收集所有路径
+            if (!Files.exists(cacheRoot)) return;
             long totalSize;
-            try (var stream = Files.walk(CACHE_ROOT)) {
+            try (var stream = Files.walk(cacheRoot)) {
                 totalSize = stream.filter(Files::isRegularFile)
                         .mapToLong(p -> {
-                            try {
-                                return Files.size(p);
-                            } catch (IOException e) {
-                                return 0L;
-                            }
+                            try { return Files.size(p); } catch (IOException e) { return 0L; }
                         }).sum();
             }
             if (totalSize <= MAX_CACHE_SIZE_BYTES) {
@@ -207,32 +239,24 @@ public final class DiskCodeCache {
             }
             log.info("磁盘缓存超过阈值: {} MB > {} MB, 开始清理",
                     totalSize / (1024 * 1024), MAX_CACHE_SIZE_BYTES / (1024 * 1024));
-            // 第二遍扫描:收集 按时间排序,删除最旧的直至低于目标大小
             long targetSize = (long) (MAX_CACHE_SIZE_BYTES * 0.7);
             List<Path> files;
-            try (var stream = Files.walk(CACHE_ROOT)) {
+            try (var stream = Files.walk(cacheRoot)) {
                 files = stream.filter(Files::isRegularFile)
                         .sorted(Comparator.comparingLong(p -> {
-                            try {
-                                return Files.getLastModifiedTime(p).toMillis();
-                            } catch (IOException e) {
-                                return Long.MAX_VALUE;
-                            }
-                        }))
-                        .toList();
+                            try { return Files.getLastModifiedTime(p).toMillis(); }
+                            catch (IOException e) { return Long.MAX_VALUE; }
+                        })).toList();
             }
             int deleted = 0;
             for (Path f : files) {
-                if (totalSize <= targetSize) {
-                    break;
-                }
+                if (totalSize <= targetSize) break;
                 try {
                     long sz = Files.size(f);
                     Files.deleteIfExists(f);
                     totalSize -= sz;
                     deleted++;
-                } catch (IOException ignored) {
-                }
+                } catch (IOException ignored) {}
             }
             log.info("磁盘缓存清理完成: 删除 {} 个文件, 剩余 {} MB",
                     deleted, totalSize / (1024 * 1024));
@@ -241,40 +265,26 @@ public final class DiskCodeCache {
         }
     }
 
-    private static Path cachePath(String workspaceHash, String internalName, DecompilerTypeEnum engine) {
-        return cachePath(workspaceHash, internalName, engine, "default");
-    }
-
-    private static Path cachePath(String workspaceHash, String internalName,
-                                  DecompilerTypeEnum engine, String optionsHash) {
+    private Path cachePath(String workspaceHash, String internalName,
+                            DecompilerTypeEnum engine, String optionsHash) {
         String safeWorkspace = sanitizePathPart(workspaceHash);
         String safeInternalName = sanitizePathPart(internalName);
         String safeEngine = engine.name().toLowerCase();
-        return CACHE_ROOT.resolve("v" + CACHE_SCHEMA_VERSION)
-                .resolve(safeWorkspace)
-                .resolve(safeEngine)
+        return cacheRoot.resolve("v" + CACHE_SCHEMA_VERSION)
+                .resolve(safeWorkspace).resolve(safeEngine)
                 .resolve(safeInternalName + "." + optionsId(optionsHash) + ".java");
     }
 
     private static String sanitizePathPart(String value) {
-        if (value == null || value.isBlank()) {
-            return "_";
-        }
-        return value.replace('/', '_')
-                .replace('\\', '_')
-                .replace(':', '_')
-                .replace('*', '_')
-                .replace('?', '_')
-                .replace('"', '_')
-                .replace('<', '_')
-                .replace('>', '_')
-                .replace('|', '_');
+        if (value == null || value.isBlank()) return "_";
+        return value.replace('/', '_').replace('\\', '_').replace(':', '_')
+                .replace('*', '_').replace('?', '_').replace('"', '_')
+                .replace('<', '_').replace('>', '_').replace('|', '_');
     }
 
     private static String optionsId(String optionsHash) {
-        if (optionsHash == null || optionsHash.isBlank() || "default".equals(optionsHash)) {
+        if (optionsHash == null || optionsHash.isBlank() || "default".equals(optionsHash))
             return "default";
-        }
         return ByteUtils.sha256Hex(optionsHash).substring(0, 16);
     }
 }
