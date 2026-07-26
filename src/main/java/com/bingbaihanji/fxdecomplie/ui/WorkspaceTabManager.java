@@ -158,25 +158,9 @@ public final class WorkspaceTabManager {
                                                java.util.function.Consumer<FileTreeNode> onFindUsage,
                                                java.util.function.Consumer<FileTreeNode> onSearchPackage,
                                                BiConsumer<FileTreeNode, TabPane> onHexClick) {
-        // 预计算 workspaceHash 避免每次 cell 更新时重复字符串拼接
-        String workspaceHash = CommentScope.workspaceHash(workspace);
-        treeView.setCellFactory(tv -> new com.bingbaihanji.fxdecomplie.ui.tree.FileTreeCell(
-                node -> displayTreeNodeName(workspaceHash, node)));
-
-        // 在 TreeView 级别通过事件过滤器处理右键菜单(避免 TreeView 内部行为拦截事件)
-        ContextMenu cachedMenu = new ContextMenu();
-        treeView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
-            TreeItem<FileTreeNode> item = findTreeItemForContextMenuEvent(event, treeView);
-            if (item == null || item.getValue() == null) {
-                return;
-            }
-            treeView.getSelectionModel().select(item);
-            rebuildTreeContextMenuItems(cachedMenu, item, workspace, codeTabPane,
-                    navigationService, onClassClick, onTextFileClick, onExportNode,
-                    onFindUsage, onSearchPackage, onHexClick);
-            cachedMenu.show(treeView, event.getScreenX(), event.getScreenY());
-            event.consume();
-        });
+        TreeContextMenuHelper.installTreeContextMenu(treeView, workspace, codeTabPane,
+                navigationService, onClassClick, onTextFileClick, onExportNode,
+                onFindUsage, onSearchPackage, onHexClick);
     }
 
     /** 从右键菜单事件中查找对应的树节点(遍历节点层级找到 TreeCell,回退到选中项) */
