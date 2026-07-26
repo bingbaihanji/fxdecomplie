@@ -259,70 +259,19 @@ public final class ExportService {
     @Deprecated
     private static List<FileTreeNode> collectExportableNodes(FileTreeModel root,
                                                              boolean exportResources) {
-        List<FileTreeNode> nodes = new ArrayList<>();
-        collectExportableNodes(root, exportResources, nodes);
-        return nodes;
+        return ExportPlanner.collectExportableNodes(root, exportResources);
     }
 
-    /** 递归遍历文件树,将可导出的节点收集到列表中 */
-    private static void collectExportableNodes(FileTreeModel item, boolean exportResources,
-                                               List<FileTreeNode> nodes) {
-        FileTreeNode data = item.getValue();
-        if (data != null && shouldExport(data, exportResources)) {
-            nodes.add(data);
-        }
-        for (FileTreeModel child : item.getChildren()) {
-            collectExportableNodes(child, exportResources, nodes);
-        }
-    }
-
-    /** 判断节点是否应被导出：class 文件总是导出,资源文件仅在启用时导出 */
     private static boolean shouldExport(FileTreeNode data, boolean exportResources) {
-        return data.isClassFile()
-                || (exportResources && (data.getNodeType() == FileTreeNode.NodeTypeEnum.RESOURCE
-                || data.getNodeType() == FileTreeNode.NodeTypeEnum.JAVA_FILE));
+        return ExportPlanner.shouldExport(data, exportResources);
     }
 
-    /** 将已反编译的内容写入目录(顺序写入，无并发) */
+    /** 将已反编译的内容写入目录(委托给 ExportWriter) */
     private static void writeDecompiledToDir(List<FileTreeNode> items,
                                              Map<FileTreeNode, ExportContent> decompiled,
                                              ExportConfig config, ExportState state,
                                              BooleanSupplier canceled) throws IOException {
-        Path outputDir = config.outputPath().toAbsolutePath().normalize();
-        Files.createDirectories(outputDir);
-        for (FileTreeNode data : items) {
-            if (canceled != null && canceled.getAsBoolean()) {
-                state.errors.add("导出已取消");
-                return;
-            }
-            try {
-                ExportContent content = decompiled.get(data);
-                if (content == null) {
-                    continue; // 反编译失败已在 parallelErrors 中记录
-                }
-                Path target = resolveSafeOutputPath(outputDir, content.relativePath());
-                target = applyDirConflictPolicy(target, config.conflictPolicy());
-                if (target != null) {
-                    Files.createDirectories(target.getParent());
-                    try {
-                        Files.write(target, content.bytes());
-                    } catch (Exception e) {
-                        try {
-                            Files.deleteIfExists(target);
-                        } catch (IOException ignored) {
-                            log.debug("清理失败写入残留文件失败: {}", target, ignored);
-                        }
-                        throw e;
-                    }
-                    state.successCount++;
-                }
-            } catch (Exception e) {
-                state.errors.add(data.getFullPath() + ": "
-                        + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
-            } finally {
-                state.advance(data.getFullPath());
-            }
-        }
+        ExportWriter.writeDecompiledToDir(items, decompiled, config, state, canceled);
     }
 
     /** 将已反编译的内容写入 ZIP(顺序写入，ZipOutputStream 非线程安全) */
@@ -558,23 +507,23 @@ public final class ExportService {
     }
 
     /** 导出内容载体：包含相对路径和要写入的字节数据 */
-    private record ExportContent(String relativePath, byte[] bytes) {
+    record ExportContent(String relativePath, byte[] bytes) {
     }
 
     /** 导出进度状态跟踪器：记录总数 完成数 成功数和错误列表 */
-    private static final class ExportState {
-        private final int totalFiles;
-        private final BiConsumer<String, Integer> onProgress;
-        private final List<String> errors = new ArrayList<>();
-        private int completed;
-        private int successCount;
+    static final class ExportState {
+        final int totalFiles;
+        final BiConsumer<String, Integer> onProgress;
+        final List<String> errors = new ArrayList<>();
+        int completed;
+        int successCount;
 
-        private ExportState(int totalFiles, BiConsumer<String, Integer> onProgress) {
+        ExportState(int totalFiles, BiConsumer<String, Integer> onProgress) {
             this.totalFiles = totalFiles;
             this.onProgress = onProgress;
         }
 
-        private void advance(String currentPath) {
+        void advance(String currentPath) {
             completed++;
             if (onProgress != null) {
                 int percent = totalFiles == 0 ? 100 : completed * 100 / totalFiles;
