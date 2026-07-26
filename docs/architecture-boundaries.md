@@ -31,7 +31,7 @@ util → model, constants (无循环依赖)
 | R6 | `classgraph/**` | `com.bingbaihanji.fxdecomplie.*` | 扫描内核隔离,不能引用主应用 |
 | R7 | `controller/**` | `classgraph/**` | UI 不能直接引用 ClassGraph,必须通过 service/classscan/ |
 | R8 | `ui/**` | `classgraph/**` | UI 不能直接引用 ClassGraph,必须通过 service/classscan/ |
-| R9 | `model/**` | 任何项目包 | 纯数据结构,零依赖 |
+| R9 | `model/**` | `controller/**`, `ui/**`, `service/**` | model 不依赖重量级包,但允许 util/decompiler(枚举)/bytecode(元数据) |
 
 ## 2. Vendored 内核边界
 
