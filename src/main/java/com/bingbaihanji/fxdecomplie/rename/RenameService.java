@@ -2895,7 +2895,7 @@ public final class RenameService {
     /**
      * Jackson 自定义序列化器：确保 RenameEntry 字段使用友好名称
      */
-    private static final class RenameEntrySerializer extends JsonSerializer<RenameEntry> {
+    static final class RenameEntrySerializer extends JsonSerializer<RenameEntry> {
         @Override
         public void serialize(RenameEntry value, JsonGenerator gen,
                               SerializerProvider serializers) throws IOException {
@@ -2912,7 +2912,7 @@ public final class RenameService {
     /**
      * Jackson 自定义反序列化器：处理 null 值安全回退，忽略未知字段保证向前兼容
      */
-    private static final class RenameEntryDeserializer extends JsonDeserializer<RenameEntry> {
+    static final class RenameEntryDeserializer extends JsonDeserializer<RenameEntry> {
         @Override
         public RenameEntry deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             String type = "";
