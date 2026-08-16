@@ -1,5 +1,6 @@
 package com.bingbaihanji.fxdecomplie.decompiler;
 
+import com.bingbaihanji.fxdecomplie.decompiler.bdec.BdecParameters;
 import com.bingbaihanji.fxdecomplie.model.DecompilerParameter;
 
 import java.util.List;
@@ -18,7 +19,8 @@ public final class EngineParameters {
             DecompilerTypeEnum.PROCYON, ProcyonParameters.PARAMETERS,
             DecompilerTypeEnum.VINEFLOWER, VineflowerParameters.PARAMETERS,
             DecompilerTypeEnum.JADX, JadxParameters.PARAMETERS,
-            DecompilerTypeEnum.JD, JdParameters.PARAMETERS);
+            DecompilerTypeEnum.JD, JdParameters.PARAMETERS,
+            DecompilerTypeEnum.BDEC, BdecParameters.PARAMETERS);
 
     private EngineParameters() {
         throw new AssertionError("工具类不允许实例化");
