@@ -16,5 +16,7 @@ public enum DecompilerTypeEnum {
     /** JD-Core 反编译器 */
     JD,
     /** jadx 反编译器 */
-    JADX
+    JADX,
+    /** bdec 反编译器 (自研) */
+    BDEC
 }

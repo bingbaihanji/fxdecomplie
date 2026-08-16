@@ -38,6 +38,7 @@ public final class DecompilerFactory {
                 case VINEFLOWER -> new VineflowerDecompiler();
                 case JD -> new JdDecompiler();
                 case JADX -> new JadxDecompiler();
+                case BDEC -> new BdecDecompiler();
             };
             try {
                 engine.initialize();

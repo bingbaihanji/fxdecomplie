@@ -363,6 +363,7 @@ public final class DecompilerRunner {
             case PROCYON -> trimmed.startsWith("// Procyon Error:");
             case JD -> isJdFailureOutput(source);
             case JADX -> trimmed.startsWith("// jadx Error:");
+            case BDEC -> trimmed.startsWith("// Bdec Error:");
         };
     }
 
