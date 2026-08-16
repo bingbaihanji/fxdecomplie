@@ -49,6 +49,14 @@ util → model, constants (无循环依赖)
 - **禁止**: UI/controller/service 直接 import core/jadx 内部类型
 - **变更要求**: 附带最小可复现 class 测试样例
 
+### 2.3 bdec (`com.bingbaihanji.bdec`)
+
+- **状态**: 内核维护区（subtree vendored, 来源 github.com/bingbaihanji/bdec）
+- **访问入口**: 仅通过 `decompiler/BdecDecompiler.java` 适配层访问
+- **禁止**: UI/controller 直接 import bdec 内部类型
+- **同步方式**: `git subtree pull --prefix=src/main/java/com/bingbaihanji/bdec bdec main-src`
+- **变更要求**: bdec 内核修改应在 bdec 仓库进行,经 subtree pull 同步
+
 ## 3. 白名单（现有违规,待后续阶段消除）
 
 执行 `ArchitectureBoundaryTest` 首次扫描结果:

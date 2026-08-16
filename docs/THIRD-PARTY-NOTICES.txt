@@ -67,4 +67,10 @@ FxDecompiler — 第三方依赖和许可声明
 
 15. JUnit Jupiter 5.12.1 (Test)
     许可证: EPL 2.0
+
+16. bdec (自研反编译引擎, vendored via subtree)
+    许可证: Apache License 2.0
+    仓库: https://github.com/bingbaihanji/bdec
+    集成: src/main/java/com/bingbaihanji/bdec
+    同步: git subtree pull --prefix=src/main/java/com/bingbaihanji/bdec bdec main-src
     网址: https://junit.org/junit5/
