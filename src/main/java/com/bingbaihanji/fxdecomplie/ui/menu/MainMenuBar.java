@@ -127,6 +127,7 @@ public class MainMenuBar extends MenuBar {
         RadioMenuItem vineflowerItem = engineItem("Vineflower", DecompilerTypeEnum.VINEFLOWER, currentEngine, engineGroup, actions);
         RadioMenuItem jdItem = engineItem("JD-Core", DecompilerTypeEnum.JD, currentEngine, engineGroup, actions);
         RadioMenuItem jadxItem = engineItem("jadx", DecompilerTypeEnum.JADX, currentEngine, engineGroup, actions);
+        RadioMenuItem bdecItem = engineItem("bdec", DecompilerTypeEnum.BDEC, currentEngine, engineGroup, actions);
 
         MenuItem compareAllItem = new MenuItem(I18nUtil.getString("menu.engine.compareAll"));
         compareAllItem.setOnAction(e -> actions.compareEngines());
@@ -140,7 +141,7 @@ public class MainMenuBar extends MenuBar {
         MenuItem restoreRenameSnapshotItem = new MenuItem("Restore Rename Snapshot");
         restoreRenameSnapshotItem.setOnAction(e -> actions.restoreLastRenameSnapshot());
 
-        engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem, jadxItem,
+        engineMenu.getItems().addAll(procyonItem, cfrItem, vineflowerItem, jdItem, jadxItem, bdecItem,
                 new SeparatorMenuItem(), compareAllItem, deobfuscateItem,
                 importMappingItem, exportMappingItem,
                 restoreRenameSnapshotItem);
