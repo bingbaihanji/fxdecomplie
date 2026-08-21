@@ -37,11 +37,12 @@ public final class UmlDiagramRenderer {
     private static final double ROW_GAP = 40;
     private static final double MIN_BOX_W = 150;
     private static final double MIN_BOX_H = 60;
+    private static final double MAX_NODE_W = 260;
     private static final double CHAR_W = 7.0;
     private static final double LINE_H = 16.0;
     private static final double NODE_PAD_W = 36;
     private static final double NODE_PAD_H = 22;
-    private static final double MIN_ZOOM = 0.1;
+    private static final double MIN_ZOOM = 0.02;
     private static final double MAX_ZOOM = 3.0;
     private static final double ZOOM_STEP = 0.1;
     private static final double EDGE_ARROW = 9;
@@ -101,7 +102,8 @@ public final class UmlDiagramRenderer {
         scroll.setFitToHeight(false);
         scroll.setStyle("-fx-background:" + theme.background() + ";-fx-background-color:" + theme.background() + ";");
         final double[] zoom = {1.0};
-        installZoom(scroll, group, canvas, bounds, zoom);
+        final boolean[] fitted = {false};
+        installZoom(scroll, group, canvas, bounds, zoom, fitted);
         Runnable fit = () -> fitToViewport(scroll, group, canvas, bounds, zoom);
         return new UmlView(scroll, canvas, fit);
     }
@@ -330,7 +332,7 @@ public final class UmlDiagramRenderer {
         for (String line : boxTextLines(cls)) {
             longest = Math.max(longest, line.length());
         }
-        return Math.max(longest * CHAR_W + NODE_PAD_W, MIN_BOX_W);
+        return Math.clamp(longest * CHAR_W + NODE_PAD_W, MIN_BOX_W, MAX_NODE_W);
     }
 
     private static double boxHeight(UmlClass cls) {
@@ -464,7 +466,19 @@ public final class UmlDiagramRenderer {
     // ======================== 交互 ========================
 
     private static void installZoom(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
-                                    double[] zoom) {
+                                    double[] zoom, boolean[] fitted) {
+        // 视口首次就绪后自动适配整图（事件驱动，布局完成时必然触发）
+        scroll.viewportBoundsProperty().addListener((obs, oldV, viewport) -> {
+            if (fitted[0]) {
+                return;
+            }
+            if (viewport.getWidth() <= 0 || viewport.getHeight() <= 0) {
+                return;
+            }
+            fitted[0] = true;
+            fitToViewport(scroll, group, canvas, bounds, zoom);
+        });
+
         // Ctrl/⌘+滚轮：指针居中缩放
         scroll.addEventFilter(ScrollEvent.SCROLL, event -> {
             if (!event.isControlDown() && !event.isMetaDown()) {

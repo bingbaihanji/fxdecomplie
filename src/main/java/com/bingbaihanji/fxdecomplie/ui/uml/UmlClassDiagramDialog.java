@@ -177,6 +177,16 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
         if (diagramCanvas == null) {
             return;
         }
+        double w = diagramCanvas.getWidth();
+        double h = diagramCanvas.getHeight();
+        if (w <= 0 || h <= 0) {
+            return;
+        }
+        // 画布过大时快照会整数溢出(ByteBuffer capacity) — 提示先缩小
+        if (w * h > 40_000_000) {
+            statusLabel.setText(I18nUtil.getString("uml.export.tooLarge"));
+            return;
+        }
         FileChooser chooser = new FileChooser();
         chooser.setTitle(I18nUtil.getString("uml.exportPng"));
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG 图片", "*.png"));
