@@ -61,10 +61,32 @@ class UmlClassExtractorTest {
 
         UmlClass enm = UmlClassExtractor.extract("com/example/MyEnum", bytes.get("com/example/MyEnum.class"));
         assertEquals(ClassKind.ENUM, enm.kind());
-        assertTrue(enm.interfaces().contains("java/lang/Enum") || enm.superName().equals("java/lang/Enum"));
+        assertEquals("java/lang/Enum", enm.superName());
+        assertTrue(enm.fields().stream().noneMatch(f -> f.name().equals("$VALUES")));
+        assertTrue(enm.methods().stream().noneMatch(m -> m.name().equals("<clinit>")));
 
         UmlClass ann = UmlClassExtractor.extract("com/example/MyAnn", bytes.get("com/example/MyAnn.class"));
         assertEquals(ClassKind.ANNOTATION, ann.kind());
+    }
+
+    @Test
+    void extract_genericTypeVariableMembers() {
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("com.example.Box",
+                "package com.example;\npublic class Box<T> {\n"
+                + "    private T value;\n"
+                + "    public void set(T v) { this.value = v; }\n"
+                + "    public T get() { return value; }\n"
+                + "}\n");
+        Map<String, byte[]> bytes = TestCompile.compile(sources);
+
+        UmlClass cls = UmlClassExtractor.extract("com/example/Box", bytes.get("com/example/Box.class"));
+        assertNotNull(cls);
+        assertTrue(cls.fields().stream().anyMatch(f -> f.name().equals("value") && f.type().equals("T")));
+        assertTrue(cls.methods().stream().anyMatch(m -> m.name().equals("set")
+                && m.params().equals(java.util.List.of("T"))));
+        assertTrue(cls.methods().stream().anyMatch(m -> m.name().equals("get")
+                && m.returnType().equals("T")));
     }
 
     @Test

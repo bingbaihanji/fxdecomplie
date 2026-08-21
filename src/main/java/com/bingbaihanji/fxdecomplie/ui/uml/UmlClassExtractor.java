@@ -13,6 +13,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 用 ASM 从 class 字节码提取 {@link UmlClass}。
@@ -83,6 +84,9 @@ public final class UmlClassExtractor {
         @Override
         public org.objectweb.asm.FieldVisitor visitField(int access, String name,
                                                          String descriptor, String signature, Object value) {
+            if ((access & Opcodes.ACC_SYNTHETIC) != 0) {
+                return null;
+            }
             fields.add(new UmlField(
                     name,
                     readableType(signature != null ? signature : descriptor),
@@ -94,9 +98,12 @@ public final class UmlClassExtractor {
         @Override
         public org.objectweb.asm.MethodVisitor visitMethod(int access, String name,
                                                            String descriptor, String signature, String[] exceptions) {
+            if ((access & Opcodes.ACC_SYNTHETIC) != 0 || "<clinit>".equals(name)) {
+                return null;
+            }
             boolean isCtor = "<init>".equals(name);
             methods.add(new UmlMethod(
-                    name,
+                    isCtor ? simpleName(internalName) : name,
                     methodParams(signature, descriptor),
                     isCtor ? "" : methodReturn(signature, descriptor),
                     visibility(access),
@@ -143,7 +150,7 @@ public final class UmlClassExtractor {
     /** 字段类型：有泛型签名走签名渲染，否则描述符 */
     private static String readableType(String sigOrDesc) {
         try {
-            if (sigOrDesc != null && sigOrDesc.indexOf('<') >= 0) {
+            if (sigOrDesc != null) {
                 String rendered = renderTypeSignature(sigOrDesc);
                 if (rendered != null && !rendered.isEmpty()) {
                     return rendered;
@@ -167,7 +174,7 @@ public final class UmlClassExtractor {
         } catch (RuntimeException e) {
             fromDesc.clear();
         }
-        if (signature != null && signature.indexOf('<') >= 0) {
+        if (signature != null) {
             try {
                 MethodSigParser parser = new MethodSigParser();
                 new SignatureReader(signature).accept(parser);
@@ -183,7 +190,7 @@ public final class UmlClassExtractor {
 
     private static String methodReturn(String signature, String descriptor) {
         try {
-            if (signature != null && signature.indexOf('<') >= 0) {
+            if (signature != null) {
                 MethodSigParser parser = new MethodSigParser();
                 new SignatureReader(signature).accept(parser);
                 String fromSig = parser.returnType();
@@ -440,7 +447,11 @@ public final class UmlClassExtractor {
         }
     }
 
-    /** 解析方法签名，逐个收集参数类型与返回类型 */
+    /**
+     * 解析方法签名，逐个收集参数类型与返回类型。
+     * 注意：ASM 对类型变量（{@code TT;}）与基元类型不会回调 visitEnd，
+     * 因此依赖 {@link CaptureBuilder} 在「顶层类型完成」时收集。
+     */
     private static final class MethodSigParser extends SignatureVisitor {
 
         private final List<String> params = new ArrayList<>();
@@ -467,29 +478,12 @@ public final class UmlClassExtractor {
 
         @Override
         public SignatureVisitor visitParameterType() {
-            return new SigBuilder() {
-                @Override
-                public void visitEnd() {
-                    super.visitEnd();
-                    params.add(toString());
-                }
-            };
+            return new CaptureBuilder(params::add);
         }
 
         @Override
         public SignatureVisitor visitReturnType() {
-            return new SigBuilder() {
-                @Override
-                public void visitEnd() {
-                    super.visitEnd();
-                    returnType = toString();
-                }
-            };
-        }
-
-        @Override
-        public void visitEnd() {
-            // 方法签名整体结束，无额外处理
+            return new CaptureBuilder(s -> returnType = s);
         }
 
         List<String> params() {
@@ -498,6 +492,98 @@ public final class UmlClassExtractor {
 
         String returnType() {
             return returnType;
+        }
+    }
+
+    /** 类型渲染构建器：在顶层类型完成时（含无 visitEnd 的类型变量/基元类型/数组）向 sink 回调渲染文本 */
+    private static final class CaptureBuilder extends SigBuilder {
+
+        private final Consumer<String> sink;
+        private int depth;
+
+        CaptureBuilder(Consumer<String> sink) {
+            super();
+            this.sink = sink;
+        }
+
+        @Override
+        public void visitBaseType(char descriptor) {
+            super.visitBaseType(descriptor);
+            if (depth == 0) {
+                sink.accept(toString());
+            }
+        }
+
+        @Override
+        public void visitTypeVariable(String name) {
+            super.visitTypeVariable(name);
+            if (depth == 0) {
+                sink.accept(toString());
+            }
+        }
+
+        @Override
+        public void visitClassType(String name) {
+            depth++;
+            super.visitClassType(name);
+        }
+
+        @Override
+        public void visitEnd() {
+            super.visitEnd();
+            depth--;
+            if (depth == 0) {
+                sink.accept(toString());
+            }
+        }
+
+        @Override
+        public SignatureVisitor visitArrayType() {
+            SignatureVisitor sub = super.visitArrayType();
+            return new SignatureVisitor(Opcodes.ASM9) {
+                @Override
+                public void visitBaseType(char d) {
+                    sub.visitBaseType(d);
+                }
+
+                @Override
+                public void visitTypeVariable(String n) {
+                    sub.visitTypeVariable(n);
+                }
+
+                @Override
+                public SignatureVisitor visitArrayType() {
+                    return sub.visitArrayType();
+                }
+
+                @Override
+                public void visitClassType(String n) {
+                    sub.visitClassType(n);
+                }
+
+                @Override
+                public void visitInnerClassType(String n) {
+                    sub.visitInnerClassType(n);
+                }
+
+                @Override
+                public void visitTypeArgument() {
+                    sub.visitTypeArgument();
+                }
+
+                @Override
+                public SignatureVisitor visitTypeArgument(char w) {
+                    return sub.visitTypeArgument(w);
+                }
+
+                @Override
+                public void visitEnd() {
+                    sub.visitEnd();
+                    if (depth == 0) {
+                        sink.accept(toString());
+                    }
+                }
+            };
         }
     }
 
