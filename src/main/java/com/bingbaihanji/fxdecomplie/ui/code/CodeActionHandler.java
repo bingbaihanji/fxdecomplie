@@ -44,6 +44,9 @@ public interface CodeActionHandler {
     /** 展示当前类的继承图 */
     void showInheritanceGraph(CodeViewContext context);
 
+    /** 展示当前类的 UML 类图 */
+    void showUmlClassDiagram(CodeViewContext context);
+
     /** 展示当前类的方法调用图 */
     void showMethodGraph(CodeViewContext context);
 

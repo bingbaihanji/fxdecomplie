@@ -27,6 +27,7 @@ public class CodeAreaContextMenu extends ContextMenu {
 
     private final MenuItem gotoDeclarationItem;
     private final MenuItem inheritanceGraphItem;
+    private final MenuItem umlDiagramItem;
     private final MenuItem methodGraphItem;
     private final MenuItem controlFlowGraphItem;
     private final MenuItem addCommentItem;
@@ -52,6 +53,9 @@ public class CodeAreaContextMenu extends ContextMenu {
         inheritanceGraphItem = new MenuItem(I18nUtil.getString("context.inheritanceGraph"));
         inheritanceGraphItem.setOnAction(e -> onShowInheritanceGraph());
 
+        umlDiagramItem = new MenuItem(I18nUtil.getString("context.umlDiagram"));
+        umlDiagramItem.setOnAction(e -> onShowUmlDiagram());
+
         methodGraphItem = new MenuItem(I18nUtil.getString("context.methodGraph"));
         methodGraphItem.setOnAction(e -> onShowMethodGraph());
 
@@ -70,6 +74,7 @@ public class CodeAreaContextMenu extends ContextMenu {
         getItems().addAll(
                 gotoDeclarationItem,
                 inheritanceGraphItem,
+                umlDiagramItem,
                 methodGraphItem,
                 controlFlowGraphItem,
                 new SeparatorMenuItem(),
@@ -102,6 +107,7 @@ public class CodeAreaContextMenu extends ContextMenu {
 
         gotoDeclarationItem.setDisable(context == null || codeArea == null);
         inheritanceGraphItem.setDisable(!hasClassContext);
+        umlDiagramItem.setDisable(!hasClassContext);
         methodGraphItem.setDisable(!hasClassContext);
         controlFlowGraphItem.setDisable(!hasClassContext);
         addCommentItem.setDisable(codeArea == null);
@@ -125,6 +131,15 @@ public class CodeAreaContextMenu extends ContextMenu {
         }
         log.info("代码区右键菜单触发查看继承图: {}", context.classInternalName());
         actionHandler.showInheritanceGraph(context);
+    }
+
+    /** 显示当前类的 UML 类图 */
+    private void onShowUmlDiagram() {
+        if (actionHandler == null || context == null) {
+            return;
+        }
+        log.info("代码区右键菜单触发查看 UML 类图: {}", context.classInternalName());
+        actionHandler.showUmlClassDiagram(context);
     }
 
     /** 显示当前类的方法调用关系图 */

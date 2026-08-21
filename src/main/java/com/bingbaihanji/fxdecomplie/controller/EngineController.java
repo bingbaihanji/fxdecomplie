@@ -11,6 +11,9 @@ import com.bingbaihanji.fxdecomplie.ui.code.CodeViewContext;
 import com.bingbaihanji.fxdecomplie.ui.graph.GraphDialog;
 import com.bingbaihanji.fxdecomplie.ui.graph.GraphService;
 import com.bingbaihanji.fxdecomplie.ui.inheritance.InheritanceService;
+import com.bingbaihanji.fxdecomplie.ui.uml.UmlClassDiagramDialog;
+import com.bingbaihanji.fxdecomplie.ui.uml.UmlDiagram;
+import com.bingbaihanji.fxdecomplie.ui.uml.UmlDiagramBuilder;
 import com.bingbaihanji.fxdecomplie.util.i18n.I18nUtil;
 import javafx.application.Platform;
 import javafx.scene.control.TabPane;
@@ -119,6 +122,58 @@ public final class EngineController {
                     var tree = InheritanceService.buildTree(fullPath, graphIndex, classBytes);
                     return tree == null ? null : GraphService.toInheritanceDOT(tree);
                 }));
+    }
+
+    /** 显示当前类的 UML 类图 */
+    public void showUmlClassDiagram(CodeViewContext context) {
+        if (context == null) {
+            return;
+        }
+        String fullPath = context.classInternalName();
+        if (fullPath == null || fullPath.isBlank()) {
+            showGraphFailed(fullPath, null);
+            return;
+        }
+        Workspace workspace = context.workspace();
+        WorkspaceIndex index = workspace != null && workspace.isIndexReady()
+                ? workspace.getIndex()
+                : context.workspaceIndex();
+        owner.statusBar().setTask(I18nUtil.getString("task.loading"));
+        owner.statusBar().setFilePath(I18nUtil.getString("graph.building", fullPath));
+        log.info("请求查看 UML 类图: {}", fullPath);
+
+        UmlClassDiagramDialog dialog = new UmlClassDiagramDialog(owner.stage(),
+                I18nUtil.getString("context.umlDiagram") + " - " + fullPath);
+        dialog.show();
+        BackgroundTasks.run("UmlClassDiagram-" + fullPath, () -> {
+            try {
+                byte[] classBytes = owner.classBytesForContext(context);
+                WorkspaceIndex graphIndex = workspace != null
+                        ? owner.searchController().awaitWorkspaceIndex(workspace)
+                        : index;
+                if (graphIndex == WorkspaceIndex.EMPTY && index != null) {
+                    graphIndex = index;
+                }
+                UmlDiagram diagram = UmlDiagramBuilder.build(fullPath, classBytes, graphIndex);
+                if (diagram == null || diagram.classes().isEmpty()) {
+                    Platform.runLater(() -> {
+                        owner.statusBar().clearTask();
+                        dialog.showMessage(I18nUtil.getString("uml.noData"));
+                    });
+                    return;
+                }
+                Platform.runLater(() -> {
+                    owner.statusBar().clearTask();
+                    dialog.showDiagram(diagram);
+                });
+            } catch (Exception e) {
+                log.error("UML 类图构建失败: {}", fullPath, e);
+                Platform.runLater(() -> {
+                    owner.statusBar().clearTask();
+                    dialog.showMessage(I18nUtil.getString("uml.renderFailed"));
+                });
+            }
+        });
     }
 
     public void showControlFlowGraph(CodeViewContext context) {

@@ -513,6 +513,11 @@ public class MainWindow implements MainMenuBar.Actions, CodeActionHandler {
     }
 
     @Override
+    public void showUmlClassDiagram(CodeViewContext context) {
+        engineController.showUmlClassDiagram(context);
+    }
+
+    @Override
     public void showControlFlowGraph(CodeViewContext context) {
         engineController.showControlFlowGraph(context);
     }
