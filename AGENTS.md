@@ -66,6 +66,7 @@ src/main/java/
 │   │   ├── theme/                         # VS Code 主题加载、正则高亮
 │   │   ├── toolbar/                       # 工具栏
 │   │   ├── tree/                          # 文件树视图
+│   │   ├── uml/                           # UML 类图（ASM 提取 + JavaFX 渲染 + PlantUML 导出）
 │   │   ├── usage/                         # Find Usages 对话框
 │   │   ├── view/                          # 通用视图组件
 │   │   ├── window/                        # 多窗口拖拽支持
@@ -208,7 +209,7 @@ Windows PowerShell 请使用 `\.\mvnw.cmd` 替代 `./mvnw`。
 ## 7. 测试
 
 - 测试框架：**JUnit 5**。
-- 当前全量测试约 **305** 个，全部通过。
+- 当前全量测试约 **357** 个，全部通过。
 - 新增功能优先补充单元测试；涉及索引、搜索、导出、项目文件解析、ClassGraph 适配、JADX 适配的变更必须覆盖异常路径。
 - ClassGraph 相关测试位于 `src/test/java/com/bingbaihanji/classgraph/` 与 `src/test/java/com/bingbaihanji/fxdecomplie/service/classscan/`、`service/reference/`。
 - JADX 相关测试位于 `src/test/java/com/bingbaihanji/fxdecomplie/decompiler/jadx/`。
