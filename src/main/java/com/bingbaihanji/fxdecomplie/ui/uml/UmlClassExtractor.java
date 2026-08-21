@@ -122,9 +122,11 @@ public final class UmlClassExtractor {
             boolean isEnum = (access & Opcodes.ACC_ENUM) != 0;
             boolean isAnnotation = (access & Opcodes.ACC_ANNOTATION) != 0;
             boolean isInterface = (access & Opcodes.ACC_INTERFACE) != 0;
+            boolean isRecord = (access & Opcodes.ACC_RECORD) != 0;
             ClassKind kind = isAnnotation ? ClassKind.ANNOTATION
                     : isEnum ? ClassKind.ENUM
                     : isInterface ? ClassKind.INTERFACE
+                    : isRecord ? ClassKind.RECORD
                     : ClassKind.CLASS;
             String simple = internalName == null ? "" : simpleName(internalName);
             String pkg = internalName == null ? "" : packageName(internalName);

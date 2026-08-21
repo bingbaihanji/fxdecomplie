@@ -31,7 +31,7 @@ class PumlExporterTest {
         assertTrue(puml.contains("top to bottom direction"));
         assertTrue(puml.contains("skinparam"));
         assertTrue(puml.contains("class \"**ServiceImpl**"));
-        assertTrue(puml.contains("abstract class \"**AbstractService**"));
+        assertTrue(puml.contains("abstract class \"<<abstract>>\\n**AbstractService**"));
         assertTrue(puml.contains("-[#000082,plain]-^"));
         assertTrue(puml.endsWith("@enduml"));
     }

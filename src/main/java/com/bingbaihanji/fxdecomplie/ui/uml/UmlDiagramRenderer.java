@@ -8,7 +8,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -37,14 +39,14 @@ public final class UmlDiagramRenderer {
     private static final double MARGIN = 48;
     private static final double LEVEL_GAP = 72;
     private static final double ROW_GAP = 34;
-    private static final double MIN_BOX_W = 170;
+    private static final double MIN_BOX_W = 190;
     private static final double MIN_BOX_H = 60;
-    private static final double MAX_NODE_W = 320;
+    private static final double MAX_NODE_W = 360;
     private static final double MAX_NODE_H = 380;
     private static final double CHAR_W = 7.0;
-    private static final double LINE_H = 16.0;
-    private static final double NODE_PAD_W = 36;
-    private static final double NODE_PAD_H = 32;
+    private static final double LINE_H = 18.0;
+    private static final double NODE_PAD_W = 48;
+    private static final double NODE_PAD_H = 36;
     private static final double MIN_ZOOM = 0.2;
     private static final double MAX_ZOOM = 3.0;
     private static final double ZOOM_STEP = 0.1;
@@ -52,7 +54,7 @@ public final class UmlDiagramRenderer {
     private static final int MAX_COLS = 7;
     private static final int MAX_VISIBLE_FIELDS = 10;
     private static final int MAX_VISIBLE_METHODS = 16;
-    private static final int MAX_MEMBER_CHARS = 84;
+    private static final int MAX_MEMBER_CHARS = 96;
 
     private UmlDiagramRenderer() {
         throw new AssertionError("utility class");
@@ -287,14 +289,28 @@ public final class UmlDiagramRenderer {
         String boxBg = cls.parsed() ? theme.nodeBackground() : theme.markerBackground();
         box.setStyle("-fx-background-color:" + boxBg + ";"
                 + "-fx-border-color:" + theme.nodeBorder() + ";"
-                + "-fx-border-width:1;-fx-background-radius:6;-fx-border-radius:6;");
+                + "-fx-border-width:1;-fx-background-radius:2;-fx-border-radius:2;");
 
-        Label title = new Label(cls.simpleName());
-        title.setStyle("-fx-text-fill:" + theme.titleText() + ";-fx-font-size:13px;-fx-font-weight:bold;");
+        Label title = new Label(titleText(cls));
+        String titleStyle = "-fx-text-fill:" + theme.titleText() + ";-fx-font-size:13px;-fx-font-weight:bold;";
+        if (cls.kind() == ClassKind.CLASS && cls.isAbstract()) {
+            titleStyle += "-fx-font-style:italic;";
+        }
+        title.setStyle(titleStyle);
         title.setMaxWidth(Double.MAX_VALUE);
-        title.setAlignment(Pos.CENTER);
+        title.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(title, Priority.ALWAYS);
 
-        VBox header = new VBox(title);
+        Region typeIcon = typeIcon(cls);
+        HBox titleRow = new HBox(6, typeIcon, title);
+        Label kindBadge = kindBadge(cls, theme);
+        if (kindBadge != null) {
+            titleRow.getChildren().add(kindBadge);
+        }
+        titleRow.setAlignment(Pos.CENTER);
+        titleRow.setMaxWidth(Double.MAX_VALUE);
+
+        VBox header = new VBox(titleRow);
         header.setAlignment(Pos.CENTER);
         if (cls.packageName() != null && !cls.packageName().isEmpty()) {
             Label pkg = new Label(cls.packageName());
@@ -305,19 +321,19 @@ public final class UmlDiagramRenderer {
         }
         String headerBg = cls.parsed() ? headerColor(cls, theme) : theme.markerBackground();
         header.setStyle("-fx-background-color:" + headerBg + ";"
-                + "-fx-background-radius:6 6 0 0;-fx-padding:5 8 5 8;");
+                + "-fx-background-radius:2 2 0 0;-fx-padding:5 8 5 8;");
         box.getChildren().add(header);
 
         if (cls.parsed()) {
             VBox members = new VBox();
-            members.setStyle("-fx-padding:4 8 6 8;");
+            members.setStyle("-fx-padding:4 0 6 0;");
             boolean hasFields = false;
             int fieldCount = 0;
             for (UmlField f : cls.fields()) {
                 if (fieldCount >= MAX_VISIBLE_FIELDS) {
                     break;
                 }
-                members.getChildren().add(memberLabel(fieldText(f), theme, width, f.isStatic(), false));
+                members.getChildren().add(fieldRow(f, theme, width));
                 hasFields = true;
                 fieldCount++;
             }
@@ -325,7 +341,8 @@ public final class UmlDiagramRenderer {
                 Region sep = new Region();
                 sep.setMaxWidth(Double.MAX_VALUE);
                 sep.setStyle("-fx-background-color:" + theme.nodeBorder()
-                        + ";-fx-pref-height:1;-fx-min-height:1;-fx-max-height:1;");
+                        + ";-fx-opacity:0.75;-fx-pref-height:1;-fx-min-height:1;-fx-max-height:1;"
+                        + "-fx-padding:0 0 0 0;");
                 members.getChildren().add(sep);
             }
             int methodCount = 0;
@@ -333,7 +350,7 @@ public final class UmlDiagramRenderer {
                 if (methodCount >= MAX_VISIBLE_METHODS) {
                     break;
                 }
-                members.getChildren().add(memberLabel(methodText(m), theme, width, m.isStatic(), m.isAbstract()));
+                members.getChildren().add(methodRow(m, theme, width));
                 methodCount++;
             }
             int hiddenFields = Math.max(0, cls.fields().size() - MAX_VISIBLE_FIELDS);
@@ -342,7 +359,8 @@ public final class UmlDiagramRenderer {
                 String text = "... +" + hiddenFields + " fields, +" + hiddenMethods + " methods";
                 Label more = new Label(text);
                 more.setStyle("-fx-text-fill:" + theme.packageText()
-                        + ";-fx-font-size:11px;-fx-font-family:'Consolas',monospace;");
+                        + ";-fx-font-size:11px;-fx-font-family:'Consolas',monospace;"
+                        + "-fx-padding:2 8 0 28;");
                 more.setMaxWidth(width - 18);
                 members.getChildren().add(more);
             }
@@ -355,45 +373,186 @@ public final class UmlDiagramRenderer {
         return box;
     }
 
-    private static String headerColor(UmlClass cls, UmlTheme theme) {
+    private static String titleText(UmlClass cls) {
         return switch (cls.kind()) {
-            case CLASS -> theme.classHeader();
-            case INTERFACE -> theme.interfaceHeader();
-            case ENUM -> theme.enumHeader();
-            case ANNOTATION -> theme.annotationHeader();
+            case INTERFACE -> "I " + cls.simpleName();
+            case ENUM -> "E " + cls.simpleName();
+            case ANNOTATION -> "@ " + cls.simpleName();
+            case RECORD -> "R " + cls.simpleName();
+            case CLASS -> cls.isAbstract() ? "A " + cls.simpleName() : cls.simpleName();
         };
     }
 
-    private static Label memberLabel(String fullText, UmlTheme theme, double boxWidth,
-                                     boolean isStatic, boolean isAbstract) {
-        String text = ellipsize(fullText, MAX_MEMBER_CHARS);
-        Label label = new Label(text);
-        String style = "-fx-text-fill:" + theme.memberText()
+    private static Region typeIcon(UmlClass cls) {
+        Region icon = new Region();
+        icon.setMinSize(10, 10);
+        icon.setPrefSize(10, 10);
+        icon.setMaxSize(10, 10);
+        String color = switch (cls.kind()) {
+            case CLASS -> cls.isAbstract() ? "#8AB4F8" : "#5DADE2";
+            case INTERFACE -> "#A7C957";
+            case ENUM -> "#E6B35A";
+            case ANNOTATION -> "#B388FF";
+            case RECORD -> "#58D1C9";
+        };
+        String radius = cls.kind() == ClassKind.INTERFACE ? "5" : "2";
+        icon.setStyle("-fx-background-color:" + color + ";-fx-background-radius:" + radius + ";"
+                + "-fx-border-color:rgba(255,255,255,0.38);-fx-border-radius:" + radius + ";"
+                + "-fx-border-width:1;");
+        return icon;
+    }
+
+    private static Label kindBadge(UmlClass cls, UmlTheme theme) {
+        String text = switch (cls.kind()) {
+            case RECORD -> "record";
+            case CLASS -> cls.isAbstract() ? "abstract" : "";
+            default -> "";
+        };
+        if (text.isEmpty()) {
+            return null;
+        }
+        Label badge = new Label(text);
+        String border = theme.dark() ? "rgba(255,255,255,0.24)" : "rgba(0,0,0,0.18)";
+        String bg = theme.dark() ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.65)";
+        badge.setStyle("-fx-text-fill:" + theme.packageText() + ";"
+                + "-fx-font-size:9px;-fx-font-family:'Consolas',monospace;"
+                + "-fx-padding:1 4 1 4;-fx-background-color:" + bg + ";"
+                + "-fx-background-radius:2;-fx-border-color:" + border + ";"
+                + "-fx-border-radius:2;-fx-border-width:1;");
+        return badge;
+    }
+
+    private static String headerColor(UmlClass cls, UmlTheme theme) {
+        return switch (cls.kind()) {
+            case CLASS -> cls.isAbstract() ? theme.abstractClassHeader() : theme.classHeader();
+            case INTERFACE -> theme.interfaceHeader();
+            case ENUM -> theme.enumHeader();
+            case ANNOTATION -> theme.annotationHeader();
+            case RECORD -> theme.recordHeader();
+        };
+    }
+
+    private static Node fieldRow(UmlField f, UmlTheme theme, double boxWidth) {
+        return memberRow(fieldNameText(f), f.type(), fieldText(f), f.visibility(),
+                theme, boxWidth, false, f.isStatic());
+    }
+
+    private static Node methodRow(UmlMethod m, UmlTheme theme, double boxWidth) {
+        String type = m.isConstructor() ? "" : m.returnType();
+        return memberRow(methodNameText(m), type, methodText(m), m.visibility(),
+                theme, boxWidth, true, m.isStatic(), m.isAbstract());
+    }
+
+    private static Node memberRow(String nameText, String typeText, String fullText,
+                                  Visibility visibility, UmlTheme theme, double boxWidth,
+                                  boolean method, boolean isStatic) {
+        return memberRow(nameText, typeText, fullText, visibility, theme, boxWidth, method, isStatic, false);
+    }
+
+    private static Node memberRow(String nameText, String typeText, String fullText,
+                                  Visibility visibility, UmlTheme theme, double boxWidth,
+                                  boolean method, boolean isStatic, boolean isAbstract) {
+        Region icon = memberIcon(method, visibility, theme);
+        Label visibilityLabel = new Label(String.valueOf(visibility.symbol()));
+        visibilityLabel.setStyle("-fx-text-fill:" + visibilityColor(visibility, theme)
+                + ";-fx-font-size:10px;-fx-font-family:'Consolas',monospace;");
+        visibilityLabel.setMinWidth(10);
+        visibilityLabel.setAlignment(Pos.CENTER);
+
+        Label name = new Label(ellipsize(nameText, MAX_MEMBER_CHARS));
+        String nameStyle = "-fx-text-fill:" + (method ? methodNameColor(theme) : fieldNameColor(theme))
                 + ";-fx-font-size:11px;-fx-font-family:'Consolas',monospace;";
         if (isAbstract) {
-            style += "-fx-font-style:italic;";
+            nameStyle += "-fx-font-style:italic;";
         }
         if (isStatic) {
-            style += "-fx-underline:true;";
+            nameStyle += "-fx-underline:true;";
         }
-        label.setStyle(style);
-        label.setWrapText(true);
-        label.setMaxWidth(boxWidth - 18);
-        label.setTextAlignment(TextAlignment.LEFT);
-        if (!text.equals(fullText)) {
-            label.setTooltip(new Tooltip(fullText));
+        name.setStyle(nameStyle);
+        name.setMinWidth(0);
+        name.setMaxWidth(Double.MAX_VALUE);
+        name.setTextAlignment(TextAlignment.LEFT);
+        HBox.setHgrow(name, Priority.ALWAYS);
+
+        Label type = new Label(ellipsize(typeText, 32));
+        type.setStyle("-fx-text-fill:" + typeColor(theme)
+                + ";-fx-font-size:11px;-fx-font-family:'Consolas',monospace;");
+        type.setAlignment(Pos.CENTER_RIGHT);
+        type.setMinWidth(Math.min(104, Math.max(52, boxWidth * 0.28)));
+        type.setMaxWidth(Math.min(132, Math.max(64, boxWidth * 0.36)));
+
+        HBox row = new HBox(4, icon, visibilityLabel, name, type);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setMinHeight(LINE_H);
+        row.setPrefHeight(LINE_H);
+        row.setMaxWidth(Double.MAX_VALUE);
+        row.setStyle("-fx-padding:0 8 0 7;");
+        if (!ellipsize(fullText, MAX_MEMBER_CHARS).equals(fullText)
+                || (typeText != null && type.getText() != null && !type.getText().equals(typeText))) {
+            Tooltip.install(row, new Tooltip(fullText));
         }
-        return label;
+        return row;
+    }
+
+    private static Region memberIcon(boolean method, Visibility visibility, UmlTheme theme) {
+        Region icon = new Region();
+        icon.setMinSize(9, 9);
+        icon.setPrefSize(9, 9);
+        icon.setMaxSize(9, 9);
+        String color = method ? methodIconColor(theme) : fieldIconColor(theme);
+        String shape = method ? "5" : "2";
+        String border = visibility == Visibility.PRIVATE ? "#D66A6A" : "#91C777";
+        icon.setStyle("-fx-background-color:" + color + ";-fx-background-radius:" + shape + ";"
+                + "-fx-border-color:" + border + ";-fx-border-radius:" + shape + ";"
+                + "-fx-border-width:1;");
+        return icon;
     }
 
     private static String fieldText(UmlField f) {
         return f.visibility().symbol() + " " + f.name() + ": " + f.type();
     }
 
+    private static String fieldNameText(UmlField f) {
+        return f.name();
+    }
+
     private static String methodText(UmlMethod m) {
         String ret = m.isConstructor() ? "" : ": " + m.returnType();
         return m.visibility().symbol() + " " + m.name() + "("
                 + String.join(", ", m.params()) + ")" + ret;
+    }
+
+    private static String methodNameText(UmlMethod m) {
+        return m.name() + "(" + String.join(", ", m.params()) + ")";
+    }
+
+    private static String fieldNameColor(UmlTheme theme) {
+        return theme.dark() ? "#F07178" : "#9B1C31";
+    }
+
+    private static String methodNameColor(UmlTheme theme) {
+        return theme.dark() ? "#FFC66D" : "#7A4D00";
+    }
+
+    private static String typeColor(UmlTheme theme) {
+        return theme.dark() ? "#C792EA" : "#6F42C1";
+    }
+
+    private static String fieldIconColor(UmlTheme theme) {
+        return theme.dark() ? "#63C6C8" : "#2F8A8C";
+    }
+
+    private static String methodIconColor(UmlTheme theme) {
+        return theme.dark() ? "#6EA8FE" : "#2F6FDB";
+    }
+
+    private static String visibilityColor(Visibility visibility, UmlTheme theme) {
+        return switch (visibility) {
+            case PUBLIC -> theme.dark() ? "#A7C957" : "#4D7C0F";
+            case PROTECTED -> theme.dark() ? "#E6B35A" : "#946200";
+            case PRIVATE -> theme.dark() ? "#F07178" : "#B42318";
+            case PACKAGE -> theme.dark() ? "#8C8C8C" : "#6B7280";
+        };
     }
 
     private static String ellipsize(String text, int maxChars) {

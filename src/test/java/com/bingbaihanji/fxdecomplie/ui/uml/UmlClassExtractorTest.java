@@ -71,6 +71,23 @@ class UmlClassExtractorTest {
     }
 
     @Test
+    void extract_record() {
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("com.example.UserRecord",
+                "package com.example;\npublic record UserRecord(String id, int age) {}\n");
+        Map<String, byte[]> bytes = TestCompile.compile(sources);
+
+        UmlClass record = UmlClassExtractor.extract("com/example/UserRecord", bytes.get("com/example/UserRecord.class"));
+        assertNotNull(record);
+        assertEquals(ClassKind.RECORD, record.kind());
+        assertEquals("java/lang/Record", record.superName());
+        assertTrue(record.fields().stream().anyMatch(f -> f.name().equals("id")
+                && f.type().equals("java.lang.String")));
+        assertTrue(record.methods().stream().anyMatch(m -> m.name().equals("id")
+                && m.returnType().equals("java.lang.String")));
+    }
+
+    @Test
     void extract_genericTypeVariableMembers() {
         Map<String, String> sources = new LinkedHashMap<>();
         sources.put("com.example.Box",

@@ -125,17 +125,26 @@ public final class PumlExporter {
             case INTERFACE -> "interface";
             case ENUM -> "enum";
             case ANNOTATION -> "annotation";
+            case RECORD -> "class";
             case CLASS -> c.isAbstract() ? "abstract class" : "class";
         };
     }
 
     private static String title(UmlClass c, UmlTheme theme) {
         String pkgColor = theme.packageText();
-        String title = "**" + c.simpleName() + "**";
+        String title = stereotype(c) + "**" + c.simpleName() + "**";
         if (c.packageName() != null && !c.packageName().isEmpty()) {
             title += "\\n<size:10><color:" + pkgColor + ">" + c.packageName() + "</color></size>";
         }
         return "\"" + title + "\"";
+    }
+
+    private static String stereotype(UmlClass c) {
+        return switch (c.kind()) {
+            case RECORD -> "<<record>>\\n";
+            case CLASS -> c.isAbstract() ? "<<abstract>>\\n" : "";
+            default -> "";
+        };
     }
 
     private static String nodeColor(UmlClass c, UmlTheme theme) {
@@ -143,10 +152,11 @@ public final class PumlExporter {
             return " " + theme.markerBackground();
         }
         String header = switch (c.kind()) {
-            case CLASS -> theme.classHeader();
+            case CLASS -> c.isAbstract() ? theme.abstractClassHeader() : theme.classHeader();
             case INTERFACE -> theme.interfaceHeader();
             case ENUM -> theme.enumHeader();
             case ANNOTATION -> theme.annotationHeader();
+            case RECORD -> theme.recordHeader();
         };
         return " #back:" + hexNoHash(theme.nodeBackground()) + ";header:" + hexNoHash(header);
     }
