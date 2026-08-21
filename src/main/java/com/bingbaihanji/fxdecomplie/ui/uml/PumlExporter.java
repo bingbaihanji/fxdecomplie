@@ -103,7 +103,8 @@ public final class PumlExporter {
             sb.append(relationshipLine(r, child, parent, theme));
         }
 
-        // 注解应用边（黄点线）
+        // 注解应用边（黄点线）。当前 builder 不会把注解类型入队成图节点，
+        // 因此 alias.get(ann) 通常为 null；保留此块以对齐参考项目，属前瞻性代码。
         String annotationSpec = theme.dark() ? "[#C9B45A,dotted]" : "[#999900,dotted]";
         for (UmlClass c : diagram.classes()) {
             for (String ann : c.annotationNames()) {
@@ -129,7 +130,7 @@ public final class PumlExporter {
     }
 
     private static String title(UmlClass c, UmlTheme theme) {
-        String pkgColor = theme.dark() ? "#8C8C8C" : "#8C9BAC";
+        String pkgColor = theme.packageText();
         String title = "**" + c.simpleName() + "**";
         if (c.packageName() != null && !c.packageName().isEmpty()) {
             title += "\\n<size:10><color:" + pkgColor + ">" + c.packageName() + "</color></size>";
@@ -139,22 +140,15 @@ public final class PumlExporter {
 
     private static String nodeColor(UmlClass c, UmlTheme theme) {
         if (!c.parsed()) {
-            return theme.dark() ? " #3A3D40" : " #EDEDED";
+            return " " + theme.markerBackground();
         }
-        if (theme.dark()) {
-            return switch (c.kind()) {
-                case INTERFACE -> " #back:3C3F41;header:3D5A46";
-                case ENUM -> " #back:3C3F41;header:5A4A30";
-                case ANNOTATION -> " #back:3C3F41;header:4A3A52";
-                case CLASS -> " #back:3C3F41;header:4B5053";
-            };
-        }
-        return switch (c.kind()) {
-            case INTERFACE -> " #back:FFFFFF;header:E9F4EC";
-            case ENUM -> " #back:FFFFFF;header:FDF3E0";
-            case ANNOTATION -> " #back:FFFFFF;header:F3E9FA";
-            case CLASS -> " #back:FFFFFF;header:EDF2FA";
+        String header = switch (c.kind()) {
+            case CLASS -> theme.classHeader();
+            case INTERFACE -> theme.interfaceHeader();
+            case ENUM -> theme.enumHeader();
+            case ANNOTATION -> theme.annotationHeader();
         };
+        return " #back:" + hexNoHash(theme.nodeBackground()) + ";header:" + hexNoHash(header);
     }
 
     private static void appendMembers(UmlClass c, StringBuilder sb) {
@@ -213,19 +207,16 @@ public final class PumlExporter {
     }
 
     private static String arrowSpec(RelationType type, UmlTheme theme) {
-        if (theme.dark()) {
-            return switch (type) {
-                case GENERALIZATION -> "[#6C8CFF,plain]";
-                case REALIZATION -> "[#4CAF50,dashed]";
-                case ASSOCIATION -> "[#9E9E9E,plain]";
-                case DEPENDENCY -> "[#9E9E9E,dashed]";
-            };
-        }
         return switch (type) {
-            case GENERALIZATION -> "[#000082,plain]";
-            case REALIZATION -> "[#008200,dashed]";
-            case ASSOCIATION -> "[#595959,plain]";
-            case DEPENDENCY -> "[#595959,dashed]";
+            case GENERALIZATION -> "[" + theme.generalizationColor() + ",plain]";
+            case REALIZATION -> "[" + theme.realizationColor() + ",dashed]";
+            case ASSOCIATION -> "[" + theme.associationColor() + ",plain]";
+            case DEPENDENCY -> "[" + theme.dependencyColor() + ",dashed]";
         };
+    }
+
+    /** 去掉十六进制颜色的前导 #（PlantUML 扩展色 #back:..;header:.. 内不接受 #） */
+    private static String hexNoHash(String color) {
+        return color != null && color.startsWith("#") ? color.substring(1) : color;
     }
 }

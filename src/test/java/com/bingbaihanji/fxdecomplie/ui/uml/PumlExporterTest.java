@@ -3,6 +3,7 @@ package com.bingbaihanji.fxdecomplie.ui.uml;
 import com.bingbaihanji.fxdecomplie.model.WorkspaceIndex;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -31,8 +32,10 @@ class PumlExporterTest {
         assertTrue(puml.contains("skinparam"));
         assertTrue(puml.contains("class \"**ServiceImpl**"));
         assertTrue(puml.contains("abstract class \"**AbstractService**"));
-        assertTrue(puml.contains("0..*"));
-        assertTrue(puml.contains("^"));
+        // 泛化:ServiceImpl(具体类) → AbstractService(抽象类),实线空心三角
+        assertTrue(puml.contains("-[#000082,plain]-^"));
+        // 关联:AbstractService → Order 集合字段 0..*（PlantUML 多重性前有一个空格）
+        assertTrue(puml.contains("-[#595959,plain]- \"0..*\""));
         assertTrue(puml.endsWith("@enduml"));
     }
 
@@ -49,5 +52,26 @@ class PumlExporterTest {
         String dark = PumlExporter.buildSource(diagram, UmlTheme.DARK);
         assertNotEquals(light, dark);
         assertTrue(dark.contains("#2B2B2B"));
+    }
+
+    @Test
+    void buildSource_markerClassAndEmptyDiagram() {
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("com.example.External", "package com.example;\npublic class External {}\n");
+        sources.put("com.example.UsesExternal",
+                "package com.example;\npublic class UsesExternal { private External ext; }\n");
+        Map<String, byte[]> all = TestCompile.compile(sources);
+        Map<String, byte[]> treeBytes = new HashMap<>(all);
+        treeBytes.remove("com/example/External.class");
+        WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(treeBytes));
+        UmlDiagram diagram = UmlDiagramBuilder.build(
+                "com/example/UsesExternal", all.get("com/example/UsesExternal.class"), index);
+
+        String puml = PumlExporter.buildSource(diagram, UmlTheme.LIGHT);
+        // 标记框:单一柔和色 + 空成员体
+        assertTrue(puml.contains("class \"**External**\" as ") && puml.contains(" #EDEDED {\n}"));
+
+        // 空图
+        assertEquals("@startuml\n@enduml", PumlExporter.buildSource(null, UmlTheme.LIGHT));
     }
 }
