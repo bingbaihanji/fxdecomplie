@@ -106,13 +106,16 @@ public final class UmlDiagramBuilder {
                             p, RelationType.DEPENDENCY, false);
                 }
             }
-            // 子类：反向继承
+            // 子类：反向继承（接口/注解的实现类用 REALIZATION 虚线，类继承用 GENERALIZATION 实线）
             if (index != null) {
                 for (String child : index.subclassesByParent().getOrDefault(name, List.of())) {
                     if (UmlTypeNameUtil.isJdk(child) || child.equals(name)) {
                         continue;
                     }
-                    addRelation(relations, seenRelations, child, name, RelationType.GENERALIZATION, null, null);
+                    RelationType rt = (uml.kind() == ClassKind.INTERFACE || uml.kind() == ClassKind.ANNOTATION)
+                            ? RelationType.REALIZATION
+                            : RelationType.GENERALIZATION;
+                    addRelation(relations, seenRelations, child, name, rt, null, null);
                     enqueue(child, d + 1, queued, queue, depth);
                 }
             }

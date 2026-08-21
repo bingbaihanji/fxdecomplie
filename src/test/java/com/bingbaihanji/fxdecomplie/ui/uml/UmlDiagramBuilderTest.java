@@ -53,6 +53,10 @@ class UmlDiagramBuilderTest {
         assertTrue(diagram.relations().contains(
                 new UmlRelation("com/example/AbstractOrderService", "com/example/IOrderService",
                         RelationType.REALIZATION, null, null)));
+        // 反向展开不应产生实线继承边指向接口
+        assertFalse(diagram.relations().contains(
+                new UmlRelation("com/example/AbstractOrderService", "com/example/IOrderService",
+                        RelationType.GENERALIZATION, null, null)));
         assertTrue(diagram.relations().contains(
                 new UmlRelation("com/example/AbstractOrderService", "com/example/Order",
                         RelationType.ASSOCIATION, null, "0..*")));
@@ -117,5 +121,27 @@ class UmlDiagramBuilderTest {
         // Hub 的 105 个字段类型全部入队,但节点上限截断为 MAX_CLASSES
         assertEquals(UmlDiagramBuilder.MAX_CLASSES, diagram.classes().size());
         assertTrue(diagram.classes().stream().anyMatch(c -> c.internalName().equals("com/example/Hub")));
+    }
+
+    @Test
+    void build_stopsExpandingAtMaxDepth() {
+        Map<String, String> sources = new LinkedHashMap<>();
+        int total = 26; // A0..A25, 深度超过 MAX_DEPTH=20
+        for (int i = 0; i < total; i++) {
+            String name = "A" + i;
+            String parent = i + 1 < total ? " A" + (i + 1) + " " : " Object ";
+            sources.put("com.example." + name,
+                    "package com.example;\npublic class " + name + " extends" + parent + "{}\n");
+        }
+        Map<String, byte[]> bytes = TestCompile.compile(sources);
+        WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(bytes));
+
+        UmlDiagram diagram = UmlDiagramBuilder.build(
+                "com/example/A0", bytes.get("com/example/A0.class"), index);
+
+        assertNotNull(diagram);
+        // 深度 0..20 显示,共 21 个节点;A21 及更深的类不再展开
+        assertEquals(21, diagram.classes().size());
+        assertFalse(diagram.classes().stream().anyMatch(c -> c.internalName().equals("com/example/A21")));
     }
 }
