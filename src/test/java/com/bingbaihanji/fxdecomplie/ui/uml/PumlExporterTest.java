@@ -74,4 +74,21 @@ class PumlExporterTest {
         // 空图
         assertEquals("@startuml\n@enduml", PumlExporter.buildSource(null, UmlTheme.LIGHT));
     }
+
+    @Test
+    void buildSource_rendersAnnotationEdge() {
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("com.example.MyAnn", "package com.example;\npublic @interface MyAnn {}\n");
+        sources.put("com.example.Annotated",
+                "package com.example;\n@MyAnn\npublic class Annotated {}\n");
+        Map<String, byte[]> bytes = TestCompile.compile(sources);
+        WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(bytes));
+
+        UmlDiagram diagram = UmlDiagramBuilder.build(
+                "com/example/Annotated", bytes.get("com/example/Annotated.class"), index);
+        String puml = PumlExporter.buildSource(diagram, UmlTheme.LIGHT);
+
+        assertTrue(puml.contains("annotation \"**MyAnn**"));
+        assertTrue(puml.contains("-[#999900,dotted]-"));
+    }
 }

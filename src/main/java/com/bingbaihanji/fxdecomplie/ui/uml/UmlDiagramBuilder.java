@@ -94,6 +94,13 @@ public final class UmlDiagramBuilder {
                 addRelation(relations, seenRelations, name, itf, RelationType.REALIZATION, null, null);
                 enqueue(itf, d + 1, queued, queue, depth);
             }
+            // 注解:加入闭包作为节点(不建立标准关系;PumlExporter 通过 annotationNames 画黄点线)
+            for (String ann : uml.annotationNames()) {
+                if (UmlTypeNameUtil.isJdk(ann) || ann.equals(name)) {
+                    continue;
+                }
+                enqueue(ann, d + 1, queued, queue, depth);
+            }
             // 关联：字段元素类型
             for (UmlField f : uml.fields()) {
                 addTypeRelation(relations, seenRelations, queue, queued, depth, name, d,

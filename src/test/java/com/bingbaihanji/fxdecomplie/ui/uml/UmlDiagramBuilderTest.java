@@ -144,4 +144,21 @@ class UmlDiagramBuilderTest {
         assertEquals(21, diagram.classes().size());
         assertFalse(diagram.classes().stream().anyMatch(c -> c.internalName().equals("com/example/A21")));
     }
+
+    @Test
+    void build_expandsAnnotations() {
+        Map<String, String> sources = new LinkedHashMap<>();
+        sources.put("com.example.MyAnn", "package com.example;\npublic @interface MyAnn {}\n");
+        sources.put("com.example.Annotated",
+                "package com.example;\n@MyAnn\npublic class Annotated {}\n");
+        Map<String, byte[]> bytes = TestCompile.compile(sources);
+        WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(bytes));
+
+        UmlDiagram diagram = UmlDiagramBuilder.build(
+                "com/example/Annotated", bytes.get("com/example/Annotated.class"), index);
+
+        assertNotNull(diagram);
+        assertTrue(diagram.classes().stream().anyMatch(c -> c.internalName().equals("com/example/MyAnn")
+                && c.kind() == ClassKind.ANNOTATION));
+    }
 }

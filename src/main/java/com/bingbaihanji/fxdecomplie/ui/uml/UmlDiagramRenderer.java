@@ -127,7 +127,7 @@ public final class UmlDiagramRenderer {
         for (Map.Entry<Integer, List<UmlClass>> entry : byLevel.entrySet()) {
             int level = entry.getKey();
             List<UmlClass> levelClasses = entry.getValue();
-            int mid = levelClasses.size() / 2;
+            double mid = (levelClasses.size() - 1) / 2.0;
             for (int i = 0; i < levelClasses.size(); i++) {
                 UmlClass c = levelClasses.get(i);
                 double w = boxWidth(c);
@@ -145,6 +145,21 @@ public final class UmlDiagramRenderer {
                 }
                 result.put(c.internalName(), new LayoutBox(box, x, y, w, h));
             }
+        }
+        // 平移:确保最左节点不越界(左右各留 MARGIN),否则被视口/快照裁剪
+        double minX = Double.POSITIVE_INFINITY;
+        for (LayoutBox lb : result.values()) {
+            minX = Math.min(minX, lb.x());
+        }
+        double shift = minX < MARGIN ? MARGIN - minX : 0;
+        if (shift > 0) {
+            Map<String, LayoutBox> shifted = new LinkedHashMap<>();
+            for (Map.Entry<String, LayoutBox> e : result.entrySet()) {
+                LayoutBox lb = e.getValue();
+                lb.box().setLayoutX(lb.x() + shift);
+                shifted.put(e.getKey(), new LayoutBox(lb.box(), lb.x() + shift, lb.y(), lb.width(), lb.height()));
+            }
+            result = shifted;
         }
         return result;
     }

@@ -128,6 +128,7 @@ public final class UmlTypeNameUtil {
         }
         String n = name.trim().replace('.', '/');
         return n.startsWith("java/") || n.startsWith("javax/")
-                || n.startsWith("sun/") || n.startsWith("com/sun/");
+                || n.startsWith("sun/") || n.startsWith("com/sun/")
+                || n.startsWith("jdk/");
     }
 }
