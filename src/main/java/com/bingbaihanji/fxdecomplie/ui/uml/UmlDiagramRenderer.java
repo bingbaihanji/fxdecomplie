@@ -33,8 +33,8 @@ import java.util.Set;
 public final class UmlDiagramRenderer {
 
     private static final double MARGIN = 48;
-    private static final double LEVEL_GAP = 60;
-    private static final double ROW_GAP = 40;
+    private static final double LEVEL_GAP = 36;
+    private static final double ROW_GAP = 24;
     private static final double MIN_BOX_W = 150;
     private static final double MIN_BOX_H = 60;
     private static final double MAX_NODE_W = 260;
@@ -42,9 +42,11 @@ public final class UmlDiagramRenderer {
     private static final double LINE_H = 16.0;
     private static final double NODE_PAD_W = 36;
     private static final double NODE_PAD_H = 22;
-    private static final double MIN_ZOOM = 0.02;
+    private static final double MIN_ZOOM = 0.02;      // 整图适配的最小下限
+    private static final double READABLE_MIN_ZOOM = 0.4; // 打开时保底可读缩放
     private static final double MAX_ZOOM = 3.0;
     private static final double ZOOM_STEP = 0.1;
+    private static final int MAX_COLS = 6;             // 每层最多列数,超宽折行
     private static final double EDGE_ARROW = 9;
 
     private UmlDiagramRenderer() {
@@ -104,8 +106,8 @@ public final class UmlDiagramRenderer {
         final double[] zoom = {1.0};
         final boolean[] fitted = {false};
         installZoom(scroll, group, canvas, bounds, zoom, fitted);
-        Runnable fit = () -> fitToViewport(scroll, group, canvas, bounds, zoom);
-        return new UmlView(scroll, canvas, fit);
+        Runnable fitWhole = () -> fitToViewport(scroll, group, canvas, bounds, zoom, MIN_ZOOM);
+        return new UmlView(scroll, canvas, fitWhole);
     }
 
     // ======================== 布局 ========================
@@ -123,22 +125,28 @@ public final class UmlDiagramRenderer {
             maxW = Math.max(maxW, boxWidth(c));
             maxH = Math.max(maxH, boxHeight(c));
         }
-        double levelStep = maxH + LEVEL_GAP;
-        double rowStep = maxW + ROW_GAP;
+        double rowStep = maxW + ROW_GAP;    // 层内列间距
         int maxLevel = byLevel.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
 
         Map<String, LayoutBox> result = new LinkedHashMap<>();
-        for (Map.Entry<Integer, List<UmlClass>> entry : byLevel.entrySet()) {
-            int level = entry.getKey();
-            List<UmlClass> levelClasses = entry.getValue();
-            double mid = (levelClasses.size() - 1) / 2.0;
+        double yCursor = MARGIN;
+        for (int level = maxLevel; level >= 0; level--) {
+            List<UmlClass> levelClasses = byLevel.get(level);
+            if (levelClasses == null) {
+                continue;
+            }
+            int cols = Math.min(levelClasses.size(), MAX_COLS);
+            int rows = (levelClasses.size() + MAX_COLS - 1) / MAX_COLS;
+            double levelOffset = (MAX_COLS - cols) * rowStep / 2.0; // 层内居中
+            double levelTop = yCursor;
             for (int i = 0; i < levelClasses.size(); i++) {
                 UmlClass c = levelClasses.get(i);
                 double w = boxWidth(c);
                 double h = boxHeight(c);
-                // 层级垂直向下，同层水平居中排列
-                double x = MARGIN + (i - mid) * rowStep + (maxW - w) / 2.0;
-                double y = MARGIN + (maxLevel - level) * levelStep;
+                int col = i % MAX_COLS;
+                int row = i / MAX_COLS;
+                double x = MARGIN + levelOffset + col * rowStep + (maxW - w) / 2.0;
+                double y = levelTop + row * (maxH + ROW_GAP);
                 Node box = createClassBox(c, theme, w);
                 box.setLayoutX(x);
                 box.setLayoutY(y);
@@ -149,7 +157,9 @@ public final class UmlDiagramRenderer {
                 }
                 result.put(c.internalName(), new LayoutBox(box, x, y, w, h));
             }
+            yCursor = levelTop + rows * (maxH + ROW_GAP) + LEVEL_GAP;
         }
+
         // 平移:确保最左节点不越界(左右各留 MARGIN),否则被视口/快照裁剪
         double minX = Double.POSITIVE_INFINITY;
         for (LayoutBox lb : result.values()) {
@@ -476,7 +486,7 @@ public final class UmlDiagramRenderer {
                 return;
             }
             fitted[0] = true;
-            fitToViewport(scroll, group, canvas, bounds, zoom);
+            fitToViewport(scroll, group, canvas, bounds, zoom, READABLE_MIN_ZOOM);
         });
 
         // Ctrl/⌘+滚轮：指针居中缩放
@@ -496,9 +506,9 @@ public final class UmlDiagramRenderer {
         });
     }
 
-    /** 适配窗口：缩放到整图可见并居中 */
+    /** 适配窗口：缩放到整图可见并居中；floor 为缩放下限（打开用可读保底,按钮用整图下限） */
     private static void fitToViewport(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
-                                      double[] zoom) {
+                                      double[] zoom, double floor) {
         double vw = scroll.getViewportBounds().getWidth();
         double vh = scroll.getViewportBounds().getHeight();
         if (vw <= 0 || vh <= 0 || bounds.width() <= 0 || bounds.height() <= 0) {
@@ -508,8 +518,8 @@ public final class UmlDiagramRenderer {
         if (!Double.isFinite(fit) || fit <= 0) {
             return;
         }
-        fit = Math.min(fit, 1.0); // 初始不放大
-        fit = Math.max(fit, MIN_ZOOM);
+        fit = Math.min(fit, 1.0); // 不放大
+        fit = Math.max(fit, floor);
         applyZoom(group, canvas, bounds, zoom, fit);
         scroll.setHvalue(0.5);
         scroll.setVvalue(0.5);
