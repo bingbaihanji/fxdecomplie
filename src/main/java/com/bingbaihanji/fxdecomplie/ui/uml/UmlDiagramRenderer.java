@@ -101,8 +101,7 @@ public final class UmlDiagramRenderer {
         scroll.setFitToHeight(false);
         scroll.setStyle("-fx-background:" + theme.background() + ";-fx-background-color:" + theme.background() + ";");
         final double[] zoom = {1.0};
-        final boolean[] fitted = {false};
-        installZoom(scroll, group, canvas, bounds, zoom, fitted);
+        installZoom(scroll, group, canvas, bounds, zoom);
         Runnable fit = () -> fitToViewport(scroll, group, canvas, bounds, zoom);
         return new UmlView(scroll, canvas, fit);
     }
@@ -465,19 +464,7 @@ public final class UmlDiagramRenderer {
     // ======================== 交互 ========================
 
     private static void installZoom(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
-                                    double[] zoom, boolean[] fitted) {
-        // 首次获得视口尺寸后自动适配：整图放入视口（仅一次，之后手动缩放不受窗口缩放影响）
-        scroll.viewportBoundsProperty().addListener((obs, oldV, viewport) -> {
-            if (fitted[0]) {
-                return;
-            }
-            if (viewport.getWidth() <= 0 || viewport.getHeight() <= 0) {
-                return;
-            }
-            fitted[0] = true;
-            fitToViewport(scroll, group, canvas, bounds, zoom);
-        });
-
+                                    double[] zoom) {
         // Ctrl/⌘+滚轮：指针居中缩放
         scroll.addEventFilter(ScrollEvent.SCROLL, event -> {
             if (!event.isControlDown() && !event.isMetaDown()) {
@@ -500,10 +487,13 @@ public final class UmlDiagramRenderer {
                                       double[] zoom) {
         double vw = scroll.getViewportBounds().getWidth();
         double vh = scroll.getViewportBounds().getHeight();
-        if (vw <= 0 || vh <= 0) {
+        if (vw <= 0 || vh <= 0 || bounds.width() <= 0 || bounds.height() <= 0) {
             return;
         }
         double fit = Math.min(vw / bounds.width(), vh / bounds.height());
+        if (!Double.isFinite(fit) || fit <= 0) {
+            return;
+        }
         fit = Math.min(fit, 1.0); // 初始不放大
         fit = Math.max(fit, MIN_ZOOM);
         applyZoom(group, canvas, bounds, zoom, fit);
@@ -513,6 +503,9 @@ public final class UmlDiagramRenderer {
 
     /** 设置缩放并同步画布尺寸 */
     private static void applyZoom(Group group, Pane canvas, Bounds bounds, double[] zoom, double next) {
+        if (!Double.isFinite(next) || next <= 0) {
+            return;
+        }
         zoom[0] = next;
         group.setScaleX(next);
         group.setScaleY(next);

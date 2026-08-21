@@ -142,6 +142,12 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
             diagramCanvas = view.canvas();
             contentStack.getChildren().setAll(view.scrollPane());
             statusLabel.setText("");
+            // 布局完成后适配整图到视口（避免 viewport 尚未就绪时计算错误）
+            Platform.runLater(() -> {
+                if (currentView == view) {
+                    view.fitToViewport().run();
+                }
+            });
         } catch (RuntimeException e) {
             log.warn("UML 类图渲染失败", e);
             showMsg(I18nUtil.getString("uml.renderFailed"));
