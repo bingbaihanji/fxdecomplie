@@ -6,7 +6,7 @@ public enum Visibility {
 
     private final char symbol;
 
-    Visibility(char symbol) {
+    private Visibility(char symbol) {
         this.symbol = symbol;
     }
 
