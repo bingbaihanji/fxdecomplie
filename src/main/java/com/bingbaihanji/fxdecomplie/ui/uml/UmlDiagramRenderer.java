@@ -41,8 +41,8 @@ public final class UmlDiagramRenderer {
     private static final double LINE_H = 16.0;
     private static final double NODE_PAD_W = 36;
     private static final double NODE_PAD_H = 22;
-    private static final double MIN_ZOOM = 0.35;
-    private static final double MAX_ZOOM = 2.5;
+    private static final double MIN_ZOOM = 0.1;
+    private static final double MAX_ZOOM = 3.0;
     private static final double ZOOM_STEP = 0.1;
     private static final double EDGE_ARROW = 9;
 
@@ -50,8 +50,8 @@ public final class UmlDiagramRenderer {
         throw new AssertionError("utility class");
     }
 
-    /** 渲染结果：可交互 ScrollPane + 画布 Pane（用于快照导出） */
-    public record UmlView(ScrollPane scrollPane, Pane canvas) {
+    /** 渲染结果：可交互 ScrollPane + 画布 Pane（用于快照导出）+ 适配窗口回调 */
+    public record UmlView(ScrollPane scrollPane, Pane canvas, Runnable fitToViewport) {
     }
 
     public static UmlView create(UmlDiagram diagram, UmlTheme theme) {
@@ -64,7 +64,7 @@ public final class UmlDiagramRenderer {
             center.setStyle("-fx-background-color:" + theme.background() + ";");
             ScrollPane scroll = new ScrollPane(center);
             scroll.setPannable(true);
-            return new UmlView(scroll, canvas);
+            return new UmlView(scroll, canvas, () -> {});
         }
 
         Map<String, LayoutBox> layout = layout(diagram, theme);
@@ -100,8 +100,11 @@ public final class UmlDiagramRenderer {
         scroll.setFitToWidth(false);
         scroll.setFitToHeight(false);
         scroll.setStyle("-fx-background:" + theme.background() + ";-fx-background-color:" + theme.background() + ";");
-        installZoom(scroll, group, canvas, bounds);
-        return new UmlView(scroll, canvas);
+        final double[] zoom = {1.0};
+        final boolean[] fitted = {false};
+        installZoom(scroll, group, canvas, bounds, zoom, fitted);
+        Runnable fit = () -> fitToViewport(scroll, group, canvas, bounds, zoom);
+        return new UmlView(scroll, canvas, fit);
     }
 
     // ======================== 布局 ========================
@@ -461,11 +464,24 @@ public final class UmlDiagramRenderer {
 
     // ======================== 交互 ========================
 
-    private static void installZoom(ScrollPane scroll, Group group, Pane canvas, Bounds bounds) {
-        final double[] zoom = {1.0};
+    private static void installZoom(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
+                                    double[] zoom, boolean[] fitted) {
+        // 首次获得视口尺寸后自动适配：整图放入视口（仅一次，之后手动缩放不受窗口缩放影响）
+        scroll.viewportBoundsProperty().addListener((obs, oldV, viewport) -> {
+            if (fitted[0]) {
+                return;
+            }
+            if (viewport.getWidth() <= 0 || viewport.getHeight() <= 0) {
+                return;
+            }
+            fitted[0] = true;
+            fitToViewport(scroll, group, canvas, bounds, zoom);
+        });
+
+        // Ctrl/⌘+滚轮：指针居中缩放
         scroll.addEventFilter(ScrollEvent.SCROLL, event -> {
             if (!event.isControlDown() && !event.isMetaDown()) {
-                return;
+                return; // 不拦截普通滚轮，让 ScrollPane 正常滚动
             }
             double next = Math.clamp(
                     zoom[0] + (event.getDeltaY() > 0 ? ZOOM_STEP : -ZOOM_STEP),
@@ -474,13 +490,62 @@ public final class UmlDiagramRenderer {
                 event.consume();
                 return;
             }
-            zoom[0] = next;
-            group.setScaleX(next);
-            group.setScaleY(next);
-            canvas.setPrefSize(bounds.width() * next, bounds.height() * next);
-            canvas.setMinSize(bounds.width() * next, bounds.height() * next);
+            zoomAround(scroll, group, canvas, bounds, zoom, next, event.getX(), event.getY());
             event.consume();
         });
+    }
+
+    /** 适配窗口：缩放到整图可见并居中 */
+    private static void fitToViewport(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
+                                      double[] zoom) {
+        double vw = scroll.getViewportBounds().getWidth();
+        double vh = scroll.getViewportBounds().getHeight();
+        if (vw <= 0 || vh <= 0) {
+            return;
+        }
+        double fit = Math.min(vw / bounds.width(), vh / bounds.height());
+        fit = Math.min(fit, 1.0); // 初始不放大
+        fit = Math.max(fit, MIN_ZOOM);
+        applyZoom(group, canvas, bounds, zoom, fit);
+        scroll.setHvalue(0.5);
+        scroll.setVvalue(0.5);
+    }
+
+    /** 设置缩放并同步画布尺寸 */
+    private static void applyZoom(Group group, Pane canvas, Bounds bounds, double[] zoom, double next) {
+        zoom[0] = next;
+        group.setScaleX(next);
+        group.setScaleY(next);
+        canvas.setPrefSize(bounds.width() * next, bounds.height() * next);
+        canvas.setMinSize(bounds.width() * next, bounds.height() * next);
+    }
+
+    /** 指针居中缩放：保持鼠标下的内容点不动 */
+    private static void zoomAround(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
+                                   double[] zoom, double next, double mouseX, double mouseY) {
+        double vw = scroll.getViewportBounds().getWidth();
+        double vh = scroll.getViewportBounds().getHeight();
+        double old = zoom[0];
+        double cw = bounds.width() * old;
+        double ch = bounds.height() * old;
+        double hscroll = scroll.getHvalue() * Math.max(0, cw - vw);
+        double vscroll = scroll.getVvalue() * Math.max(0, ch - vh);
+        // 鼠标指向的未缩放内容坐标
+        double contentX = (hscroll + mouseX) / old;
+        double contentY = (vscroll + mouseY) / old;
+
+        applyZoom(group, canvas, bounds, zoom, next);
+
+        double nw = bounds.width() * next;
+        double nh = bounds.height() * next;
+        if (nw > vw) {
+            double nhscroll = contentX * next - mouseX;
+            scroll.setHvalue(Math.clamp(nhscroll / (nw - vw), 0, 1));
+        }
+        if (nh > vh) {
+            double nvscroll = contentY * next - mouseY;
+            scroll.setVvalue(Math.clamp(nvscroll / (nh - vh), 0, 1));
+        }
     }
 
     private static Bounds computeBounds(Map<String, LayoutBox> layout) {

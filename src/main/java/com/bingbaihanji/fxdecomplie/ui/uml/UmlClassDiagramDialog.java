@@ -45,6 +45,7 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
     private UmlDiagram currentDiagram;
     private UmlTheme currentTheme = UmlTheme.DARK;
     private Pane diagramCanvas;
+    private UmlDiagramRenderer.UmlView currentView;
 
     public UmlClassDiagramDialog(javafx.stage.Window owner, String title) {
         this.ownerWindow = owner;
@@ -81,6 +82,12 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
             }
         });
 
+        Button fitButton = new Button(I18nUtil.getString("uml.export.fit"));
+        fitButton.setOnAction(e -> {
+            if (currentView != null) {
+                currentView.fitToViewport().run();
+            }
+        });
         Button exportPng = new Button(I18nUtil.getString("uml.exportPng"));
         exportPng.setOnAction(e -> exportPng());
         Button exportPuml = new Button(I18nUtil.getString("uml.exportPuml"));
@@ -89,7 +96,7 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
         statusLabel.setStyle("-fx-text-fill:#808080;-fx-font-size:11px;");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox bar = new HBox(6, light, dark, new Separator(), exportPng, exportPuml, spacer, statusLabel);
+        HBox bar = new HBox(6, light, dark, new Separator(), fitButton, exportPng, exportPuml, spacer, statusLabel);
         bar.setStyle("-fx-padding:4px 8px;-fx-background-color:#252526;");
         bar.setMinHeight(30);
         bar.setAlignment(Pos.CENTER_LEFT);
@@ -131,6 +138,7 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
         }
         try {
             UmlDiagramRenderer.UmlView view = UmlDiagramRenderer.create(currentDiagram, currentTheme);
+            currentView = view;
             diagramCanvas = view.canvas();
             contentStack.getChildren().setAll(view.scrollPane());
             statusLabel.setText("");
