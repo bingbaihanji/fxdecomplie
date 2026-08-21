@@ -14,6 +14,25 @@ class UmlTypeNameUtilTest {
         assertEquals("X", UmlTypeNameUtil.getElementType("java.util.List<? extends X>"));
         assertEquals("Y", UmlTypeNameUtil.getElementType("java.util.List<? super Y>"));
         assertEquals("Order", UmlTypeNameUtil.getElementType("Order"));
+        assertEquals("", UmlTypeNameUtil.getElementType("java.util.List<?>"));
+        assertEquals("Order", UmlTypeNameUtil.getElementType("Order[][]"));
+        assertEquals("int", UmlTypeNameUtil.getElementType("int[]"));
+        assertEquals("", UmlTypeNameUtil.getElementType(null));
+    }
+
+    @Test
+    void getSimpleName_stripsPackagePrefix() {
+        assertEquals("Order", UmlTypeNameUtil.getSimpleName("com.example.Order"));
+        assertEquals("Order", UmlTypeNameUtil.getSimpleName("java.util.List<com.example.Order>"));
+        assertEquals("", UmlTypeNameUtil.getSimpleName(null));
+    }
+
+    @Test
+    void nullInputsReturnSafeValues() {
+        assertEquals("", UmlTypeNameUtil.getElementType(null));
+        assertFalse(UmlTypeNameUtil.isCollectionOrArray(null));
+        assertFalse(UmlTypeNameUtil.isUMLClassType(null));
+        assertFalse(UmlTypeNameUtil.isJdk(null));
     }
 
     @Test

@@ -104,7 +104,11 @@ public final class UmlTypeNameUtil {
         return dot >= 0 ? base.substring(dot + 1) : base;
     }
 
-    /** 当元素类型是非 JDK 的类、值得建立关系时返回 true */
+    /**
+     * 当元素类型是非 JDK 的类、值得建立关系时返回 true。
+     * 注意：JAVA_CORE 简单名白名单意味着用户自定义的名为 String/List/Date 等的类也会被排除
+     * （继承自参考项目的启发式判定）。
+     */
     public static boolean isUMLClassType(String type) {
         String simple = getSimpleName(type);
         if (simple.isEmpty()) {
