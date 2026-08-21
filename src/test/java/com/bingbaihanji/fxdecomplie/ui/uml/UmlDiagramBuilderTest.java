@@ -99,20 +99,23 @@ class UmlDiagramBuilderTest {
     void build_respectsClassLimit() {
         Map<String, String> sources = new LinkedHashMap<>();
         int total = 105;
+        StringBuilder hub = new StringBuilder("package com.example;\npublic class Hub {\n");
         for (int i = 0; i < total; i++) {
-            String name = "A" + i;
-            String parent = i + 1 < total ? " A" + (i + 1) + " " : " Object ";
-            sources.put("com.example." + name,
-                    "package com.example;\npublic class " + name + " extends" + parent + "{}\n");
+            sources.put("com.example.Dep" + i, "package com.example;\npublic class Dep" + i + " {}\n");
+            hub.append("    private Dep").append(i).append(" d").append(i).append(";\n");
         }
+        hub.append("}\n");
+        sources.put("com.example.Hub", hub.toString());
+
         Map<String, byte[]> bytes = TestCompile.compile(sources);
         WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(bytes));
 
         UmlDiagram diagram = UmlDiagramBuilder.build(
-                "com/example/A0", bytes.get("com/example/A0.class"), index);
+                "com/example/Hub", bytes.get("com/example/Hub.class"), index);
 
         assertNotNull(diagram);
-        assertTrue(diagram.classes().size() <= UmlDiagramBuilder.MAX_CLASSES);
-        assertTrue(diagram.classes().stream().anyMatch(c -> c.internalName().equals("com/example/A0")));
+        // Hub 的 105 个字段类型全部入队,但节点上限截断为 MAX_CLASSES
+        assertEquals(UmlDiagramBuilder.MAX_CLASSES, diagram.classes().size());
+        assertTrue(diagram.classes().stream().anyMatch(c -> c.internalName().equals("com/example/Hub")));
     }
 }
