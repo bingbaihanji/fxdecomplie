@@ -41,8 +41,8 @@ class UmlDiagramBuilderTest {
         assertTrue(names.contains("com/example/OrderServiceImpl"));
         assertTrue(names.contains("com/example/AbstractOrderService"));
         assertTrue(names.contains("com/example/IOrderService"));
-        // 关联/依赖类型不再作为节点
-        assertFalse(names.contains("com/example/Order"));
+        // 字段关联/方法参数依赖会补充为邻近节点
+        assertTrue(names.contains("com/example/Order"));
         assertFalse(names.contains("java/lang/Object"));
         assertFalse(names.contains("java/lang/String"));
         assertFalse(names.contains("java/util/List"));
@@ -56,6 +56,12 @@ class UmlDiagramBuilderTest {
         assertFalse(diagram.relations().contains(
                 new UmlRelation("com/example/AbstractOrderService", "com/example/IOrderService",
                         RelationType.GENERALIZATION, null, null)));
+        assertTrue(diagram.relations().contains(
+                new UmlRelation("com/example/AbstractOrderService", "com/example/Order",
+                        RelationType.ASSOCIATION, null, "*")));
+        assertTrue(diagram.relations().contains(
+                new UmlRelation("com/example/OrderServiceImpl", "com/example/Order",
+                        RelationType.DEPENDENCY, null, null)));
     }
 
     @Test

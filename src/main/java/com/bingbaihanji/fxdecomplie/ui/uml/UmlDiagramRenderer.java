@@ -6,6 +6,7 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -16,6 +17,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextAlignment;
+import javafx.scene.transform.Scale;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -33,20 +35,24 @@ import java.util.Set;
 public final class UmlDiagramRenderer {
 
     private static final double MARGIN = 48;
-    private static final double LEVEL_GAP = 36;
-    private static final double ROW_GAP = 24;
-    private static final double MIN_BOX_W = 150;
+    private static final double LEVEL_GAP = 72;
+    private static final double ROW_GAP = 34;
+    private static final double MIN_BOX_W = 170;
     private static final double MIN_BOX_H = 60;
-    private static final double MAX_NODE_W = 260;
+    private static final double MAX_NODE_W = 320;
+    private static final double MAX_NODE_H = 380;
     private static final double CHAR_W = 7.0;
     private static final double LINE_H = 16.0;
     private static final double NODE_PAD_W = 36;
-    private static final double NODE_PAD_H = 22;
+    private static final double NODE_PAD_H = 32;
     private static final double MIN_ZOOM = 0.2;
     private static final double MAX_ZOOM = 3.0;
     private static final double ZOOM_STEP = 0.1;
     private static final double EDGE_ARROW = 9;
-    private static final int MAX_COLS = 6;
+    private static final int MAX_COLS = 7;
+    private static final int MAX_VISIBLE_FIELDS = 10;
+    private static final int MAX_VISIBLE_METHODS = 16;
+    private static final int MAX_MEMBER_CHARS = 84;
 
     private UmlDiagramRenderer() {
         throw new AssertionError("utility class");
@@ -84,13 +90,14 @@ public final class UmlDiagramRenderer {
         edgeLayer.setPickOnBounds(false);
         Pane nodeLayer = new Pane();
         nodeLayer.setPickOnBounds(false);
+        int relationIndex = 0;
         for (UmlRelation r : diagram.relations()) {
             LayoutBox from = layout.get(r.from());
             LayoutBox to = layout.get(r.to());
             if (from == null || to == null || from == to) {
                 continue;
             }
-            drawRelation(edgeLayer, from, to, r, theme);
+            drawRelation(edgeLayer, from, to, r, theme, relationIndex++);
         }
         for (LayoutBox lb : layout.values()) {
             nodeLayer.getChildren().add(lb.box());
@@ -156,16 +163,16 @@ public final class UmlDiagramRenderer {
             if (levelClasses == null) {
                 continue;
             }
-            int cols = Math.min(levelClasses.size(), MAX_COLS);
-            int rows = (levelClasses.size() + MAX_COLS - 1) / MAX_COLS;
+            int cols = columnsFor(levelClasses.size());
+            int rows = (levelClasses.size() + cols - 1) / cols;
             double levelOffset = (MAX_COLS - cols) * rowStep / 2.0;
             double levelTop = yCursor;
             for (int i = 0; i < levelClasses.size(); i++) {
                 UmlClass c = levelClasses.get(i);
                 double w = boxWidth(c);
                 double h = boxHeight(c);
-                int col = i % MAX_COLS;
-                int row = i / MAX_COLS;
+                int col = i % cols;
+                int row = i / cols;
                 double x = MARGIN + levelOffset + col * rowStep + (maxW - w) / 2.0;
                 double y = levelTop + row * (maxH + ROW_GAP);
                 Node box = createClassBox(c, theme, w);
@@ -202,6 +209,16 @@ public final class UmlDiagramRenderer {
         return result;
     }
 
+    private static int columnsFor(int count) {
+        if (count <= 1) {
+            return 1;
+        }
+        if (count <= 4) {
+            return count;
+        }
+        return Math.min(MAX_COLS, (int) Math.ceil(Math.sqrt(count * 1.8)));
+    }
+
     /** 入度拓扑分层：入度为 0 的节点（叶子/无被引用的类）在 level 0；layout 中 level 越高越靠上，使父类位于画布上方 */
     private static Map<String, Integer> computeLevels(UmlDiagram diagram) {
         Map<String, Integer> indegree = new HashMap<>();
@@ -211,6 +228,9 @@ public final class UmlDiagramRenderer {
             outgoing.put(c.internalName(), new ArrayList<>());
         }
         for (UmlRelation r : diagram.relations()) {
+            if (r.type() != RelationType.GENERALIZATION && r.type() != RelationType.REALIZATION) {
+                continue;
+            }
             if (!indegree.containsKey(r.from()) || !indegree.containsKey(r.to())) {
                 continue;
             }
@@ -292,9 +312,14 @@ public final class UmlDiagramRenderer {
             VBox members = new VBox();
             members.setStyle("-fx-padding:4 8 6 8;");
             boolean hasFields = false;
+            int fieldCount = 0;
             for (UmlField f : cls.fields()) {
-                members.getChildren().add(fieldLabel(f, theme, width));
+                if (fieldCount >= MAX_VISIBLE_FIELDS) {
+                    break;
+                }
+                members.getChildren().add(memberLabel(fieldText(f), theme, width, f.isStatic(), false));
                 hasFields = true;
+                fieldCount++;
             }
             if (hasFields && !cls.methods().isEmpty()) {
                 Region sep = new Region();
@@ -303,8 +328,23 @@ public final class UmlDiagramRenderer {
                         + ";-fx-pref-height:1;-fx-min-height:1;-fx-max-height:1;");
                 members.getChildren().add(sep);
             }
+            int methodCount = 0;
             for (UmlMethod m : cls.methods()) {
-                members.getChildren().add(methodLabel(m, theme, width));
+                if (methodCount >= MAX_VISIBLE_METHODS) {
+                    break;
+                }
+                members.getChildren().add(memberLabel(methodText(m), theme, width, m.isStatic(), m.isAbstract()));
+                methodCount++;
+            }
+            int hiddenFields = Math.max(0, cls.fields().size() - MAX_VISIBLE_FIELDS);
+            int hiddenMethods = Math.max(0, cls.methods().size() - MAX_VISIBLE_METHODS);
+            if (hiddenFields > 0 || hiddenMethods > 0) {
+                String text = "... +" + hiddenFields + " fields, +" + hiddenMethods + " methods";
+                Label more = new Label(text);
+                more.setStyle("-fx-text-fill:" + theme.packageText()
+                        + ";-fx-font-size:11px;-fx-font-family:'Consolas',monospace;");
+                more.setMaxWidth(width - 18);
+                members.getChildren().add(more);
             }
             box.getChildren().add(members);
         }
@@ -324,46 +364,50 @@ public final class UmlDiagramRenderer {
         };
     }
 
-    private static Label fieldLabel(UmlField f, UmlTheme theme, double boxWidth) {
-        String text = f.visibility().symbol() + " " + f.name() + ": " + f.type();
+    private static Label memberLabel(String fullText, UmlTheme theme, double boxWidth,
+                                     boolean isStatic, boolean isAbstract) {
+        String text = ellipsize(fullText, MAX_MEMBER_CHARS);
         Label label = new Label(text);
         String style = "-fx-text-fill:" + theme.memberText()
                 + ";-fx-font-size:11px;-fx-font-family:'Consolas',monospace;";
-        if (f.isStatic()) {
+        if (isAbstract) {
+            style += "-fx-font-style:italic;";
+        }
+        if (isStatic) {
             style += "-fx-underline:true;";
         }
         label.setStyle(style);
         label.setWrapText(true);
         label.setMaxWidth(boxWidth - 18);
         label.setTextAlignment(TextAlignment.LEFT);
+        if (!text.equals(fullText)) {
+            label.setTooltip(new Tooltip(fullText));
+        }
         return label;
     }
 
-    private static Label methodLabel(UmlMethod m, UmlTheme theme, double boxWidth) {
+    private static String fieldText(UmlField f) {
+        return f.visibility().symbol() + " " + f.name() + ": " + f.type();
+    }
+
+    private static String methodText(UmlMethod m) {
         String ret = m.isConstructor() ? "" : ": " + m.returnType();
-        String text = m.visibility().symbol() + " " + m.name() + "("
+        return m.visibility().symbol() + " " + m.name() + "("
                 + String.join(", ", m.params()) + ")" + ret;
-        Label label = new Label(text);
-        String style = "-fx-text-fill:" + theme.memberText()
-                + ";-fx-font-size:11px;-fx-font-family:'Consolas',monospace;";
-        if (m.isAbstract()) {
-            style += "-fx-font-style:italic;";
+    }
+
+    private static String ellipsize(String text, int maxChars) {
+        if (text == null || text.length() <= maxChars) {
+            return text == null ? "" : text;
         }
-        if (m.isStatic()) {
-            style += "-fx-underline:true;";
-        }
-        label.setStyle(style);
-        label.setWrapText(true);
-        label.setMaxWidth(boxWidth - 18);
-        label.setTextAlignment(TextAlignment.LEFT);
-        return label;
+        return text.substring(0, Math.max(0, maxChars - 3)) + "...";
     }
 
     // ======================== 尺寸估算 ========================
 
     private static double boxWidth(UmlClass cls) {
         int longest = 0;
-        for (String line : boxTextLines(cls)) {
+        for (String line : visibleBoxTextLines(cls)) {
             longest = Math.max(longest, line.length());
         }
         return Math.clamp(longest * CHAR_W + NODE_PAD_W, MIN_BOX_W, MAX_NODE_W);
@@ -373,29 +417,42 @@ public final class UmlDiagramRenderer {
         double w = boxWidth(cls);
         double usable = Math.max(w - NODE_PAD_W, MIN_BOX_W - NODE_PAD_W);
         int visualLines = 0;
-        for (String line : boxTextLines(cls)) {
+        for (String line : visibleBoxTextLines(cls)) {
             visualLines += Math.max(1, (int) Math.ceil(line.length() * CHAR_W / usable));
         }
-        return Math.max(visualLines * LINE_H + NODE_PAD_H, MIN_BOX_H);
+        return Math.clamp(visualLines * LINE_H + NODE_PAD_H, MIN_BOX_H, MAX_NODE_H);
     }
 
-    private static List<String> boxTextLines(UmlClass cls) {
+    private static List<String> visibleBoxTextLines(UmlClass cls) {
         List<String> lines = new ArrayList<>();
         lines.add(cls.simpleName());
         if (cls.packageName() != null && !cls.packageName().isEmpty()) {
             lines.add(cls.packageName());
         }
         if (cls.parsed()) {
+            int fieldCount = 0;
             for (UmlField f : cls.fields()) {
-                lines.add(f.visibility().symbol() + " " + f.name() + ": " + f.type());
+                if (fieldCount >= MAX_VISIBLE_FIELDS) {
+                    break;
+                }
+                lines.add(ellipsize(fieldText(f), MAX_MEMBER_CHARS));
+                fieldCount++;
             }
             if (!cls.fields().isEmpty() && !cls.methods().isEmpty()) {
                 lines.add("-");
             }
+            int methodCount = 0;
             for (UmlMethod m : cls.methods()) {
-                lines.add(m.visibility().symbol() + " " + m.name() + "("
-                        + String.join(", ", m.params()) + ")"
-                        + (m.isConstructor() ? "" : ": " + m.returnType()));
+                if (methodCount >= MAX_VISIBLE_METHODS) {
+                    break;
+                }
+                lines.add(ellipsize(methodText(m), MAX_MEMBER_CHARS));
+                methodCount++;
+            }
+            int hiddenFields = Math.max(0, cls.fields().size() - MAX_VISIBLE_FIELDS);
+            int hiddenMethods = Math.max(0, cls.methods().size() - MAX_VISIBLE_METHODS);
+            if (hiddenFields > 0 || hiddenMethods > 0) {
+                lines.add("... +" + hiddenFields + " fields, +" + hiddenMethods + " methods");
             }
         }
         return lines;
@@ -404,12 +461,7 @@ public final class UmlDiagramRenderer {
     // ======================== 关系渲染 ========================
 
     private static void drawRelation(Pane pane, LayoutBox from, LayoutBox to,
-                                     UmlRelation r, UmlTheme theme) {
-        Point2D fromCenter = from.center();
-        Point2D toCenter = to.center();
-        Point2D start = borderPoint(from, toCenter);
-        Point2D end = borderPoint(to, fromCenter);
-
+                                     UmlRelation r, UmlTheme theme, int relationIndex) {
         String color = switch (r.type()) {
             case GENERALIZATION -> theme.generalizationColor();
             case REALIZATION -> theme.realizationColor();
@@ -418,23 +470,46 @@ public final class UmlDiagramRenderer {
         };
         boolean dashed = r.type() == RelationType.REALIZATION || r.type() == RelationType.DEPENDENCY;
 
+        Point2D start;
+        Point2D end;
+        List<Point2D> points;
+        if (r.type() == RelationType.GENERALIZATION || r.type() == RelationType.REALIZATION) {
+            start = new Point2D(from.center().getX(), from.y());
+            end = new Point2D(to.center().getX(), to.y() + to.height());
+            if (from.center().getY() < to.center().getY()) {
+                start = new Point2D(from.center().getX(), from.y() + from.height());
+                end = new Point2D(to.center().getX(), to.y());
+            }
+            points = hierarchyPath(start, end, relationIndex);
+        } else {
+            boolean horizontal = Math.abs(to.center().getX() - from.center().getX())
+                    >= Math.abs(to.center().getY() - from.center().getY());
+            if (horizontal) {
+                boolean toRight = to.center().getX() >= from.center().getX();
+                start = new Point2D(toRight ? from.x() + from.width() : from.x(), from.center().getY());
+                end = new Point2D(toRight ? to.x() : to.x() + to.width(), to.center().getY());
+            } else {
+                boolean toBelow = to.center().getY() >= from.center().getY();
+                start = new Point2D(from.center().getX(), toBelow ? from.y() + from.height() : from.y());
+                end = new Point2D(to.center().getX(), toBelow ? to.y() : to.y() + to.height());
+            }
+            points = associationPath(start, end, horizontal, relationIndex);
+        }
+
         Point2D lineEnd = end;
         if (r.type() == RelationType.GENERALIZATION || r.type() == RelationType.REALIZATION) {
-            double angle = Math.atan2(end.getY() - start.getY(), end.getX() - start.getX());
+            Point2D previous = previousPoint(points, end);
+            double angle = Math.atan2(end.getY() - previous.getY(), end.getX() - previous.getX());
             lineEnd = new Point2D(end.getX() - 11 * Math.cos(angle), end.getY() - 11 * Math.sin(angle));
         }
-        Line line = new Line(start.getX(), start.getY(), lineEnd.getX(), lineEnd.getY());
-        line.setStroke(Color.web(color));
-        line.setStrokeWidth(1.2);
-        if (dashed) {
-            line.getStrokeDashArray().addAll(8.0, 4.0);
-        }
-        pane.getChildren().add(line);
+        drawPolyline(pane, points, lineEnd, color, dashed);
 
         if (r.type() == RelationType.GENERALIZATION || r.type() == RelationType.REALIZATION) {
-            hollowArrow(pane, start, end, color);
+            Point2D previous = previousPoint(points, end);
+            hollowArrow(pane, previous, end, color);
         } else if (r.type() == RelationType.DEPENDENCY) {
-            filledArrow(pane, start, end, color);
+            Point2D previous = previousPoint(points, end);
+            filledArrow(pane, previous, end, color);
         }
 
         if (r.toCardinality() != null && !r.toCardinality().isBlank()) {
@@ -446,6 +521,55 @@ public final class UmlDiagramRenderer {
             card.setLayoutY(midY - 10);
             pane.getChildren().add(card);
         }
+    }
+
+    private static List<Point2D> hierarchyPath(Point2D start, Point2D end, int relationIndex) {
+        double offset = laneOffset(relationIndex, 16);
+        double midY = (start.getY() + end.getY()) / 2.0 + offset;
+        return List.of(start, new Point2D(start.getX(), midY), new Point2D(end.getX(), midY), end);
+    }
+
+    private static List<Point2D> associationPath(Point2D start, Point2D end,
+                                                 boolean horizontal, int relationIndex) {
+        double offset = laneOffset(relationIndex, 18);
+        if (horizontal) {
+            double midX = (start.getX() + end.getX()) / 2.0 + offset;
+            return List.of(start, new Point2D(midX, start.getY()), new Point2D(midX, end.getY()), end);
+        }
+        double midY = (start.getY() + end.getY()) / 2.0 + offset;
+        return List.of(start, new Point2D(start.getX(), midY), new Point2D(end.getX(), midY), end);
+    }
+
+    private static double laneOffset(int relationIndex, double step) {
+        int lane = relationIndex % 5;
+        return (lane - 2) * step;
+    }
+
+    private static Point2D previousPoint(List<Point2D> points, Point2D end) {
+        if (points.size() < 2) {
+            return end;
+        }
+        return points.get(points.size() - 2);
+    }
+
+    private static void drawPolyline(Pane pane, List<Point2D> points, Point2D lineEnd,
+                                     String color, boolean dashed) {
+        for (int i = 0; i < points.size() - 1; i++) {
+            Point2D a = points.get(i);
+            Point2D b = i == points.size() - 2 ? lineEnd : points.get(i + 1);
+            drawSegment(pane, a, b, color, dashed);
+        }
+    }
+
+    private static void drawSegment(Pane pane, Point2D start, Point2D end,
+                                    String color, boolean dashed) {
+        Line line = new Line(start.getX(), start.getY(), end.getX(), end.getY());
+        line.setStroke(Color.web(color));
+        line.setStrokeWidth(1.2);
+        if (dashed) {
+            line.getStrokeDashArray().addAll(8.0, 4.0);
+        }
+        pane.getChildren().add(line);
     }
 
     /** 空心三角（继承/实现箭头） */
@@ -481,22 +605,6 @@ public final class UmlDiagramRenderer {
         pane.getChildren().add(tri);
     }
 
-    /** 射线与节点矩形边框的交点（连线端点截断） */
-    private static Point2D borderPoint(LayoutBox node, Point2D target) {
-        Point2D center = node.center();
-        double dx = target.getX() - center.getX();
-        double dy = target.getY() - center.getY();
-        if (Math.abs(dx) < 0.0001 && Math.abs(dy) < 0.0001) {
-            return center;
-        }
-        double scaleX = Math.abs(dx) < 0.0001
-                ? Double.POSITIVE_INFINITY : (node.width() / 2.0) / Math.abs(dx);
-        double scaleY = Math.abs(dy) < 0.0001
-                ? Double.POSITIVE_INFINITY : (node.height() / 2.0) / Math.abs(dy);
-        double scale = Math.min(scaleX, scaleY);
-        return new Point2D(center.getX() + dx * scale, center.getY() + dy * scale);
-    }
-
     // ======================== 交互 ========================
 
     /** 缩放/适配控制器：画布 = max(内容×缩放, 视口)，内容居中；大图可滚动 */
@@ -506,6 +614,7 @@ public final class UmlDiagramRenderer {
         private final Pane canvas;
         private final double contentW;
         private final double contentH;
+        private final Scale scale = new Scale(1.0, 1.0, 0, 0);
         private double zoom = 1.0;
 
         ZoomController(ScrollPane scroll, Group group, Pane canvas, double contentW, double contentH) {
@@ -514,6 +623,7 @@ public final class UmlDiagramRenderer {
             this.canvas = canvas;
             this.contentW = contentW;
             this.contentH = contentH;
+            this.group.getTransforms().setAll(scale);
         }
 
         /** 整图适配：缩放到整图可见并居中 */
@@ -545,8 +655,8 @@ public final class UmlDiagramRenderer {
 
         private void applyZoom(double next) {
             zoom = next;
-            group.setScaleX(next);
-            group.setScaleY(next);
+            scale.setX(next);
+            scale.setY(next);
             double vw = scroll.getViewportBounds().getWidth();
             double vh = scroll.getViewportBounds().getHeight();
             double cw = Math.max(contentW * next, vw);

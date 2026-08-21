@@ -17,7 +17,7 @@ import java.util.Set;
  *
  * <p>向上：父类链（GENERALIZATION）+ 接口及其父接口（REALIZATION），均带成员；
  * 向下：仅目标类的直接子类 / 目标接口的实现者，各带成员。
- * 不再展开字段关联（ASSOCIATION）、方法参数依赖（DEPENDENCY）与注解节点，避免图爆炸。
+ * 字段类型补充为关联（ASSOCIATION），方法参数/返回值与注解补充为依赖（DEPENDENCY）。
  * JDK 类型不建节点；解析不到的类建「仅类名」标记框。</p>
  */
 public final class UmlDiagramBuilder {
@@ -26,6 +26,8 @@ public final class UmlDiagramBuilder {
     public static final int MAX_CLASSES = 100;
     /** 关系展开深度上限 */
     public static final int MAX_DEPTH = 20;
+    /** 非继承关系只从目标附近展开，避免大工程图爆炸 */
+    private static final int MAX_MEMBER_RELATION_DEPTH = 1;
 
     private UmlDiagramBuilder() {
         throw new AssertionError("utility class");
@@ -95,6 +97,9 @@ public final class UmlDiagramBuilder {
                 addRelation(relations, seenRelations, name, itf, RelationType.REALIZATION, null, null);
                 enqueue(itf, d + 1, queued, queue, depth);
             }
+            if (d <= MAX_MEMBER_RELATION_DEPTH) {
+                addMemberRelations(uml, d, target, index, relations, seenRelations, queued, queue, depth);
+            }
             // 向下：仅目标类的直接子类/实现者
             if (index != null && d == 0) {
                 for (String child : index.subclassesByParent().getOrDefault(name, List.of())) {
@@ -110,6 +115,118 @@ public final class UmlDiagramBuilder {
             }
         }
         return new UmlDiagram(target, List.copyOf(byName.values()), List.copyOf(relations));
+    }
+
+    private static void addMemberRelations(UmlClass uml, int d, String target, WorkspaceIndex index,
+                                           List<UmlRelation> relations, Set<String> seenRelations,
+                                           Set<String> queued, Deque<String> queue,
+                                           Map<String, Integer> depth) {
+        if (index == null || index == WorkspaceIndex.EMPTY) {
+            return;
+        }
+        String source = uml.internalName();
+        for (UmlField field : uml.fields()) {
+            for (String related : relationTargets(field.type(), index)) {
+                if (related.equals(source)) {
+                    continue;
+                }
+                String cardinality = UmlTypeNameUtil.isCollectionOrArray(field.type()) ? "*" : null;
+                addRelation(relations, seenRelations, source, related,
+                        RelationType.ASSOCIATION, null, cardinality);
+                enqueueRelated(related, d + 1, target, queued, queue, depth);
+            }
+        }
+        for (UmlMethod method : uml.methods()) {
+            for (String param : method.params()) {
+                addDependency(source, param, d, target, index, relations, seenRelations, queued, queue, depth);
+            }
+            if (!method.isConstructor()) {
+                addDependency(source, method.returnType(), d, target, index, relations, seenRelations, queued, queue, depth);
+            }
+        }
+        for (String annotation : uml.annotationNames()) {
+            String related = resolveType(annotation, index);
+            if (related != null && !related.equals(source)) {
+                addRelation(relations, seenRelations, source, related,
+                        RelationType.DEPENDENCY, null, null);
+                enqueueRelated(related, d + 1, target, queued, queue, depth);
+            }
+        }
+    }
+
+    private static void addDependency(String source, String type, int d, String target, WorkspaceIndex index,
+                                      List<UmlRelation> relations, Set<String> seenRelations,
+                                      Set<String> queued, Deque<String> queue,
+                                      Map<String, Integer> depth) {
+        for (String related : relationTargets(type, index)) {
+            if (related.equals(source)) {
+                continue;
+            }
+            addRelation(relations, seenRelations, source, related,
+                    RelationType.DEPENDENCY, null, null);
+            enqueueRelated(related, d + 1, target, queued, queue, depth);
+        }
+    }
+
+    private static List<String> relationTargets(String type, WorkspaceIndex index) {
+        if (type == null || type.isBlank()) {
+            return List.of();
+        }
+        Set<String> targets = new LinkedHashSet<>();
+        for (String candidate : typeCandidates(type)) {
+            String resolved = resolveType(candidate, index);
+            if (resolved != null && !UmlTypeNameUtil.isJdk(resolved)) {
+                targets.add(resolved);
+            }
+        }
+        return List.copyOf(targets);
+    }
+
+    private static List<String> typeCandidates(String type) {
+        String normalized = type.replace("[]", "");
+        List<String> result = new ArrayList<>();
+        StringBuilder token = new StringBuilder();
+        for (int i = 0; i < normalized.length(); i++) {
+            char ch = normalized.charAt(i);
+            if (Character.isJavaIdentifierPart(ch) || ch == '.' || ch == '/' || ch == '$') {
+                token.append(ch);
+            } else {
+                addTypeCandidate(result, token);
+            }
+        }
+        addTypeCandidate(result, token);
+        return result;
+    }
+
+    private static void addTypeCandidate(List<String> result, StringBuilder token) {
+        if (token.isEmpty()) {
+            return;
+        }
+        String value = token.toString();
+        token.setLength(0);
+        if (UmlTypeNameUtil.isUMLClassType(value)) {
+            result.add(value);
+        }
+    }
+
+    private static String resolveType(String type, WorkspaceIndex index) {
+        if (type == null || type.isBlank()) {
+            return null;
+        }
+        String internal = normalize(UmlTypeNameUtil.getElementType(type));
+        if (internal.isBlank() || UmlTypeNameUtil.isJdk(internal)) {
+            return null;
+        }
+        var entry = index.findClass(internal);
+        return entry == null ? null : entry.internalName();
+    }
+
+    private static void enqueueRelated(String name, int d, String target, Set<String> queued,
+                                       Deque<String> queue, Map<String, Integer> depth) {
+        if (queued.size() >= MAX_CLASSES || name.equals(target)) {
+            return;
+        }
+        enqueue(name, d, queued, queue, depth);
     }
 
     private static void addRelation(List<UmlRelation> relations, Set<String> seenRelations,
