@@ -101,6 +101,11 @@ public final class UmlClassExtractor {
             if ((access & Opcodes.ACC_SYNTHETIC) != 0 || "<clinit>".equals(name)) {
                 return null;
             }
+            // javac 生成的枚举 values()/valueOf(String) 并非 SYNTHETIC，需显式过滤（枚举内这两个名字被保留，无法用户重载）
+            boolean isEnumClass = (this.access & Opcodes.ACC_ENUM) != 0;
+            if (isEnumClass && ("values".equals(name) || "valueOf".equals(name))) {
+                return null;
+            }
             boolean isCtor = "<init>".equals(name);
             methods.add(new UmlMethod(
                     isCtor ? simpleName(internalName) : name,
@@ -531,7 +536,9 @@ public final class UmlClassExtractor {
         @Override
         public void visitEnd() {
             super.visitEnd();
-            depth--;
+            if (depth > 0) {
+                depth--;
+            }
             if (depth == 0) {
                 sink.accept(toString());
             }
@@ -539,51 +546,108 @@ public final class UmlClassExtractor {
 
         @Override
         public SignatureVisitor visitArrayType() {
-            SignatureVisitor sub = super.visitArrayType();
-            return new SignatureVisitor(Opcodes.ASM9) {
-                @Override
-                public void visitBaseType(char d) {
-                    sub.visitBaseType(d);
-                }
-
-                @Override
-                public void visitTypeVariable(String n) {
-                    sub.visitTypeVariable(n);
-                }
-
-                @Override
-                public SignatureVisitor visitArrayType() {
-                    return sub.visitArrayType();
-                }
-
-                @Override
-                public void visitClassType(String n) {
-                    sub.visitClassType(n);
-                }
-
-                @Override
-                public void visitInnerClassType(String n) {
-                    sub.visitInnerClassType(n);
-                }
-
-                @Override
-                public void visitTypeArgument() {
-                    sub.visitTypeArgument();
-                }
-
-                @Override
-                public SignatureVisitor visitTypeArgument(char w) {
-                    return sub.visitTypeArgument(w);
-                }
-
+            // 注意：基元/类型变量的数组元素 ASM 不回调 visitEnd，将回退到描述符路径
+            SignatureVisitor element = super.visitArrayType();
+            return new DelegatingSignatureVisitor(element) {
                 @Override
                 public void visitEnd() {
-                    sub.visitEnd();
+                    super.visitEnd();
                     if (depth == 0) {
                         sink.accept(toString());
                     }
                 }
             };
+        }
+    }
+
+    /** 通用转发访问器：将全部签名事件原样转发给委托访问器，用于在数组子访问器外再包一层钩子 */
+    private static class DelegatingSignatureVisitor extends SignatureVisitor {
+
+        private final SignatureVisitor delegate;
+
+        DelegatingSignatureVisitor(SignatureVisitor delegate) {
+            super(Opcodes.ASM9);
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void visitFormalTypeParameter(String name) {
+            delegate.visitFormalTypeParameter(name);
+        }
+
+        @Override
+        public SignatureVisitor visitClassBound() {
+            return delegate.visitClassBound();
+        }
+
+        @Override
+        public SignatureVisitor visitInterfaceBound() {
+            return delegate.visitInterfaceBound();
+        }
+
+        @Override
+        public SignatureVisitor visitSuperclass() {
+            return delegate.visitSuperclass();
+        }
+
+        @Override
+        public SignatureVisitor visitInterface() {
+            return delegate.visitInterface();
+        }
+
+        @Override
+        public SignatureVisitor visitParameterType() {
+            return delegate.visitParameterType();
+        }
+
+        @Override
+        public SignatureVisitor visitReturnType() {
+            return delegate.visitReturnType();
+        }
+
+        @Override
+        public SignatureVisitor visitExceptionType() {
+            return delegate.visitExceptionType();
+        }
+
+        @Override
+        public void visitBaseType(char descriptor) {
+            delegate.visitBaseType(descriptor);
+        }
+
+        @Override
+        public void visitTypeVariable(String name) {
+            delegate.visitTypeVariable(name);
+        }
+
+        @Override
+        public SignatureVisitor visitArrayType() {
+            return new DelegatingSignatureVisitor(delegate.visitArrayType());
+        }
+
+        @Override
+        public void visitClassType(String name) {
+            delegate.visitClassType(name);
+        }
+
+        @Override
+        public void visitInnerClassType(String name) {
+            delegate.visitInnerClassType(name);
+        }
+
+        @Override
+        public void visitTypeArgument() {
+            delegate.visitTypeArgument();
+        }
+
+        @Override
+        public SignatureVisitor visitTypeArgument(char wildcard) {
+            return delegate.visitTypeArgument(wildcard);
+        }
+
+        @Override
+        public void visitEnd() {
+            delegate.visitEnd();
         }
     }
 

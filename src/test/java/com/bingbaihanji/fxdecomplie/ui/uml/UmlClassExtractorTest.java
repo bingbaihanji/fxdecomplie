@@ -40,7 +40,7 @@ class UmlClassExtractorTest {
         assertTrue(cls.fields().stream().anyMatch(f -> f.name().equals("orders")
                 && f.type().contains("java.util.List<com.example.Order>")));
 
-        assertTrue(cls.methods().stream().anyMatch(m -> m.isConstructor()));
+        assertTrue(cls.methods().stream().anyMatch(m -> m.isConstructor() && m.name().equals("Person")));
         assertTrue(cls.methods().stream().anyMatch(m -> m.name().equals("run")
                 && m.isAbstract() && m.returnType().equals("void")));
         assertTrue(cls.methods().stream().anyMatch(m -> m.name().equals("greet")
@@ -64,6 +64,7 @@ class UmlClassExtractorTest {
         assertEquals("java/lang/Enum", enm.superName());
         assertTrue(enm.fields().stream().noneMatch(f -> f.name().equals("$VALUES")));
         assertTrue(enm.methods().stream().noneMatch(m -> m.name().equals("<clinit>")));
+        assertTrue(enm.methods().stream().noneMatch(m -> m.name().equals("values") || m.name().equals("valueOf")));
 
         UmlClass ann = UmlClassExtractor.extract("com/example/MyAnn", bytes.get("com/example/MyAnn.class"));
         assertEquals(ClassKind.ANNOTATION, ann.kind());
