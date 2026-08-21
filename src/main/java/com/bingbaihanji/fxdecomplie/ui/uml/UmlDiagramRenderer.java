@@ -42,12 +42,11 @@ public final class UmlDiagramRenderer {
     private static final double LINE_H = 16.0;
     private static final double NODE_PAD_W = 36;
     private static final double NODE_PAD_H = 22;
-    private static final double MIN_ZOOM = 0.02;      // 整图适配的最小下限
-    private static final double READABLE_MIN_ZOOM = 0.4; // 打开时保底可读缩放
+    private static final double MIN_ZOOM = 0.2;
     private static final double MAX_ZOOM = 3.0;
     private static final double ZOOM_STEP = 0.1;
-    private static final int MAX_COLS = 6;             // 每层最多列数,超宽折行
     private static final double EDGE_ARROW = 9;
+    private static final int MAX_COLS = 6;
 
     private UmlDiagramRenderer() {
         throw new AssertionError("utility class");
@@ -71,15 +70,20 @@ public final class UmlDiagramRenderer {
         }
 
         Map<String, LayoutBox> layout = layout(diagram, theme);
-        Bounds bounds = computeBounds(layout);
+        double contentW = 0;
+        double contentH = 0;
+        for (LayoutBox lb : layout.values()) {
+            contentW = Math.max(contentW, lb.x() + lb.width());
+            contentH = Math.max(contentH, lb.y() + lb.height());
+        }
+        contentW += MARGIN;
+        contentH += MARGIN;
 
         Pane edgeLayer = new Pane();
         edgeLayer.setMouseTransparent(true);
         edgeLayer.setPickOnBounds(false);
-
         Pane nodeLayer = new Pane();
         nodeLayer.setPickOnBounds(false);
-
         for (UmlRelation r : diagram.relations()) {
             LayoutBox from = layout.get(r.from());
             LayoutBox to = layout.get(r.to());
@@ -95,19 +99,36 @@ public final class UmlDiagramRenderer {
         Group group = new Group(edgeLayer, nodeLayer);
         Pane canvas = new Pane(group);
         canvas.setStyle("-fx-background-color:" + theme.background() + ";");
-        canvas.setMinSize(bounds.width(), bounds.height());
-        canvas.setPrefSize(bounds.width(), bounds.height());
+        canvas.setMinSize(contentW, contentH);
+        canvas.setPrefSize(contentW, contentH);
 
         ScrollPane scroll = new ScrollPane(canvas);
         scroll.setPannable(true);
         scroll.setFitToWidth(false);
         scroll.setFitToHeight(false);
         scroll.setStyle("-fx-background:" + theme.background() + ";-fx-background-color:" + theme.background() + ";");
-        final double[] zoom = {1.0};
+
+        ZoomController controller = new ZoomController(scroll, group, canvas, contentW, contentH);
+        scroll.addEventFilter(ScrollEvent.SCROLL, event -> {
+            if (!event.isControlDown() && !event.isMetaDown()) {
+                return;
+            }
+            controller.zoomBy(event.getDeltaY());
+            event.consume();
+        });
         final boolean[] fitted = {false};
-        installZoom(scroll, group, canvas, bounds, zoom, fitted);
-        Runnable fitWhole = () -> fitToViewport(scroll, group, canvas, bounds, zoom, MIN_ZOOM);
-        return new UmlView(scroll, canvas, fitWhole);
+        scroll.viewportBoundsProperty().addListener((obs, oldV, vp) -> {
+            if (fitted[0]) {
+                return;
+            }
+            if (vp.getWidth() <= 0 || vp.getHeight() <= 0) {
+                return;
+            }
+            fitted[0] = true;
+            controller.fitToWindow();
+        });
+        Runnable fit = controller::fitToWindow;
+        return new UmlView(scroll, canvas, fit);
     }
 
     // ======================== 布局 ========================
@@ -125,11 +146,11 @@ public final class UmlDiagramRenderer {
             maxW = Math.max(maxW, boxWidth(c));
             maxH = Math.max(maxH, boxHeight(c));
         }
-        double rowStep = maxW + ROW_GAP;    // 层内列间距
-        int maxLevel = byLevel.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
+        double rowStep = maxW + ROW_GAP;
 
-        Map<String, LayoutBox> result = new LinkedHashMap<>();
+        Map<String, LayoutBox> raw = new LinkedHashMap<>();
         double yCursor = MARGIN;
+        int maxLevel = byLevel.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
         for (int level = maxLevel; level >= 0; level--) {
             List<UmlClass> levelClasses = byLevel.get(level);
             if (levelClasses == null) {
@@ -137,7 +158,7 @@ public final class UmlDiagramRenderer {
             }
             int cols = Math.min(levelClasses.size(), MAX_COLS);
             int rows = (levelClasses.size() + MAX_COLS - 1) / MAX_COLS;
-            double levelOffset = (MAX_COLS - cols) * rowStep / 2.0; // 层内居中
+            double levelOffset = (MAX_COLS - cols) * rowStep / 2.0;
             double levelTop = yCursor;
             for (int i = 0; i < levelClasses.size(); i++) {
                 UmlClass c = levelClasses.get(i);
@@ -155,25 +176,28 @@ public final class UmlDiagramRenderer {
                     region.setMinSize(w, h);
                     region.setMaxSize(w, h);
                 }
-                result.put(c.internalName(), new LayoutBox(box, x, y, w, h));
+                raw.put(c.internalName(), new LayoutBox(box, x, y, w, h));
             }
             yCursor = levelTop + rows * (maxH + ROW_GAP) + LEVEL_GAP;
         }
 
-        // 平移:确保最左节点不越界(左右各留 MARGIN),否则被视口/快照裁剪
+        // 整体平移:内容对齐左上角(各留 MARGIN),消除负坐标与右侧大量空白
         double minX = Double.POSITIVE_INFINITY;
-        for (LayoutBox lb : result.values()) {
+        double minY = Double.POSITIVE_INFINITY;
+        for (LayoutBox lb : raw.values()) {
             minX = Math.min(minX, lb.x());
+            minY = Math.min(minY, lb.y());
         }
-        double shift = minX < MARGIN ? MARGIN - minX : 0;
-        if (shift > 0) {
-            Map<String, LayoutBox> shifted = new LinkedHashMap<>();
-            for (Map.Entry<String, LayoutBox> e : result.entrySet()) {
-                LayoutBox lb = e.getValue();
-                lb.box().setLayoutX(lb.x() + shift);
-                shifted.put(e.getKey(), new LayoutBox(lb.box(), lb.x() + shift, lb.y(), lb.width(), lb.height()));
-            }
-            result = shifted;
+        double shiftX = minX - MARGIN;
+        double shiftY = minY - MARGIN;
+        Map<String, LayoutBox> result = new LinkedHashMap<>();
+        for (Map.Entry<String, LayoutBox> e : raw.entrySet()) {
+            LayoutBox lb = e.getValue();
+            double nx = lb.x() - shiftX;
+            double ny = lb.y() - shiftY;
+            lb.box().setLayoutX(nx);
+            lb.box().setLayoutY(ny);
+            result.put(e.getKey(), new LayoutBox(lb.box(), nx, ny, lb.width(), lb.height()));
         }
         return result;
     }
@@ -475,112 +499,68 @@ public final class UmlDiagramRenderer {
 
     // ======================== 交互 ========================
 
-    private static void installZoom(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
-                                    double[] zoom, boolean[] fitted) {
-        // 视口首次就绪后自动适配整图（事件驱动，布局完成时必然触发）
-        scroll.viewportBoundsProperty().addListener((obs, oldV, viewport) -> {
-            if (fitted[0]) {
+    /** 缩放/适配控制器：画布 = max(内容×缩放, 视口)，内容居中；大图可滚动 */
+    private static final class ZoomController {
+        private final ScrollPane scroll;
+        private final Group group;
+        private final Pane canvas;
+        private final double contentW;
+        private final double contentH;
+        private double zoom = 1.0;
+
+        ZoomController(ScrollPane scroll, Group group, Pane canvas, double contentW, double contentH) {
+            this.scroll = scroll;
+            this.group = group;
+            this.canvas = canvas;
+            this.contentW = contentW;
+            this.contentH = contentH;
+        }
+
+        /** 整图适配：缩放到整图可见并居中 */
+        void fitToWindow() {
+            double vw = scroll.getViewportBounds().getWidth();
+            double vh = scroll.getViewportBounds().getHeight();
+            if (vw <= 0 || vh <= 0 || contentW <= 0 || contentH <= 0) {
                 return;
             }
-            if (viewport.getWidth() <= 0 || viewport.getHeight() <= 0) {
+            double fit = Math.min(vw / contentW, vh / contentH);
+            if (!Double.isFinite(fit) || fit <= 0) {
                 return;
             }
-            fitted[0] = true;
-            fitToViewport(scroll, group, canvas, bounds, zoom, READABLE_MIN_ZOOM);
-        });
+            fit = Math.min(fit, 1.0);       // 不放大
+            fit = Math.max(fit, MIN_ZOOM);  // 保底可读
+            applyZoom(fit);
+            scroll.setHvalue(0.5);
+            scroll.setVvalue(0.5);
+        }
 
-        // Ctrl/⌘+滚轮：指针居中缩放
-        scroll.addEventFilter(ScrollEvent.SCROLL, event -> {
-            if (!event.isControlDown() && !event.isMetaDown()) {
-                return; // 不拦截普通滚轮，让 ScrollPane 正常滚动
-            }
-            double next = Math.clamp(
-                    zoom[0] + (event.getDeltaY() > 0 ? ZOOM_STEP : -ZOOM_STEP),
-                    MIN_ZOOM, MAX_ZOOM);
-            if (Math.abs(next - zoom[0]) < 0.0001) {
-                event.consume();
+        /** Ctrl+滚轮缩放（简单可靠的从原点缩放） */
+        void zoomBy(double deltaY) {
+            double next = Math.clamp(zoom + (deltaY > 0 ? ZOOM_STEP : -ZOOM_STEP), MIN_ZOOM, MAX_ZOOM);
+            if (Math.abs(next - zoom) < 0.0001) {
                 return;
             }
-            zoomAround(scroll, group, canvas, bounds, zoom, next, event.getX(), event.getY());
-            event.consume();
-        });
-    }
-
-    /** 适配窗口：缩放到整图可见并居中；floor 为缩放下限（打开用可读保底,按钮用整图下限） */
-    private static void fitToViewport(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
-                                      double[] zoom, double floor) {
-        double vw = scroll.getViewportBounds().getWidth();
-        double vh = scroll.getViewportBounds().getHeight();
-        if (vw <= 0 || vh <= 0 || bounds.width() <= 0 || bounds.height() <= 0) {
-            return;
+            applyZoom(next);
         }
-        double fit = Math.min(vw / bounds.width(), vh / bounds.height());
-        if (!Double.isFinite(fit) || fit <= 0) {
-            return;
-        }
-        fit = Math.min(fit, 1.0); // 不放大
-        fit = Math.max(fit, floor);
-        applyZoom(group, canvas, bounds, zoom, fit);
-        scroll.setHvalue(0.5);
-        scroll.setVvalue(0.5);
-    }
 
-    /** 设置缩放并同步画布尺寸 */
-    private static void applyZoom(Group group, Pane canvas, Bounds bounds, double[] zoom, double next) {
-        if (!Double.isFinite(next) || next <= 0) {
-            return;
+        private void applyZoom(double next) {
+            zoom = next;
+            group.setScaleX(next);
+            group.setScaleY(next);
+            double vw = scroll.getViewportBounds().getWidth();
+            double vh = scroll.getViewportBounds().getHeight();
+            double cw = Math.max(contentW * next, vw);
+            double ch = Math.max(contentH * next, vh);
+            canvas.setPrefSize(cw, ch);
+            canvas.setMinSize(cw, ch);
+            group.setLayoutX((cw - contentW * next) / 2.0);
+            group.setLayoutY((ch - contentH * next) / 2.0);
         }
-        zoom[0] = next;
-        group.setScaleX(next);
-        group.setScaleY(next);
-        canvas.setPrefSize(bounds.width() * next, bounds.height() * next);
-        canvas.setMinSize(bounds.width() * next, bounds.height() * next);
-    }
-
-    /** 指针居中缩放：保持鼠标下的内容点不动 */
-    private static void zoomAround(ScrollPane scroll, Group group, Pane canvas, Bounds bounds,
-                                   double[] zoom, double next, double mouseX, double mouseY) {
-        double vw = scroll.getViewportBounds().getWidth();
-        double vh = scroll.getViewportBounds().getHeight();
-        double old = zoom[0];
-        double cw = bounds.width() * old;
-        double ch = bounds.height() * old;
-        double hscroll = scroll.getHvalue() * Math.max(0, cw - vw);
-        double vscroll = scroll.getVvalue() * Math.max(0, ch - vh);
-        // 鼠标指向的未缩放内容坐标
-        double contentX = (hscroll + mouseX) / old;
-        double contentY = (vscroll + mouseY) / old;
-
-        applyZoom(group, canvas, bounds, zoom, next);
-
-        double nw = bounds.width() * next;
-        double nh = bounds.height() * next;
-        if (nw > vw) {
-            double nhscroll = contentX * next - mouseX;
-            scroll.setHvalue(Math.clamp(nhscroll / (nw - vw), 0, 1));
-        }
-        if (nh > vh) {
-            double nvscroll = contentY * next - mouseY;
-            scroll.setVvalue(Math.clamp(nvscroll / (nh - vh), 0, 1));
-        }
-    }
-
-    private static Bounds computeBounds(Map<String, LayoutBox> layout) {
-        double maxX = MARGIN * 2;
-        double maxY = MARGIN * 2;
-        for (LayoutBox lb : layout.values()) {
-            maxX = Math.max(maxX, lb.x() + lb.width() + MARGIN);
-            maxY = Math.max(maxY, lb.y() + lb.height() + MARGIN);
-        }
-        return new Bounds(maxX, maxY);
     }
 
     private record LayoutBox(Node box, double x, double y, double width, double height) {
         Point2D center() {
             return new Point2D(x + width / 2.0, y + height / 2.0);
         }
-    }
-
-    private record Bounds(double width, double height) {
     }
 }
