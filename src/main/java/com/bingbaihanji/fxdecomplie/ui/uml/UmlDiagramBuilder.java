@@ -13,10 +13,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 从目标类出发 BFS 构建 UML 类图闭包。
+ * 从目标类出发 BFS 构建「聚焦」UML 类图（继承/实现层级）。
  *
- * <p>展开方向：父类（GENERALIZATION）、接口（REALIZATION）、字段元素类型（ASSOCIATION，
- * 集合/数组带 0..* 多重性）、方法参数元素类型（DEPENDENCY）、子类（反向 GENERALIZATION）。
+ * <p>向上：父类链（GENERALIZATION）+ 接口及其父接口（REALIZATION），均带成员；
+ * 向下：仅目标类的直接子类 / 目标接口的实现者，各带成员。
+ * 不再展开字段关联（ASSOCIATION）、方法参数依赖（DEPENDENCY）与注解节点，避免图爆炸。
  * JDK 类型不建节点；解析不到的类建「仅类名」标记框。</p>
  */
 public final class UmlDiagramBuilder {
@@ -78,15 +79,15 @@ public final class UmlDiagramBuilder {
             }
             byName.put(name, uml);
             if (d >= MAX_DEPTH) {
-                continue; // 仅显示，不再展开关系
+                continue; // 仅显示，不再向上/向下展开
             }
 
-            // 继承：父类
+            // 向上：父类链（继承）
             if (uml.superName() != null && !UmlTypeNameUtil.isJdk(uml.superName())) {
                 addRelation(relations, seenRelations, name, uml.superName(), RelationType.GENERALIZATION, null, null);
                 enqueue(uml.superName(), d + 1, queued, queue, depth);
             }
-            // 实现：接口
+            // 向上：接口（实现，含父接口链）
             for (String itf : uml.interfaces()) {
                 if (UmlTypeNameUtil.isJdk(itf)) {
                     continue;
@@ -94,27 +95,8 @@ public final class UmlDiagramBuilder {
                 addRelation(relations, seenRelations, name, itf, RelationType.REALIZATION, null, null);
                 enqueue(itf, d + 1, queued, queue, depth);
             }
-            // 注解:加入闭包作为节点(不建立标准关系;PumlExporter 通过 annotationNames 画黄点线)
-            for (String ann : uml.annotationNames()) {
-                if (UmlTypeNameUtil.isJdk(ann) || ann.equals(name)) {
-                    continue;
-                }
-                enqueue(ann, d + 1, queued, queue, depth);
-            }
-            // 关联：字段元素类型
-            for (UmlField f : uml.fields()) {
-                addTypeRelation(relations, seenRelations, queue, queued, depth, name, d,
-                        f.type(), RelationType.ASSOCIATION, true);
-            }
-            // 依赖：方法参数元素类型
-            for (UmlMethod m : uml.methods()) {
-                for (String p : m.params()) {
-                    addTypeRelation(relations, seenRelations, queue, queued, depth, name, d,
-                            p, RelationType.DEPENDENCY, false);
-                }
-            }
-            // 子类：反向继承（接口/注解的实现类用 REALIZATION 虚线，类继承用 GENERALIZATION 实线）
-            if (index != null) {
+            // 向下：仅目标类的直接子类/实现者
+            if (index != null && d == 0) {
                 for (String child : index.subclassesByParent().getOrDefault(name, List.of())) {
                     if (UmlTypeNameUtil.isJdk(child) || child.equals(name)) {
                         continue;
@@ -128,28 +110,6 @@ public final class UmlDiagramBuilder {
             }
         }
         return new UmlDiagram(target, List.copyOf(byName.values()), List.copyOf(relations));
-    }
-
-    /** 按可读类型名建立 ASSOCIATION/DEPENDENCY 关系 */
-    private static void addTypeRelation(List<UmlRelation> relations, Set<String> seenRelations,
-                                        Deque<String> queue, Set<String> queued, Map<String, Integer> depth,
-                                        String from, int fromDepth, String readableType,
-                                        RelationType type, boolean isField) {
-        String element = UmlTypeNameUtil.getElementType(readableType);
-        if (!UmlTypeNameUtil.isUMLClassType(element)) {
-            return;
-        }
-        // 类型变量（如 T/E/K/V）不建立关系，避免生成无意义的标记框
-        if (element.length() == 1 && Character.isUpperCase(element.charAt(0))) {
-            return;
-        }
-        String target = normalize(element);
-        if (target.equals(from)) {
-            return; // 自引用不建边
-        }
-        String cardinality = isField && UmlTypeNameUtil.isCollectionOrArray(readableType) ? "0..*" : null;
-        addRelation(relations, seenRelations, from, target, type, null, cardinality);
-        enqueue(target, fromDepth + 1, queued, queue, depth);
     }
 
     private static void addRelation(List<UmlRelation> relations, Set<String> seenRelations,

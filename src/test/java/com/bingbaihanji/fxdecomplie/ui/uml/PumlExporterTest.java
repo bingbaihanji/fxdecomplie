@@ -32,10 +32,7 @@ class PumlExporterTest {
         assertTrue(puml.contains("skinparam"));
         assertTrue(puml.contains("class \"**ServiceImpl**"));
         assertTrue(puml.contains("abstract class \"**AbstractService**"));
-        // 泛化:ServiceImpl(具体类) → AbstractService(抽象类),实线空心三角
         assertTrue(puml.contains("-[#000082,plain]-^"));
-        // 关联:AbstractService → Order 集合字段 0..*（PlantUML 多重性前有一个空格）
-        assertTrue(puml.contains("-[#595959,plain]- \"0..*\""));
         assertTrue(puml.endsWith("@enduml"));
     }
 
@@ -57,38 +54,20 @@ class PumlExporterTest {
     @Test
     void buildSource_markerClassAndEmptyDiagram() {
         Map<String, String> sources = new LinkedHashMap<>();
-        sources.put("com.example.External", "package com.example;\npublic class External {}\n");
-        sources.put("com.example.UsesExternal",
-                "package com.example;\npublic class UsesExternal { private External ext; }\n");
+        sources.put("com.example.MissingBase", "package com.example;\npublic class MissingBase {}\n");
+        sources.put("com.example.Child", "package com.example;\npublic class Child extends MissingBase {}\n");
         Map<String, byte[]> all = TestCompile.compile(sources);
         Map<String, byte[]> treeBytes = new HashMap<>(all);
-        treeBytes.remove("com/example/External.class");
+        treeBytes.remove("com/example/MissingBase.class");
         WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(treeBytes));
         UmlDiagram diagram = UmlDiagramBuilder.build(
-                "com/example/UsesExternal", all.get("com/example/UsesExternal.class"), index);
+                "com/example/Child", all.get("com/example/Child.class"), index);
 
         String puml = PumlExporter.buildSource(diagram, UmlTheme.LIGHT);
         // 标记框:单一柔和色 + 空成员体
-        assertTrue(puml.contains("class \"**External**\" as ") && puml.contains(" #EDEDED {\n}"));
+        assertTrue(puml.contains("class \"**MissingBase**\" as ") && puml.contains(" #EDEDED {\n}"));
 
         // 空图
         assertEquals("@startuml\n@enduml", PumlExporter.buildSource(null, UmlTheme.LIGHT));
-    }
-
-    @Test
-    void buildSource_rendersAnnotationEdge() {
-        Map<String, String> sources = new LinkedHashMap<>();
-        sources.put("com.example.MyAnn", "package com.example;\npublic @interface MyAnn {}\n");
-        sources.put("com.example.Annotated",
-                "package com.example;\n@MyAnn\npublic class Annotated {}\n");
-        Map<String, byte[]> bytes = TestCompile.compile(sources);
-        WorkspaceIndex index = WorkspaceIndex.build(TestCompile.treeFromClasses(bytes));
-
-        UmlDiagram diagram = UmlDiagramBuilder.build(
-                "com/example/Annotated", bytes.get("com/example/Annotated.class"), index);
-        String puml = PumlExporter.buildSource(diagram, UmlTheme.LIGHT);
-
-        assertTrue(puml.contains("annotation \"**MyAnn**"));
-        assertTrue(puml.contains("-[#999900,dotted]-"));
     }
 }
