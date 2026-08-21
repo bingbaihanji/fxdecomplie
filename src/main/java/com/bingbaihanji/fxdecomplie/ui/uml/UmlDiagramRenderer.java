@@ -14,6 +14,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextAlignment;
 
 import java.util.ArrayDeque;
@@ -40,7 +41,6 @@ public final class UmlDiagramRenderer {
     private static final double LINE_H = 16.0;
     private static final double NODE_PAD_W = 36;
     private static final double NODE_PAD_H = 22;
-    private static final double WRAP_THRESHOLD = 40;
     private static final double MIN_ZOOM = 0.35;
     private static final double MAX_ZOOM = 2.5;
     private static final double ZOOM_STEP = 0.1;
@@ -135,7 +135,7 @@ public final class UmlDiagramRenderer {
                 // 层级垂直向下，同层水平居中排列
                 double x = MARGIN + (i - mid) * rowStep + (maxW - w) / 2.0;
                 double y = MARGIN + (maxLevel - level) * levelStep;
-                Node box = createClassBox(c, theme);
+                Node box = createClassBox(c, theme, w);
                 box.setLayoutX(x);
                 box.setLayoutY(y);
                 if (box instanceof Region region) {
@@ -209,7 +209,7 @@ public final class UmlDiagramRenderer {
 
     // ======================== 类框渲染 ========================
 
-    private static Node createClassBox(UmlClass cls, UmlTheme theme) {
+    private static Node createClassBox(UmlClass cls, UmlTheme theme, double width) {
         VBox box = new VBox();
         String boxBg = cls.parsed() ? theme.nodeBackground() : theme.markerBackground();
         box.setStyle("-fx-background-color:" + boxBg + ";"
@@ -240,7 +240,7 @@ public final class UmlDiagramRenderer {
             members.setStyle("-fx-padding:4 8 6 8;");
             boolean hasFields = false;
             for (UmlField f : cls.fields()) {
-                members.getChildren().add(fieldLabel(f, theme));
+                members.getChildren().add(fieldLabel(f, theme, width));
                 hasFields = true;
             }
             if (hasFields && !cls.methods().isEmpty()) {
@@ -251,9 +251,13 @@ public final class UmlDiagramRenderer {
                 members.getChildren().add(sep);
             }
             for (UmlMethod m : cls.methods()) {
-                members.getChildren().add(methodLabel(m, theme));
+                members.getChildren().add(methodLabel(m, theme, width));
             }
             box.getChildren().add(members);
+        }
+        if (width > 0) {
+            Rectangle clip = new Rectangle(width, boxHeight(cls));
+            box.setClip(clip);
         }
         return box;
     }
@@ -267,7 +271,7 @@ public final class UmlDiagramRenderer {
         };
     }
 
-    private static Label fieldLabel(UmlField f, UmlTheme theme) {
+    private static Label fieldLabel(UmlField f, UmlTheme theme, double boxWidth) {
         String text = f.visibility().symbol() + " " + f.name() + ": " + f.type();
         Label label = new Label(text);
         String style = "-fx-text-fill:" + theme.memberText()
@@ -276,12 +280,13 @@ public final class UmlDiagramRenderer {
             style += "-fx-underline:true;";
         }
         label.setStyle(style);
-        label.setMaxWidth(Double.MAX_VALUE);
+        label.setWrapText(true);
+        label.setMaxWidth(boxWidth - 18);
         label.setTextAlignment(TextAlignment.LEFT);
         return label;
     }
 
-    private static Label methodLabel(UmlMethod m, UmlTheme theme) {
+    private static Label methodLabel(UmlMethod m, UmlTheme theme, double boxWidth) {
         String ret = m.isConstructor() ? "" : ": " + m.returnType();
         String text = m.visibility().symbol() + " " + m.name() + "("
                 + String.join(", ", m.params()) + ")" + ret;
@@ -295,7 +300,8 @@ public final class UmlDiagramRenderer {
             style += "-fx-underline:true;";
         }
         label.setStyle(style);
-        label.setMaxWidth(Double.MAX_VALUE);
+        label.setWrapText(true);
+        label.setMaxWidth(boxWidth - 18);
         label.setTextAlignment(TextAlignment.LEFT);
         return label;
     }
@@ -311,9 +317,11 @@ public final class UmlDiagramRenderer {
     }
 
     private static double boxHeight(UmlClass cls) {
+        double w = boxWidth(cls);
+        double usable = Math.max(w - NODE_PAD_W, MIN_BOX_W - NODE_PAD_W);
         int visualLines = 0;
         for (String line : boxTextLines(cls)) {
-            visualLines += Math.max(1, (int) Math.ceil(line.length() / (double) WRAP_THRESHOLD));
+            visualLines += Math.max(1, (int) Math.ceil(line.length() * CHAR_W / usable));
         }
         return Math.max(visualLines * LINE_H + NODE_PAD_H, MIN_BOX_H);
     }
@@ -357,7 +365,12 @@ public final class UmlDiagramRenderer {
         };
         boolean dashed = r.type() == RelationType.REALIZATION || r.type() == RelationType.DEPENDENCY;
 
-        Line line = new Line(start.getX(), start.getY(), end.getX(), end.getY());
+        Point2D lineEnd = end;
+        if (r.type() == RelationType.GENERALIZATION || r.type() == RelationType.REALIZATION) {
+            double angle = Math.atan2(end.getY() - start.getY(), end.getX() - start.getX());
+            lineEnd = new Point2D(end.getX() - 11 * Math.cos(angle), end.getY() - 11 * Math.sin(angle));
+        }
+        Line line = new Line(start.getX(), start.getY(), lineEnd.getX(), lineEnd.getY());
         line.setStroke(Color.web(color));
         line.setStrokeWidth(1.2);
         if (dashed) {
