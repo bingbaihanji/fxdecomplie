@@ -211,7 +211,8 @@ public final class UmlDiagramRenderer {
 
     private static Node createClassBox(UmlClass cls, UmlTheme theme) {
         VBox box = new VBox();
-        box.setStyle("-fx-background-color:" + theme.nodeBackground() + ";"
+        String boxBg = cls.parsed() ? theme.nodeBackground() : theme.markerBackground();
+        box.setStyle("-fx-background-color:" + boxBg + ";"
                 + "-fx-border-color:" + theme.nodeBorder() + ";"
                 + "-fx-border-width:1;-fx-background-radius:6;-fx-border-radius:6;");
 
@@ -229,7 +230,8 @@ public final class UmlDiagramRenderer {
             pkg.setAlignment(Pos.CENTER);
             header.getChildren().add(pkg);
         }
-        header.setStyle("-fx-background-color:" + headerColor(cls, theme) + ";"
+        String headerBg = cls.parsed() ? headerColor(cls, theme) : theme.markerBackground();
+        header.setStyle("-fx-background-color:" + headerBg + ";"
                 + "-fx-background-radius:6 6 0 0;-fx-padding:5 8 5 8;");
         box.getChildren().add(header);
 
