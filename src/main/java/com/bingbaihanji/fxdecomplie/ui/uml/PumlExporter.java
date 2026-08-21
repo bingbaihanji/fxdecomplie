@@ -86,7 +86,7 @@ public final class PumlExporter {
         i = 0;
         for (UmlClass c : diagram.classes()) {
             String a = "C" + i;
-            sb.append(kindKeyword(c, diagram.classes())).append(' ')
+            sb.append(kindKeyword(c)).append(' ')
               .append(title(c, theme)).append(" as ").append(a)
               .append(nodeColor(c, theme)).append(" {\n");
             appendMembers(c, sb);
@@ -119,34 +119,13 @@ public final class PumlExporter {
         return sb.toString();
     }
 
-    /**
-     * 类节点的 PlantUML 关键词。
-     * IDEA 风格：子类继承了抽象父类的抽象性，故若自身或其父类链上存在抽象类，
-     * 一律渲染为 {@code abstract class}。
-     */
-    private static String kindKeyword(UmlClass c, List<UmlClass> classes) {
+    private static String kindKeyword(UmlClass c) {
         return switch (c.kind()) {
             case INTERFACE -> "interface";
             case ENUM -> "enum";
             case ANNOTATION -> "annotation";
-            case CLASS -> isEffectivelyAbstract(c, classes) ? "abstract class" : "class";
+            case CLASS -> c.isAbstract() ? "abstract class" : "class";
         };
-    }
-
-    /** 是否为「有效抽象」：自身声明为抽象，或其（图内可解析的）父类链上存在抽象类 */
-    private static boolean isEffectivelyAbstract(UmlClass c, List<UmlClass> classes) {
-        if (c.isAbstract()) {
-            return true;
-        }
-        if (c.superName() == null) {
-            return false;
-        }
-        for (UmlClass other : classes) {
-            if (c.superName().equals(other.internalName())) {
-                return isEffectivelyAbstract(other, classes);
-            }
-        }
-        return false;
     }
 
     private static String title(UmlClass c, UmlTheme theme) {
