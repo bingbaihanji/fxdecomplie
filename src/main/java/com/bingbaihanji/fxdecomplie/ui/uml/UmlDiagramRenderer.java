@@ -149,7 +149,7 @@ public final class UmlDiagramRenderer {
         return result;
     }
 
-    /** 入度拓扑分层：入度为 0（继承链顶端）在 level 0（画布顶部） */
+    /** 入度拓扑分层：入度为 0 的节点（叶子/无被引用的类）在 level 0；layout 中 level 越高越靠上，使父类位于画布上方 */
     private static Map<String, Integer> computeLevels(UmlDiagram diagram) {
         Map<String, Integer> indegree = new HashMap<>();
         Map<String, List<String>> outgoing = new HashMap<>();
