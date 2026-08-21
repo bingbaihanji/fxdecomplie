@@ -158,6 +158,7 @@ public final class EngineController {
                 if (diagram == null || diagram.classes().isEmpty()) {
                     Platform.runLater(() -> {
                         owner.statusBar().clearTask();
+                        owner.statusBar().setFilePath(I18nUtil.getString("graph.renderFailed"));
                         dialog.showMessage(I18nUtil.getString("uml.noData"));
                     });
                     return;
@@ -170,6 +171,7 @@ public final class EngineController {
                 log.error("UML 类图构建失败: {}", fullPath, e);
                 Platform.runLater(() -> {
                     owner.statusBar().clearTask();
+                    owner.statusBar().setFilePath(I18nUtil.getString("graph.renderFailed"));
                     dialog.showMessage(I18nUtil.getString("uml.renderFailed"));
                 });
             }

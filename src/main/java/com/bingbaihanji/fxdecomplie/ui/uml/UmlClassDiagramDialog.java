@@ -178,7 +178,8 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
             statusLabel.setText(I18nUtil.getString("uml.export.done", file.getName()));
         } catch (Exception e) {
             log.error("导出 PNG 失败", e);
-            statusLabel.setText(I18nUtil.getString("uml.export.failed", e.getMessage()));
+            statusLabel.setText(I18nUtil.getString("uml.export.failed",
+                    e.getMessage() == null ? "" : e.getMessage()));
         }
     }
 
@@ -199,7 +200,8 @@ public class UmlClassDiagramDialog extends Dialog<Void> {
             statusLabel.setText(I18nUtil.getString("uml.export.done", file.getName()));
         } catch (Exception e) {
             log.error("导出 .puml 失败", e);
-            statusLabel.setText(I18nUtil.getString("uml.export.failed", e.getMessage()));
+            statusLabel.setText(I18nUtil.getString("uml.export.failed",
+                    e.getMessage() == null ? "" : e.getMessage()));
         }
     }
 
