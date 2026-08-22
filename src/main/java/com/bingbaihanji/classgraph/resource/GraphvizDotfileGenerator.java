@@ -118,33 +118,31 @@ public final class GraphvizDotfileGenerator {
                     buf.append("&quot;");
                     break;
                 case '\'':
-                    buf.append("&#x27;"); // 参见 http://goo.gl/FzoP6m
+                    buf.append("&#x27;"); // See http://goo.gl/FzoP6m
                     break;
                 case '\\':
                     buf.append("&lsol;");
                     break;
                 case '/':
-                    buf.append("&#x2F;"); // 如果属性值未加引号,'/' 可能是危险字符
+                    buf.append("&#x2F;"); // '/' can be a dangerous char if attr values are not quoted
                     break;
-                // 编码一些常见的在某些字符集/浏览器变体中容易出问题的字符
+                // Encode a few common characters that like to get screwed up in some charset/browser variants
                 case '—':
                     buf.append("&mdash;");
                     break;
                 case '–':
                     buf.append("&ndash;");
                     break;
-                case '"':
+                case '“':
                     buf.append("&ldquo;");
                     break;
-                case '"':
+                case '”':
                     buf.append("&rdquo;");
                     break;
-                case ''
-                    ':
+                case '‘':
                     buf.append("&lsquo;");
                     break;
-                case ''
-                    ':
+                case '’':
                     buf.append("&rsquo;");
                     break;
                 case '«':
@@ -169,7 +167,7 @@ public final class GraphvizDotfileGenerator {
                     if (turnNewlineIntoBreak) {
                         buf.append("<br>");
                     } else {
-                        buf.append(' '); // 在 HTML 文本中,换行符作为空白字符起作用
+                        buf.append(' '); // Newlines function as whitespace in HTML text
                     }
                     break;
                 default:
